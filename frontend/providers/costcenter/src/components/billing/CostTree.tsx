@@ -244,92 +244,85 @@ function CostNodesCanvas() {
   ]);
 
   return (
-    <div>
-      <div
-        className="m-[20rem] w-[40rem] min-w-full min-h-[max(32rem,100%)]"
-        style={{ height: workspaceNodes.length * 5 + 16 + 'rem' }}
-        ref={wrapperRef}
+    <div
+      className="relative min-w-[max(40rem,100%)] min-h-[max(32rem,100%)] my-[12rem] mx-[32rem]"
+      style={{ minHeight: `max(${workspaceNodes.length * 5 + 16}rem, 32rem, 100%)` }}
+      ref={wrapperRef}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        className="absolute w-full h-full -z-10 overflow-visible"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          className="absolute w-full h-full -z-10 overflow-visible"
-        >
-          <g>
-            {paths.regularPaths.map((path) => (
-              <path
-                key={path.id}
-                stroke="var(--color-zinc-400)"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-                d={path.d}
-              />
-            ))}
-          </g>
-          <g>
-            {paths.highlightedPaths.map((path) => (
-              <path key={path.id} stroke="var(--color-blue-600)" strokeWidth="2" d={path.d} />
-            ))}
-          </g>
-        </svg>
+        <g>
+          {paths.regularPaths.map((path) => (
+            <path
+              key={path.id}
+              stroke="var(--color-zinc-400)"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+              d={path.d}
+            />
+          ))}
+        </g>
+        <g>
+          {paths.highlightedPaths.map((path) => (
+            <path key={path.id} stroke="var(--color-blue-600)" strokeWidth="2" d={path.d} />
+          ))}
+        </g>
+      </svg>
 
-        {rootNode && (
-          <CanvasNode anchorX={0} anchorY={0} ref={getRefForNode('total_cost')}>
-            <CostCard
-              id={rootNode.id}
-              name={rootNode.name}
-              cost={rootNode.cost}
-              onClick={() => {
-                setSelectedRegion(null);
-                setSelectedWorkspace(null);
-              }}
-              selected={false}
-            />
-          </CanvasNode>
-        )}
-        {regionNodes.map((node, idx) => (
-          <CanvasNode
-            key={node.id}
-            anchorX={3}
-            anchorY={3 + idx * 2.5}
-            ref={getRefForNode(node.id)}
-          >
-            <CostCard
-              id={node.id}
-              name={node.name}
-              cost={node.cost}
-              onClick={(id) => {
-                setSelectedRegion(id);
-                setSelectedWorkspace(null);
-              }}
-              selected={selectedRegion === node.id}
-            />
-          </CanvasNode>
-        ))}
-        {workspaceNodes.map((node, idx) => (
-          <CanvasNode
-            key={node.id}
-            anchorX={9.5}
-            anchorY={4.5 + idx * 2.5}
-            ref={getRefForNode(node.id)}
-          >
-            <CostCard
-              id={node.id}
-              name={node.name}
-              cost={node.cost}
-              onClick={(id) => setSelectedWorkspace(id)}
-              selected={selectedWorkspace === node.id}
-            />
-          </CanvasNode>
-        ))}
-      </div>
+      {rootNode && (
+        <CanvasNode anchorX={0} anchorY={0} ref={getRefForNode('total_cost')}>
+          <CostCard
+            id={rootNode.id}
+            name={rootNode.name}
+            cost={rootNode.cost}
+            onClick={() => {
+              setSelectedRegion(null);
+              setSelectedWorkspace(null);
+            }}
+            selected={false}
+          />
+        </CanvasNode>
+      )}
+      {regionNodes.map((node, idx) => (
+        <CanvasNode key={node.id} anchorX={3} anchorY={3 + idx * 2.5} ref={getRefForNode(node.id)}>
+          <CostCard
+            id={node.id}
+            name={node.name}
+            cost={node.cost}
+            onClick={(id) => {
+              setSelectedRegion(id);
+              setSelectedWorkspace(null);
+            }}
+            selected={selectedRegion === node.id}
+          />
+        </CanvasNode>
+      ))}
+      {workspaceNodes.map((node, idx) => (
+        <CanvasNode
+          key={node.id}
+          anchorX={9.5}
+          anchorY={4.5 + idx * 2.5}
+          ref={getRefForNode(node.id)}
+        >
+          <CostCard
+            id={node.id}
+            name={node.name}
+            cost={node.cost}
+            onClick={(id) => setSelectedWorkspace(id)}
+            selected={selectedWorkspace === node.id}
+          />
+        </CanvasNode>
+      ))}
     </div>
   );
 }
 
 export function CostTree() {
   return (
-    <div className="border mx-auto overflow-hidden relative">
+    <div className="overflow-hidden relative">
       <TransformWrapper
         minScale={0.75}
         maxScale={1.5}
@@ -340,9 +333,9 @@ export function CostTree() {
         minPositionY={-600}
         maxPositionY={600}
         centerOnInit={false}
-        limitToBounds={false}
-        initialPositionX={32}
-        initialPositionY={32}
+        limitToBounds={true}
+        initialPositionX={-480}
+        initialPositionY={-128}
         doubleClick={{
           mode: 'toggle'
         }}
@@ -374,8 +367,12 @@ export function CostTree() {
         <TransformComponent
           wrapperStyle={{
             width: '100%',
-            height: '100%',
+            height: '600px',
             zIndex: 10
+          }}
+          contentStyle={{
+            minHeight: '100%',
+            minWidth: '100%'
           }}
         >
           <CostNodesCanvas />

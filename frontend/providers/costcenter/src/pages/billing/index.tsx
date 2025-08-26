@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Trend as OverviewTrend } from '@/components/cost_overview/trend';
 import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { CostTree } from '@/components/billing/CostTree';
 
 function Billing() {
@@ -30,7 +31,13 @@ function Billing() {
         </TabsList>
 
         <TabsContent value="listing">
-          <CostTree />
+          <div className="flex flex-col border rounded-2xl overflow-hidden">
+            <div className="border-b bg-white px-6 py-3">
+              <DateRangePicker className="w-fit" />
+            </div>
+
+            <CostTree />
+          </div>
         </TabsContent>
 
         <TabsContent value="trends" className="flex flex-col gap-4">
