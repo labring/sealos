@@ -178,6 +178,7 @@ func (c *WorkspaceTrafficController) batchUpdateTrafficPackages(packages []types
 	return tx.Commit().Error
 }
 
+// TODO 流量不足 80% + 耗尽时发送通知
 // handleNoAvailableTraffic handles the case when workspace has no available traffic
 func (c *WorkspaceTrafficController) handleNoAvailableTraffic(subscription *types.WorkspaceSubscription) error {
 	// Check current traffic status

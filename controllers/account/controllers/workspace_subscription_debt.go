@@ -144,7 +144,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(ctx cont
 	// Query 1: Subscriptions with a status of Normal and that have expired
 	var normalExpiredSubscriptions []types.WorkspaceSubscription
 	err := wdp.db.WithContext(ctx).Model(&types.WorkspaceSubscription{}).
-		Where("region_domain = ? AND expire_at < ? AND status = ?",
+		Where("region_domain = ? AND current_period_end_at < ? AND status = ?",
 			wdp.localDomain,
 			now,
 			types.SubscriptionStatusNormal).
@@ -191,7 +191,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(ctx cont
 			"status", subscription.Status)
 
 		// 判断当前应该处于的状态
-		currentStatus := wdp.determineCurrentStatus(subscription.ExpireAt)
+		currentStatus := wdp.determineCurrentStatus(subscription.CurrentPeriodEndAt)
 		if currentStatus == subscription.Status {
 			continue // 状态未变化，跳过
 		}

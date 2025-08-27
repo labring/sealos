@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/google/uuid"
@@ -160,6 +162,53 @@ func (wsp *WorkspaceSubscriptionProcessor) shouldProcessTransaction(tx *types.Wo
 		tx.Status != types.SubscriptionTransactionStatusFailed
 }
 
+// updateWorkspaceQuotaLimit0 初始化未使用期的工作空间的资源配额限制为0
+func (r *AccountReconciler) updateWorkspaceQuotaLimit0(ctx context.Context, workspace string) error {
+	nsQuota := resources.GetDefaultResourceQuota(workspace, "quota-"+workspace)
+	zeroQuantity := func() (q resource.Quantity) {
+		q.Set(0)
+		return
+	}
+	for defaultRs := range nsQuota.Spec.Hard {
+		nsQuota.Spec.Hard[defaultRs] = zeroQuantity()
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, nsQuota, func() error {
+		if nsQuota.Spec.Hard != nil {
+			for usedRs, usedQuantity := range nsQuota.Status.Used {
+				if quantity, ok := nsQuota.Spec.Hard[usedRs]; ok {
+					if usedQuantity.Cmp(quantity) > 0 {
+						// TODO situations exceeding the quota need to be handled
+						// restart the space resource deploy sts
+						return fmt.Errorf("used resource %s exceeds the limit 0: used %s", usedRs, usedQuantity.String())
+					}
+				}
+			}
+		}
+		if nsQuota.Annotations == nil {
+			nsQuota.Annotations = make(map[string]string)
+		}
+		nsQuota.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().UTC().Format(time.RFC3339)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create or update resource quota: %w", err)
+	}
+	ns := &v1.Namespace{}
+	if err := r.Get(ctx, types2.NamespacedName{Name: workspace}, ns); err != nil {
+		return err
+	}
+	original := ns.DeepCopy()
+	if ns.Annotations == nil {
+		ns.Annotations = make(map[string]string)
+	}
+	ns.Annotations[types.DebtNamespaceAnnoStatusKey] = types.SuspendDebtNamespaceAnnoStatus
+	ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.SuspendDebtNamespaceAnnoStatus
+	if err := r.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
+		return fmt.Errorf("patch namespace annotation failed: %w", err)
+	}
+	return nil
+}
+
 // updateWorkspaceQuota 更新工作空间的资源配额
 func (r *AccountReconciler) updateWorkspaceQuota(ctx context.Context, workspace, planName string) error {
 	rs, ok := r.workspaceSubPlansResourceLimit[planName]
@@ -215,6 +264,63 @@ func (wsp *WorkspaceSubscriptionProcessor) handleCreated(ctx context.Context, db
 	return wsp.AccountReconciler.HandleWorkspaceSubscriptionCreated(ctx, dbTx, tx)
 }
 
+func (r *AccountReconciler) handlerNoTrialInitialWorkspaceSubscription(ctx context.Context, userUID uuid.UUID, workspace string) error {
+	return r.AccountV2.GetGlobalDB().Transaction(func(dbTx *gorm.DB) error {
+		// 1. create subscription transaction
+		// 2. create limit0 quota
+		var sub types.WorkspaceSubscription
+		if err := dbTx.Debug().Model(&types.WorkspaceSubscription{}).
+			Where("workspace = ? AND region_domain = ?", workspace, r.localDomain).
+			First(&sub).Error; err == nil {
+			r.Logger.Info("Workspace subscription already exists", "workspace", sub.Workspace, "region", sub.RegionDomain, "plan", sub.PlanName)
+			return nil
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to fetch workspace subscription: %w", err)
+		}
+		now := time.Now().UTC()
+		sub.ID = uuid.New()
+		sub.UserUID = userUID
+		sub.PlanName = types.FreeSubscriptionPlanName
+		sub.Workspace = workspace
+		sub.RegionDomain = r.localDomain
+		sub.Status = types.SubscriptionStatusPaused
+		sub.TrafficStatus = types.WorkspaceTrafficStatusActive
+		sub.CreateAt = now
+		sub.CurrentPeriodStartAt = now
+		sub.CurrentPeriodEndAt = now
+		sub.CancelAtPeriodEnd = true
+		sub.PayStatus = types.SubscriptionPayStatusNoNeed
+		sub.UpdateAt = now
+		if err := dbTx.Create(&sub).Error; err != nil {
+			return fmt.Errorf("failed to create workspace subscription: %w", err)
+		}
+		if err := r.updateWorkspaceQuotaLimit0(ctx, workspace); err != nil {
+			return fmt.Errorf("failed to update workspace quota limit0: %w", err)
+		}
+		return nil
+	})
+}
+
+func (r *AccountReconciler) handleProbationPeriodWorkspaceSubscription(ctx context.Context, userUID uuid.UUID, nsName string) error {
+	plan, err := r.AccountV2.GetWorkspaceSubscriptionPlan(types.FreeSubscriptionPlanName)
+	if err != nil {
+		return fmt.Errorf("get workspace subscription plan failed: %v", err)
+	}
+	r.Logger.Info("get workspace subscription plan", "plan", plan)
+	return r.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		return r.handleWorkspaceSubscriptionCreated(ctx, tx, &types.WorkspaceSubscriptionTransaction{
+			UserUID:      userUID,
+			ID:           uuid.New(),
+			Workspace:    nsName,
+			RegionDomain: r.localDomain,
+			Operator:     types.SubscriptionTransactionTypeCreated,
+			PayStatus:    types.SubscriptionPayStatusNoNeed,
+			NewPlanName:  plan.Name,
+			Period:       types.DayPeriod(14),
+		})
+	})
+}
+
 func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
 	var sub types.WorkspaceSubscription
 	if err := dbTx.Debug().Model(&types.WorkspaceSubscription{}).
@@ -231,14 +337,20 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Conte
 	}
 	now := time.Now().UTC()
 	sub.ID = uuid.New()
+	sub.UserUID = tx.UserUID
 	sub.PlanName = tx.NewPlanName
 	sub.Workspace = tx.Workspace
 	sub.RegionDomain = tx.RegionDomain
 	sub.Status = types.SubscriptionStatusNormal
 	sub.TrafficStatus = types.WorkspaceTrafficStatusActive
-	sub.StartAt = now
+	sub.CreateAt = now
+	sub.CurrentPeriodStartAt = now
+	sub.CurrentPeriodEndAt = now.Add(addPeriod)
+	sub.CancelAtPeriodEnd = false
+	sub.PayStatus = tx.PayStatus
 	sub.UpdateAt = now
-	sub.ExpireAt = now.Add(addPeriod)
+	//sub.StartAt = now
+	//sub.ExpireAt = now.Add(addPeriod)
 
 	if err := dbTx.Create(&sub).Error; err != nil {
 		return fmt.Errorf("failed to update workspace subscription: %w", err)
@@ -250,7 +362,7 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Conte
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	if err = r.NewTrafficPackage(dbTx, &sub, plan, sub.ExpireAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = r.NewTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
 
@@ -283,15 +395,16 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, db
 	// 更新订阅信息
 	sub.PlanName = tx.NewPlanName
 	sub.Status = types.SubscriptionStatusNormal
-	sub.StartAt = now
+	//sub.StartAt = now
 	sub.UpdateAt = now
-	sub.ExpireAt = now.Add(addPeriod)
+	sub.CurrentPeriodStartAt = now
+	sub.CurrentPeriodEndAt = now.Add(addPeriod)
+	// sub.ExpireAt = now.Add(addPeriod)
 	plan, err := wsp.AccountV2.GetWorkspaceSubscriptionPlan(sub.PlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	// TODO 创建流量包
-	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.ExpireAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
 
@@ -340,9 +453,11 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(ctx context.Context, 
 	now := time.Now()
 	sub.PlanName = tx.NewPlanName
 	sub.Status = types.SubscriptionStatusNormal
-	sub.StartAt = now
+	//sub.StartAt = now
+	sub.CurrentPeriodStartAt = now
+	sub.CurrentPeriodEndAt = now.Add(addPeriod)
 	sub.UpdateAt = now
-	sub.ExpireAt = now.Add(addPeriod)
+	// sub.ExpireAt = now.Add(addPeriod)
 
 	if err := dbTx.Save(&sub).Error; err != nil {
 		return fmt.Errorf("failed to update workspace subscription: %w", err)
@@ -371,17 +486,17 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(ctx context.Context, db
 		return fmt.Errorf("failed to parse period: %w", err)
 	}
 	now := time.Now()
-	if sub.ExpireAt.Before(now) {
-		sub.StartAt = now
-		sub.ExpireAt = now.Add(addPeriod)
+	if sub.CurrentPeriodEndAt.Before(now) {
+		sub.CurrentPeriodEndAt = now
+		sub.CurrentPeriodEndAt = now.Add(addPeriod)
 	} else {
-		sub.ExpireAt = sub.ExpireAt.Add(addPeriod)
+		sub.CurrentPeriodEndAt = sub.CurrentPeriodEndAt.Add(addPeriod)
 	}
 	plan, err := wsp.AccountV2.GetWorkspaceSubscriptionPlan(sub.PlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.ExpireAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
 	sub.Status = types.SubscriptionStatusNormal
