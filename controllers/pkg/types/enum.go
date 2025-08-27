@@ -8,7 +8,9 @@ import (
 type SubscriptionStatus string
 
 const (
-	SubscriptionStatusNormal            SubscriptionStatus = "NORMAL"
+	SubscriptionStatusNormal SubscriptionStatus = "NORMAL"
+	// initialize the state of the subscription space the pause state
+	SubscriptionStatusPaused            SubscriptionStatus = "PAUSED"
 	SubscriptionStatusDebt              SubscriptionStatus = "DEBT"
 	SubscriptionStatusDebtPreDeletion   SubscriptionStatus = "DEBT_PRE_DELETION"
 	SubscriptionStatusDebtFinalDeletion SubscriptionStatus = "DEBT_FINAL_DELETION"
@@ -27,8 +29,8 @@ func (s *SubscriptionStatus) Scan(value interface{}) error {
 	return nil
 }
 
-func (s SubscriptionStatus) Value() (driver.Value, error) {
-	return string(s), nil
+func (s *SubscriptionStatus) Value() (driver.Value, error) {
+	return string(*s), nil
 }
 
 type SubscriptionOperator string
@@ -39,6 +41,9 @@ const (
 	SubscriptionTransactionTypeDowngraded SubscriptionOperator = "downgraded"
 	SubscriptionTransactionTypeCanceled   SubscriptionOperator = "canceled"
 	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
+	// 续订余额失败状态
+	SubscriptionTransactionTypeRenewFailed SubscriptionOperator = "renew_failed"
+	// SubscriptionTransactionTypePayStatusChanged SubscriptionOperator = "pay_status_changed"
 )
 
 func (o *SubscriptionOperator) Scan(value interface{}) error {
@@ -54,17 +59,29 @@ func (o *SubscriptionOperator) Scan(value interface{}) error {
 	return nil
 }
 
-func (o SubscriptionOperator) Value() (driver.Value, error) {
-	return string(o), nil
+func (o *SubscriptionOperator) Value() (driver.Value, error) {
+	return string(*o), nil
 }
+
+type PaymentMethod string
+
+const (
+	PaymentMethodBalance PaymentMethod = "BALANCE" // 余额支付
+	PaymentMethodStripe  PaymentMethod = "STRIPE"  // Stripe 支付
+)
 
 type SubscriptionPayStatus string
 
 const (
-	SubscriptionPayStatusPending SubscriptionPayStatus = "pending"
-	SubscriptionPayStatusPaid    SubscriptionPayStatus = "paid"
-	SubscriptionPayStatusNoNeed  SubscriptionPayStatus = "no_need"
-	SubscriptionPayStatusFailed  SubscriptionPayStatus = "failed"
+	SubscriptionPayStatusPending    SubscriptionPayStatus = "pending"
+	SubscriptionPayStatusProcessing SubscriptionPayStatus = "processing"
+	SubscriptionPayStatusCanceled   SubscriptionPayStatus = "canceled"
+	SubscriptionPayStatusPaid       SubscriptionPayStatus = "paid"
+	SubscriptionPayStatusUnpaid     SubscriptionPayStatus = "unpaid"
+	SubscriptionPayStatusNoNeed     SubscriptionPayStatus = "no_need"
+	SubscriptionPayStatusFailed     SubscriptionPayStatus = "failed"
+	// 表示续订失败后，使用余额支付成功
+	SubscriptionPayStatusFailedAndUseBalance SubscriptionPayStatus = "failed_and_use_balance"
 )
 
 func (p *SubscriptionPayStatus) Scan(value interface{}) error {

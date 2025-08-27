@@ -418,3 +418,11 @@ type RegionConfig struct {
 func (RegionConfig) TableName() string {
 	return "RegionConfig"
 }
+
+type NotificationRecipient struct {
+	UserName    string    `json:"user_name"`
+	Email       string    `json:"email,omitempty"`
+	PhoneNumber string    `json:"phone_number,omitempty"`
+	UserID      string    `json:"user_id,omitempty"`
+	UserUID     uuid.UUID `json:"user_uid,omitempty"`
+}

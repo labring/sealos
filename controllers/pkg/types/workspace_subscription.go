@@ -14,14 +14,22 @@ type WorkspaceSubscription struct {
 	PlanName      string                 `gorm:"type:varchar(50);column:plan_name"`                        // 计划名称
 	Workspace     string                 `gorm:"type:varchar(50);column:workspace;uniqueIndex:idx_workspace_region_domain"`
 	RegionDomain  string                 `gorm:"type:varchar(50);column:region_domain;uniqueIndex:idx_workspace_region_domain"`
-	UserUID       uuid.UUID              `gorm:"type:uuid;column:user_uid"`                                            // 付费的用户 ID
+	UserUID       uuid.UUID              `gorm:"type:uuid;index:idx_workspace_subscription_user_uid;column:user_uid"`  // 用户 ID
 	Status        SubscriptionStatus     `gorm:"type:subscription_status;column:status"`                               // 状态
+	PayStatus     SubscriptionPayStatus  `gorm:"type:subscription_pay_status;column:pay_status"`                       // 支付状态
+	PayMethod     PaymentMethod          `gorm:"type:string;column:pay_method"`                                        // 支付方式
+	Stripe        *StripePay             `gorm:"column:stripe;type:json"`                                              // Stripe 相关信息
 	TrafficStatus WorkspaceTrafficStatus `gorm:"type:workspace_traffic_status;default:'active';column:traffic_status"` // 流量状态
-	StartAt       time.Time              `gorm:"column:start_at;autoCreateTime"`                                       // 开始时间
-	UpdateAt      time.Time              `gorm:"column:update_at;autoCreateTime"`                                      // 更新时间
-	ExpireAt      time.Time              `gorm:"column:expire_at;autoCreateTime"`                                      // 过期时间
-	// CardID       *uuid.UUID         `gorm:"type:uuid;column:card_id"`                         // 银行卡 ID
-	Traffic []WorkspaceTraffic `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"` // 关联的流量数据
+	// StartAt       time.Time              `gorm:"column:start_at;autoCreateTime"`                                       // 开始时间
+	CurrentPeriodStartAt time.Time `gorm:"column:current_period_start_at"`            // 当前周期开始时间
+	CurrentPeriodEndAt   time.Time `gorm:"column:current_period_end_at"`              // 当前周期结束时间
+	CancelAtPeriodEnd    bool      `gorm:"column:cancel_at_period_end;default:false"` // 是否在当前周期结束时取消订阅
+
+	CancelAt time.Time          `gorm:"column:cancel_at"`                                 // 取消订阅时间
+	CreateAt time.Time          `gorm:"column:create_at"`                                 // 创建时间
+	UpdateAt time.Time          `gorm:"column:update_at;autoCreateTime"`                  // 更新时间
+	ExpireAt *time.Time         `gorm:"column:expire_at"`                                 // 过期时间
+	Traffic  []WorkspaceTraffic `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"` // 关联的流量数据
 }
 
 // TODO CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);
@@ -30,10 +38,11 @@ type WorkspaceSubscriptionTransaction struct {
 	From          TransactionFrom               `gorm:"type:varchar(50);column:from;type:text"`                                           // 变更来源, 例如: "user" / "admin" / "referral"
 	Workspace     string                        `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:workspace"`     // Workspace 名称
 	RegionDomain  string                        `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:region_domain"` // Region Domain
+	UserUID       uuid.UUID                     `gorm:"type:uuid;column:user_uid"`                                                        // 用户 ID
 	OldPlanName   string                        `gorm:"type:varchar(50);column:old_plan_name"`                                            // 旧的订阅计划名称
 	NewPlanName   string                        `gorm:"type:varchar(50);column:new_plan_name"`                                            // 新的订阅计划名称
 	OldPlanStatus SubscriptionStatus            `gorm:"type:subscription_status;column:old_plan_status"`                                  // 旧的订阅状态
-	Operator      SubscriptionOperator          `gorm:"type:subscription_operator;column:operator"`                                       // 操作类型(created/upgraded/downgraded/canceled/renewed)
+	Operator      SubscriptionOperator          `gorm:"type:subscription_operator;column:operator"`                                       // 操作类型(created/upgraded/downgraded/canceled/renewed/pay_status_changed)
 	StartAt       time.Time                     `gorm:"column:start_at"`                                                                  // 变更开始时间
 	CreatedAt     time.Time                     `gorm:"column:created_at;autoCreateTime"`                                                 // 创建时间
 	UpdatedAt     time.Time                     `gorm:"column:updated_at;autoUpdateTime"`                                                 // 更新时间
