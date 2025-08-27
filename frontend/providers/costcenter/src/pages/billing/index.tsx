@@ -314,6 +314,49 @@ function Billing() {
               onOpenChange={setDetailsDrawerOpen}
               appType={selectedApp?.appType || ''}
               namespace={selectedWorkspace ? selectedWorkspace.replace('workspace_', '') : ''}
+              hasSubApps={false}
+              data={[
+                {
+                  appName: 'App Name',
+                  appType: 'applaunchpad',
+                  time: new Date('2025-08-27T15:00:00'),
+                  orderId: 'order-123',
+                  namespace: 'default',
+                  amount: 1200000,
+                  usage: {
+                    cpu: { amount: 1600, cost: 200000 },
+                    memory: { amount: 1600, cost: 200000 },
+                    storage: { amount: 1600, cost: 200000 },
+                    network: { amount: 1600, cost: 200000 },
+                    port: { amount: 2, cost: 200000 },
+                    gpu: { amount: 2, cost: 200000 }
+                  }
+                },
+                {
+                  appName: 'App Name 2',
+                  appType: 'devbox',
+                  time: new Date('2025-08-27T15:00:00'),
+                  orderId: 'order-124',
+                  namespace: 'default',
+                  amount: 600000,
+                  usage: {
+                    cpu: { amount: 800, cost: 100000 },
+                    memory: { amount: 800, cost: 100000 }
+                  }
+                }
+              ]}
+              appName={selectedApp?.appName || 'Unknown App'}
+              appIcon={selectedApp?.avatarFallback ?? 'A'}
+              region={currentRegionName || 'Unknown Region'}
+              currentPage={1}
+              totalPages={1}
+              pageSize={1}
+              totalCount={1}
+              onPageChange={() => {}}
+              onOpenApp={() => {
+                // Handle open app logic
+                console.log('Open app:', selectedApp?.appName);
+              }}
             />
           </div>
         </TabsContent>
