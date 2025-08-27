@@ -131,11 +131,11 @@ export default function Trend({
     },
     color: [
       // Does not support CSS vars here.
-      'oklch(0.646 0.222 41.116)',
-      'oklch(0.6 0.118 184.704)',
-      'oklch(0.398 0.07 227.392)',
-      'oklch(0.828 0.189 84.429)',
-      'oklch(0.769 0.188 70.08)'
+      '#49AEFF',
+      '#00D1B5',
+      '#A78BFA',
+      '#F59E0B',
+      '#22D3EE'
     ],
     tooltip: {
       trigger: 'axis',
