@@ -322,7 +322,7 @@ function CostNodesCanvas() {
 
 export function CostTree({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="overflow-hidden relative">
+    <div className="border mx-auto overflow-hidden relative h-full">
       <TransformWrapper
         minScale={0.75}
         maxScale={1.5}
@@ -372,8 +372,8 @@ export function CostTree({ children }: { children?: React.ReactNode }) {
             zIndex: 10
           }}
           contentStyle={{
-            minHeight: '100%',
-            minWidth: '100%'
+            width: '100%',
+            height: '100%'
           }}
         >
           <CostNodesCanvas />
