@@ -25,7 +25,7 @@ const CanvasNode = React.forwardRef<
 ));
 CanvasNode.displayName = 'CanvasNode';
 
-type BillingNode = {
+export type BillingNode = {
   id: string;
   name: string;
   cost: number;
@@ -60,70 +60,19 @@ function CostCard({
   );
 }
 
-function CostNodesCanvas() {
-  const nodes: BillingNode[] = useMemo(
-    () => [
-      { id: 'total_cost', name: 'Total Cost', cost: 450, type: 'total', dependsOn: null },
-      {
-        id: 'region_bja',
-        name: 'Beijing',
-        cost: 100,
-        type: 'region',
-        dependsOn: 'total_cost'
-      },
-      {
-        id: 'region_hzh',
-        name: 'Hangzhou',
-        cost: 100,
-        type: 'region',
-        dependsOn: 'total_cost'
-      },
-      {
-        id: 'region_gzg',
-        name: 'Guangzhou',
-        cost: 100,
-        type: 'region',
-        dependsOn: 'total_cost'
-      },
-      {
-        id: 'region_sgp',
-        name: 'Singapore',
-        cost: 150,
-        type: 'region',
-        dependsOn: 'total_cost'
-      },
-      {
-        id: 'workspace_test_1',
-        name: 'sealos-test-1',
-        cost: 30,
-        type: 'workspace',
-        dependsOn: 'region_bja'
-      },
-      {
-        id: 'workspace_test_2',
-        name: 'sealos-test-2',
-        cost: 10,
-        type: 'workspace',
-        dependsOn: 'region_bja'
-      },
-      {
-        id: 'workspace_test_3',
-        name: 'sealos-test-3',
-        cost: 45,
-        type: 'workspace',
-        dependsOn: 'region_bja'
-      },
-      {
-        id: 'workspace_test_4',
-        name: 'sealos-test-4',
-        cost: 15,
-        type: 'workspace',
-        dependsOn: 'region_bja'
-      }
-    ],
-    []
-  );
-
+function CostNodesCanvas({
+  nodes,
+  selectedRegion: externalSelectedRegion,
+  selectedWorkspace: externalSelectedWorkspace,
+  onRegionSelect,
+  onWorkspaceSelect
+}: {
+  nodes: BillingNode[];
+  selectedRegion?: string | null;
+  selectedWorkspace?: string | null;
+  onRegionSelect?: (regionId: string | null) => void;
+  onWorkspaceSelect?: (workspaceId: string | null) => void;
+}) {
   const transformContext = useTransformContext();
 
   const wrapperRef = React.useRef<HTMLDivElement>(null);
@@ -150,8 +99,34 @@ function CostNodesCanvas() {
     return cb;
   }, []);
 
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const [internalSelectedRegion, setInternalSelectedRegion] = useState<string | null>(null);
+  const [internalSelectedWorkspace, setInternalSelectedWorkspace] = useState<string | null>(null);
+
+  const selectedRegion =
+    externalSelectedRegion !== undefined ? externalSelectedRegion : internalSelectedRegion;
+  const selectedWorkspace =
+    externalSelectedWorkspace !== undefined ? externalSelectedWorkspace : internalSelectedWorkspace;
+
+  const handleRegionSelect = (regionId: string | null) => {
+    if (onRegionSelect) {
+      onRegionSelect(regionId);
+      // Always clear workspace selection when region changes
+      if (onWorkspaceSelect) {
+        onWorkspaceSelect(null);
+      }
+    } else {
+      setInternalSelectedRegion(regionId);
+      setInternalSelectedWorkspace(null);
+    }
+  };
+
+  const handleWorkspaceSelect = (workspaceId: string | null) => {
+    if (onWorkspaceSelect) {
+      onWorkspaceSelect(workspaceId);
+    } else {
+      setInternalSelectedWorkspace(workspaceId);
+    }
+  };
 
   const rootNode = useMemo(() => nodes.find((item) => item.type === 'total'), [nodes]);
   const regionNodes = useMemo(() => nodes.filter((item) => item.type === 'region'), [nodes]);
@@ -275,8 +250,8 @@ function CostNodesCanvas() {
             name={rootNode.name}
             cost={rootNode.cost}
             onClick={() => {
-              setSelectedRegion(null);
-              setSelectedWorkspace(null);
+              handleRegionSelect(null);
+              // handleWorkspaceSelect(null) is called automatically in handleRegionSelect
             }}
             selected={false}
           />
@@ -289,8 +264,8 @@ function CostNodesCanvas() {
             name={node.name}
             cost={node.cost}
             onClick={(id) => {
-              setSelectedRegion(id);
-              setSelectedWorkspace(null);
+              handleRegionSelect(id);
+              // handleWorkspaceSelect(null) is called automatically in handleRegionSelect
             }}
             selected={selectedRegion === node.id}
           />
@@ -307,7 +282,7 @@ function CostNodesCanvas() {
             id={node.id}
             name={node.name}
             cost={node.cost}
-            onClick={(id) => setSelectedWorkspace(id)}
+            onClick={(id) => handleWorkspaceSelect(id)}
             selected={selectedWorkspace === node.id}
           />
         </CanvasNode>
@@ -316,7 +291,23 @@ function CostNodesCanvas() {
   );
 }
 
-export function CostTree({ children }: { children?: React.ReactNode }) {
+type CostTreeProps = {
+  children?: React.ReactNode;
+  nodes: BillingNode[];
+  selectedRegion?: string | null;
+  selectedWorkspace?: string | null;
+  onRegionSelect?: (regionId: string | null) => void;
+  onWorkspaceSelect?: (workspaceId: string | null) => void;
+};
+
+export function CostTree({
+  children,
+  nodes,
+  selectedRegion: externalSelectedRegion,
+  selectedWorkspace: externalSelectedWorkspace,
+  onRegionSelect,
+  onWorkspaceSelect
+}: CostTreeProps) {
   return (
     <div className="mx-auto overflow-hidden relative h-full w-full">
       <TransformWrapper
@@ -368,7 +359,13 @@ export function CostTree({ children }: { children?: React.ReactNode }) {
             zIndex: 10
           }}
         >
-          <CostNodesCanvas />
+          <CostNodesCanvas
+            nodes={nodes}
+            selectedRegion={externalSelectedRegion}
+            selectedWorkspace={externalSelectedWorkspace}
+            onRegionSelect={onRegionSelect}
+            onWorkspaceSelect={onWorkspaceSelect}
+          />
         </TransformComponent>
       </TransformWrapper>
     </div>
