@@ -1,0 +1,455 @@
+package services
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/stripe/stripe-go/v82/invoice"
+
+	"github.com/labring/sealos/controllers/pkg/types"
+
+	"github.com/stripe/stripe-go/v82"
+	portalsession "github.com/stripe/stripe-go/v82/billingportal/session"
+	checkoutsession "github.com/stripe/stripe-go/v82/checkout/session"
+	"github.com/stripe/stripe-go/v82/customer"
+	"github.com/stripe/stripe-go/v82/price"
+	"github.com/stripe/stripe-go/v82/product"
+	"github.com/stripe/stripe-go/v82/subscription"
+	"github.com/stripe/stripe-go/v82/webhook"
+)
+
+// StripeService provides Stripe integration for workspace subscriptions
+type StripeService struct {
+	SecretKey      string
+	PublishableKey string
+	Domain         string
+	WebhookSecret  string
+}
+
+// NewStripeService creates a new Stripe service instance following official pattern
+func NewStripeService() *StripeService {
+	secretKey := os.Getenv("STRIPE_SECRET_KEY")
+	if secretKey == "" {
+		panic("STRIPE_SECRET_KEY environment variable is not set")
+	}
+
+	// Set global Stripe key following official example
+	stripe.Key = secretKey
+
+	return &StripeService{
+		SecretKey:     secretKey,
+		Domain:        getBaseURL(),
+		WebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
+	}
+}
+
+func getBaseURL() string {
+	if domain := os.Getenv("DOMAIN"); domain != "" {
+		return "https://" + domain
+	}
+	return "https://cloud.sealos.io"
+}
+
+// CreateWorkspaceSubscriptionSession creates a Stripe Checkout Session following official pattern
+func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction) (*StripeResponse, error) {
+	// 构造成功与取消回调URL，避免硬编码斜杠问题
+	successURL := fmt.Sprintf("%s/workspace-subscription/success?session_id={CHECKOUT_SESSION_ID}", s.Domain)
+	cancelURL := fmt.Sprintf("%s/workspace-subscription/cancel", s.Domain)
+	// Create checkout session following official example pattern
+	checkoutParams := &stripe.CheckoutSessionParams{
+		Metadata: map[string]string{
+			"workspace":             transaction.Workspace,
+			"region_domain":         transaction.RegionDomain,
+			"plan_name":             transaction.NewPlanName,
+			"period":                string(transaction.Period),
+			"payment_id":            transaction.PayID,
+			"subscription_operator": string(transaction.Operator),
+			"user_uid":              paymentReq.UserUID.String(),
+		},
+		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				Price: stripe.String(priceID),
+				//PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				//	Currency:   stripe.String(string(stripe.CurrencyUSD)),
+				//	UnitAmount: stripe.Int64(paymentReq.Amount / 10000),
+				//	ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+				//		Name: stripe.String(fmt.Sprintf("workspace subscription - %s", transaction.NewPlanName)),
+				//	},
+				//	// TODO 如果是年包需要修改： the billing cycle is monthly
+				//	Recurring: &stripe.CheckoutSessionLineItemPriceDataRecurringParams{
+				//		Interval: stripe.String("day"), // Default to monthly
+				//		// If the period is yearly, set interval to year
+				//		IntervalCount: stripe.Int64(30), // Default to 1 month
+				//	},
+				//},
+				Quantity: stripe.Int64(1),
+			},
+		},
+		SuccessURL: stripe.String(successURL),
+		CancelURL:  stripe.String(cancelURL),
+		//BillingAddressCollection: stripe.String("required"),
+		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
+			Enabled: stripe.Bool(false),
+		},
+		ExpiresAt: stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
+	}
+
+	// Create session using official SDK
+	sess, err := checkoutsession.New(checkoutParams)
+	if err != nil {
+		return nil, fmt.Errorf("stripe.NewCheckoutSession: %v", err)
+	}
+
+	return &StripeResponse{
+		SessionID: sess.ID,
+		URL:       sess.URL,
+	}, nil
+}
+
+// UpdatePlan updates the subscription plan for a given subscription ID
+func (s *StripeService) UpdatePlan(subscriptionID, newPriceID string) (*stripe.Subscription, error) {
+	// Retrieve the current subscription
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Get: %v", err)
+	}
+
+	if len(sub.Items.Data) == 0 {
+		return nil, fmt.Errorf("subscription has no items to update")
+	}
+
+	// Update the subscription to the new price
+	params := &stripe.SubscriptionParams{
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				ID:    stripe.String(sub.Items.Data[0].ID),
+				Price: stripe.String(newPriceID),
+			},
+		},
+		ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+	}
+
+	updatedSub, err := subscription.Update(subscriptionID, params)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Update: %v", err)
+	}
+
+	return updatedSub, nil
+}
+
+// getOrCreatePrice creates or retrieves a price using lookup key pattern
+func (s *StripeService) getOrCreatePrice(planName, period string, amount int64, currency string) (string, error) {
+	// Create lookup key for the price following Stripe best practices
+	lookupKey := fmt.Sprintf("workspace_subscription_%s_%s", planName, period)
+
+	// Try to find existing price with lookup key
+	params := &stripe.PriceListParams{
+		LookupKeys: stripe.StringSlice([]string{lookupKey}),
+	}
+
+	iter := price.List(params)
+	for iter.Next() {
+		p := iter.Price()
+		if p.UnitAmount == amount && string(p.Currency) == currency {
+			return p.ID, nil
+		}
+	}
+
+	// Create product first if it doesn't exist
+	productID, err := s.getOrCreateProduct(planName)
+	if err != nil {
+		return "", fmt.Errorf("failed to get/create product: %v", err)
+	}
+
+	// Create new price with lookup key
+	interval := "month"
+	if period == "1y" {
+		interval = "year"
+	}
+
+	priceParams := &stripe.PriceParams{
+		Product:    stripe.String(productID),
+		UnitAmount: stripe.Int64(amount),
+		Currency:   stripe.String(currency),
+		LookupKey:  stripe.String(lookupKey),
+		Recurring: &stripe.PriceRecurringParams{
+			Interval: stripe.String(interval),
+		},
+	}
+
+	p, err := price.New(priceParams)
+	if err != nil {
+		return "", fmt.Errorf("price.New: %v", err)
+	}
+
+	return p.ID, nil
+}
+
+// getOrCreateProduct creates or retrieves a product
+func (s *StripeService) getOrCreateProduct(planName string) (string, error) {
+	productName := fmt.Sprintf("Workspace Subscription - %s", planName)
+
+	// Try to find existing product
+	params := &stripe.ProductListParams{}
+	params.Filters.AddFilter("active", "", "true")
+
+	iter := product.List(params)
+	for iter.Next() {
+		prod := iter.Product()
+		if prod.Name == productName {
+			return prod.ID, nil
+		}
+	}
+
+	// Create new product if not found
+	productParams := &stripe.ProductParams{
+		Name:        stripe.String(productName),
+		Description: stripe.String(fmt.Sprintf("Workspace subscription plan: %s", planName)),
+	}
+
+	prod, err := product.New(productParams)
+	if err != nil {
+		return "", fmt.Errorf("product.New: %v", err)
+	}
+
+	return prod.ID, nil
+}
+
+// GetCheckoutSession retrieves a checkout session following user's pattern
+func (s *StripeService) GetCheckoutSession(sessionID string) (*stripe.CheckoutSession, error) {
+	checkoutSession, err := checkoutsession.Get(sessionID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("stripe.GetCheckoutSession: %v", err)
+	}
+	return checkoutSession, nil
+}
+
+// HandleWebhook processes Stripe webhook events following official pattern
+func (s *StripeService) HandleWebhook(payload []byte, signature string) (*stripe.Event, error) {
+	if s.WebhookSecret == "" {
+		return nil, fmt.Errorf("webhook secret not configured")
+	}
+
+	// Verify webhook signature using official SDK
+	event, err := webhook.ConstructEvent(payload, signature, s.WebhookSecret)
+	if err != nil {
+		return nil, fmt.Errorf("webhook.ConstructEvent: %v", err)
+	}
+
+	return &event, nil
+}
+
+// CreatePortalSession creates a customer portal session for subscription management
+func (s *StripeService) CreatePortalSession(customerID string) (*stripe.BillingPortalSession, error) {
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(customerID),
+		ReturnURL: stripe.String(s.Domain),
+	}
+
+	ps, err := portalsession.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("portalsession.New: %v", err)
+	}
+
+	return ps, nil
+}
+
+// CreateCustomer creates a new Stripe customer
+//func (s *StripeService) CreateCustomer(userUID, email string) (*stripe.Customer, error) {
+//	params := &stripe.CustomerParams{
+//		Metadata: map[string]string{
+//			"user_uid": userUID,
+//		},
+//	}
+//
+//	if email != "" {
+//		params.Email = stripe.String(email)
+//	}
+//
+//	cust, err := customer.New(params)
+//	if err != nil {
+//		return nil, fmt.Errorf("customer.New: %v", err)
+//	}
+//
+//	return cust, nil
+//}
+
+// GetCustomerByUID finds customer by user UID in metadata
+func (s *StripeService) GetCustomerByUID(userUID string) (*stripe.Customer, error) {
+	params := &stripe.CustomerListParams{}
+	params.Filters.AddFilter("metadata[user_uid]", "", userUID)
+
+	iter := customer.List(params)
+	if iter.Next() {
+		return iter.Customer(), nil
+	}
+
+	return nil, fmt.Errorf("customer not found for user_uid: %s", userUID)
+}
+
+// GetSubscription retrieves a Stripe subscription
+func (s *StripeService) GetSubscription(subscriptionID string) (*stripe.Subscription, error) {
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Get: %v", err)
+	}
+	return sub, nil
+}
+
+// CancelSubscription cancels a Stripe subscription
+func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subscription, error) {
+	sub, err := subscription.Cancel(subscriptionID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Cancel: %v", err)
+	}
+	return sub, nil
+}
+
+// UpdateSubscription updates a Stripe subscription
+func (s *StripeService) UpdateSubscription(subscriptionID string, params *stripe.SubscriptionParams) (*stripe.Subscription, error) {
+	sub, err := subscription.Update(subscriptionID, params)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Update: %v", err)
+	}
+	return sub, nil
+}
+
+func (s *StripeService) UpdatePreview(params *stripe.InvoiceCreatePreviewParams) (*stripe.Invoice, error) {
+	inv, err := invoice.CreatePreview(params)
+	if err != nil {
+		return nil, fmt.Errorf("invoice.CreatePreview: %v", err)
+	}
+	return inv, nil
+}
+
+// GetPrice retrieves a Stripe price by ID
+func (s *StripeService) GetPrice(priceID string) (*stripe.Price, error) {
+	p, err := price.Get(priceID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("price.Get: %v", err)
+	}
+	return p, nil
+}
+
+// ListPrices lists Stripe prices with optional filters
+func (s *StripeService) ListPrices(activeOnly bool) ([]*stripe.Price, error) {
+	params := &stripe.PriceListParams{}
+	if activeOnly {
+		params.Filters.AddFilter("active", "", "true")
+	}
+
+	var prices []*stripe.Price
+	iter := price.List(params)
+	for iter.Next() {
+		prices = append(prices, iter.Price())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("price.List: %v", err)
+	}
+
+	return prices, nil
+}
+
+// ParseWebhookEventData parses webhook event data into specific Stripe objects
+// This only handles Stripe API parsing, no database operations
+func (s *StripeService) ParseWebhookEventData(event *stripe.Event) (interface{}, error) {
+	switch event.Type {
+	case "checkout.session.completed":
+		var sess stripe.CheckoutSession
+		err := json.Unmarshal(event.Data.Raw, &sess)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing checkout session: %v", err)
+		}
+		return &sess, nil
+
+	case "customer.subscription.created":
+		var sub stripe.Subscription
+		err := json.Unmarshal(event.Data.Raw, &sub)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing subscription: %v", err)
+		}
+		return &sub, nil
+
+	case "customer.subscription.updated":
+		var sub stripe.Subscription
+		err := json.Unmarshal(event.Data.Raw, &sub)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing subscription: %v", err)
+		}
+		return &sub, nil
+
+	case "customer.subscription.deleted":
+		var sub stripe.Subscription
+		err := json.Unmarshal(event.Data.Raw, &sub)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing subscription: %v", err)
+		}
+		return &sub, nil
+
+	case "customer.subscription.trial_will_end":
+		var sub stripe.Subscription
+		err := json.Unmarshal(event.Data.Raw, &sub)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing subscription: %v", err)
+		}
+		return &sub, nil
+
+	case "invoice.payment_succeeded", "invoice.payment_failed", "invoice.paid":
+		var in stripe.Invoice
+		err := json.Unmarshal(event.Data.Raw, &in)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing invoice: %v", err)
+		}
+		return &in, nil
+
+	default:
+		return nil, fmt.Errorf("unhandled event type: %s", event.Type)
+	}
+}
+
+// Helper methods for customer management
+
+// CreateCustomer creates a new Stripe customer
+//func (s *StripeService) CreateCustomer(userUID, email string) (*stripe.Customer, error) {
+//	params := &stripe.CustomerParams{
+//		Params: stripe.Params{
+//			Metadata: map[string]string{
+//				"user_uid": userUID,
+//			},
+//		},
+//	}
+//
+//	if email != "" {
+//		params.Email = stripe.String(email)
+//	}
+//
+//	cust, err := customer.New(params)
+//	if err != nil {
+//		return nil, fmt.Errorf("customer.New: %v", err)
+//	}
+//
+//	return cust, nil
+//}
+
+// GetOrCreateCustomer gets existing customer or creates new one
+func (s *StripeService) GetCustomer(userUID, email string) (*stripe.Customer, error) {
+	// Try to find existing customer
+	cust, err := s.GetCustomerByUID(userUID)
+	if err == nil {
+		return cust, nil
+	}
+	return nil, fmt.Errorf("customer not found for user_uid: %s", userUID)
+}
+
+// Global StripeService instance
+var StripeServiceInstance *StripeService
+
+// InitStripeService initializes the global Stripe service
+func InitStripeService() {
+	if os.Getenv("STRIPE_SECRET_KEY") != "" {
+		StripeServiceInstance = NewStripeService()
+	}
+}
