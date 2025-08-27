@@ -1,10 +1,4 @@
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { Avatar, AvatarFallback } from '@sealos/shadcn-ui/avatar';
@@ -33,7 +27,7 @@ import { format, addHours } from 'date-fns';
 
 type PAYGBillingDetail = {
   appName: string;
-  appType: 'devbox' | 'applaunchpad';
+  appType: string;
   time: Date;
   orderId: string;
   namespace: string;
@@ -56,97 +50,114 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   appType: string;
   namespace: string;
+  hasSubApps: boolean;
+  data: PAYGBillingDetail[];
+  appName: string;
+  appIcon: string;
+  region: string;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+  onOpenApp: () => void;
 };
 
-export function PAYGAppBillingDrawer({ open, onOpenChange }: Props) {
-  // Mock data - replace with actual data
-  const mockData: PAYGBillingDetail[] = useMemo(
-    () => [
-      {
-        appName: 'App Name',
-        appType: 'applaunchpad',
-        time: new Date('2025-08-27T15:00:00'),
-        orderId: 'order-123',
-        namespace: 'default',
-        amount: 1200000,
-        usage: {
-          cpu: { amount: 1600, cost: 200000 },
-          memory: { amount: 1600, cost: 200000 },
-          storage: { amount: 1600, cost: 200000 },
-          network: { amount: 1600, cost: 200000 },
-          port: { amount: 2, cost: 200000 },
-          gpu: { amount: 2, cost: 200000 }
-        }
-      },
-      {
-        appName: 'App Name 2',
-        appType: 'devbox',
-        time: new Date('2025-08-27T15:00:00'),
-        orderId: 'order-124',
-        namespace: 'default',
-        amount: 600000,
-        usage: {
-          cpu: { amount: 800, cost: 100000 },
-          memory: { amount: 800, cost: 100000 }
-          // storage, network, port, gpu are optional and not provided
-        }
-      }
-    ],
-    []
-  );
-
-  // Group data by hour and add separators
+export function PAYGAppBillingDrawer({
+  open,
+  onOpenChange,
+  hasSubApps,
+  data,
+  appName,
+  appIcon,
+  appType,
+  namespace,
+  region,
+  currentPage,
+  totalPages,
+  pageSize,
+  totalCount,
+  onPageChange,
+  onOpenApp
+}: Props) {
+  // Group data by hour or day based on hasSubApps and add separators
   const tableData: TableRowData[] = useMemo(() => {
-    const grouped = mockData.reduce(
+    const grouped = data.reduce(
       (acc, item) => {
-        const hourKey = new Date(
-          item.time.getFullYear(),
-          item.time.getMonth(),
-          item.time.getDate(),
-          item.time.getHours()
-        ).toISOString();
-        if (!acc[hourKey]) {
-          acc[hourKey] = [];
+        let groupKey: string;
+        if (hasSubApps) {
+          // Group by hour when showing sub-apps
+          groupKey = new Date(
+            item.time.getFullYear(),
+            item.time.getMonth(),
+            item.time.getDate(),
+            item.time.getHours()
+          ).toISOString();
+        } else {
+          // Group by day when not showing sub-apps
+          groupKey = new Date(
+            item.time.getFullYear(),
+            item.time.getMonth(),
+            item.time.getDate()
+          ).toISOString();
         }
-        acc[hourKey].push(item);
+
+        if (!acc[groupKey]) {
+          acc[groupKey] = [];
+        }
+        acc[groupKey].push(item);
         return acc;
       },
       {} as Record<string, PAYGBillingDetail[]>
     );
 
     const result: TableRowData[] = [];
-    Object.entries(grouped).forEach(([hourKey, items]) => {
-      result.push({ type: 'separator', time: new Date(hourKey) });
+    Object.entries(grouped).forEach(([groupKey, items]) => {
+      result.push({ type: 'separator', time: new Date(groupKey) });
       result.push(...items);
     });
     return result;
-  }, [mockData]);
+  }, [data, hasSubApps]);
 
   const columnHelper = createColumnHelper<TableRowData>();
 
   const columns: ColumnDef<TableRowData, any>[] = [
-    columnHelper.accessor('appName', {
-      header: 'Sub-app',
+    columnHelper.accessor(hasSubApps ? 'appName' : 'time', {
+      header: hasSubApps ? 'Sub-app' : 'Time',
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row && row.type === 'separator') {
-          const startTime = format(row.time, 'yyyy-MM-dd HH:mm');
-          const endTime = format(addHours(row.time, 1), 'HH:mm');
-          const timeStr = `${startTime} - ${endTime}`;
+          let timeStr: string;
+          if (hasSubApps) {
+            // Show hour range for sub-apps
+            const startTime = format(row.time, 'yyyy-MM-dd HH:mm');
+            const endTime = format(addHours(row.time, 1), 'HH:mm');
+            timeStr = `${startTime} - ${endTime}`;
+          } else {
+            // Show date for non-sub-apps
+            timeStr = format(row.time, 'yyyy-MM-dd');
+          }
           return (
             <div className="bg-zinc-50 text-gray-900 font-normal" style={{ gridColumn: '1 / -1' }}>
               {timeStr}
             </div>
           );
         }
-        return (
-          <div className="flex gap-2 items-center">
-            <Avatar className="size-6">
-              <AvatarFallback>A</AvatarFallback>
-            </Avatar>
-            <span>{info.getValue()}</span>
-          </div>
-        );
+
+        if (hasSubApps) {
+          // Show app name with avatar for sub-apps
+          return (
+            <div className="flex gap-2 items-center">
+              <Avatar className="size-6">
+                <AvatarFallback>A</AvatarFallback>
+              </Avatar>
+              <span>{info.getValue()}</span>
+            </div>
+          );
+        } else {
+          // Show time for non-sub-apps
+          return format(row.time, 'HH:mm');
+        }
       }
     }),
     columnHelper.display({
@@ -281,18 +292,20 @@ export function PAYGAppBillingDrawer({ open, onOpenChange }: Props) {
           <DrawerTitle className="flex items-center gap-8 justify-between w-full">
             <div className="flex gap-2 items-center">
               <Avatar className="size-6">
-                <AvatarFallback>A</AvatarFallback>
+                <AvatarFallback>{appIcon || appName.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span className="text-nowrap">App Name</span>
-              <Badge variant="secondary">Hangzhou/Sealos-test</Badge>
-              <Badge variant="secondary">App Launchpad</Badge>
+              <span className="text-nowrap">{appName}</span>
+              <Badge variant="secondary">{region}</Badge>
+              <Badge variant="secondary">{appType}</Badge>
             </div>
-            <div>
-              <Button variant="outline">
-                <span>Open App</span>
-                <ArrowUpRight size={16} />
-              </Button>
-            </div>
+            {onOpenApp && (
+              <div>
+                <Button variant="outline" onClick={onOpenApp}>
+                  <span>Open App</span>
+                  <ArrowUpRight size={16} />
+                </Button>
+              </div>
+            )}
           </DrawerTitle>
         </DrawerHeader>
 
@@ -371,11 +384,15 @@ export function PAYGAppBillingDrawer({ open, onOpenChange }: Props) {
 
               <TableLayoutFooter>
                 <div className="px-4 py-3 flex justify-between">
-                  <div className="flex items-center text-zinc-500">Total: 101</div>
+                  <div className="flex items-center text-zinc-500">Total: {totalCount}</div>
                   <div className="flex items-center gap-3">
-                    <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={onPageChange || (() => {})}
+                    />
                     <span>
-                      <span>8</span>
+                      <span>{pageSize}</span>
                       <span className="text-zinc-500"> / Page</span>
                     </span>
                   </div>
