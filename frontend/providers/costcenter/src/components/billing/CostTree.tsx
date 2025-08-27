@@ -244,11 +244,7 @@ function CostNodesCanvas() {
   ]);
 
   return (
-    <div
-      className="relative min-w-[max(40rem,100%)] min-h-[max(32rem,100%)] my-[12rem] mx-[32rem]"
-      style={{ minHeight: `max(${workspaceNodes.length * 5 + 16}rem, 32rem, 100%)` }}
-      ref={wrapperRef}
-    >
+    <div className="relative w-px h-px" ref={wrapperRef}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -333,9 +329,9 @@ export function CostTree({ children }: { children?: React.ReactNode }) {
         minPositionY={-600}
         maxPositionY={600}
         centerOnInit={false}
-        limitToBounds={true}
-        initialPositionX={-480}
-        initialPositionY={-128}
+        limitToBounds={false}
+        initialPositionX={32}
+        initialPositionY={56}
         doubleClick={{
           mode: 'toggle'
         }}
@@ -370,10 +366,6 @@ export function CostTree({ children }: { children?: React.ReactNode }) {
             width: '100%',
             height: '100%',
             zIndex: 10
-          }}
-          contentStyle={{
-            width: '100%',
-            height: '100%'
           }}
         >
           <CostNodesCanvas />
