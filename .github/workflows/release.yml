@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  goreleaser:
+  releaser:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -49,13 +49,25 @@ jobs:
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
   cloud-release:
-    uses: ./.github/workflows/cloud-release.yml
+    runs-on: ubuntu-24.04
     needs:
-      - goreleaser
+      - releaser
     permissions:
       contents: read
       packages: write
-    secrets: inherit
-    with:
-      tag: ${{ github.ref_name }}
-      build_offline_tar_only: false
+      actions: write
+    steps:
+      - name: Trigger Cloud Release Workflow(only when tagged)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'cloud-release.yml',
+              ref: "refs/tags/${{ github.ref_name }}",
+              inputs: {
+                  tag: "${{ github.ref_name }}",
+                  build_offline_tar_only: false
+              }
+            })

@@ -3,13 +3,12 @@ set -e
 export readonly ARCH=${1:-amd64}
 mkdir -p tars
 
-RetryPullImageInterval=3
-RetrySleepSeconds=3
+RetryPullImageInterval=1000
+RetrySleepSeconds=15
 
 retryPullImage() {
     local image=$1
     local retry=0
-    local retryMax=3
     set +e
     while [ $retry -lt $RetryPullImageInterval ]; do
         sealos pull --policy=always --platform=linux/"${ARCH}" $image >/dev/null && break
@@ -18,10 +17,6 @@ retryPullImage() {
         sleep $RetrySleepSeconds
     done
     set -e
-    if [ $retry -eq $retryMax ]; then
-        echo "pull image $image failed"
-        exit 1
-    fi
 }
 
 declare -A images=(
