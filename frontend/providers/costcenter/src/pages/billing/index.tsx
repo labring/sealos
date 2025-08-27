@@ -32,7 +32,7 @@ function Billing() {
         </TabsList>
 
         <TabsContent value="listing" className="h-full overflow-hidden">
-          <div className="flex flex-col border rounded-2xl overflow-hidden">
+          <div className="flex flex-col h-full border rounded-2xl overflow-hidden">
             <div className="border-b bg-white px-6 py-3">
               <DateRangePicker className="w-fit" />
             </div>
