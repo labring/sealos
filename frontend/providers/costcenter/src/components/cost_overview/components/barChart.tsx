@@ -98,7 +98,7 @@ export default function Chart({
       left: '40px',
       right: '5px'
     },
-    color: ['#24282C', '#11B6FC'],
+    color: ['#18181B', '#3B82F6'],
     tooltip: {
       trigger: 'axis',
       borderWidth: 0
