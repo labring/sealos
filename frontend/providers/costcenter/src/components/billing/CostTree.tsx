@@ -368,7 +368,7 @@ export function CostTree({ children }: { children?: React.ReactNode }) {
         <TransformComponent
           wrapperStyle={{
             width: '100%',
-            height: '600px',
+            height: '100%',
             zIndex: 10
           }}
           contentStyle={{
