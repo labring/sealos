@@ -431,18 +431,16 @@ const RechargeModal = forwardRef(
 
                 <Flex
                   pointerEvents={complete === 0 ? 'auto' : 'none'}
-                  pt="24px"
+                  p="24px"
                   mt={'0'}
-                  pb="28px"
                   w="full"
-                  px={'36px'}
                   flexDirection="column"
                   justifyContent="center"
                   alignItems="center"
                 >
                   <Flex direction={'column'} mb={'20px'} width={'full'}>
                     <div className="flex flex-col gap-6">
-                      <section className="w-full bg-plan-payg px-6 py-5 rounded-xl gap-1 flex flex-col">
+                      <section className="w-full bg-plan-payg px-4 py-3 rounded-xl gap-1 flex flex-col">
                         <span className="text-slate-500 text-sm">{t('remaining_balance')}</span>
                         <span className="text-2xl font-semibold leading-none flex gap-1 items-center">
                           <CurrencySymbol boxSize="20px" type={currency} fontSize="24px" />
@@ -453,11 +451,10 @@ const RechargeModal = forwardRef(
                       <section className="mt-2">
                         <div className="flex justify-between">
                           <div className="font-medium">{t('Select Amount')}</div>
-                          {specialBonus && specialBonus.length > 0 && (
+                          {/* {specialBonus && specialBonus.length > 0 && (
                             <div className="text-sm flex gap-1 items-center">
                               <Gift size={16} className="text-blue-600" />
                               <span>{t('first_recharge_title')}</span>
-                              {/* We have z-index issues when using Shadcn tooltip in a chakra modal */}
                               <MyTooltip
                                 px={'12px'}
                                 py={'8px'}
@@ -472,7 +469,7 @@ const RechargeModal = forwardRef(
                                 <CircleHelp size={16} className="text-zinc-400" />
                               </MyTooltip>
                             </div>
-                          )}
+                          )} */}
                         </div>
                       </section>
                     </div>
