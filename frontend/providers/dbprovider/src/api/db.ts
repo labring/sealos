@@ -37,50 +37,6 @@ export const getDatabaseAlerts = (namespace: string) =>
     namespace
   });
 
-// Mock function for testing - remove this in production
-export const getMockDatabaseAlerts = (): DatabaseAlertItem[] => [
-  {
-    name: 'm1',
-    status: 'Abnormal',
-    reason: '集群状态异常',
-    details:
-      '数据库集群状态异常，可能存在以下问题：\n1. Pod 健康检查失败\n2. 资源不足\n3. 网络连接问题\n\n建议检查 Pod 状态和日志以获取更多信息。'
-  },
-  {
-    name: 'sealos-mongo',
-    status: 'Stopped',
-    reason: '',
-    details: ''
-  },
-  {
-    name: 'sealos-mongodb',
-    status: 'Running',
-    reason: '',
-    details: ''
-  },
-  {
-    name: 'test-clickhouse',
-    status: 'Running',
-    reason: 'Pod 健康检查失败',
-    details:
-      'Unhealthy - Pod test-clickhouse-zookeeper-0: Liveness probe failed: \nUnhealthy - Pod test-clickhouse-zookeeper-0: Readiness probe failed: \n\nZookeeper 组件健康检查失败，可能原因：\n1. 内存不足\n2. 磁盘空间不足\n3. 配置错误\n\n建议检查 Pod 资源使用情况和日志。'
-  },
-  {
-    name: 'mll',
-    status: 'Updating',
-    reason: '配置更新中',
-    details:
-      'Redis 集群正在更新配置，当前状态：\n1. 主节点配置已更新\n2. 从节点同步中\n3. 预计完成时间：2-3分钟\n\n更新期间服务可能短暂不可用。'
-  },
-  {
-    name: 'postgresql-ha',
-    status: 'Failed',
-    reason: '部署失败',
-    details:
-      'PostgreSQL 高可用集群部署失败：\n1. 存储卷创建失败\n2. 服务端口冲突\n3. 权限配置错误\n\n错误代码: E001\n建议检查存储配置和网络设置。'
-  }
-];
-
 export const getDBByName = ({
   name,
   mock = false,

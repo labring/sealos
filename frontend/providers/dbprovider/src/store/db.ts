@@ -9,7 +9,6 @@ import {
   getDBByName,
   getMonitorData,
   getDatabaseAlerts,
-  getMockDatabaseAlerts,
   type DatabaseAlertItem
 } from '@/api/db';
 import { defaultDBDetail } from '@/constants/db';
@@ -102,23 +101,18 @@ export const useDBStore = create<State>()(
             state.dataSourceIds[dbName] = dataSourceId;
           }),
         getDataSourceId: (dbName: string) => get().dataSourceIds[dbName],
-        alerts: (() => {
-          // Initialize with mock data for immediate availability
-          const alertsList = getMockDatabaseAlerts();
-          return (alertsList || []).reduce((acc, cur) => {
-            acc[cur.name] = cur;
-            return acc;
-          }, {} as Record<string, DatabaseAlertItem>);
-        })(),
+        alerts: {},
         loadAlerts: async () => {
           try {
             const namespace = getUserNamespace();
-            // const alertsList = await getDatabaseAlerts(namespace);
-            const alertsList = getMockDatabaseAlerts();
-            const alertsMap = (alertsList || []).reduce((acc, cur) => {
-              acc[cur.name] = cur;
-              return acc;
-            }, {} as Record<string, DatabaseAlertItem>);
+            const alertsList = await getDatabaseAlerts(namespace);
+            const alertsMap = (alertsList || []).reduce(
+              (acc, cur) => {
+                acc[cur.name] = cur;
+                return acc;
+              },
+              {} as Record<string, DatabaseAlertItem>
+            );
 
             set((state) => {
               state.alerts = alertsMap;
