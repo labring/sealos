@@ -18,7 +18,7 @@ function Billing() {
   const queryClient = useQueryClient();
   return (
     <>
-      <Tabs defaultValue="listing">
+      <Tabs defaultValue="listing" className="h-[calc(100vh-60px)]">
         <TabsList variant="underline" className="w-fit">
           <TabsTrigger variant="cleanUnderline" value="listing">
             Billing
@@ -31,7 +31,7 @@ function Billing() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="listing">
+        <TabsContent value="listing" className="h-full overflow-hidden">
           <div className="flex flex-col border rounded-2xl overflow-hidden">
             <div className="border-b bg-white px-6 py-3">
               <DateRangePicker className="w-fit" />
@@ -43,7 +43,7 @@ function Billing() {
           </div>
         </TabsContent>
 
-        <TabsContent value="trends" className="flex flex-col gap-4">
+        <TabsContent value="trends" className="flex flex-col gap-4 overflow-auto">
           <OverviewTrend />
           <TrendOverviewBar />
         </TabsContent>
