@@ -11,6 +11,7 @@ import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBa
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { CostTree } from '@/components/billing/CostTree';
+import { CostPanel } from '@/components/billing/CostPanel';
 
 function Billing() {
   const { t } = useTranslation();
@@ -36,7 +37,9 @@ function Billing() {
               <DateRangePicker className="w-fit" />
             </div>
 
-            <CostTree />
+            <CostTree>
+              <CostPanel />
+            </CostTree>
           </div>
         </TabsContent>
 

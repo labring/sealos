@@ -320,7 +320,7 @@ function CostNodesCanvas() {
   );
 }
 
-export function CostTree() {
+export function CostTree({ children }: { children?: React.ReactNode }) {
   return (
     <div className="overflow-hidden relative">
       <TransformWrapper
@@ -349,6 +349,7 @@ export function CostTree() {
         <span className="absolute z-20 text-sm pointer-events-none top-5 left-5 text-zinc-600">
           Select a card to view cost details
         </span>
+        <div className="absolute top-0 right-0 z-20 h-full overflow-y-auto p-0">{children}</div>
         <svg className="absolute z-10 bg-zinc-50 flex-1 w-full h-full">
           <pattern
             id="pattern-circles"
