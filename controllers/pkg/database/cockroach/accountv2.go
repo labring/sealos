@@ -1792,6 +1792,22 @@ func (c *Cockroach) InitTables() error {
 			return fmt.Errorf("failed to add column workspace_subscription_id to PaymentOrder: %v", err)
 		}
 	}
+	if !c.DB.Migrator().HasColumn(&types.Payment{}, "stripe") {
+		fmt.Println("add column stripe to Payment")
+		tableName := types.Payment{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "stripe" JSON;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column stripe to Payment: %v", err)
+		}
+	}
+	if !c.DB.Migrator().HasColumn(&types.PaymentOrder{}, "stripe") {
+		fmt.Println("add column stripe to Payment")
+		tableName := types.PaymentOrder{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "stripe" JSON;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column stripe to Payment: %v", err)
+		}
+	}
 
 	// 设置默认值 ''
 	if err := migrateColumns(c.DB); err != nil {
