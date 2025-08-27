@@ -65,6 +65,16 @@ const (
 	CardSetDefault              = "/card/set-default"
 	CreditsList                 = "/credits/list"
 	CreditsInfo                 = "/credits/info"
+
+	// WorkspaceSubscription routes
+	WorkspaceSubscriptionInfo            = "/workspace-subscription/info"
+	WorkspaceSubscriptionList            = "/workspace-subscription/list"
+	WorkspaceSubscriptionPlanList        = "/workspace-subscription/plan-list"
+	WorkspaceSubscriptionPay             = "/workspace-subscription/pay"
+	WorkspaceSubscriptionNotify          = "/workspace-subscription/notify"
+	WorkspaceSubscriptionLastTransaction = "/workspace-subscription/last-transaction"
+	WorkspaceSubscriptionUpgradeAmount   = "/workspace-subscription/upgrade-amount"
+	WorkspaceSubscriptionPortalSession   = "/workspace-subscription/portal-session"
 )
 
 const PayNotificationPath = PaymentGroup + Notify
@@ -91,4 +101,6 @@ const (
 	EnvAlipayPrivateKey = "ALIPAY_PRIVATE_KEY"
 
 	EnvPaymentCurrency = "PAYMENT_CURRENCY"
+
+	EnvNotifyConfig = "NOTIFY_CONFIG"
 )
