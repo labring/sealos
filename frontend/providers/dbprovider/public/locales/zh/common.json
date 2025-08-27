@@ -278,6 +278,14 @@
   "manual_backup_tip": "建议在业务低峰期备份实例。备份期间，请勿执行DDL操作，避免锁表导致备份失败。若数据量较大，花费的时问可能较长，请耐心等待。点击 [开始备份] 后，将在1分钟后开始备份。",
   "max_replicas": "实例数最大为: ",
   "memory": "内存",
+  "backups":{
+    "stop_backup": "是否停止备份？",
+    "stop_backup_tip": "数据库备份中，停止备份后不可恢复，确认停止备份？",
+    "stop_backup_confirm": "停止备份",
+    "stop_backup_cancel": "取消",
+    "stop_backup_success": "备份已停止",
+    "stop_backup_error": "处理备份时出错"
+  },
   "migrate": {
     "Incremental migration prompt information": "如果需要数据库增量同步，可以开启\"持续迁移\"，默认是关闭。",
     "mongo": {

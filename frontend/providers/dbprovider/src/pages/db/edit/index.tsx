@@ -30,7 +30,8 @@ import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { getDBSecret } from '@/api/db';
 import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
-import type { DBType } from '@/types/db';
+import type { DBType, BackupItemType } from '@/types/db';
+import { getBackups, deleteBackup } from '@/api/backup';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -229,6 +230,55 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     setIsLoading(false);
   };
 
+  const handleBackupCheck = async (formData: DBEditType) => {
+    try {
+      if (isEdit) {
+        const result = await getBackups();
+        console.log('API response:', result);
+
+        // Filter backups for this specific database
+        const allBackups = result || [];
+        const backups = allBackups.filter(
+          (backup: BackupItemType) => backup.dbName === formData.dbName
+        );
+        console.log('filtered backups for db:', formData.dbName, backups);
+        const inProgressBackups = backups.filter(
+          (backup: BackupItemType) => backup.status.value === 'Running'
+        );
+        console.log('inProgressBackups', inProgressBackups);
+
+        if (inProgressBackups.length > 0) {
+          const confirmStop = await new Promise<boolean>((resolve) => {
+            openConfirm(() => resolve(true), {
+              onCancel: () => resolve(false),
+              title: t('backups.stop_backup'),
+              content: t('backups.stop_backup_tip'),
+              confirmText: t('backups.stop_backup_confirm'),
+              cancelText: t('backups.stop_backup_cancel')
+            })();
+          });
+
+          if (confirmStop) {
+            await Promise.all(
+              inProgressBackups.map(async (backup: BackupItemType) => {
+                await deleteBackup(backup.name);
+              })
+            );
+            toast({ title: t('backups.stop_backup_success'), status: 'success' });
+          } else {
+            return; // User canceled, do not proceed
+          }
+        }
+      }
+
+      // Proceed with submission
+      await submitSuccess(formData);
+    } catch (error) {
+      console.error(error);
+      toast({ title: t('backups.stop_backup_error'), status: 'error' });
+    }
+  };
+
   const submitError = (err: FieldErrors<DBEditType>) => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -301,7 +351,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit(
-              (data) => openConfirm(() => submitSuccess(data))(),
+              (data) => handleBackupCheck(data),
               (err) => submitError(err)
             )()
           }
