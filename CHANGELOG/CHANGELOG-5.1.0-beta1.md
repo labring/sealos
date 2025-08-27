@@ -29,8 +29,6 @@
 * remote-ssh remove config code ([#5255](https://github.com/labring/sealos/issues/5255))
 * actions upload artifactv4 name ([#5258](https://github.com/labring/sealos/issues/5258))
 * devboxList not found “devbox_config” cause plugin activating error ([#5259](https://github.com/labring/sealos/issues/5259))
-* bug ([#5262](https://github.com/labring/sealos/issues/5262))
-* bug ([#5272](https://github.com/labring/sealos/issues/5272))
 * document typo error ([#5270](https://github.com/labring/sealos/issues/5270))
 * devbox plugin refresh performance bug ([#5276](https://github.com/labring/sealos/issues/5276))
 * upgrade Go version to 1.23 and update kubeadm API versions to v1beta4 ([#5718](https://github.com/labring/sealos/issues/5718))
@@ -40,30 +38,15 @@
 * devbox launch launchpad twice not working ([#5745](https://github.com/labring/sealos/issues/5745))
 * version refresh bug ([#5284](https://github.com/labring/sealos/issues/5284))
 * missing dbtype in database ([#5302](https://github.com/labring/sealos/issues/5302))
-* bug ([#5305](https://github.com/labring/sealos/issues/5305))
-* bug ([#5736](https://github.com/labring/sealos/issues/5736))
-* frontend job step name
-* git is in a dirty state
-* license not matched
-* cloud release call
-* pr reviewer
-* release permissions
-* release permissions
-* release permissions
-* release permissions
-* sha length
 * devbox plugin gzg http bug ([#5301](https://github.com/labring/sealos/issues/5301))
 * bug ([#5310](https://github.com/labring/sealos/issues/5310))
 * devbox deploy bug version2 ([#5312](https://github.com/labring/sealos/issues/5312))
 * db miss dbtype & update operation log ([#5315](https://github.com/labring/sealos/issues/5315))
 * launchpad ingress ([#5320](https://github.com/labring/sealos/issues/5320))
-* bug ([#5352](https://github.com/labring/sealos/issues/5352))
 * ensure that the controller and gateway can be deployed to the master and the tainted node ([#5359](https://github.com/labring/sealos/issues/5359))
 * account merge issue ([#5683](https://github.com/labring/sealos/issues/5683))
-* bug ([#5373](https://github.com/labring/sealos/issues/5373))
 * devboxList monitor show bug ([#5374](https://github.com/labring/sealos/issues/5374))
 * devbox release tag use last predicated success commit. ([#5379](https://github.com/labring/sealos/issues/5379))
-* bug ([#5381](https://github.com/labring/sealos/issues/5381))
 * devbox release target image tag ([#5527](https://github.com/labring/sealos/issues/5527))
 * openapi show bug ([#5671](https://github.com/labring/sealos/issues/5671))
 * objectstorage openHost ([#5672](https://github.com/labring/sealos/issues/5672))
@@ -75,26 +58,19 @@
 * docs select style & cronjob bug, desktop guide bug ([#5386](https://github.com/labring/sealos/issues/5386))
 * add database billing in template system ([#5582](https://github.com/labring/sealos/issues/5582))
 * service nodeport modification issue ([#5579](https://github.com/labring/sealos/issues/5579))
-* bug ([#5390](https://github.com/labring/sealos/issues/5390))
-* 文档字段描述有误 ([#5534](https://github.com/labring/sealos/issues/5534))
 * frontend ci ([#5541](https://github.com/labring/sealos/issues/5541))
 * save empty key ([#5411](https://github.com/labring/sealos/issues/5411))
 * empty key support ([#5412](https://github.com/labring/sealos/issues/5412))
 * sealos cloud deploy script ([#5417](https://github.com/labring/sealos/issues/5417))
 * frontend packages permission ([#5529](https://github.com/labring/sealos/issues/5529))
-* bug ([#5526](https://github.com/labring/sealos/issues/5526))
 * devbox release target image tag ([#5525](https://github.com/labring/sealos/issues/5525))
-* bug ([#5523](https://github.com/labring/sealos/issues/5523))
-* bug ([#5505](https://github.com/labring/sealos/issues/5505))
 * fix run-shell-injection in workflows ([#5502](https://github.com/labring/sealos/issues/5502))
 * higress deploy config ([#5422](https://github.com/labring/sealos/issues/5422))
 * update objectstorage cloud image and fix workflow error ([#5497](https://github.com/labring/sealos/issues/5497))
 * admin deploy and sed command error ([#5423](https://github.com/labring/sealos/issues/5423))
 * empty subnet ([#5426](https://github.com/labring/sealos/issues/5426))
-* bug ([#5468](https://github.com/labring/sealos/issues/5468))
 * devbox controller with event filter. ([#5460](https://github.com/labring/sealos/issues/5460))
 * user controller with event filter. ([#5433](https://github.com/labring/sealos/issues/5433))
-* bug ([#5446](https://github.com/labring/sealos/issues/5446))
 * template yaml separator regex ([#5440](https://github.com/labring/sealos/issues/5440))
 * relay retry delay ([#5429](https://github.com/labring/sealos/issues/5429))
 * **aiproxy:** fix kc auth ([#5549](https://github.com/labring/sealos/issues/5549))
@@ -146,23 +122,13 @@
 * **launchpad:** app error state not correctly shown ([#5754](https://github.com/labring/sealos/issues/5754))
 * **launchpad:** extract AppCR URL update logic to prevent API response blocking ([#5835](https://github.com/labring/sealos/issues/5835))
 * **link-error:** add configuration argument for lychee-action ([#5867](https://github.com/labring/sealos/issues/5867))
-* **main:** validate kubeadm config files before pulling images ([#5715](https://github.com/labring/sealos/issues/5715))
 * **security:** add non-root user to Dockerfile and update TLS configuration in req.go ([#5818](https://github.com/labring/sealos/issues/5818))
 * **sync:** include LICENSE and workflow files in sync paths ([#5749](https://github.com/labring/sealos/issues/5749))
 * **sync:** update source paths and sync action configuration ([#5740](https://github.com/labring/sealos/issues/5740))
 * **sync:** update LICENSE file references to LICENSE.md in sync_code.yml ([#5802](https://github.com/labring/sealos/issues/5802))
 * **tagpr:** remove unused release variable from output in tagpr.yml ([#5843](https://github.com/labring/sealos/issues/5843))
 
-### Code Refactoring
-
-* launchpad configmap logic ([#5650](https://github.com/labring/sealos/issues/5650))
-* simplify invitation app ([#5576](https://github.com/labring/sealos/issues/5576))
-* optimize i18n English translations ([#5191](https://github.com/labring/sealos/issues/5191))
-* **docs:** simplify announcement bar configuration ([#5314](https://github.com/labring/sealos/issues/5314))
-* **i18n:** improve release instruction wording in English messages ([#5493](https://github.com/labring/sealos/issues/5493))
-* **invite:** invitation rewarding wording tweaks ([#5784](https://github.com/labring/sealos/issues/5784))
-
-### Features
+### New Features
 
 * aiproxy baidu ernie v2 ([#5287](https://github.com/labring/sealos/issues/5287))
 * Incremental updates of database applications ([#5536](https://github.com/labring/sealos/issues/5536))
@@ -191,14 +157,6 @@
 * track gtm v2 events ([#5733](https://github.com/labring/sealos/issues/5733))
 * frontend arm runner ([#5351](https://github.com/labring/sealos/issues/5351))
 * support configurable currency symbol ([#5221](https://github.com/labring/sealos/issues/5221))
-* sha tag
-* add sha tag for controller and service
-* controller and service
-* add gh_token secret to easy push ghcr iamge
-* add frontend to acr
-* add gtm sdk ([#5728](https://github.com/labring/sealos/issues/5728))
-* qwen vl image ([#5226](https://github.com/labring/sealos/issues/5226))
-* aiproxy probe ([#5229](https://github.com/labring/sealos/issues/5229))
 * aiproxy errorlog and hide get balance error ([#5230](https://github.com/labring/sealos/issues/5230))
 * get channel default models and modelmapping ([#5232](https://github.com/labring/sealos/issues/5232))
 * update sdk readme and adjust db wording ([#5710](https://github.com/labring/sealos/issues/5710))
@@ -255,6 +213,7 @@
 * database UI 2.0 ([#5293](https://github.com/labring/sealos/issues/5293))
 * devbox  controller concurrent and config qps flag. ([#5365](https://github.com/labring/sealos/issues/5365))
 * update invite page and adjust cashback ([#5364](https://github.com/labring/sealos/issues/5364))
+* **main:** validate kubeadm config files before pulling images ([#5715](https://github.com/labring/sealos/issues/5715))
 * **changelog:** enhance configuration for automated changelog generation ([#5842](https://github.com/labring/sealos/issues/5842))
 * **ci:** add automated workflow for updating tagpr configuration ([#5807](https://github.com/labring/sealos/issues/5807))
 * **costcenter:** add recharge limit for non real name user ([#5174](https://github.com/labring/sealos/issues/5174))
@@ -301,6 +260,16 @@
 * **tagpr:** add configuration files and scripts for automated changelog generation ([#5809](https://github.com/labring/sealos/issues/5809))
 * **template:** template api v1 ([#5712](https://github.com/labring/sealos/issues/5712))
 * **vscode/devbox:** plugin transform init ([#5188](https://github.com/labring/sealos/issues/5188))
+
+### Code Refactoring
+
+* launchpad configmap logic ([#5650](https://github.com/labring/sealos/issues/5650))
+* simplify invitation app ([#5576](https://github.com/labring/sealos/issues/5576))
+* optimize i18n English translations ([#5191](https://github.com/labring/sealos/issues/5191))
+* **docs:** simplify announcement bar configuration ([#5314](https://github.com/labring/sealos/issues/5314))
+* **i18n:** improve release instruction wording in English messages ([#5493](https://github.com/labring/sealos/issues/5493))
+* **invite:** invitation rewarding wording tweaks ([#5784](https://github.com/labring/sealos/issues/5784))
+
 
 ### Performance Improvements
 
