@@ -7,7 +7,7 @@ options:
   tag_filter_pattern: '^v'
   sort: "date"
   commits:
-   sort_by: Scope
+   sort_by: Type
    filters:
      Type:
        - feat
@@ -18,7 +18,7 @@ options:
     group_by: Type
     sort_by: Title
     title_maps:
-      feat: Features
+      feat: New Features
       fix: Bug Fixes
       perf: Performance Improvements
       refactor: Code Refactoring
