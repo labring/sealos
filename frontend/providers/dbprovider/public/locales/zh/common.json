@@ -356,6 +356,7 @@
   "running_time": "运行时长",
   "sealaf": "云开发",
   "search": "搜索",
+  "search_name_and_remark_placeholder": "搜索名称或备注",
   "search_or_create": "搜索或创建",
   "select_a_maximum_of_10_files": "最多选择 10 个文件",
   "service_deletion_failed": "Service 删除失败",

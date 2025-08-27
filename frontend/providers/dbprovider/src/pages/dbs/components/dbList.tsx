@@ -13,11 +13,23 @@ import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Box, Button, Center, Flex, Image, Text, useDisclosure, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  InputLeftElement,
+  InputGroup,
+  Text,
+  useDisclosure,
+  useTheme
+} from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import {
   ColumnDef,
+  FilterFn,
   getCoreRowModel,
   getFilteredRowModel,
   useReactTable
@@ -52,6 +64,7 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
+import { Search } from 'lucide-react';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -81,6 +94,7 @@ const DBList = ({
   const [remarkValue, setRemarkValue] = useState('');
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
@@ -302,6 +316,14 @@ const DBList = ({
     [router, t, toast, getDataSourceId, setDataSourceId]
   );
 
+  const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
+    const searchTerm = filterValue.toLowerCase();
+    const name = row.original.name.toLowerCase();
+    const remark = (row.original.remark || '').toLowerCase();
+    console.log('row data', row.original.remark);
+    return name.includes(searchTerm) || remark.includes(searchTerm);
+  };
+
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
       {
@@ -409,6 +431,7 @@ const DBList = ({
       },
       {
         accessorKey: 'dbType',
+        enableGlobalFilter: false,
         header: () => t('Type'),
         cell: ({ row }) => (
           <Flex alignItems={'center'} gap={'6px'}>
@@ -631,7 +654,14 @@ const DBList = ({
     },
     // enableColumnPinning: true,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel()
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter: searchQuery
+    },
+    filterFns: {
+      global: globalFilterFn
+    },
+    globalFilterFn: globalFilterFn
   });
 
   const isClientSide = useClientSideValue(true);
@@ -671,9 +701,26 @@ const DBList = ({
           py={'2px'}
           minW={'34px'}
         >
-          {dbList.length}
+          {table.getFilteredRowModel().rows.length}
         </Center>
         <Box flex={1}></Box>
+        <InputGroup w={'200px'} h={'36px'} mr={'12px'}>
+          <InputLeftElement pointerEvents="none" h="full" alignItems="center">
+            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </InputLeftElement>
+          <Input
+            placeholder={t('search_name_and_remark_placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            border={'1px solid'}
+            borderColor={'grayModern.200'}
+            h={'36px'}
+            _focus={{
+              borderColor: 'brightBlue.500',
+              boxShadow: '0 0 0 1px var(--chakra-colors-brightBlue-500)'
+            }}
+          />
+        </InputGroup>
         <Button
           className="create-app-btn"
           minW={'95px'}
