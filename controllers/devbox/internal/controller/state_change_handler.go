@@ -71,7 +71,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 			h.Logger.Info("commit already in progress, skipping duplicate request", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
 			return nil
 		}
-		if err := h.commitDevbox(ctx, devbox); err != nil {
+		if err := h.commitDevbox(ctx, devbox, targetState); err != nil {
 			h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 			return err
 		}
@@ -87,7 +87,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 	return nil
 }
 
-func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox, targetState devboxv1alpha2.DevboxState) error {
 	// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 	// step 0: set commit status to committing to prevent duplicate requests
 	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusCommitting
@@ -139,7 +139,7 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusSuccess
 	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitTime = metav1.Now()
 	// step 3: update devbox status state to shutdown
-	devbox.Status.State = devboxv1alpha2.DevboxStateShutdown
+	devbox.Status.State = targetState
 	// step 4: add a new commit record for the new content id
 	// make sure that always have a new commit record for shutdown state
 	devbox.Status.ContentID = uuid.New().String()
