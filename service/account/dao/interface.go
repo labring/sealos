@@ -64,6 +64,7 @@ type Interface interface {
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 	GetUserID(ops types.UserQueryOpts) (string, error)
 	GetUserCrName(ops types.UserQueryOpts) (string, error)
+	GetNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, error)
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
 	UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, error)
@@ -95,6 +96,15 @@ type Interface interface {
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	RefundAmount(ref types.PaymentRefund, postDo func(types.PaymentRefund) error) error
 	CreateCorporate(corporate types.Corporate) error
+
+	// WorkspaceSubscription methods
+	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
+	ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error)
+	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
+	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)
+	GetWorkspaceSubscriptionPlanPrice(planName string, period types.SubscriptionPeriod) (*types.ProductPrice, error)
+	GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain string) (*types.WorkspaceSubscriptionTransaction, error)
+	CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transaction ...*types.WorkspaceSubscriptionTransaction) error
 }
 
 type Account struct {
@@ -134,6 +144,10 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
 	return account, nil
+}
+
+func (g *Cockroach) GetNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, error) {
+	return g.ck.GetNotificationRecipient(userUID)
 }
 
 func (g *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, error) {
@@ -1857,6 +1871,9 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoi
 		return
 	}
 	for i := range payments {
+		if payments[i].ChargeSource == types.ChargeSourceBalance {
+			continue
+		}
 		amount += payments[i].Amount
 		paymentIDs = append(paymentIDs, payments[i].ID)
 		invoicePayments = append(invoicePayments, types.InvoicePayment{

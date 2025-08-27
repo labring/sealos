@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,19 +55,24 @@ type Region struct {
 }
 
 var (
-	DBClient             Interface
-	EmailTmplMap         map[string]string
-	SMTPConfig           *utils.SMTPConfig
-	ClientIP             string
-	DeviceTokenID        string
-	PaymentService       *services.AtomPaymentService
-	PaymentCurrency      string
-	SubPlanResourceQuota map[string]corev1.ResourceList
-	JwtMgr               *utils.JWTManager
-	Cfg                  *Config
-	BillingTask          *helper.TaskQueue
-	FlushQuotaProcesser  *FlushQuotaTask
-	K8sManager           ctrl.Manager
+	DBClient              Interface
+	EmailTmplMap          map[string]string
+	SMTPConfig            *utils.SMTPConfig
+	ClientIP              string
+	DeviceTokenID         string
+	PaymentService        *services.AtomPaymentService
+	PaymentCurrency       string
+	SubPlanResourceQuota  map[string]corev1.ResourceList
+	WorkspacePlanResQuota map[string]corev1.ResourceList
+	JwtMgr                *utils.JWTManager
+	Cfg                   *Config
+	BillingTask           *helper.TaskQueue
+	FlushQuotaProcesser   *FlushQuotaTask
+	K8sManager            ctrl.Manager
+
+	// TODO: need init
+	UserContactProvider     usernotify.UserContactProvider
+	UserNotificationService usernotify.EventNotificationService
 
 	SendDebtStatusEmailBody map[types.DebtStatusType]string
 	//Debug                bool
@@ -175,6 +182,27 @@ func Init(ctx context.Context) error {
 			LocalDomain: Cfg.LocalRegionDomain,
 		}
 	}
+	workspacePlans, err := DBClient.GetWorkspaceSubscriptionPlanList()
+	if err != nil {
+		return fmt.Errorf("get workspace subscription plan list error: %v", err)
+	}
+	WorkspacePlanResQuota, err = resources.ParseResourceLimitWithPlans(workspacePlans)
+	if err != nil {
+		return fmt.Errorf("parse resource limit with workspace subscription error: %v", err)
+	}
+
+	notifyConfigStr := os.Getenv(helper.EnvNotifyConfig)
+	if notifyConfigStr == "" {
+		return fmt.Errorf("empty notify config, please check env: notify_config")
+	}
+
+	notifyConfig, err := usernotify.ParseConfigsWithJSON(notifyConfigStr)
+	if err != nil {
+		return fmt.Errorf("parse notify config error: %v", err)
+	}
+	UserContactProvider = usernotify.NewMemoryContactProvider()
+	UserNotificationService = usernotify.NewEventNotificationService(notifyConfig, UserContactProvider)
+
 	EmailTmplMap = map[string]string{
 		utils.EnvPaySuccessEmailTmpl: os.Getenv(utils.EnvPaySuccessEmailTmpl),
 		utils.EnvPayFailedEmailTmpl:  os.Getenv(utils.EnvPayFailedEmailTmpl),
@@ -205,6 +233,10 @@ func Init(ctx context.Context) error {
 	if err = SetupCache(K8sManager); err != nil {
 		return fmt.Errorf("setup cache error: %v", err)
 	}
+
+	// Initialize Stripe service if configured
+	services.InitStripeService()
+
 	go func() {
 		if err := K8sManager.Start(ctrl.SetupSignalHandler()); err != nil {
 			logrus.Errorf("unable to start manager: %v", err)
