@@ -3,7 +3,9 @@ import {
   applyDumpCR,
   deleteMigrateJobByName,
   getLogByNameAndContainerName,
-  getMigrateJobList
+  getMigrateJobList,
+  getMigratePodList,
+  getPodStatusByName
 } from '@/api/migrate';
 import { uploadFile } from '@/api/platform';
 import FileSelect from '@/components/FileSelect';
@@ -32,6 +34,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
+import { useMemo } from 'react';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -86,6 +89,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             if (!file.name.includes('.')) throw new Error('file name error');
             form.append('file', file, encodeURIComponent(file.name));
           });
+
           const result = await uploadFile(form, (e) => {
             if (!e.progress) return;
             const percent = Math.round(e.progress * 100);
@@ -113,7 +117,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           setMigrateName(res.name);
         } catch (error: any) {
           toast({
-            title: String(error),
+            title: t('file_upload_failed'),
             status: 'error'
           });
           closeMigrate();
@@ -126,7 +130,11 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           if (!!obj.message) {
             return obj.message;
           }
-          return deepSearch(Object.values(obj)[0]);
+          const values = Object.values(obj);
+          if (values.length > 0) {
+            return deepSearch(values[0]);
+          }
+          return t('submit_error');
         };
         toast({
           title: deepSearch(error),
@@ -164,22 +172,61 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         } else if (podStatus === 'Failed') {
           setMigrateStatus(MigrateStatusEnum.Fail);
         }
-        // setPodName(data[0].metadata.name);
       }
     }
   });
 
+  const { data: podList = [] } = useQuery(
+    ['getMigratePodList', migrateName],
+    () => getMigratePodList(migrateName, 'file'),
+    {
+      enabled: !!migrateName && migrateStatus === MigrateStatusEnum.Fail,
+      refetchInterval: 5000,
+      onSuccess(data) {
+        if (data && data.length > 0 && !podName) {
+          const podNameToSet = (data[0] as any).name || '';
+          setPodName(podNameToSet);
+        }
+      }
+    }
+  );
+
+  const { data: fullPodInfo } = useQuery(
+    ['getFullPodInfo', podName],
+    () => getPodStatusByName(podName),
+    {
+      enabled: !!podName && migrateStatus === MigrateStatusEnum.Fail,
+      onSuccess(data) {},
+      onError(error) {
+        console.error('Failed to get pod info:', error);
+      }
+    }
+  );
+
+  const containerName = useMemo(() => {
+    if (!fullPodInfo?.spec?.containers || fullPodInfo.spec.containers.length === 0) {
+      return 'migrate';
+    }
+
+    const firstContainer = fullPodInfo.spec.containers[0];
+    return firstContainer.name;
+  }, [fullPodInfo]);
+
   const { data: log = '' } = useQuery(
-    ['getLogByNameAndContainerName', podName],
+    ['getLogByNameAndContainerName', podName, containerName],
     () =>
       getLogByNameAndContainerName({
         podName: podName,
-        containerName: migrateName,
+        containerName: containerName,
         stream: false
       }),
     {
       refetchInterval: 5000,
-      enabled: !!podName && !!migrateName && migrateStatus === MigrateStatusEnum.Fail
+      enabled: !!podName && !!containerName && migrateStatus === MigrateStatusEnum.Fail,
+      onSuccess(data) {},
+      onError(error) {
+        console.error('Failed to get logs:', error);
+      }
     }
   );
 
@@ -187,7 +234,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     ['getDBService', db?.dbName, db?.dbType],
     () => (db ? getDatabases({ dbName: db.dbName, dbType: db.dbType }) : null),
     {
-      retry: 3
+      retry: 3,
+      select: (data) => data?.filter((dbName) => dbName !== 'Database') || []
     }
   );
 
@@ -352,7 +400,9 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                       fontSize={'14px'}
                       fontWeight={400}
                       color={'#7B838B'}
-                      dangerouslySetInnerHTML={{ __html: log ? log : 'have_error' }}
+                      dangerouslySetInnerHTML={{
+                        __html: log ? log : 'have_error'
+                      }}
                     ></Text>
                   </Flex>
                 )}
