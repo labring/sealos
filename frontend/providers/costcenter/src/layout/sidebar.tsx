@@ -1,20 +1,15 @@
-import dashbordIcon from '@/assert/dashboard.svg';
-import dashboard_a_icon from '@/assert/dashboard_black.svg';
-import letter_icon from '@/assert/format_letter_spacing_standard.svg';
-import letter_a_icon from '@/assert/format_letter_spacing_standard_black.svg';
-import invoice_a_icon from '@/assert/invoice-active.svg';
-import invoice_icon from '@/assert/invoice.svg';
-import layers_icon from '@/assert/layers.svg';
-import layers_a_icon from '@/assert/layers_black.svg';
-import linechart_icon from '@/assert/lineChart.svg';
-import linechart_a_icon from '@/assert/lineChart_black.svg';
-import receipt_icon from '@/assert/receipt_long.svg';
-import receipt_a_icon from '@/assert/receipt_long_black.svg';
+import {
+  Calculator,
+  ChartLine,
+  ChartPie,
+  Dock,
+  ReceiptText,
+  BarChart3,
+  LucideIcon
+} from 'lucide-react';
 import useEnvStore from '@/stores/env';
-import { Img } from '@chakra-ui/react';
 import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
-import type { StaticImageData } from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
@@ -22,8 +17,7 @@ type Menu = {
   id: string;
   url: string;
   value: string;
-  icon: StaticImageData;
-  aicon: StaticImageData;
+  icon: LucideIcon;
   display: boolean;
 };
 
@@ -36,57 +30,51 @@ export default function SideBar() {
       id: 'Plan',
       url: '/plan',
       value: 'SideBar.Plan',
-      icon: invoice_icon,
-      aicon: invoice_a_icon,
+      icon: Dock,
+      display: true
+    },
+    {
+      id: 'Billing',
+      url: '/billing',
+      value: 'SideBar.Billing',
+      icon: ChartLine,
       display: true
     },
     {
       id: 'Usage',
       url: '/usage',
       value: 'SideBar.Usage',
-      icon: invoice_icon,
-      aicon: invoice_a_icon,
+      icon: ChartPie,
       display: true
+    },
+    {
+      id: 'Invoice',
+      url: '/create_invoice',
+      value: 'SideBar.Invoice',
+      icon: ReceiptText,
+      display: invoiceEnabled
     },
     {
       id: 'CostOverview',
       url: '/cost_overview',
       value: 'SideBar.Index',
-      icon: dashbordIcon,
-      aicon: dashboard_a_icon,
+      icon: BarChart3,
       display: true
     },
     {
       id: 'BillingOverview',
       url: '/app_overview',
       value: 'SideBar.CostOverview',
-      icon: linechart_icon,
-      aicon: linechart_a_icon,
+      icon: ChartLine,
       display: true
     },
+
     {
-      id: 'BillingDetails',
-      url: '/billing',
-      value: 'SideBar.BillingDetails',
-      icon: receipt_icon,
-      aicon: receipt_a_icon,
-      display: true
-    },
-    {
-      id: 'ValuationStandard',
+      id: 'Pricing Standard',
       url: '/valuation',
-      value: 'SideBar.ValuationStandard',
-      icon: letter_icon,
-      aicon: letter_a_icon,
+      value: 'SideBar.PricingStandard',
+      icon: Calculator,
       display: true
-    },
-    {
-      id: 'CreateInvoice',
-      url: '/create_invoice',
-      value: 'SideBar.CreateInvoice',
-      icon: invoice_icon,
-      aicon: invoice_a_icon,
-      display: invoiceEnabled
     }
   ];
 
@@ -105,10 +93,9 @@ export default function SideBar() {
                 data-is-current-page={router.route === item.url}
               >
                 <Link href={item.url} className="flex items-center gap-2">
-                  <Img
-                    src={router.route == item.url ? item.aicon.src : item.icon.src}
-                    width={'16px'}
-                    alt="icon of module"
+                  <item.icon
+                    size={16}
+                    className={router.route === item.url ? 'text-zinc-900' : 'text-zinc-600'}
                   />
                   <span className="leading-normal">{t(item.value)}</span>
                 </Link>

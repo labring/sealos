@@ -92,7 +92,10 @@
     "Plan": "Plan",
     "Usage": "Usage",
     "ValuationStandard": "Pricing",
-    "resource_analysis": "Resource Analysis"
+    "resource_analysis": "Resource Analysis",
+    "PricingStandard": "Pricing Standard",
+    "Invoice": "Invoice",
+    "Billing": "Billing"
   },
   "Storage": "Storage",
   "Storage Amount": "Storage Amount",
@@ -243,7 +246,7 @@
   "quantity": "quantity",
   "region": "Region",
   "region_type": "region",
-  "remaining_balance": "Remaining Balance",
+  "remaining_balance": "Balance",
   "resource": "resource",
   "storage": "Storage",
   "time": "time",

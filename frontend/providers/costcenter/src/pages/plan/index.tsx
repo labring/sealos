@@ -510,7 +510,7 @@ export default function Plan() {
 export async function getServerSideProps({ locale }: { locale: string }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, ['zh', 'en']))
+      ...(await serverSideTranslations(locale, ['common', 'applist'], undefined, ['zh', 'en']))
     }
   };
 }
