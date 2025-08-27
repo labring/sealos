@@ -94,7 +94,10 @@
     "Plan": "套餐",
     "Usage": "用量",
     "ValuationStandard": "计价标准",
-    "resource_analysis": "资源分析"
+    "resource_analysis": "资源分析",
+    "PricingStandard": "计费标准",
+    "Invoice": "发票",
+    "Billing": "账单"
   },
   "Storage": "存储卷",
   "Storage Amount": "存储金额",
@@ -243,7 +246,7 @@
   "quantity": "数量",
   "region": "可用区",
   "region_type": "可用区",
-  "remaining_balance": "当前余额",
+  "remaining_balance": "余额",
   "resource": "资源",
   "storage": "存储卷",
   "time": "时间",
