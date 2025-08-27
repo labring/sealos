@@ -68,6 +68,11 @@ func ParseCardOperationReq(c *gin.Context) (*CardOperationReq, error) {
 	return req, nil
 }
 
+const (
+	STRIPE  = "STRIPE"
+	BALANCE = "BALANCE"
+)
+
 type SubscriptionOperatorReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information

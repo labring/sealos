@@ -73,7 +73,16 @@ func RegisterPayRouter() {
 		POST(helper.UseGiftCode, api.UseGiftCode).
 		POST(helper.UserUsage, api.UserUsage).
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
-		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo)
+		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo).
+		// WorkspaceSubscription routes
+		POST(helper.WorkspaceSubscriptionInfo, api.GetWorkspaceSubscriptionInfo).
+		POST(helper.WorkspaceSubscriptionList, api.GetWorkspaceSubscriptionList).
+		POST(helper.WorkspaceSubscriptionPlanList, api.GetWorkspaceSubscriptionPlanList).
+		POST(helper.WorkspaceSubscriptionLastTransaction, api.GetLastWorkspaceSubscriptionTransaction).
+		POST(helper.WorkspaceSubscriptionUpgradeAmount, api.GetWorkspaceSubscriptionUpgradeAmount).
+		POST(helper.WorkspaceSubscriptionPay, api.CreateWorkspaceSubscriptionPay).
+		POST(helper.WorkspaceSubscriptionNotify, api.NewWorkspaceSubscriptionNotifyHandler).
+		POST(helper.WorkspaceSubscriptionPortalSession, api.CreateWorkspaceSubscriptionPortalSession)
 	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).

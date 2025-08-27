@@ -670,3 +670,116 @@ func ParseAdminFlushDebtResourceStatusReq(c *gin.Context) (*AdminFlushDebtResour
 	}
 	return flushDebtResourceStatus, nil
 }
+
+// WorkspaceSubscription request structures
+type WorkspaceSubscriptionOperatorReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Workspace name
+	// @Description Workspace name
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain
+	// @JSONSchema required
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+
+	// @Summary Plan name
+	// @Description Plan name
+	// @JSONSchema required
+	PlanName string `json:"planName" bson:"planName" binding:"required" example:"premium"`
+
+	// @Summary Subscription period
+	// @Description Subscription period (1m for monthly, 1y for yearly)
+	// @JSONSchema required
+	Period types.SubscriptionPeriod `json:"period" bson:"period" binding:"required" example:"1m"`
+
+	// @Summary Payment method
+	// @Description Payment method (STRIPE, BALANCE)
+	// @JSONSchema required
+	PayMethod types.PaymentMethod `json:"payMethod" bson:"payMethod" binding:"required" example:"STRIPE"`
+
+	// @Summary Subscription operator (created/upgraded/downgraded/canceled/renewed)
+	// @Description Subscription operator type
+	Operator types.SubscriptionOperator `json:"operator" bson:"operator" binding:"required" example:"created"`
+
+	// @Summary Card ID (optional for stripe payments)
+	// @Description Card ID for stripe payments
+	CardID *uuid.UUID `json:"cardId,omitempty" bson:"cardId,omitempty"`
+}
+
+type WorkspaceSubscriptionInfoReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Workspace name
+	// @Description Workspace name
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain
+	// @JSONSchema required
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+}
+
+type WorkspaceSubscriptionUpgradeAmountReq struct {
+	WorkspaceSubscriptionOperatorReq `json:",inline" bson:",inline"`
+}
+
+func ParseWorkspaceSubscriptionOperatorReq(c *gin.Context) (*WorkspaceSubscriptionOperatorReq, error) {
+	req := &WorkspaceSubscriptionOperatorReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if req.Workspace == "" {
+		return nil, fmt.Errorf("workspace cannot be empty")
+	}
+	if req.RegionDomain == "" {
+		return nil, fmt.Errorf("regionDomain cannot be empty")
+	}
+	if req.PlanName == "" {
+		return nil, fmt.Errorf("planName cannot be empty")
+	}
+	if req.PayMethod == "" {
+		return nil, fmt.Errorf("payMethod cannot be empty")
+	}
+	if req.Period == "" {
+		req.Period = types.SubscriptionPeriodMonthly
+	}
+	if req.Operator == "" {
+		return nil, fmt.Errorf("operator cannot be empty")
+	}
+	// Validate operator type - only allow specific operations
+	switch req.Operator {
+	case types.SubscriptionTransactionTypeCreated,
+		types.SubscriptionTransactionTypeUpgraded,
+		types.SubscriptionTransactionTypeDowngraded,
+		types.SubscriptionTransactionTypeCanceled,
+		types.SubscriptionTransactionTypeRenewed:
+		// Valid operations
+	default:
+		return nil, fmt.Errorf("invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed", req.Operator)
+	}
+	return req, nil
+}
+
+func ParseWorkspaceSubscriptionInfoReq(c *gin.Context) (*WorkspaceSubscriptionInfoReq, error) {
+	req := &WorkspaceSubscriptionInfoReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if req.Workspace == "" {
+		return nil, fmt.Errorf("workspace cannot be empty")
+	}
+	if req.RegionDomain == "" {
+		return nil, fmt.Errorf("regionDomain cannot be empty")
+	}
+	return req, nil
+}
