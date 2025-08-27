@@ -107,7 +107,9 @@ const (
 	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
 	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
 
-	InitAccountTimeAnnotation = "user.sealos.io/init-account-time"
+	InitAccountTimeAnnotation   = "user.sealos.io/init-account-time"
+	WorkspaceStatusAnnotation   = "user.sealos.io/workspace-status"
+	WorkspaceStatusSubscription = "subscription"
 )
 
 var SubscriptionEnabled = false
@@ -159,7 +161,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// This is only used to monitor and initialize user resource creation data,
 		// determine the resource quota created by the owner user and the resource quota initialized by the account user,
 		// and only the resource quota created by the team user
-		_, err = r.syncAccount(ctx, owner, "ns-"+user.Name)
+		_, err = r.syncAccount(ctx, user)
 		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(r.SkipExpiredUserTimeDuration).Before(time.Now()) {
 			return ctrl.Result{}, nil
 		}
@@ -175,19 +177,20 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userNamespace string) (account *pkgtypes.Account, err error) {
+func (r *AccountReconciler) syncAccount(ctx context.Context, userCr *userv1.User) (account *pkgtypes.Account, err error) {
+	owner := userCr.Annotations[userv1.UserAnnotationOwnerKey]
+	userNamespace := "ns-" + userCr.Name
 	//if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
 	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
 	//}
+	user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: owner, IgnoreEmpty: true})
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
 	if getUsername(userNamespace) == owner {
-		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: owner, IgnoreEmpty: true})
-		if err != nil {
-			return nil, err
-		}
-		if user == nil {
-			return nil, gorm.ErrRecordNotFound
-		}
-
 		account, err = r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
 		if err != nil {
 			return nil, err
@@ -196,9 +199,14 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 			return nil, fmt.Errorf("sync user debt failed: %v", err)
 		}
 	}
-	if err = r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
-		//r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
-		return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+	if userCr.Annotations != nil && userCr.Annotations[WorkspaceStatusAnnotation] == WorkspaceStatusSubscription {
+		if err := r.syncSubscriptionWorkspaceResourceQuotaAndLimitRange(ctx, user.UID, userNamespace); err != nil {
+			return nil, fmt.Errorf("sync subscription workspace resource quota and limit range failed: %v", err)
+		}
+	} else {
+		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
+			return nil, fmt.Errorf("sync user namespace resource quota and limit range failed: %v", err)
+		}
 	}
 	return
 }
@@ -296,7 +304,23 @@ func convertDebtStatus(statusType accountv1.DebtStatusType) pkgtypes.DebtStatusT
 	}
 }
 
-func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, _, nsName string) error {
+func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
+	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
+	for i := range objs {
+		err := retry.Retry(10, 1*time.Second, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
+				return nil
+			})
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
+		}
+	}
+	return nil
+}
+
+func (r *AccountReconciler) syncSubscriptionWorkspaceResourceQuotaAndLimitRange(ctx context.Context, userUID uuid.UUID, nsName string) error {
 	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName))}
 	for i := range objs {
 		err := retry.Retry(10, 1*time.Second, func() error {
@@ -309,22 +333,15 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
 		}
 	}
-	plan, err := r.AccountV2.GetWorkspaceSubscriptionPlan(types.FreeSubscriptionPlanName)
-	if err != nil {
-		return fmt.Errorf("get workspace subscription plan failed: %v", err)
+	// determine that each user subscribes only once
+	err := r.AccountV2.GetGlobalDB().Where(&types.WorkspaceSubscription{UserUID: userUID}).First(&types.WorkspaceSubscription{}).Error
+	if err == nil {
+		// If already have other subscription Spaces, just create WorkspaceSubscription and set the quota to 0
+		return r.handlerNoTrialInitialWorkspaceSubscription(ctx, userUID, nsName)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("check user workspace subscription existence failed: %v", err)
 	}
-	r.Logger.Info("get workspace subscription plan", "plan", plan)
-	// TODO Check if the quota exists. If it doesn't, treat it as a new space and create a space subscription
-	err = r.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
-		return r.handleWorkspaceSubscriptionCreated(ctx, tx, &types.WorkspaceSubscriptionTransaction{
-			ID:           plan.ID,
-			Workspace:    nsName,
-			RegionDomain: r.localDomain,
-			Operator:     types.SubscriptionTransactionTypeCreated,
-			NewPlanName:  plan.Name,
-			Period:       "14d",
-		})
-	})
+	err = r.handleProbationPeriodWorkspaceSubscription(ctx, userUID, nsName)
 	if err != nil {
 		return fmt.Errorf("handle workspace subscription created failed: %v", err)
 	}
@@ -439,7 +456,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		r.workspaceSubPlansResourceLimit = res
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
 	}
-	r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
+	//r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		WithOptions(rateOpts).
