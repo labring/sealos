@@ -42,7 +42,7 @@ function Billing() {
               <CostPanel />
             </CostTree>
 
-            <PAYGAppBillingDrawer open={true} />
+            <PAYGAppBillingDrawer open={false} />
           </div>
         </TabsContent>
 
