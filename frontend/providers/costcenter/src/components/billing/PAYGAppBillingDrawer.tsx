@@ -127,10 +127,7 @@ export function PAYGAppBillingDrawer({ open }: { open: boolean }) {
           const endTime = format(addHours(row.time, 1), 'HH:mm');
           const timeStr = `${startTime} - ${endTime}`;
           return (
-            <div
-              className="bg-zinc-50 text-gray-900 py-2 px-4 font-medium"
-              style={{ gridColumn: '1 / -1' }}
-            >
+            <div className="bg-zinc-50 text-gray-900 font-normal" style={{ gridColumn: '1 / -1' }}>
               {timeStr}
             </div>
           );
@@ -330,32 +327,36 @@ export function PAYGAppBillingDrawer({ open }: { open: boolean }) {
                   const rowData = row.original;
                   const isSeparator = 'type' in rowData && rowData.type === 'separator';
 
-                  if (isSeparator) {
-                    const startTime = format(rowData.time, 'yyyy-MM-dd HH:mm');
-                    const endTime = format(addHours(rowData.time, 1), 'HH:mm');
-                    const timeStr = `${startTime} - ${endTime}`;
-                    return (
-                      <TableRow key={row.id}>
-                        <TableCell colSpan={999} className="bg-zinc-50 text-gray-900 font-medium">
-                          {timeStr}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }
-
                   return (
-                    <TableRow key={row.id} className="h-14">
-                      {row.getVisibleCells().map((cell, index) => (
-                        <TableCell
-                          key={cell.id}
-                          className={cn(
-                            index > 0 && index % 2 === 1 && 'border-l',
-                            index > 0 && index % 2 === 0 && 'border-r'
-                          )}
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
+                    <TableRow key={row.id} className={cn({ 'h-14': !isSeparator })}>
+                      {row.getVisibleCells().map((cell, index) => {
+                        if (isSeparator) {
+                          // Only the first cell in separator row is useful.
+                          if (index !== 0) return null;
+
+                          return (
+                            <TableCell
+                              key={row.id}
+                              colSpan={999}
+                              className="bg-zinc-50 text-gray-900 font-normal"
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          );
+                        }
+
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            className={cn(
+                              index > 0 && index % 2 === 1 && 'border-l',
+                              index > 0 && index % 2 === 0 && 'border-r'
+                            )}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   );
                 })}
