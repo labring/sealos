@@ -1735,7 +1735,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 
 func (c *Cockroach) InitTables() error {
 	enumTypes := []string{
-		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION')`,
+		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION')`,
 		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed')`,
 		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed')`,
 		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
@@ -1757,6 +1757,10 @@ func (c *Cockroach) InitTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
+	err = CreateTableIfNotExist(c.Localdb, types.WorkspaceSubscriptionPlan{}, types.ProductPrice{})
+	if err != nil {
+		return fmt.Errorf("failed to create table in local db: %v", err)
+	}
 	err = c.DB.Exec(`
 		CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);`).Error
 	if err != nil {
@@ -1770,6 +1774,22 @@ func (c *Cockroach) InitTables() error {
 		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "activityType" TEXT;`, gorm.Expr(tableName)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column activityType: %v", err)
+		}
+	}
+	if !c.DB.Migrator().HasColumn(&types.Payment{}, "workspace_subscription_id") {
+		fmt.Println("add column workspace_subscription_id")
+		tableName := types.Payment{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "workspace_subscription_id" uuid;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column workspace_subscription_id: %v", err)
+		}
+	}
+	if !c.DB.Migrator().HasColumn(&types.PaymentOrder{}, "workspace_subscription_id") {
+		fmt.Println("add column workspace_subscription_id to PaymentOrder")
+		tableName := types.PaymentOrder{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "workspace_subscription_id" uuid;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column workspace_subscription_id to PaymentOrder: %v", err)
 		}
 	}
 

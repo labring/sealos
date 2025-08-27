@@ -1,6 +1,7 @@
 package types
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"time"
 
@@ -24,10 +25,40 @@ type PaymentRaw struct {
 	ActivityType ActivityType `gorm:"type:text;column:activityType"`
 	Message      string       `gorm:"type:text;not null"`
 	//TODO 初始化判断 新加字段
-	CardUID      *uuid.UUID    `gorm:"type:uuid"`
-	Type         PaymentType   `gorm:"type:text"` // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
-	ChargeSource ChargeSource  `gorm:"type:text"`
-	Status       PaymentStatus `gorm:"type:text;column:status;not null"`
+	CardUID                 *uuid.UUID    `gorm:"type:uuid"`
+	Type                    PaymentType   `gorm:"type:text"`                        // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
+	ChargeSource            ChargeSource  `gorm:"type:text"`                        // 支付来源: 余额支付, 新卡支付, 绑卡支付, Stripe支付
+	Status                  PaymentStatus `gorm:"type:text;column:status;not null"` // 支付状态: PAID, REFUNDED
+	WorkspaceSubscriptionID *uuid.UUID    `gorm:"type:uuid;column:workspace_subscription_id;not null"`
+	Stripe                  *StripePay    `gorm:"column:stripe;type:json"` // Stripe 相关信息
+}
+
+type StripePay struct {
+	SubscriptionID string `json:"subscriptionId"`
+	CustomerID     string `json:"customerId"`
+}
+
+func (s *StripePay) Value() (driver.Value, error) {
+	if s == nil {
+		return nil, nil
+	}
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return string(data), nil
+}
+
+func (s *StripePay) Scan(value interface{}) error {
+	if value == nil {
+		*s = StripePay{}
+		return nil
+	}
+	sv, ok := value.(string)
+	if !ok {
+		return driver.ErrBadConn
+	}
+	return json.Unmarshal([]byte(sv), s)
 }
 
 type ChargeSource string
@@ -36,6 +67,7 @@ const (
 	ChargeSourceBalance  ChargeSource = "BALANCE"
 	ChargeSourceNewCard  ChargeSource = "CARD"
 	ChargeSourceBindCard ChargeSource = "BIND_CARD"
+	ChargeSourceStripe   ChargeSource = "STRIPE" // Stripe 相关支付
 )
 
 type PaymentOrder struct {

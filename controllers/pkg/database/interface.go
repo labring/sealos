@@ -101,6 +101,7 @@ type AccountV2 interface {
 	GetLocalDB() *gorm.DB
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
+	GetNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, error)
 	GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error)
 	GetUserID(ops *types.UserQueryOpts) (string, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
@@ -123,6 +124,7 @@ type AccountV2 interface {
 	NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts) (*types.Account, error)
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)
+	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
 	Payment(payment *types.Payment) error
 	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
