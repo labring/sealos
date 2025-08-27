@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { CostTree } from '@/components/billing/CostTree';
 import { CostPanel } from '@/components/billing/CostPanel';
+import { PAYGAppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
 
 function Billing() {
   const { t } = useTranslation();
@@ -40,6 +41,8 @@ function Billing() {
             <CostTree>
               <CostPanel />
             </CostTree>
+
+            <PAYGAppBillingDrawer open={true} />
           </div>
         </TabsContent>
 
