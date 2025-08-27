@@ -51,7 +51,14 @@ type PAYGBillingDetail = {
 
 type TableRowData = PAYGBillingDetail | { type: 'separator'; time: Date };
 
-export function PAYGAppBillingDrawer({ open }: { open: boolean }) {
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  appType: string;
+  namespace: string;
+};
+
+export function PAYGAppBillingDrawer({ open, onOpenChange }: Props) {
   // Mock data - replace with actual data
   const mockData: PAYGBillingDetail[] = useMemo(
     () => [
@@ -268,7 +275,7 @@ export function PAYGAppBillingDrawer({ open }: { open: boolean }) {
   });
 
   return (
-    <Drawer open={open}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="w-fit sm:max-w-[calc(100vw-24px)]">
         <DrawerHeader className="pr-14">
           <DrawerTitle className="flex items-center gap-8 justify-between w-full">
