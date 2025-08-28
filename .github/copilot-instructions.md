@@ -2,6 +2,8 @@
 
 Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
 
+> **Note**: These instructions are specifically designed for GitHub Copilot coding agents to work effectively with the sealos codebase.
+
 ## Working Effectively
 
 ### Prerequisites and Dependencies
