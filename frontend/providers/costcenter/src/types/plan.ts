@@ -92,6 +92,15 @@ export const SubscriptionTransactionSchema = z.object({
 });
 export type SubscriptionTransaction = z.infer<typeof SubscriptionTransactionSchema>;
 
+// Payment records
+export const PaymentRecordSchema = z.object({
+  Time: z.iso.datetime(),
+  Amount: z.number(),
+  PlanName: z.string(),
+  Operator: z.string()
+});
+export type PaymentRecord = z.infer<typeof PaymentRecordSchema>;
+
 // 请求类型
 export const WorkspaceSubscriptionRequestSchema = z.object({
   workspace: z.string(),
@@ -116,6 +125,13 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
 });
 export type SubscriptionPayRequest = z.infer<typeof SubscriptionPayRequestSchema>;
 
+export const PaymentListRequestSchema = z.object({
+  startTime: z.iso.datetime(),
+  endTime: z.iso.datetime(),
+  regionUid: z.string()
+});
+export type PaymentListRequest = z.infer<typeof PaymentListRequestSchema>;
+
 // 响应类型
 export const SubscriptionInfoResponseSchema = z.object({
   subscription: WorkspaceSubscriptionSchema
@@ -126,6 +142,11 @@ export const PlanListResponseSchema = z.object({
   plans: z.array(SubscriptionPlanSchema)
 });
 export type PlanListResponse = z.infer<typeof PlanListResponseSchema>;
+
+export const PaymentListResponseSchema = z.object({
+  payments: z.array(PaymentRecordSchema)
+});
+export type PaymentListResponse = z.infer<typeof PaymentListResponseSchema>;
 
 export const LastTransactionResponseSchema = z.object({
   transaction: SubscriptionTransactionSchema.optional()

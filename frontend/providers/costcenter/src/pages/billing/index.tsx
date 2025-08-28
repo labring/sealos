@@ -28,6 +28,7 @@ import { DateRange } from 'react-day-picker';
 import { Region } from '@/types/region';
 import { ApiResp, AppOverviewBilling, APPBillingItem } from '@/types';
 import useOverviewStore from '@/stores/overview';
+import { getPaymentList } from '@/api/plan';
 
 function Billing() {
   const { t } = useTranslation();
@@ -135,6 +136,21 @@ function Billing() {
     keepPreviousData: false,
     queryKey: ['appOverviewBilling', appOverviewQueryBody, page, pageSize],
     enabled: !!currentRegionUid && !!selectedRegion
+  });
+
+  // ! ======================================== Still needs waiting for upstream
+  // Query payment data for the selected region
+  const paymentListQueryBody = useMemo(() => {
+    return {
+      endTime: effectiveEndTime,
+      startTime: effectiveStartTime,
+      regionUid: currentRegionUid
+    };
+  }, [effectiveEndTime, effectiveStartTime, currentRegionUid]);
+  const { data: paymentListData } = useQuery({
+    queryFn: () => getPaymentList(queryBody),
+    queryKey: ['paymentList', queryBody],
+    enabled: !!currentRegionUid
   });
 
   // Sync date range with store values when they change
