@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import useAppTypeStore from '@/stores/appType';
+import { DateRange } from 'react-day-picker';
 
 import { Region } from '@/types/region';
 import { ApiResp, AppOverviewBilling, APPBillingItem } from '@/types';
@@ -40,6 +41,18 @@ function Billing() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
+
+  // Date range state for the main billing view
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(startTime),
+    to: new Date(endTime)
+  });
+
+  // Date range state for the app billing drawer
+  const [appDateRange, setAppDateRange] = useState<{ from: Date; to: Date } | undefined>({
+    from: new Date(startTime),
+    to: new Date(endTime)
+  });
 
   // App billing drawer states
   const [appBillingPage, setAppBillingPage] = useState(1);
@@ -63,9 +76,17 @@ function Billing() {
     return getRegion()?.uid || '';
   }, [selectedRegion, getRegion]);
 
+  // Use date range from picker if available, otherwise fall back to store values
+  const effectiveStartTime = dateRange?.from
+    ? dateRange.from.toISOString()
+    : new Date(startTime).toISOString();
+  const effectiveEndTime = dateRange?.to
+    ? dateRange.to.toISOString()
+    : new Date(endTime).toISOString();
+
   const queryBody = {
-    startTime,
-    endTime,
+    startTime: effectiveStartTime,
+    endTime: effectiveEndTime,
     regionUid: currentRegionUid
   };
 
@@ -79,8 +100,8 @@ function Billing() {
   // Query app overview billing data for the selected workspace
   const appOverviewQueryBody = useMemo(() => {
     return {
-      endTime,
-      startTime,
+      endTime: effectiveEndTime,
+      startTime: effectiveStartTime,
       regionUid: currentRegionUid,
       // Not supports filtering apps for now.
       appType: '',
@@ -89,7 +110,7 @@ function Billing() {
       page,
       pageSize
     };
-  }, [endTime, startTime, currentRegionUid, selectedWorkspace, page, pageSize]);
+  }, [effectiveEndTime, effectiveStartTime, currentRegionUid, selectedWorkspace, page, pageSize]);
 
   const { data: appOverviewData, refetch: refetchAppOverview } = useQuery({
     queryFn() {
@@ -116,10 +137,22 @@ function Billing() {
     enabled: !!currentRegionUid && !!selectedRegion
   });
 
+  // Sync date range with store values when they change
+  useEffect(() => {
+    setDateRange({
+      from: new Date(startTime),
+      to: new Date(endTime)
+    });
+    setAppDateRange({
+      from: new Date(startTime),
+      to: new Date(endTime)
+    });
+  }, [startTime, endTime]);
+
   // Reset pagination on search change
   useEffect(() => {
     setPage(1);
-  }, [selectedRegion, selectedWorkspace, endTime, startTime]);
+  }, [selectedRegion, selectedWorkspace, effectiveEndTime, effectiveStartTime]);
 
   // Transform data to BillingNode format
   const nodes: BillingNode[] = useMemo(() => {
@@ -260,9 +293,14 @@ function Billing() {
   const appBillingQueryBody = useMemo(() => {
     if (!selectedApp) return null;
 
+    const drawerStartTime = appDateRange?.from
+      ? appDateRange.from.toISOString()
+      : effectiveStartTime;
+    const drawerEndTime = appDateRange?.to ? appDateRange.to.toISOString() : effectiveEndTime;
+
     return {
-      endTime,
-      startTime,
+      endTime: drawerEndTime,
+      startTime: drawerStartTime,
       regionUid: currentRegionUid,
       appType: selectedApp.appType, // Use the string appType ID (e.g., "DB")
       appName: selectedApp.appName,
@@ -270,7 +308,15 @@ function Billing() {
       page: appBillingPage,
       pageSize: appBillingPageSize
     };
-  }, [selectedApp, endTime, startTime, currentRegionUid, appBillingPage, appBillingPageSize]);
+  }, [
+    selectedApp,
+    appDateRange,
+    effectiveStartTime,
+    effectiveEndTime,
+    currentRegionUid,
+    appBillingPage,
+    appBillingPageSize
+  ]);
 
   const { data: appBillingData } = useQuery({
     queryFn() {
@@ -360,7 +406,7 @@ function Billing() {
         <TabsContent value="listing" className="h-full overflow-hidden">
           <div className="flex flex-col h-full border rounded-2xl overflow-hidden">
             <div className="border-b bg-white px-6 py-3">
-              <DateRangePicker className="w-fit" />
+              <DateRangePicker className="w-fit" value={dateRange} onChange={setDateRange} />
             </div>
 
             <CostTree
@@ -375,8 +421,8 @@ function Billing() {
                 {paygData.length > 0 && selectedRegion && (
                   <PAYGCostTable
                     data={paygData}
-                    timeRange={`${new Date(startTime).toLocaleDateString()} – ${new Date(
-                      endTime
+                    timeRange={`${new Date(effectiveStartTime).toLocaleDateString()} – ${new Date(
+                      effectiveEndTime
                     ).toLocaleDateString()}`}
                     onUsageClick={handleUsageClick}
                   />
@@ -399,6 +445,8 @@ function Billing() {
               pageSize={appBillingPageSize}
               totalCount={appBillingTotalItem}
               onPageChange={setAppBillingPage}
+              dateRange={appDateRange}
+              onDateRangeChange={setAppDateRange}
               onOpenApp={() => {
                 // Handle open app logic
                 console.log('Open app:', selectedApp?.appName);

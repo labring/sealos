@@ -10,22 +10,40 @@ import { Button } from './button';
 import { Calendar } from './calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
+interface DateRangePickerProps {
+  placeholder?: string;
+  variant?: React.ComponentProps<typeof Button>['variant'];
+  buttonClassName?: React.ComponentProps<typeof Button>['className'];
+  dateFormat?: string;
+  className?: string;
+  value?: DateRange;
+  onChange?: (date: DateRange | undefined) => void;
+}
+
 export function DateRangePicker({
   placeholder,
   variant = 'outline',
   buttonClassName,
   dateFormat = 'yyyy-MM-dd',
-  className
-}: React.HTMLAttributes<HTMLDivElement> & {
-  placeholder?: string;
-  variant?: React.ComponentProps<typeof Button>['variant'];
-  buttonClassName?: React.ComponentProps<typeof Button>['className'];
-  dateFormat?: string;
-}) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
+  className,
+  value,
+  onChange
+}: DateRangePickerProps) {
+  const [internalDate, setInternalDate] = React.useState<DateRange | undefined>({
     from: new Date(),
     to: addDays(new Date(), 20)
   });
+
+  // Use controlled value if provided, otherwise use internal state
+  const date = value !== undefined ? value : internalDate;
+
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    if (onChange) {
+      onChange(newDate);
+    } else {
+      setInternalDate(newDate);
+    }
+  };
 
   return (
     <div className={cn('grid gap-2', className)}>
@@ -56,11 +74,10 @@ export function DateRangePicker({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
-            initialFocus
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateChange}
             numberOfMonths={2}
           />
         </PopoverContent>
