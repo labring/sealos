@@ -21,8 +21,8 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import DetailsIcon from '../icons/DetailsIcon';
-import { AppImg } from './BaseTable';
 import { BillingDetailsTable } from './billingTable';
+import { AppIcon } from '../AppIcon';
 
 export default function BillingDetails({
   namespace,
@@ -140,7 +140,7 @@ export function BillingDetailsModal({
           alignItems={'center'}
           gap={'10px'}
         >
-          <AppImg app_type={query.appType} boxSize={'24px'}></AppImg>
+          <AppIcon app={query.appType} className={{ avatar: 'size-6' }} />
           <Text>{query.appName}</Text>
         </ModalHeader>
         <ModalCloseButton />
