@@ -124,5 +124,4 @@ enum TagType {
   PROGRAMMING_LANGUAGE
   USE_CASE
   OS
-  MCP
 }
