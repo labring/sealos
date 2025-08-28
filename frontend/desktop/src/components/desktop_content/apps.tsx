@@ -30,7 +30,7 @@ import {
   useState
 } from 'react';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
