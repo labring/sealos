@@ -62,6 +62,8 @@ type Props = {
   totalCount: number;
   onPageChange: (page: number) => void;
   onOpenApp: () => void;
+  dateRange?: { from: Date; to: Date };
+  onDateRangeChange?: (range: { from: Date; to: Date } | undefined) => void;
 };
 
 export function PAYGAppBillingDrawer({
@@ -72,14 +74,16 @@ export function PAYGAppBillingDrawer({
   appName,
   appIcon,
   appType,
-  namespace,
+  namespace: _namespace,
   region,
   currentPage,
   totalPages,
   pageSize,
   totalCount,
   onPageChange,
-  onOpenApp
+  onOpenApp,
+  dateRange,
+  onDateRangeChange
 }: Props) {
   const { t } = useTranslation('applist');
 
@@ -321,7 +325,16 @@ export function PAYGAppBillingDrawer({
                 <Badge variant="secondary">Hourly</Badge>
               </div>
               <div>
-                <DateRangePicker />
+                <DateRangePicker
+                  value={dateRange ? { from: dateRange.from, to: dateRange.to } : undefined}
+                  onChange={(range) => {
+                    if (range?.from && range?.to && onDateRangeChange) {
+                      onDateRangeChange({ from: range.from, to: range.to });
+                    } else if (!range && onDateRangeChange) {
+                      onDateRangeChange(undefined);
+                    }
+                  }}
+                />
               </div>
             </TableLayoutCaption>
 
