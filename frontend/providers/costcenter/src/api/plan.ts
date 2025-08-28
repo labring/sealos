@@ -8,13 +8,25 @@ import {
   UpgradeAmountResponse,
   SubscriptionPayRequest,
   PaymentResponse,
-  WorkspaceSubscriptionListResponse
+  WorkspaceSubscriptionListResponse,
+  PaymentListResponse,
+  PaymentListRequest
 } from '@/types/plan';
 
 // Get all subscription plans
 export const getPlanList = () =>
   request<any, ApiResp<PlanListResponse>>('/api/plan/list', {
     method: 'POST'
+  });
+
+/**
+ * Get subscription payment records list.
+ * @returns payment records
+ */
+export const getPaymentList = (data: PaymentListRequest) =>
+  request<any, ApiResp<PaymentListResponse>>('/api/plan/payment-list', {
+    method: 'POST',
+    data
   });
 
 // Get current workspace subscription info
