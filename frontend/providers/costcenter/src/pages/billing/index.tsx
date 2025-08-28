@@ -367,18 +367,22 @@ function Billing() {
       usage: {
         // Map from used and used_amount arrays based on resource type indices
         // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
-        cpu: item.used['0'] ? { amount: item.used['0'], cost: item.used_amount['0'] } : undefined,
-        memory: item.used['1']
+        cpu: item?.used?.['0']
+          ? { amount: item.used['0'], cost: item.used_amount['0'] }
+          : undefined,
+        memory: item?.used?.['1']
           ? { amount: item.used['1'], cost: item.used_amount['1'] }
           : undefined,
-        storage: item.used['2']
+        storage: item?.used?.['2']
           ? { amount: item.used['2'], cost: item.used_amount['2'] }
           : undefined,
-        network: item.used['3']
+        network: item?.used?.['3']
           ? { amount: item.used['3'], cost: item.used_amount['3'] }
           : undefined,
-        port: item.used['4'] ? { amount: item.used['4'], cost: item.used_amount['4'] } : undefined,
-        gpu: item.used['5'] ? { amount: item.used['5'], cost: item.used_amount['5'] } : undefined
+        port: item?.used?.['4']
+          ? { amount: item.used['4'], cost: item.used_amount['4'] }
+          : undefined,
+        gpu: item?.used?.['5'] ? { amount: item.used['5'], cost: item.used_amount['5'] } : undefined
       }
     }));
   }, [appBillingData, getAppTypeString]);
@@ -436,7 +440,8 @@ function Billing() {
               onOpenChange={setDetailsDrawerOpen}
               appType={selectedApp?.appType || ''}
               namespace={selectedApp?.namespace || ''}
-              hasSubApps={false}
+              // ! ============================================ We also need data with sub apps
+              hasSubApps={selectedApp?.appType === 'APP-STORE'}
               data={appBillingDetails}
               appName={selectedApp?.appName || 'Unknown App'}
               appIcon={selectedApp?.avatarFallback ?? 'A'}
