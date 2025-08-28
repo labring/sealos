@@ -1,3 +1,15 @@
+# Issues translator workflow - temporarily disabled
+# 
+# This workflow is temporarily disabled because it requires an external bot
+# to join the repository with proper permissions to function correctly.
+# The current setup using GITHUB_TOKEN has insufficient permissions.
+#
+# To re-enable this workflow:
+# 1. Set up a bot account or obtain a personal access token with proper permissions
+# 2. Add the token as a repository secret (e.g., BOT_GITHUB_TOKEN)
+# 3. Update the workflow to use the new token
+# 4. Remove the "if: false" condition below
+#
 name: 'Github Rebot for issues-translator'
 on:
   issues:
@@ -6,6 +18,8 @@ on:
     types: [ created ]
 jobs:
   translate:
+    # Temporarily disabled - requires external bot setup
+    if: false
     permissions:
       issues: write
       discussions: write
