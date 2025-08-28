@@ -25,6 +25,7 @@ import { useMemo } from 'react';
 import { format, addHours } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
+import { AppType } from '@/types/app';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -154,7 +155,7 @@ export function PAYGAppBillingDrawer({
           return (
             <div className="flex gap-2 items-center">
               <AppIcon
-                app={'appType' in row ? row.appType : 'OTHER'}
+                app={'appType' in row ? row.appType : AppType.OTHER}
                 className={{ avatar: 'size-5' }}
               />
               <span>{info.getValue()}</span>
