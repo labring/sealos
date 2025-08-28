@@ -15,7 +15,7 @@ import { ChakraIndicator } from './ChakraIndicator';
 // import Apps from './apps';
 import Assistant from './assistant';
 import IframeWindow from './iframe_window';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import Monitor from './monitor';
 import SearchBox from './searchBox';
 import Warn from './warn';
