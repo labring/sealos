@@ -10,12 +10,14 @@ import {
   TableLayoutBody
 } from '@sealos/shadcn-ui/table-layout';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { useTranslation } from 'next-i18next';
 
 export type PAYGData = {
   appName: string;
-  appType: string;
+  appType: string; // String ID for both display and API queries (e.g., "DB")
   cost: number;
   avatarFallback?: string;
+  namespace?: string;
 };
 
 type PAYGCostTableProps = {
@@ -25,6 +27,8 @@ type PAYGCostTableProps = {
 };
 
 export function PAYGCostTable({ data, timeRange, onUsageClick }: PAYGCostTableProps) {
+  const { t } = useTranslation('applist');
+
   const PAYGRow = ({ item }: { item: PAYGData }) => (
     <TableRow>
       <TableCell>
@@ -39,7 +43,7 @@ export function PAYGCostTable({ data, timeRange, onUsageClick }: PAYGCostTablePr
       </TableCell>
       <TableCell>
         <Badge variant="secondary" className={cn('font-medium')}>
-          {item.appType}
+          {t(item.appType)}
         </Badge>
       </TableCell>
       <TableCell>${item.cost}</TableCell>
