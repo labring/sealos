@@ -62,14 +62,6 @@ export default function SideBar() {
       display: true
     },
     {
-      id: 'BillingOverview',
-      url: '/app_overview',
-      value: 'SideBar.CostOverview',
-      icon: ChartLine,
-      display: true
-    },
-
-    {
       id: 'Pricing Standard',
       url: '/valuation',
       value: 'SideBar.PricingStandard',

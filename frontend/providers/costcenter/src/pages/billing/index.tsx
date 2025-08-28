@@ -355,6 +355,7 @@ function Billing() {
   const appBillingDetails = useMemo(() => {
     if (!appBillingData?.data?.costs) return [];
 
+    // ! ================================================= Should move to separate utils
     return appBillingData.data.costs.map((item): any => ({
       appName: item.app_name,
       // Convert appType number to string using the store
