@@ -1,5 +1,4 @@
 import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
-import { Avatar, AvatarFallback } from '@sealos/shadcn-ui/avatar';
 import { cn } from '@sealos/shadcn-ui';
 import { Button } from '@sealos/shadcn-ui/button';
 import {
@@ -11,12 +10,12 @@ import {
 } from '@sealos/shadcn-ui/table-layout';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { useTranslation } from 'next-i18next';
+import { AppIcon } from '../AppIcon';
 
 export type PAYGData = {
   appName: string;
   appType: string; // String ID for both display and API queries (e.g., "DB")
   cost: number;
-  avatarFallback?: string;
   namespace?: string;
 };
 
@@ -33,11 +32,7 @@ export function PAYGCostTable({ data, timeRange, onUsageClick }: PAYGCostTablePr
     <TableRow>
       <TableCell>
         <div className="flex gap-1 items-center">
-          <Avatar className="size-5">
-            <AvatarFallback>
-              {item.avatarFallback || item.appName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <AppIcon app={item.appType} className={{ avatar: 'size-5' }} />
           <div>{item.appName}</div>
         </div>
       </TableCell>

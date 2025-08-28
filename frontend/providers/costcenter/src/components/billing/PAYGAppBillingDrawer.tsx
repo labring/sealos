@@ -1,7 +1,6 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
-import { Avatar, AvatarFallback } from '@sealos/shadcn-ui/avatar';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { ArrowUpRight } from 'lucide-react';
@@ -25,6 +24,7 @@ import {
 import { useMemo } from 'react';
 import { format, addHours } from 'date-fns';
 import { useTranslation } from 'next-i18next';
+import { AppIcon } from '../AppIcon';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -54,7 +54,6 @@ type Props = {
   hasSubApps: boolean;
   data: PAYGBillingDetail[];
   appName: string;
-  appIcon: string;
   region: string;
   currentPage: number;
   totalPages: number;
@@ -72,7 +71,6 @@ export function PAYGAppBillingDrawer({
   hasSubApps,
   data,
   appName,
-  appIcon,
   appType,
   namespace: _namespace,
   region,
@@ -155,9 +153,10 @@ export function PAYGAppBillingDrawer({
           // Show app name with avatar for sub-apps
           return (
             <div className="flex gap-2 items-center">
-              <Avatar className="size-6">
-                <AvatarFallback>A</AvatarFallback>
-              </Avatar>
+              <AppIcon
+                app={'appType' in row ? row.appType : 'OTHER'}
+                className={{ avatar: 'size-5' }}
+              />
               <span>{info.getValue()}</span>
             </div>
           );
@@ -298,9 +297,7 @@ export function PAYGAppBillingDrawer({
         <DrawerHeader className="pr-14">
           <DrawerTitle className="flex items-center gap-8 justify-between w-full">
             <div className="flex gap-2 items-center">
-              <Avatar className="size-6">
-                <AvatarFallback>{appIcon || appName.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <AppIcon app={appType} className={{ avatar: 'size-5' }} />
               <span className="text-nowrap">{appName}</span>
               <Badge variant="secondary">{region}</Badge>
               <Badge variant="secondary">{t(appType)}</Badge>

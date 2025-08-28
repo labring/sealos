@@ -152,23 +152,3 @@ export function BaseTable<T extends unknown>({
     </TableContainer>
   );
 }
-export function AppImg({ app_type, ...props }: { app_type: string } & ImgProps) {
-  const { getAppType } = useAppTypeStore();
-  let uri = '';
-  if (getAppType(app_type) === 'DB' || app_type === 'DB') {
-    uri = dbIcon.src;
-  } else if (getAppType(app_type) === 'APP' || app_type === 'APP') {
-    uri = appIcon.src;
-  } else if (getAppType(app_type) === 'TERMINAL' || app_type === 'TERMINAL') {
-    uri = terminalIcon.src;
-  } else if (getAppType(app_type) === 'JOB' || app_type === 'JOB') {
-    uri = jobIcon.src;
-  } else if (getAppType(app_type) === 'OBJECT-STORAGE' || app_type === 'OBJECT-STORAGE') {
-    uri = osIcon.src;
-  } else if (getAppType(app_type) === 'CLOUD-VM' || app_type === 'CLOUD-VM') {
-    uri = cvmIcon.src;
-  } else {
-    uri = sealosIcon.src;
-  }
-  return <Img src={uri} boxSize={'20px'} {...props} />;
-}

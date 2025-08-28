@@ -1,14 +1,4 @@
-import appIcon from '@/assert/app.svg';
-import cvmIcon from '@/assert/cvm.svg';
-import dbIcon from '@/assert/db.svg';
-import jobIcon from '@/assert/job.svg';
-import osIcon from '@/assert/objectstorage.svg';
-import sealosIcon from '@/assert/sealos.svg';
-import terminalIcon from '@/assert/terminal.svg';
-import useAppTypeStore from '@/stores/appType';
 import {
-  Img,
-  ImgProps,
   Table,
   TableContainer,
   TableContainerProps,
@@ -129,24 +119,4 @@ export function BaseTable<T extends unknown>({
       </Table>
     </TableContainer>
   );
-}
-export function AppImg({ app_type, ...props }: { app_type: string } & ImgProps) {
-  const { getAppType } = useAppTypeStore();
-  let uri = '';
-  if (getAppType(app_type) === 'DB' || app_type === 'DB') {
-    uri = dbIcon.src;
-  } else if (getAppType(app_type) === 'APP' || app_type === 'APP') {
-    uri = appIcon.src;
-  } else if (getAppType(app_type) === 'TERMINAL' || app_type === 'TERMINAL') {
-    uri = terminalIcon.src;
-  } else if (getAppType(app_type) === 'JOB' || app_type === 'JOB') {
-    uri = jobIcon.src;
-  } else if (getAppType(app_type) === 'OBJECT-STORAGE' || app_type === 'OBJECT-STORAGE') {
-    uri = osIcon.src;
-  } else if (getAppType(app_type) === 'CLOUD-VM' || app_type === 'CLOUD-VM') {
-    uri = cvmIcon.src;
-  } else {
-    uri = sealosIcon.src;
-  }
-  return <Img src={uri} boxSize={'20px'} {...props} />;
 }
