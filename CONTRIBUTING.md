@@ -14,7 +14,7 @@ It is warmly welcomed if you have interest to hack on sealos. First, we encourag
 
 ## Reporting security issues
 
-Security issues are always treated seriously. As our usual principle, we discourage anyone to spread security issues. If you find a security issue of sealos, please do not discuss it in public and even do not open a public issue. Instead we encourage you to send us a private email to [admin@sealos.io](mailto:admin@sealos.io) to report this.
+Security issues are always treated seriously. As our usual principle, we discourage anyone to spread security issues. If you find a security issue of sealos, please do not discuss it in public and even do not open a public issue. Instead we encourage you to send us a private email to [security@sealos.io](mailto:security@sealos.io) to report this.
 
 ## Reporting general issues
 
