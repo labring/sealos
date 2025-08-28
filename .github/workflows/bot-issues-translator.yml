@@ -1,33 +1,18 @@
-# Issues translator workflow - temporarily disabled
-# 
-# This workflow is temporarily disabled because it requires an external bot
-# to join the repository with proper permissions to function correctly.
-# The current setup using GITHUB_TOKEN has insufficient permissions.
-#
-# To re-enable this workflow:
-# 1. Set up a bot account or obtain a personal access token with proper permissions
-# 2. Add the token as a repository secret (e.g., BOT_GITHUB_TOKEN)
-# 3. Update the workflow to use the new token
-# 4. Remove the "if: false" condition below
-#
-name: 'Github Rebot for issues-translator'
-on:
-  issues:
-    types: [ opened ]
-  issue_comment:
-    types: [ created ]
+name: 'issue-translator'
+on: 
+  issue_comment: 
+    types: [created]
+  issues: 
+    types: [opened]
+
 jobs:
-  translate:
-    # Temporarily disabled - requires external bot setup
-    if: false
-    permissions:
-      issues: write
-      discussions: write
-      pull-requests: write
-    runs-on: ubuntu-24.04
+  build:
+    runs-on: ubuntu-latest
     steps:
       - uses: usthe/issues-translate-action@v2.7
         with:
-          IS_MODIFY_TITLE: true
-          BOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_MODIFY_TITLE: false
+          # not require, default false, . Decide whether to modify the issue title
+          # if true, the robot account @Issues-translate-bot must have modification permissions, invite @Issues-translate-bot to your project or use your custom bot.
           CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿
+          # not require. Customize the translation robot prefix message.
