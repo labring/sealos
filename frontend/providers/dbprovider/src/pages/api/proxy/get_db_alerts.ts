@@ -1,10 +1,27 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
+import { authSession } from '@/services/backend/auth';
+import { ResponseCode, ResponseMessages } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.status(405).end();
     return;
+  }
+
+  try {
+    const kubeconfig = await authSession(req);
+    if (!kubeconfig) {
+      return jsonRes(res, {
+        code: ResponseCode.UNAUTHORIZED,
+        message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+      });
+    }
+  } catch (error) {
+    return jsonRes(res, {
+      code: ResponseCode.UNAUTHORIZED,
+      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    });
   }
 
   const { namespace } = req.query;
