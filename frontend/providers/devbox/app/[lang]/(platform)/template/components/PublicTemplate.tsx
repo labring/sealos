@@ -1,9 +1,13 @@
 import { useTranslations, useLocale } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
-
+import { Label } from '@sealos/shadcn-ui/label';
+import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
+
 import { useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
 import { Tag, TagType } from '@/prisma/generated/client';
@@ -13,18 +17,15 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useDevboxStore } from '@/stores/devbox';
 import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
 
-import { Label } from '@sealos/shadcn-ui/label';
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
-import { Button } from '@sealos/shadcn-ui/button';
-
 import TemplateCard from './TemplateCard';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import Empty from './Empty';
 
 // Define view modes
 type ViewMode = 'overview' | 'category';
+
+// Define category types based on USE_CASE tag names
+type CategoryType = 'official' | 'language' | 'framework' | 'os' | 'mcp';
 
 const PublicTemplate = ({ search }: { search: string }) => {
   const { selectedTagList, getSelectedTagList, resetTags, setSelectedTag } = useTagSelectorStore();
@@ -35,29 +36,32 @@ const PublicTemplate = ({ search }: { search: string }) => {
 
   // View state management
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
-  const [currentCategory, setCurrentCategory] = useState<TagType | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<TagType>>(new Set());
+  const [currentCategory, setCurrentCategory] = useState<CategoryType | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<CategoryType>>(new Set());
 
   const tagsQuery = useQuery(['template-repository-tags'], listTag, {
     staleTime: Infinity,
     cacheTime: Infinity
   });
 
-  let tags = (tagsQuery.data?.tagList || []).sort((a, b) =>
-    a.name === 'official' ? -1 : b.name === 'official' ? 1 : 0
-  );
+  // Get all tags for different purposes
+  const allTags = useMemo(() => {
+    return tagsQuery.data?.tagList || [];
+  }, [tagsQuery.data?.tagList]);
 
-  // Set official tag as default selected only on first load for category view
-  const hasSetDefaultRef = useRef(false);
-  useEffect(() => {
-    if (!hasSetDefaultRef.current && tags.length > 0 && viewMode === 'category') {
-      const officialTag = tags.find((tag) => tag.name === 'official');
-      if (officialTag && selectedTagList.size === 0) {
-        setSelectedTag(officialTag.uid, true);
-        hasSetDefaultRef.current = true;
-      }
-    }
-  }, [tags, selectedTagList.size, setSelectedTag, viewMode]);
+  // Filter USE_CASE tags for main categories
+  const useCaseTags = useMemo(() => {
+    return allTags
+      .filter((tag) => tag.type === TagType.USE_CASE)
+      .sort((a, b) => (a.name === 'official' ? -1 : b.name === 'official' ? 1 : 0));
+  }, [allTags]);
+
+  // Get programming language tags
+  const programmingLanguageTags = useMemo(() => {
+    return allTags.filter((tag) => tag.type === TagType.PROGRAMMING_LANGUAGE);
+  }, [allTags]);
+
+  // No default tag selection needed - tags are auto-selected when switching to category view
 
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
@@ -67,7 +71,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
   });
 
   // Toggle category expansion in sidebar
-  const toggleCategoryExpansion = (category: TagType) => {
+  const toggleCategoryExpansion = useCallback((category: CategoryType) => {
     setExpandedCategories((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(category)) {
@@ -77,35 +81,49 @@ const PublicTemplate = ({ search }: { search: string }) => {
       }
       return newSet;
     });
-  };
-
-  // Handle category click - switch to category view and show templates for that category
-  const handleCategoryClick = (category: TagType) => {
-    switchToCategoryView(category);
-  };
+  }, []);
 
   // Switch to category view (when clicking "More" button or category item)
-  const switchToCategoryView = (category: TagType) => {
-    setViewMode('category');
-    setCurrentCategory(category);
-    // Auto-expand the selected category
-    setExpandedCategories((prev) => new Set([...prev, category]));
-    resetTags(); // Clear any existing tag selections - default state with no tags selected
+  const switchToCategoryView = useCallback(
+    (category: CategoryType) => {
+      setViewMode('category');
+      setCurrentCategory(category);
+      // Auto-expand the selected category
+      setExpandedCategories((prev) => new Set([...prev, category]));
 
-    setPageQueryBody({
-      page: 1,
-      pageSize: 30,
-      totalItems: 0,
-      totalPage: 0
-    });
-  };
+      // Reset tags first, then auto-select the category tag
+      resetTags();
+
+      // Auto-select the corresponding USE_CASE tag for the category
+      const categoryTag = useCaseTags.find((tag) => tag.name === category);
+      if (categoryTag) {
+        setSelectedTag(categoryTag.uid, true);
+      }
+
+      setPageQueryBody({
+        page: 1,
+        pageSize: 30,
+        totalItems: 0,
+        totalPage: 0
+      });
+    },
+    [resetTags, useCaseTags, setSelectedTag]
+  );
+
+  // Handle category click - switch to category view and show templates for that category
+  const handleCategoryClick = useCallback(
+    (category: CategoryType) => {
+      switchToCategoryView(category);
+    },
+    [switchToCategoryView]
+  );
 
   // Switch back to overview
-  const switchToOverview = () => {
+  const switchToOverview = useCallback(() => {
     setViewMode('overview');
     setCurrentCategory(null);
     resetTags();
-  };
+  }, [resetTags]);
 
   // reset query when search changes (only in category view)
   useEffect(() => {
@@ -155,14 +173,10 @@ const PublicTemplate = ({ search }: { search: string }) => {
     () => {
       if (viewMode !== 'category') return null;
 
-      // If no tags selected, get more templates for frontend filtering
-      const queryPageSize = selectedTagList.size === 0 ? 200 : categoryQueryBody.pageSize;
-      const queryPage = selectedTagList.size === 0 ? 1 : categoryQueryBody.page;
-
       return listTemplateRepositoryApi(
         {
-          page: queryPage,
-          pageSize: queryPageSize
+          page: categoryQueryBody.page,
+          pageSize: categoryQueryBody.pageSize
         },
         categoryQueryBody.tags,
         categoryQueryBody.search
@@ -182,53 +196,42 @@ const PublicTemplate = ({ search }: { search: string }) => {
     async () => {
       if (viewMode !== 'overview') return {};
 
-      const categoryTypes = [
-        TagType.PROGRAMMING_LANGUAGE,
-        TagType.USE_CASE,
-        TagType.OS,
-        TagType.MCP
-      ];
-      const promises = categoryTypes.map(async (categoryType) => {
+      // Define the categories we want to show in overview
+      const categoryNames: CategoryType[] = ['language', 'framework'];
+      const promises = categoryNames.map(async (categoryName) => {
         try {
-          // Get tags of this category type
-          const categoryTags = tags.filter((tag) => tag.type === categoryType);
-          if (categoryTags.length === 0) return { categoryType, templates: [] };
+          // Find the specific tag for this category
+          const categoryTag = useCaseTags.find((tag) => tag.name === categoryName);
+          if (!categoryTag) return { categoryName, templates: [] };
 
-          // Get top 5 templates for this category by getting all templates and filtering
-          // Since we can't query by category directly, we'll get general templates first
+          // Get top 5 templates for this category by filtering with the specific tag
           const response = await listTemplateRepositoryApi(
             { page: 1, pageSize: 20 }, // Get more to ensure we have enough after filtering
-            [], // No tag filter initially
+            [categoryTag.uid], // Filter by the specific category tag
             ''
           );
 
-          // Filter templates that have tags of this category type
-          const filteredTemplates = (response.templateRepositoryList || [])
-            .filter((template: any) =>
-              template.templateRepositoryTags?.some(
-                (tagRef: any) => tagRef.tag?.type === categoryType
-              )
-            )
-            .slice(0, 5); // Take top 5
+          // Take top 5 templates
+          const filteredTemplates = (response.templateRepositoryList || []).slice(0, 5);
 
-          return { categoryType, templates: filteredTemplates };
+          return { categoryName, templates: filteredTemplates };
         } catch (error) {
-          console.error(`Error fetching templates for category ${categoryType}:`, error);
-          return { categoryType, templates: [] };
+          console.error(`Error fetching templates for category ${categoryName}:`, error);
+          return { categoryName, templates: [] };
         }
       });
 
       const results = await Promise.all(promises);
       return results.reduce(
         (acc, result) => {
-          acc[result.categoryType] = result.templates;
+          acc[result.categoryName] = result.templates;
           return acc;
         },
-        {} as Record<TagType, any[]>
+        {} as Record<CategoryType, any[]>
       );
     },
     {
-      enabled: viewMode === 'overview' && tags.length > 0,
+      enabled: viewMode === 'overview' && useCaseTags.length > 0,
       staleTime: 5 * 60 * 1000 // 5 minutes
     }
   );
@@ -236,34 +239,14 @@ const PublicTemplate = ({ search }: { search: string }) => {
   const templateRepositoryList = useMemo(() => {
     if (viewMode === 'category') {
       const allTemplates = listTemplateRepository.data?.templateRepositoryList || [];
-
-      // If no tags are selected, filter by current category type and apply frontend pagination
-      if (selectedTagList.size === 0 && currentCategory) {
-        const filtered = allTemplates.filter((template) =>
-          template.templateRepositoryTags?.some((tagRef) => tagRef.tag?.type === currentCategory)
-        );
-
-        // Apply frontend pagination
-        const start = (pageQueryBody.page - 1) * pageQueryBody.pageSize;
-        const end = start + pageQueryBody.pageSize;
-        return filtered.slice(start, end);
-      }
-
-      // If tags are selected, use the backend filtered results (already paginated)
+      // Now we always use backend filtered results since we always have tags selected
       return allTemplates;
     }
     return [];
-  }, [
-    listTemplateRepository.data,
-    viewMode,
-    selectedTagList.size,
-    currentCategory,
-    pageQueryBody.page,
-    pageQueryBody.pageSize
-  ]);
+  }, [listTemplateRepository.data, viewMode]);
 
   const overviewData = useMemo(() => {
-    return overviewQueries.data || ({} as Record<TagType, any[]>);
+    return overviewQueries.data || ({} as Record<CategoryType, any[]>);
   }, [overviewQueries.data]);
 
   const isClientSide = useClientSideValue(true);
@@ -287,22 +270,38 @@ const PublicTemplate = ({ search }: { search: string }) => {
     }
   }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router, t]);
 
-  let tagListCollection = tags.reduce(
-    (acc, tag) => {
-      if (!acc[tag.type]) {
-        acc[tag.type] = [];
+  // Group tags by their category type
+  const tagListCollection = useMemo(() => {
+    const collection = {
+      official: [] as Tag[],
+      language: [] as Tag[],
+      framework: [] as Tag[],
+      os: [] as Tag[],
+      mcp: [] as Tag[]
+    };
+
+    // Add USE_CASE tags to their respective categories, but exclude main category tags from their own secondary menus
+    useCaseTags.forEach((tag) => {
+      const categoryName = tag.name as CategoryType;
+      if (collection[categoryName]) {
+        // Don't add the main category tag to its own secondary menu
+        // For example, don't add "language" tag to language category's secondary menu
+        // or "framework" tag to framework category's secondary menu
+        if (tag.name !== categoryName) {
+          collection[categoryName].push(tag);
+        }
       }
-      acc[tag.type].push(tag);
-      return acc;
-    },
-    {
-      [TagType.OFFICIAL_CONTENT]: [],
-      [TagType.USE_CASE]: [],
-      [TagType.PROGRAMMING_LANGUAGE]: [],
-      [TagType.OS]: [],
-      [TagType.MCP]: []
-    } as Record<TagType, Tag[]>
-  );
+    });
+
+    // For language category, add all PROGRAMMING_LANGUAGE tags (this replaces any USE_CASE tags)
+    collection.language = programmingLanguageTags;
+
+    // For framework category, add all PROGRAMMING_LANGUAGE tags for language filtering
+    // This allows users to filter frameworks by programming language
+    collection.framework = [...collection.framework, ...programmingLanguageTags];
+
+    return collection;
+  }, [useCaseTags, programmingLanguageTags]);
 
   useEffect(() => {
     if (
@@ -312,124 +311,147 @@ const PublicTemplate = ({ search }: { search: string }) => {
     ) {
       const data = listTemplateRepository.data.page;
 
-      // If we're filtering by category and no tags selected, adjust pagination
-      if (selectedTagList.size === 0 && currentCategory) {
-        const allTemplates = listTemplateRepository.data.templateRepositoryList || [];
-        const filteredTemplates = allTemplates.filter((template) =>
-          template.templateRepositoryTags?.some((tagRef) => tagRef.tag?.type === currentCategory)
-        );
-        const filteredCount = filteredTemplates.length;
-
-        setPageQueryBody((prev) => ({
-          ...prev,
-          totalItems: filteredCount,
-          totalPage: Math.ceil(filteredCount / prev.pageSize),
-          page: Math.min(prev.page, Math.ceil(filteredCount / prev.pageSize) || 1)
-        }));
-      } else {
-        // Use backend pagination for tag-filtered results
-        setPageQueryBody((prev) => ({
-          ...prev,
-          totalItems: data.totalItems || 0,
-          totalPage: data.totalPage || 0,
-          page: data.page || 1
-        }));
-      }
+      // Always use backend pagination since we always have tags selected
+      setPageQueryBody((prev) => ({
+        ...prev,
+        totalItems: data.totalItems || 0,
+        totalPage: data.totalPage || 0,
+        page: data.page || 1
+      }));
     }
-  }, [
-    listTemplateRepository.data,
-    listTemplateRepository.isSuccess,
-    viewMode,
-    selectedTagList.size,
-    currentCategory
-  ]);
+  }, [listTemplateRepository.data, listTemplateRepository.isSuccess, viewMode]);
 
   const hasFilter = viewMode === 'category' && (!!search || selectedTagList.size > 0);
 
   // Define category display names and order
-  const categoryOrder = [
-    { type: TagType.PROGRAMMING_LANGUAGE, title: t('programming_language') },
-    { type: TagType.USE_CASE, title: t('use_case') },
-    { type: TagType.OS, title: t('os') },
-    { type: TagType.MCP, title: t('mcp') }
-  ];
+  const categoryOrder = useMemo(
+    () => [
+      { type: 'language' as CategoryType, title: t('language') },
+      { type: 'framework' as CategoryType, title: t('framework') }
+    ],
+    [t]
+  );
 
   return (
     <div className="flex h-[calc(100vh-200px)] gap-3">
       {/* left sidebar */}
-      <div className="w-50 flex flex-shrink-0 flex-col items-start gap-1">
-        <div className="flex w-full items-center justify-between px-2 py-1.5">
-          <span className="truncate text-sm text-zinc-900">{t('categories')}</span>
-        </div>
+      <div className="flex w-50 flex-shrink-0 flex-col items-start gap-1">
         <ScrollArea className="flex h-[calc(100vh-200px)] w-full flex-col gap-1 pr-2">
           <div className="flex flex-col gap-1">
-            {/* Official Content */}
+            {/* Official Picks */}
             <div>
               <div
                 className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
                 onClick={() => {
                   if (viewMode === 'overview') {
-                    handleCategoryClick(TagType.OFFICIAL_CONTENT);
-                  } else if (currentCategory === TagType.OFFICIAL_CONTENT) {
-                    toggleCategoryExpansion(TagType.OFFICIAL_CONTENT);
+                    handleCategoryClick('official');
+                  } else if (currentCategory === 'official') {
+                    toggleCategoryExpansion('official');
                   } else {
-                    handleCategoryClick(TagType.OFFICIAL_CONTENT);
+                    handleCategoryClick('official');
                   }
                 }}
               >
-                <span className="text-sm text-zinc-900">{t('official_content')}</span>
-                {viewMode === 'category' &&
-                  (expandedCategories.has(TagType.OFFICIAL_CONTENT) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  ))}
+                <span className="text-sm text-zinc-900">{t('official')}</span>
               </div>
-              {viewMode === 'category' && expandedCategories.has(TagType.OFFICIAL_CONTENT) && (
+              {viewMode === 'category' && expandedCategories.has('official') && (
                 <div className="pl-4">
-                  <div className="flex flex-col gap-1">
-                    {tagListCollection[TagType.OFFICIAL_CONTENT].map((tag) => (
-                      <TagItem key={tag.uid} tag={tag} />
-                    ))}
-                  </div>
+                  <CategoryRadioGroup tags={tagListCollection.official} />
                 </div>
               )}
             </div>
 
-            {/* Other Categories */}
-            {categoryOrder.map(({ type, title }) => (
-              <div key={type}>
-                <div
-                  className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
-                  onClick={() => {
-                    if (viewMode === 'overview') {
-                      handleCategoryClick(type);
-                    } else if (currentCategory === type) {
-                      toggleCategoryExpansion(type);
-                    } else {
-                      handleCategoryClick(type);
-                    }
-                  }}
-                >
-                  <span className="text-sm text-zinc-900">{title}</span>
-                  {viewMode === 'category' &&
-                    (expandedCategories.has(type) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    ))}
-                </div>
-                {viewMode === 'category' && expandedCategories.has(type) && (
-                  <div className="pl-4">
-                    <div className="flex flex-col gap-1">
-                      {tagListCollection[type].map((tag) => (
-                        <TagItem key={tag.uid} tag={tag} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Language */}
+            <div>
+              <div
+                className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
+                onClick={() => {
+                  if (viewMode === 'overview') {
+                    handleCategoryClick('language');
+                  } else if (currentCategory === 'language') {
+                    toggleCategoryExpansion('language');
+                  } else {
+                    handleCategoryClick('language');
+                  }
+                }}
+              >
+                <span className="text-sm text-zinc-900">{t('language')}</span>
               </div>
-            ))}
+              {viewMode === 'category' && expandedCategories.has('language') && (
+                <div className="w-full pl-4">
+                  <CategoryRadioGroup tags={tagListCollection.language} />
+                </div>
+              )}
+            </div>
+
+            {/* Framework */}
+            <div>
+              <div
+                className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
+                onClick={() => {
+                  if (viewMode === 'overview') {
+                    handleCategoryClick('framework');
+                  } else if (currentCategory === 'framework') {
+                    toggleCategoryExpansion('framework');
+                  } else {
+                    handleCategoryClick('framework');
+                  }
+                }}
+              >
+                <span className="text-sm text-zinc-900">{t('framework')}</span>
+              </div>
+              {viewMode === 'category' && expandedCategories.has('framework') && (
+                <div className="w-full pl-4">
+                  <CategoryRadioGroup tags={tagListCollection.framework} />
+                </div>
+              )}
+            </div>
+
+            {/* OS */}
+            <div>
+              <div
+                className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
+                onClick={() => {
+                  if (viewMode === 'overview') {
+                    handleCategoryClick('os');
+                  } else if (currentCategory === 'os') {
+                    toggleCategoryExpansion('os');
+                  } else {
+                    handleCategoryClick('os');
+                  }
+                }}
+              >
+                <span className="text-sm text-zinc-900">{t('os')}</span>
+              </div>
+              {viewMode === 'category' && expandedCategories.has('os') && (
+                <div className="w-full pl-4">
+                  <CategoryRadioGroup tags={tagListCollection.os} />
+                </div>
+              )}
+            </div>
+
+            {/* MCP */}
+            <div>
+              <div
+                className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
+                onClick={() => {
+                  if (viewMode === 'overview') {
+                    handleCategoryClick('mcp');
+                  } else if (currentCategory === 'mcp') {
+                    toggleCategoryExpansion('mcp');
+                  } else {
+                    handleCategoryClick('mcp');
+                  }
+                }}
+              >
+                <span className="text-sm text-zinc-900">{t('mcp')}</span>
+              </div>
+              {viewMode === 'category' && expandedCategories.has('mcp') && (
+                <div className="w-full pl-4">
+                  <CategoryRadioGroup tags={tagListCollection.mcp} />
+                </div>
+              )}
+            </div>
           </div>
         </ScrollArea>
       </div>
@@ -444,7 +466,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
                 <TemplateSection
                   key={type}
                   title={title}
-                  templates={(overviewData as any)[type] || []}
+                  templates={(overviewData as Record<CategoryType, any[]>)[type] || []}
                   onMoreClick={() => switchToCategoryView(type)}
                   isLoading={overviewQueries.isLoading}
                 />
@@ -457,9 +479,17 @@ const PublicTemplate = ({ search }: { search: string }) => {
             {/* Category mode header */}
             <div className="flex items-center justify-between pb-4">
               <h2 className="text-lg font-medium text-zinc-900">
-                {currentCategory === TagType.OFFICIAL_CONTENT
-                  ? t('official_content')
-                  : categoryOrder.find((c) => c.type === currentCategory)?.title || t('templates')}
+                {currentCategory === 'official'
+                  ? t('official')
+                  : currentCategory === 'language'
+                    ? t('language')
+                    : currentCategory === 'framework'
+                      ? t('framework')
+                      : currentCategory === 'os'
+                        ? t('os')
+                        : currentCategory === 'mcp'
+                          ? t('mcp')
+                          : t('templates')}
               </h2>
               <Button
                 variant="ghost"
@@ -596,55 +626,51 @@ const TemplateSection = ({
   );
 };
 
-const TagItem = ({ tag }: { tag: Tag }) => {
-  const { selectedTagList, setSelectedTag } = useTagSelectorStore();
+const TagItem = ({ tag, onSelect }: { tag: Tag; onSelect: (value: string) => void }) => {
   const locale = useLocale();
 
   if (!tag) return null;
 
-  const isSelected = selectedTagList.has(tag.uid);
-  const toggleSelection = () => {
-    setSelectedTag(tag.uid, !isSelected);
+  const handleClick = () => {
+    onSelect(tag.uid);
   };
 
   return (
     <div
-      className={cn(
-        'flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 py-1',
-        isSelected && 'bg-[rgba(0,0,0,0.04)]'
-      )}
-      onClick={toggleSelection}
+      className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-neutral-200"
+      onClick={handleClick}
     >
-      <Checkbox
-        id={tag.uid}
-        className="border-zinc-900"
-        checked={isSelected}
-        onCheckedChange={toggleSelection}
-      />
-      <Label
-        htmlFor={tag.uid}
-        className="w-full cursor-pointer text-sm text-zinc-900"
-        onClick={(e) => {
-          e.preventDefault();
-          toggleSelection();
-        }}
-      >
+      <RadioGroupItem value={tag.uid} id={tag.uid} className="border-zinc-900" />
+      <Label htmlFor={tag.uid} className="w-full cursor-pointer text-sm text-zinc-900">
         {tag[locale === 'zh' ? 'zhName' : 'enName'] || tag.name}
       </Label>
     </div>
   );
 };
 
-const TagList = ({ tags, title }: { tags: Tag[]; title: string }) => {
+const CategoryRadioGroup = ({ tags }: { tags: Tag[] }) => {
+  const { selectedTagList, setSelectedTagInCategory } = useTagSelectorStore();
+
+  // Find the currently selected tag in this category
+  const selectedValue = tags.find((tag) => selectedTagList.has(tag.uid))?.uid || '';
+  const categoryTags = tags.map((t) => t.uid);
+
+  const handleValueChange = (value: string) => {
+    if (value) {
+      setSelectedTagInCategory(value, categoryTags);
+    }
+  };
+
   return (
-    <>
-      <span className="h-7 truncate px-2 py-1.5 text-xs/4 font-medium text-zinc-500">{title}</span>
-      <div className="flex flex-col gap-1">
-        {tags.map((tag) => (
-          <TagItem key={tag.uid} tag={tag} />
-        ))}
-      </div>
-    </>
+    <RadioGroup
+      className="flex w-full flex-col gap-1"
+      value={selectedValue}
+      onValueChange={handleValueChange}
+    >
+      {tags.map((tag) => (
+        <TagItem key={tag.uid} tag={tag} onSelect={handleValueChange} />
+      ))}
+    </RadioGroup>
   );
 };
 

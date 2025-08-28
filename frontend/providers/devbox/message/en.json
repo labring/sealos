@@ -389,9 +389,7 @@
   "tag_length_error": "No more than 50 characters.",
   "tag_required": "Need to input tag",
   "tags": "Tags",
-  "tags_enum": {
-    "official": "Official Picks"
-  },
+  "official": "Official Picks",
   "template": "Template",
   "template_description": "Description",
   "template_description_placeholder": "Briefly describe the purpose and features of this template......",
