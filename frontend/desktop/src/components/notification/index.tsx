@@ -20,7 +20,7 @@ import clsx from 'clsx';
 import { produce } from 'immer';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import { TNotification } from '@/types';
 import { listNotification } from '@/api/platform';
 import { TriangleAlert, X } from 'lucide-react';

@@ -4,7 +4,7 @@ import { Box, Flex, Image, Text } from '@chakra-ui/react';
 import clsx from 'clsx';
 import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import { useTranslation } from 'next-i18next';
 import { useConfigStore } from '@/stores/config';
 
@@ -51,8 +51,8 @@ export default function AppWindow(props: {
               ? 0
               : x
             : x > 0.9 * appHeaderWidth
-            ? 0
-            : x,
+              ? 0
+              : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {

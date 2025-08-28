@@ -1,18 +1,14 @@
-.container {
-  &[data-show='true'] {
-    display: block;
-  }
-  .title {
-    font-weight: 500;
-    font-size: 18px;
-    // color: white;
-  }
+.container[data-show='true'] {
+  display: block;
+}
+.container .title {
+  font-weight: 500;
+  font-size: 18px;
 }
 
 .tab {
   font-weight: 400;
   font-size: 12px;
-  // color: rgba(255, 255, 255, 0.6);
   border-bottom: 2px solid transparent;
   cursor: pointer;
 }
@@ -20,7 +16,6 @@
 .active {
   font-weight: 500;
   font-size: 12px;
-  // color: white;
   border-bottom: 2px solid #1599e9;
 }
 
@@ -31,9 +26,10 @@
   border-radius: 12px;
   position: absolute;
   left: 0;
-  &[data-active='index'] {
-    display: none;
-  }
+}
+
+.back_btn[data-active='index'] {
+  display: none;
 }
 
 .scrollWrap {
@@ -42,7 +38,8 @@
   position: relative;
   box-sizing: border-box;
   scroll-behavior: smooth;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+}
+
+.scrollWrap::-webkit-scrollbar {
+  display: none;
 }
