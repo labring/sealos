@@ -14,11 +14,12 @@ import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import CurrencySymbol from '../CurrencySymbol';
 import Amount from '../billing/AmountTableHeader';
-import { AppImg, BaseTable } from './BaseTable';
+import { BaseTable } from './BaseTable';
 import BillingDetails from './billingDetails';
 
 import useBillingStore from '@/stores/billing';
 import { format, parseISO, subHours } from 'date-fns';
+import { AppIcon } from '../AppIcon';
 const getCustomTh = (data?: { tNs?: string; needCurrency?: boolean }) =>
   function CustomTh({ header }: HeaderContext<APPBillingItem, unknown>) {
     const tNs = data?.tNs || 'common';
@@ -70,7 +71,9 @@ export function AppBillingTable({
 }: { data: APPBillingItem[] } & TableContainerProps) {
   const { t, i18n } = useTranslation();
   const { getRegion, namespaceList } = useBillingStore();
+  const { getAppType } = useAppTypeStore();
   const region = getRegion();
+
   const namespaceMap = useMemo(() => new Map(namespaceList), [namespaceList]);
   const regionName = i18n.language === 'zh' ? region?.name.zh || '' : region?.name.en || '';
   const columns = useMemo(() => {
@@ -86,7 +89,7 @@ export function AppBillingTable({
             props.getValue() || (app_type === 3 ? t('TERMINAL', { ns: 'applist' }) : t('Other'));
           return (
             <Flex gap={'6px'} color={'grayModern.900'}>
-              <AppImg app_type={app_type + ''} boxSize={'20px'} />
+              <AppIcon app={getAppType(app_type.toString())} className={{ avatar: 'size-5' }} />
               <Text>{appName}</Text>
             </Flex>
           );
