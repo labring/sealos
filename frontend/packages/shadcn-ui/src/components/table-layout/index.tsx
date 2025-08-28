@@ -64,13 +64,9 @@ export function TableLayoutFooter({
   className
 }: {
   children: React.ReactNode;
-  className?: {
-    tfoot?: string;
-    tr?: string;
-    td?: string;
-  };
+  className?: string;
 }) {
-  return <div className={cn('p-0 border-t w-full', className?.td)}>{children}</div>;
+  return <div className={cn('p-0 border-t w-full', className)}>{children}</div>;
 }
 
 export function TableLayoutContent({
