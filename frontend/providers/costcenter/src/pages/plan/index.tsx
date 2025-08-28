@@ -535,40 +535,43 @@ export default function Plan() {
   // console.log('plansData', plansData);
 
   // Get current workspace subscription info
-  // const { data: subscriptionData } = useQuery({
-  //   queryKey: ['subscription-info', session?.user?.nsid, region?.uid],
-  //   queryFn: () =>
-  //     getSubscriptionInfo({
-  //       workspace: session?.user?.nsid || '',
-  //       regionDomain: region?.domain || ''
-  //     }),
-  //   enabled: !!(session?.user?.nsid && region?.uid)
-  // });
-  const subscriptionData = {
-    data: {
-      subscription: {
-        ID: '5f42293e-ec79-4554-9d65-fdad9069247f',
-        PlanName: 'team',
-        Workspace: 'ns-1bww11km',
-        RegionDomain: '192.168.10.35.nip.io',
-        UserUID: '9d510716-9ff9-4aed-8d22-49f41a3600da',
-        Status: 'NORMAL',
-        PayStatus: 'no_need',
-        PayMethod: '',
-        Stripe: null,
-        TrafficStatus: 'active',
-        CurrentPeriodStartAt: '2025-08-26T03:10:24.584415Z',
-        CurrentPeriodEndAt: '2025-09-09T03:10:24.584415Z',
-        CancelAtPeriodEnd: false,
-        CancelAt: '0001-01-01T00:00:00Z',
-        CreateAt: '2025-08-26T03:10:24.584415Z',
-        UpdateAt: '2025-08-26T03:10:24.584415Z',
-        ExpireAt: null,
-        Traffic: null,
-        type: 'SUBSCRIPTION'
-      }
-    }
-  };
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['subscription-info', session?.user?.nsid, region?.uid],
+    queryFn: () =>
+      getSubscriptionInfo({
+        workspace: session?.user?.nsid || '',
+        regionDomain: region?.domain || ''
+      }),
+    enabled: !!(session?.user?.nsid && region?.uid)
+  });
+
+  // mock data
+  // const subscriptionData = {
+  //   data: {
+  //     subscription: {
+  //       ID: '5f42293e-ec79-4554-9d65-fdad9069247f',
+  //       PlanName: 'team',
+  //       Workspace: 'ns-1bww11km',
+  //       RegionDomain: '192.168.10.35.nip.io',
+  //       UserUID: '9d510716-9ff9-4aed-8d22-49f41a3600da',
+  //       Status: 'NORMAL',
+  //       PayStatus: 'no_need',
+  //       PayMethod: '',
+  //       Stripe: null,
+  //       TrafficStatus: 'active',
+  //       CurrentPeriodStartAt: '2025-08-26T03:10:24.584415Z',
+  //       CurrentPeriodEndAt: '2025-09-09T03:10:24.584415Z',
+  //       CancelAtPeriodEnd: false,
+  //       CancelAt: '0001-01-01T00:00:00Z',
+  //       CreateAt: '2025-08-26T03:10:24.584415Z',
+  //       UpdateAt: '2025-08-26T03:10:24.584415Z',
+  //       ExpireAt: null,
+  //       Traffic: null,
+  //       type: 'SUBSCRIPTION'
+  //     }
+  //   }
+  // };
+
   // Calculate balance
   let rechargAmount = balance_raw?.data?.balance || 0;
   let expenditureAmount = balance_raw?.data?.deductionBalance || 0;
