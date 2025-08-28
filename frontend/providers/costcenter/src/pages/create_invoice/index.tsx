@@ -146,20 +146,20 @@ function Invoice() {
                   <ExampleOrderListRow />
                   <ExampleOrderListRow selected />
                 </TableLayoutBody>
-
-                <TableLayoutFooter>
-                  <div className="px-4 py-3 flex justify-between">
-                    <div className="flex items-center text-zinc-500">Total: 101</div>
-                    <div className="flex items-center gap-3">
-                      <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
-                      <span>
-                        <span>8</span>
-                        <span className="text-zinc-500"> / Page</span>
-                      </span>
-                    </div>
-                  </div>
-                </TableLayoutFooter>
               </TableLayoutContent>
+
+              <TableLayoutFooter>
+                <div className="px-4 py-3 flex justify-between">
+                  <div className="flex items-center text-zinc-500">Total: 101</div>
+                  <div className="flex items-center gap-3">
+                    <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
+                    <span>
+                      <span>8</span>
+                      <span className="text-zinc-500"> / Page</span>
+                    </span>
+                  </div>
+                </div>
+              </TableLayoutFooter>
             </TableLayout>
           </TabsContent>
 
@@ -184,20 +184,20 @@ function Invoice() {
                   <ExampleHistoryRow />
                   <ExampleHistoryRow selected />
                 </TableLayoutBody>
-
-                <TableLayoutFooter>
-                  <div className="px-4 py-3 flex justify-between">
-                    <div className="flex items-center text-zinc-500">Total: 101</div>
-                    <div className="flex items-center gap-3">
-                      <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
-                      <span>
-                        <span>8</span>
-                        <span className="text-zinc-500"> / Page</span>
-                      </span>
-                    </div>
-                  </div>
-                </TableLayoutFooter>
               </TableLayoutContent>
+
+              <TableLayoutFooter>
+                <div className="px-4 py-3 flex justify-between">
+                  <div className="flex items-center text-zinc-500">Total: 101</div>
+                  <div className="flex items-center gap-3">
+                    <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
+                    <span>
+                      <span>8</span>
+                      <span className="text-zinc-500"> / Page</span>
+                    </span>
+                  </div>
+                </div>
+              </TableLayoutFooter>
             </TableLayout>
           </TabsContent>
         </Tabs>

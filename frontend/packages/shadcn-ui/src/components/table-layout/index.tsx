@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, TableHeader, TableRow, TableBody, TableFooter, TableCell } from '../ui/table';
+import { Table, TableHeader, TableRow, TableBody } from '../ui/table';
 import { cn } from '../../lib/utils';
 
 export function TableLayout({
@@ -70,15 +70,7 @@ export function TableLayoutFooter({
     td?: string;
   };
 }) {
-  return (
-    <TableFooter className={cn('bg-transparent', className?.tfoot)}>
-      <TableRow className={cn(className?.tr)}>
-        <TableCell colSpan={999} className={cn('p-0', className?.td)}>
-          {children}
-        </TableCell>
-      </TableRow>
-    </TableFooter>
-  );
+  return <div className={cn('p-0 border-t w-full', className?.td)}>{children}</div>;
 }
 
 export function TableLayoutContent({
