@@ -37,6 +37,15 @@ const nextConfig = {
             value: ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim()
           }
         ]
+      },
+      {
+        source: '/plan',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim()
+          }
+        ]
       }
     ]
   },

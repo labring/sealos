@@ -19,8 +19,28 @@
   );
   --background-image-plan-enterprise: linear-gradient(
     90deg,
+    rgba(252, 149, 129, 0.12) 0%,
+    rgba(81, 119, 245, 0.12) 100%
+  );
+  --background-image-plan-hobby: linear-gradient(
+    90deg,
+    rgba(229, 228, 118, 0.12) 0%,
+    rgba(129, 203, 252, 0.12) 100%
+  );
+  --background-image-plan-hobby-plus: linear-gradient(
+    90deg,
+    rgba(139, 237, 163, 0.12) 0%,
+    rgba(84, 187, 255, 0.12) 100%
+  );
+  --background-image-plan-team: linear-gradient(
+    90deg,
     rgba(252, 129, 234, 0.12) 0%,
     rgba(144, 81, 245, 0.12) 100%
+  );
+  --background-image-plan-customized: linear-gradient(
+    90deg,
+    rgba(252, 149, 129, 0.12) 0%,
+    rgba(206, 81, 245, 0.12) 100%
   );
 }
 

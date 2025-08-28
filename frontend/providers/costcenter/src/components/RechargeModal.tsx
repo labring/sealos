@@ -84,7 +84,13 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       alignItems={'center'}
       position={'relative'}
     >
-      <Flex height={'295px'} direction={'column'} align="center" justify={'space-between'}>
+      <Flex
+        height={'295px'}
+        direction={'column'}
+        align="center"
+        justify={'space-between'}
+        pt={'24px'}
+      >
         <p className="text-lg font-semibold mb-2 text-center">{t('Scan with WeChat')}</p>
         {props.complete === 2 && !!props.codeURL ? (
           <QRCodeSVG
@@ -173,8 +179,8 @@ const BonusBox = (props: { onClick: () => void; selected: boolean; amount: numbe
 
   return (
     <Flex
-      width="140px"
-      height="92px"
+      width="100%"
+      height="72px"
       justify={'start'}
       align={'center'}
       padding={'calc(var(--spacing) * 4)'}
@@ -189,9 +195,8 @@ const BonusBox = (props: { onClick: () => void; selected: boolean; amount: numbe
             borderColor: 'var(--color-zinc-200)',
             bg: 'var(--color-white)'
           })}
-      borderRadius="var(--radius-xl)"
+      borderRadius="12px"
       position={'relative'}
-      flexGrow="0"
       cursor={'pointer'}
       onClick={(e) => {
         e.preventDefault();
@@ -205,6 +210,7 @@ const BonusBox = (props: { onClick: () => void; selected: boolean; amount: numbe
     </Flex>
   );
 };
+
 const RechargeModal = forwardRef(
   (
     props: {
@@ -438,9 +444,9 @@ const RechargeModal = forwardRef(
                   justifyContent="center"
                   alignItems="center"
                 >
-                  <Flex direction={'column'} mb={'20px'} width={'full'}>
-                    <div className="flex flex-col gap-6">
-                      <section className="w-full bg-plan-payg px-4 py-3 rounded-xl gap-1 flex flex-col">
+                  <Flex direction={'column'} mb={'24px'} width={'full'}>
+                    <div className="flex flex-col">
+                      <section className="w-full bg-plan-payg px-4 py-3 rounded-xl gap-1 flex flex-col h-[88px]">
                         <span className="text-slate-500 text-sm">{t('remaining_balance')}</span>
                         <span className="text-2xl font-semibold leading-none flex gap-1 items-center">
                           <CurrencySymbol boxSize="20px" type={currency} fontSize="24px" />
@@ -448,7 +454,7 @@ const RechargeModal = forwardRef(
                         </span>
                       </section>
 
-                      <section className="mt-2">
+                      <section className="mt-6 mb-2">
                         <div className="flex justify-between">
                           <div className="font-medium">{t('Select Amount')}</div>
                           {/* {specialBonus && specialBonus.length > 0 && (
@@ -474,7 +480,7 @@ const RechargeModal = forwardRef(
                       </section>
                     </div>
 
-                    <Flex wrap={'wrap'} gap={'16px'}>
+                    <SimpleGrid columns={3} gap={'16px'}>
                       {steps.map((amount, index) => (
                         <BonusBox
                           key={index}
@@ -486,7 +492,7 @@ const RechargeModal = forwardRef(
                           selected={selectAmount === index}
                         />
                       ))}
-                    </Flex>
+                    </SimpleGrid>
                   </Flex>
 
                   <div className="flex gap-8 items-center">
