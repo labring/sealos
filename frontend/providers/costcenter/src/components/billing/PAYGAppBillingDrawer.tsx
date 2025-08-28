@@ -169,7 +169,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.cpu ? `${row.usage.cpu.amount / 1000} Cores` : '-';
+        return row.usage.cpu ? `${(row.usage.cpu.amount / 1000).toFixed(6)} Cores` : '-';
       }
     }),
     columnHelper.display({
@@ -178,7 +178,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.cpu ? `-$${(row.usage.cpu.cost / 100000).toString()}` : '-';
+        return row.usage.cpu ? `-$${(row.usage.cpu.cost / 100000).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -187,7 +187,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.memory ? `${row.usage.memory.amount / 1024} Gi` : '-';
+        return row.usage.memory ? `${(row.usage.memory.amount / 1024).toFixed(6)} Gi` : '-';
       }
     }),
     columnHelper.display({
@@ -196,7 +196,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.memory ? `-$${(row.usage.memory.cost / 100000).toString()}` : '-';
+        return row.usage.memory ? `-$${(row.usage.memory.cost / 100000).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -205,7 +205,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.storage ? `${row.usage.storage.amount / 1024} Gi` : '-';
+        return row.usage.storage ? `${(row.usage.storage.amount / 1024).toFixed(6)} Gi` : '-';
       }
     }),
     columnHelper.display({
@@ -214,7 +214,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.storage ? `-$${(row.usage.storage.cost / 100000).toString()}` : '-';
+        return row.usage.storage ? `-$${(row.usage.storage.cost / 100000).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -223,7 +223,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.network ? `${row.usage.network.amount / 1024} Gi` : '-';
+        return row.usage.network ? `${(row.usage.network.amount / 1024).toFixed(6)} Gi` : '-';
       }
     }),
     columnHelper.display({
@@ -232,7 +232,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.network ? `-$${(row.usage.network.cost / 100000).toString()}` : '-';
+        return row.usage.network ? `-$${(row.usage.network.cost / 100000).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -241,7 +241,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.port ? `${row.usage.port.amount / 1000} Ports` : '-';
+        return row.usage.port ? `${(row.usage.port.amount / 1000).toFixed(6)} Ports` : '-';
       }
     }),
     columnHelper.display({
@@ -250,7 +250,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.port ? `-$${(row.usage.port.cost / 100000).toString()}` : '-';
+        return row.usage.port ? `-$${(row.usage.port.cost / 100000).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -259,7 +259,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.gpu ? `${row.usage.gpu.amount} GPUs` : '-';
+        return row.usage.gpu ? `${row.usage.gpu.amount.toFixed(6)} GPUs` : '-';
       }
     }),
     columnHelper.display({
@@ -268,7 +268,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.gpu ? `-$${(row.usage.gpu.cost / 100000).toString()}` : '-';
+        return row.usage.gpu ? `-$${(row.usage.gpu.cost / 100000).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -277,7 +277,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return `-$${(row.amount / 100000).toString()}`;
+        return `-$${(row.amount / 100000).toFixed(6)}`;
       }
     })
   ];
@@ -332,7 +332,7 @@ export function PAYGAppBillingDrawer({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        'bg-transparent',
+                        'sticky top-0 z-20 bg-card',
                         index > 0 && index % 2 === 1 && 'border-l',
                         index > 0 && index % 2 === 0 && 'border-r'
                       )}
@@ -361,7 +361,7 @@ export function PAYGAppBillingDrawer({
                             <TableCell
                               key={row.id}
                               colSpan={999}
-                              className="bg-zinc-50 text-gray-900 font-normal"
+                              className="bg-zinc-50 text-gray-900 font-normal sticky left-0 z-10"
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </TableCell>
@@ -384,24 +384,24 @@ export function PAYGAppBillingDrawer({
                   );
                 })}
               </TableLayoutBody>
-
-              <TableLayoutFooter>
-                <div className="px-4 py-3 flex justify-between">
-                  <div className="flex items-center text-zinc-500">Total: {totalCount}</div>
-                  <div className="flex items-center gap-3">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={onPageChange || (() => {})}
-                    />
-                    <span>
-                      <span>{pageSize}</span>
-                      <span className="text-zinc-500"> / Page</span>
-                    </span>
-                  </div>
-                </div>
-              </TableLayoutFooter>
             </TableLayoutContent>
+
+            <TableLayoutFooter>
+              <div className="px-4 py-3 flex justify-between">
+                <div className="flex items-center text-zinc-500">Total: {totalCount}</div>
+                <div className="flex items-center gap-3">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange || (() => {})}
+                  />
+                  <span>
+                    <span>{pageSize}</span>
+                    <span className="text-zinc-500"> / Page</span>
+                  </span>
+                </div>
+              </div>
+            </TableLayoutFooter>
           </TableLayout>
         </div>
       </DrawerContent>
