@@ -383,7 +383,8 @@ export default function Desktop(props: any) {
       {/* modal */}
       <NeedToMerge />
 
-      <AppsRunningPrompt />
+      {/* AppsRunningPrompt is disabled as it conflicts with Stripe payment. */}
+      {/* <AppsRunningPrompt /> */}
     </Box>
   );
 }
