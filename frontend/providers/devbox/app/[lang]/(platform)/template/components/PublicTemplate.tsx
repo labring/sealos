@@ -94,10 +94,18 @@ const PublicTemplate = ({ search }: { search: string }) => {
       // Reset tags first, then auto-select the category tag
       resetTags();
 
-      // Auto-select the corresponding USE_CASE tag for the category
-      const categoryTag = useCaseTags.find((tag) => tag.name === category);
-      if (categoryTag) {
-        setSelectedTag(categoryTag.uid, true);
+      if (category === 'official') {
+        // For official category, auto-select all OFFICIAL_CONTENT tags
+        const officialTags = allTags.filter((tag) => tag.type === TagType.OFFICIAL_CONTENT);
+        officialTags.forEach((tag) => {
+          setSelectedTag(tag.uid, true);
+        });
+      } else {
+        // Auto-select the corresponding USE_CASE tag for other categories
+        const categoryTag = useCaseTags.find((tag) => tag.name === category);
+        if (categoryTag) {
+          setSelectedTag(categoryTag.uid, true);
+        }
       }
 
       setPageQueryBody({
@@ -107,7 +115,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
         totalPage: 0
       });
     },
-    [resetTags, useCaseTags, setSelectedTag]
+    [resetTags, useCaseTags, setSelectedTag, allTags]
   );
 
   // Handle category click - switch to category view and show templates for that category
@@ -270,6 +278,42 @@ const PublicTemplate = ({ search }: { search: string }) => {
     }
   }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router, t]);
 
+  // Query to get framework templates to determine which languages have frameworks
+  const frameworkLanguagesQuery = useQuery(
+    ['framework-languages'],
+    async () => {
+      const frameworkTag = useCaseTags.find((tag) => tag.name === 'framework');
+      if (!frameworkTag) return new Set<string>();
+
+      try {
+        const response = await listTemplateRepositoryApi(
+          { page: 1, pageSize: 100 }, // Get enough to cover all framework templates
+          [frameworkTag.uid], // Filter by framework tag
+          ''
+        );
+
+        // Extract all programming language tags from framework templates
+        const frameworkLanguageUids = new Set<string>();
+        response.templateRepositoryList?.forEach((template) => {
+          template.templateRepositoryTags?.forEach((tagRelation) => {
+            if (tagRelation.tag.type === 'PROGRAMMING_LANGUAGE') {
+              frameworkLanguageUids.add(tagRelation.tag.uid);
+            }
+          });
+        });
+
+        return frameworkLanguageUids;
+      } catch (error) {
+        console.error('Error fetching framework languages:', error);
+        return new Set<string>();
+      }
+    },
+    {
+      enabled: useCaseTags.length > 0,
+      staleTime: 5 * 60 * 1000 // 5 minutes
+    }
+  );
+
   // Group tags by their category type
   const tagListCollection = useMemo(() => {
     const collection = {
@@ -280,10 +324,13 @@ const PublicTemplate = ({ search }: { search: string }) => {
       mcp: [] as Tag[]
     };
 
+    // For official category, add all OFFICIAL_CONTENT tags
+    collection.official = allTags.filter((tag) => tag.type === TagType.OFFICIAL_CONTENT);
+
     // Add USE_CASE tags to their respective categories, but exclude main category tags from their own secondary menus
     useCaseTags.forEach((tag) => {
       const categoryName = tag.name as CategoryType;
-      if (collection[categoryName]) {
+      if (collection[categoryName] && categoryName !== 'official') {
         // Don't add the main category tag to its own secondary menu
         // For example, don't add "language" tag to language category's secondary menu
         // or "framework" tag to framework category's secondary menu
@@ -296,12 +343,15 @@ const PublicTemplate = ({ search }: { search: string }) => {
     // For language category, add all PROGRAMMING_LANGUAGE tags (this replaces any USE_CASE tags)
     collection.language = programmingLanguageTags;
 
-    // For framework category, add all PROGRAMMING_LANGUAGE tags for language filtering
-    // This allows users to filter frameworks by programming language
-    collection.framework = [...collection.framework, ...programmingLanguageTags];
+    // For framework category, only add programming languages that actually have framework templates
+    const frameworkLanguageUids = frameworkLanguagesQuery.data || new Set<string>();
+    collection.framework = [
+      ...collection.framework,
+      ...programmingLanguageTags.filter((tag) => frameworkLanguageUids.has(tag.uid))
+    ];
 
     return collection;
-  }, [useCaseTags, programmingLanguageTags]);
+  }, [useCaseTags, programmingLanguageTags, frameworkLanguagesQuery.data, allTags]);
 
   useEffect(() => {
     if (
@@ -343,22 +393,11 @@ const PublicTemplate = ({ search }: { search: string }) => {
               <div
                 className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
                 onClick={() => {
-                  if (viewMode === 'overview') {
-                    handleCategoryClick('official');
-                  } else if (currentCategory === 'official') {
-                    toggleCategoryExpansion('official');
-                  } else {
-                    handleCategoryClick('official');
-                  }
+                  handleCategoryClick('official');
                 }}
               >
                 <span className="text-sm text-zinc-900">{t('official')}</span>
               </div>
-              {viewMode === 'category' && expandedCategories.has('official') && (
-                <div className="pl-4">
-                  <CategoryRadioGroup tags={tagListCollection.official} />
-                </div>
-              )}
             </div>
 
             {/* Language */}
@@ -379,7 +418,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
               </div>
               {viewMode === 'category' && expandedCategories.has('language') && (
                 <div className="w-full pl-4">
-                  <CategoryRadioGroup tags={tagListCollection.language} />
+                  <CategoryRadioGroup tags={tagListCollection.language} category="language" />
                 </div>
               )}
             </div>
@@ -402,7 +441,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
               </div>
               {viewMode === 'category' && expandedCategories.has('framework') && (
                 <div className="w-full pl-4">
-                  <CategoryRadioGroup tags={tagListCollection.framework} />
+                  <CategoryRadioGroup tags={tagListCollection.framework} category="framework" />
                 </div>
               )}
             </div>
@@ -425,7 +464,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
               </div>
               {viewMode === 'category' && expandedCategories.has('os') && (
                 <div className="w-full pl-4">
-                  <CategoryRadioGroup tags={tagListCollection.os} />
+                  <CategoryRadioGroup tags={tagListCollection.os} category="os" />
                 </div>
               )}
             </div>
@@ -448,7 +487,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
               </div>
               {viewMode === 'category' && expandedCategories.has('mcp') && (
                 <div className="w-full pl-4">
-                  <CategoryRadioGroup tags={tagListCollection.mcp} />
+                  <CategoryRadioGroup tags={tagListCollection.mcp} category="mcp" />
                 </div>
               )}
             </div>
@@ -648,16 +687,15 @@ const TagItem = ({ tag, onSelect }: { tag: Tag; onSelect: (value: string) => voi
   );
 };
 
-const CategoryRadioGroup = ({ tags }: { tags: Tag[] }) => {
-  const { selectedTagList, setSelectedTagInCategory } = useTagSelectorStore();
+const CategoryRadioGroup = ({ tags, category }: { tags: Tag[]; category: CategoryType }) => {
+  const { selectedTagsByCategory, setSelectedTagInCategory } = useTagSelectorStore();
 
-  // Find the currently selected tag in this category
-  const selectedValue = tags.find((tag) => selectedTagList.has(tag.uid))?.uid || '';
-  const categoryTags = tags.map((t) => t.uid);
+  // Find the currently selected tag in this specific category
+  const selectedValue = selectedTagsByCategory[category] || '';
 
   const handleValueChange = (value: string) => {
     if (value) {
-      setSelectedTagInCategory(value, categoryTags);
+      setSelectedTagInCategory(value, category);
     }
   };
 
