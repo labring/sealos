@@ -307,6 +307,7 @@ const DBList = ({
           }
         });
       } catch (err) {
+        console.error('chat2db redirect failed:', err);
         toast({
           title: t('chat2db_redirect_failed'),
           status: 'error'
