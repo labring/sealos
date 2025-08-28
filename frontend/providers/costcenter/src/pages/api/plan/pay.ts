@@ -52,6 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       requestBody,
       { headers }
     );
+    console.log('response', response);
 
     return jsonRes<PaymentResponse>(res, {
       data: response.data
