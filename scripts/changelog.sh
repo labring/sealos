@@ -25,6 +25,17 @@ if [ ! -d CHANGELOG ]; then
     mkdir CHANGELOG
 fi
 
+if command -v git-chglog &> /dev/null; then
+    echo "git-chglog is installed, proceeding with changelog generation."
+else
+    echo "git-chglog is not installed. Will install it first."
+    wget -q https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz
+    tar -zxvf git-chglog_0.15.4_linux_amd64.tar.gz git-chglog &> /dev/null
+    sudo mv git-chglog /usr/local/bin/
+    git-chglog --version
+    rm -rf git-chglog_0.15.4_linux_amd64.tar.gz
+fi
+
 git-chglog --repository-url https://github.com/labring/sealos --output CHANGELOG/CHANGELOG-"${TAG#v}".md --next-tag ${TAG} ${TAG}
 
 echo "# Changelog" > CHANGELOG/CHANGELOG.md
@@ -32,6 +43,9 @@ echo -e "\nAll notable changes to this project will be documented in this file.\
 
 for file in $(ls CHANGELOG |grep -v '^CHANGELOG.md$' | sort -V -r); do
     version=$(echo $file | sed -E 's/CHANGELOG-(.*)\.md/\1/')
+    if [ "$version" = "latest" ]; then
+        continue
+    fi
     echo -e "- [CHANGELOG-${version}.md](./CHANGELOG-${version}.md)" >> CHANGELOG/CHANGELOG.md
 done
 
@@ -41,3 +55,5 @@ if [[ ${TAG} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/install.sh
     sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/build-offline-tar.sh
 fi
+
+cp CHANGELOG/CHANGELOG-"${TAG#v}".md CHANGELOG/CHANGELOG-latest.md

@@ -44,6 +44,8 @@ import { has } from 'lodash';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
+import z from 'zod';
+import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
 
 export const getDBSource = (
   db: KbPgClusterType
@@ -208,7 +210,8 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     storage: 1,
     labels: 1,
     autoBackup: 1,
-    terminationPolicy: 1
+    terminationPolicy: 1,
+    dataSourceId: 1
   };
   const form: any = {};
 

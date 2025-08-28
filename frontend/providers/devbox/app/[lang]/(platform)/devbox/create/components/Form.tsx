@@ -19,7 +19,7 @@ import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
 
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 
 interface FormProps {
   isEdit: boolean;

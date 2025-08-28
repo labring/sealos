@@ -5,12 +5,17 @@ import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useUserStore } from '@/stores/user';
 
-import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Progress } from '@sealos/shadcn-ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
+import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
 const sourceMap = {
   cpu: {

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
 import { Tag, TagType } from '@/prisma/generated/client';
@@ -13,14 +13,14 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useDevboxStore } from '@/stores/devbox';
 import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
 
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+import { Button } from '@sealos/shadcn-ui/button';
 
 import TemplateCard from './TemplateCard';
-import { Pagination } from '@/components/ui/pagination';
+import { Pagination } from '@sealos/shadcn-ui/pagination';
 import Empty from './Empty';
 
 // Define view modes
@@ -357,7 +357,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
   return (
     <div className="flex h-[calc(100vh-200px)] gap-3">
       {/* left sidebar */}
-      <div className="flex w-50 flex-shrink-0 flex-col items-start gap-1">
+      <div className="w-50 flex flex-shrink-0 flex-col items-start gap-1">
         <div className="flex w-full items-center justify-between px-2 py-1.5">
           <span className="truncate text-sm text-zinc-900">{t('categories')}</span>
         </div>

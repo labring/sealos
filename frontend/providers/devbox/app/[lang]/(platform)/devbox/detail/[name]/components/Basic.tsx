@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import { Copy, Download, Settings } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 import { useDevboxStore } from '@/stores/devbox';
@@ -11,11 +11,11 @@ import { getTemplateConfig } from '@/api/template';
 import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
 
 import GPUItem from '@/components/GPUItem';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 const Basic = () => {
   const t = useTranslations();

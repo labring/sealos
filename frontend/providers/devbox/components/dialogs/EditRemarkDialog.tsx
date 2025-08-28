@@ -8,9 +8,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from '@sealos/shadcn-ui/dialog';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Input } from '@sealos/shadcn-ui/input';
 import { updateDevboxRemark } from '@/api/devbox';
 
 type Props = {

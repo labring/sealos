@@ -13,7 +13,7 @@ import { startDriver, detailDriverObj } from '@/hooks/driver';
 import useEnvStore from '@/store/env';
 import { useGuideStore } from '@/store/guide';
 import { SOURCE_PRICE } from '@/store/static';
-import type { DBDetailType } from '@/types/db';
+import type { DBDetailType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
@@ -26,6 +26,7 @@ import {
   FlexProps,
   FormErrorMessage,
   FormLabel,
+  HStack,
   Input,
   Modal,
   ModalCloseButton,
@@ -96,6 +97,16 @@ const CopyBox = ({
     </Flex>
   );
 };
+
+export interface ConnectionInfo {
+  host: string;
+  port: number | string;
+  connection: string;
+  username: string;
+  password: string;
+  dbType: DBType;
+  dbName: string;
+}
 
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
@@ -579,74 +590,83 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           px={'24px'}
           py={'16px'}
         >
-          <Flex fontSize={'base'} gap={'8px'} alignItems={'center'} color={'grayModern.600'}>
+          <Flex
+            fontSize={'base'}
+            gap={'8px'}
+            alignItems={'center'}
+            color={'grayModern.600'}
+            justifyContent={'space-between'}
+          >
             <Box fontSize={'16px'} fontWeight={'bold'} color={'grayModern.900'}>
               {t('connection_info')}
             </Box>
-            <Center
-              h="28px"
-              w="28px"
-              bg="white"
-              border="1px solid #DFE2EA"
-              borderRadius={'md'}
-              cursor={'pointer'}
-              onClick={() => setShowSecret(!showSecret)}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-            >
-              <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
-            </Center>
+            <HStack spacing={2} ml={'auto'}>
+              <Center
+                h="28px"
+                w="28px"
+                bg="white"
+                border="1px solid #DFE2EA"
+                borderRadius={'md'}
+                cursor={'pointer'}
+                onClick={() => setShowSecret(!showSecret)}
+                _hover={{
+                  color: 'brightBlue.600'
+                }}
+              >
+                <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
+              </Center>
 
-            {!['milvus', 'kafka'].includes(db.dbType) && (
-              <Center
-                className="driver-detail-terminal-button"
-                gap={'6px'}
-                h="28px"
-                fontSize={'12px'}
-                bg="white"
-                border="1px solid #DFE2EA"
-                borderRadius={'md'}
-                px="8px"
-                cursor={'pointer'}
-                fontWeight={'bold'}
-                onClick={() => onclickConnectDB()}
-                _hover={{
-                  color: 'brightBlue.600'
-                }}
-              >
-                <MyIcon name="terminal" w="16px" h="16px" />
-                {t('direct_connection')}
-              </Center>
-            )}
-            {[DBTypeEnum.mysql, DBTypeEnum.postgresql, DBTypeEnum.mongodb].includes(
-              db.dbType as DBTypeEnum
-            ) && (
-              <Center
-                className="driver-detail-terminal-button"
-                gap={'6px'}
-                h="28px"
-                fontSize={'12px'}
-                bg="white"
-                border="1px solid #DFE2EA"
-                borderRadius={'md'}
-                px="8px"
-                cursor={'pointer'}
-                fontWeight={'bold'}
-                onClick={() => {
-                  reset();
-                  setScenario('editPassword');
-                  onOpen();
-                }}
-                _hover={{
-                  color: 'brightBlue.600'
-                }}
-              >
-                <MyIcon name="edit" w={'16px'} h={'16px'} />
-                {t('edit_password')}
-              </Center>
-            )}
+              {!['milvus', 'kafka'].includes(db.dbType) && (
+                <Center
+                  className="driver-detail-terminal-button"
+                  gap={'6px'}
+                  h="28px"
+                  fontSize={'12px'}
+                  bg="white"
+                  border="1px solid #DFE2EA"
+                  borderRadius={'md'}
+                  px="8px"
+                  cursor={'pointer'}
+                  fontWeight={'bold'}
+                  onClick={() => onclickConnectDB()}
+                  _hover={{
+                    color: 'brightBlue.600'
+                  }}
+                >
+                  <MyIcon name="terminal" w="16px" h="16px" />
+                  {t('direct_connection')}
+                </Center>
+              )}
+              {[DBTypeEnum.mysql, DBTypeEnum.postgresql, DBTypeEnum.mongodb].includes(
+                db.dbType as DBTypeEnum
+              ) && (
+                <Center
+                  className="driver-detail-terminal-button"
+                  gap={'6px'}
+                  h="28px"
+                  fontSize={'12px'}
+                  bg="white"
+                  border="1px solid #DFE2EA"
+                  borderRadius={'md'}
+                  px="8px"
+                  cursor={'pointer'}
+                  fontWeight={'bold'}
+                  onClick={() => {
+                    reset();
+                    setScenario('editPassword');
+                    onOpen();
+                  }}
+                  _hover={{
+                    color: 'brightBlue.600'
+                  }}
+                >
+                  <MyIcon name="edit" w={'16px'} h={'16px'} />
+                  {t('edit_password')}
+                </Center>
+              )}
+            </HStack>
           </Flex>
+
           {!['milvus', 'kafka'].includes(db.dbType) && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (

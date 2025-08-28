@@ -45,19 +45,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
+} from '@sealos/shadcn-ui/dropdown-menu';
 import IDEButton from '@/components/IDEButton';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 import MonitorChart from '@/components/MonitorChart';
 import DevboxStatusTag from '@/components/StatusTag';
-import { Pagination } from '@/components/ui/pagination';
+import { Pagination } from '@sealos/shadcn-ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { track } from '@sealos/gtm';
 import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import SearchEmpty from './SearchEmpty';
 
 const DeleteDevboxDialog = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));

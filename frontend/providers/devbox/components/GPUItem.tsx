@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { CircuitBoard } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { GpuType } from '@/types/user';
 import { usePriceStore } from '@/stores/price';
 

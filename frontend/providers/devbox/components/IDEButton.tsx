@@ -10,11 +10,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from '@sealos/shadcn-ui/dropdown-menu';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { IDEType, useIDEStore } from '@/stores/ide';

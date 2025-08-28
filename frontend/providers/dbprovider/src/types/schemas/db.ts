@@ -1,71 +1,89 @@
 import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
 import { DBTypeEnum } from '@/constants/db';
 import * as z from 'zod';
-import { autoBackupFormSchema } from './backup';
+import { autoBackupFormSchema, backupInfoSchema } from './backup';
 
 export const dbTypeSchema = z.enum([
-  DBTypeEnum.postgresql,
-  DBTypeEnum.mongodb,
-  DBTypeEnum.mysql,
-  DBTypeEnum.redis,
-  DBTypeEnum.kafka,
-  DBTypeEnum.qdrant,
-  DBTypeEnum.nebula,
-  DBTypeEnum.weaviate,
-  DBTypeEnum.milvus,
-  DBTypeEnum.pulsar,
-  DBTypeEnum.clickhouse
+  'postgresql',
+  'mongodb',
+  'apecloud-mysql',
+  'redis',
+  'kafka',
+  'qdrant',
+  'nebula',
+  'weaviate',
+  'milvus',
+  'pulsar',
+  'clickhouse'
 ]);
-
-export const kubeBlockClusterTerminationPolicySchema = z.union([
-  z.literal('Delete'),
-  z.literal('WipeOut')
-]);
-
-export const backupTypeEnumSchema = z.enum([
-  BackupTypeEnum.manual,
-  BackupTypeEnum.auto,
-  BackupTypeEnum.UnKnow
-]);
-
-export const backupStatusEnumSchema = z.enum([
-  BackupStatusEnum.Completed,
-  BackupStatusEnum.InProgress,
-  BackupStatusEnum.Failed,
-  BackupStatusEnum.UnKnow,
-  BackupStatusEnum.Running,
-  BackupStatusEnum.Deleting
-]);
-
-export const backupStatusMapSchema = z.object({
-  label: z.string(),
-  value: backupStatusEnumSchema,
-  color: z.string()
+export const kubeBlockClusterTerminationPolicySchema = z.enum(['Delete', 'WipeOut']);
+export const baseResourceSchema = z.object({
+  cpu: z.string(),
+  memory: z.string(),
+  storage: z.string()
 });
-
-export const backupItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  remark: z.string(),
-  status: backupStatusMapSchema,
-  startTime: z.date(),
-  failureReason: z.string().optional(),
-  type: backupTypeEnumSchema,
-  namespace: z.string(),
-  connectionPassword: z.string(),
-  dbName: z.string(),
-  dbType: z.string()
-});
-
+export const allResourceSchema = baseResourceSchema.and(
+  z.object({
+    replicas: z.number().min(1).max(3)
+  })
+);
 export const dbEditSchema = z.object({
-  dbType: dbTypeSchema,
-  dbVersion: z.string(),
-  dbName: z.string(),
-  replicas: z.number(),
-  cpu: z.number(),
-  memory: z.number(),
-  storage: z.number(),
-  labels: z.record(z.string(), z.string()),
   terminationPolicy: kubeBlockClusterTerminationPolicySchema,
-  autoBackup: z.optional(autoBackupFormSchema)
+  name: z.string(),
+  type: dbTypeSchema,
+  version: z.string(),
+  resource: allResourceSchema,
+  autoBackup: autoBackupFormSchema.optional()
 });
+// export const dbConditionItemSchema = z.object({
+//   lastTransitionTime: z.string(),
+//   message: z.string(),
+//   observedGeneration: z.number(),
+//   reason: z.string(),
+//   status: z.enum(['True', 'False']),
+//   type: z.string()
+// });
+export const dbSourceSchema = z.object({
+  hasSource: z.boolean(),
+  sourceName: z.string(),
+  sourceType: z.enum(['app_store', 'sealaf'])
+});
+export const dbStatusSchema = z.enum([
+  'Creating',
+  'Starting',
+  'Stopping',
+  'Stopped',
+  'Running',
+  'Updating',
+  'SpecUpdating',
+  'Rebooting',
+  'Upgrade',
+  'VerticalScaling',
+  'VolumeExpanding',
+  'Failed',
+  'UnKnow',
+  'Deleting'
+]);
+export const dbDetailSchema = dbEditSchema.and(
+  z.object({
+    id: z.string(),
+    status: dbStatusSchema,
+    createTime: z.string(),
+    totalResource: baseResourceSchema,
+    isDiskSpaceOverflow: z.boolean(),
+    source: dbSourceSchema
+  })
+);
+export const dblistItemSchema = dbEditSchema.and(
+  z.object({
+    id: z.string(),
+    status: dbStatusSchema,
+    createTime: z.string(),
+    totalResource: baseResourceSchema,
+    isDiskSpaceOverflow: z.boolean(),
+    source: dbSourceSchema
+    // autoBackup: autoBackupFormSchema.optional()
+  })
+);
+
+export const versionListSchema = z.record(dbTypeSchema, z.array(z.string()));

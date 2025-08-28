@@ -9,7 +9,7 @@ import {
 } from '@/constants/app';
 import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
-import { pathFormat, mountPathToConfigMapKey, str2Num, strToBase64 } from '@/utils/tools';
+import { str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customAlphabet, customRandom } from 'nanoid';
@@ -45,6 +45,13 @@ const getServiceName = (data: AppEditType, forNodePort: boolean = false): string
   const suffix = forNodePort ? '-nodeport' : '';
 
   return `${data.appName}${suffix}-${deterministicId}`;
+};
+
+export const yamlString2Objects = (yamlString: string): object[] => {
+  if (!yamlString.trim()) return [];
+
+  const documents = yamlString.split(/\n---\n/);
+  return documents.filter((doc) => doc.trim()).map((doc) => yaml.load(doc.trim()) as object);
 };
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
@@ -472,6 +479,14 @@ export const json2Ingress = (data: AppEditType) => {
     });
 
   return result.join('\n---\n');
+};
+
+export const json2ServiceObjects = (data: AppEditType): object[] => {
+  return yamlString2Objects(json2Service(data));
+};
+
+export const json2IngressObjects = (data: AppEditType): object[] => {
+  return yamlString2Objects(json2Ingress(data));
 };
 
 export const json2ConfigMap = (data: AppEditType) => {
