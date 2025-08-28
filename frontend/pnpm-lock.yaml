@@ -114,9 +114,15 @@ importers:
       '@sealos/gtm':
         specifier: workspace:^
         version: link:../packages/gtm
+      '@sealos/shadcn-ui':
+        specifier: workspace:^
+        version: link:../packages/shadcn-ui
       '@sealos/ui':
         specifier: workspace:^
         version: link:../packages/ui
+      '@tailwindcss/postcss':
+        specifier: ^4.1.10
+        version: 4.1.10
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)
@@ -204,6 +210,9 @@ importers:
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
+      postcss:
+        specifier: ^8.5.6
+        version: 8.5.6
       prisma:
         specifier: ^5.10.2
         version: 5.10.2
@@ -243,6 +252,12 @@ importers:
       sharp:
         specifier: ^0.32.6
         version: 0.32.6
+      sonner:
+        specifier: ^2.0.5
+        version: 2.0.5(react-dom@18.2.0)(react@18.2.0)
+      tailwindcss:
+        specifier: ^4.1.12
+        version: 4.1.12
       tencentcloud-sdk-nodejs:
         specifier: 4.0.905
         version: 4.0.905
@@ -8221,7 +8236,7 @@ packages:
     resolution: {integrity: sha512-MHjT95QuipcPrpLM+8JMSzFx6eHp5Bm+4XeFDJlwsvVBjmKNiIAvasGK2fxz2WbGRlnvqehFbh07MMa7n3YJnw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.20
+      '@jridgewell/trace-mapping': 0.3.25
       callsites: 3.1.0
       graceful-fs: 4.2.11
     dev: true
@@ -25211,13 +25226,13 @@ packages:
     resolution: {integrity: sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==}
     engines: {node: '>= 0.4'}
 
-  /postcss-import@15.1.0(postcss@8.5.3):
+  /postcss-import@15.1.0(postcss@8.5.6):
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
-      postcss: 8.5.3
+      postcss: 8.5.6
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.8
@@ -25235,17 +25250,17 @@ packages:
       resolve: 1.22.8
     dev: true
 
-  /postcss-js@4.0.1(postcss@8.5.3):
+  /postcss-js@4.0.1(postcss@8.5.6):
     resolution: {integrity: sha512-dDLF8pEO191hJMtlHFPRa8xsizHaM82MLfNkUHdUtVEV3tgTp5oj+8qbEqYM57SLfc74KSbw//4SeJma2LRVIw==}
     engines: {node: ^12 || ^14 || >= 16}
     peerDependencies:
       postcss: ^8.4.21
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.5.3
+      postcss: 8.5.6
     dev: true
 
-  /postcss-load-config@4.0.2(postcss@8.5.3):
+  /postcss-load-config@4.0.2(postcss@8.5.6):
     resolution: {integrity: sha512-bSVhyJGL00wMVoPUzAVAnbEoWyqRxkjv64tUl427SKnPrENtq6hJwUojroMz2VB+Q1edmi4IfrAPpami5VVgMQ==}
     engines: {node: '>= 14'}
     peerDependencies:
@@ -25258,17 +25273,17 @@ packages:
         optional: true
     dependencies:
       lilconfig: 3.1.2
-      postcss: 8.5.3
+      postcss: 8.5.6
       yaml: 2.7.1
     dev: true
 
-  /postcss-nested@6.0.1(postcss@8.5.3):
+  /postcss-nested@6.0.1(postcss@8.5.6):
     resolution: {integrity: sha512-mEp4xPMi5bSWiMbsgoPfcP74lsWLHkQbZc3sY+jWYd65CUwXrUaTp0fmNpa01ZcETKlIgUdFN/MpS2xZtqL9dQ==}
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.2.14
     dependencies:
-      postcss: 8.5.3
+      postcss: 8.5.6
       postcss-selector-parser: 6.0.15
     dev: true
 
@@ -28481,11 +28496,11 @@ packages:
       normalize-path: 3.0.0
       object-hash: 3.0.0
       picocolors: 1.0.0
-      postcss: 8.5.3
-      postcss-import: 15.1.0(postcss@8.5.3)
-      postcss-js: 4.0.1(postcss@8.5.3)
-      postcss-load-config: 4.0.2(postcss@8.5.3)
-      postcss-nested: 6.0.1(postcss@8.5.3)
+      postcss: 8.5.6
+      postcss-import: 15.1.0(postcss@8.5.6)
+      postcss-js: 4.0.1(postcss@8.5.6)
+      postcss-load-config: 4.0.2(postcss@8.5.6)
+      postcss-nested: 6.0.1(postcss@8.5.6)
       postcss-selector-parser: 6.0.15
       resolve: 1.22.8
       sucrase: 3.35.0
@@ -29542,7 +29557,7 @@ packages:
     resolution: {integrity: sha512-/EH/sDgxU2eGxajKdwLCDmQ4FWq+kpi3uCmBGpw1xJtnAxEjlD8j8PEiGWpCIMIs3ciNAgH0d3TTJiUkYzyZjA==}
     engines: {node: '>=10.12.0'}
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.20
+      '@jridgewell/trace-mapping': 0.3.25
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
     dev: true
