@@ -47,24 +47,25 @@ export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;
 
 // 工作空间订阅
 export const WorkspaceSubscriptionSchema = z.object({
-  type: SubscriptionTypeSchema,
-  id: z.string().optional(),
-  plan_name: z.string().optional(),
-  workspace: z.string().optional(),
-  region_domain: z.string().optional(),
-  user_uid: z.string().optional(),
-  status: z.string().optional(),
-  pay_status: z.string().optional(),
-  pay_method: z.string().optional(),
-  stripe: StripeInfoSchema.optional(),
-  traffic_status: z.string().optional(),
-  current_period_start_at: z.string().optional(),
-  current_period_end_at: z.string().optional(),
-  cancel_at_period_end: z.boolean().optional(),
-  create_at: z.string().optional(),
-  update_at: z.string().optional(),
-  expire_at: z.string().nullable().optional(),
-  traffic: z.array(z.any()).optional()
+  ID: z.string(),
+  PlanName: z.string(),
+  Workspace: z.string(),
+  RegionDomain: z.string(),
+  UserUID: z.string(),
+  Status: z.string(),
+  PayStatus: z.string(),
+  PayMethod: z.string(),
+  Stripe: StripeInfoSchema.nullable(),
+  TrafficStatus: z.string(),
+  CurrentPeriodStartAt: z.string(),
+  CurrentPeriodEndAt: z.string(),
+  CancelAtPeriodEnd: z.boolean(),
+  CancelAt: z.string(),
+  CreateAt: z.string(),
+  UpdateAt: z.string(),
+  ExpireAt: z.string().nullable(),
+  Traffic: z.array(z.any()).nullable(),
+  type: SubscriptionTypeSchema
 });
 export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
@@ -100,7 +101,7 @@ export type WorkspaceSubscriptionRequest = z.infer<typeof WorkspaceSubscriptionR
 
 export const UpgradeAmountRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
   planName: z.string(),
-  period: z.string(),
+  period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
   payMethod: PaymentMethodSchema,
   operator: z.literal('upgraded')
 });
@@ -108,8 +109,8 @@ export type UpgradeAmountRequest = z.infer<typeof UpgradeAmountRequestSchema>;
 
 export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
   planName: z.string(),
-  period: z.string(),
-  payMethod: PaymentMethodSchema,
+  period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
+  payMethod: PaymentMethodSchema, // 支付方式：STRIPE 或 BALANCE
   operator: OperatorSchema,
   cardId: z.string().optional()
 });

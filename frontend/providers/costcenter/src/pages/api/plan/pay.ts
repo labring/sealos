@@ -4,10 +4,8 @@ import { jsonRes } from '@/service/backend/response';
 import {
   SubscriptionPayRequestSchema,
   PaymentResponse,
-  PaymentResponseSchema,
   SubscriptionPayRequest
 } from '@/types/plan';
-import { ApiResp } from '@/types/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -26,18 +24,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { workspace, regionDomain, planName, period, payMethod, operator, cardId } =
       parseResult.data;
 
-    // 创建 API 客户端
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
 
-    // 准备请求头（包含可选的 Device-Token-ID）
     const headers: Record<string, string> = {};
     const deviceTokenId = req.headers['device-token-id'];
     if (deviceTokenId && typeof deviceTokenId === 'string') {
       headers['Device-Token-ID'] = deviceTokenId;
     }
 
-    // 准备请求体
     const requestBody: SubscriptionPayRequest = {
       workspace,
       regionDomain,
@@ -47,39 +42,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       operator
     };
 
-    // 如果提供了 cardId，则添加到请求体
     if (cardId) {
       requestBody.cardId = cardId;
     }
 
-    // 调用后端 API
     console.log('requestBody', requestBody);
-    const response = await client.post<ApiResp<PaymentResponse>>(
+    const response = await client.post<PaymentResponse>(
       '/account/v1alpha1/workspace-subscription/pay',
       requestBody,
       { headers }
     );
 
-    // 尝试验证响应数据，但即使失败也返回数据
-    const validatedResponse = PaymentResponseSchema.safeParse(response.data?.data);
-    if (!validatedResponse.success) {
-      console.warn(
-        'Response validation failed, but returning data anyway:',
-        validatedResponse.error
-      );
-    }
-
     return jsonRes<PaymentResponse>(res, {
-      data: response.data?.data
+      data: response.data
     });
   } catch (error: any) {
-    if (error.response?.data) {
-      return jsonRes(res, {
-        code: error.response.status || 500,
-        message: error.response.data.message || 'Backend service error',
-        error: error.response.data
-      });
-    }
+    console.log('error', error);
 
     return jsonRes(res, {
       code: 500,
