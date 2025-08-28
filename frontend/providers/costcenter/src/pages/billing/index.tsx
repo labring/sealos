@@ -236,7 +236,6 @@ function Billing() {
       // Use the string appType ID directly (e.g., "DB") for both display and API
       appType: getAppTypeString(overview.appType.toString()),
       cost: overview.amount / 100000, // Convert from micro units to dollars
-      avatarFallback: overview.appName?.charAt(0).toUpperCase() || 'A',
       // Store the namespace for this specific app
       namespace: overview.namespace
     }));
@@ -444,7 +443,6 @@ function Billing() {
               hasSubApps={selectedApp?.appType === 'APP-STORE'}
               data={appBillingDetails}
               appName={selectedApp?.appName || 'Unknown App'}
-              appIcon={selectedApp?.avatarFallback ?? 'A'}
               region={currentRegionName || 'Unknown Region'}
               currentPage={appBillingPage}
               totalPages={appBillingTotalPage}

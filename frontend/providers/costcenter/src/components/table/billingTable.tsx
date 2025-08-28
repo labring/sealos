@@ -16,7 +16,8 @@ import { format, parseISO, subHours } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import CurrencySymbol from '../CurrencySymbol';
-import { AppImg, BaseTable } from '../table/BaseTable';
+import { BaseTable } from '../table/BaseTable';
+import { AppIcon } from '../AppIcon';
 const getAmountCell = (data?: { isTotal?: boolean }) =>
   function AmountCell(props: CellContext<APPBillingItem, number>) {
     const isTotal = data?.isTotal || false;
@@ -36,6 +37,8 @@ export function BillingDetailsTable({
 }: { data: APPBillingItem[] } & TableContainerProps) {
   const { t } = useTranslation();
   const { currency, gpuEnabled } = useEnvStore((s) => s);
+  const { getAppType } = useAppTypeStore();
+
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<APPBillingItem>();
     const customTh = (needCurrency?: boolean) =>
@@ -79,7 +82,8 @@ export function BillingDetailsTable({
             props.getValue() || (app_type === 3 ? t('TERMINAL', { ns: 'applist' }) : t('Other'));
           return (
             <Flex gap={'6px'} color={'grayModern.900'}>
-              <AppImg app_type={app_type + ''} boxSize={'20px'}></AppImg>
+              <AppIcon app={getAppType(app_type.toString())} />
+
               <Text>{appName}</Text>
             </Flex>
           );
