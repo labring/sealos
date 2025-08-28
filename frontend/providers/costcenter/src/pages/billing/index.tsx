@@ -22,24 +22,30 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
+import useAppTypeStore from '@/stores/appType';
 
 import { Region } from '@/types/region';
-import { ApiResp, AppOverviewBilling } from '@/types';
+import { ApiResp, AppOverviewBilling, APPBillingItem } from '@/types';
 import useOverviewStore from '@/stores/overview';
 
 function Billing() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { getRegion, getAppName, getAppType, getNamespace } = useBillingStore();
+  const { getRegion } = useBillingStore();
+  const { getAppType: getAppTypeString } = useAppTypeStore();
   const { startTime, endTime } = useOverviewStore();
 
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPage, setTotalPage] = useState(1);
-  const [totalItem, setTotalItem] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
+
+  // App billing drawer states
+  const [appBillingPage, setAppBillingPage] = useState(1);
+  const [appBillingTotalPage, setAppBillingTotalPage] = useState(1);
+  const [appBillingTotalItem, setAppBillingTotalItem] = useState(0);
+  const [appBillingPageSize] = useState(10);
 
   // Query regions
   const { data: regionData } = useQuery({
@@ -72,33 +78,20 @@ function Billing() {
 
   // Query app overview billing data for the selected workspace
   const appOverviewQueryBody = useMemo(() => {
-    const namespace = selectedWorkspace ? selectedWorkspace.replace('workspace_', '') : '';
     return {
       endTime,
       startTime,
       regionUid: currentRegionUid,
-      appType: getAppType(),
-      appName: getAppName(),
-      namespace,
+      // Not supports filtering apps for now.
+      appType: '',
+      appName: '',
+      namespace: selectedWorkspace || '', // selectedWorkspace is now the namespace ID directly
       page,
       pageSize
     };
-  }, [
-    endTime,
-    startTime,
-    currentRegionUid,
-    selectedWorkspace,
-    getAppType,
-    getAppName,
-    page,
-    pageSize
-  ]);
+  }, [endTime, startTime, currentRegionUid, selectedWorkspace, page, pageSize]);
 
-  const {
-    data: appOverviewData,
-    isFetching: isAppOverviewFetching,
-    refetch: refetchAppOverview
-  } = useQuery({
+  const { data: appOverviewData, refetch: refetchAppOverview } = useQuery({
     queryFn() {
       return request.post<
         any,
@@ -113,21 +106,14 @@ function Billing() {
       if (!data.data) {
         return;
       }
-      const { total, totalPage } = data.data;
-      if (totalPage === 0) {
-        setTotalPage(1);
-        setTotalItem(1);
-      } else {
-        setTotalItem(total);
-        setTotalPage(totalPage);
-      }
+      const { totalPage } = data.data;
       if (totalPage < page) {
         setPage(1);
       }
     },
     keepPreviousData: false,
     queryKey: ['appOverviewBilling', appOverviewQueryBody, page, pageSize],
-    enabled: !!currentRegionUid && !!selectedWorkspace && !!appOverviewQueryBody.namespace
+    enabled: !!currentRegionUid && !!selectedRegion
   });
 
   // Reset pagination on search change
@@ -164,9 +150,10 @@ function Billing() {
 
     // Add workspace nodes - namespaces are [id, name] tuples
     // Since we're querying with a specific regionUid, all returned namespaces belong to that region
+    // Store namespace ID directly without workspace_ prefix for simpler usage
     namespaces.forEach(([namespaceId, namespaceName]) => {
       result.push({
-        id: `workspace_${namespaceId}`,
+        id: namespaceId, // Store namespace ID directly
         name: namespaceName,
         cost: 0, // Will be updated with actual cost data
         type: 'workspace',
@@ -183,6 +170,11 @@ function Billing() {
     setSelectedApp(null);
     if (!regionId) {
       setSelectedWorkspace(null);
+    } else {
+      // Trigger refetch when region is selected
+      setTimeout(() => {
+        refetchAppOverview();
+      }, 0);
     }
   };
 
@@ -201,22 +193,24 @@ function Billing() {
 
   // Transform app overview data to PAYGData format
   const paygData: PAYGData[] = useMemo(() => {
-    if (!selectedWorkspace) {
+    if (!selectedRegion) {
       return [];
     }
 
     const overviews = appOverviewData?.data?.overviews || [];
     return overviews.map((overview) => ({
       appName: overview.appName,
-      // ! ================================================= I can't find where to convert appType to actual string.
-      appType: overview.appType.toString(),
+      // Use the string appType ID directly (e.g., "DB") for both display and API
+      appType: getAppTypeString(overview.appType.toString()),
       cost: overview.amount / 100000, // Convert from micro units to dollars
-      avatarFallback: overview.appName?.charAt(0).toUpperCase() || 'A'
+      avatarFallback: overview.appName?.charAt(0).toUpperCase() || 'A',
+      // Store the namespace for this specific app
+      namespace: overview.namespace
     }));
-  }, [appOverviewData, selectedWorkspace]);
+  }, [appOverviewData, selectedRegion, getAppTypeString]);
 
-  // Mock subscription data (keeping this as subscription data is not available in app overview)
-  const subscriptionData: SubscriptionData[] = Array.from({ length: 3 }, (_, i) => ({
+  // ! ========================================================================== Mock subscription data (keeping this as subscription data is not available in app overview)
+  const subscriptionData: SubscriptionData[] = Array.from({ length: 3 }, () => ({
     time: '2024-12-14 16:00',
     plan: 'STARTER',
     cost: 5
@@ -240,7 +234,7 @@ function Billing() {
   const currentWorkspaceName = useMemo(() => {
     if (selectedWorkspace) {
       const namespaces = (nsListData?.data || []) as [string, string][];
-      const workspace = namespaces.find(([id]) => `workspace_${id}` === selectedWorkspace);
+      const workspace = namespaces.find(([id]) => id === selectedWorkspace);
       return workspace?.[1];
     }
     return null; // No workspace selected
@@ -262,8 +256,89 @@ function Billing() {
 
   const [selectedApp, setSelectedApp] = useState<PAYGData | null>(null);
 
+  // App billing query for drawer
+  const appBillingQueryBody = useMemo(() => {
+    if (!selectedApp) return null;
+
+    return {
+      endTime,
+      startTime,
+      regionUid: currentRegionUid,
+      appType: selectedApp.appType, // Use the string appType ID (e.g., "DB")
+      appName: selectedApp.appName,
+      namespace: selectedApp.namespace || '', // Use the app's specific namespace
+      page: appBillingPage,
+      pageSize: appBillingPageSize
+    };
+  }, [selectedApp, endTime, startTime, currentRegionUid, appBillingPage, appBillingPageSize]);
+
+  const { data: appBillingData } = useQuery({
+    queryFn() {
+      return request.post<
+        any,
+        ApiResp<{
+          costs: APPBillingItem[];
+          current_page: number;
+          total_pages: number;
+          total_records: number;
+        }>
+      >('/api/billing/appBilling', appBillingQueryBody);
+    },
+    onSuccess(data) {
+      if (!data.data) {
+        return;
+      }
+      const { total_records: total, total_pages: totalPage } = data.data;
+      if (totalPage === 0) {
+        setAppBillingTotalPage(1);
+        setAppBillingTotalItem(1);
+      } else {
+        setAppBillingTotalItem(total);
+        setAppBillingTotalPage(totalPage);
+      }
+      if (totalPage < appBillingPage) {
+        setAppBillingPage(1);
+      }
+    },
+    keepPreviousData: true,
+    queryKey: ['appBillingDrawer', appBillingQueryBody, appBillingPage, appBillingPageSize],
+    enabled: !!appBillingQueryBody
+  });
+
+  // Transform app billing data to PAYGBillingDetail format
+  const appBillingDetails = useMemo(() => {
+    if (!appBillingData?.data?.costs) return [];
+
+    return appBillingData.data.costs.map((item): any => ({
+      appName: item.app_name,
+      // Convert appType number to string using the store
+      appType: getAppTypeString(item.app_type.toString()),
+      time: new Date(item.time),
+      orderId: item.order_id,
+      namespace: item.namespace,
+      amount: item.amount,
+      usage: {
+        // Map from used and used_amount arrays based on resource type indices
+        // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
+        cpu: item.used['0'] ? { amount: item.used['0'], cost: item.used_amount['0'] } : undefined,
+        memory: item.used['1']
+          ? { amount: item.used['1'], cost: item.used_amount['1'] }
+          : undefined,
+        storage: item.used['2']
+          ? { amount: item.used['2'], cost: item.used_amount['2'] }
+          : undefined,
+        network: item.used['3']
+          ? { amount: item.used['3'], cost: item.used_amount['3'] }
+          : undefined,
+        port: item.used['4'] ? { amount: item.used['4'], cost: item.used_amount['4'] } : undefined,
+        gpu: item.used['5'] ? { amount: item.used['5'], cost: item.used_amount['5'] } : undefined
+      }
+    }));
+  }, [appBillingData, getAppTypeString]);
+
   const handleUsageClick = (item: PAYGData) => {
     setSelectedApp(item);
+    setAppBillingPage(1); // Reset pagination when opening drawer
     setDetailsDrawerOpen(true);
   };
 
@@ -297,7 +372,7 @@ function Billing() {
             >
               <CostPanel displayTitle={displayTitle} totalCost={totalCost}>
                 <SubscriptionCostTable data={subscriptionData} />
-                {paygData.length > 0 && (
+                {paygData.length > 0 && selectedRegion && (
                   <PAYGCostTable
                     data={paygData}
                     timeRange={`${new Date(startTime).toLocaleDateString()} – ${new Date(
@@ -313,46 +388,17 @@ function Billing() {
               open={detailsDrawerOpen}
               onOpenChange={setDetailsDrawerOpen}
               appType={selectedApp?.appType || ''}
-              namespace={selectedWorkspace ? selectedWorkspace.replace('workspace_', '') : ''}
+              namespace={selectedApp?.namespace || ''}
               hasSubApps={false}
-              data={[
-                {
-                  appName: 'App Name',
-                  appType: 'applaunchpad',
-                  time: new Date('2025-08-27T15:00:00'),
-                  orderId: 'order-123',
-                  namespace: 'default',
-                  amount: 1200000,
-                  usage: {
-                    cpu: { amount: 1600, cost: 200000 },
-                    memory: { amount: 1600, cost: 200000 },
-                    storage: { amount: 1600, cost: 200000 },
-                    network: { amount: 1600, cost: 200000 },
-                    port: { amount: 2, cost: 200000 },
-                    gpu: { amount: 2, cost: 200000 }
-                  }
-                },
-                {
-                  appName: 'App Name 2',
-                  appType: 'devbox',
-                  time: new Date('2025-08-27T15:00:00'),
-                  orderId: 'order-124',
-                  namespace: 'default',
-                  amount: 600000,
-                  usage: {
-                    cpu: { amount: 800, cost: 100000 },
-                    memory: { amount: 800, cost: 100000 }
-                  }
-                }
-              ]}
+              data={appBillingDetails}
               appName={selectedApp?.appName || 'Unknown App'}
               appIcon={selectedApp?.avatarFallback ?? 'A'}
               region={currentRegionName || 'Unknown Region'}
-              currentPage={1}
-              totalPages={1}
-              pageSize={1}
-              totalCount={1}
-              onPageChange={() => {}}
+              currentPage={appBillingPage}
+              totalPages={appBillingTotalPage}
+              pageSize={appBillingPageSize}
+              totalCount={appBillingTotalItem}
+              onPageChange={setAppBillingPage}
               onOpenApp={() => {
                 // Handle open app logic
                 console.log('Open app:', selectedApp?.appName);
