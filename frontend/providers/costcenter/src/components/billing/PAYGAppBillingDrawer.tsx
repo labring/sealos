@@ -24,6 +24,7 @@ import {
 } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { format, addHours } from 'date-fns';
+import { useTranslation } from 'next-i18next';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -80,6 +81,8 @@ export function PAYGAppBillingDrawer({
   onPageChange,
   onOpenApp
 }: Props) {
+  const { t } = useTranslation('applist');
+
   // Group data by hour or day based on hasSubApps and add separators
   const tableData: TableRowData[] = useMemo(() => {
     const grouped = data.reduce(
@@ -184,7 +187,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.memory ? `${row.usage.memory.amount / 1000} Gi` : '-';
+        return row.usage.memory ? `${row.usage.memory.amount / 1024} Gi` : '-';
       }
     }),
     columnHelper.display({
@@ -202,7 +205,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.storage ? `${row.usage.storage.amount / 1000} Gi` : '-';
+        return row.usage.storage ? `${row.usage.storage.amount / 1024} Gi` : '-';
       }
     }),
     columnHelper.display({
@@ -220,7 +223,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.network ? `${row.usage.network.amount / 1000} Gi` : '-';
+        return row.usage.network ? `${row.usage.network.amount / 1024} Gi` : '-';
       }
     }),
     columnHelper.display({
@@ -238,7 +241,7 @@ export function PAYGAppBillingDrawer({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.port ? `${row.usage.port.amount} Ports` : '-';
+        return row.usage.port ? `${row.usage.port.amount / 1000} Ports` : '-';
       }
     }),
     columnHelper.display({
@@ -296,7 +299,7 @@ export function PAYGAppBillingDrawer({
               </Avatar>
               <span className="text-nowrap">{appName}</span>
               <Badge variant="secondary">{region}</Badge>
-              <Badge variant="secondary">{appType}</Badge>
+              <Badge variant="secondary">{t(appType)}</Badge>
             </div>
             {onOpenApp && (
               <div>
