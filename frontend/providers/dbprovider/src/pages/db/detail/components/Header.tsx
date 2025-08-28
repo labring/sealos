@@ -145,129 +145,137 @@ const Header = ({
   }, [db, t, toast]);
 
   const handleManageData = useCallback(async () => {
-    const orgId = '34';
-    const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
-    const userStr = localStorage.getItem('session');
-    const userObj = userStr ? JSON.parse(userStr) : null;
-    const userId = userObj?.user.id;
-    const userNS = userObj?.user.nsid;
-    const userKey = `${userId}/${userNS}`;
-
     try {
-      const conn = await getDBSecret({
-        dbName: db.dbName,
-        dbType: db.dbType,
-        mock: false
-      });
+      const orgId = '34';
+      const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
+      const userStr = localStorage.getItem('session');
+      const userObj = userStr ? JSON.parse(userStr) : null;
+      const userId = userObj?.user.id;
+      const userNS = userObj?.user.nsid;
+      const userKey = `${userId}/${userNS}`;
 
-      if (!conn) {
-        return toast({
-          title: 'Connection info not ready',
-          status: 'error'
+      try {
+        const conn = await getDBSecret({
+          dbName: db.dbName,
+          dbType: db.dbType,
+          mock: false
         });
-      }
 
-      const { host, port, connection, username, password } = conn;
+        if (!conn) {
+          return toast({
+            title: 'Connection info not ready',
+            status: 'error'
+          });
+        }
 
-      let connectionUrl = connection;
-      switch (db.dbType) {
-        case 'mongodb':
-          connectionUrl = `mongodb://${host}:${port}`;
-          break;
-        case 'apecloud-mysql':
-          connectionUrl = `jdbc:mysql://${host}:${port}`;
-          break;
-        case 'postgresql':
-          connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
-          break;
-        case 'redis':
-          connectionUrl = `jdbc:redis://${host}:${port}`;
-          break;
-        default:
-          break;
-      }
+        const { host, port, connection, username, password } = conn;
 
-      const payload = {
-        alias: db.dbName,
-        environmentId: 2 as 1 | 2,
-        storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
-        host: host,
-        port: String(port),
-        user: username,
-        password: password,
-        url: connectionUrl,
-        type: mapDBType(db.dbType)
-      };
+        let connectionUrl = connection;
+        switch (db.dbType) {
+          case 'mongodb':
+            connectionUrl = `mongodb://${host}:${port}`;
+            break;
+          case 'apecloud-mysql':
+            connectionUrl = `jdbc:mysql://${host}:${port}`;
+            break;
+          case 'postgresql':
+            connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
+            break;
+          case 'redis':
+            connectionUrl = `jdbc:redis://${host}:${port}`;
+            break;
+          default:
+            break;
+        }
 
-      let currentDataSourceId = getDataSourceId(db.dbName);
+        const payload = {
+          alias: db.dbName,
+          environmentId: 2 as 1 | 2,
+          storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
+          host: host,
+          port: String(port),
+          user: username,
+          password: password,
+          url: connectionUrl,
+          type: mapDBType(db.dbType)
+        };
 
-      if (!currentDataSourceId) {
-        try {
-          const res = await syncDatasourceFirst(payload, userKey);
-          currentDataSourceId = res.data;
-          if (currentDataSourceId) {
-            setDataSourceId(db.dbName, currentDataSourceId);
-          }
-        } catch (err: any) {
-          if (err.data) {
-            currentDataSourceId = err.data;
+        let currentDataSourceId = getDataSourceId(db.dbName);
+
+        if (!currentDataSourceId) {
+          try {
+            const res = await syncDatasourceFirst(payload, userKey);
+            currentDataSourceId = res?.data;
             if (currentDataSourceId) {
               setDataSourceId(db.dbName, currentDataSourceId);
             }
-          } else {
-            throw err;
+          } catch (err: any) {
+            if (err?.data) {
+              currentDataSourceId = err.data;
+              if (currentDataSourceId) {
+                setDataSourceId(db.dbName, currentDataSourceId);
+              }
+            } else {
+              throw err;
+            }
+          }
+        } else {
+          try {
+            const syncPayload = {
+              ...payload,
+              id: currentDataSourceId
+            };
+            await syncDatasource(syncPayload, userKey);
+          } catch (err) {
+            console.error('sync datasource:', JSON.stringify(err));
           }
         }
-      } else {
-        try {
-          const syncPayload = {
-            ...payload,
-            id: currentDataSourceId
-          };
-          await syncDatasource(syncPayload, userKey);
-        } catch (err) {
-          console.error('sync datasource:', JSON.stringify(err));
+
+        if (!currentDataSourceId) {
+          throw new Error('Failed to get or create datasource ID');
         }
+
+        const currentLang = getLangStore() || i18n?.language || 'zh';
+        const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
+
+        const baseUrl = await generateLoginUrl({
+          userId,
+          userNS,
+          orgId,
+          secretKey,
+          ui: {
+            theme: ThemeAppearance.Light,
+            primaryColor: PrimaryColorsType.bw,
+            language: chat2dbLanguage,
+            hideAvatar: yowantLayoutConfig.hideAvatar
+          }
+        });
+
+        const chat2dbUrl = new URL(baseUrl);
+        chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
+
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-chat2db',
+          pathname: '',
+          query: {
+            url: chat2dbUrl.toString()
+          }
+        });
+      } catch (error) {
+        console.error('chat2db redirect failed:', error);
+        toast({
+          title: t('chat2db_redirect_failed'),
+          status: 'error'
+        });
       }
-
-      if (!currentDataSourceId) {
-        throw new Error('Failed to get or create datasource ID');
-      }
-
-      const currentLang = getLangStore() || i18n?.language || 'zh';
-      const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
-
-      const baseUrl = await generateLoginUrl({
-        userId,
-        userNS,
-        orgId,
-        secretKey,
-        ui: {
-          theme: ThemeAppearance.Light,
-          primaryColor: PrimaryColorsType.bw,
-          language: chat2dbLanguage,
-          hideAvatar: yowantLayoutConfig.hideAvatar
-        }
-      });
-
-      const chat2dbUrl = new URL(baseUrl);
-      chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-
-      sealosApp.runEvents('openDesktopApp', {
-        appKey: 'system-chat2db',
-        pathname: '',
-        query: {
-          url: chat2dbUrl.toString()
-        }
-      });
     } catch (error) {
-      console.error('chat2db redirect failed:', error);
+      console.error('handleManageData error:', error);
       toast({
-        title: t('chat2db_redirect_failed'),
+        title: 'Failed to manage data',
         status: 'error'
       });
     }
-  }, [toast, router, getDataSourceId, setDataSourceId, t]);
+  }, [toast, router, getDataSourceId, setDataSourceId, t, SystemEnv]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
