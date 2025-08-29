@@ -2,7 +2,6 @@ import receipt_icon from '@/assert/invoice-active.svg';
 import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
 import PaymentPanel from '@/components/invoice/PaymentPanel';
 import RecordPanel from '@/components/invoice/RecordPanel';
-// import { RechargeBillingItem } from '@/types';
 import { formatMoney } from '@/utils/format';
 import {
   Button as ChakraButton,
@@ -23,34 +22,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs
 import { Separator } from '@sealos/shadcn-ui/separator';
 import { cn } from '@sealos/shadcn-ui';
 import { Button } from '@sealos/shadcn-ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableFooter,
-  TableRow
-} from '@sealos/shadcn-ui/table';
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { TableCell, TableHead, TableRow } from '@sealos/shadcn-ui/table';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { Input } from '@sealos/shadcn-ui/input';
-import { Avatar, AvatarFallback } from '@sealos/shadcn-ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useMemo, useState, useEffect } from 'react';
 import InvoicdForm from './InvoicdForm';
 import InvoicdFormDetail from './InvoicdFormDetail';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { ReceiptText, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import request from '@/service/request';
 import { DateRange } from 'react-day-picker';
 import { getPaymentList } from '@/api/plan';
 import { ApiResp } from '@/types';
-import { RechargeBillingData, RechargeBillingItem } from '@/types/billing';
-import { Region } from '@/types/region';
+import { RechargeBillingData } from '@/types/billing';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -60,6 +47,7 @@ import {
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
 import OrderList, { CombinedRow } from '@/components/invoice/OrderList';
+import useBillingStore from '@/stores/billing';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
@@ -86,15 +74,12 @@ function Invoice() {
     return dateRange?.to ? new Date(dateRange.to).toISOString() : new Date().toISOString();
   }, [dateRange?.to]);
 
-  const { data: regionData } = useQuery({
-    queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
-    queryKey: ['regionList', 'invoice']
-  });
+  const regionList = useBillingStore((s) => s.regionList);
   const regionUidToName = useMemo(() => {
     const map = new Map<string, string>();
-    (regionData?.data || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
+    (regionList || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
     return map;
-  }, [regionData]);
+  }, [regionList]);
 
   const rechargeBody = useMemo(
     () => ({
@@ -114,7 +99,7 @@ function Invoice() {
     });
   });
 
-  const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
+  const regionUids = useMemo(() => (regionList || []).map((r) => r.uid), [regionList]);
   const paymentListQueryBodyBase = useMemo(
     () => ({
       startTime: effectiveStartTime,

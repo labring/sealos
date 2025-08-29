@@ -40,13 +40,10 @@ export default function NamespaceMenu({
   });
   const { t } = useTranslation();
   useEffect(() => {
-    const namespaceList: [string, string][] = [
-      ['', t('all_workspace')],
-      ...((nsListData?.data as [string, string][]) || [])
-    ];
+    const namespaceList: [string, string][] = (nsListData?.data as [string, string][]) || [];
     setNamespaceList(namespaceList);
     // setNamespace(0);
-  }, [nsListData, t]);
+  }, [nsListData, t, setNamespaceList]);
 
   return (
     <Select

@@ -102,7 +102,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       const record = data?.appMap;
       if (record) {
         setAppTypeMap(new Map(Object.entries(record)));
-        setAppTypeList(['all_app_type', ...(Object.values(record) || [])]);
+        setAppTypeList(Object.values(record) || []);
       }
     })();
   }, []);

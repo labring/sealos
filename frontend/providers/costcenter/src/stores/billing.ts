@@ -58,10 +58,10 @@ const useBillingStore = create<BillingState>()(
       cycleIdx: 0,
       regionIdx: 0,
       appNameIdx: 0,
-      namespaceList: [['', 'All Workspace']],
-      appTypeList: ['all_app_type'],
+      namespaceList: [],
+      appTypeList: [],
       regionList: [],
-      appNameList: ['All APP'],
+      appNameList: [],
       detailIsOpen: false,
       openBillingDetail: () => set({ detailIsOpen: true }),
       closeBillingDetail: () => set({ detailIsOpen: false }),
@@ -110,13 +110,15 @@ const useBillingStore = create<BillingState>()(
       },
       getAppName() {
         const { appNameIdx, appNameList } = get();
-        if (appNameIdx === -1 || appNameIdx === 0 || appNameList.length === 0) return '';
+        if (appNameIdx === -1 || appNameIdx >= appNameList.length || appNameList.length === 0)
+          return '';
         return appNameList[appNameIdx];
       },
       getAppType() {
-        if (get().appTypeIdx === -1 || get().appTypeIdx === 0 || get().appTypeList.length === 0)
+        const { appTypeIdx, appTypeList } = get();
+        if (appTypeIdx === -1 || appTypeIdx >= appTypeList.length || appTypeList.length === 0)
           return '';
-        return get().appTypeList[get().appTypeIdx];
+        return appTypeList[appTypeIdx];
       },
       getRegion() {
         if (get().regionIdx === -1 || get().regionList.length === 0) return null;

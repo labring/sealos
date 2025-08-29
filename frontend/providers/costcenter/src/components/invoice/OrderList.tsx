@@ -19,11 +19,14 @@ import {
 import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
 import request from '@/service/request';
 import { ApiResp } from '@/types';
-import { RechargeBillingData, RechargeBillingItem } from '@/types/billing';
+import { RechargeBillingData } from '@/types/billing';
 import { Region } from '@/types/region';
 import { getPaymentList } from '@/api/plan';
 import { formatMoney } from '@/utils/format';
 import { format as formatDate } from 'date-fns';
+import { PaymentRecord } from '@/types/plan';
+import { Avatar, AvatarFallback, AvatarImage } from '@sealos/shadcn-ui/avatar';
+import useBillingStore from '@/stores/billing';
 
 function formatDateTime(iso: string) {
   return formatDate(new Date(iso), 'yyyy-MM-dd HH:mm:ss');
@@ -32,11 +35,11 @@ function formatDateTime(iso: string) {
 export type CombinedRow = {
   id: string;
   region: string;
-  workspace: string;
+  workspaceId?: string;
+  workspaceName?: string;
   time: string;
   amount: number;
   type: 'recharge' | 'subscription';
-  raw?: any;
 };
 
 export default function OrderList({
@@ -93,32 +96,22 @@ export default function OrderList({
   });
 
   const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
-  // fetch all namespaces for all regions, build namespaceId -> name map
-  const { data: allNamespaces } = useQuery({
-    queryKey: ['allNamespacesForInvoice', regionUids, effectiveStartTime, effectiveEndTime],
-    enabled: (regionUids?.length || 0) > 0,
-    queryFn: async () => {
-      const results = await Promise.all(
-        (regionUids || []).map(async (uid) => {
-          try {
-            const res = await request.post('/api/billing/getNamespaceList', {
-              startTime: effectiveStartTime,
-              endTime: effectiveEndTime,
-              regionUid: uid
-            });
-            return res.data as [string, string][];
-          } catch (e) {
-            return [] as [string, string][];
-          }
-        })
-      );
-      const merged = ([] as [string, string][]).concat(...results);
-      return merged.reduce<Record<string, string>>((acc, [id, name]) => {
-        acc[id] = name;
+
+  // Get namespaces from store - since RegionMenu and NamespaceMenu already fetch and cache this data
+  const storeNamespaceList = useBillingStore((s) => s.namespaceList);
+  const allNamespaces = useMemo(() => {
+    // Convert store namespace list to the expected format
+    return (storeNamespaceList || []).reduce(
+      (acc: Record<string, { name: string; avatar?: string }>, [id, name]: [string, string]) => {
+        if (id && name) {
+          // Skip empty entries
+          acc[id] = { name, avatar: undefined };
+        }
         return acc;
-      }, {});
-    }
-  });
+      },
+      {} as Record<string, { name: string; avatar?: string }>
+    );
+  }, [storeNamespaceList]);
   const paymentListQueryBodyBase = useMemo(
     () => ({
       startTime: effectiveStartTime,
@@ -131,12 +124,12 @@ export default function OrderList({
       const entries = await Promise.all(
         (regionUids || []).map(async (uid) => {
           const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
-            .then((res) => res?.data?.payments || [])
-            .catch(() => []);
+            .then((res) => res?.data?.payments || ([] satisfies PaymentRecord[]))
+            .catch(() => [] satisfies PaymentRecord[]);
           return [uid, payments] as const;
         })
       );
-      return entries.reduce<Record<string, any[]>>((acc, [uid, payments]) => {
+      return entries.reduce<Record<string, PaymentRecord[]>>((acc, [uid, payments]) => {
         acc[uid] = payments;
         return acc;
       }, {});
@@ -151,7 +144,8 @@ export default function OrderList({
       .map((item) => ({
         id: item.ID,
         region: regionUidToName.get(item.RegionUID) || item.RegionUID || '',
-        workspace: '-',
+        workspaceId: undefined,
+        workspaceName: undefined,
         time: item.CreatedAt,
         amount: item.Amount,
         type: 'recharge',
@@ -160,11 +154,11 @@ export default function OrderList({
 
     const subscriptionPayments: CombinedRow[] = Object.entries(allPaymentsData || {}).flatMap(
       ([uid, payments]) =>
-        (payments as any[]).map((p, idx) => ({
-          // ! =================================================== For testing only!
-          id: `${p.Time}`,
+        payments.map((p) => ({
+          id: p.ID,
           region: regionUidToName.get(uid) || uid || '',
-          workspace: (allNamespaces || {})[p.Workspace] || p.Workspace || '-',
+          workspaceId: p.Workspace,
+          workspaceName: (allNamespaces || {})[p.Workspace]?.name || p.Workspace || '-',
           time: p.Time,
           amount: p.Amount,
           type: 'subscription',
@@ -285,7 +279,24 @@ export default function OrderList({
               </TableCell>
               <TableCell>{row.id || '-'}</TableCell>
               <TableCell>{row.region || '-'}</TableCell>
-              <TableCell>{row.workspace || ''}</TableCell>
+              <TableCell>
+                {row.type === 'subscription' ? (
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="size-5">
+                      <AvatarFallback>
+                        {(row.workspaceName || row.workspaceId || '-').charAt(0).toUpperCase() ||
+                          'W'}
+                      </AvatarFallback>
+                      {row.workspaceId && allNamespaces?.[row.workspaceId]?.avatar ? (
+                        <AvatarImage src={allNamespaces[row.workspaceId].avatar as string} />
+                      ) : null}
+                    </Avatar>
+                    <div>{row.workspaceName || row.workspaceId || '-'}</div>
+                  </div>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
               <TableCell>{formatDateTime(row.time)}</TableCell>
               <TableCell>
                 {row.type === 'subscription' ? (

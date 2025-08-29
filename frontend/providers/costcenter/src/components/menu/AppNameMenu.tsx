@@ -41,12 +41,12 @@ export default function AppNameMenu({
   const { appNameList, setAppNameList } = useBillingStore();
   useEffect(() => {
     const apps = (data?.data?.apps || []).filter((app) => !!app.appName).map((app) => app.appName);
-    setAppNameList([t('All APP'), ...apps]);
+    setAppNameList(apps);
     // setAppName(0);
-  }, [data?.data?.apps]);
+  }, [data?.data?.apps, setAppNameList]);
   const tappNameList: string[] = useMemo(() => {
     return appNameList.map((app) => app || commonT('Other'));
-  }, [appNameList]);
+  }, [appNameList, commonT]);
   return (
     <BaseMenu
       isDisabled={isDisabled || isFetching}
