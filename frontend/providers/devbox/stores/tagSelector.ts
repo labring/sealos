@@ -8,6 +8,7 @@ interface TagSelectorState {
   selectedTagsByCategory: Record<CategoryType, string | null>;
   setSelectedTag: (tagId: string, checked: boolean) => void;
   setSelectedTagInCategory: (tagId: string, category: CategoryType) => void;
+  clearCategorySelection: (category: CategoryType) => void;
   getSelectedTagList: () => string[];
   resetTags: () => void;
 }
@@ -42,6 +43,23 @@ export const useTagSelectorStore = create<TagSelectorState>((set, get) => ({
       // Set new selection for this category
       newCategorySelection[category] = tagId;
       newSet.add(tagId);
+
+      return {
+        selectedTagList: newSet,
+        selectedTagsByCategory: newCategorySelection
+      };
+    }),
+  clearCategorySelection: (category: CategoryType) =>
+    set((state) => {
+      const newSet = new Set(state.selectedTagList);
+      const newCategorySelection = { ...state.selectedTagsByCategory };
+
+      // Remove the current selection for this category
+      const currentSelection = newCategorySelection[category];
+      if (currentSelection) {
+        newSet.delete(currentSelection);
+        newCategorySelection[category] = null;
+      }
 
       return {
         selectedTagList: newSet,

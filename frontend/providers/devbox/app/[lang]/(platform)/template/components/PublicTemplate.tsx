@@ -27,7 +27,8 @@ type ViewMode = 'overview' | 'category';
 type CategoryType = 'official' | 'language' | 'framework' | 'os' | 'mcp';
 
 const PublicTemplate = ({ search }: { search: string }) => {
-  const { selectedTagList, getSelectedTagList, resetTags, setSelectedTag } = useTagSelectorStore();
+  const { selectedTagList, getSelectedTagList, resetTags, setSelectedTag, clearCategorySelection } =
+    useTagSelectorStore();
   const t = useTranslations();
   const { guide3, setGuide3 } = useGuideStore();
   const { setStartedTemplate } = useDevboxStore();
@@ -408,6 +409,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
                   if (viewMode === 'overview') {
                     handleCategoryClick('language');
                   } else if (currentCategory === 'language') {
+                    // If already in language category, clear secondary menu selection and toggle expansion
+                    clearCategorySelection('language');
                     toggleCategoryExpansion('language');
                   } else {
                     handleCategoryClick('language');
@@ -431,6 +434,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
                   if (viewMode === 'overview') {
                     handleCategoryClick('framework');
                   } else if (currentCategory === 'framework') {
+                    // If already in framework category, clear secondary menu selection and toggle expansion
+                    clearCategorySelection('framework');
                     toggleCategoryExpansion('framework');
                   } else {
                     handleCategoryClick('framework');
@@ -454,6 +459,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
                   if (viewMode === 'overview') {
                     handleCategoryClick('os');
                   } else if (currentCategory === 'os') {
+                    // If already in os category, clear secondary menu selection and toggle expansion
+                    clearCategorySelection('os');
                     toggleCategoryExpansion('os');
                   } else {
                     handleCategoryClick('os');
@@ -477,6 +484,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
                   if (viewMode === 'overview') {
                     handleCategoryClick('mcp');
                   } else if (currentCategory === 'mcp') {
+                    // If already in mcp category, clear secondary menu selection and toggle expansion
+                    clearCategorySelection('mcp');
                     toggleCategoryExpansion('mcp');
                   } else {
                     handleCategoryClick('mcp');
