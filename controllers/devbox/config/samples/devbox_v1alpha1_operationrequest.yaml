@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: devbox.sealos.io/v1alpha1
+apiVersion: devbox.sealos.io/v1alpha2
 kind: OperationRequest
 metadata:
   labels:
