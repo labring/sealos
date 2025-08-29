@@ -1,18 +1,19 @@
-name: 'issue-translator'
-on: 
-  issue_comment: 
-    types: [created]
-  issues: 
-    types: [opened]
-
+name: 'Github Rebot for issues-translator'
+on:
+  issues:
+    types: [ opened ]
+  issue_comment:
+    types: [ created ]
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  translate:
+    permissions:
+      issues: write
+      discussions: write
+      pull-requests: write
+    runs-on: ubuntu-24.04
     steps:
       - uses: usthe/issues-translate-action@v2.7
         with:
           IS_MODIFY_TITLE: false
-          # not require, default false, . Decide whether to modify the issue title
-          # if true, the robot account @Issues-translate-bot must have modification permissions, invite @Issues-translate-bot to your project or use your custom bot.
+          BOT_GITHUB_TOKEN: ${{ secrets.GH_CI_PAT }}
           CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿
-          # not require. Customize the translation robot prefix message.
