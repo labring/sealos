@@ -158,6 +158,20 @@ const TemplateCard = ({
                 </TooltipTrigger>
                 <TooltipContent side="bottom">{templateRepositoryName}</TooltipContent>
               </Tooltip>
+              {/* badge */}
+              {!inPublicStore && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'rounded-full px-2 text-xs/4 font-medium',
+                    isPublic
+                      ? 'border-green-200 bg-green-50 text-green-600'
+                      : 'border-zinc-200 bg-zinc-50 text-zinc-600'
+                  )}
+                >
+                  {t(isPublic ? 'public' : 'private')}
+                </Badge>
+              )}
             </div>
             {/* action */}
             <div className="flex items-center gap-1">
