@@ -104,13 +104,15 @@ function PlanHeader({
   isLoading,
   subscription,
   onSubscribe,
-  isSubscribing = false
+  isSubscribing = false,
+  lastTransaction
 }: {
   plans?: SubscriptionPlan[];
   isLoading?: boolean;
   subscription?: SubscriptionInfoResponse['subscription'];
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
+  lastTransaction?: any;
 }) {
   const planName = subscription?.PlanName || 'Free Plan';
   const renewalTime = subscription?.CurrentPeriodEndAt
@@ -144,6 +146,10 @@ function PlanHeader({
     planResources = {};
   }
 
+  // Check if there's a downgrade and show next plan info
+  const isDowngrade = lastTransaction?.Operator === 'downgraded';
+  const nextPlanName = isDowngrade ? lastTransaction?.NewPlanName : null;
+
   if (isPaygType) {
     return (
       <div className="bg-white shadow-sm border p-2 rounded-2xl">
@@ -159,6 +165,7 @@ function PlanHeader({
             plans={plans}
             isLoading={isLoading}
             currentPlan={subscription?.PlanName}
+            lastTransaction={lastTransaction}
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
           >
@@ -185,6 +192,7 @@ function PlanHeader({
             plans={plans}
             isLoading={isLoading}
             currentPlan={subscription?.PlanName}
+            lastTransaction={lastTransaction}
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
           >
@@ -215,7 +223,7 @@ function PlanHeader({
         </div>
       </div>
 
-      <div className="px-6 py-5 grid grid-cols-2">
+      <div className={`px-6 py-5 grid ${isDowngrade ? 'grid-cols-3' : 'grid-cols-2'}`}>
         <div className="flex gap-2 flex-col">
           <span className="text-sm text-muted-foreground">Price/Month</span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
@@ -229,6 +237,15 @@ function PlanHeader({
             {renewalTime}
           </span>
         </div>
+
+        {isDowngrade && (
+          <div className="flex gap-2 flex-col">
+            <span className="text-sm text-muted-foreground">Next Plan</span>
+            <span className="bg-[#FFEDD5] text-orange-600 font-medium text-sm leading-none flex items-center gap-2 px-2 py-1 w-fit rounded-full">
+              {nextPlanName} Plan
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -239,6 +256,7 @@ function UpgradePlanCard({
   className,
   isPopular = false,
   isCurrentPlan = false,
+  isNextPlan = false,
   currentPlan,
   onSubscribe,
   isLoading = false
@@ -247,6 +265,7 @@ function UpgradePlanCard({
   className?: string;
   isPopular?: boolean;
   isCurrentPlan?: boolean;
+  isNextPlan?: boolean;
   currentPlan?: SubscriptionPlan;
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isLoading?: boolean;
@@ -274,6 +293,7 @@ function UpgradePlanCard({
   // Get button text based on action type
   const getButtonText = () => {
     if (isCurrentPlan) return 'Your current plan';
+    if (isNextPlan) return 'Your next plan';
     if (isLoading) return 'Processing...';
 
     switch (actionType) {
@@ -318,15 +338,15 @@ function UpgradePlanCard({
         <Button
           className={cn(
             'w-full mb-6 font-medium',
-            isCurrentPlan
+            isCurrentPlan || isNextPlan
               ? 'bg-gray-200 text-gray-600 cursor-not-allowed hover:bg-gray-200'
               : actionType === 'contact'
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-900 text-white hover:bg-gray-800'
           )}
-          disabled={isCurrentPlan || isLoading}
+          disabled={isCurrentPlan || isNextPlan || isLoading}
           onClick={() => {
-            if (!isCurrentPlan && actionType !== 'contact' && onSubscribe) {
+            if (!isCurrentPlan && !isNextPlan && actionType !== 'contact' && onSubscribe) {
               onSubscribe(plan);
             }
           }}
@@ -416,11 +436,13 @@ function UpgradePlanCard({
 function PlansDisplay({
   plans,
   currentPlan,
+  lastTransaction,
   onSubscribe,
   isSubscribing
 }: {
   plans: SubscriptionPlan[];
   currentPlan?: string;
+  lastTransaction?: any;
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
 }) {
@@ -438,24 +460,46 @@ function PlansDisplay({
   // Find the current plan object
   const currentPlanObj = plans.find((plan) => plan.Name === currentPlan);
 
-  // Set Hobby+ as default selection when component mounts
+  // Check if there's a downgrade and determine next plan
+  const isDowngrade = lastTransaction?.Operator === 'downgraded';
+  const nextPlanName = isDowngrade ? lastTransaction?.NewPlanName : null;
+
+  // Check if current plan is in more plans (has 'more' tag)
+  const currentPlanInMore = currentPlanObj && currentPlanObj.Tags.includes('more');
+
+  // Set initial state for More Plans checkbox and selection
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   useEffect(() => {
-    const hobbyPlusPlan = additionalPlans.find((plan) => plan.Name === 'Hobby+');
-    if (hobbyPlusPlan && !selectedPlan) {
-      setSelectedPlan(hobbyPlusPlan.ID);
+    if (!hasInitialized && additionalPlans.length > 0) {
+      if (currentPlanInMore) {
+        setShowMorePlans(true);
+        setSelectedPlan(currentPlanObj.ID);
+      } else {
+        const hobbyPlusPlan = additionalPlans.find((plan) => plan.Name === 'Hobby+');
+        if (hobbyPlusPlan) {
+          setSelectedPlan(hobbyPlusPlan.ID);
+        }
+      }
+      setHasInitialized(true);
     }
-  }, [additionalPlans, selectedPlan]);
+  }, [additionalPlans, currentPlanInMore, currentPlanObj, hasInitialized]);
 
   return (
     <div className="pt-6 w-full">
       {/* Main Plans Grid */}
-      <div className={`flex w-full gap-3 justify-between ${showMorePlans ? 'opacity-30' : ''}`}>
+      <div
+        className={`flex w-full gap-3 justify-between ${
+          showMorePlans ? 'opacity-30 pointer-events-none' : ''
+        }`}
+      >
         {mainPlans.map((plan, index) => (
           <UpgradePlanCard
             key={plan.ID}
             plan={plan}
             isPopular={index === 1}
             isCurrentPlan={plan.Name === currentPlan}
+            isNextPlan={plan.Name === nextPlanName}
             currentPlan={currentPlanObj}
             onSubscribe={onSubscribe}
             isLoading={isSubscribing}
@@ -493,6 +537,9 @@ function PlansDisplay({
                 const trafficGB =
                   plan.Traffic > 1 ? (plan.Traffic / 1024).toFixed(0) : plan.Traffic;
 
+                const isCurrentPlanInSelect = plan.Name === currentPlan;
+                const isNextPlanInSelect = plan.Name === nextPlanName;
+
                 return (
                   <SelectItem key={plan.ID} value={plan.ID} className="w-full">
                     <div className="flex w-full items-center">
@@ -516,6 +563,16 @@ function PlansDisplay({
                         }}
                       />
                       <span className="text-xs text-gray-500">${monthlyPrice.toFixed(0)}</span>
+                      {isCurrentPlanInSelect && (
+                        <span className="bg-blue-100 text-blue-600 font-medium text-xs px-2 py-1 rounded-full ml-2">
+                          Your current plan
+                        </span>
+                      )}
+                      {isNextPlanInSelect && (
+                        <span className="bg-orange-100 text-orange-600 font-medium text-xs px-2 py-1 rounded-full ml-2">
+                          Your next plan
+                        </span>
+                      )}
                     </div>
                   </SelectItem>
                 );
@@ -524,7 +581,12 @@ function PlansDisplay({
           </Select>
           {showMorePlans && (
             <Button
-              disabled={!selectedPlan || isSubscribing}
+              disabled={
+                !selectedPlan ||
+                isSubscribing ||
+                additionalPlans.find((p) => p.ID === selectedPlan)?.Name === currentPlan ||
+                additionalPlans.find((p) => p.ID === selectedPlan)?.Name === nextPlanName
+              }
               onClick={() => {
                 const plan = additionalPlans.find((p) => p.ID === selectedPlan);
                 if (plan && onSubscribe) {
@@ -532,7 +594,22 @@ function PlansDisplay({
                 }
               }}
             >
-              {isSubscribing ? 'Processing...' : 'Upgrade'}
+              {(() => {
+                if (isSubscribing) return 'Processing...';
+
+                const selectedPlanName = additionalPlans.find((p) => p.ID === selectedPlan)?.Name;
+                if (selectedPlanName === currentPlan) return 'Your current plan';
+                if (selectedPlanName === nextPlanName) return 'Your next plan';
+
+                // Determine if it's upgrade or downgrade based on plan relationships
+                if (currentPlanObj && selectedPlanName) {
+                  if (currentPlanObj.UpgradePlanList?.includes(selectedPlanName)) return 'Upgrade';
+                  if (currentPlanObj.DowngradePlanList?.includes(selectedPlanName))
+                    return 'Downgrade';
+                }
+
+                return 'Upgrade';
+              })()}
             </Button>
           )}
         </div>
@@ -546,6 +623,7 @@ function UpgradePlanDialog({
   plans,
   isLoading,
   currentPlan,
+  lastTransaction,
   onSubscribe,
   isSubscribing = false
 }: {
@@ -553,6 +631,7 @@ function UpgradePlanDialog({
   plans?: SubscriptionPlan[];
   isLoading?: boolean;
   currentPlan?: string;
+  lastTransaction?: any;
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
 }) {
@@ -574,6 +653,7 @@ function UpgradePlanDialog({
             <PlansDisplay
               plans={plans}
               currentPlan={currentPlan}
+              lastTransaction={lastTransaction}
               onSubscribe={onSubscribe}
               isSubscribing={isSubscribing}
             />
@@ -815,6 +895,7 @@ export default function Plan() {
             subscription={subscriptionData?.data?.subscription}
             onSubscribe={handleSubscribe}
             isSubscribing={subscriptionMutation.isLoading}
+            lastTransaction={lastTransactionData?.data?.transaction}
           />
 
           <BalanceSection
