@@ -2,7 +2,7 @@ import receipt_icon from '@/assert/invoice-active.svg';
 import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
 import PaymentPanel from '@/components/invoice/PaymentPanel';
 import RecordPanel from '@/components/invoice/RecordPanel';
-import { RechargeBillingItem } from '@/types';
+// import { RechargeBillingItem } from '@/types';
 import { formatMoney } from '@/utils/format';
 import {
   Button as ChakraButton,
@@ -37,14 +37,20 @@ import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Avatar, AvatarFallback } from '@sealos/shadcn-ui/avatar';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import InvoicdForm from './InvoicdForm';
 import InvoicdFormDetail from './InvoicdFormDetail';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { ReceiptText, Search } from 'lucide-react';
+import request from '@/service/request';
+import { DateRange } from 'react-day-picker';
+import { getPaymentList } from '@/api/plan';
+import { ApiResp } from '@/types';
+import { RechargeBillingData, RechargeBillingItem } from '@/types/billing';
+import { Region } from '@/types/region';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -53,42 +59,131 @@ import {
   TableLayoutFooter,
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
+import OrderList, { CombinedRow } from '@/components/invoice/OrderList';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
-  const [selectBillings, setSelectBillings] = useState<RechargeBillingItem[]>([]);
+  const [selectBillings, setSelectBillings] = useState<CombinedRow[]>([]);
   const [searchValue, setSearch] = useState('');
   const [orderID, setOrderID] = useState('');
   const queryClient = useQueryClient();
   const [tabIdx, setTabIdx] = useState(0);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [processState, setProcessState] = useState(0);
-  const invoiceAmount = selectBillings.reduce((acc, cur) => acc + cur.Amount, 0);
+  const invoiceAmount = selectBillings.reduce((acc, cur) => acc + cur.amount, 0);
   const invoiceCount = selectBillings.length;
   const isLoading = false;
 
-  const ExampleOrderListRow = ({ selected }: { selected?: boolean }) => (
-    <TableRow className="h-14 data-[selected]:bg-zinc-50" data-selected={selected}>
-      <TableCell>
-        <Checkbox></Checkbox>
-      </TableCell>
-      <TableCell>ScVJXklcms-m</TableCell>
-      <TableCell>Hangzhou</TableCell>
-      <TableCell>
-        <div className="flex gap-1 items-center">
-          <Avatar className="size-4">
-            <AvatarFallback>A</AvatarFallback>
-          </Avatar>
-          <span>sealos-test</span>
-        </div>
-      </TableCell>
-      <TableCell>2025-01-20 10:15</TableCell>
-      <TableCell>
-        <Badge className="bg-blue-50 text-blue-600">Subscription Change</Badge>
-      </TableCell>
-      <TableCell>$15.00</TableCell>
-    </TableRow>
+  const effectiveStartTime = useMemo(() => {
+    return dateRange?.from
+      ? new Date(dateRange.from).toISOString()
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  }, [dateRange?.from]);
+  const effectiveEndTime = useMemo(() => {
+    return dateRange?.to ? new Date(dateRange.to).toISOString() : new Date().toISOString();
+  }, [dateRange?.to]);
+
+  const { data: regionData } = useQuery({
+    queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
+    queryKey: ['regionList', 'invoice']
+  });
+  const regionUidToName = useMemo(() => {
+    const map = new Map<string, string>();
+    (regionData?.data || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
+    return map;
+  }, [regionData]);
+
+  const rechargeBody = useMemo(
+    () => ({
+      startTime: effectiveStartTime,
+      endTime: effectiveEndTime,
+      page: 1,
+      pageSize: 1000,
+      paymentID: orderID,
+      invoiced: false
+    }),
+    [effectiveStartTime, effectiveEndTime, orderID]
   );
+  const { data: rechargeResp } = useQuery(['billing', 'invoice', rechargeBody], () => {
+    return request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
+      data: rechargeBody,
+      method: 'POST'
+    });
+  });
+
+  const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
+  const paymentListQueryBodyBase = useMemo(
+    () => ({
+      startTime: effectiveStartTime,
+      endTime: effectiveEndTime
+    }),
+    [effectiveStartTime, effectiveEndTime]
+  );
+  const { data: allPaymentsData } = useQuery({
+    queryFn: async () => {
+      const entries = await Promise.all(
+        (regionUids || []).map(async (uid) => {
+          const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
+            .then((res) => res?.data?.payments || [])
+            .catch(() => []);
+          return [uid, payments] as const;
+        })
+      );
+      return entries.reduce<Record<string, any[]>>((acc, [uid, payments]) => {
+        acc[uid] = payments;
+        return acc;
+      }, {});
+    },
+    queryKey: ['paymentListAllRegions', paymentListQueryBodyBase, regionUids],
+    enabled: (regionUids?.length || 0) > 0
+  });
+
+  const mergedRows = useMemo(() => {
+    const rechargePayments: any[] = (rechargeResp?.data?.payments || [])
+      .filter((item) => !item.InvoicedAt && item.Status !== 'REFUNDED')
+      .map((item) => ({
+        id: item.ID,
+        orderId: item.ID,
+        region: regionUidToName.get(item.RegionUID) || item.RegionUID || '',
+        workspace: '',
+        type: '',
+        time: item.CreatedAt,
+        amount: item.Amount
+      }));
+
+    const subscriptionPayments: any[] = Object.entries(allPaymentsData || {}).flatMap(
+      ([uid, payments]) =>
+        (payments as any[]).map((p) => ({
+          id: `${p.Time}-${p.PlanName}-${p.Amount}-${uid}`,
+          orderId: '',
+          region: regionUidToName.get(uid) || uid || '',
+          workspace: '',
+          type: '',
+          time: p.Time,
+          amount: p.Amount
+        }))
+    );
+
+    return [...rechargePayments, ...subscriptionPayments].sort(
+      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+    );
+  }, [rechargeResp, allPaymentsData, regionUidToName]);
+
+  const paginationInfo = useMemo(() => {
+    const total = mergedRows.length;
+    const totalPage = Math.ceil(total / pageSize) || 1;
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentPageData = mergedRows.slice(startIndex, endIndex);
+    return { total, totalPage, currentPageData };
+  }, [mergedRows, page, pageSize]);
+
+  useEffect(() => {
+    if (page > paginationInfo.totalPage) setPage(1);
+  }, [paginationInfo.totalPage, page]);
 
   const ExampleHistoryRow = ({ selected }: { selected?: boolean }) => (
     <TableRow className="h-14 data-[selected]:bg-zinc-50" data-selected={selected}>
@@ -118,54 +213,18 @@ function Invoice() {
           </TabsList>
 
           <TabsContent value="listing">
-            <TableLayout>
-              <TableLayoutCaption>
-                <div className="flex gap-3 items-center">
-                  <DateRangePicker placeholder="PICK DATE RANGE!" buttonClassName="shadow-none" />
-                  <Input icon={<Search size={16} />} placeholder="Order ID" className="w-[15rem]" />
-                </div>
-
-                <div className="flex items-center gap-3 font-medium">
-                  <div className="text-blue-600 text-base">Amount: $16.00</div>
-                  <Button>
-                    <ReceiptText size={16} />
-                    <span>Obtain Invoice: 10</span>
-                  </Button>
-                </div>
-              </TableLayoutCaption>
-
-              <TableLayoutContent>
-                <TableLayoutHeadRow>
-                  <TableHead>
-                    <Checkbox />
-                  </TableHead>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Workspace</TableHead>
-                  <TableHead>Transaction Time</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                </TableLayoutHeadRow>
-
-                <TableLayoutBody>
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow selected />
-                </TableLayoutBody>
-              </TableLayoutContent>
-
-              <TableLayoutFooter>
-                <div className="px-4 py-3 flex justify-between">
-                  <div className="flex items-center text-zinc-500">Total: 101</div>
-                  <div className="flex items-center gap-3">
-                    <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
-                    <span>
-                      <span>8</span>
-                      <span className="text-zinc-500"> / Page</span>
-                    </span>
-                  </div>
-                </div>
-              </TableLayoutFooter>
-            </TableLayout>
+            <OrderList
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              orderId={searchValue}
+              onOrderIdChange={(v) => {
+                setSearch(v);
+                setOrderID(v.trim());
+              }}
+              onSelectionChange={(items) => {
+                setSelectBillings(items);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="history">
@@ -411,8 +470,8 @@ function Invoice() {
               </TabList>
               <TabPanels>
                 <PaymentPanel
-                  selectbillings={selectBillings}
-                  setSelectBillings={setSelectBillings}
+                  selectbillings={[]}
+                  setSelectBillings={() => {}}
                   orderID={orderID}
                 ></PaymentPanel>
                 <RecordPanel
@@ -434,7 +493,7 @@ function Invoice() {
             }}
             invoiceAmount={invoiceAmount}
             invoiceCount={invoiceCount}
-            billings={selectBillings}
+            billings={[]}
             backcb={() => {
               setProcessState(0);
             }}
