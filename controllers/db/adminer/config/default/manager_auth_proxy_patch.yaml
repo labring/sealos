@@ -17,8 +17,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
-  namespace: system
+  name: adminer-controller-manager
+  namespace: adminer-system
 spec:
   template:
     spec:
