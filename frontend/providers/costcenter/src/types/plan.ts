@@ -40,7 +40,8 @@ export const SubscriptionPlanSchema = z.object({
   Traffic: z.number(),
   Prices: z.array(PlanPriceSchema),
   CreatedAt: z.string(),
-  UpdatedAt: z.string()
+  UpdatedAt: z.string(),
+  Tags: z.array(z.string())
 });
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;
