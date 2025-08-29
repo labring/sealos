@@ -71,21 +71,9 @@ function Billing() {
     queryKey: ['regionList', 'menu']
   });
 
-  // Query namespaces for current region
-  const { data: nsListData } = useQuery({
-    queryFn: () =>
-      request.post('/api/billing/getNamespaceList', {
-        startTime: effectiveStartTime,
-        endTime: effectiveEndTime,
-        regionUid: currentRegionUid
-      }),
-    queryKey: [
-      'nsList',
-      'menu',
-      { startTime: effectiveStartTime, endTime: effectiveEndTime, regionUid: currentRegionUid }
-    ],
-    enabled: !!currentRegionUid
-  });
+  // Use cached namespaces from store for current region
+  const namespaceList = useBillingStore((s) => s.namespaceList);
+  const nsListData = useMemo(() => ({ data: namespaceList }), [namespaceList]);
 
   // Query body for subscription payments (region scope)
   // We need this for calculating costs
