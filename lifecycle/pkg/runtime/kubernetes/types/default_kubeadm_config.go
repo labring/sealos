@@ -137,8 +137,8 @@ enableControllerAttachDetach: true
 enableDebuggingHandlers: true
 enforceNodeAllocatable:
   - pods
-eventBurst: 10
-eventRecordQPS: 5
+eventBurst: 100
+eventRecordQPS: 50
 evictionHard:
   imagefs.available: 10%
   memory.available: 100Mi
@@ -152,26 +152,27 @@ healthzBindAddress: 0.0.0.0
 healthzPort: 10248
 httpCheckFrequency: 20s
 imageGCHighThresholdPercent: 85
-imageGCLowThresholdPercent: 75
+imageGCLowThresholdPercent: 80
 imageMinimumGCAge: 2m0s
 iptablesDropBit: 15
 iptablesMasqueradeBit: 14
-kubeAPIBurst: 10
-kubeAPIQPS: 5
+kubeAPIBurst: 100
+kubeAPIQPS: 50
 makeIPTablesUtilChains: true
 maxOpenFiles: 1000000
 maxPods: 110
+memoryThrottlingFactor: 0.8
 nodeLeaseDurationSeconds: 40
 nodeStatusReportFrequency: 10s
 nodeStatusUpdateFrequency: 10s
 oomScoreAdj: -999
 podPidsLimit: -1
 port: 10250
-registryBurst: 10
-registryPullQPS: 5
+registryBurst: 100
+registryPullQPS: 50
 rotateCertificates: true
 runtimeRequestTimeout: 2m0s
-serializeImagePulls: true
+serializeImagePulls: false
 staticPodPath: /etc/kubernetes/manifests
 streamingConnectionIdleTimeout: 4h0m0s
 syncFrequency: 1m0s
