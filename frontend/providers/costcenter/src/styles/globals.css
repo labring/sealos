@@ -65,19 +65,19 @@ iframe {
 
 ::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-  border-radius: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
   background: transparent;
-  border-radius: 6px;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: #bfbfbf;
-  border-radius: 6px;
+  background: #c9c8c8;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
