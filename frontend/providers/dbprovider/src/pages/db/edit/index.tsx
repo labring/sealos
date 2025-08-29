@@ -12,7 +12,7 @@ import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ import { getDBSecret } from '@/api/db';
 import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
 import type { DBType, BackupItemType } from '@/types/db';
 import { getBackups, deleteBackup } from '@/api/backup';
-
+import StopBackupModal from '../detail/components/StopBackupModal';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -53,6 +53,14 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { loadDBDetail, dbDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
   const { checkQuotaAllow } = useUserStore();
+
+  // Stop backup modal state
+  const {
+    isOpen: isStopBackupOpen,
+    onOpen: onStopBackupOpen,
+    onClose: onStopBackupClose
+  } = useDisclosure();
+  const [pendingFormData, setPendingFormData] = useState<DBEditType | null>(null);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -248,26 +256,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         console.log('inProgressBackups', inProgressBackups);
 
         if (inProgressBackups.length > 0) {
-          const confirmStop = await new Promise<boolean>((resolve) => {
-            openConfirm(() => resolve(true), {
-              onCancel: () => resolve(false),
-              title: t('backups.stop_backup'),
-              content: t('backups.stop_backup_tip'),
-              confirmText: t('backups.stop_backup_confirm'),
-              cancelText: t('backups.stop_backup_cancel')
-            })();
-          });
-
-          if (confirmStop) {
-            await Promise.all(
-              inProgressBackups.map(async (backup: BackupItemType) => {
-                await deleteBackup(backup.name);
-              })
-            );
-            toast({ title: t('backups.stop_backup_success'), status: 'success' });
-          } else {
-            return; // User canceled, do not proceed
-          }
+          setPendingFormData(formData); // Set the form data for the modal
+          onStopBackupOpen(); // Open the modal
+          return; // Do not proceed with submission until modal is closed
         }
       }
 
@@ -380,6 +371,45 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           onClose={() => setErrorMessage('')}
         />
       )}
+      <StopBackupModal
+        isOpen={isStopBackupOpen}
+        onClose={onStopBackupClose}
+        onConfirm={async () => {
+          if (pendingFormData) {
+            onStopBackupClose();
+            setIsLoading(true);
+            try {
+              const result = await getBackups();
+              const allBackups = result || [];
+              const backups = allBackups.filter(
+                (backup: BackupItemType) => backup.dbName === pendingFormData.dbName
+              );
+              const inProgressBackups = backups.filter(
+                (backup: BackupItemType) => backup.status.value === 'Running'
+              );
+
+              if (inProgressBackups.length > 0) {
+                await Promise.all(
+                  inProgressBackups.map(async (backup: BackupItemType) => {
+                    await deleteBackup(backup.name);
+                  })
+                );
+                toast({ title: t('backups.stop_backup_success'), status: 'success' });
+              }
+
+              // Proceed with submission after stopping backups
+              await submitSuccess(pendingFormData);
+            } catch (error) {
+              console.error(error);
+              toast({ title: t('backups.stop_backup_error'), status: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        }}
+        onCancel={onStopBackupClose}
+        dbName={pendingFormData?.dbName || ''}
+      />
     </>
   );
 };
