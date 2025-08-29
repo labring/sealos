@@ -297,8 +297,7 @@ export const defaultDBEditValue: DBEditType = {
     saveTime: 100,
     saveType: 'd'
   },
-  terminationPolicy: 'Delete',
-  dataSourceId: undefined
+  terminationPolicy: 'Delete'
 };
 
 export const RedisHAConfig = (ha = true) => {
