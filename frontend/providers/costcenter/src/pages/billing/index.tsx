@@ -15,20 +15,19 @@ import { useQuery } from '@tanstack/react-query';
 import { DateRange } from 'react-day-picker';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
-import useAppTypeStore from '@/stores/appType';
 import useOverviewStore from '@/stores/overview';
 import { getPaymentList } from '@/api/plan';
 import { Region } from '@/types/region';
-import { ApiResp, AppOverviewBilling } from '@/types';
+import { ApiResp } from '@/types';
 import { BillingNode, CostTree } from '@/components/billing/CostTree';
 import { PAYGCostTable } from '@/components/billing/PAYGCostTable';
-import type { PAYGData } from '@/components/billing/PAYGCostTableView';
 import {
   SubscriptionCostTable,
   SubscriptionData
 } from '@/components/billing/SubscriptionCostTable';
 import { CostPanel } from '@/components/billing/CostPanel';
 import { AppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
+import { PaymentRecord } from '@/types/plan';
 
 /**
  * Billing page container.
@@ -54,12 +53,8 @@ function Billing() {
 
   // Resolve current region UID from selection or store
   const currentRegionUid = useMemo(() => {
-    if (selectedRegion) {
-      // Extract region UID from selectedRegion (format: "region_<uid>")
-      return selectedRegion.replace('region_', '');
-    }
     // Fallback to store region
-    return getRegion()?.uid || '';
+    return selectedRegion ?? (getRegion()?.uid || '');
   }, [selectedRegion, getRegion]);
 
   // Effective start/end time derived from picker or store
@@ -94,45 +89,34 @@ function Billing() {
 
   // Query body for subscription payments (region scope)
   // We need this for calculating costs
-  const paymentListQueryBody = useMemo(
+  const paymentListQueryBodyBase = useMemo(
     () => ({
       endTime: effectiveEndTime,
-      startTime: effectiveStartTime,
-      regionUid: currentRegionUid
+      startTime: effectiveStartTime
     }),
-    [effectiveEndTime, effectiveStartTime, currentRegionUid]
+    [effectiveEndTime, effectiveStartTime]
   );
 
-  // ! ======================================= We need to query all regions and cache them for constructing the node tree
-  const { data: paymentListData } = useQuery({
-    queryFn: () => getPaymentList(paymentListQueryBody),
-    queryKey: ['paymentList', paymentListQueryBody],
-    enabled: !!currentRegionUid
-  });
-
-  // Query body for region-level PAYG consumption
-  const regionConsumptionQueryBody = useMemo(
-    () => ({
-      appType: '',
-      namespace: '', // empty namespace means entire region
-      startTime: effectiveStartTime,
-      endTime: effectiveEndTime,
-      regionUid: currentRegionUid,
-      appName: ''
-    }),
-    [effectiveStartTime, effectiveEndTime, currentRegionUid]
-  );
-
-  // ! ============================================= We need to query all regions and cache them for constructing the node tree
-  const { data: regionConsumptionData } = useQuery({
-    queryKey: ['regionConsumption', regionConsumptionQueryBody],
-    queryFn: () => {
-      return request.post<{ amount: number }>(
-        '/api/billing/consumption',
-        regionConsumptionQueryBody
+  // Fetch payments for ALL regions and merge
+  const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
+  const { data: allPaymentsData } = useQuery({
+    queryFn: async () => {
+      const entries = await Promise.all(
+        (regionUids || []).map(async (uid) => {
+          const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
+            .then((res) => res?.data?.payments || [])
+            .catch(() => [] satisfies PaymentRecord[]);
+          return [uid, payments] as const;
+        })
       );
+
+      return entries.reduce<Record<string, PaymentRecord[]>>((acc, [uid, payments]) => {
+        acc[uid] = payments;
+        return acc;
+      }, {});
     },
-    enabled: !!currentRegionUid
+    queryKey: ['paymentListAllRegions', paymentListQueryBodyBase, regionUids],
+    enabled: (regionUids?.length || 0) > 0
   });
 
   // Build queries for workspace-level PAYG consumption
@@ -176,10 +160,42 @@ function Billing() {
     enabled: !!currentRegionUid && workspaceConsumptionQueries.length > 0
   });
 
+  // Fetch region-level PAYG consumption for ALL regions and map by region key
+  // ! ============================================= Need to include workspace PAYG consumption data later!
+  const { data: allRegionConsumptions } = useQuery({
+    queryKey: ['regionConsumptionAll', regionUids, effectiveStartTime, effectiveEndTime],
+    queryFn: async () => {
+      const results = await Promise.all(
+        (regionUids || []).map(async (uid) => {
+          try {
+            const body = {
+              appType: '',
+              namespace: '',
+              startTime: effectiveStartTime,
+              endTime: effectiveEndTime,
+              regionUid: uid,
+              appName: ''
+            };
+            const resp = await request.post<{ amount: number }>('/api/billing/consumption', body);
+            return { regionKey: uid, amount: resp.data.amount };
+          } catch (e) {
+            return { regionKey: uid, amount: 0 };
+          }
+        })
+      );
+      return results.reduce<Record<string, number>>((acc, cur) => {
+        acc[cur.regionKey] = cur.amount;
+        return acc;
+      }, {});
+    },
+    enabled: (regionUids?.length || 0) > 0
+  });
+
   const { nodes, totalCost } = useMemo(() => {
     const regions = regionData?.data || [];
     const namespaces = (nsListData?.data || []) as [string, string][];
-    const paymentList = paymentListData?.data?.payments || [];
+    const paymentsByRegion = allPaymentsData || {};
+    const paymentList = Object.values(paymentsByRegion).flat();
     const workspaceConsumptions = workspaceConsumptionResults?.data || [];
 
     // Build workspaceCosts using consumption and payments
@@ -199,12 +215,25 @@ function Billing() {
       };
     }, {});
 
-    // Build regionCosts using consumption
-    const regionId = `region_${currentRegionUid}`;
-    const regionCost = regionConsumptionData?.data?.amount || 0;
-    const regionCosts: Record<string, number> = {
-      [regionId]: regionCost
-    };
+    // Build region costs
+    const regionConsumptions: Record<string, number> = allRegionConsumptions || {};
+    const regionPayments: Record<string, number> = Object.entries(paymentsByRegion).reduce<
+      Record<string, number>
+    >((acc, [regionKey, payments]) => {
+      const sum = (payments || []).reduce((s: number, p: any) => s + (p.Amount || 0), 0);
+      acc[regionKey] = (acc[regionKey] || 0) + sum;
+      return acc;
+    }, {});
+
+    const allRegionKeys = Array.from(
+      new Set([...Object.keys(regionConsumptions), ...Object.keys(regionPayments)])
+    );
+    const regionCosts: Record<string, number> = allRegionKeys.reduce((acc, regionKey) => {
+      return {
+        ...acc,
+        [regionKey]: (regionConsumptions[regionKey] || 0) + (regionPayments[regionKey] || 0)
+      };
+    }, {});
 
     // Compute total amount
     const totalCost = Object.values(regionCosts).reduce((sum, cost) => sum + cost, 0);
@@ -220,7 +249,7 @@ function Billing() {
 
     // Region nodes
     const regionNodes: BillingNode[] = regions.map((region) => {
-      const regionId = `region_${region.uid}`;
+      const regionId = region.uid;
       return {
         id: regionId,
         name: region.name.en,
@@ -236,7 +265,7 @@ function Billing() {
       name: namespaceName,
       cost: workspaceCosts[namespaceId] || 0,
       type: 'workspace',
-      dependsOn: selectedRegion || `region_${currentRegionUid}` || null
+      dependsOn: selectedRegion || currentRegionUid || null
     }));
 
     // Merge nodes
@@ -246,8 +275,8 @@ function Billing() {
   }, [
     regionData,
     nsListData,
-    paymentListData,
-    regionConsumptionData,
+    allPaymentsData,
+    allRegionConsumptions,
     workspaceConsumptionResults,
     selectedRegion,
     currentRegionUid
@@ -255,26 +284,21 @@ function Billing() {
 
   // Transform query results for child components
   const subscriptionData = useMemo(() => {
-    // Transform subscription payments data
-    const subscriptionData: SubscriptionData[] = [];
-    if (paymentListData?.data?.payments) {
-      paymentListData.data.payments
-        .filter((data) => {
-          return selectedWorkspace ? data.Workspace === selectedWorkspace : true;
-        })
-        .forEach((data) => {
-          subscriptionData.push({
+    return (Object.values(allPaymentsData || {}).flat() || [])
+      .filter((data: any) => {
+        return selectedWorkspace ? data.Workspace === selectedWorkspace : true;
+      })
+      .map(
+        (data: any) =>
+          ({
             time: data.Time,
             plan: data.PlanName,
             cost: data.Amount
-          });
-        });
-    }
+          }) satisfies SubscriptionData
+      );
+  }, [allPaymentsData, selectedWorkspace]);
 
-    return subscriptionData;
-  }, [paymentListData, selectedWorkspace]);
-
-  // Sync date range with store values when they change
+  /** Sync date range with store values */
   useEffect(() => {
     setDateRange({
       from: new Date(startTime),
@@ -282,7 +306,7 @@ function Billing() {
     });
   }, [startTime, endTime]);
 
-  // Reset pagination on search change
+  /** Reset pagination when filters change */
   useEffect(() => {
     setPage(1);
   }, [selectedRegion, selectedWorkspace, effectiveEndTime, effectiveStartTime]);
@@ -305,7 +329,7 @@ function Billing() {
   // Get current region and workspace names for display
   const currentRegionName = useMemo(() => {
     if (selectedRegion) {
-      const region = (regionData?.data || []).find((r) => `region_${r.uid}` === selectedRegion);
+      const region = (regionData?.data || []).find((r) => r.uid === selectedRegion);
       return region?.name.en;
     }
     return null; // No region selected
