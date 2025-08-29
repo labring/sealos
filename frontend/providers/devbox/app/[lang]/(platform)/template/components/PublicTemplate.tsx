@@ -6,7 +6,6 @@ import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
 import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 import { Button } from '@sealos/shadcn-ui/button';
-import { cn } from '@sealos/shadcn-ui';
 
 import { useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
@@ -70,13 +69,13 @@ const PublicTemplate = ({ search }: { search: string }) => {
     totalPage: 0
   });
 
-  // Toggle category expansion in sidebar
+  // Toggle category expansion in sidebar - only allow one category to be expanded at a time
   const toggleCategoryExpansion = useCallback((category: CategoryType) => {
     setExpandedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(category)) {
-        newSet.delete(category);
-      } else {
+      const newSet = new Set<CategoryType>();
+      // If the clicked category is already expanded, close it (empty set)
+      // Otherwise, open only the clicked category
+      if (!prev.has(category)) {
         newSet.add(category);
       }
       return newSet;
@@ -88,8 +87,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
     (category: CategoryType) => {
       setViewMode('category');
       setCurrentCategory(category);
-      // Auto-expand the selected category
-      setExpandedCategories((prev) => new Set([...prev, category]));
+      // Auto-expand only the selected category (close others)
+      setExpandedCategories(new Set([category]));
 
       // Reset tags first, then auto-select the category tag
       resetTags();
