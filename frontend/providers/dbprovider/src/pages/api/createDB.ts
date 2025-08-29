@@ -3,7 +3,13 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
-import { BackupItemType, DBEditType } from '@/types/db';
+import {
+  BackupItemType,
+  DBEditType,
+  CPUResourceEnum,
+  MemoryResourceEnum,
+  ReplicasResourceEnum
+} from '@/types/db';
 import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
@@ -13,10 +19,35 @@ import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { dbForm, isEdit, backupInfo } = req.body as {
-      dbForm: DBEditType;
-      isEdit: boolean;
-      backupInfo?: BackupItemType;
+    const { type, version, name, resource, terminationPolicy, autoBackup, isEdit, backupInfo } =
+      req.body as {
+        type: string;
+        version: string;
+        name: string;
+        resource: {
+          cpu: CPUResourceEnum;
+          memory: MemoryResourceEnum;
+          storage: number; // 1-300 Gi range
+          replicas: ReplicasResourceEnum;
+        };
+        terminationPolicy: string;
+        autoBackup?: any;
+        isEdit: boolean;
+        backupInfo?: BackupItemType;
+      };
+
+    // Convert to DBEditType format for internal processing
+    const dbForm: DBEditType = {
+      dbType: type as any,
+      dbVersion: version,
+      dbName: name,
+      replicas: resource.replicas,
+      cpu: resource.cpu,
+      memory: resource.memory,
+      storage: resource.storage,
+      labels: {},
+      terminationPolicy: terminationPolicy as any,
+      autoBackup
     };
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
@@ -29,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         'v1alpha1',
         namespace,
         'clusters',
-        dbForm.dbName
+        name
       )) as {
         body: KbPgClusterType;
       };

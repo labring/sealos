@@ -4,7 +4,12 @@ import { z } from 'zod';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, adaptDBListItem } from '@/utils/adapt';
 import { dbDetailSchema, dblistItemSchema } from '@/types/schemas/db';
-import { DBDetailType, DBListItemType } from '@/types/db';
+import {
+  CPUResourceEnum,
+  DBDetailType,
+  MemoryResourceEnum,
+  ReplicasResourceEnum
+} from '@/types/db';
 const raw2schema = (raw: DBDetailType): z.Infer<typeof dblistItemSchema> => {
   const autoBackup = raw.autoBackup;
   const dbEditSchemaFromRaw: z.Infer<typeof dblistItemSchema> = {
@@ -13,18 +18,18 @@ const raw2schema = (raw: DBDetailType): z.Infer<typeof dblistItemSchema> => {
     type: raw.dbType,
     version: raw.dbVersion,
     resource: {
-      cpu: raw.cpu.toString(),
-      memory: raw.memory.toString(),
-      storage: raw.storage.toString(),
-      replicas: raw.replicas
+      cpu: raw.cpu as CPUResourceEnum,
+      memory: raw.memory as MemoryResourceEnum,
+      storage: raw.storage as number,
+      replicas: raw.replicas as ReplicasResourceEnum
     },
     id: raw.id,
-    status: raw.status.value, // 假设 status 是一个对象，其中的 value 是状态字符串
+    status: raw.status.value,
     createTime: raw.createTime,
     totalResource: {
-      cpu: raw.totalCpu.toString(),
-      memory: raw.totalMemory.toString(),
-      storage: raw.totalStorage.toString()
+      cpu: raw.totalCpu as CPUResourceEnum,
+      memory: raw.totalMemory as MemoryResourceEnum,
+      storage: raw.totalStorage as number
     },
     isDiskSpaceOverflow: raw.isDiskSpaceOverflow,
     source: {
