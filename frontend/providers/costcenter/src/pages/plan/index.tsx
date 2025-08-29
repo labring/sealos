@@ -1,4 +1,12 @@
-import { Button, cn, Dialog, DialogContent, DialogTrigger, Separator } from '@sealos/shadcn-ui';
+import {
+  Button,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  Separator
+} from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck, Sparkles } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -14,7 +22,7 @@ import request from '@/service/request';
 import GiftCode from '@/components/cost_overview/components/GiftCode';
 import RechargeModal from '@/components/RechargeModal';
 import TransferModal from '@/components/TransferModal';
-import { useRef, useMemo, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import jsyaml from 'js-yaml';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { createSubscriptionPayment } from '@/api/plan';
@@ -248,11 +256,11 @@ function UpgradePlanCard({
       )}
       style={{ width: '258px' }}
     >
-      <div className="p-6 pb-4">
-        <div className="flex justify-between items-start mb-2">
+      <div className="p-6 pb-4 relative">
+        <div className="flex justify-between items-start mb-2 ">
           <h3 className="text-xl font-semibold text-gray-900">{plan.Name}</h3>
           {isPopular && (
-            <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
+            <Badge className="bg-blue-600 z-10 text-white text-xs px-2 py-1 rounded-full absolute -top-4 left-1/2 leading-[14px] -translate-x-1/2">
               Most popular
             </Badge>
           )}
@@ -383,33 +391,41 @@ function PlansDisplay({
   const [showMorePlans, setShowMorePlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
 
-  // Filter out free plans and show first 4 for main display
+  // Filter out free plans and separate main plans from additional plans
   const paidPlans = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
-  const mainPlans = paidPlans.slice(0, 4);
-  const additionalPlans = paidPlans.slice(4);
+
+  // Move plans with 'more' tag to additional plans
+  const mainPlans = paidPlans.filter((plan) => !plan.Tags.includes('more'));
+
+  const additionalPlans = paidPlans.filter((plan) => plan.Tags.includes('more'));
+
+  // Set Hobby+ as default selection when component mounts
+  useEffect(() => {
+    const hobbyPlusPlan = additionalPlans.find((plan) => plan.Name === 'Hobby+');
+    if (hobbyPlusPlan && !selectedPlan) {
+      setSelectedPlan(hobbyPlusPlan.ID);
+    }
+  }, [additionalPlans, selectedPlan]);
 
   return (
-    <div className="pt-6">
+    <div className="pt-6 w-full">
       {/* Main Plans Grid */}
-      <div
-        className={`flex gap-3 overflow-x-auto justify-center ${showMorePlans ? 'opacity-30' : ''}`}
-      >
+      <div className={`flex w-full gap-3 justify-between ${showMorePlans ? 'opacity-30' : ''}`}>
         {mainPlans.map((plan, index) => (
           <UpgradePlanCard
             key={plan.ID}
             plan={plan}
-            isPopular={index === 1} // 设置第二个为推荐
+            isPopular={index === 1}
             isCurrentPlan={plan.Name === currentPlan}
             onSubscribe={onSubscribe}
             isLoading={isSubscribing}
           />
         ))}
       </div>
-
       {/* More Plans Section */}
       {additionalPlans.length > 0 && (
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <div className="flex items-center space-x-2">
+        <div className="mt-6 flex items-center justify-start gap-4">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <Checkbox
               id="more-plans"
               checked={showMorePlans}
@@ -420,38 +436,64 @@ function PlansDisplay({
             </label>
           </div>
 
-          {showMorePlans && (
-            <>
-              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {additionalPlans.map((plan) => (
-                    <SelectItem key={plan.ID} value={plan.ID}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{plan.Name}</span>
-                        <span className="text-sm text-gray-500 ml-2">
-                          ${((plan.Prices?.[0]?.Price || 0) / 1000000).toFixed(0)}/month
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a plan" />
+            </SelectTrigger>
+            <SelectContent>
+              {additionalPlans.map((plan) => {
+                let resources: any = {};
+                try {
+                  resources = JSON.parse(plan.MaxResources);
+                } catch (e) {
+                  resources = {};
+                }
 
-              <Button
-                disabled={!selectedPlan || isSubscribing}
-                onClick={() => {
-                  const plan = additionalPlans.find((p) => p.ID === selectedPlan);
-                  if (plan && onSubscribe) {
-                    onSubscribe(plan, 'monthly');
-                  }
-                }}
-              >
-                {isSubscribing ? 'Processing...' : 'Upgrade'}
-              </Button>
-            </>
+                const monthlyPrice = (plan.Prices?.[0]?.Price || 0) / 1000000;
+                const trafficGB =
+                  plan.Traffic > 1 ? (plan.Traffic / 1024).toFixed(0) : plan.Traffic;
+
+                return (
+                  <SelectItem key={plan.ID} value={plan.ID} className="w-full">
+                    <div className="flex w-full items-center">
+                      <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
+                      <Separator
+                        orientation="vertical"
+                        style={{
+                          height: '16px',
+                          margin: '0 12px'
+                        }}
+                      />
+                      <div className="text-xs text-gray-500">
+                        {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +
+                        {trafficGB} GB Traffic
+                      </div>
+                      <Separator
+                        orientation="vertical"
+                        style={{
+                          height: '16px',
+                          margin: '0 12px'
+                        }}
+                      />
+                      <span className="text-xs text-gray-500">${monthlyPrice.toFixed(0)}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          {showMorePlans && (
+            <Button
+              disabled={!selectedPlan || isSubscribing}
+              onClick={() => {
+                const plan = additionalPlans.find((p) => p.ID === selectedPlan);
+                if (plan && onSubscribe) {
+                  onSubscribe(plan, 'monthly');
+                }
+              }}
+            >
+              {isSubscribing ? 'Processing...' : 'Upgrade'}
+            </Button>
           )}
         </div>
       )}
@@ -477,10 +519,11 @@ function UpgradePlanDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="min-w-[70rem] py-8 px-20 bg-zinc-50">
+      <DialogContent className="min-w-[1200px] py-12 px-14 bg-zinc-50">
+        <DialogTitle className="sr-only">Choose Your Workspace Plan</DialogTitle>
         <div className="flex flex-col justify-center">
-          <section className="mt-6">
-            <h1 className="text-3xl font-semibold text-center">Upgrade Plan</h1>
+          <section>
+            <h1 className="text-3xl font-semibold text-left">Choose Your Workspace Plan</h1>
           </section>
 
           {isLoading ? (
@@ -532,7 +575,7 @@ export default function Plan() {
     // staleTime: 5 * 60 * 1000,
     // refetchOnWindowFocus: false
   });
-  // console.log('plansData', plansData);
+  console.log('plansData', plansData);
 
   // Get current workspace subscription info
   const { data: subscriptionData } = useQuery({
@@ -600,7 +643,18 @@ export default function Plan() {
         console.log('data', data);
         if (data.data?.redirectUrl) {
           window.parent.location.href = data.data.redirectUrl;
+        } else if (data.data?.success === true) {
+          toast({
+            title: 'Payment Success',
+            description: 'Your subscription has been upgraded successfully',
+            variant: 'success'
+          });
         }
+        toast({
+          title: 'Payment Success',
+          description: 'Your subscription has been upgraded successfully',
+          variant: 'success'
+        });
       }
     },
     onError: (error: any) => {
@@ -612,6 +666,15 @@ export default function Plan() {
       });
     }
   });
+
+  // useEffect(() => {
+  //   toast({
+  //     title: 'Payment Success',
+  //     description: 'Your subscription has been upgraded successfully',
+  //     variant: 'success',
+  //     duration: null
+  //   });
+  // }, []);
 
   const handleSubscribe = (plan: SubscriptionPlan, period: string) => {
     if (!session?.user?.nsid || !region?.domain) {

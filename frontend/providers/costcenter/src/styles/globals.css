@@ -47,6 +47,7 @@
 /* New designs uses white color for background. It's different from the default theme in shadcn-ui package (previously used by DevBox). */
 :root {
   --background: #ffffff;
+  --alert-bg: #ffffff;
 }
 
 body {
