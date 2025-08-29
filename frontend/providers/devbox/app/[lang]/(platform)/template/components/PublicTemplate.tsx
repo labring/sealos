@@ -205,7 +205,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
       if (viewMode !== 'overview') return {};
 
       // Define the categories we want to show in overview
-      const categoryNames: CategoryType[] = ['language', 'framework', 'os'];
+      const categoryNames: CategoryType[] = ['language', 'framework', 'os', 'mcp'];
       const promises = categoryNames.map(async (categoryName) => {
         try {
           // Find the specific tag for this category
@@ -378,7 +378,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
     () => [
       { type: 'language' as CategoryType, title: t('language') },
       { type: 'framework' as CategoryType, title: t('framework') },
-      { type: 'os' as CategoryType, title: t('os') }
+      { type: 'os' as CategoryType, title: t('os') },
+      { type: 'mcp' as CategoryType, title: t('mcp') }
     ],
     [t]
   );
