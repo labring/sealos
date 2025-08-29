@@ -6,13 +6,14 @@ import { useLoading } from '@/hooks/useLoading';
 import { useEffect, useState } from 'react';
 import { serviceSideProps } from '@/utils/i18n';
 import Sidebar from '@/components/Sidebar';
-import { Flex } from '@chakra-ui/react';
+import { Box, Flex, Switch, Text } from '@chakra-ui/react';
 import { useGuideStore } from '@/store/guide';
 import { useRouter } from 'next/router';
 import { track } from '@sealos/gtm';
+import { type DatabaseAlertItem } from '@/api/db';
 
 function Home() {
-  const { dbList, setDBList } = useDBStore();
+  const { dbList, setDBList, alerts, loadAlerts } = useDBStore();
   const { Loading } = useLoading();
   const [initialized, setInitialized] = useState(false);
   const router = useRouter();
@@ -23,6 +24,12 @@ function Home() {
     onSettled() {
       setInitialized(true);
     }
+  });
+
+  // Fetch database alerts once when page loads
+  useQuery(['databaseAlerts'], loadAlerts, {
+    staleTime: Infinity,
+    cacheTime: 5 * 60 * 1000
   });
 
   useEffect(() => {
@@ -44,7 +51,7 @@ function Home() {
         {dbList.length === 0 && initialized ? (
           <Empty />
         ) : (
-          <DBList dbList={dbList} refetchApps={refetch} />
+          <DBList dbList={dbList} refetchApps={refetch} alerts={alerts} />
         )}
       </Flex>
       <Loading loading={!initialized} />

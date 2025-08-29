@@ -1,4 +1,10 @@
-import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import {
+  delDBServiceByName,
+  pauseDBByName,
+  restartDB,
+  startDBByName,
+  type DatabaseAlertItem
+} from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
@@ -35,12 +41,14 @@ const Header = ({
   db = defaultDBDetail,
   conn,
   isLargeScreen = true,
-  setShowSlider
+  setShowSlider,
+  alerts = {}
 }: {
   db: DBDetailType;
   conn: ConnectionInfo | null;
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
+  alerts: Record<string, DatabaseAlertItem>;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -285,7 +293,12 @@ const Header = ({
           {router.query.name || db.dbName}
         </Box>
       </Flex>
-      <DBStatusTag status={db.status} conditions={db.conditions} />
+      <DBStatusTag
+        status={db.status}
+        conditions={db.conditions}
+        alertReason={alerts[db.dbName]?.reason}
+        alertDetails={alerts[db.dbName]?.details}
+      />
       {/* {!isLargeScreen && (
         <Box mx={4}>
           <Button
