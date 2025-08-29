@@ -42,6 +42,9 @@ const (
 )
 
 type DevboxReleaseStatus struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=Pending
+	// +kubebuilder:validation:Enum=Success;Pending;Failed
 	Phase               DevboxReleasePhase `json:"phase,omitempty"`
 	OriginalDevboxState DevboxState        `json:"originalDevboxState,omitempty"`
 	SourceImage         string             `json:"sourceImage,omitempty"`
@@ -50,6 +53,9 @@ type DevboxReleaseStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="SourceImage",type="string",JSONPath=".status.sourceImage"
+// +kubebuilder:printcolumn:name="TargetImage",type="string",JSONPath=".status.targetImage"
 
 // DevboxRelease is the Schema for the devboxreleases API.
 type DevboxRelease struct {

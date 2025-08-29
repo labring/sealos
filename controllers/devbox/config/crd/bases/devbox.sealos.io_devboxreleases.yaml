@@ -14,7 +14,17 @@ spec:
     singular: devboxrelease
   scope: Namespaced
   versions:
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.sourceImage
+      name: SourceImage
+      type: string
+    - jsonPath: .status.targetImage
+      name: TargetImage
+      type: string
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         description: DevboxRelease is the Schema for the devboxreleases API.
@@ -54,6 +64,11 @@ spec:
               originalDevboxState:
                 type: string
               phase:
+                default: Pending
+                enum:
+                - Success
+                - Pending
+                - Failed
                 type: string
               sourceImage:
                 type: string
