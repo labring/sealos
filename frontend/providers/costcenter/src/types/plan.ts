@@ -53,7 +53,7 @@ export const WorkspaceSubscriptionSchema = z.object({
   Workspace: z.string(),
   RegionDomain: z.string(),
   UserUID: z.string(),
-  Status: z.string(),
+  Status: z.string(), // Plan = Free. status = Paused 是无试用期， Normal 是试用期， Debt 和其他的都是过期了
   PayStatus: z.string(),
   PayMethod: z.string(),
   Stripe: StripeInfoSchema.nullable(),
@@ -72,24 +72,24 @@ export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
 // 订阅变更流水
 export const SubscriptionTransactionSchema = z.object({
-  id: z.string(),
-  from: z.string(),
-  workspace: z.string(),
-  region_domain: z.string(),
-  user_uid: z.string(),
-  old_plan_name: z.string(),
-  new_plan_name: z.string(),
-  old_plan_status: z.string(),
-  operator: z.string(),
-  start_at: z.string(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  status: z.string(),
-  status_desc: z.string(),
-  pay_status: z.string(),
-  pay_id: z.string(),
-  period: z.string(),
-  amount: z.number()
+  ID: z.string(),
+  From: z.string(),
+  Workspace: z.string(),
+  RegionDomain: z.string(),
+  UserUID: z.string(),
+  OldPlanName: z.string(),
+  NewPlanName: z.string(),
+  OldPlanStatus: z.string(),
+  Operator: z.string(),
+  StartAt: z.string(),
+  CreatedAt: z.string(),
+  UpdatedAt: z.string(),
+  Status: z.string(),
+  StatusDesc: z.string(),
+  PayStatus: z.string(),
+  PayID: z.string(),
+  Period: z.string(),
+  Amount: z.number()
 });
 export type SubscriptionTransaction = z.infer<typeof SubscriptionTransactionSchema>;
 

@@ -78,66 +78,71 @@ export function AllPlansSection() {
   }, {});
 
   return (
-    <div className="space-y-6">
-      {Object.entries(subscriptionsByRegion).map(
-        ([regionDomain, regionSubscriptions]: [string, any]) => (
-          <TableLayout key={regionDomain}>
-            <TableLayoutCaption className="font-medium text-base bg-zinc-50">
-              {getRegionName(regionDomain)}
-            </TableLayoutCaption>
+    <div>
+      <div className="text-black font-medium text-lg mb-4">All Plans</div>
+      <div className="space-y-6">
+        {Object.entries(subscriptionsByRegion).map(
+          ([regionDomain, regionSubscriptions]: [string, any]) => (
+            <TableLayout key={regionDomain}>
+              <TableLayoutCaption className="font-medium text-base bg-zinc-50">
+                {getRegionName(regionDomain)}
+              </TableLayoutCaption>
 
-            <TableLayoutContent>
-              <TableLayoutHeadRow>
-                <TableHead className="bg-transparent">Workspace</TableHead>
-                <TableHead className="bg-transparent">Plan</TableHead>
-                <TableHead className="bg-transparent">Renewal Time</TableHead>
-                <TableHead className="bg-transparent">Status</TableHead>
-              </TableLayoutHeadRow>
+              <TableLayoutContent>
+                <TableLayoutHeadRow>
+                  <TableHead className="bg-transparent">Workspace</TableHead>
+                  <TableHead className="bg-transparent">Plan</TableHead>
+                  <TableHead className="bg-transparent">Renewal Time</TableHead>
+                  <TableHead className="bg-transparent">Status</TableHead>
+                </TableLayoutHeadRow>
 
-              <TableLayoutBody>
-                {regionSubscriptions.map((subscription: any, index: number) => (
-                  <TableRow key={subscription.id || subscription.ID || index}>
-                    <TableCell className="h-14">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar className="size-5">
-                          <AvatarFallback>
-                            {(subscription.workspace ||
-                              subscription.Workspace)?.[0]?.toUpperCase() || 'W'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          {subscription.workspace || subscription.Workspace || 'Unknown Workspace'}
+                <TableLayoutBody>
+                  {regionSubscriptions.map((subscription: any, index: number) => (
+                    <TableRow key={subscription.id || subscription.ID || index}>
+                      <TableCell className="h-14">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar className="size-5">
+                            <AvatarFallback>
+                              {(subscription.workspace ||
+                                subscription.Workspace)?.[0]?.toUpperCase() || 'W'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            {subscription.workspace ||
+                              subscription.Workspace ||
+                              'Unknown Workspace'}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`${getPlanBadgeColor(subscription.type)} font-medium`}>
-                        {subscription.plan_name ||
-                          subscription.PlanName ||
-                          subscription.type ||
-                          'Unknown'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(
-                        subscription.current_period_end_at || subscription.CurrentPeriodEndAt
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col text-sm">
-                        <span>{subscription.status || subscription.Status || 'Unknown'}</span>
-                        <span className="text-gray-500">
-                          {subscription.pay_status || subscription.PayStatus || 'Unknown'}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableLayoutBody>
-            </TableLayoutContent>
-          </TableLayout>
-        )
-      )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getPlanBadgeColor(subscription.type)} font-medium`}>
+                          {subscription.plan_name ||
+                            subscription.PlanName ||
+                            subscription.type ||
+                            'Unknown'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(
+                          subscription.current_period_end_at || subscription.CurrentPeriodEndAt
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-sm">
+                          <span>{subscription.status || subscription.Status || 'Unknown'}</span>
+                          <span className="text-gray-500">
+                            {subscription.pay_status || subscription.PayStatus || 'Unknown'}
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableLayoutBody>
+              </TableLayoutContent>
+            </TableLayout>
+          )
+        )}
+      </div>
     </div>
   );
 }

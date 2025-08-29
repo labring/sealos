@@ -8,14 +8,14 @@ import {
   Separator
 } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
-import { CircleCheck, Sparkles } from 'lucide-react';
+import { CircleCheck, Info, Sparkles } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SubscriptionInfoResponse, SubscriptionPlan } from '@/types/plan';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
-import { getPlanList, getSubscriptionInfo } from '@/api/plan';
+import { getPlanList, getSubscriptionInfo, getLastTransaction } from '@/api/plan';
 import { AllPlansSection } from '@/components/plan/AllPlansSection';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
@@ -109,7 +109,7 @@ function PlanHeader({
   plans?: SubscriptionPlan[];
   isLoading?: boolean;
   subscription?: SubscriptionInfoResponse['subscription'];
-  onSubscribe?: (plan: SubscriptionPlan, period: string) => void;
+  onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
 }) {
   const planName = subscription?.PlanName || 'Free Plan';
@@ -125,10 +125,24 @@ function PlanHeader({
         .replace(/\//g, '/')
         .replace(',', '')
     : 'N/A';
+  console.log('subscription', subscription);
 
   const isPaygType = subscription?.type === 'PAYG';
   const planDisplayName = isPaygType ? 'PAYG' : planName;
   const backgroundClass = getPlanBackgroundClass(planName, isPaygType);
+
+  // Find current plan details from plans list
+  const currentPlan = plans?.find((plan) => plan.Name === subscription?.PlanName);
+  const monthlyPrice = currentPlan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+  console.log('currentPlan', currentPlan, monthlyPrice);
+
+  // Parse plan resources
+  let planResources: any = {};
+  try {
+    planResources = JSON.parse(currentPlan?.MaxResources || '{}');
+  } catch (e) {
+    planResources = {};
+  }
 
   if (isPaygType) {
     return (
@@ -184,32 +198,28 @@ function PlanHeader({
         <Separator className="border-slate-200" />
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="flex gap-2 items-center">
-            <CircleCheck size={16} className="text-blue-600"></CircleCheck>
-            <span className="text-gray-600 text-sm">
-              Status: {subscription?.Status || 'Unknown'}
-            </span>
-          </div>
-          <div className="flex gap-2 items-center">
-            <CircleCheck size={16} className="text-blue-600"></CircleCheck>
-            <span className="text-gray-600 text-sm">Type: {subscription?.type || 'Unknown'}</span>
-          </div>
-          <div className="flex gap-2 items-center">
-            <CircleCheck size={16} className="text-blue-600"></CircleCheck>
-            <span className="text-gray-600 text-sm">
-              Pay Status: {subscription?.PayStatus || 'Unknown'}
-            </span>
-          </div>
+          {Object.entries(planResources).map(([key, value]) => (
+            <div key={key} className="flex gap-2 items-center">
+              <CircleCheck size={16} className="text-blue-600"></CircleCheck>
+              <span className="text-gray-600 text-sm">
+                {key}: {String(value) || 'N/A'}
+              </span>
+            </div>
+          ))}
+          {currentPlan?.Traffic && (
+            <div className="flex gap-2 items-center">
+              <CircleCheck size={16} className="text-blue-600"></CircleCheck>
+              <span className="text-gray-600 text-sm">Traffic: {currentPlan.Traffic}GB</span>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="px-6 py-5 grid grid-cols-2">
         <div className="flex gap-2 flex-col">
-          <span className="text-sm text-muted-foreground">Plan Type</span>
+          <span className="text-sm text-muted-foreground">Price/Month</span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
-            {subscription?.type === 'SUBSCRIPTION'
-              ? 'Subscription'
-              : subscription?.type || 'Unknown'}
+            ${displayMoney(formatMoney(monthlyPrice))}
           </span>
         </div>
 
@@ -229,6 +239,7 @@ function UpgradePlanCard({
   className,
   isPopular = false,
   isCurrentPlan = false,
+  currentPlan,
   onSubscribe,
   isLoading = false
 }: {
@@ -236,7 +247,8 @@ function UpgradePlanCard({
   className?: string;
   isPopular?: boolean;
   isCurrentPlan?: boolean;
-  onSubscribe?: (plan: SubscriptionPlan, period: string) => void;
+  currentPlan?: SubscriptionPlan;
+  onSubscribe?: (plan: SubscriptionPlan) => void;
   isLoading?: boolean;
 }) {
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
@@ -247,6 +259,34 @@ function UpgradePlanCard({
   } catch (e) {
     resources = {};
   }
+
+  // Determine action type based on plan relationships
+  const getActionType = () => {
+    if (!currentPlan) return 'upgrade';
+    if (currentPlan.UpgradePlanList?.includes(plan.Name)) return 'upgrade';
+    if (currentPlan.DowngradePlanList?.includes(plan.Name)) return 'downgrade';
+    if (plan.Name.includes('Enterprise')) return 'contact';
+    return 'upgrade';
+  };
+
+  const actionType = getActionType();
+
+  // Get button text based on action type
+  const getButtonText = () => {
+    if (isCurrentPlan) return 'Your current plan';
+    if (isLoading) return 'Processing...';
+
+    switch (actionType) {
+      case 'upgrade':
+        return 'Upgrade';
+      case 'downgrade':
+        return 'Downgrade';
+      case 'contact':
+        return 'Contact Us';
+      default:
+        return 'Subscribe';
+    }
+  };
 
   return (
     <section
@@ -280,22 +320,18 @@ function UpgradePlanCard({
             'w-full mb-6 font-medium',
             isCurrentPlan
               ? 'bg-gray-200 text-gray-600 cursor-not-allowed hover:bg-gray-200'
-              : 'bg-gray-900 text-white hover:bg-gray-800'
+              : actionType === 'contact'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-900 text-white hover:bg-gray-800'
           )}
           disabled={isCurrentPlan || isLoading}
           onClick={() => {
-            if (!isCurrentPlan && !plan.Name.includes('medium') && onSubscribe) {
-              onSubscribe(plan, 'monthly');
+            if (!isCurrentPlan && actionType !== 'contact' && onSubscribe) {
+              onSubscribe(plan);
             }
           }}
         >
-          {isCurrentPlan
-            ? 'Your current plan'
-            : plan.Name.includes('medium')
-              ? 'Contact Us'
-              : isLoading
-                ? 'Processing...'
-                : 'Subscribe'}
+          {getButtonText()}
         </Button>
 
         <ul className="space-y-3">
@@ -385,7 +421,7 @@ function PlansDisplay({
 }: {
   plans: SubscriptionPlan[];
   currentPlan?: string;
-  onSubscribe?: (plan: SubscriptionPlan, period: string) => void;
+  onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
 }) {
   const [showMorePlans, setShowMorePlans] = useState(false);
@@ -398,6 +434,9 @@ function PlansDisplay({
   const mainPlans = paidPlans.filter((plan) => !plan.Tags.includes('more'));
 
   const additionalPlans = paidPlans.filter((plan) => plan.Tags.includes('more'));
+
+  // Find the current plan object
+  const currentPlanObj = plans.find((plan) => plan.Name === currentPlan);
 
   // Set Hobby+ as default selection when component mounts
   useEffect(() => {
@@ -417,6 +456,7 @@ function PlansDisplay({
             plan={plan}
             isPopular={index === 1}
             isCurrentPlan={plan.Name === currentPlan}
+            currentPlan={currentPlanObj}
             onSubscribe={onSubscribe}
             isLoading={isSubscribing}
           />
@@ -488,7 +528,7 @@ function PlansDisplay({
               onClick={() => {
                 const plan = additionalPlans.find((p) => p.ID === selectedPlan);
                 if (plan && onSubscribe) {
-                  onSubscribe(plan, 'monthly');
+                  onSubscribe(plan);
                 }
               }}
             >
@@ -513,7 +553,7 @@ function UpgradePlanDialog({
   plans?: SubscriptionPlan[];
   isLoading?: boolean;
   currentPlan?: string;
-  onSubscribe?: (plan: SubscriptionPlan, period: string) => void;
+  onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
 }) {
   return (
@@ -588,6 +628,18 @@ export default function Plan() {
     enabled: !!(session?.user?.nsid && region?.uid)
   });
 
+  // Get last transaction to check if it was a downgrade
+  const { data: lastTransactionData } = useQuery({
+    queryKey: ['last-transaction', session?.user?.nsid, region?.uid],
+    queryFn: () =>
+      getLastTransaction({
+        workspace: session?.user?.nsid || '',
+        regionDomain: region?.domain || ''
+      }),
+    enabled: !!(session?.user?.nsid && region?.uid)
+  });
+  console.log('lastTransactionData', lastTransactionData);
+
   // mock data
   // const subscriptionData = {
   //   data: {
@@ -639,25 +691,32 @@ export default function Plan() {
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
     onSuccess: (data) => {
+      // Refresh subscription data
+      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+
       if (data.code === 200) {
         console.log('data', data);
         if (data.data?.redirectUrl) {
           window.parent.location.href = data.data.redirectUrl;
         } else if (data.data?.success === true) {
+          // Determine if it's an upgrade or downgrade based on the last transaction
+          const isDowngrade = lastTransactionData?.data?.transaction?.Operator === 'downgraded';
           toast({
             title: 'Payment Success',
-            description: 'Your subscription has been upgraded successfully',
+            description: `Your subscription has been ${
+              isDowngrade ? 'downgraded' : 'upgraded'
+            } successfully`,
             variant: 'success'
           });
         }
-        toast({
-          title: 'Payment Success',
-          description: 'Your subscription has been upgraded successfully',
-          variant: 'success'
-        });
       }
     },
     onError: (error: any) => {
+      // Refresh subscription data on error as well
+      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+
       console.error('Subscription payment error:', error);
       toast({
         title: 'Payment Failed',
@@ -676,7 +735,7 @@ export default function Plan() {
   //   });
   // }, []);
 
-  const handleSubscribe = (plan: SubscriptionPlan, period: string) => {
+  const handleSubscribe = (plan: SubscriptionPlan) => {
     if (!session?.user?.nsid || !region?.domain) {
       toast({
         title: 'Error',
@@ -686,13 +745,24 @@ export default function Plan() {
       return;
     }
 
+    // Determine operator based on plan relationship
+    const currentPlanObj = plansData?.data?.plans?.find(
+      (p) => p.Name === subscriptionData?.data?.subscription?.PlanName
+    );
+    const getOperator = () => {
+      if (!currentPlanObj) return 'upgraded';
+      if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
+      if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
+      return 'upgraded';
+    };
+
     const paymentRequest: SubscriptionPayRequest = {
       workspace: session.user.nsid,
       regionDomain: region.domain,
       planName: plan.Name,
       period: '1m',
-      payMethod: 'STRIPE', // Using balance as default payment method
-      operator: 'upgraded' // Set appropriate operator type
+      payMethod: 'STRIPE',
+      operator: getOperator()
     };
 
     subscriptionMutation.mutate(paymentRequest);
@@ -701,7 +771,7 @@ export default function Plan() {
   const isPaygType = subscriptionData?.data?.subscription?.type === 'PAYG';
 
   return (
-    <div className="bg-white gap-8 flex flex-col">
+    <div className="bg-white gap-8 flex flex-col overflow-auto h-full pb-20">
       {isPaygType ? (
         <div className="flex gap-4">
           <div className="flex-2/3">
@@ -723,6 +793,22 @@ export default function Plan() {
         </div>
       ) : (
         <>
+          {lastTransactionData?.data?.transaction?.Operator === 'downgraded' && (
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+              <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
+                <Info className="text-orange-600" />
+              </div>
+              <div className="text-orange-600 text-sm leading-5">
+                Please ensure resources remain within
+                {lastTransactionData?.data?.transaction?.NewPlanName} plan limits by
+                {new Date(
+                  lastTransactionData?.data?.transaction?.StartAt || ''
+                ).toLocaleDateString()}
+                to avoid charges.
+              </div>
+            </div>
+          )}
+
           <PlanHeader
             plans={plansData?.data?.plans}
             isLoading={plansLoading}
