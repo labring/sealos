@@ -6343,7 +6343,7 @@ packages:
       react: '>=18'
     dependencies:
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
-      '@emotion/cache': 11.14.0
+      '@emotion/cache': 11.11.0
       '@emotion/react': 11.11.1(@types/react@18.2.37)(react@18.2.0)
       next: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
@@ -6388,7 +6388,7 @@ packages:
       react: '>=18'
     dependencies:
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
-      '@emotion/cache': 11.14.0
+      '@emotion/cache': 11.11.0
       '@emotion/react': 11.11.1(@types/react@18.2.37)(react@18.2.0)
       next: 13.5.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
@@ -6403,7 +6403,7 @@ packages:
       react: '>=18'
     dependencies:
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
-      '@emotion/cache': 11.14.0
+      '@emotion/cache': 11.11.0
       '@emotion/react': 11.11.1(@types/react@18.2.37)(react@18.2.0)
       next: 13.5.9(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
@@ -8672,8 +8672,8 @@ packages:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.24.1
-      zod-to-json-schema: 3.24.5(zod@3.24.1)
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.5(zod@3.23.8)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -30302,12 +30302,12 @@ packages:
       zod: 4.0.14
     dev: false
 
-  /zod-to-json-schema@3.24.5(zod@3.24.1):
+  /zod-to-json-schema@3.24.5(zod@3.23.8):
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
       zod: ^3.24.1
     dependencies:
-      zod: 3.24.1
+      zod: 3.23.8
     dev: false
 
   /zod@3.21.4:
