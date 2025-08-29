@@ -20,6 +20,8 @@ import {
   Text
 } from '@chakra-ui/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { cn } from '@sealos/shadcn-ui';
 import { Button } from '@sealos/shadcn-ui/button';
 import {
   Table,
@@ -110,6 +112,9 @@ function Invoice() {
             <TabsTrigger variant="cleanUnderline" value="history">
               Invoice History
             </TabsTrigger>
+            <TabsTrigger variant="cleanUnderline" value="details_form">
+              Details Form (dev)
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="listing">
@@ -199,6 +204,115 @@ function Invoice() {
                 </div>
               </TableLayoutFooter>
             </TableLayout>
+          </TabsContent>
+
+          <TabsContent value="details_form">
+            <section className="flex flex-col border rounded-2xl mb-4 shadow-sm">
+              <div className="border-b text-base font-medium p-6">Invoice Details</div>
+              <div
+                className={cn(
+                  'px-8 py-6 grid grid-cols-2 gap-y-3 gap-x-6',
+                  '[&>label]:text-sm [&>label]:font-medium [&>label]:flex [&>label]:items-start',
+                  '[&>label>:first-child]:w-[15ch] [&>label>:first-child]:leading-[2.5rem]',
+                  '[&>label_input]:h-10 [&>label>:nth-child(2)]:flex-1',
+                  '[&>label:has(input[aria-invalid=true])_p]:text-destructive',
+                  '[&>label:not(:has(input[aria-invalid=true]))_p]:pointer-events-none [&>label:not(:has(input[aria-invalid=true]))_p]:opacity-0'
+                )}
+              >
+                <label>
+                  <span>Invoice Items</span>
+                  <span className="font-normal text-zinc-600 leading-[2.5rem]">
+                    Electronic Computer Service Fee
+                  </span>
+                </label>
+                <label>
+                  <span>Invoice Type</span>
+                  <div>
+                    <Input type="text" aria-invalid></Input>
+                    <p>Error text</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Invoice Title</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Tax ID</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Bank Name</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Bank Account No.</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Address</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Tel</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+                <label>
+                  <span>Fax</span>
+                  <div>
+                    <Input type="text"></Input>
+                    <p>No error</p>
+                  </div>
+                </label>
+              </div>
+            </section>
+
+            <section className="flex flex-col border rounded-2xl shadow-sm">
+              <div className="border-b text-base font-medium p-6">Invoice Details</div>
+              <div
+                className={cn(
+                  'px-8 py-6 grid grid-cols-2 gap-y-3 gap-x-6',
+                  '[&>label]:text-sm [&>label]:font-medium [&>label]:flex [&>label]:items-center',
+                  '[&>label>:first-child]:w-[15ch]',
+                  '[&>label_input]:h-10 [&>label>:nth-child(2)]:flex-1'
+                )}
+              >
+                <label>
+                  <span>Contact Person</span>
+                  <Input type="text" aria-invalid></Input>
+                </label>
+                <label>
+                  <span>Notification Email</span>
+                  <Input type="text" aria-invalid></Input>
+                </label>
+                <Separator className="col-span-2 border-dashed bg-transparent border-b-1"></Separator>
+                <label>
+                  <span>Mobile Number</span>
+                  <Input type="text"></Input>
+                </label>
+                <label>
+                  <span>Verification Code</span>
+                  <Input type="text"></Input>
+                </label>
+              </div>
+            </section>
           </TabsContent>
         </Tabs>
       </section>
