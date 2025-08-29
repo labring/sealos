@@ -280,10 +280,12 @@
   "max_replicas": "Max Replicas: ",
   "memory": "Memory",
   "backups":{
+    "db_backup_running": "Database backup in progress",
+    "backup_running": "Running",
     "stop_backup": "Stop Backup?",
     "stop_backup_tip": "Database backup in progress, stopping backup cannot be recovered, confirm to stop backup?",
     "stop_backup_confirm": "Stop Backup",
-    "stop_backup_cancel": "Cancel",
+    "stop_update_cancel": "Cancel Update",
     "stop_backup_success": "Backup stopped",
     "stop_backup_error": "Error stopping backup"
   },

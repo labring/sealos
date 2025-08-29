@@ -279,10 +279,12 @@
   "max_replicas": "实例数最大为: ",
   "memory": "内存",
   "backups":{
+    "db_backup_running": "数据库备份中",
+    "backup_running": "备份中",
     "stop_backup": "是否停止备份？",
     "stop_backup_tip": "数据库备份中，停止备份后不可恢复，确认停止备份？",
     "stop_backup_confirm": "停止备份",
-    "stop_backup_cancel": "取消",
+    "stop_update_cancel": "取消变更",
     "stop_backup_success": "备份已停止",
     "stop_backup_error": "处理备份时出错"
   },
