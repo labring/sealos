@@ -6,4 +6,6 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: devboxrelease-sample
 spec:
-  # TODO(user): Add fields here
+  devboxName: devbox-sample-1
+  version: 1.0.0
+  notes: "This is a sample devbox release"

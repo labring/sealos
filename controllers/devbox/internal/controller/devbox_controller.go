@@ -164,6 +164,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					"acceptanceThreshold", r.AcceptanceThreshold)
 				// set up devbox node and content id, new a record for the devbox
 				devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
+				devbox.Status.Node = r.NodeName
 				if err := r.Status().Update(ctx, devbox); err != nil {
 					logger.Info("try to schedule devbox to node failed. This devbox may have already been scheduled to another node", "error", err)
 					return ctrl.Result{}, err
@@ -205,11 +206,10 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync service success", "Sync service success")
 	}
 
-	// sync devbox state
-	if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName && r.syncDevboxState(ctx, devbox) {
-		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	// sync devbox phase based on desired state and current pod status
+	if err := r.syncDevboxPhase(ctx, devbox, recLabels); err != nil {
+		logger.Error(err, "sync devbox phase failed")
+		return ctrl.Result{}, err
 	}
 
 	// create or update pod
@@ -221,6 +221,15 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	logger.Info("sync pod success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
+
+	// sync devbox state
+	if r.syncDevboxState(ctx, devbox) {
+		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
+		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
+		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
@@ -345,14 +354,14 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	var servicePorts []corev1.ServicePort
-	// for _, port := range devbox.Spec.Config.Ports {
-	// 	servicePorts = append(servicePorts, corev1.ServicePort{
-	// 		Name:       port.Name,
-	// 		Port:       port.ContainerPort,
-	// 		TargetPort: intstr.FromInt32(port.ContainerPort),
-	// 		Protocol:   port.Protocol,
-	// 	})
-	// }
+	for _, port := range devbox.Spec.Config.Ports {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       port.Name,
+			Port:       port.ContainerPort,
+			TargetPort: intstr.FromInt32(port.ContainerPort),
+			Protocol:   port.Protocol,
+		})
+	}
 	if len(servicePorts) == 0 {
 		//use the default value
 		servicePorts = []corev1.ServicePort{
@@ -434,6 +443,92 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	return nil
 }
 
+// syncDevboxPhase updates devbox.Status.Phase derived from desired state and current pod status
+func (r *DevboxReconciler) syncDevboxPhase(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	logger := log.FromContext(ctx)
+	podList := &corev1.PodList{}
+	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+		return err
+	}
+	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox)
+	if err != nil {
+		return fmt.Errorf("failed to get devbox: %w", err)
+	}
+
+	var (
+		hasRunning     bool
+		hasPending     bool
+		hasFailed      bool
+		hasTerminating bool
+	)
+	for i := range podList.Items {
+		p := &podList.Items[i]
+		if !p.DeletionTimestamp.IsZero() {
+			hasTerminating = true
+		}
+		switch p.Status.Phase {
+		case corev1.PodRunning:
+			hasRunning = true
+		case corev1.PodPending:
+			hasPending = true
+		case corev1.PodFailed:
+			hasFailed = true
+		}
+	}
+
+	derivePhase := func() devboxv1alpha2.DevboxPhase {
+		// Any explicit failure maps to Error
+		if hasFailed {
+			return devboxv1alpha2.DevboxPhaseError
+		}
+		switch devbox.Spec.State {
+		case devboxv1alpha2.DevboxStateRunning:
+			if hasRunning {
+				return devboxv1alpha2.DevboxPhaseRunning
+			}
+			if hasPending || len(podList.Items) > 0 {
+				return devboxv1alpha2.DevboxPhasePending
+			}
+			// no pod yet, but desired Running -> Pending
+			return devboxv1alpha2.DevboxPhasePending
+		case devboxv1alpha2.DevboxStatePaused:
+			if len(podList.Items) > 0 {
+				if hasTerminating {
+					return devboxv1alpha2.DevboxPhasePausing
+				}
+				return devboxv1alpha2.DevboxPhasePausing
+			}
+			return devboxv1alpha2.DevboxPhasePaused
+		case devboxv1alpha2.DevboxStateStopped:
+			if len(podList.Items) > 0 {
+				if hasTerminating {
+					return devboxv1alpha2.DevboxPhaseStopping
+				}
+				return devboxv1alpha2.DevboxPhaseStopping
+			}
+			return devboxv1alpha2.DevboxPhaseStopped
+		case devboxv1alpha2.DevboxStateShutdown:
+			if len(podList.Items) > 0 {
+				if hasTerminating {
+					return devboxv1alpha2.DevboxPhaseShutting
+				}
+				return devboxv1alpha2.DevboxPhaseShutting
+			}
+			return devboxv1alpha2.DevboxPhaseShutdown
+		default:
+			return devboxv1alpha2.DevboxPhaseUnknown
+		}
+	}
+
+	newPhase := derivePhase()
+	if devbox.Status.Phase == newPhase {
+		return nil
+	}
+	logger.Info("updating devbox phase", "from", devbox.Status.Phase, "to", newPhase)
+	devbox.Status.Phase = newPhase
+	return r.Status().Update(ctx, devbox)
+}
+
 // sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
 func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha2.Devbox) bool {
 	logger := log.FromContext(ctx)
@@ -448,10 +543,6 @@ func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1
 			"from", devbox.Status.State,
 			"to", devbox.Spec.State,
 			"devbox", devbox.Name)
-		logger.Info("recording state change event",
-			"devbox", devbox.Name,
-			"nodeName", r.NodeName)
-		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
 		return true
 	}
 	logger.Info("devbox state unchanged",

@@ -55,9 +55,10 @@ spec:
                 type: string
               phase:
                 type: string
-            required:
-            - originalDevboxState
-            - phase
+              sourceImage:
+                type: string
+              targetImage:
+                type: string
             type: object
         type: object
     served: true

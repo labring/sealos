@@ -27,6 +27,9 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
+    - jsonPath: .status.node
+      name: Node
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -3293,6 +3296,8 @@ spec:
                 required:
                 - type
                 type: object
+              node:
+                type: string
               phase:
                 type: string
               state:

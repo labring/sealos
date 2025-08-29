@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -19,6 +20,8 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var commitMap = sync.Map{}
 
 type StateChangeHandler struct {
 	Committer           commit.Committer
@@ -67,11 +70,13 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 
 	if needsCommit {
 		// Check if commit is already in progress to prevent duplicate requests
-		if devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus == devboxv1alpha2.CommitStatusCommitting {
+		if _, ok := commitMap.Load(devbox.Status.ContentID); ok {
 			h.Logger.Info("commit already in progress, skipping duplicate request", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
 			return nil
 		}
+		commitMap.Store(devbox.Status.ContentID, true)
 		if err := h.commitDevbox(ctx, devbox, targetState); err != nil {
+			commitMap.Delete(devbox.Status.ContentID)
 			h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 			return err
 		}
@@ -88,6 +93,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 }
 
 func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox, targetState devboxv1alpha2.DevboxState) error {
+	defer commitMap.Delete(devbox.Status.ContentID)
 	// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 	// step 0: set commit status to committing to prevent duplicate requests
 	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusCommitting
@@ -150,6 +156,7 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 		CommitImage:  h.generateImageName(devbox),
 		GenerateTime: metav1.Now(),
 	}
+	devbox.Status.Node = ""
 	h.Logger.Info("update devbox status to shutdown", "devbox", devbox.Name)
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		return h.Client.Status().Update(ctx, devbox)
