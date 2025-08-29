@@ -95,6 +95,7 @@ export type SubscriptionTransaction = z.infer<typeof SubscriptionTransactionSche
 
 // Payment records
 export const PaymentRecordSchema = z.object({
+  ID: z.string(),
   Time: z.iso.datetime(),
   Amount: z.number(),
   PlanName: z.string(),
