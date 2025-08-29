@@ -10,31 +10,34 @@ import { Trend as OverviewTrend } from '@/components/cost_overview/trend';
 import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
-import { CostTree, type BillingNode } from '@/components/billing/CostTree';
-import { CostPanel } from '@/components/billing/CostPanel';
-import {
-  SubscriptionCostTable,
-  type SubscriptionData
-} from '@/components/billing/SubscriptionCostTable';
-import { PAYGCostTable, type PAYGData } from '@/components/billing/PAYGCostTable';
-import { PAYGAppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { DateRange } from 'react-day-picker';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import useAppTypeStore from '@/stores/appType';
-import { DateRange } from 'react-day-picker';
-
-import { Region } from '@/types/region';
-import { ApiResp, AppOverviewBilling, APPBillingItem } from '@/types';
 import useOverviewStore from '@/stores/overview';
 import { getPaymentList } from '@/api/plan';
+import { Region } from '@/types/region';
+import { ApiResp, AppOverviewBilling } from '@/types';
+import { BillingNode, CostTree } from '@/components/billing/CostTree';
+import { PAYGCostTable } from '@/components/billing/PAYGCostTable';
+import type { PAYGData } from '@/components/billing/PAYGCostTableView';
+import {
+  SubscriptionCostTable,
+  SubscriptionData
+} from '@/components/billing/SubscriptionCostTable';
+import { CostPanel } from '@/components/billing/CostPanel';
+import { AppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
 
+/**
+ * Billing page container.
+ * Hosts filters, region/workspace selection, and renders cost trees and tables.
+ */
 function Billing() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { getRegion } = useBillingStore();
-  const { getAppType: getAppTypeString } = useAppTypeStore();
   const { startTime, endTime } = useOverviewStore();
 
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
@@ -43,31 +46,13 @@ function Billing() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
-  // Date range state for the main billing view
+  // Date range for the main billing view
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(startTime),
     to: new Date(endTime)
   });
 
-  // Date range state for the app billing drawer
-  const [appDateRange, setAppDateRange] = useState<{ from: Date; to: Date } | undefined>({
-    from: new Date(startTime),
-    to: new Date(endTime)
-  });
-
-  // App billing drawer states
-  const [appBillingPage, setAppBillingPage] = useState(1);
-  const [appBillingTotalPage, setAppBillingTotalPage] = useState(1);
-  const [appBillingTotalItem, setAppBillingTotalItem] = useState(0);
-  const [appBillingPageSize] = useState(10);
-
-  // Query regions
-  const { data: regionData } = useQuery({
-    queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
-    queryKey: ['regionList', 'menu']
-  });
-
-  // Get current region UID for namespace query
+  // Resolve current region UID from selection or store
   const currentRegionUid = useMemo(() => {
     if (selectedRegion) {
       // Extract region UID from selectedRegion (format: "region_<uid>")
@@ -77,7 +62,7 @@ function Billing() {
     return getRegion()?.uid || '';
   }, [selectedRegion, getRegion]);
 
-  // Use date range from picker if available, otherwise fall back to store values
+  // Effective start/end time derived from picker or store
   const effectiveStartTime = dateRange?.from
     ? dateRange.from.toISOString()
     : new Date(startTime).toISOString();
@@ -85,81 +70,213 @@ function Billing() {
     ? dateRange.to.toISOString()
     : new Date(endTime).toISOString();
 
-  const queryBody = {
-    startTime: effectiveStartTime,
-    endTime: effectiveEndTime,
-    regionUid: currentRegionUid
-  };
+  // Query regions list
+  const { data: regionData } = useQuery({
+    queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
+    queryKey: ['regionList', 'menu']
+  });
 
-  // Query namespaces - only when we have a region selected
+  // Query namespaces for current region
   const { data: nsListData } = useQuery({
-    queryFn: () => request.post('/api/billing/getNamespaceList', queryBody),
-    queryKey: ['nsList', 'menu', queryBody],
+    queryFn: () =>
+      request.post('/api/billing/getNamespaceList', {
+        startTime: effectiveStartTime,
+        endTime: effectiveEndTime,
+        regionUid: currentRegionUid
+      }),
+    queryKey: [
+      'nsList',
+      'menu',
+      { startTime: effectiveStartTime, endTime: effectiveEndTime, regionUid: currentRegionUid }
+    ],
     enabled: !!currentRegionUid
   });
 
-  // Query app overview billing data for the selected workspace
-  const appOverviewQueryBody = useMemo(() => {
-    return {
-      endTime: effectiveEndTime,
-      startTime: effectiveStartTime,
-      regionUid: currentRegionUid,
-      // Not supports filtering apps for now.
-      appType: '',
-      appName: '',
-      namespace: selectedWorkspace || '', // selectedWorkspace is now the namespace ID directly
-      page,
-      pageSize
-    };
-  }, [effectiveEndTime, effectiveStartTime, currentRegionUid, selectedWorkspace, page, pageSize]);
-
-  const { data: appOverviewData, refetch: refetchAppOverview } = useQuery({
-    queryFn() {
-      return request.post<
-        any,
-        ApiResp<{
-          overviews: AppOverviewBilling[];
-          total: number;
-          totalPage: number;
-        }>
-      >('/api/billing/appOverview', appOverviewQueryBody);
-    },
-    onSuccess(data) {
-      if (!data.data) {
-        return;
-      }
-      const { totalPage } = data.data;
-      if (totalPage < page) {
-        setPage(1);
-      }
-    },
-    keepPreviousData: false,
-    queryKey: ['appOverviewBilling', appOverviewQueryBody, page, pageSize],
-    enabled: !!currentRegionUid && !!selectedRegion
-  });
-
-  // ! ======================================== Still needs waiting for upstream
-  // Query payment data for the selected region
-  const paymentListQueryBody = useMemo(() => {
-    return {
+  // Query body for subscription payments (region scope)
+  // We need this for calculating costs
+  const paymentListQueryBody = useMemo(
+    () => ({
       endTime: effectiveEndTime,
       startTime: effectiveStartTime,
       regionUid: currentRegionUid
-    };
-  }, [effectiveEndTime, effectiveStartTime, currentRegionUid]);
+    }),
+    [effectiveEndTime, effectiveStartTime, currentRegionUid]
+  );
+
+  // ! ======================================= We need to query all regions and cache them for constructing the node tree
   const { data: paymentListData } = useQuery({
-    queryFn: () => getPaymentList(queryBody),
-    queryKey: ['paymentList', queryBody],
+    queryFn: () => getPaymentList(paymentListQueryBody),
+    queryKey: ['paymentList', paymentListQueryBody],
     enabled: !!currentRegionUid
   });
+
+  // Query body for region-level PAYG consumption
+  const regionConsumptionQueryBody = useMemo(
+    () => ({
+      appType: '',
+      namespace: '', // empty namespace means entire region
+      startTime: effectiveStartTime,
+      endTime: effectiveEndTime,
+      regionUid: currentRegionUid,
+      appName: ''
+    }),
+    [effectiveStartTime, effectiveEndTime, currentRegionUid]
+  );
+
+  // ! ============================================= We need to query all regions and cache them for constructing the node tree
+  const { data: regionConsumptionData } = useQuery({
+    queryKey: ['regionConsumption', regionConsumptionQueryBody],
+    queryFn: () => {
+      return request.post<{ amount: number }>(
+        '/api/billing/consumption',
+        regionConsumptionQueryBody
+      );
+    },
+    enabled: !!currentRegionUid
+  });
+
+  // Build queries for workspace-level PAYG consumption
+  // !=============================================== Probably do not need this later
+  const workspaceConsumptionQueries = useMemo(() => {
+    const namespaces = (nsListData?.data || []) as [string, string][];
+    return namespaces.map(([namespaceId, namespaceName]) => ({
+      namespaceId,
+      namespaceName,
+      queryBody: {
+        appType: '',
+        namespace: namespaceId,
+        startTime: effectiveStartTime,
+        endTime: effectiveEndTime,
+        regionUid: currentRegionUid,
+        appName: ''
+      }
+    }));
+  }, [nsListData, effectiveStartTime, effectiveEndTime, currentRegionUid]);
+
+  // Fetch consumption for each workspace in parallel
+  const workspaceConsumptionResults = useQuery({
+    queryKey: ['workspaceConsumptions', workspaceConsumptionQueries],
+    queryFn: async () => {
+      const results = await Promise.all(
+        workspaceConsumptionQueries.map(async ({ namespaceId, queryBody }) => {
+          try {
+            const response = await request.post<{ amount: number }>(
+              '/api/billing/consumption',
+              queryBody
+            );
+            return { namespaceId, amount: response.data.amount };
+          } catch (error) {
+            console.error(`Failed to fetch consumption for namespace ${namespaceId}:`, error);
+            return { namespaceId, amount: 0 };
+          }
+        })
+      );
+      return results;
+    },
+    enabled: !!currentRegionUid && workspaceConsumptionQueries.length > 0
+  });
+
+  const { nodes, totalCost } = useMemo(() => {
+    const regions = regionData?.data || [];
+    const namespaces = (nsListData?.data || []) as [string, string][];
+    const paymentList = paymentListData?.data?.payments || [];
+    const workspaceConsumptions = workspaceConsumptionResults?.data || [];
+
+    // Build workspaceCosts using consumption and payments
+    const workspaceCosts = [
+      ...workspaceConsumptions.map((consumption) => ({
+        namespace: consumption.namespaceId,
+        cost: consumption.amount
+      })),
+      ...paymentList.map((payment) => ({
+        namespace: payment.Workspace,
+        cost: payment.Amount
+      }))
+    ].reduce<Record<string, number>>((acc, { namespace, cost }) => {
+      return {
+        ...acc,
+        [namespace]: (acc[namespace] || 0) + cost
+      };
+    }, {});
+
+    // Build regionCosts using consumption
+    const regionId = `region_${currentRegionUid}`;
+    const regionCost = regionConsumptionData?.data?.amount || 0;
+    const regionCosts: Record<string, number> = {
+      [regionId]: regionCost
+    };
+
+    // Compute total amount
+    const totalCost = Object.values(regionCosts).reduce((sum, cost) => sum + cost, 0);
+
+    // Total node
+    const totalNode: BillingNode = {
+      id: 'total_cost',
+      name: 'Total Cost',
+      cost: totalCost,
+      type: 'total',
+      dependsOn: null
+    };
+
+    // Region nodes
+    const regionNodes: BillingNode[] = regions.map((region) => {
+      const regionId = `region_${region.uid}`;
+      return {
+        id: regionId,
+        name: region.name.en,
+        cost: regionCosts[regionId] || 0,
+        type: 'region',
+        dependsOn: 'total_cost'
+      };
+    });
+
+    // Workspace nodes
+    const workspaceNodes: BillingNode[] = namespaces.map(([namespaceId, namespaceName]) => ({
+      id: namespaceId,
+      name: namespaceName,
+      cost: workspaceCosts[namespaceId] || 0,
+      type: 'workspace',
+      dependsOn: selectedRegion || `region_${currentRegionUid}` || null
+    }));
+
+    // Merge nodes
+    const nodes = [totalNode, ...regionNodes, ...workspaceNodes];
+
+    return { nodes, totalCost };
+  }, [
+    regionData,
+    nsListData,
+    paymentListData,
+    regionConsumptionData,
+    workspaceConsumptionResults,
+    selectedRegion,
+    currentRegionUid
+  ]);
+
+  // Transform query results for child components
+  const subscriptionData = useMemo(() => {
+    // Transform subscription payments data
+    const subscriptionData: SubscriptionData[] = [];
+    if (paymentListData?.data?.payments) {
+      paymentListData.data.payments
+        .filter((data) => {
+          return selectedWorkspace ? data.Workspace === selectedWorkspace : true;
+        })
+        .forEach((data) => {
+          subscriptionData.push({
+            time: data.Time,
+            plan: data.PlanName,
+            cost: data.Amount
+          });
+        });
+    }
+
+    return subscriptionData;
+  }, [paymentListData, selectedWorkspace]);
 
   // Sync date range with store values when they change
   useEffect(() => {
     setDateRange({
-      from: new Date(startTime),
-      to: new Date(endTime)
-    });
-    setAppDateRange({
       from: new Date(startTime),
       to: new Date(endTime)
     });
@@ -170,60 +287,12 @@ function Billing() {
     setPage(1);
   }, [selectedRegion, selectedWorkspace, effectiveEndTime, effectiveStartTime]);
 
-  // Transform data to BillingNode format
-  const nodes: BillingNode[] = useMemo(() => {
-    const regions = regionData?.data || [];
-    const namespaces = (nsListData?.data || []) as [string, string][];
-
-    const result: BillingNode[] = [];
-
-    // Add total cost node
-    result.push({
-      id: 'total_cost',
-      name: 'Total Cost',
-      cost: 0,
-      type: 'total',
-      dependsOn: null
-    });
-
-    // Add region nodes
-    regions.forEach((region) => {
-      result.push({
-        id: `region_${region.uid}`,
-        name: region.name.en, // Use English name, could be made dynamic based on locale
-        cost: 0, // Calculate from workspaces in this region
-        type: 'region',
-        dependsOn: 'total_cost'
-      });
-    });
-
-    // Add workspace nodes - namespaces are [id, name] tuples
-    // Since we're querying with a specific regionUid, all returned namespaces belong to that region
-    // Store namespace ID directly without workspace_ prefix for simpler usage
-    namespaces.forEach(([namespaceId, namespaceName]) => {
-      result.push({
-        id: namespaceId, // Store namespace ID directly
-        name: namespaceName,
-        cost: 0, // Will be updated with actual cost data
-        type: 'workspace',
-        dependsOn: selectedRegion || `region_${currentRegionUid}`
-      });
-    });
-
-    return result;
-  }, [regionData, nsListData, selectedRegion, currentRegionUid]);
-
   const handleRegionSelect = (regionId: string | null) => {
     setSelectedRegion(regionId);
     setPage(1);
     setSelectedApp(null);
     if (!regionId) {
       setSelectedWorkspace(null);
-    } else {
-      // Trigger refetch when region is selected
-      setTimeout(() => {
-        refetchAppOverview();
-      }, 0);
     }
   };
 
@@ -231,44 +300,7 @@ function Billing() {
     setSelectedWorkspace(workspaceId);
     setPage(1);
     setSelectedApp(null);
-
-    // Trigger refetch on workspace selection
-    if (workspaceId && currentRegionUid) {
-      setTimeout(() => {
-        refetchAppOverview();
-      }, 0);
-    }
   };
-
-  // Transform app overview data to PAYGData format
-  const paygData: PAYGData[] = useMemo(() => {
-    if (!selectedRegion) {
-      return [];
-    }
-
-    const overviews = appOverviewData?.data?.overviews || [];
-    return overviews.map((overview) => ({
-      appName: overview.appName,
-      // Use the string appType ID directly (e.g., "DB") for both display and API
-      appType: getAppTypeString(overview.appType.toString()),
-      cost: overview.amount / 100000, // Convert from micro units to dollars
-      // Store the namespace for this specific app
-      namespace: overview.namespace
-    }));
-  }, [appOverviewData, selectedRegion, getAppTypeString]);
-
-  // ! ========================================================================== Mock subscription data (keeping this as subscription data is not available in app overview)
-  const subscriptionData: SubscriptionData[] = Array.from({ length: 3 }, () => ({
-    time: '2024-12-14 16:00',
-    plan: 'STARTER',
-    cost: 5
-  }));
-
-  // Calculate total cost from PAYG data
-  // ! ================================= Subscription data is missing for now, so calc from PAYG data only.
-  const totalCost = useMemo(() => {
-    return paygData.reduce((sum, item) => sum + item.cost, 0);
-  }, [paygData]);
 
   // Get current region and workspace names for display
   const currentRegionName = useMemo(() => {
@@ -281,130 +313,18 @@ function Billing() {
 
   const currentWorkspaceName = useMemo(() => {
     if (selectedWorkspace) {
-      const namespaces = (nsListData?.data || []) as [string, string][];
-      const workspace = namespaces.find(([id]) => id === selectedWorkspace);
+      const workspace = (nsListData?.data || []).find(
+        ([id]: [string, string]) => id === selectedWorkspace
+      );
       return workspace?.[1];
     }
     return null; // No workspace selected
   }, [selectedWorkspace, nsListData]);
 
-  // Display title logic
-  const displayTitle = useMemo(() => {
-    if (!selectedRegion && !selectedWorkspace) {
-      return 'Total Cost';
-    }
-    if (selectedRegion && !selectedWorkspace) {
-      return `${currentRegionName} Cost`;
-    }
-    if (selectedRegion && selectedWorkspace) {
-      return `${currentRegionName} / ${currentWorkspaceName} Cost`;
-    }
-    return 'Total Cost';
-  }, [selectedRegion, selectedWorkspace, currentRegionName, currentWorkspaceName]);
+  const [selectedApp, setSelectedApp] = useState<any>(null);
 
-  const [selectedApp, setSelectedApp] = useState<PAYGData | null>(null);
-
-  // App billing query for drawer
-  const appBillingQueryBody = useMemo(() => {
-    if (!selectedApp) return null;
-
-    const drawerStartTime = appDateRange?.from
-      ? appDateRange.from.toISOString()
-      : effectiveStartTime;
-    const drawerEndTime = appDateRange?.to ? appDateRange.to.toISOString() : effectiveEndTime;
-
-    return {
-      endTime: drawerEndTime,
-      startTime: drawerStartTime,
-      regionUid: currentRegionUid,
-      appType: selectedApp.appType, // Use the string appType ID (e.g., "DB")
-      appName: selectedApp.appName,
-      namespace: selectedApp.namespace || '', // Use the app's specific namespace
-      page: appBillingPage,
-      pageSize: appBillingPageSize
-    };
-  }, [
-    selectedApp,
-    appDateRange,
-    effectiveStartTime,
-    effectiveEndTime,
-    currentRegionUid,
-    appBillingPage,
-    appBillingPageSize
-  ]);
-
-  const { data: appBillingData } = useQuery({
-    queryFn() {
-      return request.post<
-        any,
-        ApiResp<{
-          costs: APPBillingItem[];
-          current_page: number;
-          total_pages: number;
-          total_records: number;
-        }>
-      >('/api/billing/appBilling', appBillingQueryBody);
-    },
-    onSuccess(data) {
-      if (!data.data) {
-        return;
-      }
-      const { total_records: total, total_pages: totalPage } = data.data;
-      if (totalPage === 0) {
-        setAppBillingTotalPage(1);
-        setAppBillingTotalItem(1);
-      } else {
-        setAppBillingTotalItem(total);
-        setAppBillingTotalPage(totalPage);
-      }
-      if (totalPage < appBillingPage) {
-        setAppBillingPage(1);
-      }
-    },
-    keepPreviousData: true,
-    queryKey: ['appBillingDrawer', appBillingQueryBody, appBillingPage, appBillingPageSize],
-    enabled: !!appBillingQueryBody
-  });
-
-  // Transform app billing data to PAYGBillingDetail format
-  const appBillingDetails = useMemo(() => {
-    if (!appBillingData?.data?.costs) return [];
-
-    // ! ================================================= Should move to separate utils
-    return appBillingData.data.costs.map((item): any => ({
-      appName: item.app_name,
-      // Convert appType number to string using the store
-      appType: getAppTypeString(item.app_type.toString()),
-      time: new Date(item.time),
-      orderId: item.order_id,
-      namespace: item.namespace,
-      amount: item.amount,
-      usage: {
-        // Map from used and used_amount arrays based on resource type indices
-        // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
-        cpu: item?.used?.['0']
-          ? { amount: item.used['0'], cost: item.used_amount['0'] }
-          : undefined,
-        memory: item?.used?.['1']
-          ? { amount: item.used['1'], cost: item.used_amount['1'] }
-          : undefined,
-        storage: item?.used?.['2']
-          ? { amount: item.used['2'], cost: item.used_amount['2'] }
-          : undefined,
-        network: item?.used?.['3']
-          ? { amount: item.used['3'], cost: item.used_amount['3'] }
-          : undefined,
-        port: item?.used?.['4']
-          ? { amount: item.used['4'], cost: item.used_amount['4'] }
-          : undefined,
-        gpu: item?.used?.['5'] ? { amount: item.used['5'], cost: item.used_amount['5'] } : undefined
-      }
-    }));
-  }, [appBillingData, getAppTypeString]);
-
-  const handleUsageClick = (item: PAYGData) => {
+  const handleUsageClick = (item: any) => {
     setSelectedApp(item);
-    setAppBillingPage(1); // Reset pagination when opening drawer
     setDetailsDrawerOpen(true);
   };
 
@@ -436,41 +356,36 @@ function Billing() {
               onRegionSelect={handleRegionSelect}
               onWorkspaceSelect={handleWorkspaceSelect}
             >
-              <CostPanel displayTitle={displayTitle} totalCost={totalCost}>
+              <CostPanel
+                region={currentRegionName}
+                workspace={currentWorkspaceName}
+                totalCost={totalCost}
+              >
                 <SubscriptionCostTable data={subscriptionData} />
-                {paygData.length > 0 && selectedRegion && (
+
+                {selectedRegion && (
                   <PAYGCostTable
-                    data={paygData}
-                    timeRange={`${new Date(effectiveStartTime).toLocaleDateString()} – ${new Date(
-                      effectiveEndTime
-                    ).toLocaleDateString()}`}
+                    currentRegionUid={currentRegionUid}
+                    selectedRegion={selectedRegion}
+                    selectedWorkspace={selectedWorkspace}
+                    effectiveStartTime={effectiveStartTime}
+                    effectiveEndTime={effectiveEndTime}
+                    page={page}
+                    pageSize={pageSize}
                     onUsageClick={handleUsageClick}
                   />
                 )}
               </CostPanel>
             </CostTree>
 
-            <PAYGAppBillingDrawer
+            <AppBillingDrawer
               open={detailsDrawerOpen}
               onOpenChange={setDetailsDrawerOpen}
-              appType={selectedApp?.appType || ''}
-              namespace={selectedApp?.namespace || ''}
-              // ! ============================================ We also need data with sub apps
-              hasSubApps={selectedApp?.appType === 'APP-STORE'}
-              data={appBillingDetails}
-              appName={selectedApp?.appName || 'Unknown App'}
-              region={currentRegionName || 'Unknown Region'}
-              currentPage={appBillingPage}
-              totalPages={appBillingTotalPage}
-              pageSize={appBillingPageSize}
-              totalCount={appBillingTotalItem}
-              onPageChange={setAppBillingPage}
-              dateRange={appDateRange}
-              onDateRangeChange={setAppDateRange}
-              onOpenApp={() => {
-                // Handle open app logic
-                console.log('Open app:', selectedApp?.appName);
-              }}
+              selectedApp={selectedApp}
+              currentRegionUid={currentRegionUid}
+              currentRegionName={currentRegionName || null}
+              effectiveStartTime={effectiveStartTime}
+              effectiveEndTime={effectiveEndTime}
             />
           </div>
         </TabsContent>

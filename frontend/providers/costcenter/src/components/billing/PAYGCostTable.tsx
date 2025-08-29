@@ -1,78 +1,86 @@
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
-import { cn } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
-import {
-  TableLayout,
-  TableLayoutCaption,
-  TableLayoutContent,
-  TableLayoutHeadRow,
-  TableLayoutBody
-} from '@sealos/shadcn-ui/table-layout';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { useTranslation } from 'next-i18next';
-import { AppIcon } from '../AppIcon';
-
-export type PAYGData = {
-  appName: string;
-  appType: string; // String ID for both display and API queries (e.g., "DB")
-  cost: number;
-  namespace?: string;
-};
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import request from '@/service/request';
+import { ApiResp, AppOverviewBilling } from '@/types';
+import useAppTypeStore from '@/stores/appType';
+import { PAYGCostTableView, PAYGData } from './PAYGCostTableView';
 
 type PAYGCostTableProps = {
-  data: PAYGData[];
-  timeRange?: string;
+  currentRegionUid: string;
+  selectedRegion: string | null;
+  selectedWorkspace: string | null;
+  effectiveStartTime: string;
+  effectiveEndTime: string;
+  page: number;
+  pageSize: number;
   onUsageClick?: (item: PAYGData) => void;
 };
 
-export function PAYGCostTable({ data, timeRange, onUsageClick }: PAYGCostTableProps) {
-  const { t } = useTranslation('applist');
+/**
+ * PAYGCostTable container.
+ * Fetches PAYG overview data and renders PAYGCostTableView.
+ */
+export function PAYGCostTable({
+  currentRegionUid,
+  selectedRegion,
+  selectedWorkspace,
+  effectiveStartTime,
+  effectiveEndTime,
+  page,
+  pageSize,
+  onUsageClick
+}: PAYGCostTableProps) {
+  const { getAppType: getAppTypeString } = useAppTypeStore();
 
-  const PAYGRow = ({ item }: { item: PAYGData }) => (
-    <TableRow>
-      <TableCell>
-        <div className="flex gap-1 items-center">
-          <AppIcon app={item.appType} className={{ avatar: 'size-5' }} />
-          <div>{item.appName}</div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <Badge variant="secondary" className={cn('font-medium')}>
-          {t(item.appType)}
-        </Badge>
-      </TableCell>
-      <TableCell>${item.cost}</TableCell>
-      <TableCell>
-        <Button variant="outline" size="sm" onClick={() => onUsageClick?.(item)}>
-          Usage
-        </Button>
-      </TableCell>
-    </TableRow>
+  const appOverviewQueryBody = useMemo(
+    () => ({
+      endTime: effectiveEndTime,
+      startTime: effectiveStartTime,
+      regionUid: currentRegionUid,
+      appType: '',
+      appName: '',
+      namespace: selectedWorkspace || '',
+      page,
+      pageSize
+    }),
+    [effectiveEndTime, effectiveStartTime, currentRegionUid, selectedWorkspace, page, pageSize]
   );
 
-  return (
-    <TableLayout className="border-r-0 rounded-r-none">
-      <TableLayoutCaption className="font-medium text-sm bg-zinc-50">
-        <div className="flex items-center gap-3">
-          <h3>PAYG</h3>
-          {timeRange && <div className="font-normal text-zinc-500">{timeRange}</div>}
-        </div>
-      </TableLayoutCaption>
+  const { data: appOverviewData } = useQuery({
+    queryFn() {
+      return request.post<
+        any,
+        ApiResp<{
+          overviews: AppOverviewBilling[];
+          total: number;
+          totalPage: number;
+        }>
+      >('/api/billing/appOverview', appOverviewQueryBody);
+    },
+    queryKey: ['appOverviewBilling', appOverviewQueryBody, page, pageSize],
+    enabled: !!currentRegionUid && !!selectedRegion
+  });
 
-      <TableLayoutContent>
-        <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">Item</TableHead>
-          <TableHead className="bg-transparent">Type</TableHead>
-          <TableHead className="bg-transparent">Cost</TableHead>
-          <TableHead className="bg-transparent">Action</TableHead>
-        </TableLayoutHeadRow>
+  const paygData: PAYGData[] = useMemo(() => {
+    const result: PAYGData[] = [];
+    if (selectedRegion && appOverviewData?.data?.overviews) {
+      appOverviewData.data.overviews.forEach((overview) => {
+        result.push({
+          appName: overview.appName,
+          appType: getAppTypeString(overview.appType.toString()),
+          cost: overview.amount / 100000,
+          namespace: overview.namespace
+        });
+      });
+    }
+    return result;
+  }, [appOverviewData, selectedRegion, getAppTypeString]);
 
-        <TableLayoutBody>
-          {data.map((item, index) => (
-            <PAYGRow key={index} item={item} />
-          ))}
-        </TableLayoutBody>
-      </TableLayoutContent>
-    </TableLayout>
-  );
+  const timeRange = `${new Date(effectiveStartTime).toLocaleDateString()} – ${new Date(
+    effectiveEndTime
+  ).toLocaleDateString()}`;
+
+  if (!selectedRegion) return null;
+
+  return <PAYGCostTableView data={paygData} timeRange={timeRange} onUsageClick={onUsageClick} />;
 }

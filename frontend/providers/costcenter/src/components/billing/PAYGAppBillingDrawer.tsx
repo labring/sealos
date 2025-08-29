@@ -1,421 +1,171 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
-import { Pagination } from '@sealos/shadcn-ui/pagination';
-import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { ArrowUpRight } from 'lucide-react';
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
-import { cn } from '@sealos/shadcn-ui';
-import {
-  TableLayout,
-  TableLayoutCaption,
-  TableLayoutContent,
-  TableLayoutHeadRow,
-  TableLayoutBody,
-  TableLayoutFooter
-} from '@sealos/shadcn-ui/table-layout';
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  createColumnHelper,
-  type ColumnDef
-} from '@tanstack/react-table';
-import { useMemo } from 'react';
-import { format, addHours } from 'date-fns';
-import { useTranslation } from 'next-i18next';
-import { AppIcon } from '../AppIcon';
+import { useState, useMemo, useEffect } from 'react';
+import { PAYGAppBillingDrawerView } from './PAYGAppBillingDrawerView';
 import { AppType } from '@/types/app';
+import { APPBillingItem } from '@/types';
+import useAppTypeStore from '@/stores/appType';
+import { useQuery } from '@tanstack/react-query';
+import request from '@/service/request';
+import { ApiResp } from '@/types/api';
 
-type PAYGBillingDetail = {
-  appName: string;
-  appType: string;
-  time: Date;
-  orderId: string;
-  namespace: string;
-  amount: number;
-  usage: Partial<
-    Record<
-      'cpu' | 'memory' | 'storage' | 'network' | 'port' | 'gpu',
-      {
-        amount: number;
-        cost: number;
-      }
-    >
-  >;
-};
-
-type TableRowData = PAYGBillingDetail | { type: 'separator'; time: Date };
-
-type Props = {
+export interface AppBillingDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  appType: string;
-  namespace: string;
-  hasSubApps: boolean;
-  data: PAYGBillingDetail[];
-  appName: string;
-  region: string;
-  currentPage: number;
-  totalPages: number;
-  pageSize: number;
-  totalCount: number;
-  onPageChange: (page: number) => void;
-  onOpenApp: () => void;
-  dateRange?: { from: Date; to: Date };
-  onDateRangeChange?: (range: { from: Date; to: Date } | undefined) => void;
-};
+  selectedApp: any | null;
+  currentRegionUid: string;
+  currentRegionName: string | null;
+  effectiveStartTime: string;
+  effectiveEndTime: string;
+}
 
-export function PAYGAppBillingDrawer({
+export function AppBillingDrawer({
   open,
   onOpenChange,
-  hasSubApps,
-  data,
-  appName,
-  appType,
-  namespace: _namespace,
-  region,
-  currentPage,
-  totalPages,
-  pageSize,
-  totalCount,
-  onPageChange,
-  onOpenApp,
-  dateRange,
-  onDateRangeChange
-}: Props) {
-  const { t } = useTranslation('applist');
-
-  // Group data by hour or day based on hasSubApps and add separators
-  const tableData: TableRowData[] = useMemo(() => {
-    const grouped = data.reduce(
-      (acc, item) => {
-        let groupKey: string;
-        if (hasSubApps) {
-          // Group by hour when showing sub-apps
-          groupKey = new Date(
-            item.time.getFullYear(),
-            item.time.getMonth(),
-            item.time.getDate(),
-            item.time.getHours()
-          ).toISOString();
-        } else {
-          // Group by day when not showing sub-apps
-          groupKey = new Date(
-            item.time.getFullYear(),
-            item.time.getMonth(),
-            item.time.getDate()
-          ).toISOString();
-        }
-
-        if (!acc[groupKey]) {
-          acc[groupKey] = [];
-        }
-        acc[groupKey].push(item);
-        return acc;
-      },
-      {} as Record<string, PAYGBillingDetail[]>
-    );
-
-    const result: TableRowData[] = [];
-    Object.entries(grouped).forEach(([groupKey, items]) => {
-      result.push({ type: 'separator', time: new Date(groupKey) });
-      result.push(...items);
-    });
-    return result;
-  }, [data, hasSubApps]);
-
-  const columnHelper = createColumnHelper<TableRowData>();
-
-  const columns: ColumnDef<TableRowData, any>[] = [
-    columnHelper.accessor(hasSubApps ? 'appName' : 'time', {
-      header: hasSubApps ? 'Sub-app' : 'Time',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row && row.type === 'separator') {
-          let timeStr: string;
-          if (hasSubApps) {
-            // Show hour range for sub-apps
-            const startTime = format(row.time, 'yyyy-MM-dd HH:mm');
-            const endTime = format(addHours(row.time, 1), 'HH:mm');
-            timeStr = `${startTime} - ${endTime}`;
-          } else {
-            // Show date for non-sub-apps
-            timeStr = format(row.time, 'yyyy-MM-dd');
-          }
-          return (
-            <div className="bg-zinc-50 text-gray-900 font-normal" style={{ gridColumn: '1 / -1' }}>
-              {timeStr}
-            </div>
-          );
-        }
-
-        if (hasSubApps) {
-          // Show app name with avatar for sub-apps
-          return (
-            <div className="flex gap-2 items-center">
-              <AppIcon
-                app={'appType' in row ? row.appType : AppType.OTHER}
-                className={{ avatar: 'size-5' }}
-              />
-              <span>{info.getValue()}</span>
-            </div>
-          );
-        } else {
-          // Show time for non-sub-apps
-          return format(row.time, 'HH:mm');
-        }
-      }
-    }),
-    columnHelper.display({
-      id: 'cpu-usage',
-      header: 'CPU',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.cpu ? `${(row.usage.cpu.amount / 1000).toFixed(6)} Cores` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'cpu-amount',
-      header: 'Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.cpu ? `-$${(row.usage.cpu.cost / 100000).toFixed(6)}` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'memory-usage',
-      header: 'Memory',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.memory ? `${(row.usage.memory.amount / 1024).toFixed(6)} Gi` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'memory-amount',
-      header: 'Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.memory ? `-$${(row.usage.memory.cost / 100000).toFixed(6)}` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'storage-usage',
-      header: 'Storage',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.storage ? `${(row.usage.storage.amount / 1024).toFixed(6)} Gi` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'storage-amount',
-      header: 'Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.storage ? `-$${(row.usage.storage.cost / 100000).toFixed(6)}` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'network-usage',
-      header: 'Traffic',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.network ? `${(row.usage.network.amount / 1024).toFixed(6)} Gi` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'network-amount',
-      header: 'Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.network ? `-$${(row.usage.network.cost / 100000).toFixed(6)}` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'port-usage',
-      header: 'Port',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.port ? `${(row.usage.port.amount / 1000).toFixed(6)} Ports` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'port-amount',
-      header: 'Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.port ? `-$${(row.usage.port.cost / 100000).toFixed(6)}` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'gpu-usage',
-      header: 'GPU',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.gpu ? `${row.usage.gpu.amount.toFixed(6)} GPUs` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'gpu-amount',
-      header: 'Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return row.usage.gpu ? `-$${(row.usage.gpu.cost / 100000).toFixed(6)}` : '-';
-      }
-    }),
-    columnHelper.display({
-      id: 'total-amount',
-      header: 'Total Amount',
-      cell: (info) => {
-        const row = info.row.original;
-        if ('type' in row) return null;
-        return `-$${(row.amount / 100000).toFixed(6)}`;
-      }
-    })
-  ];
-
-  const table = useReactTable({
-    data: tableData,
-    columns,
-    getCoreRowModel: getCoreRowModel()
+  selectedApp,
+  currentRegionUid,
+  currentRegionName,
+  effectiveStartTime,
+  effectiveEndTime
+}: AppBillingDrawerProps) {
+  const [appBillingPage, setAppBillingPage] = useState(1);
+  const [appBillingPageSize] = useState(10);
+  const [appDateRange, setAppDateRange] = useState<{ from: Date; to: Date } | undefined>({
+    from: new Date(effectiveStartTime),
+    to: new Date(effectiveEndTime)
   });
 
+  const { getAppType: getAppTypeString } = useAppTypeStore();
+
+  // App billing query for drawer
+  const appBillingQueryBody = useMemo(() => {
+    if (!selectedApp) return null;
+
+    const drawerStartTime = appDateRange?.from
+      ? appDateRange.from.toISOString()
+      : effectiveStartTime;
+    const drawerEndTime = appDateRange?.to ? appDateRange.to.toISOString() : effectiveEndTime;
+
+    return {
+      endTime: drawerEndTime,
+      startTime: drawerStartTime,
+      regionUid: currentRegionUid,
+      appType: selectedApp.appType,
+      appName: selectedApp.appName,
+      namespace: selectedApp.namespace || '',
+      page: appBillingPage,
+      pageSize: appBillingPageSize
+    };
+  }, [
+    selectedApp,
+    appDateRange,
+    effectiveStartTime,
+    effectiveEndTime,
+    currentRegionUid,
+    appBillingPage,
+    appBillingPageSize
+  ]);
+
+  // App billing data query
+  const {
+    data: appBillingData,
+    isLoading,
+    error
+  } = useQuery({
+    queryFn() {
+      if (!appBillingQueryBody) throw new Error('No params provided');
+
+      return request.post<
+        any,
+        ApiResp<{
+          costs: APPBillingItem[];
+          current_page: number;
+          total_pages: number;
+          total_records: number;
+        }>
+      >('/api/billing/appBilling', appBillingQueryBody);
+    },
+    queryKey: ['appBillingDrawer', appBillingQueryBody, appBillingPage, appBillingPageSize],
+    enabled: !!appBillingQueryBody,
+    keepPreviousData: true
+  });
+
+  // Transform app billing data
+  const appBillingDetails = useMemo(() => {
+    if (!appBillingData?.data?.costs) return [];
+
+    return appBillingData.data.costs.map((item): any => ({
+      appName: item.app_name,
+      appType: getAppTypeString(item.app_type.toString()),
+      time: new Date(item.time),
+      orderId: item.order_id,
+      namespace: item.namespace,
+      amount: item.amount,
+      usage: {
+        // Map from used and used_amount arrays based on resource type indices
+        // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
+        cpu: item?.used?.['0']
+          ? { amount: item.used['0'], cost: item.used_amount['0'] }
+          : undefined,
+        memory: item?.used?.['1']
+          ? { amount: item.used['1'], cost: item.used_amount['1'] }
+          : undefined,
+        storage: item?.used?.['2']
+          ? { amount: item.used['2'], cost: item.used_amount['2'] }
+          : undefined,
+        network: item?.used?.['3']
+          ? { amount: item.used['3'], cost: item.used_amount['3'] }
+          : undefined,
+        port: item?.used?.['4']
+          ? { amount: item.used['4'], cost: item.used_amount['4'] }
+          : undefined,
+        gpu: item?.used?.['5'] ? { amount: item.used['5'], cost: item.used_amount['5'] } : undefined
+      }
+    }));
+  }, [appBillingData, getAppTypeString]);
+
+  // Calculate pagination info
+  const { total, totalPage } = useMemo(() => {
+    if (!appBillingData?.data) {
+      return { total: 0, totalPage: 1 };
+    }
+
+    const { total_records: total, total_pages: totalPage } = appBillingData.data;
+
+    return {
+      total: totalPage === 0 ? 1 : total,
+      totalPage: totalPage === 0 ? 1 : totalPage
+    };
+  }, [appBillingData]);
+
+  // Reset pagination when page exceeds total
+  useEffect(() => {
+    if (totalPage < appBillingPage) {
+      setAppBillingPage(1);
+    }
+  }, [totalPage, appBillingPage]);
+
+  if (!selectedApp) return null;
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="w-fit sm:max-w-[calc(100vw-24px)]">
-        <DrawerHeader className="pr-14">
-          <DrawerTitle className="flex items-center gap-8 justify-between w-full">
-            <div className="flex gap-2 items-center">
-              <AppIcon app={appType} className={{ avatar: 'size-5' }} />
-              <span className="text-nowrap">{appName}</span>
-              <Badge variant="secondary">{region}</Badge>
-              <Badge variant="secondary">{t(appType)}</Badge>
-            </div>
-            {onOpenApp && (
-              <div>
-                <Button variant="outline" onClick={onOpenApp}>
-                  <span>Open App</span>
-                  <ArrowUpRight size={16} />
-                </Button>
-              </div>
-            )}
-          </DrawerTitle>
-        </DrawerHeader>
-
-        {/* Table */}
-        <div className="p-5">
-          <TableLayout>
-            <TableLayoutCaption className="font-medium text-base">
-              <div className="flex gap-2 items-center">
-                <h3>Billing & Usage</h3>
-                <Badge variant="secondary">Hourly</Badge>
-              </div>
-              <div>
-                <DateRangePicker
-                  value={dateRange ? { from: dateRange.from, to: dateRange.to } : undefined}
-                  onChange={(range) => {
-                    if (range?.from && range?.to && onDateRangeChange) {
-                      onDateRangeChange({ from: range.from, to: range.to });
-                    } else if (!range && onDateRangeChange) {
-                      onDateRangeChange(undefined);
-                    }
-                  }}
-                />
-              </div>
-            </TableLayoutCaption>
-
-            <TableLayoutContent>
-              <TableLayoutHeadRow>
-                {table.getHeaderGroups().map((headerGroup) =>
-                  headerGroup.headers.map((header, index) => (
-                    <TableHead
-                      key={header.id}
-                      className={cn(
-                        'sticky top-0 z-20 bg-card',
-                        index > 0 && index % 2 === 1 && 'border-l',
-                        index > 0 && index % 2 === 0 && 'border-r'
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))
-                )}
-              </TableLayoutHeadRow>
-
-              <TableLayoutBody>
-                {table.getRowModel().rows.map((row) => {
-                  const rowData = row.original;
-                  const isSeparator = 'type' in rowData && rowData.type === 'separator';
-
-                  return (
-                    <TableRow key={row.id} className={cn({ 'h-14': !isSeparator })}>
-                      {row.getVisibleCells().map((cell, index) => {
-                        if (isSeparator) {
-                          // Only the first cell in separator row is useful.
-                          if (index !== 0) return null;
-
-                          return (
-                            <TableCell
-                              key={row.id}
-                              colSpan={999}
-                              className="bg-zinc-50 text-gray-900 font-normal sticky left-0 z-10"
-                            >
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          );
-                        }
-
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            className={cn(
-                              index > 0 && index % 2 === 1 && 'border-l',
-                              index > 0 && index % 2 === 0 && 'border-r'
-                            )}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
-              </TableLayoutBody>
-            </TableLayoutContent>
-
-            <TableLayoutFooter>
-              <div className="px-4 py-3 flex justify-between">
-                <div className="flex items-center text-zinc-500">Total: {totalCount}</div>
-                <div className="flex items-center gap-3">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={onPageChange || (() => {})}
-                  />
-                  <span>
-                    <span>{pageSize}</span>
-                    <span className="text-zinc-500"> / Page</span>
-                  </span>
-                </div>
-              </div>
-            </TableLayoutFooter>
-          </TableLayout>
-        </div>
-      </DrawerContent>
-    </Drawer>
+    <PAYGAppBillingDrawerView
+      open={open}
+      onOpenChange={onOpenChange}
+      appType={selectedApp.appType || ''}
+      namespace={selectedApp.namespace || ''}
+      hasSubApps={selectedApp.appType === AppType.APP_STORE}
+      data={appBillingDetails}
+      appName={selectedApp.appName || 'Unknown App'}
+      region={currentRegionName || 'Unknown Region'}
+      currentPage={appBillingPage}
+      totalPages={totalPage}
+      pageSize={appBillingPageSize}
+      totalCount={total}
+      onPageChange={setAppBillingPage}
+      dateRange={appDateRange}
+      onDateRangeChange={setAppDateRange}
+      onOpenApp={() => {
+        // Handle open app logic
+        console.log('Open app:', selectedApp?.appName);
+      }}
+    />
   );
 }

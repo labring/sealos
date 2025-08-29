@@ -97,6 +97,7 @@ export const PaymentRecordSchema = z.object({
   Time: z.iso.datetime(),
   Amount: z.number(),
   PlanName: z.string(),
+  Workspace: z.string(),
   Operator: z.string()
 });
 export type PaymentRecord = z.infer<typeof PaymentRecordSchema>;
