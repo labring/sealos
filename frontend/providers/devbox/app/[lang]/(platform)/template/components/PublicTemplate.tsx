@@ -21,12 +21,18 @@ import { Pagination } from '@sealos/shadcn-ui/pagination';
 import Empty from './Empty';
 
 // Define view modes
-type ViewMode = 'overview' | 'category';
+type ViewMode = 'overview' | 'category' | 'searchResults';
 
 // Define category types based on USE_CASE tag names
 type CategoryType = 'official' | 'language' | 'framework' | 'os' | 'mcp';
 
-const PublicTemplate = ({ search }: { search: string }) => {
+const PublicTemplate = ({
+  search,
+  onClearSearch
+}: {
+  search: string;
+  onClearSearch?: () => void;
+}) => {
   const { selectedTagList, getSelectedTagList, resetTags, setSelectedTag, clearCategorySelection } =
     useTagSelectorStore();
   const t = useTranslations();
@@ -133,9 +139,41 @@ const PublicTemplate = ({ search }: { search: string }) => {
     resetTags();
   }, [resetTags]);
 
-  // reset query when search changes (only in category view)
+  // Switch back to overview from search results
+  const switchFromSearchToOverview = useCallback(() => {
+    setViewMode('overview');
+    setCurrentCategory(null);
+    resetTags();
+    setPageQueryBody({
+      page: 1,
+      pageSize: 30,
+      totalItems: 0,
+      totalPage: 0
+    });
+    // Clear the search input in parent component
+    onClearSearch?.();
+  }, [resetTags, onClearSearch]);
+
+  // Handle view mode switching based on search
   useEffect(() => {
-    if (!search || viewMode !== 'category') return;
+    if (search && viewMode === 'overview') {
+      // Switch to search results view when searching from overview
+      setViewMode('searchResults');
+      setPageQueryBody({
+        page: 1,
+        pageSize: 30,
+        totalItems: 0,
+        totalPage: 0
+      });
+    } else if (!search && viewMode === 'searchResults') {
+      // Switch back to overview when search is cleared
+      setViewMode('overview');
+    }
+  }, [search, viewMode]);
+
+  // reset query when search changes (in category or searchResults view)
+  useEffect(() => {
+    if (!search || (viewMode !== 'category' && viewMode !== 'searchResults')) return;
     setPageQueryBody((prev) => ({
       ...prev,
       page: 1,
@@ -162,11 +200,11 @@ const PublicTemplate = ({ search }: { search: string }) => {
     };
   }, [resetTags]);
 
-  // Query for category view - normal pagination with tag filtering
+  // Query for category view and search results - normal pagination with tag filtering
   const categoryQueryBody = {
     page: pageQueryBody.page,
     pageSize: pageQueryBody.pageSize,
-    search: viewMode === 'category' ? search : '',
+    search: viewMode === 'category' || viewMode === 'searchResults' ? search : '',
     tags: viewMode === 'category' ? getSelectedTagList() : []
   };
 
@@ -179,7 +217,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
       currentCategory
     ],
     () => {
-      if (viewMode !== 'category') return null;
+      if (viewMode !== 'category' && viewMode !== 'searchResults') return null;
 
       return listTemplateRepositoryApi(
         {
@@ -191,7 +229,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
       );
     },
     {
-      enabled: viewMode === 'category',
+      enabled: viewMode === 'category' || viewMode === 'searchResults',
       staleTime: 5000, // Increase stale time to reduce refetching
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
       retry: false // Don't retry on failure to avoid delays
@@ -245,9 +283,9 @@ const PublicTemplate = ({ search }: { search: string }) => {
   );
 
   const templateRepositoryList = useMemo(() => {
-    if (viewMode === 'category') {
+    if (viewMode === 'category' || viewMode === 'searchResults') {
       const allTemplates = listTemplateRepository.data?.templateRepositoryList || [];
-      // Now we always use backend filtered results since we always have tags selected
+      // Use backend filtered results
       return allTemplates;
     }
     return [];
@@ -355,13 +393,13 @@ const PublicTemplate = ({ search }: { search: string }) => {
 
   useEffect(() => {
     if (
-      viewMode === 'category' &&
+      (viewMode === 'category' || viewMode === 'searchResults') &&
       listTemplateRepository.isSuccess &&
       listTemplateRepository.data
     ) {
       const data = listTemplateRepository.data.page;
 
-      // Always use backend pagination since we always have tags selected
+      // Use backend pagination
       setPageQueryBody((prev) => ({
         ...prev,
         totalItems: data.totalItems || 0,
@@ -371,7 +409,9 @@ const PublicTemplate = ({ search }: { search: string }) => {
     }
   }, [listTemplateRepository.data, listTemplateRepository.isSuccess, viewMode]);
 
-  const hasFilter = viewMode === 'category' && (!!search || selectedTagList.size > 0);
+  const hasFilter =
+    (viewMode === 'category' && (!!search || selectedTagList.size > 0)) ||
+    (viewMode === 'searchResults' && !!search);
 
   // Define category display names and order
   const categoryOrder = useMemo(
@@ -522,6 +562,74 @@ const PublicTemplate = ({ search }: { search: string }) => {
               ))}
             </div>
           </ScrollArea>
+        ) : viewMode === 'searchResults' ? (
+          // Search results mode - paginated list with header
+          <>
+            {/* Search results mode header */}
+            <div className="flex items-center justify-between pb-4">
+              <h2 className="text-lg font-medium text-zinc-900">{t('search_results')}</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-sm text-zinc-600 hover:text-zinc-900"
+                onClick={switchFromSearchToOverview}
+              >
+                <span>{t('back')}</span>
+              </Button>
+            </div>
+
+            <ScrollArea className="select-runtime-container h-[calc(100vh-250px)] pr-2">
+              {listTemplateRepository.isLoading || listTemplateRepository.isFetching ? (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(200px,300px,440px),1fr))] gap-3">
+                  {Array.from({ length: 9 }).map((_, idx) => (
+                    <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                      <Skeleton className="h-4 w-full" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-6 w-16 rounded-md" />
+                        <Skeleton className="h-6 w-16 rounded-md" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : templateRepositoryList.length > 0 ? (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(200px,300px,440px),1fr))] gap-3">
+                  {templateRepositoryList.map((tr, idx) => (
+                    <TemplateCard
+                      key={tr.uid}
+                      iconId={tr.iconId || ''}
+                      templateRepositoryName={tr.name}
+                      templateRepositoryDescription={tr.description}
+                      templateRepositoryUid={tr.uid}
+                      tags={tr.templateRepositoryTags.map((t) => t.tag)}
+                      isPublic
+                      forceHover={idx === 0}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Empty
+                  description={hasFilter ? t('no_search_template_tip') : t('no_template_action')}
+                />
+              )}
+            </ScrollArea>
+            <Pagination
+              className="pr-2"
+              pageSize={pageQueryBody.pageSize}
+              totalPages={pageQueryBody.totalPage}
+              totalItems={pageQueryBody.totalItems}
+              currentPage={pageQueryBody.page}
+              onPageChange={(currentPage) => {
+                setPageQueryBody((page) => ({
+                  ...page,
+                  page: currentPage
+                }));
+              }}
+            />
+          </>
         ) : (
           // Category mode - paginated list with header
           <>
