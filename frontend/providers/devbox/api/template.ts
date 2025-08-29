@@ -42,6 +42,7 @@ export const listTemplateRepository = (
       name: string;
       description: string | null;
       iconId: string | null;
+      usageCount: number;
       templates: {
         uid: string;
         name: string;
