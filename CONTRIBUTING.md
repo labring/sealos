@@ -9,6 +9,7 @@ It is warmly welcomed if you have interest to hack on sealos. First, we encourag
 - [Reporting security issues](#reporting-security-issues)
 - [Reporting general issues](#reporting-general-issues)
 - [Code and doc contribution](#code-and-doc-contribution)
+- [License and Contributor Agreement](#license-and-contributor-agreement)
 - [Engage to help anything](#engage-to-help-anything)
 
 ## Reporting security issues
@@ -236,6 +237,42 @@ Please obey the following rules to better format the docs, which would greatly i
 1. Please check if there's any typos in the docs before submitting PRs.
 
 You can also check out the [Docusaurus docs](https://docusaurus.io/docs/markdown-features) to write docs with richer feature.
+
+## License and Contributor Agreement
+
+### Sealos Sustainable Use License
+
+Sealos is licensed under the **Sealos Sustainable Use License**, a custom license based on the Sustainable Use License. This is **not** a standard open source license. Key points:
+
+- ✅ **Permitted**: Internal business use and personal non-commercial use
+- ❌ **Prohibited**: Providing cloud services to third parties (public, private, or managed services)
+- ❌ **Prohibited**: Commercial distribution without permission
+
+📄 **Full license terms**: [LICENSE.md](./LICENSE.md)
+
+### Contributor License Agreement (CLA)
+
+**By contributing to Sealos, you agree to our Contributor License Agreement (CLA).**
+
+The CLA grants labring (the company behind Sealos) and the community certain rights to your contributions, including:
+- Perpetual, worldwide, royalty-free license to use, modify, and distribute your contributions
+- Patent license for your contributions
+- Right to change the license of your contributions as part of the project
+
+📋 **Important**: When you submit any contribution (code, documentation, etc.), you automatically accept the terms of our CLA.
+
+📄 **Full CLA terms**: [CONTRIBUTOR_LICENSE_AGREEMENT.md](./CONTRIBUTOR_LICENSE_AGREEMENT.md)
+
+### License Change Declaration
+
+**⚠️ Notice to Contributors**: By contributing to this project, you acknowledge and agree that:
+
+1. Your contributions will be licensed under the Sealos Sustainable Use License
+2. labring reserves the right to change the license of the project and your contributions
+3. You grant labring the necessary rights to make such license changes
+4. You have read and understood both the current license terms and the CLA
+
+If you do not agree to these terms, please do not contribute to this project.
 
 ## Engage to help anything
 
