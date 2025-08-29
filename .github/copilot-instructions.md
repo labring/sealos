@@ -162,6 +162,34 @@ make lint                  # Takes 1 minute - NEVER CANCEL, may show type errors
 
 Always run `make format` before committing to pass CI format checks.
 
+## Pull Request Guidelines
+
+### PR Title Specification
+All pull request titles **must** follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and include both **type** and **scope** fields.
+
+**Required format**: `<type>(<scope>): <description>`
+
+**Available types**:
+- `feat`: New features
+- `fix`: Bug fixes  
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Test additions or modifications
+- `build`: Build system changes
+- `ci`: CI/CD pipeline changes
+- `chore`: Maintenance tasks
+- `revert`: Revert previous changes
+
+**Example PR titles**:
+- `feat(lifecycle): add new cluster management command`
+- `fix(controllers): resolve user controller memory leak`
+- `docs(frontend): update component usage examples`
+- `ci(workflow): update build pipeline for Go 1.23`
+
+**CI validation**: PRs with non-compliant titles will fail automated checks and cannot be merged.
+
 ## Troubleshooting Common Issues
 
 ### Build Failures
