@@ -21,6 +21,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/labring/sealos/pkg/runtime/k3s"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"golang.org/x/sync/errgroup"
@@ -123,9 +125,12 @@ func (c *Applier) Apply() error {
 
 func (c *Applier) getWriteBackObjects() []interface{} {
 	obj := []interface{}{c.ClusterDesired}
+	distribution := c.ClusterFile.GetCluster().GetDistribution()
 	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
 		if components := runtimeConfig.GetComponents(); len(components) > 0 {
-			obj = append(obj, components...)
+			if distribution == k3s.Distribution {
+				obj = append(obj, components...)
+			}
 		}
 	}
 	if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
