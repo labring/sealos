@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"sync"
 	"time"
+
+	"github.com/labring/sealos/pkg/utils/file"
 
 	"github.com/Masterminds/semver/v3"
 	v1 "k8s.io/api/core/v1"
@@ -100,34 +101,28 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 	return driver, nil
 }
 
-var (
-	mergeOnce sync.Once
-	mergeErr  error
-)
-
 // MergeKubeadmConfig Unsafe, dangerous use of goroutines.
-func (k *KubeadmRuntime) MergeKubeadmConfig() error {
-	mergeOnce.Do(func() {
-		mergeErr = func() error {
-			for _, fn := range []string{
-				"",                          // generate default kubeadm configs
-				k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
-			} {
-				if err := k.kubeadmConfig.Merge(fn); err != nil {
-					return err
-				}
+func (k *KubeadmRuntime) MergeKubeadmConfig(node string) error {
+	var mergeErr = func() error {
+		for _, fn := range []string{
+			"",                              // generate default kubeadm configs
+			k.getDefaultKubeadmConfig(node), // merging from predefined path of file if file exists
+		} {
+			if err := k.kubeadmConfig.Merge(fn); err != nil {
+				return err
 			}
-			// merge from clusterfile
-			if k.config.KubeadmConfig != nil {
-				if err := k.kubeadmConfig.LoadFromClusterfile(k.config.KubeadmConfig); err != nil {
-					return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
-				}
+		}
+
+		// merge from clusterfile
+		if k.config.KubeadmConfig != nil {
+			if err := k.kubeadmConfig.LoadFromClusterfile(k.config.KubeadmConfig); err != nil {
+				return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
 			}
-			k.setKubeadmAPIVersion()
-			k.setFeatureGatesConfiguration()
-			return k.validateVIP(k.getVip())
-		}()
-	})
+		}
+		k.setKubeadmAPIVersion()
+		k.setFeatureGatesConfiguration()
+		return k.validateVIP(k.getVip())
+	}()
 	return mergeErr
 }
 
@@ -145,8 +140,23 @@ func (k *KubeadmRuntime) validateVIP(ip string) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
+func (k *KubeadmRuntime) getDefaultKubeadmConfig(node string) string {
+	defaultKubeadm := filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
+	if node == "" {
+		return defaultKubeadm
+	}
+	out, err := k.execer.Cmd(node, fmt.Sprintf("cat %s", defaultKubeadm))
+	if err != nil {
+		logger.Warn("load rootfs kubeadm config error: %+v, using default rootfs kubeadm config", err)
+		return filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
+	}
+	kubeadmPath := path.Join(k.pathResolver.TmpPath(), fmt.Sprintf("kubeadm-%s.yaml", iputils.GetHostIP(node)))
+	err = file.WriteFile(kubeadmPath, out)
+	if err != nil {
+		logger.Warn("write temp kubeadm config error: %+v, using default rootfs kubeadm config", err)
+		return filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
+	}
+	return kubeadmPath
 }
 
 func (k *KubeadmRuntime) getVip() string {
@@ -424,11 +434,15 @@ func (k *KubeadmRuntime) getCRISocket(node string) (string, error) {
 
 //nolint:all
 func (k *KubeadmRuntime) setCRISocket(criSocket string) {
-	k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
-	k.kubeadmConfig.JoinConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
-	k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
-	k.kubeadmConfig.InitConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
-	k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint = fmt.Sprintf("unix://%s", criSocket)
+	if k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket == "" {
+		k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
+	}
+	if k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket == "" {
+		k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
+	}
+	if k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint == "" {
+		k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint = fmt.Sprintf("unix://%s", criSocket)
+	}
 }
 
 var setCGroupDriverAndSocket = func(krt *KubeadmRuntime) error {
@@ -470,7 +484,7 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 }
 
 func (k *KubeadmRuntime) CompleteKubeadmConfig(fns ...func(*KubeadmRuntime) error) error {
-	if err := k.MergeKubeadmConfig(); err != nil {
+	if err := k.MergeKubeadmConfig(""); err != nil {
 		return err
 	}
 	for _, fn := range fns {
@@ -494,7 +508,7 @@ func (k *KubeadmRuntime) CompleteKubeadmConfig(fns ...func(*KubeadmRuntime) erro
 }
 
 func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
-	if err := k.MergeKubeadmConfig(); err != nil {
+	if err := k.MergeKubeadmConfig(node); err != nil {
 		return nil, err
 	}
 	if err := k.setCGroupDriverAndSocket(node); err != nil {
@@ -514,7 +528,7 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 }
 
 func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, error) {
-	if err := k.MergeKubeadmConfig(); err != nil {
+	if err := k.MergeKubeadmConfig(masterIP); err != nil {
 		return nil, err
 	}
 	if err := k.setCGroupDriverAndSocket(masterIP); err != nil {
@@ -551,4 +565,6 @@ func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
 func (k *KubeadmRuntime) setImageSocket() {
 	imageEndpoint := k.cluster.GetImageEndpoint()
 	k.kubeadmConfig.KubeletConfiguration.ImageServiceEndpoint = fmt.Sprintf("unix://%s", imageEndpoint)
+	k.kubeadmConfig.InitConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
+	k.kubeadmConfig.JoinConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
 }
