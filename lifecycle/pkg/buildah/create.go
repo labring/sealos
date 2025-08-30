@@ -32,11 +32,12 @@ import (
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/storage/pkg/unshare"
-	"github.com/labring/sreg/pkg/utils/file"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/file"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
