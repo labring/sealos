@@ -1,13 +1,12 @@
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAccessToken, verifyAppToken } from '@/services/backend/auth';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { get_k8s_username } from '@/services/backend/regionAuth';
 import { jsonRes } from '@/services/backend/response';
-import { bindingRole, modifyWorkspaceRole } from '@/services/backend/team';
-import { getRegionUid, getTeamLimit } from '@/services/enable';
+import { modifyWorkspaceRole } from '@/services/backend/team';
+import { getRegionUid } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
-import { UserRoleToRole } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 import { v4 } from 'uuid';
@@ -15,9 +14,14 @@ import { v4 } from 'uuid';
 // const TEAM_LIMIT = getTeamLimit();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await verifyAccessToken(req.headers);
+    const payload = (await verifyAccessToken(req.headers)) || (await verifyAppToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const { teamName } = req.body as { teamName?: string };
+    const { teamName, userType } = req.body as {
+      teamName?: string;
+      userType: 'Subscription' | 'Payg';
+    };
+    console.log('create team workspace', userType, teamName, payload);
+
     if (!teamName) return jsonRes(res, { code: 400, message: 'teamName is required' });
     const currentNamespaces = await prisma.userWorkspace.findMany({
       where: {
@@ -104,7 +108,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     try {
       // 创建伪user
-      const creater_kc_str = await getTeamKubeconfig(workspace_creater, payload.userCrName);
+      const creater_kc_str = await getTeamKubeconfig(
+        workspace_creater,
+        payload.userCrName,
+        userType
+      );
       if (!creater_kc_str) throw new Error('fail to get kubeconfig');
       await modifyWorkspaceRole({
         role: UserRole.Owner,

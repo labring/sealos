@@ -321,7 +321,11 @@ export async function getRegionToken({
         });
       throw new Error('Failed to get user from db');
     }
-    const kubeconfig = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
+    const kubeconfig = await getUserKubeconfig(
+      payload.userCrUid,
+      payload.userCrName,
+      'Subscription'
+    );
     if (!kubeconfig) {
       throw new Error('Failed to get user from k8s');
     }
@@ -529,7 +533,8 @@ export async function initRegionToken({
     // k8s 操作会自动创建, 幂等
     const kubeconfig = await getUserKubeconfig(
       regionalDbResult.userCrUid,
-      regionalDbResult.userCrName
+      regionalDbResult.userCrName,
+      'Subscription'
     );
     if (!kubeconfig) {
       const failureMessage = 'failed to get user from k8s';
