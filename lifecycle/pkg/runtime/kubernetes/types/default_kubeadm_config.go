@@ -21,9 +21,7 @@ const (
 kind: InitConfiguration
 localAPIEndpoint:
   # advertiseAddress: 192.168.2.110
-  bindPort: 6443
-nodeRegistration:
-  criSocket: /run/containerd/containerd.sock`
+  bindPort: 6443`
 	defaultKubeadmClusterConfiguration = `apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: v1.19.8
@@ -194,8 +192,6 @@ kind: JoinConfiguration
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   timeout: 5m0s
-nodeRegistration:
-  criSocket: /run/containerd/containerd.sock
 controlPlane:
   localAPIEndpoint:
     # advertiseAddress: 192.168.56.7
