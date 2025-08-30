@@ -98,7 +98,12 @@ async function watchCustomClusterObject({
   return null;
 }
 
-async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: string) {
+async function setUserKubeconfig(
+  kc: k8s.KubeConfig,
+  uid: string,
+  k8s_username: string,
+  userType: 'Subscription' | 'Payg'
+) {
   const resourceKind = 'User';
   const group = 'user.sealos.io';
   const version = 'v1';
@@ -126,6 +131,9 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
     const resourceObj = {
       apiVersion: 'user.sealos.io/v1',
       kind: resourceKind,
+      annotations: {
+        'user.sealos.io/workspace-status': userType
+      },
       metadata: {
         name: k8s_username,
         labels: {
@@ -160,7 +168,12 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
   return k8s_username;
 }
 
-async function setUserTeamCreate(kc: k8s.KubeConfig, k8s_username: string, owner: string) {
+async function setUserTeamCreate(
+  kc: k8s.KubeConfig,
+  k8s_username: string,
+  owner: string,
+  userType: 'Subscription' | 'Payg'
+) {
   const group = 'user.sealos.io';
   const resourceKind = 'User';
   const version = 'v1';
@@ -172,7 +185,8 @@ async function setUserTeamCreate(kc: k8s.KubeConfig, k8s_username: string, owner
     kind: resourceKind,
     metadata: {
       annotations: {
-        'user.sealos.io/owner': owner
+        'user.sealos.io/owner': owner,
+        'user.sealos.io/workspace-status': userType
       },
       name: k8s_username,
       labels: {
@@ -261,12 +275,16 @@ export const getUserKubeconfigNotPatch = async (name: string) => {
   }
 };
 // for update sign in
-export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
+export const getUserKubeconfig = async (
+  uid: string,
+  k8s_username: string,
+  userType: 'Subscription' | 'Payg'
+) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
-  await setUserKubeconfig(kc, uid, k8s_username);
+  await setUserKubeconfig(kc, uid, k8s_username, userType);
 
   let kubeconfig = await watchClusterObject({
     kc,
@@ -278,12 +296,16 @@ export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
   return kubeconfig;
 };
 // for create workspace
-export const getTeamKubeconfig = async (k8s_username: string, owner: string) => {
+export const getTeamKubeconfig = async (
+  k8s_username: string,
+  owner: string,
+  userType: 'Subscription' | 'Payg'
+) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
-  await setUserTeamCreate(kc, k8s_username, owner);
+  await setUserTeamCreate(kc, k8s_username, owner, userType);
 
   let body = await watchCustomClusterObject({
     kc,
