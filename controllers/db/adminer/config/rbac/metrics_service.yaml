@@ -17,13 +17,13 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-  name: controller-manager-metrics-service
-  namespace: system
+  name: adminer-controller-manager-metrics-service
+  namespace: adminer-system
 spec:
   ports:
-  - name: https
-    port: 8443
+  - name: http-metrics
+    port: 8080
     protocol: TCP
-    targetPort: https
+    targetPort: http-metrics
   selector:
     control-plane: controller-manager
