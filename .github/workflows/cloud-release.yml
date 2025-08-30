@@ -22,6 +22,7 @@ env:
 permissions:
   contents: write
   actions: write
+  packages: write
 
 jobs:
   save-sealos:
