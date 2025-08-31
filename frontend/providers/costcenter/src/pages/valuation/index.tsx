@@ -14,6 +14,9 @@ import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { ApiResp } from '@/types/api';
 import { ValuationStandard } from '@/types/valuation';
+import { SubscriptionPlan } from '@/types/plan';
+import { SubscriptionPlansPanel } from '@/components/valuation/SubscriptionPlansPanel';
+import { getPlanList } from '@/api/plan';
 import { Flex, Img, Stack, Tab, TabList, TabPanels, Tabs } from '@chakra-ui/react';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -44,6 +47,10 @@ function Valuation() {
   const regionUid = getRegion()?.uid || '';
   const { data: _data } = useQuery(['valuation', regionUid], () => getValuation(regionUid), {
     // staleTime: 1000 * 60 * 60 * 24
+  });
+
+  const { data: plansData } = useQuery(['plans'], () => getPlanList(), {
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
   const data = useMemo(
     () =>
@@ -126,15 +133,17 @@ function Valuation() {
           }}
         >
           <TabList mx={'24px'}>
+            <Tab>{t('Subscription Plans')}</Tab>
             <Tab>{t('Price Table')}</Tab>
             <Tab>{t('price_calculator')}</Tab>
 
             <Flex ml="auto" gap={'12px'}>
-              <RegionMenu innerWidth={'230px'} isDisabled={false} />
+              <RegionMenu isDisabled={false} />
               {tabIdx === 0 && <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} mr={'0'} />}
             </Flex>
           </TabList>
           <TabPanels minW={'max-content'}>
+            <SubscriptionPlansPanel plansData={plansData?.data?.plans} />
             <PriceTablePanel priceData={PriceTableData} />
             <CalculatorPanel priceData={data} />
           </TabPanels>
@@ -148,7 +157,10 @@ export default Valuation;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(['valuation'], () => getValuation(''));
+  await Promise.all([
+    queryClient.prefetchQuery(['valuation'], () => getValuation('')),
+    queryClient.prefetchQuery(['plans'], () => getPlanList())
+  ]);
   return {
     props: {
       ...(await serverSideTranslations(locale, ['common'], null, ['zh', 'en'])),
