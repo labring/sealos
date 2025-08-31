@@ -70,7 +70,7 @@ export const verifyAppToken = async (header: IncomingHttpHeaders) => {
     if (!header?.authorization) {
       throw new Error('缺少凭证');
     }
-    const token = decodeURIComponent(header.authorization);
+    const token = header.authorization;
     const payload = await verifyJWT<AccessTokenPayload>(token, internalJwtSecret());
     return payload;
   } catch (err) {

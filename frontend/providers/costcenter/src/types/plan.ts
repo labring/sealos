@@ -124,7 +124,13 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
   period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
   payMethod: PaymentMethodSchema, // 支付方式：STRIPE 或 BALANCE
   operator: OperatorSchema,
-  cardId: z.string().optional()
+  cardId: z.string().optional(),
+  createWorkspace: z
+    .object({
+      teamName: z.string(),
+      userType: z.enum(['Subscription', 'Payg'])
+    })
+    .optional()
 });
 export type SubscriptionPayRequest = z.infer<typeof SubscriptionPayRequestSchema>;
 
