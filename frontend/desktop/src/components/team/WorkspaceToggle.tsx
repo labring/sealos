@@ -25,17 +25,17 @@ import { jwtDecode } from 'jwt-decode';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus, Settings } from 'lucide-react';
-import CreateTeam from './CreateTeam';
 import BoringAvatar from 'boring-avatars';
 import { useEffect, useMemo, useRef } from 'react';
 import { track } from '@sealos/gtm';
 import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
+import useAppStore from '@/stores/app';
 
 export default function WorkspaceToggle() {
   const modalDisclosure = useDisclosure();
-  const createTeamDisclosure = useDisclosure();
   const { session } = useSessionStore();
   const { setBlockingPageUnload } = useAppsRunningPromptStore();
+  const { openDesktopApp } = useAppStore();
   const { t } = useTranslation();
   const user = session?.user;
   const ns_uid = user?.ns_uid || '';
@@ -64,6 +64,17 @@ export default function WorkspaceToggle() {
   const switchTeam = async ({ uid }: { uid: string }) => {
     if (ns_uid !== uid && !mutation.isLoading) return mutation.mutateAsync(uid);
   };
+
+  const openCostCenterApp = () => {
+    openDesktopApp({
+      appKey: 'system-costcenter',
+      pathname: '/',
+      query: {
+        mode: 'create'
+      }
+    });
+  };
+
   const { data } = useQuery({
     queryKey: ['teamList', 'teamGroup'],
     queryFn: nsListRequest
@@ -135,7 +146,7 @@ export default function WorkspaceToggle() {
             height={'40px'}
             cursor={'pointer'}
             onClick={() => {
-              createTeamDisclosure.onOpen();
+              openCostCenterApp();
             }}
           >
             <Plus size={20} color="#71717A" />
@@ -235,7 +246,6 @@ export default function WorkspaceToggle() {
       </Popover>
 
       <TeamCenter isOpen={modalDisclosure.isOpen} onClose={modalDisclosure.onClose} />
-      <CreateTeam isOpen={createTeamDisclosure.isOpen} onClose={createTeamDisclosure.onClose} />
     </>
   );
 }
