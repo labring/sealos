@@ -38,6 +38,7 @@ interface PlanHeaderProps {
   isSubscribing?: boolean;
   lastTransaction?: any;
   isCreateMode?: boolean;
+  isUpgradeMode?: boolean;
 }
 
 export function PlanHeader({
@@ -47,7 +48,8 @@ export function PlanHeader({
   onSubscribe,
   isSubscribing = false,
   lastTransaction,
-  isCreateMode = false
+  isCreateMode = false,
+  isUpgradeMode = false
 }: PlanHeaderProps) {
   const planName = subscription?.PlanName || 'Free Plan';
   const renewalTime = subscription?.CurrentPeriodEndAt
@@ -104,6 +106,7 @@ export function PlanHeader({
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
             isCreateMode={isCreateMode}
+            isUpgradeMode={isUpgradeMode}
           >
             <Button size="lg" variant="outline">
               <Sparkles />
@@ -132,6 +135,7 @@ export function PlanHeader({
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
             isCreateMode={isCreateMode}
+            isUpgradeMode={isUpgradeMode}
           >
             <Button size="lg">
               <Sparkles />

@@ -21,6 +21,7 @@ interface UpgradePlanDialogProps {
   onSubscribe?: (plan: SubscriptionPlan | null, workspaceName?: string, isPayg?: boolean) => void;
   isSubscribing?: boolean;
   isCreateMode?: boolean;
+  isUpgradeMode?: boolean;
 }
 
 export function UpgradePlanDialog({
@@ -31,16 +32,17 @@ export function UpgradePlanDialog({
   lastTransaction,
   onSubscribe,
   isSubscribing = false,
-  isCreateMode = false
+  isCreateMode = false,
+  isUpgradeMode = false
 }: UpgradePlanDialogProps) {
   const [workspaceName, setWorkspaceName] = useState('');
   const [stillChargeByVolume, setStillChargeByVolume] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
 
-  // Auto-open dialog when in create mode and set default selected plan
+  // Auto-open dialog when in create mode or upgrade mode and set default selected plan
   useEffect(() => {
-    if (isCreateMode) {
+    if (isCreateMode || isUpgradeMode) {
       setIsOpen(true);
       // Set default selected plan to the most popular one (index 1)
       if (plans && plans.length > 1) {
@@ -52,7 +54,7 @@ export function UpgradePlanDialog({
         }
       }
     }
-  }, [isCreateMode, plans]);
+  }, [isCreateMode, isUpgradeMode, plans]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
