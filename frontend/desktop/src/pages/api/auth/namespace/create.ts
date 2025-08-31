@@ -14,6 +14,7 @@ import { v4 } from 'uuid';
 // const TEAM_LIMIT = getTeamLimit();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    console.log('req.headers', req.headers);
     const payload = (await verifyAccessToken(req.headers)) || (await verifyAppToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { teamName, userType } = req.body as {
