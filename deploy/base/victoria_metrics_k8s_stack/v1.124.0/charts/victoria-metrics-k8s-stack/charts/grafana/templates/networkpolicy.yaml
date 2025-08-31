@@ -1,0 +1,61 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "grafana.fullname" . }}
+  namespace: {{ include "grafana.namespace" . }}
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  policyTypes:
+    {{- if .Values.networkPolicy.ingress }}
+    - Ingress
+    {{- end }}
+    {{- if .Values.networkPolicy.egress.enabled }}
+    - Egress
+    {{- end }}
+  podSelector:
+    matchLabels:
+      {{- include "grafana.selectorLabels" . | nindent 6 }}
+
+  {{- if .Values.networkPolicy.egress.enabled }}
+  egress:
+    {{- if not .Values.networkPolicy.egress.blockDNSResolution }}
+    - ports:
+        - port: 53
+          protocol: UDP
+    {{- end }}
+    - ports:
+        {{ .Values.networkPolicy.egress.ports | toJson }}
+      {{- with .Values.networkPolicy.egress.to }}
+      to:
+        {{- toYaml . | nindent 12 }}
+      {{- end }}
+  {{- end }}
+  {{- if .Values.networkPolicy.ingress }}
+  ingress:
+    - ports:
+      - port: {{ .Values.service.targetPort }}
+      {{- if not .Values.networkPolicy.allowExternal }}
+      from:
+        - podSelector:
+            matchLabels:
+              {{ include "grafana.fullname" . }}-client: "true"
+        {{- with .Values.networkPolicy.explicitNamespacesSelector }}
+        - namespaceSelector:
+            {{- toYaml . | nindent 12 }}
+        {{- end }}
+        - podSelector:
+            matchLabels:
+              {{- include "grafana.labels" . | nindent 14 }}
+              role: read
+      {{- end }}
+  {{- end }}
+{{- end }}

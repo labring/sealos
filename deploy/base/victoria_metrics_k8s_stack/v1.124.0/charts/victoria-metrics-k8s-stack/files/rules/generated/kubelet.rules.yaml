@@ -1,0 +1,42 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ ($Values.kubelet).enabled }}'
+name: kubelet.rules
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    histogram_quantile(
+      0.99,
+      sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (instance,le,{{ $groupLabels }})
+      * on (instance,{{ $groupLabels }}) group_left (node)
+      max by (instance,node,{{ $groupLabels }}) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+    )
+  labels:
+    quantile: '0.99'
+  record: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: |-
+    histogram_quantile(
+      0.9,
+      sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (instance,le,{{ $groupLabels }})
+      * on (instance,{{ $groupLabels }}) group_left (node)
+      max by (instance,node,{{ $groupLabels }}) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+    )
+  labels:
+    quantile: '0.9'
+  record: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: |-
+    histogram_quantile(
+      0.5,
+      sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (instance,le,{{ $groupLabels }})
+      * on (instance,{{ $groupLabels }}) group_left (node)
+      max by (instance,node,{{ $groupLabels }}) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+    )
+  labels:
+    quantile: '0.5'
+  record: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile

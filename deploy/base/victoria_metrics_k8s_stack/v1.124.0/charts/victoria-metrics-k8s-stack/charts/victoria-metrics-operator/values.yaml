@@ -1,0 +1,338 @@
+global:
+  # -- Image pull secrets, that can be shared across multiple helm charts
+  imagePullSecrets: []
+  image:
+    # -- Image registry, that can be shared across multiple helm charts
+    registry: ""
+  # -- Openshift security context compatibility configuration
+  compatibility:
+    openshift:
+      adaptSecurityContext: "auto"
+  cluster:
+    # -- K8s cluster domain suffix, uses for building storage pods' FQDN. Details are [here](https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/)
+    dnsDomain: cluster.local.
+# Default values for victoria-metrics.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+# -- operator image configuration
+image:
+  # -- Image registry
+  registry: ""
+  # -- Image repository
+  repository: victoriametrics/operator
+  # -- Image tag
+  # override Chart.AppVersion
+  tag: ""
+  # Variant of the image to use.
+  # e.g. scratch
+  variant: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+crds:
+  # -- manages CRD creation. Disables CRD creation only in combination with `crds.plain: false` due to helm dependency conditions limitation
+  enabled: true
+  # -- check if plain or templated CRDs should be created.
+  # with this option set to `false`, all CRDs will be rendered from templates.
+  # with this option set to `true`, all CRDs are immutable and require manual upgrade.
+  plain: false
+  # -- additional CRD annotations, when `.Values.crds.plain: false`
+  annotations: {}
+  cleanup:
+    # -- Tells helm to clean up all the vm resources under this release's namespace when uninstalling
+    enabled: false
+    # -- Image configuration for CRD cleanup Job
+    image:
+      repository: rancher/kubectl
+      # use image tag that matches k8s API version by default
+      tag: ""
+      pullPolicy: IfNotPresent
+    # -- Cleanup hook resources
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+      requests:
+        cpu: "100m"
+        memory: "56Mi"
+
+# -- Number of operator replicas
+replicaCount: 1
+
+# -- Secret to pull images
+imagePullSecrets: []
+
+# -- Override chart name
+nameOverride: ""
+
+# -- Overrides the full name of server component resources
+fullnameOverride: ""
+
+# -- VM operator log level. Possible values: info and error.
+logLevel: "info"
+
+allowedMetricsEndpoints:
+  - /metrics
+  - /metrics/resources
+
+rbac:
+  # -- Specifies whether the RBAC resources should be created
+  create: true
+  # -- Create aggregated clusterRoles for CRD readonly and admin permissions
+  aggregatedClusterRoles:
+    enabled: true
+    # -- Labels attached to according clusterRole
+    labels:
+      view:
+        rbac.authorization.k8s.io/aggregate-to-view: "true"
+      admin:
+        rbac.authorization.k8s.io/aggregate-to-admin: "true"
+
+# -- Labels to be added to the all resources
+extraLabels: {}
+# -- extra Labels for Pods only
+podLabels: {}
+# -- Annotations to be added to the all resources
+annotations: {}
+
+# -- Pod's security context. Details are [here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+podSecurityContext:
+  enabled: true
+  fsGroup: 2000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# -- Security context to be added to server pods
+securityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+operator:
+  # -- By default, operator converts prometheus-operator objects.
+  disable_prometheus_converter: false
+  # -- Compare-options and sync-options for prometheus objects converted by operator for properly use with ArgoCD
+  prometheus_converter_add_argocd_ignore_annotations: false
+  # -- Enables ownership reference for converted prometheus-operator objects,
+  # it will remove corresponding victoria-metrics objects in case of deletion prometheus one.
+  enable_converter_ownership: false
+  # -- Enables custom config-reloader, bundled with operator.
+  # It should reduce  vmagent and vmauth config sync-time and make it predictable.
+  useCustomConfigReloader: false
+
+# -- By default, the operator will watch all the namespaces
+# If you want to override this behavior, specify the namespace.
+# Operator supports multiple namespaces for watching.
+watchNamespaces: []
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+  # -- Whether to automount the service account token. Note that token needs to be mounted manually if this is disabled.
+  automountServiceAccountToken: true
+
+service:
+  # -- Service annotations
+  annotations: {}
+  # -- Service labels
+  labels: {}
+  # -- Service ClusterIP
+  clusterIP: ""
+  # -- Service external IPs. Check [here](https://kubernetes.io/docs/concepts/services-networking/service/#external-ips) for details
+  externalIPs: ""
+  # -- Service load balancer IP
+  loadBalancerIP: ""
+  # -- Load balancer source range
+  loadBalancerSourceRanges: []
+  # -- Service type
+  type: ClusterIP
+  # -- Health check node port for a service. Check [here](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip) for details
+  healthCheckNodePort: ""
+  # -- Service external traffic policy. Check [here](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip) for details
+  externalTrafficPolicy: ""
+  # -- Service IP family policy. Check [here](https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services) for details.
+  ipFamilyPolicy: ""
+  # -- List of service IP families. Check [here](https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services) for details.
+  ipFamilies: []
+  # -- Service port
+  servicePort: 8080
+  # -- Service webhook port
+  webhookPort: 9443
+
+# -- See `kubectl explain poddisruptionbudget.spec` for more or check [these docs](https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  # maxUnavailable: 1
+  labels: {}
+
+# -- Graceful pod termination timeout. See [this article](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution) for details.
+terminationGracePeriodSeconds: 30
+
+# -- Operator lifecycle. See [this article](https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/) for details.
+lifecycle: {}
+
+# -- Resource object
+resources:
+  {}
+  # limits:
+  #   cpu: 120m
+  #   memory: 320Mi
+  # requests:
+  #   cpu: 80m
+  #   memory: 120Mi
+
+# -- Pod's node selector. Details are [here](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)
+nodeSelector: {}
+
+# -- Name of Priority Class
+priorityClassName: ""
+
+# -- Array of tolerations object. Spec is [here](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/)
+tolerations: []
+
+# -- Pod affinity
+affinity: {}
+
+# -- Pod Topology Spread Constraints. Spec is [here](https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/)
+topologySpreadConstraints: []
+
+# -- Operator container additional commandline arguments
+extraArgs: {}
+
+# -- Extra settings for the operator deployment. Full list [here](https://docs.victoriametrics.com/operator/configuration/#environment-variables)
+env:
+  []
+  # - name: VM_VMSINGLEDEFAULT_VERSION
+  #   value: v1.43.0
+
+# -- Specify alternative source for env variables
+envFrom:
+  []
+  #- configMapRef:
+  #    name: special-config
+
+# -- Additional hostPath mounts
+extraHostPathMounts:
+  []
+  # - name: certs-dir
+  #   mountPath: /etc/kubernetes/certs
+  #   subPath: ""
+  #   hostPath: /etc/kubernetes/certs
+#   readOnly: true
+
+# -- Extra Volumes for the pod
+extraVolumes:
+  []
+  # - name: example
+  #   configMap:
+  #     name: example
+
+# -- Extra Volume Mounts for the container
+extraVolumeMounts:
+  []
+  # - name: example
+  #   mountPath: /example
+
+# -- Extra containers to run in a pod with operator
+extraContainers:
+  []
+  # - name: config-reloader
+  #   image: reloader-image
+
+# -- Enable hostNetwork on operator deployment
+hostNetwork: false
+
+# -- Configures resource validation
+admissionWebhooks:
+  # -- Enables validation webhook.
+  enabled: true
+  enabledCRDValidation:
+    vmagent: true
+    vmalert: true
+    vmanomaly: true
+    vmsingle: true
+    vmauth: true
+    vmrule: true
+    vmalertmanagerconfig: true
+    vmalertmanager: true
+    vmcluster: true
+    vmuser: true
+    vlagent: true
+    vlogs: true
+    vlsingle: true
+    vlcluster: true
+    vmservicescrape: true
+    vmpodscrape: true
+    vmnodescrape: true
+    vmprobe: true
+    vmstaticscrape: true
+  # -- What to do in case, when operator not available to validate request.
+  policy: Fail
+  # -- Enables custom ca bundle, if you are not using cert-manager. In case of custom ca, you have to create secret - {chart-name}-validation with keys: tls.key, tls.crt, ca.crt
+  certManager:
+    # -- Enables cert creation and injection by cert-manager.
+    enabled: false
+    # --If needed, provide own issuer. Operator will create self-signed if empty.
+    issuer: {}
+    # -- Certificate Authority parameters
+    ca:
+      secretTemplate: {}
+      subject: {}
+      duration: 63800h0m0s
+      commonName: ca.validation.victoriametrics
+    # -- Certificate parameters
+    cert:
+      secretTemplate: {}
+      subject: {}
+      duration: 45800h0m0s
+      commonName: ""
+  keepTLSSecret: true
+  # tls specifies TLS cert/key for the webhook
+  tls:
+    caCert:
+    cert:
+    key:
+
+# -- Configures monitoring with serviceScrape using either `VMServiceScrape` or `ServiceMonitor`. For latter [Prometheus Operator CRDs](https://artifacthub.io/packages/helm/prometheus-community/prometheus-operator-crds) should be preinstalled
+serviceMonitor:
+  enabled: false
+  # -- Creates `VMServiceScrape` if `true` and `ServiceMonitor` otherwise. Make sure [Prometheus Operator CRDs](https://artifacthub.io/packages/helm/prometheus-community/prometheus-operator-crds) are installed if it's set to `false`
+  vm: true
+  extraLabels: {}
+  annotations: {}
+  relabelings: []
+  scheme: ""
+  interval: ""
+  scrapeTimeout: ""
+  tlsConfig: {}
+  basicAuth: {}
+
+probe:
+  # -- Readiness probe
+  readiness:
+    httpGet:
+      port: probe
+    initialDelaySeconds: 5
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  # -- Liveness probe
+  liveness:
+    tcpSocket:
+      port: probe
+    initialDelaySeconds: 5
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  # -- Startup probe
+  startup: {}
+
+# -- Add extra specs dynamically to this chart
+extraObjects: []

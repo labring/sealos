@@ -1,0 +1,1 @@
+FROM docker.io/labring/victoria_metrics_k8s_stack:v1.96.0

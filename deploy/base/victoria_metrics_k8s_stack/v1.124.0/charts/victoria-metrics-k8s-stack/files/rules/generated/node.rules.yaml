@@ -1,0 +1,50 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: node.rules
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    topk by (namespace,pod,{{ $groupLabels }}) (1,
+      max by (node,namespace,pod,{{ $groupLabels }}) (
+        label_replace(kube_pod_info{job="kube-state-metrics",node!=""}, "pod", "$1", "pod", "(.*)")
+    ))
+  record: 'node_namespace_pod:kube_pod_info:'
+- condition: '{{ true }}'
+  expr: |-
+    count by (node,{{ $groupLabels }}) (
+      node_cpu_seconds_total{mode="idle",job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+      * on (namespace,pod,{{ $groupLabels }}) group_left(node)
+      topk by (namespace,pod,{{ $groupLabels }}) (1, node_namespace_pod:kube_pod_info:)
+    )
+  record: node:node_num_cpu:sum
+- condition: '{{ true }}'
+  expr: |-
+    sum(
+      node_memory_MemAvailable_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"} or
+      (
+        node_memory_Buffers_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"} +
+        node_memory_Cached_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"} +
+        node_memory_MemFree_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"} +
+        node_memory_Slab_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+      )
+    ) by ({{ $groupLabels }})
+  record: :node_memory_MemAvailable_bytes:sum
+- condition: '{{ true }}'
+  expr: |-
+    avg by (node,{{ $groupLabels }}) (
+      sum without (mode) (
+        rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal",job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}[5m])
+      )
+    )
+  record: node:node_cpu_utilization:ratio_rate5m
+- condition: '{{ true }}'
+  expr: |-
+    avg by ({{ $groupLabels }}) (
+      node:node_cpu_utilization:ratio_rate5m
+    )
+  record: cluster:node_cpu:ratio_rate5m
