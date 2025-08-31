@@ -36,6 +36,7 @@ export default function Plan() {
 
   // Check if we're in create mode - use state to persist across re-renders
   const [isCreateMode, setIsCreateMode] = useState(false);
+  const [isUpgradeMode, setIsUpgradeMode] = useState(false);
 
   useEffect(() => {
     // Method 1: Check router.query when ready
@@ -45,13 +46,27 @@ export default function Plan() {
       return;
     }
 
+    if (router.isReady && router.query.mode === 'upgrade') {
+      setIsUpgradeMode(true);
+      console.log('router.query method - upgradeMode set to true', router.query);
+      return;
+    }
+
     // Method 2: Parse URL directly as fallback
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const createMode = urlParams.get('mode') === 'create';
+      const upgradeMode = urlParams.get('mode') === 'upgrade';
+
       if (createMode) {
         setIsCreateMode(true);
         console.log('URL parsing method - createMode set to true', window.location.search);
+        return;
+      }
+
+      if (upgradeMode) {
+        setIsUpgradeMode(true);
+        console.log('URL parsing method - upgradeMode set to true', window.location.search);
         return;
       }
     }
@@ -273,6 +288,7 @@ export default function Plan() {
               onSubscribe={handleSubscribe}
               isSubscribing={subscriptionMutation.isLoading}
               isCreateMode={isCreateMode}
+              isUpgradeMode={isUpgradeMode}
             />
           </div>
           <div className="flex-1/3">
@@ -309,6 +325,7 @@ export default function Plan() {
             isSubscribing={subscriptionMutation.isLoading}
             lastTransaction={lastTransactionData?.data?.transaction}
             isCreateMode={isCreateMode}
+            isUpgradeMode={isUpgradeMode}
           />
 
           <BalanceSection
