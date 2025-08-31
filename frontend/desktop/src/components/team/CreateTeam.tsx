@@ -17,7 +17,12 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { track } from '@sealos/gtm';
+import useAppStore from '@/stores/app';
 
+/**
+ * @deprecated This component is deprecated. Use Cost Center to create workspaces instead.
+ * CreateTeam modal is no longer needed as workspace creation is handled by the Cost Center app.
+ */
 export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
@@ -25,6 +30,8 @@ export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClo
   const userCrUid = session?.user?.userCrUid;
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
+  const { openDesktopApp } = useAppStore();
+
   const mutation = useMutation(createRequest, {
     mutationKey: [{ teamName, userCrUid }],
     onSuccess(data) {
@@ -43,6 +50,16 @@ export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClo
   const submit = () => {
     //!todo
     mutation.mutate({ teamName });
+  };
+
+  const openCostCenterApp = () => {
+    openDesktopApp({
+      appKey: 'system-costcenter',
+      pathname: '/',
+      query: {
+        mode: 'create'
+      }
+    });
   };
 
   return (

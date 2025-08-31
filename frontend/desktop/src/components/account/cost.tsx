@@ -25,6 +25,7 @@ import CustomTooltip from '../AppDock/CustomTooltip';
 import { blurBackgroundStyles } from '../desktop_content';
 import Monitor from '../desktop_content/monitor';
 import { ClockIcon, HelpIcon, InfiniteIcon } from '../icons';
+import { BalancePopover } from './BalancePopover';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ export default function Cost() {
     staleTime: 60 * 1000
   });
 
-  const { data: billing, isSuccess } = useQuery(['getUserBilling'], () => getUserBilling(), {
+  const { data: billing } = useQuery(['getUserBilling'], () => getUserBilling(), {
     cacheTime: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
@@ -99,45 +100,55 @@ export default function Cost() {
         pt={'20px'}
         flexDirection={'column'}
       >
-        <Flex
-          borderRadius={'6px'}
-          p="16px"
-          bg={'rgba(255, 255, 255, 0.05)'}
-          justifyContent={'space-between'}
-          _hover={{
-            background: 'rgba(255, 255, 255, 0.10)'
+        <BalancePopover
+          openCostCenterApp={() => {
+            const costcenter = installApp.find((t) => t.key === 'system-costcenter');
+            if (!costcenter) return;
+            openApp(costcenter);
           }}
         >
-          <Box flex={1}>
-            <Text color={'rgba(255, 255, 255, 0.90)'} fontSize={'11px'}>
-              {t('common:balance')}
-            </Text>
-            <Flex alignItems={'center'} gap={'8px'}>
-              <Text fontSize={'20px'} color={'#7CE7FF'}>
-                {formatMoney(balance).toFixed(2)}
+          <Flex
+            borderRadius={'6px'}
+            p="16px"
+            bg={'rgba(255, 255, 255, 0.05)'}
+            justifyContent={'space-between'}
+            _hover={{
+              background: 'rgba(255, 255, 255, 0.10)'
+            }}
+            cursor="pointer"
+          >
+            <Box flex={1}>
+              <Text color={'rgba(255, 255, 255, 0.90)'} fontSize={'11px'}>
+                {t('common:balance')}
               </Text>
-              <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'16px'} />
-            </Flex>
-          </Box>
-          {rechargeEnabled && (
-            <Center
-              ml="auto"
-              onClick={() => {
-                const costcenter = installApp.find((t) => t.key === 'system-costcenter');
-                if (!costcenter) return;
-                openApp(costcenter, {
-                  query: {
-                    openRecharge: 'true'
-                  }
-                });
-              }}
-              color={'rgba(255, 255, 255, 0.90)'}
-              cursor={'pointer'}
-            >
-              {t('common:charge')}
-            </Center>
-          )}
-        </Flex>
+              <Flex alignItems={'center'} gap={'8px'}>
+                <Text fontSize={'20px'} color={'#7CE7FF'}>
+                  {formatMoney(balance).toFixed(2)}
+                </Text>
+                <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'16px'} />
+              </Flex>
+            </Box>
+            {rechargeEnabled && (
+              <Center
+                ml="auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const costcenter = installApp.find((t) => t.key === 'system-costcenter');
+                  if (!costcenter) return;
+                  openApp(costcenter, {
+                    query: {
+                      openRecharge: 'true'
+                    }
+                  });
+                }}
+                color={'rgba(255, 255, 255, 0.90)'}
+                cursor={'pointer'}
+              >
+                {t('common:charge')}
+              </Center>
+            )}
+          </Flex>
+        </BalancePopover>
         {calculations && (
           <Flex flexDirection={'column'}>
             <Flex

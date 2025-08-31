@@ -16,13 +16,14 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
-import { getAmount } from '@/api/auth';
+import { getAmount, getPlanInfo } from '@/api/auth';
 import Decimal from 'decimal.js';
 import { CurrencySymbol } from '@sealos/ui';
 import { formatMoney } from '@/utils/format';
 import useSessionStore from '@/stores/session';
 import { MoreHorizontal } from 'lucide-react';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
+import { BalancePopover } from '@/components/account/BalancePopover';
 
 const baseItemStyle = {
   minW: '36px',
@@ -59,10 +60,13 @@ export default function SecondaryLinks() {
     });
   };
 
-  const openCostCenterApp = () => {
+  const openCostCenterApp = (mode: 'create' | 'upgrade') => {
     openDesktopApp({
       appKey: 'system-costcenter',
-      pathname: '/'
+      pathname: '/',
+      query: {
+        mode: mode
+      }
     });
   };
 
@@ -72,6 +76,25 @@ export default function SecondaryLinks() {
     enabled: !!user,
     staleTime: 60 * 1000
   });
+
+  // Mock plan info for now
+  const mockPlanInfo = {
+    data: {
+      subscription: {
+        PlanName: 'hobby'
+      }
+    }
+  };
+
+  const getPlanBackground = (planName: string) => {
+    const name = planName.toLowerCase();
+    if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
+    if (name.includes('starter')) return 'var(--background-image-plan-starter)';
+    if (name.includes('pro')) return 'var(--background-image-plan-pro)';
+    if (name.includes('team')) return 'var(--background-image-plan-team)';
+    if (name.includes('enterprise')) return 'var(--background-image-plan-enterprise)';
+    return 'var(--background-image-plan-payg)';
+  };
 
   const balance = useMemo(() => {
     let realBalance = new Decimal(data?.data?.balance || 0);
@@ -95,24 +118,25 @@ export default function SecondaryLinks() {
   if (!isCollapsed) {
     return (
       <Flex gap={'4px'} ml={'auto'}>
-        <Center
-          mr={'12px'}
-          borderRadius={'8px'}
-          bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
-          h={'36px'}
-          px={'12px'}
-          py={'8px'}
-          color="#2563EB"
-          fontSize={'14px'}
-          fontWeight={'500'}
-          cursor={'pointer'}
-          onClick={openCostCenterApp}
-        >
-          <Text>{t('common:balance')}</Text>
-          <Divider orientation="vertical" mx={'12px'} />
-          <CurrencySymbol type={currencySymbol} />
-          <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
-        </Center>
+        <BalancePopover openCostCenterApp={() => openCostCenterApp('upgrade')}>
+          <Center
+            mr={'12px'}
+            borderRadius={'8px'}
+            bg={getPlanBackground(mockPlanInfo?.data?.subscription?.PlanName || 'payg')}
+            h={'36px'}
+            px={'12px'}
+            py={'8px'}
+            color="#2563EB"
+            fontSize={'14px'}
+            fontWeight={'500'}
+            cursor={'pointer'}
+          >
+            <Text>{t('common:balance')}</Text>
+            <Divider orientation="vertical" mx={'12px'} />
+            <CurrencySymbol type={currencySymbol} />
+            <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
+          </Center>
+        </BalancePopover>
 
         <Center
           className="guide-button"
@@ -198,7 +222,7 @@ export default function SecondaryLinks() {
         <MenuItem
           borderRadius="8px"
           _hover={{ bg: 'rgba(129, 203, 252, 0.12)' }}
-          onClick={openCostCenterApp}
+          // onClick={() => openCostCenterApp('upgrade')}
           bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
           color="#2563EB"
           fontSize="14px"

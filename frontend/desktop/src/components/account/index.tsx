@@ -33,6 +33,7 @@ import {
   Gift,
   Globe,
   LogOut,
+  Plane,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
@@ -76,10 +77,14 @@ export default function Account() {
     setToken('');
   };
 
-  const openCostcenterApp = () => {
+  const openCostcenterApp = ({ page = 'plan', mode = '' }: { page?: string; mode?: string }) => {
     openDesktopApp({
       appKey: 'system-costcenter',
-      pathname: '/'
+      pathname: '/',
+      query: {
+        page: page,
+        mode: mode
+      }
     });
   };
 
@@ -254,6 +259,23 @@ export default function Account() {
                     </MenuItem>
                   </AccountCenter>
                 )}
+                <MenuItem
+                  mt="0px"
+                  py="6px"
+                  px="8px"
+                  borderRadius="8px"
+                  _hover={{ bg: '#F4F4F5' }}
+                  onClick={() => openCostcenterApp({ page: 'plan', mode: '' })}
+                >
+                  <Flex alignItems="center" gap="8px">
+                    <Center w="20px" h="20px">
+                      <Plane size={16} color="#737373" />
+                    </Center>
+                    <Text fontSize="14px" fontWeight="400">
+                      {t('common:plan')}
+                    </Text>
+                  </Flex>
+                </MenuItem>
 
                 <MenuItem
                   mt="0px"
@@ -261,7 +283,7 @@ export default function Account() {
                   px="8px"
                   borderRadius="8px"
                   _hover={{ bg: '#F4F4F5' }}
-                  onClick={openCostcenterApp}
+                  onClick={() => openCostcenterApp({ page: 'billing', mode: '' })}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
