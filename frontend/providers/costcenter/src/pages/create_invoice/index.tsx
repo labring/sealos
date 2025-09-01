@@ -4,13 +4,16 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
 import InvoiceForm from '@/components/invoice/InvoiceForm';
-import InvoicdFormDetail from './InvoicdFormDetail';
+import InvoiceInspection from '@/components/invoice/InvoiceInspection';
 import { DateRange } from 'react-day-picker';
 import OrderList, { CombinedRow } from '@/components/invoice/OrderList';
 import InvoiceHistory from '@/components/invoice/InvoiceHistory';
+import useInvoiceStore from '@/stores/invoce';
+import { InvoicePayload } from '@/types/invoice';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
+  const { data: invoiceInspectionData, setData: setInvoiceInspectionData } = useInvoiceStore();
   const [selectBillings, setSelectBillings] = useState<CombinedRow[]>([]);
   const [searchValue, setSearch] = useState('');
   const [orderID, setOrderID] = useState('');
@@ -22,6 +25,10 @@ function Invoice() {
   const [processState, setProcessState] = useState(0);
   const invoiceAmount = selectBillings.reduce((acc, cur) => acc + cur.amount, 0);
   const invoiceCount = selectBillings.length;
+
+  const handleInvoiceClick = (invoice: InvoicePayload) => {
+    setInvoiceInspectionData(invoice);
+  };
 
   return (
     <>
@@ -64,6 +71,7 @@ function Invoice() {
                 toInvoiceDetail={() => {
                   setProcessState(2);
                 }}
+                onInvoiceClick={handleInvoiceClick}
               />
             </TabsContent>
           </Tabs>
@@ -102,17 +110,10 @@ function Invoice() {
         </section>
       ) : processState === 2 ? (
         <section>
-          {/* // ! the last one legacy component */}
-          <InvoicdFormDetail
-            onSuccess={() => {
-              setSelectBillings([]);
-              queryClient.invalidateQueries({
-                queryKey: ['billing'],
-                exact: false
-              });
-              setProcessState(0);
-            }}
-            backcb={() => {
+          <InvoiceInspection
+            invoiceData={invoiceInspectionData ?? null}
+            onBack={() => {
+              setInvoiceInspectionData();
               setProcessState(0);
             }}
           />

@@ -12,6 +12,7 @@ interface InvoiceHistoryProps {
   orderIdFilter: string;
   onOrderIdFilterChange: (v: string) => void;
   toInvoiceDetail?: () => void;
+  onInvoiceClick?: (invoice: InvoicePayload) => void;
 }
 
 export default function InvoiceHistory({
@@ -19,7 +20,8 @@ export default function InvoiceHistory({
   onDateRangeChange,
   orderIdFilter,
   onOrderIdFilterChange,
-  toInvoiceDetail
+  toInvoiceDetail,
+  onInvoiceClick
 }: InvoiceHistoryProps) {
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(1);
@@ -114,6 +116,7 @@ export default function InvoiceHistory({
       totalPages={totalPage}
       onPageChange={setPage}
       toInvoiceDetail={toInvoiceDetail}
+      onInvoiceClick={onInvoiceClick}
     />
   );
 }

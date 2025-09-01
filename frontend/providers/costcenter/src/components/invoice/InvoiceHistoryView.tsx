@@ -33,7 +33,8 @@ export default function InvoiceHistoryView({
   currentPage,
   totalPages,
   onPageChange,
-  toInvoiceDetail
+  toInvoiceDetail,
+  onInvoiceClick
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
@@ -46,6 +47,7 @@ export default function InvoiceHistoryView({
   totalPages: number;
   onPageChange: (page: number) => void;
   toInvoiceDetail?: () => void;
+  onInvoiceClick?: (invoice: InvoicePayload) => void;
 }) {
   const getStatusDisplay = (status: InvoicePayload['status']) => {
     switch (status) {
@@ -115,7 +117,14 @@ export default function InvoiceHistoryView({
                       </Button>
                     )}
                     {toInvoiceDetail && (
-                      <Button variant="outline" size="sm" onClick={toInvoiceDetail}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onInvoiceClick?.(invoice);
+                          toInvoiceDetail();
+                        }}
+                      >
                         Details
                       </Button>
                     )}
