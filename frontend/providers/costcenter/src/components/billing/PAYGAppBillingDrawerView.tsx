@@ -281,7 +281,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return `-$${(row.amount / 100000).toFixed(6)}`;
+        return `-$${(row.amount / 1000000).toFixed(6)}`;
       }
     })
   ];
