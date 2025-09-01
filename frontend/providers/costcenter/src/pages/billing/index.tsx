@@ -265,14 +265,16 @@ function Billing() {
       };
     });
 
-    // Workspace nodes
-    const workspaceNodes: BillingNode[] = namespaces.map(([namespaceId, namespaceName]) => ({
-      id: namespaceId,
-      name: namespaceName,
-      cost: workspaceCosts[namespaceId] || 0,
-      type: 'workspace',
-      dependsOn: selectedRegion || null
-    }));
+    // Workspace nodes - only show when a region is selected
+    const workspaceNodes: BillingNode[] = selectedRegion
+      ? namespaces.map(([namespaceId, namespaceName]) => ({
+          id: namespaceId,
+          name: namespaceName,
+          cost: workspaceCosts[namespaceId] || 0,
+          type: 'workspace',
+          dependsOn: selectedRegion
+        }))
+      : [];
 
     // Merge nodes
     const nodes = [totalNode, ...regionNodes, ...workspaceNodes];
