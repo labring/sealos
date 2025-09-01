@@ -40,7 +40,7 @@ export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
       <TableCell>
         <Badge className={cn('font-medium', 'bg-plan-starter text-blue-600')}>{item.plan}</Badge>
       </TableCell>
-      <TableCell>${item.cost}</TableCell>
+      <TableCell>${item.cost / 1000000}</TableCell>
     </TableRow>
   );
 
