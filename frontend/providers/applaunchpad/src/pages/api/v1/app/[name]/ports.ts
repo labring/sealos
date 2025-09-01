@@ -214,10 +214,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: filteredData
       });
     } catch (error: any) {
-      console.error(`Failed to ${req.method?.toLowerCase()} ports:`, error);
       return jsonRes(res, {
         code: 500,
-        error: error.message || `Failed to ${req.method?.toLowerCase()} ports`
+        error: error?.message || `Failed to ports`
       });
     }
   } catch (error: any) {
