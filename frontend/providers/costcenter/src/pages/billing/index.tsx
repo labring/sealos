@@ -66,14 +66,28 @@ function Billing() {
     : new Date(endTime).toISOString();
 
   // Query regions list
+  // [TODO] This is a temporary implementation, we should use region/namespace list from billing store
   const { data: regionData } = useQuery({
     queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
     queryKey: ['regionList', 'menu']
   });
 
-  // Use cached namespaces from store for current region
-  const namespaceList = useBillingStore((s) => s.namespaceList);
-  const nsListData = useMemo(() => ({ data: namespaceList }), [namespaceList]);
+  // Query namespaces for current region
+  // [TODO] This is a temporary implementation, we should use region/namespace list from billing store
+  const { data: nsListData } = useQuery({
+    queryFn: () =>
+      request.post('/api/billing/getNamespaceList', {
+        startTime: effectiveStartTime,
+        endTime: effectiveEndTime,
+        regionUid: currentRegionUid
+      }),
+    queryKey: [
+      'nsList',
+      'menu',
+      { startTime: effectiveStartTime, endTime: effectiveEndTime, regionUid: currentRegionUid }
+    ],
+    enabled: !!currentRegionUid
+  });
 
   // Query body for subscription payments (region scope)
   // We need this for calculating costs
@@ -253,7 +267,7 @@ function Billing() {
       name: namespaceName,
       cost: workspaceCosts[namespaceId] || 0,
       type: 'workspace',
-      dependsOn: selectedRegion || currentRegionUid || null
+      dependsOn: selectedRegion || null
     }));
 
     // Merge nodes
@@ -266,8 +280,7 @@ function Billing() {
     allPaymentsData,
     allRegionConsumptions,
     workspaceConsumptionResults,
-    selectedRegion,
-    currentRegionUid
+    selectedRegion
   ]);
 
   // Transform query results for child components
