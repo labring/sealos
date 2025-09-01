@@ -131,7 +131,10 @@ function CostNodesCanvas({
   const rootNode = useMemo(() => nodes.find((item) => item.type === 'total'), [nodes]);
   const regionNodes = useMemo(() => nodes.filter((item) => item.type === 'region'), [nodes]);
   const workspaceNodes = useMemo(
-    () => nodes.filter((item) => item.type === 'workspace' && item.dependsOn === selectedRegion),
+    () =>
+      nodes.filter(
+        (item) => item.type === 'workspace' && selectedRegion && item.dependsOn === selectedRegion
+      ),
     [nodes, selectedRegion]
   );
 
