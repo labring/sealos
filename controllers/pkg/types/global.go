@@ -420,9 +420,9 @@ func (RegionConfig) TableName() string {
 }
 
 type NotificationRecipient struct {
-	UserName    string    `json:"user_name"`
-	Email       string    `json:"email,omitempty"`
-	PhoneNumber string    `json:"phone_number,omitempty"`
-	UserID      string    `json:"user_id,omitempty"`
-	UserUID     uuid.UUID `json:"user_uid,omitempty"`
+	UserName    string    `json:"user_name" gorm:"column:user_name,omitempty"`
+	Email       string    `json:"email,omitempty" gorm:"column:email,omitempty"`
+	PhoneNumber string    `json:"phone_number,omitempty" gorm:"column:phone_number,omitempty"`
+	UserID      string    `json:"user_id,omitempty" gorm:"column:user_id,omitempty"`
+	UserUID     uuid.UUID `json:"user_uid,omitempty" gorm:"column:user_uid,omitempty"`
 }

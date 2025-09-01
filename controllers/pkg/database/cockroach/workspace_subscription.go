@@ -36,9 +36,22 @@ func (c *Cockroach) GetWorkspaceSubscription(workspace, regionDomain string) (*t
 	var subscription types.WorkspaceSubscription
 	err := c.DB.Where("workspace = ? AND region_domain = ?", workspace, regionDomain).First(&subscription).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get workspace subscription: %v", err)
+		return nil, err
 	}
-	return &subscription, nil
+	return &subscription, err
+}
+
+func (c *Cockroach) GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error) {
+	result := &struct {
+		Total int64 `gorm:"column:total"`
+		Used  int64 `gorm:"column:used"`
+	}{}
+	err = c.DB.Model(&types.WorkspaceTraffic{}).Where("workspace = ? AND region_domain = ? AND status = ? AND expired_at > ?", workspace, regionDomain, types.WorkspaceTrafficStatusActive, time.Now()).
+		Select("SUM(total_bytes) as total, SUM(used_bytes) as used").Scan(result).Error
+	if err != nil {
+		return 0, 0, err
+	}
+	return result.Total, result.Used, nil
 }
 
 // ListWorkspaceSubscription lists all subscriptions for a given user UID.
@@ -64,7 +77,7 @@ func AddWorkspaceSubscriptionTrafficPackage(globalDB *gorm.DB, subscriptionID uu
 	totalBytes := totalMiB * 1024 * 1024 // Convert MiB to Bytes
 	// Get workspace subscription
 	var subscription types.WorkspaceSubscription
-	err := globalDB.First(&subscription, "id = ?", subscriptionID).Error
+	err := globalDB.Where(&types.WorkspaceSubscription{ID: subscriptionID}).Find(&subscription).Error
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription: %v", err)
 	}

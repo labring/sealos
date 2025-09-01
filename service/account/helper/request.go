@@ -121,6 +121,33 @@ type AppResourceCostsResponse struct {
 	AppType         string                    `json:"app_type"`
 }
 
+type AppCostDetail struct {
+	AppType    uint8           `json:"app_type,omitempty" bson:"app_type,omitempty"`
+	AppName    string          `json:"app_name,omitempty" bson:"app_name,omitempty"`
+	Amount     int64           `json:"amount,omitempty" bson:"amount,omitempty"`
+	Used       map[uint8]int64 `json:"used,omitempty" bson:"used,omitempty"`
+	UsedAmount map[uint8]int64 `json:"used_amount,omitempty" bson:"used_amount,omitempty"`
+}
+
+// WorkspaceAppCostWithResources 包含成本数据和资源使用情况的组合结构体
+type WorkspaceAppCostWithResources struct {
+	AppName         string          `json:"app_name,omitempty" bson:"app_name,omitempty" example:"app"`
+	AppType         int32           `json:"app_type,omitempty" bson:"app_type,omitempty" example:"8"`
+	Time            time.Time       `json:"time,omitempty" bson:"time,omitempty" example:"2021-01-01T00:00:00Z"`
+	OrderID         string          `json:"order_id,omitempty" bson:"order_id,omitempty" example:"order_id"`
+	Namespace       string          `json:"namespace,omitempty" bson:"namespace,omitempty" example:"ns-admin"`
+	Amount          int64           `json:"amount,omitempty" bson:"amount,omitempty" example:"100000000"`
+	ResourcesByType []AppCostDetail `json:"resources_by_type,omitempty"`
+}
+
+// WorkspaceAppCostsResponse 工作空间应用成本和资源使用的响应结构体
+type WorkspaceAppCostsResponse struct {
+	Costs        []WorkspaceAppCostWithResources `json:"costs,omitempty" bson:"costs,omitempty"`
+	CurrentPage  int                             `json:"current_page,omitempty" bson:"current_page,omitempty" example:"1"`
+	TotalPages   int                             `json:"total_pages,omitempty" bson:"total_pages,omitempty" example:"1"`
+	TotalRecords int                             `json:"total_records,omitempty" bson:"total_records,omitempty" example:"1"`
+}
+
 type AppCostsReq struct {
 	// @Summary Order ID
 	// @Description Order ID
@@ -780,6 +807,27 @@ func ParseWorkspaceSubscriptionInfoReq(c *gin.Context) (*WorkspaceSubscriptionIn
 	}
 	if req.RegionDomain == "" {
 		return nil, fmt.Errorf("regionDomain cannot be empty")
+	}
+	return req, nil
+}
+
+type WorkspaceInfoReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Workspace name
+	// @Description Workspace name
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+}
+
+func ParseWorkspaceInfoReq(c *gin.Context) (*WorkspaceInfoReq, error) {
+	req := &WorkspaceInfoReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if req.Workspace == "" {
+		return nil, fmt.Errorf("workspace cannot be empty")
 	}
 	return req, nil
 }

@@ -65,6 +65,7 @@ type WorkspaceSubscriptionPlan struct {
 	Traffic           int64          `gorm:"type:bigint;column:traffic"`                               // 包含流量包大小, 单位: MB
 	CreatedAt         time.Time      `gorm:"column:created_at;autoCreateTime"`                         // 创建时间
 	UpdatedAt         time.Time      `gorm:"column:updated_at;autoUpdateTime"`                         // 更新时间
+	Tags              pq.StringArray `gorm:"type:text[];column:tags"`                                  // 标签分类
 	Prices            []ProductPrice `gorm:"foreignKey:ProductID;references:ID"`                       // 一对多关联
 }
 

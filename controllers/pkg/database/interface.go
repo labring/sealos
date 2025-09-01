@@ -125,6 +125,7 @@ type AccountV2 interface {
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)
 	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
+	GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error)
 	Payment(payment *types.Payment) error
 	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error

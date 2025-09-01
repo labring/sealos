@@ -127,6 +127,41 @@ func GetConsumptionAmount(c *gin.Context) {
 	})
 }
 
+// GetWorkspaceConsumptionAmount
+// @Summary Get workspace consumption amount
+// @Description Get workspace consumption amount within a specified time range
+// @Tags ConsumptionAmount
+// @Accept json
+// @Produce json
+// @Param request body helper.ConsumptionRecordReq true "Workspace consumption amount request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved workspace consumption amount"
+// @Failure 400 {object} map[string]interface{} "failed to parse workspace consumption amount request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get workspace consumption amount"
+// @Router /account/v1alpha1/costs/workspace-consumption [post]
+func GetWorkspaceConsumptionAmount(c *gin.Context) {
+	req, err := helper.ParseConsumptionRecordReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user consumption amount request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	var amount = map[string]int64{}
+	if req.Owner != "" {
+		amount, err = dao.DBClient.GetWorkspaceConsumptionAmount(*req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"amount": amount,
+	})
+}
+
 // GetAllRegionConsumptionAmount
 // @Summary Get all region consumption amount
 // @Description Get all region consumption amount within a specified time range
@@ -536,6 +571,42 @@ func GetAPPCosts(c *gin.Context) {
 	cost, err := dao.DBClient.GetAppCosts(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app cost : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"app_costs": cost,
+	})
+}
+
+// GetWorkspaceAPPCosts
+// @Summary Get workspace app costs
+// @Description Get workspace app costs within a specified time range
+// @Tags WorkspaceAppCosts
+// @Accept json
+// @Produce json
+// @Param request body helper.WorkspaceAppCostsReq true "Workspace app costs request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved workspace app costs"
+// @Failure 400 {object} map[string]interface{} "failed to parse get workspace app cost request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get workspace app cost"
+// @Router /account/v1alpha1/costs/workspace-app [post]
+func GetWorkspaceAPPCosts(c *gin.Context) {
+	req, err := helper.ParseAppCostsReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get workspace app cost request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	if req.Namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "workspace is empty"})
+		return
+	}
+	cost, err := dao.DBClient.GetWorkspaceAPPCosts(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace app cost : %v", err)})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

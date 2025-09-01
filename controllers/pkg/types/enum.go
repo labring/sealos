@@ -14,6 +14,7 @@ const (
 	SubscriptionStatusDebt              SubscriptionStatus = "DEBT"
 	SubscriptionStatusDebtPreDeletion   SubscriptionStatus = "DEBT_PRE_DELETION"
 	SubscriptionStatusDebtFinalDeletion SubscriptionStatus = "DEBT_FINAL_DELETION"
+	SubscriptionStatusDeleted           SubscriptionStatus = "DELETED"
 )
 
 func (s *SubscriptionStatus) Scan(value interface{}) error {
@@ -40,6 +41,7 @@ const (
 	SubscriptionTransactionTypeUpgraded   SubscriptionOperator = "upgraded"
 	SubscriptionTransactionTypeDowngraded SubscriptionOperator = "downgraded"
 	SubscriptionTransactionTypeCanceled   SubscriptionOperator = "canceled"
+	SubscriptionTransactionTypeDeleted    SubscriptionOperator = "deleted"
 	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
 	// 续订余额失败状态
 	SubscriptionTransactionTypeRenewFailed SubscriptionOperator = "renew_failed"
@@ -80,6 +82,7 @@ const (
 	SubscriptionPayStatusUnpaid     SubscriptionPayStatus = "unpaid"
 	SubscriptionPayStatusNoNeed     SubscriptionPayStatus = "no_need"
 	SubscriptionPayStatusFailed     SubscriptionPayStatus = "failed"
+	SubscriptionPayStatusExpired    SubscriptionPayStatus = "expired"
 	// 表示续订失败后，使用余额支付成功
 	SubscriptionPayStatusFailedAndUseBalance SubscriptionPayStatus = "failed_and_use_balance"
 )

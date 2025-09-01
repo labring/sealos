@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	refund2 "github.com/stripe/stripe-go/v82/refund"
+
 	"github.com/stripe/stripe-go/v82/invoice"
 
 	"github.com/labring/sealos/controllers/pkg/types"
@@ -55,18 +57,23 @@ func getBaseURL() string {
 // CreateWorkspaceSubscriptionSession creates a Stripe Checkout Session following official pattern
 func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction) (*StripeResponse, error) {
 	// 构造成功与取消回调URL，避免硬编码斜杠问题
-	successURL := fmt.Sprintf("%s/workspace-subscription/success?session_id={CHECKOUT_SESSION_ID}", s.Domain)
-	cancelURL := fmt.Sprintf("%s/workspace-subscription/cancel", s.Domain)
+	successURL := fmt.Sprintf("%s/?openapp=system-costcenter%3FstripeState%3Dsuccess%3FpayID%3D%%s", s.Domain, transaction.PayID)
+	cancelURL := fmt.Sprintf("%s/?openapp=system-costcenter%3FstripeState%3Dsuccess%3FpayID%3D%%s", s.Domain, transaction.PayID)
 	// Create checkout session following official example pattern
 	checkoutParams := &stripe.CheckoutSessionParams{
 		Metadata: map[string]string{
-			"workspace":             transaction.Workspace,
-			"region_domain":         transaction.RegionDomain,
-			"plan_name":             transaction.NewPlanName,
-			"period":                string(transaction.Period),
-			"payment_id":            transaction.PayID,
-			"subscription_operator": string(transaction.Operator),
-			"user_uid":              paymentReq.UserUID.String(),
+			"payment_id": transaction.PayID,
+		},
+		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
+			Metadata: map[string]string{
+				"workspace":             transaction.Workspace,
+				"region_domain":         transaction.RegionDomain,
+				"plan_name":             transaction.NewPlanName,
+				"period":                string(transaction.Period),
+				"payment_id":            transaction.PayID,
+				"subscription_operator": string(transaction.Operator),
+				"user_uid":              paymentReq.UserUID.String(),
+			},
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
@@ -107,6 +114,32 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		SessionID: sess.ID,
 		URL:       sess.URL,
 	}, nil
+}
+
+// RefundSubscription only refund the latest payment
+func (s *StripeService) RefundSubscription(subscriptionID string) error {
+	sub, err := subscription.Get(subscriptionID, &stripe.SubscriptionParams{
+		Expand: []*string{stripe.String("latest_invoice.payments")},
+	})
+	if err != nil {
+		return fmt.Errorf("subscription.Get: %v", err)
+	}
+	if sub.LatestInvoice.Payments == nil || len(sub.LatestInvoice.Payments.Data) == 0 || sub.LatestInvoice.Payments.Data[0].Payment == nil {
+		return fmt.Errorf("no payment found for invoice")
+	}
+	refundParams := stripe.RefundParams{}
+	if sub.LatestInvoice.Payments.Data[0].Payment.PaymentIntent != nil {
+		refundParams.PaymentIntent = stripe.String(sub.LatestInvoice.Payments.Data[0].Payment.PaymentIntent.ID)
+	}
+	if sub.LatestInvoice.Payments.Data[0].Payment.Charge != nil {
+		refundParams.Charge = stripe.String(sub.LatestInvoice.Payments.Data[0].Payment.Charge.ID)
+	}
+
+	_, err = refund2.New(&refundParams)
+	if err != nil {
+		return fmt.Errorf("stripe.RefundNew: %v", err)
+	}
+	return nil
 }
 
 // UpdatePlan updates the subscription plan for a given subscription ID
@@ -301,7 +334,9 @@ func (s *StripeService) GetSubscription(subscriptionID string) (*stripe.Subscrip
 
 // CancelSubscription cancels a Stripe subscription
 func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subscription, error) {
-	sub, err := subscription.Cancel(subscriptionID, nil)
+	sub, err := subscription.Cancel(subscriptionID, &stripe.SubscriptionCancelParams{
+		InvoiceNow: stripe.Bool(true),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("subscription.Cancel: %v", err)
 	}
@@ -357,7 +392,7 @@ func (s *StripeService) ListPrices(activeOnly bool) ([]*stripe.Price, error) {
 // This only handles Stripe API parsing, no database operations
 func (s *StripeService) ParseWebhookEventData(event *stripe.Event) (interface{}, error) {
 	switch event.Type {
-	case "checkout.session.completed":
+	case "checkout.session.completed", "checkout.session.expired":
 		var sess stripe.CheckoutSession
 		err := json.Unmarshal(event.Data.Raw, &sess)
 		if err != nil {

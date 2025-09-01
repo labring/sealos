@@ -16,6 +16,10 @@ func (g *Cockroach) GetWorkspaceSubscription(workspace, regionDomain string) (*t
 	return g.ck.GetWorkspaceSubscription(workspace, regionDomain)
 }
 
+func (g *Cockroach) GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error) {
+	return g.ck.GetWorkspaceSubscriptionTraffic(workspace, regionDomain)
+}
+
 func (g *Cockroach) ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error) {
 	return g.ck.ListWorkspaceSubscription(userUID)
 }
