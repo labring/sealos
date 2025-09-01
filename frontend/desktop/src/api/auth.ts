@@ -218,6 +218,9 @@ export const _enterpriseRealNameAuthCancelRequest = (request: AxiosInstance) => 
   );
 };
 
+export const _getBanksListRequest = (request: AxiosInstance) => () =>
+  request<never, ApiResp<Record<string, string>>>('/api/account/enterpriseRealName?type=banks');
+
 export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
 export const _verifyToken = (request: AxiosInstance) => () =>
@@ -274,5 +277,6 @@ export const enterpriseRealNameAuthCancelRequest = _enterpriseRealNameAuthCancel
 
 export const faceAuthGenerateQRcodeUriRequest = _faceAuthGenerateQRcodeUriRequest(request);
 export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
+export const getBanksListRequest = _getBanksListRequest(request);
 
 export const getAmount = _getAmount(request);

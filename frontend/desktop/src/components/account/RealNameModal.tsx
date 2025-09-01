@@ -20,11 +20,16 @@ import {
   Spinner,
   Link,
   FormErrorMessage,
-  FlexProps
+  FlexProps,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Icon
 } from '@chakra-ui/react';
 import { CloseIcon, RefreshIcon, useMessage, WarningIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState, useMemo, useRef } from 'react';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -36,7 +41,8 @@ import {
   enterpriseRealNameAuthVerifyRequest,
   faceAuthGenerateQRcodeUriRequest,
   getFaceAuthStatusRequest,
-  refreshRealNameQRecodeUriRequest
+  refreshRealNameQRecodeUriRequest,
+  getBanksListRequest 
 } from '@/api/auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
@@ -360,7 +366,7 @@ export function RealNameAuthForm(
               boxShadow:
                 '0px 1px 2px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.15)'
             },
-            _focus: { boxShadow: 'none' }
+            _focus: {}
           }}
         >
           {t('common:enterprise_verification')}
@@ -591,6 +597,62 @@ function EnterpriseVerification(
   const queryClient = useQueryClient();
   const domain = useConfigStore((state) => state.cloudConfig?.domain);
 
+ 
+  const [banksList, setBanksList] = useState<Array<{code: string; name: string; shortName: string}>>([]);
+  const [banksLoading, setBanksLoading] = useState(false);
+  const [banksError, setBanksError] = useState<any>(null);
+  
+
+  const [selectedBank, setSelectedBank] = useState<string>('');
+
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  
+
+  const clearSearch = useCallback(() => {
+    setSearchKeyword('');
+  }, []);
+
+
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        setBanksLoading(true);
+        setBanksError(null);
+        const response = await getBanksListRequest();
+        const banksData = response?.data || {};
+        const banksArray = Object.entries(banksData).map(([key, value]) => ({
+          code: key,
+          name: String(value || ''),
+          shortName: String(key || '')
+        }));
+        setBanksList(banksArray);
+      } catch (error) {
+        console.error('Failed to fetch banks list:', error);
+        setBanksError(error);
+        console.error('Banks fetch error:', error);
+      } finally {
+        setBanksLoading(false);
+      }
+    };
+
+    fetchBanks();
+  }, []);
+  const filteredBanksList = useMemo(() => {
+    if (!searchKeyword.trim()) {
+      return banksList;
+    }
+    return banksList.filter(bank => {
+      const bankShortName = bank.shortName.toLowerCase();
+      const keyword = searchKeyword.toLowerCase();
+      return  bankShortName.includes(keyword);
+    });
+  }, [banksList, searchKeyword]);
+
   const schema = z.object({
     key: z.string().min(1, { message: t('common:enterprise_key_required') }),
     accountBank: z.string().min(1, { message: t('common:account_bank_required') }),
@@ -620,6 +682,7 @@ function EnterpriseVerification(
     register: registerMain,
     handleSubmit: handleMainSubmit,
     reset: resetMain,
+    setValue: setMainValue,
     formState: { errors: mainErrors }
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -653,8 +716,22 @@ function EnterpriseVerification(
         usrName,
         contactInfo
       });
+      setSelectedBank(accountBank || '');
     }
   }, [enterpriseRealNameAuthInfo?.data, resetMain]);
+
+
+  const handleBankSelect = useCallback((bankName: string) => {
+    setSelectedBank(bankName);
+    setMainValue('accountBank', bankName);
+    setSearchKeyword(''); 
+  }, [setMainValue]);
+
+
+  const resetSearchState = useCallback(() => {
+    clearSearch();
+    setSelectedBank('');
+  }, [clearSearch]);
 
   const canPayment = enterpriseRealNameAuthInfo?.data?.paymentStatus !== PAYMENTSTATUS.PROCESSING;
 
@@ -721,6 +798,7 @@ function EnterpriseVerification(
         queryClient.invalidateQueries(['enterpriseRealNameAuthInfo']);
         resetMain();
         resetVerification();
+        resetSearchState();
 
         if (props.onFormSuccess) {
           props.onFormSuccess();
@@ -810,6 +888,22 @@ function EnterpriseVerification(
         as="form"
         w="full"
         onSubmit={handleMainSubmit((data: FormData) => {
+              // 添加调试信息
+    console.log('=== 表单提交数据 ===');
+    console.log('企业名称 (keyName):', data.keyName);
+    console.log('统一社会信用代码 (key):', data.key);
+    console.log('法人代表 (usrName):', data.usrName);
+    console.log('银行账号 (accountNo):', data.accountNo);
+    console.log('开户银行 (accountBank):', data.accountBank);
+    console.log('联系电话 (contactInfo):', data.contactInfo);
+    console.log('完整表单数据:', JSON.stringify(data, null, 2));
+    console.log('选中的银行:', selectedBank);
+    console.log('银行列表状态:', { 
+      banksLoading, 
+      banksError, 
+      banksList: banksList.length 
+    });
+    console.log('===================');
           enterpriseRealNameAuthPaymentMutation.mutate(data);
         })}
       >
@@ -1038,6 +1132,7 @@ function EnterpriseVerification(
             </FormErrorMessage>
           </FormControl>
 
+      
           <FormControl
             isInvalid={!!mainErrors.accountBank}
             w="full"
@@ -1064,17 +1159,258 @@ function EnterpriseVerification(
               >
                 {t('common:bank_name')}
               </FormLabel>
+              <Box position="relative" w="full">
+                <Input
+                  ref={searchInputRef}
+                  isDisabled={!canInput || banksLoading}
+                  placeholder={banksLoading 
+                    ? t('common:loading') 
+                    : banksError 
+                      ? t('common:get_code_failed')
+                      : t('common:please_enter_bank_name')
+                  }
+                  value={searchKeyword || selectedBank}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchKeyword(value);
+                 
+                    if (selectedBank && value !== selectedBank) {
+                      setSelectedBank('');
+                      setMainValue('accountBank', '');
+                    }
+                    
+                    if (value) {
+                      setIsMenuOpen(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (filteredBanksList.length > 0) {
+                      setIsMenuOpen(true);
+                    }
+                  }}
+                  onBlur={(e) => {
+                   
+                    setTimeout(() => {
+                      setIsMenuOpen(false);
+                    }, 150);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      clearSearch();
+                      setIsMenuOpen(false);
+                    } else if (e.key === 'Enter' && filteredBanksList.length > 0) {
+                      e.preventDefault();
+                     
+                      if (filteredBanksList.length === 1) {
+                        handleBankSelect(filteredBanksList[0].shortName);
+                        setIsMenuOpen(false);
+                      }
+                    }
+                  }}
+                  h="32px"
+                  px="12px"
+                  pr="40px" 
+                  w="full"
+                  borderRadius="6px"
+                  borderColor={isMenuOpen ? "brightBlue.600" : "grayModern.200"}
+                  bg="grayModern.50"
+                  fontSize="14px"
+                  fontWeight={400}
+                  lineHeight="20px"
+                  color="grayModern.900"
+                  _hover={{}}
+                  _focus={{}}
+                  backgroundColor={(searchKeyword || selectedBank) ? "brightBlue.50" : "grayModern.50"}
+                  _disabled={{
+                    bg: "grayModern.100",
+                    color: "grayModern.400",
+                    cursor: "not-allowed",
+                    opacity: 0.6
+                  }}
+                  autoComplete="off"
+                />
+                
+                {/* 右侧图标区域 */}
+                <Flex
+                  position="absolute"
+                  right="12px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  alignItems="center"
+                  gap="4px"
+                  pointerEvents={!canInput || banksLoading ? "none" : "auto"}
+                >
+                  {(searchKeyword || selectedBank) && (
+                    <Icon
+                      viewBox="0 0 16 16"
+                      w="14px"
+                      h="14px"
+                      color="grayModern.400"
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBank('');
+                        setMainValue('accountBank', '');
+                        setSearchKeyword('');
+                        if (searchInputRef.current) {
+                          searchInputRef.current.focus();
+                        }
+                      }}
+                      _hover={{ color: "grayModern.600" }}
+                    >
+                      <path
+                        d="M8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1ZM10.7071 5.29289C11.0976 5.68342 11.0976 6.31658 10.7071 6.70711L9.41421 8L10.7071 9.29289C11.0976 9.68342 11.0976 10.3166 10.7071 10.7071C10.3166 11.0976 9.68342 11.0976 9.29289 10.7071L8 9.41421L6.70711 10.7071C6.31658 11.0976 5.68342 11.0976 5.29289 10.7071C4.90237 10.3166 4.90237 9.68342 5.29289 9.29289L6.58579 8L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L8 6.58579L9.29289 5.29289C9.68342 4.90237 10.3166 4.90237 10.7071 5.29289Z"
+                        fill="currentColor"
+                      />
+                    </Icon>
+                  )}
+                  <Icon 
+                    viewBox="0 0 16 16" 
+                    w="14px" 
+                    h="14px"
+                    color="grayModern.500"
+                    transform={isMenuOpen ? "rotate(180deg)" : "rotate(0deg)"}
+                    transition="transform 0.15s ease"
+                    cursor="pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isMenuOpen) {
+                        setIsMenuOpen(false);
+                      } else {
+                        setIsMenuOpen(true);
+                        if (searchInputRef.current) {
+                          searchInputRef.current.focus();
+                        }
+                      }
+                    }}
+                  >
+                    <path 
+                      d="M4 6L8 10L12 6" 
+                      stroke="currentColor" 
+                      strokeWidth="1.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </Icon>
+                </Flex>
+                
+                {/* 自定义下拉列表 */}
+                {isMenuOpen && (
+                  <Box
+                    position="absolute"
+                    top="100%"
+                    left="0"
+                    right="0"
+                    maxH="280px"
+                    borderRadius="8px"
+                    borderColor="white"
+                    border="none"
+                    bg="white"
+                    boxShadow="0px 8px 24px rgba(19, 51, 107, 0.15)"
+                    py="8px"
+                    mt="4px"
+                    zIndex={1500}
+                    overflow="hidden"
+                  >
+                    <Box maxH="320px" overflowY="auto">
+                      {Array.isArray(filteredBanksList) && filteredBanksList.length > 0 ? (
+                        filteredBanksList.map((bank, index) => (
+                          <Box
+                            key={`${bank.code}-${index}`}
+                            onClick={() => {
+                              handleBankSelect(bank.shortName);
+                              setIsMenuOpen(false);
+                            }}
+                            h="48px"
+                            px="12px"
+                            py="8px"
+                            cursor="pointer"
+                            bg={selectedBank === bank.shortName ? "brightBlue.50" : "white"}
+                            _hover={{
+                              bg: selectedBank === bank.shortName ? "brightBlue.100" : "grayModern.50"
+                            }}
+                            transition="background-color 0.1s ease"
+                          >
+                            <Flex alignItems="center" w="full" h="full">
+                              {/* 银行Logo */}
+                              <Box
+                                w="24px"
+                                h="24px"
+                                borderRadius="4px"
+                                bg="grayModern.200"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                mr="12px"
+                                flexShrink={0}
+                              >
+                                <Text fontSize="10px" fontWeight="bold" color="grayModern.600">
+                                  {bank.shortName.charAt(0)}
+                                </Text>
+                              </Box>
+                              
+                              {/* 银行信息 */}
+                              <Text 
+                                fontSize="14px" 
+                                fontWeight={selectedBank === bank.shortName ? 600 : 400} 
+                                color="grayModern.900"
+                                flex="1"
+                              >
+                                {bank.shortName}
+                              </Text>
+                              
+                              {/* 选中状态图标 */}
+                              {selectedBank === bank.shortName && (
+                                <Icon
+                                  viewBox="0 0 16 16"
+                                  w="16px"
+                                  h="16px"
+                                  color="brightBlue.600"
+                                  ml="8px"
+                                >
+                                  <path
+                                    d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"
+                                    fill="currentColor"
+                                  />
+                                </Icon>
+                              )}
+                            </Flex>
+                          </Box>
+                        ))
+                      ) : searchKeyword ? (
+                        <Flex
+                          h="48px"
+                          px="12px"
+                          alignItems="center"
+                          justifyContent="center"
+                          color="grayModern.500"
+                          fontSize="14px"
+                        >
+                          未找到相关银行
+                        </Flex>
+                      ) : (
+                        <Flex
+                          h="48px"
+                          px="12px"
+                          alignItems="center"
+                          justifyContent="center"
+                          color="grayModern.500"
+                          fontSize="14px"
+                        >
+                          {banksError ? t('common:get_code_failed') : '请选择银行'}
+                        </Flex>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+              {/* 隐藏的表单字段用于form validation */}
               <Input
                 {...registerMain('accountBank')}
-                isDisabled={!canInput}
-                placeholder={t('common:please_enter_bank_name')}
-                h="32px"
-                px="12px"
-                alignItems="center"
-                w="full"
-                borderRadius="6px"
-                borderColor="grayModern.200"
-                bg="grayModern.50"
+                type="hidden"
+                value={selectedBank}
               />
             </Flex>
             <FormErrorMessage
