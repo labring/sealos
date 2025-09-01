@@ -1,14 +1,4 @@
-import appIcon from '@/assert/app.svg';
-import cvmIcon from '@/assert/cvm.svg';
-import dbIcon from '@/assert/db.svg';
-import jobIcon from '@/assert/job.svg';
-import osIcon from '@/assert/objectstorage.svg';
-import sealosIcon from '@/assert/sealos.svg';
-import terminalIcon from '@/assert/terminal.svg';
-import useAppTypeStore from '@/stores/appType';
 import {
-  Img,
-  ImgProps,
   Table,
   TableContainer,
   TableContainerProps,
