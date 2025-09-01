@@ -50,7 +50,7 @@ export default function RecordPanel({ toInvoiceDetail }: { toInvoiceDetail: () =
     if (totalPage < page) {
       setPage(1);
     }
-  }, [data?.data]);
+  }, [data?.data, page]);
 
   return (
     <TabPanel p="0" display={'flex'} flexDirection={'column'} flex={'auto'}>
