@@ -348,7 +348,6 @@ async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload
       regionUid: payload.regionUid
     });
 
-    // 构建完整的 API URL
     const fullApiUrl = `${enterpriseRealNameAuthApi}/v1/banks`;
     
     
