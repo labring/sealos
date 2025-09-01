@@ -25,8 +25,8 @@ function formatDateTime(iso: Date | string) {
 export default function InvoiceHistoryView({
   dateRange,
   onDateRangeChange,
-  orderId,
-  onOrderIdChange,
+  orderIdFilter,
+  onOrderIdFilterChange,
   invoiceList,
   isLoading,
   totalItem,
@@ -37,8 +37,8 @@ export default function InvoiceHistoryView({
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
-  orderId: string;
-  onOrderIdChange: (v: string) => void;
+  orderIdFilter: string;
+  onOrderIdFilterChange: (v: string) => void;
   invoiceList: InvoicePayload[];
   isLoading: boolean;
   totalItem: number;
@@ -80,8 +80,8 @@ export default function InvoiceHistoryView({
             icon={<Search size={16} />}
             placeholder="Order ID"
             className="w-[15rem]"
-            value={orderId}
-            onChange={(e) => onOrderIdChange(e.target.value)}
+            value={orderIdFilter}
+            onChange={(e) => onOrderIdFilterChange(e.target.value)}
           />
         </div>
       </TableLayoutCaption>

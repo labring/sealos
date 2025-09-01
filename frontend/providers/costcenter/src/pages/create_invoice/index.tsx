@@ -42,7 +42,7 @@ function Invoice() {
                 dateRange={dateRange}
                 onDateRangeChange={setDateRange}
                 orderIdFilter={searchValue}
-                onOrderIdChange={(v) => {
+                onOrderIdFilterChange={(v) => {
                   setSearch(v);
                   setOrderID(v.trim());
                 }}
@@ -52,9 +52,6 @@ function Invoice() {
                 onObtainInvoice={() => {
                   setProcessState(1);
                 }}
-                selectedBillings={selectBillings}
-                invoiceAmount={invoiceAmount}
-                invoiceCount={invoiceCount}
               />
             </TabsContent>
 
@@ -62,8 +59,8 @@ function Invoice() {
               <InvoiceHistory
                 dateRange={historyDateRange}
                 onDateRangeChange={setHistoryDateRange}
-                orderId={historySearchValue}
-                onOrderIdChange={setHistorySearchValue}
+                orderIdFilter={historySearchValue}
+                onOrderIdFilterChange={setHistorySearchValue}
                 toInvoiceDetail={() => {
                   setProcessState(2);
                 }}
@@ -105,6 +102,7 @@ function Invoice() {
         </section>
       ) : processState === 2 ? (
         <section>
+          {/* // ! the last one legacy component */}
           <InvoicdFormDetail
             onSuccess={() => {
               setSelectBillings([]);
