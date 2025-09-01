@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export enum BillingType {
   ALL = -1,
   CONSUME,
@@ -129,3 +131,17 @@ export type TransferBilling = {
   FromUserID: string;
   ToUserID: string;
 };
+
+// Workspace Consumption API Schema
+export const WorkspaceConsumptionRequestSchema = z.object({
+  startTime: z.iso.datetime(),
+  endTime: z.iso.datetime()
+});
+
+export type WorkspaceConsumptionRequest = z.infer<typeof WorkspaceConsumptionRequestSchema>;
+
+export const WorkspaceConsumptionResponseSchema = z.object({
+  amount: z.record(z.string(), z.number())
+});
+
+export type WorkspaceConsumptionResponse = z.infer<typeof WorkspaceConsumptionResponseSchema>;

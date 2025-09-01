@@ -28,6 +28,7 @@ import {
 import { CostPanel } from '@/components/billing/CostPanel';
 import { AppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
 import { PaymentRecord } from '@/types/plan';
+import { getWorkspacesConsumptions } from '@/api/billing';
 
 /**
  * Billing page container.
@@ -125,49 +126,29 @@ function Billing() {
     enabled: (regionUids?.length || 0) > 0
   });
 
-  // Build queries for workspace-level PAYG consumption
-  // !=============================================== Probably do not need this later
-  const workspaceConsumptionQueries = useMemo(() => {
-    const namespaces = (nsListData?.data || []) as [string, string][];
-    return namespaces.map(([namespaceId, namespaceName]) => ({
-      namespaceId,
-      namespaceName,
-      queryBody: {
-        appType: '',
-        namespace: namespaceId,
-        startTime: effectiveStartTime,
-        endTime: effectiveEndTime,
-        regionUid: currentRegionUid,
-        appName: ''
-      }
-    }));
-  }, [nsListData, effectiveStartTime, effectiveEndTime, currentRegionUid]);
-
-  // Fetch consumption for each workspace in parallel
-  const workspaceConsumptionResults = useQuery({
-    queryKey: ['workspaceConsumptions', workspaceConsumptionQueries],
+  // Fetch workspace-level PAYG consumption using new API
+  const { data: workspaceConsumptionData } = useQuery({
+    queryKey: ['workspacesConsumptions', currentRegionUid, effectiveStartTime, effectiveEndTime],
     queryFn: async () => {
-      const results = await Promise.all(
-        workspaceConsumptionQueries.map(async ({ namespaceId, queryBody }) => {
-          try {
-            const response = await request.post<{ amount: number }>(
-              '/api/billing/consumption',
-              queryBody
-            );
-            return { namespaceId, amount: response.data.amount };
-          } catch (error) {
-            console.error(`Failed to fetch consumption for namespace ${namespaceId}:`, error);
-            return { namespaceId, amount: 0 };
-          }
-        })
-      );
-      return results;
+      try {
+        const response = await getWorkspacesConsumptions({
+          startTime: effectiveStartTime,
+          endTime: effectiveEndTime
+        });
+
+        // Fail silently
+        if (!response.data) throw new Error('No response data');
+
+        return response.data.amount;
+      } catch (error) {
+        console.error('Failed to fetch workspaces consumption:', error);
+        return {} as Record<string, number>;
+      }
     },
-    enabled: !!currentRegionUid && workspaceConsumptionQueries.length > 0
+    enabled: !!currentRegionUid
   });
 
   // Fetch region-level PAYG consumption for ALL regions and map by region key
-  // ! ============================================= Need to include workspace PAYG consumption data later!
   const { data: allRegionConsumptions } = useQuery({
     queryKey: ['regionConsumptionAll', regionUids, effectiveStartTime, effectiveEndTime],
     queryFn: async () => {
@@ -202,13 +183,14 @@ function Billing() {
     const namespaces = (nsListData?.data || []) as [string, string][];
     const paymentsByRegion = allPaymentsData || {};
     const paymentList = Object.values(paymentsByRegion).flat();
-    const workspaceConsumptions = workspaceConsumptionResults?.data || [];
+    const workspaceConsumptions = workspaceConsumptionData || {};
 
     // Build workspaceCosts using consumption and payments
     const workspaceCosts = [
-      ...workspaceConsumptions.map((consumption) => ({
-        namespace: consumption.namespaceId,
-        cost: consumption.amount
+      // Convert consumption data from Record<string, number> to array format
+      ...Object.entries(workspaceConsumptions).map(([namespaceId, amount]) => ({
+        namespace: namespaceId,
+        cost: amount
       })),
       ...paymentList.map((payment) => ({
         namespace: payment.Workspace,
@@ -285,7 +267,7 @@ function Billing() {
     nsListData,
     allPaymentsData,
     allRegionConsumptions,
-    workspaceConsumptionResults,
+    workspaceConsumptionData,
     selectedRegion
   ]);
 
