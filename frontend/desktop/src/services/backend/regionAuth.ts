@@ -324,7 +324,7 @@ export async function getRegionToken({
     const kubeconfig = await getUserKubeconfig(
       payload.userCrUid,
       payload.userCrName,
-      'Subscription'
+      'subscription'
     );
     if (!kubeconfig) {
       throw new Error('Failed to get user from k8s');
@@ -534,7 +534,7 @@ export async function initRegionToken({
     const kubeconfig = await getUserKubeconfig(
       regionalDbResult.userCrUid,
       regionalDbResult.userCrName,
-      'Subscription'
+      'subscription'
     );
     if (!kubeconfig) {
       const failureMessage = 'failed to get user from k8s';
