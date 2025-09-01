@@ -202,7 +202,7 @@ async function handlePost(
       regionUid: payload.regionUid
     });
 
-    const response = await fetch(enterpriseRealNameAuthApi, {
+    const response = await fetch(`${enterpriseRealNameAuthApi}/v1/enterprise-auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -327,13 +327,32 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, userUid: s
 
 async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload: AccessTokenPayload) {
   try {
+    const realNameAuthProvider: RealNameAuthProvider | null =
+      await globalPrisma.realNameAuthProvider.findFirst({
+        where: {
+          backend: 'UNIONPAY',
+          authType: '3060'
+        }
+      });
+
+    if (!realNameAuthProvider) {
+      throw new Error('enterpriseRealNameAuth: Real name authentication provider not found');
+    }
+
+    const config: UnionPay3060Config = realNameAuthProvider.config as UnionPay3060Config;
+    const enterpriseRealNameAuthApi = config.api;
+
     const globalToken = generateAuthenticationToken({
       userUid: payload.userUid,
       userId: payload.userId,
       regionUid: payload.regionUid
     });
 
-    const response = await fetch('http://42.194.229.203:2342/v1/banks', {
+    // 构建完整的 API URL
+    const fullApiUrl = `${enterpriseRealNameAuthApi}/v1/banks`;
+    
+    
+    const response = await fetch(fullApiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
