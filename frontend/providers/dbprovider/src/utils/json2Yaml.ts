@@ -8,7 +8,8 @@ import {
   MigrationRemark,
   RedisHAConfig,
   crLabelKey,
-  defaultDBEditValue
+  defaultDBEditValue,
+  sealafDeployKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
 import type {
@@ -50,10 +51,16 @@ export const json2CreateCluster = (
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data);
 
+  // Remove sealaf-app label for restored databases to allow normal deletion
+  const filteredLabels = { ...data.labels };
+  if (backupInfo?.name && filteredLabels[sealafDeployKey]) {
+    delete filteredLabels[sealafDeployKey];
+  }
+
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
-      ...data.labels,
+      ...filteredLabels,
       'clusterdefinition.kubeblocks.io/name': data.dbType,
       'clusterversion.kubeblocks.io/name': data.dbVersion,
       [crLabelKey]: data.dbName
