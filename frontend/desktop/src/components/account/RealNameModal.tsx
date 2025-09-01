@@ -26,6 +26,12 @@ import {
   MenuList,
   MenuItem,
   Icon
+  FlexProps,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Icon
 } from '@chakra-ui/react';
 import { CloseIcon, RefreshIcon, useMessage, WarningIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
@@ -41,6 +47,8 @@ import {
   enterpriseRealNameAuthVerifyRequest,
   faceAuthGenerateQRcodeUriRequest,
   getFaceAuthStatusRequest,
+  refreshRealNameQRecodeUriRequest,
+  getBanksListRequest 
   refreshRealNameQRecodeUriRequest,
   getBanksListRequest 
 } from '@/api/auth';
@@ -702,6 +710,7 @@ function EnterpriseVerification(
         contactInfo
       });
       setSelectedBank(accountBank || '');
+      setSelectedBank(accountBank || '');
     }
   }, [enterpriseRealNameAuthInfo?.data, resetMain]);
 
@@ -873,6 +882,22 @@ function EnterpriseVerification(
         as="form"
         w="full"
         onSubmit={handleMainSubmit((data: FormData) => {
+              // 添加调试信息
+    console.log('=== 表单提交数据 ===');
+    console.log('企业名称 (keyName):', data.keyName);
+    console.log('统一社会信用代码 (key):', data.key);
+    console.log('法人代表 (usrName):', data.usrName);
+    console.log('银行账号 (accountNo):', data.accountNo);
+    console.log('开户银行 (accountBank):', data.accountBank);
+    console.log('联系电话 (contactInfo):', data.contactInfo);
+    console.log('完整表单数据:', JSON.stringify(data, null, 2));
+    console.log('选中的银行:', selectedBank);
+    console.log('银行列表状态:', { 
+      banksLoading, 
+      banksError, 
+      banksList: banksList.length 
+    });
+    console.log('===================');
           enterpriseRealNameAuthPaymentMutation.mutate(data);
         })}
       >
