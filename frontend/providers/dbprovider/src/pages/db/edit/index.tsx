@@ -251,7 +251,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         );
         console.log('filtered backups for db:', formData.dbName, backups);
         const inProgressBackups = backups.filter(
-          (backup: BackupItemType) => backup.status.value === 'Completed'
+          (backup: BackupItemType) => backup.status.value === 'Running'
         );
         console.log('inProgressBackups', inProgressBackups);
 
