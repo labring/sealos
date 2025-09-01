@@ -19,10 +19,24 @@ type SubscriptionCostTableProps = {
   data: SubscriptionData[];
 };
 
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return 'N/A';
+  return new Date(dateStr)
+    .toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+    .replace(/\//g, '/')
+    .replace(',', ' ');
+};
+
 export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
   const SubscriptionRow = ({ item }: { item: SubscriptionData }) => (
     <TableRow>
-      <TableCell>{item.time}</TableCell>
+      <TableCell>{formatDate(item.time)}</TableCell>
       <TableCell>
         <Badge className={cn('font-medium', 'bg-plan-starter text-blue-600')}>{item.plan}</Badge>
       </TableCell>
