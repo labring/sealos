@@ -209,7 +209,7 @@ export default function Plan() {
           operator: 'created',
           createWorkspace: {
             teamName: workspaceName.trim(),
-            userType: 'Payg'
+            userType: 'payg'
           }
         };
         subscriptionMutation.mutate(paymentRequest);
@@ -224,7 +224,7 @@ export default function Plan() {
           operator: 'created',
           createWorkspace: {
             teamName: workspaceName.trim(),
-            userType: 'Subscription'
+            userType: 'subscription'
           }
         };
         subscriptionMutation.mutate(paymentRequest);
