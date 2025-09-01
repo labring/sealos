@@ -598,11 +598,6 @@ function EnterpriseVerification(
   const domain = useConfigStore((state) => state.cloudConfig?.domain);
 
  
-  const [banksList, setBanksList] = useState<Array<{code: string; name: string; shortName: string}>>([]);
-  const [banksLoading, setBanksLoading] = useState(false);
-  const [banksError, setBanksError] = useState<any>(null);
-  
-
   const [selectedBank, setSelectedBank] = useState<string>('');
 
   const [searchKeyword, setSearchKeyword] = useState<string>('');
@@ -611,37 +606,27 @@ function EnterpriseVerification(
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  
-
   const clearSearch = useCallback(() => {
     setSearchKeyword('');
   }, []);
 
-
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        setBanksLoading(true);
-        setBanksError(null);
-        const response = await getBanksListRequest();
+  const { data: banksResponse, isLoading: banksLoading, error: banksError } = useQuery(
+    ['banksList'],
+    getBanksListRequest,
+    {
+      refetchOnWindowFocus: false,
+      select: (response) => {
         const banksData = response?.data || {};
-        const banksArray = Object.entries(banksData).map(([key, value]) => ({
+        return Object.entries(banksData).map(([key, value]) => ({
           code: key,
           name: String(value || ''),
           shortName: String(key || '')
         }));
-        setBanksList(banksArray);
-      } catch (error) {
-        console.error('Failed to fetch banks list:', error);
-        setBanksError(error);
-        console.error('Banks fetch error:', error);
-      } finally {
-        setBanksLoading(false);
       }
-    };
+    }
+  );
 
-    fetchBanks();
-  }, []);
+  const banksList = banksResponse || [];
   const filteredBanksList = useMemo(() => {
     if (!searchKeyword.trim()) {
       return banksList;
@@ -1203,9 +1188,7 @@ function EnterpriseVerification(
                   fontWeight={400}
                   lineHeight="20px"
                   color="grayModern.900"
-                  _hover={{}}
-                  _focus={{}}
-                  backgroundColor={(searchKeyword || selectedBank) ? "brightBlue.50" : "grayModern.50"}
+                  backgroundColor={selectedBank ? "rgb(231, 240, 254)" : "grayModern.50"}
                   _disabled={{
                     bg: "grayModern.100",
                     color: "grayModern.400",
@@ -1215,7 +1198,6 @@ function EnterpriseVerification(
                   autoComplete="off"
                 />
                 
-                {/* 右侧图标区域 */}
                 <Flex
                   position="absolute"
                   right="12px"
@@ -1280,7 +1262,6 @@ function EnterpriseVerification(
                   </Icon>
                 </Flex>
                 
-                {/* 自定义下拉列表 */}
                 {isMenuOpen && (
                   <Box
                     position="absolute"
@@ -1318,7 +1299,6 @@ function EnterpriseVerification(
                             transition="background-color 0.1s ease"
                           >
                             <Flex alignItems="center" w="full" h="full">
-                              {/* 银行Logo */}
                               <Box
                                 w="24px"
                                 h="24px"
@@ -1335,7 +1315,6 @@ function EnterpriseVerification(
                                 </Text>
                               </Box>
                               
-                              {/* 银行信息 */}
                               <Text 
                                 fontSize="14px" 
                                 fontWeight={selectedBank === bank.shortName ? 600 : 400} 
@@ -1345,7 +1324,6 @@ function EnterpriseVerification(
                                 {bank.shortName}
                               </Text>
                               
-                              {/* 选中状态图标 */}
                               {selectedBank === bank.shortName && (
                                 <Icon
                                   viewBox="0 0 16 16"
@@ -1390,7 +1368,6 @@ function EnterpriseVerification(
                   </Box>
                 )}
               </Box>
-              {/* 隐藏的表单字段用于form validation */}
               <Input
                 {...registerMain('accountBank')}
                 type="hidden"
