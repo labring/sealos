@@ -237,8 +237,6 @@ async function updateAppPorts(
   containerPorts: any[],
   method?: string
 ) {
-  console.log(containerPorts, 'containerPorts,updateAppPorts');
-
   let jsonPatch: any[];
 
   if (method === 'POST') {
@@ -322,7 +320,6 @@ async function updateAppPorts(
 
 async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: any) {
   const yamlList: string[] = [];
-  console.log(appEditData, 'appEditData,updateServiceAndIngress');
 
   const serviceYaml = json2Service(appEditData);
   if (serviceYaml.trim()) {
