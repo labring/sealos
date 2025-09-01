@@ -45,6 +45,10 @@ function Billing() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
+  // Separate pagination state for PAYG table
+  const [paygPage, setPaygPage] = useState(1);
+  const [paygPageSize] = useState(10);
+
   // Date range for the main billing view
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(startTime),
@@ -310,11 +314,13 @@ function Billing() {
   /** Reset pagination when filters change */
   useEffect(() => {
     setPage(1);
+    setPaygPage(1);
   }, [selectedRegion, selectedWorkspace, effectiveEndTime, effectiveStartTime]);
 
   const handleRegionSelect = (regionId: string | null) => {
     setSelectedRegion(regionId);
     setPage(1);
+    setPaygPage(1);
     setSelectedApp(null);
     if (!regionId) {
       setSelectedWorkspace(null);
@@ -324,6 +330,7 @@ function Billing() {
   const handleWorkspaceSelect = (workspaceId: string | null) => {
     setSelectedWorkspace(workspaceId);
     setPage(1);
+    setPaygPage(1);
     setSelectedApp(null);
   };
 
@@ -395,9 +402,10 @@ function Billing() {
                     selectedWorkspace={selectedWorkspace}
                     effectiveStartTime={effectiveStartTime}
                     effectiveEndTime={effectiveEndTime}
-                    page={page}
-                    pageSize={pageSize}
+                    page={paygPage}
+                    pageSize={paygPageSize}
                     onUsageClick={handleUsageClick}
+                    onPageChange={setPaygPage}
                   />
                 )}
               </CostPanel>
