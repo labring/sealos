@@ -14,6 +14,7 @@ type PAYGCostTableProps = {
   page: number;
   pageSize: number;
   onUsageClick?: (item: PAYGData) => void;
+  onPageChange: (page: number) => void;
 };
 
 /**
@@ -28,7 +29,8 @@ export function PAYGCostTable({
   effectiveEndTime,
   page,
   pageSize,
-  onUsageClick
+  onUsageClick,
+  onPageChange
 }: PAYGCostTableProps) {
   const { getAppType: getAppTypeString } = useAppTypeStore();
 
@@ -61,6 +63,20 @@ export function PAYGCostTable({
     enabled: !!currentRegionUid && !!selectedRegion
   });
 
+  // Calculate pagination info
+  const { total, totalPage } = useMemo(() => {
+    if (!appOverviewData?.data) {
+      return { total: 0, totalPage: 1 };
+    }
+
+    const { total, totalPage } = appOverviewData.data;
+
+    return {
+      total: totalPage === 0 ? 1 : total,
+      totalPage: totalPage === 0 ? 1 : totalPage
+    };
+  }, [appOverviewData]);
+
   const paygData: PAYGData[] = useMemo(() => {
     const result: PAYGData[] = [];
     if (selectedRegion && appOverviewData?.data?.overviews) {
@@ -82,5 +98,16 @@ export function PAYGCostTable({
 
   if (!selectedRegion) return null;
 
-  return <PAYGCostTableView data={paygData} timeRange={timeRange} onUsageClick={onUsageClick} />;
+  return (
+    <PAYGCostTableView
+      data={paygData}
+      timeRange={timeRange}
+      onUsageClick={onUsageClick}
+      currentPage={page}
+      totalPages={totalPage}
+      pageSize={pageSize}
+      totalCount={total}
+      onPageChange={onPageChange}
+    />
+  );
 }

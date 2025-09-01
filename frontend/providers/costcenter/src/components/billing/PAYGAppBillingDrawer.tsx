@@ -33,6 +33,14 @@ export function AppBillingDrawer({
     to: new Date(effectiveEndTime)
   });
 
+  // Sync internal date range with external date range changes
+  useEffect(() => {
+    setAppDateRange({
+      from: new Date(effectiveStartTime),
+      to: new Date(effectiveEndTime)
+    });
+  }, [effectiveStartTime, effectiveEndTime]);
+
   const { getAppType: getAppTypeString } = useAppTypeStore();
 
   // App billing query for drawer
@@ -92,34 +100,38 @@ export function AppBillingDrawer({
   const appBillingDetails = useMemo(() => {
     if (!appBillingData?.data?.costs) return [];
 
-    return appBillingData.data.costs.map((item): any => ({
-      appName: item.app_name,
-      appType: getAppTypeString(item.app_type.toString()),
-      time: new Date(item.time),
-      orderId: item.order_id,
-      namespace: item.namespace,
-      amount: item.amount,
-      usage: {
-        // Map from used and used_amount arrays based on resource type indices
-        // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
-        cpu: item?.used?.['0']
-          ? { amount: item.used['0'], cost: item.used_amount['0'] }
-          : undefined,
-        memory: item?.used?.['1']
-          ? { amount: item.used['1'], cost: item.used_amount['1'] }
-          : undefined,
-        storage: item?.used?.['2']
-          ? { amount: item.used['2'], cost: item.used_amount['2'] }
-          : undefined,
-        network: item?.used?.['3']
-          ? { amount: item.used['3'], cost: item.used_amount['3'] }
-          : undefined,
-        port: item?.used?.['4']
-          ? { amount: item.used['4'], cost: item.used_amount['4'] }
-          : undefined,
-        gpu: item?.used?.['5'] ? { amount: item.used['5'], cost: item.used_amount['5'] } : undefined
-      }
-    }));
+    return appBillingData.data.costs.flatMap((item) =>
+      item.resources_by_type.map((subItem) => ({
+        appName: subItem.app_name,
+        appType: getAppTypeString(subItem.app_type.toString()),
+        time: new Date(item.time),
+        orderId: item.order_id,
+        namespace: item.namespace,
+        amount: subItem.amount,
+        usage: {
+          // Map from used and used_amount arrays based on resource type indices
+          // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
+          cpu: subItem?.used?.['0']
+            ? { amount: subItem.used['0'], cost: subItem.used_amount['0'] }
+            : undefined,
+          memory: subItem?.used?.['1']
+            ? { amount: subItem.used['1'], cost: subItem.used_amount['1'] }
+            : undefined,
+          storage: subItem?.used?.['2']
+            ? { amount: subItem.used['2'], cost: subItem.used_amount['2'] }
+            : undefined,
+          network: subItem?.used?.['3']
+            ? { amount: subItem.used['3'], cost: subItem.used_amount['3'] }
+            : undefined,
+          port: subItem?.used?.['4']
+            ? { amount: subItem.used['4'], cost: subItem.used_amount['4'] }
+            : undefined,
+          gpu: subItem?.used?.['5']
+            ? { amount: subItem.used['5'], cost: subItem.used_amount['5'] }
+            : undefined
+        }
+      }))
+    );
   }, [appBillingData, getAppTypeString]);
 
   // Calculate pagination info

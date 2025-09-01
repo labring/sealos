@@ -6,9 +6,11 @@ import {
   TableLayoutCaption,
   TableLayoutContent,
   TableLayoutHeadRow,
-  TableLayoutBody
+  TableLayoutBody,
+  TableLayoutFooter
 } from '@sealos/shadcn-ui/table-layout';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 
@@ -23,13 +25,27 @@ type PAYGCostTableViewProps = {
   data: PAYGData[];
   timeRange?: string;
   onUsageClick?: (item: PAYGData) => void;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
 };
 
 /**
  * Render-only PAYG table view.
  * Displays PAYG item rows with type badge, cost and action.
  */
-export function PAYGCostTableView({ data, timeRange, onUsageClick }: PAYGCostTableViewProps) {
+export function PAYGCostTableView({
+  data,
+  timeRange,
+  onUsageClick,
+  currentPage,
+  totalPages,
+  pageSize,
+  totalCount,
+  onPageChange
+}: PAYGCostTableViewProps) {
   const { t } = useTranslation('applist');
 
   const PAYGRow = ({ item }: { item: PAYGData }) => (
@@ -77,6 +93,23 @@ export function PAYGCostTableView({ data, timeRange, onUsageClick }: PAYGCostTab
           ))}
         </TableLayoutBody>
       </TableLayoutContent>
+
+      <TableLayoutFooter>
+        <div className="px-4 py-2 flex justify-between">
+          <div className="flex items-center text-zinc-500">Total: {totalCount}</div>
+          <div className="flex items-center gap-3">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+            />
+            <span>
+              <span>{pageSize}</span>
+              <span className="text-zinc-500"> / Page</span>
+            </span>
+          </div>
+        </div>
+      </TableLayoutFooter>
     </TableLayout>
   );
 }

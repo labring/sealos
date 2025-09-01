@@ -315,7 +315,7 @@ export function PAYGAppBillingDrawerView({
         </DrawerHeader>
 
         {/* Table */}
-        <div className="p-5">
+        <div className="p-5 max-h-full overflow-y-scroll">
           <TableLayout>
             <TableLayoutCaption className="font-medium text-base">
               <div className="flex gap-2 items-center">
