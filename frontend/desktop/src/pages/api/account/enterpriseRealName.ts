@@ -76,6 +76,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   switch (req.method) {
     case 'GET':
+      if (req.query.type === 'banks') {
+        return handleGetBanks(req, res, payload);
+      }
       return handleGet(req, res, payload.userUid);
     case 'POST':
       return handlePost(req, res, payload.userUid, payload);
@@ -319,5 +322,39 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, userUid: s
   } catch (error) {
     console.error('Error updating payment status:', error);
     return jsonRes(res, { code: 500, message: 'Internal server error' });
+  }
+}
+
+async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload: AccessTokenPayload) {
+  try {
+    const globalToken = generateAuthenticationToken({
+      userUid: payload.userUid,
+      userId: payload.userId,
+      regionUid: payload.regionUid
+    });
+
+    const response = await fetch('http://42.194.229.203:2342/v1/banks', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${globalToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch banks: ${response.status}`);
+    }
+
+    const banksResponse = await response.json();
+    
+    const banksData = banksResponse?.data || {};
+
+    return jsonRes(res, {
+      code: 200,
+      data: banksData
+    });
+  } catch (error) {
+    console.error('Error fetching banks list:', error);
+    return jsonRes(res, { code: 500, message: 'Failed to fetch banks list' });
   }
 }
