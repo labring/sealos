@@ -26,7 +26,7 @@ export function CostPanel({ children, region, workspace, totalCost }: CostPanelP
       <div className="shadow-sm border border-r-0 border-t-0 bg-blue-50 text-sm flex p-4 justify-between rounded-xl rounded-r-none rounded-t-none items-center gap-16 sticky top-0 z-10">
         <div className="font-semibold">
           <span>{displayTitle}: </span>
-          <span className="text-blue-600">${(totalCost / 100000).toFixed(2)}</span>
+          <span className="text-blue-600">${(totalCost / 1000000).toFixed(2)}</span>
         </div>
 
         <div className="font-semibold">

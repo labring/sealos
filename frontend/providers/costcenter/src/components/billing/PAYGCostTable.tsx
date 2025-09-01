@@ -84,7 +84,7 @@ export function PAYGCostTable({
         result.push({
           appName: overview.appName,
           appType: getAppTypeString(overview.appType.toString()),
-          cost: overview.amount / 100000,
+          cost: overview.amount,
           namespace: overview.namespace
         });
       });

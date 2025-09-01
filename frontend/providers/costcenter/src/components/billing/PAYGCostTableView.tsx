@@ -61,7 +61,7 @@ export function PAYGCostTableView({
           {t(item.appType)}
         </Badge>
       </TableCell>
-      <TableCell>${item.cost}</TableCell>
+      <TableCell>${item.cost / 1000000}</TableCell>
       <TableCell>
         <Button variant="outline" size="sm" onClick={() => onUsageClick?.(item)}>
           Usage
