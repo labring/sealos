@@ -38,6 +38,7 @@ import { DateRange } from 'react-day-picker';
 import { getPaymentList } from '@/api/plan';
 import { ApiResp } from '@/types';
 import { RechargeBillingData } from '@/types/billing';
+import { Region } from '@/types/region';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -47,7 +48,6 @@ import {
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
 import OrderList, { CombinedRow } from '@/components/invoice/OrderList';
-import useBillingStore from '@/stores/billing';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
@@ -74,12 +74,16 @@ function Invoice() {
     return dateRange?.to ? new Date(dateRange.to).toISOString() : new Date().toISOString();
   }, [dateRange?.to]);
 
-  const regionList = useBillingStore((s) => s.regionList);
+  // [TODO] This is a temporary implementation, we should use region/namespace list from billing store
+  const { data: regionData } = useQuery({
+    queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
+    queryKey: ['regionList', 'invoice']
+  });
   const regionUidToName = useMemo(() => {
     const map = new Map<string, string>();
-    (regionList || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
+    (regionData?.data || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
     return map;
-  }, [regionList]);
+  }, [regionData]);
 
   const rechargeBody = useMemo(
     () => ({
@@ -99,7 +103,7 @@ function Invoice() {
     });
   });
 
-  const regionUids = useMemo(() => (regionList || []).map((r) => r.uid), [regionList]);
+  const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
   const paymentListQueryBodyBase = useMemo(
     () => ({
       startTime: effectiveStartTime,
