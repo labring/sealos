@@ -14,10 +14,10 @@ kbcli addon enable csi-s3
 
 REPO_NAME="backup"
 if kbcli backuprepo list | awk -v repo="$REPO_NAME" 'NR>1 && $1 == repo {found=1; exit} END {exit !found}'; then
-    echo "备份仓库 '$REPO_NAME' 已存在，跳过创建。"
+    echo "backup '$REPO_NAME' is already exists, skip create it."
 else
     echo "
-    正在创建备份仓库 '$REPO_NAME'..."
+    backup '$REPO_NAME'..."
     kubectl apply -f manifests/backuprepo.yaml
 fi
 

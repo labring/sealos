@@ -45,7 +45,7 @@ crds:
     image:
       repository: rancher/kubectl
       # use image tag that matches k8s API version by default
-      tag: ""
+      tag: "v1.28.15"
       pullPolicy: IfNotPresent
     # -- Cleanup hook resources
     resources:

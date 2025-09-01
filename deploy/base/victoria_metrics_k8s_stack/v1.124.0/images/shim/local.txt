@@ -1,7 +1,6 @@
 docker.io/prom/alertmanager:v0.28.1
 docker.io/jimmidyson/configmap-reload:v0.3.0
 quay.io/prometheus-operator/prometheus-config-reloader:v0.82.1
-docker.io/victoriametrics/operator:config-reloader-v0.53.0
 docker.io/victoriametrics/vmalert:v1.124.0
 docker.io/victoriametrics/vmagent:v1.124.0
 docker.io/victoriametrics/victoria-metrics:v1.124.0
@@ -10,3 +9,4 @@ docker.io/victoriametrics/vmstorage:v1.124.0-cluster
 docker.io/victoriametrics/vminsert:v1.124.0-cluster
 docker.io/victoriametrics/vmbackupmanager:v1.124.0-enterprise
 docker.io/victoriametrics/vmauth:v1.124.0
+quay.io/victoriametrics/operator:config-reloader-v0.53.0

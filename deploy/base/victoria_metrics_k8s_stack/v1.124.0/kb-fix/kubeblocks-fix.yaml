@@ -1,0 +1,25 @@
+{{- $app := .Values.vmagent }}
+{{- if $app.enabled }}
+{{- $ctx := dict "helm" . "appKey" (list "vmagent" "spec") }}
+{{- $fullname := include "vm.cr.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubeblocks-fix
+  {{- with $app.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end  }}
+  namespace: {{ $ns }}
+  {{- $_ := set $ctx "style" "managed" }}
+  {{- $_ := set $ctx "extraLabels" ($app.labels | default dict) }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- $_ := unset $ctx "extraLabels" }}
+stringData:
+{{- range $path, $bytes := .Files.Glob "files/prometheus-additional.yaml" }}
+  prometheus-additional.yaml: |
+{{ printf "%s" $bytes | indent 4 }}
+{{- end }}
+---
+{{- end }}

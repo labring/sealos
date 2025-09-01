@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-NAME=${NAME:-"victoria-metrics-k8s-stack"}
+NAME=${NAME:-"vm-stack"}
 NAMESPACE=${NAMESPACE:-"vm"}
 CHARTS=${CHARTS:-"./charts/victoria-metrics-k8s-stack"}
 HELM_OPTS=${HELM_OPTS:-" \
 --set grafana.service.type=NodePort \
 "}
 
-helm upgrade -i ${NAME} ${CHARTS} -n ${NAMESPACE} --create-namespace ${HELM_OPTS}
+cp kb-fix/prometheus-additional.yaml ./charts/victoria-metrics-k8s-stack/files/prometheus-additional.yaml
+cp kb-fix/kubeblocks-fix.yaml ./charts/victoria-metrics-k8s-stack/templates/victoria-metrics-operator/vmagent/kubeblocks-fix.yaml
+
+helm upgrade -i ${NAME} ${CHARTS} -n ${NAMESPACE} --create-namespace -f ./charts/victoria-metrics-k8s-stack/values.yaml -f values-cloud.yaml ${HELM_OPTS}
