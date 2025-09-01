@@ -102,6 +102,7 @@
   "cancel": "取消",
   "cannot_change_name": "不允许修改数据库名称",
   "change_log": "变更历史",
+  "click_for_details": "点击查看详情",
   "clipboard_read_failed": "读取剪切板失败！",
   "clipboard_unsupported": "浏览器不支持 Clipboard API",
   "collection": "集合",

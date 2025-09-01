@@ -110,6 +110,16 @@ Sealos 维护了一个[公开的发展路线图](https://github.com/orgs/labring
 - [Laf](https://github.com/labring/laf) 是 Sealos 上的一款函数计算应用，让写代码像写博客一样简单，随时随地发布上线。
 - [Buildah](https://github.com/containers/buildah) 在 Sealos 4.0 中，我们广泛地利用了 Buildah 的能力，以确保集群镜像与 OCI 标准兼容。
 
+## 📄 许可证
+
+Sealos 采用 [Sealos 可持续使用许可证](./LICENSE.md)，这是一个定制许可证，允许：
+- ✅ 内部商业用途和个人非商业用途
+- ❌ 向第三方提供云服务
+
+**这不是标准的开源许可证** - 使用前请查看 [完整许可证条款](./LICENSE.md)。
+
+**贡献代码**: 通过贡献代码，您同意我们的 [贡献者许可协议](./CONTRIBUTOR_LICENSE_AGREEMENT.md) 和许可证变更条款。
+
 <!-- ## License -->
 
 <!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->

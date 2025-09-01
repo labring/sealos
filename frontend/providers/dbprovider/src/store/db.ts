@@ -3,8 +3,16 @@ import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { persist } from 'zustand/middleware';
 import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
-import { getMyDBList, getPodsByDBName, getDBByName, getMonitorData } from '@/api/db';
+import {
+  getMyDBList,
+  getPodsByDBName,
+  getDBByName,
+  getMonitorData,
+  getDatabaseAlerts,
+  type DatabaseAlertItem
+} from '@/api/db';
 import { defaultDBDetail } from '@/constants/db';
+import { getUserNamespace } from '@/utils/user';
 
 type State = {
   dbList: DBListItemType[];
@@ -16,6 +24,8 @@ type State = {
   dataSourceIds: Record<string, number>;
   setDataSourceId: (dbName: string, dataSourceId: number) => void;
   getDataSourceId: (dbName: string) => number | undefined;
+  alerts: Record<string, DatabaseAlertItem>;
+  loadAlerts: () => Promise<Record<string, DatabaseAlertItem>>;
 };
 
 const getDiskOverflowStatus = async (dbName: string, dbType: string): Promise<boolean> => {
@@ -90,7 +100,33 @@ export const useDBStore = create<State>()(
           set((state) => {
             state.dataSourceIds[dbName] = dataSourceId;
           }),
-        getDataSourceId: (dbName: string) => get().dataSourceIds[dbName]
+        getDataSourceId: (dbName: string) => get().dataSourceIds[dbName],
+        alerts: {},
+        loadAlerts: async () => {
+          try {
+            const namespace = getUserNamespace();
+            const alertsList = await getDatabaseAlerts(namespace);
+            const alertsMap = (alertsList || []).reduce(
+              (acc, cur) => {
+                acc[cur.name] = cur;
+                return acc;
+              },
+              {} as Record<string, DatabaseAlertItem>
+            );
+
+            set((state) => {
+              state.alerts = alertsMap;
+            });
+            return alertsMap;
+          } catch (error) {
+            console.error('Failed to load database alerts:', error);
+            const emptyAlerts = {} as Record<string, DatabaseAlertItem>;
+            set((state) => {
+              state.alerts = emptyAlerts;
+            });
+            return emptyAlerts;
+          }
+        }
       })),
       {
         name: 'db-store',

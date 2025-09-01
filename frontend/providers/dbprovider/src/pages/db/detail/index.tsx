@@ -10,7 +10,7 @@ import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppBaseInfo, { ConnectionInfo } from './components/AppBaseInfo';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import Header from './components/Header';
@@ -23,6 +23,7 @@ import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
 import OperationLog from './components/OperationLog';
+import { type DatabaseAlertItem } from '@/api/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -127,10 +128,16 @@ const AppDetail = ({
   const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const { dbDetail, loadDBDetail } = useDBStore();
+  const { dbDetail, loadDBDetail, alerts, loadAlerts } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
   const [podsCount, setPodsCount] = useState(0);
   const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
+
+  // Load alerts data once when page loads
+  useQuery(['databaseAlertsDetail'], loadAlerts, {
+    staleTime: Infinity,
+    cacheTime: 5 * 60 * 1000
+  });
 
   useQuery(
     ['loadDBDetail', 'intervalLoadPods', dbName],
@@ -171,6 +178,7 @@ const AppDetail = ({
           conn={connInfo}
           setShowSlider={setShowSlider}
           isLargeScreen={isLargeScreen}
+          alerts={alerts}
         />
       </Box>
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'} minH={'600px'}>

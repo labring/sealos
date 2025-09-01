@@ -103,6 +103,7 @@
   "cancel": "Cancel",
   "cannot_change_name": "Database name cannot be changed",
   "change_log": "History",
+  "click_for_details": "Click for details",
   "clipboard_read_failed": "Reading clipboard failed!",
   "clipboard_unsupported": "Browser does not support Clipper API",
   "collection": "Collection",

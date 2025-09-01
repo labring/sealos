@@ -164,6 +164,16 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 [deploy-link]: https://os.sealos.io
 [deploy-link-cn]: https://cloud.sealos.run
 
+## 📄 License
+
+Sealos is licensed under the [Sealos Sustainable Use License](./LICENSE.md), a custom license that allows:
+- ✅ Internal business use and personal non-commercial use  
+- ❌ Providing cloud services to third parties
+
+**Not a standard open source license** - please review the [full license terms](./LICENSE.md) before use.
+
+**Contributing**: By contributing, you agree to our [Contributor License Agreement](./CONTRIBUTOR_LICENSE_AGREEMENT.md) and license change terms.
+
 <!-- ## License -->
 
 <!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->

@@ -4,7 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { ResponseCode, ResponseMessages } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET') {
     res.status(405).end();
     return;
   }
@@ -24,19 +24,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const apiUrl = `${process.env.GATEWAY_DOMAIN_NAME}/api/open/enterprise/sync_data_source_a`;
-
-  const apiKey = process.env.CHAT2DB_API_KEY;
-
-  const { userKey, ...requestBody } = req.body as any;
+  const { namespace } = req.query;
+  const apiUrl = `${
+    process.env.DATABASE_ALERT_URL || 'http://database-alert.sealos.svc:8000'
+  }/v1/databases?namespace=${namespace}`;
 
   try {
     const response = await fetch(apiUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-        ...(userKey ? { sync_user: userKey } : {}),
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
         ...(req.headers['auth_user']
           ? {
               auth_user: Array.isArray(req.headers['auth_user'])
@@ -44,30 +42,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 : req.headers['auth_user']
             }
           : {}),
-        ...(req.headers['sync_user']
-          ? {
-              sync_user: Array.isArray(req.headers['sync_user'])
-                ? req.headers['sync_user'][0]
-                : req.headers['sync_user']
-            }
-          : {}),
         'Time-Zone': Array.isArray(req.headers['time-zone'])
           ? req.headers['time-zone'][0]
           : req.headers['time-zone'] || 'Asia/Shanghai'
-      },
-      body: JSON.stringify(requestBody)
+      }
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const responseData = await response.json();
-    jsonRes(res, { data: responseData });
-  } catch (err: any) {
+    const data = await response.json();
+    jsonRes(res, data);
+  } catch (error) {
+    console.error('Database alerts proxy error:', error);
     jsonRes(res, {
       code: 500,
-      error: err
+      error: 'Failed to fetch database alerts',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
