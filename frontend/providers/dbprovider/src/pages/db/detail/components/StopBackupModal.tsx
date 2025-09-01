@@ -77,7 +77,7 @@ const StopBackupModal = ({
                     h="24px"
                   >
                     <Image
-                      src="/icons/database.svg"
+                      src="/logo.svg"
                       alt="Database"
                       w="16px"
                       h="16px"
