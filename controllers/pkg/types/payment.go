@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -54,11 +55,19 @@ func (s *StripePay) Scan(value interface{}) error {
 		*s = StripePay{}
 		return nil
 	}
-	sv, ok := value.(string)
-	if !ok {
-		return driver.ErrBadConn
+	var data []byte
+	switch value.(type) {
+	case []byte:
+		data = value.([]byte)
+	case string:
+		data = []byte(value.(string))
+	default:
+		return fmt.Errorf("unexpected type for StripePay: %T", value)
 	}
-	return json.Unmarshal([]byte(sv), s)
+	if err := json.Unmarshal(data, s); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON into StripePay: %w", err)
+	}
+	return nil
 }
 
 type ChargeSource string
@@ -87,6 +96,7 @@ type (
 const (
 	PaymentStatusPAID     PaymentStatus = "PAID"
 	PaymentStatusRefunded PaymentStatus = "REFUNDED"
+	PaymentStatusExpired  PaymentStatus = "EXPIRED"
 )
 
 const (

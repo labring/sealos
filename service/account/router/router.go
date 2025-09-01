@@ -54,6 +54,8 @@ func RegisterPayRouter() {
 		POST(helper.GetPayment, api.GetPayment).
 		POST(helper.GetRechargeAmount, api.GetRechargeAmount).
 		POST(helper.GetConsumptionAmount, api.GetConsumptionAmount).
+		POST(helper.GetWorkspaceConsumptionAmount, api.GetWorkspaceConsumptionAmount).
+		POST(helper.GetWorkspaceAppCosts, api.GetWorkspaceAPPCosts).
 		POST(helper.GetAllRegionConsumptionAmount, api.GetAllRegionConsumptionAmount).
 		POST(helper.GetPropertiesUsed, api.GetPropertiesUsedAmount).
 		POST(helper.SetPaymentInvoice, api.SetPaymentInvoice). // will be deprecated
@@ -74,9 +76,12 @@ func RegisterPayRouter() {
 		POST(helper.UserUsage, api.UserUsage).
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo).
+		POST(helper.WorkspaceGetResourceQuota, api.GetWorkspaceResourceQuota).
 		// WorkspaceSubscription routes
 		POST(helper.WorkspaceSubscriptionInfo, api.GetWorkspaceSubscriptionInfo).
 		POST(helper.WorkspaceSubscriptionList, api.GetWorkspaceSubscriptionList).
+		POST(helper.WorkspaceSubscriptionDelete, api.DeleteWorkspaceSubscription).
+		POST(helper.WorkspaceSubscriptionPaymentList, api.GetWorkspaceSubscriptionPaymentList).
 		POST(helper.WorkspaceSubscriptionPlanList, api.GetWorkspaceSubscriptionPlanList).
 		POST(helper.WorkspaceSubscriptionLastTransaction, api.GetLastWorkspaceSubscriptionTransaction).
 		POST(helper.WorkspaceSubscriptionUpgradeAmount, api.GetWorkspaceSubscriptionUpgradeAmount).

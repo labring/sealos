@@ -110,6 +110,7 @@ const (
 	InitAccountTimeAnnotation   = "user.sealos.io/init-account-time"
 	WorkspaceStatusAnnotation   = "user.sealos.io/workspace-status"
 	WorkspaceStatusSubscription = "subscription"
+	WorkspaceStatusPAYG         = "payg"
 )
 
 var SubscriptionEnabled = false

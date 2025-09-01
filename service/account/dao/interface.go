@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -40,6 +41,7 @@ type Interface interface {
 	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 	GetAppResourceCosts(req *helper.AppCostsReq) (*helper.AppResourceCostsResponse, error)
+	GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.WorkspaceAppCostsResponse, error)
 	ChargeBilling(req *helper.AdminChargeBillingReq) error
 	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
@@ -47,6 +49,7 @@ type Interface interface {
 	GetCostAppList(req helper.GetCostAppListReq) (helper.CostAppListResp, error)
 	Disconnect(ctx context.Context) error
 	GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error)
+	GetWorkspaceConsumptionAmount(req helper.ConsumptionRecordReq) (map[string]int64, error)
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
@@ -64,6 +67,7 @@ type Interface interface {
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 	GetUserID(ops types.UserQueryOpts) (string, error)
 	GetUserCrName(ops types.UserQueryOpts) (string, error)
+	GetWorkspaceUserUid(workspace string) (uuid.UUID, error)
 	GetNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, error)
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
@@ -99,6 +103,7 @@ type Interface interface {
 
 	// WorkspaceSubscription methods
 	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
+	GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error)
 	ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error)
 	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)
@@ -180,6 +185,26 @@ func (g *Cockroach) GetUserCrName(ops types.UserQueryOpts) (string, error) {
 		return "", err
 	}
 	return user.CrName, nil
+}
+
+func (g *Cockroach) GetWorkspaceUserUid(workspace string) (uuid.UUID, error) {
+	db := g.ck.GetLocalDB()
+	var userUid struct {
+		UID uuid.UUID `gorm:"column:userUid"`
+	}
+	err := db.Model(&types.RegionUserCr{}).
+		Select(`"UserCr"."userUid"`).
+		Joins(`INNER JOIN "UserWorkspace" ON "UserCr".uid = "UserWorkspace"."userCrUid"`).
+		Joins(`INNER JOIN "Workspace" ON "UserWorkspace"."workspaceUid" = "Workspace".uid`).
+		Where(`"Workspace".id = ?`, workspace).
+		Scan(&userUid).Error
+
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.UUID{}, fmt.Errorf("failed to query user uid: %v", err)
+		}
+	}
+	return userUid.UID, err
 }
 
 func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error) {
@@ -683,6 +708,229 @@ func (m *MongoDB) GetAppResourceCosts(req *helper.AppCostsReq) (*helper.AppResou
 	}
 	return result, nil
 }
+
+func (m *MongoDB) GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.WorkspaceAppCostsResponse, error) {
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+
+	results := &helper.WorkspaceAppCostsResponse{
+		CurrentPage: req.Page,
+	}
+
+	// 构建查询条件，组合成本和资源使用数据
+	matchConditions := bson.D{
+		{Key: "owner", Value: req.Owner},
+		{Key: "time", Value: bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		}},
+	}
+
+	if req.Namespace != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+
+	if req.AppType != "" {
+		if strings.ToUpper(req.AppType) != resources.AppStore {
+			matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]})
+		} else {
+			matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[resources.AppStore]})
+		}
+	}
+
+	if req.AppName != "" {
+		if req.AppType != "" && strings.ToUpper(req.AppType) != resources.AppStore {
+			matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
+		} else {
+			matchConditions = append(matchConditions, bson.E{Key: "app_name", Value: req.AppName})
+		}
+	}
+
+	// 构建聚合管道
+	var pipeline mongo.Pipeline
+
+	if req.AppType == "" || strings.ToUpper(req.AppType) != resources.AppStore {
+		// 处理非AppStore类型的应用
+		pipeline = mongo.Pipeline{
+			{{Key: "$match", Value: matchConditions}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+		}
+
+		if req.AppName != "" && req.AppType != "" && strings.ToUpper(req.AppType) != resources.AppStore {
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+		}
+
+		pipeline = append(pipeline,
+			bson.D{{Key: "$project", Value: bson.D{
+				{Key: "app_name", Value: "$app_costs.name"},
+				{Key: "app_type", Value: "$app_type"},
+				{Key: "time", Value: 1},
+				{Key: "order_id", Value: 1},
+				{Key: "namespace", Value: 1},
+				{Key: "amount", Value: "$app_costs.amount"},
+				{Key: "used", Value: "$app_costs.used"},
+				{Key: "used_amount", Value: "$app_costs.used_amount"},
+			}}},
+			bson.D{{Key: "$sort", Value: bson.D{
+				{Key: "time", Value: -1},
+				{Key: "app_name", Value: 1},
+			}}},
+		)
+	} else {
+		// 处理AppStore类型的应用，需要累加app_costs中的used和used_amount
+		pipeline = mongo.Pipeline{
+			{{Key: "$match", Value: matchConditions}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "app_name", Value: 1},
+				{Key: "app_type", Value: 1},
+				{Key: "time", Value: 1},
+				{Key: "order_id", Value: 1},
+				{Key: "namespace", Value: 1},
+				{Key: "amount", Value: 1},
+				{Key: "app_costs", Value: 1}, // 保留app_costs用于后续处理
+			}}},
+			{{Key: "$sort", Value: bson.D{
+				{Key: "time", Value: -1},
+				{Key: "app_name", Value: 1},
+			}}},
+		}
+	}
+
+	// 分页处理
+	skip := (req.Page - 1) * req.PageSize
+	pipeline = append(pipeline,
+		bson.D{{Key: "$facet", Value: bson.D{
+			{Key: "totalRecords", Value: bson.A{
+				bson.D{{Key: "$count", Value: "count"}},
+			}},
+			{Key: "costs", Value: bson.A{
+				bson.D{{Key: "$skip", Value: skip}},
+				bson.D{{Key: "$limit", Value: req.PageSize}},
+			}},
+		}}},
+	)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var pipelineResult struct {
+		TotalRecords []struct {
+			Count int `bson:"count"`
+		} `bson:"totalRecords"`
+		Costs []struct {
+			AppName    string           `bson:"app_name"`
+			AppType    int32            `bson:"app_type"`
+			Time       time.Time        `bson:"time"`
+			OrderID    string           `bson:"order_id"`
+			Namespace  string           `bson:"namespace"`
+			Amount     int64            `bson:"amount"`
+			Used       map[string]int64 `bson:"used"`
+			UsedAmount map[string]int64 `bson:"used_amount"`
+			AppCosts   []struct {
+				Type       uint8            `bson:"type"`
+				Name       string           `bson:"name"`
+				Amount     int64            `bson:"amount"`
+				Used       map[string]int64 `bson:"used"`
+				UsedAmount map[string]int64 `bson:"used_amount"`
+			} `bson:"app_costs,omitempty"` // 用于AppStore类型
+		} `bson:"costs"`
+	}
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&pipelineResult); err != nil {
+			return nil, fmt.Errorf("failed to decode result: %v", err)
+		}
+	}
+
+	// 设置总记录数和总页数
+	if len(pipelineResult.TotalRecords) > 0 {
+		results.TotalRecords = pipelineResult.TotalRecords[0].Count
+	}
+	results.TotalPages = (results.TotalRecords + req.PageSize - 1) / req.PageSize
+
+	// 转换结果并构建资源使用情况
+	for _, cost := range pipelineResult.Costs {
+		workspaceCost := helper.WorkspaceAppCostWithResources{
+			AppName:   cost.AppName,
+			AppType:   cost.AppType,
+			Time:      cost.Time,
+			OrderID:   cost.OrderID,
+			Namespace: cost.Namespace,
+			Amount:    cost.Amount,
+		}
+
+		var resourcesByType []helper.AppCostDetail
+
+		// 判断是否为AppStore类型
+		appTypeStr := resources.AppTypeReverse[uint8(cost.AppType)]
+		if appTypeStr == resources.AppStore && len(cost.AppCosts) > 0 {
+			// AppStore类型：展开app_costs数组，每个app_cost作为一个独立的资源项
+			for _, appCost := range cost.AppCosts {
+				detail := helper.AppCostDetail{
+					AppType:    appCost.Type,
+					AppName:    appCost.Name,
+					Amount:     appCost.Amount,
+					Used:       make(map[uint8]int64),
+					UsedAmount: make(map[uint8]int64),
+				}
+
+				// 转换used数据
+				for strKey, value := range appCost.Used {
+					if key, err := strconv.ParseUint(strKey, 10, 8); err == nil {
+						detail.Used[uint8(key)] = value
+					}
+				}
+
+				// 转换used_amount数据
+				for strKey, value := range appCost.UsedAmount {
+					if key, err := strconv.ParseUint(strKey, 10, 8); err == nil {
+						detail.UsedAmount[uint8(key)] = value
+					}
+				}
+
+				resourcesByType = append(resourcesByType, detail)
+			}
+		} else {
+			// 非AppStore类型：创建单个资源项
+			detail := helper.AppCostDetail{
+				AppType:    uint8(cost.AppType),
+				AppName:    cost.AppName,
+				Amount:     cost.Amount,
+				Used:       make(map[uint8]int64),
+				UsedAmount: make(map[uint8]int64),
+			}
+
+			// 转换used数据
+			for strKey, value := range cost.Used {
+				if key, err := strconv.ParseUint(strKey, 10, 8); err == nil {
+					detail.Used[uint8(key)] = value
+				}
+			}
+
+			// 转换used_amount数据
+			for strKey, value := range cost.UsedAmount {
+				if key, err := strconv.ParseUint(strKey, 10, 8); err == nil {
+					detail.UsedAmount[uint8(key)] = value
+				}
+			}
+
+			resourcesByType = append(resourcesByType, detail)
+		}
+
+		workspaceCost.ResourcesByType = resourcesByType
+		results.Costs = append(results.Costs, workspaceCost)
+	}
+
+	return results, nil
+}
+
 func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts, rErr error) {
 	if req.Page <= 0 {
 		req.Page = 1
@@ -1546,6 +1794,7 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 	timeMatchValue := bson.D{primitive.E{Key: "$gte", Value: startTime}, primitive.E{Key: "$lte", Value: endTime}}
 	matchValue := bson.D{
 		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "status", Value: resources.Settled},
 		primitive.E{Key: "owner", Value: owner},
 	}
 	if appType != "" {
@@ -1590,6 +1839,71 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 		}
 	}
 	return result.Total, nil
+}
+
+func (m *MongoDB) GetWorkspaceConsumptionAmount(req helper.ConsumptionRecordReq) (map[string]int64, error) {
+	// 获取各个 namespace的费用
+	owner, appType, appName, startTime, endTime := req.Owner, req.AppType, req.AppName, req.TimeRange.StartTime, req.TimeRange.EndTime
+	timeMatchValue := bson.D{primitive.E{Key: "$gte", Value: startTime}, primitive.E{Key: "$lte", Value: endTime}}
+	matchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: owner},
+		primitive.E{Key: "status", Value: resources.Settled},
+	}
+
+	// 添加app_type过滤条件
+	if appType != "" {
+		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]})
+	}
+
+	// 构建unwind后的匹配条件
+	unwindMatchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+	}
+	if appType != "" && appName != "" {
+		if appType != resources.AppStore {
+			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_costs.name", Value: appName})
+		} else {
+			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_name", Value: appName})
+		}
+	}
+
+	// 构建聚合管道：按namespace分组统计amount
+	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: matchValue}},
+		bson.D{{Key: "$unwind", Value: "$app_costs"}},
+		bson.D{{Key: "$match", Value: unwindMatchValue}},
+		bson.D{{Key: "$group", Value: bson.M{
+			"_id":   "$namespace", // 按namespace分组
+			"total": bson.M{"$sum": "$app_costs.amount"},
+		}}},
+		bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}}, // 按namespace排序
+	}
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	// 构建结果map
+	result := make(map[string]int64)
+	for cursor.Next(context.Background()) {
+		var doc struct {
+			Namespace string `bson:"_id"`
+			Total     int64  `bson:"total"`
+		}
+		if err := cursor.Decode(&doc); err != nil {
+			return nil, fmt.Errorf("failed to decode result: %v", err)
+		}
+		result[doc.Namespace] = doc.Total
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
+	return result, nil
 }
 
 func (m *MongoDB) GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error) {

@@ -1735,9 +1735,9 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 
 func (c *Cockroach) InitTables() error {
 	enumTypes := []string{
-		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION')`,
-		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed')`,
-		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed')`,
+		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION', 'DELETED')`,
+		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed', 'deleted')`,
+		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed', 'expired')`,
 		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
 		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed')`,
 	}
