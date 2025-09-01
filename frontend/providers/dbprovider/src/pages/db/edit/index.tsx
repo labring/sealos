@@ -242,27 +242,21 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     try {
       if (isEdit) {
         const result = await getBackups();
-        console.log('API response:', result);
-
-        // Filter backups for this specific database
         const allBackups = result || [];
         const backups = allBackups.filter(
           (backup: BackupItemType) => backup.dbName === formData.dbName
         );
-        console.log('filtered backups for db:', formData.dbName, backups);
         const inProgressBackups = backups.filter(
           (backup: BackupItemType) => backup.status.value === 'Running'
         );
-        console.log('inProgressBackups', inProgressBackups);
 
         if (inProgressBackups.length > 0) {
-          setPendingFormData(formData); // Set the form data for the modal
-          onStopBackupOpen(); // Open the modal
-          return; // Do not proceed with submission until modal is closed
+          setPendingFormData(formData);
+          onStopBackupOpen();
+          return;
         }
       }
 
-      // Proceed with submission
       await submitSuccess(formData);
     } catch (error) {
       console.error(error);
