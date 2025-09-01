@@ -13,24 +13,18 @@ interface OrderListProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
   orderIdFilter: string;
-  onOrderIdChange: (v: string) => void;
+  onOrderIdFilterChange: (v: string) => void;
   onSelectionChange: (selected: CombinedRow[], amount: number, count: number) => void;
   onObtainInvoice?: () => void;
-  selectedBillings?: CombinedRow[];
-  invoiceAmount?: number;
-  invoiceCount?: number;
 }
 
 export default function OrderList({
   dateRange,
   onDateRangeChange,
   orderIdFilter,
-  onOrderIdChange,
+  onOrderIdFilterChange,
   onSelectionChange,
-  onObtainInvoice,
-  selectedBillings = [],
-  invoiceAmount = 0,
-  invoiceCount = 0
+  onObtainInvoice
 }: OrderListProps) {
   const effectiveStartTime = useMemo(() => {
     return dateRange?.from
@@ -168,14 +162,11 @@ export default function OrderList({
     <OrderListView
       dateRange={dateRange}
       onDateRangeChange={onDateRangeChange}
-      orderId={orderIdFilter}
-      onOrderIdChange={onOrderIdChange}
+      orderIdFilter={orderIdFilter}
+      onOrderIdFilterChange={onOrderIdFilterChange}
       onSelectionChange={onSelectionChange}
       mergedRows={mergedRows}
       onObtainInvoice={onObtainInvoice}
-      selectedBillings={selectedBillings}
-      invoiceAmount={invoiceAmount}
-      invoiceCount={invoiceCount}
     />
   );
 }
