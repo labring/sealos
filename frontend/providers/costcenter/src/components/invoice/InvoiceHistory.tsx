@@ -9,16 +9,16 @@ import InvoiceHistoryView from './InvoiceHistoryView';
 interface InvoiceHistoryProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
-  orderId: string;
-  onOrderIdChange: (v: string) => void;
+  orderIdFilter: string;
+  onOrderIdFilterChange: (v: string) => void;
   toInvoiceDetail?: () => void;
 }
 
 export default function InvoiceHistory({
   dateRange,
   onDateRangeChange,
-  orderId,
-  onOrderIdChange,
+  orderIdFilter,
+  onOrderIdFilterChange,
   toInvoiceDetail
 }: InvoiceHistoryProps) {
   const [page, setPage] = useState(1);
@@ -45,9 +45,9 @@ export default function InvoiceHistory({
       page,
       pageSize,
       // Add orderId filter if needed in the future
-      ...(orderId.trim() && { orderId: orderId.trim() })
+      ...(orderIdFilter.trim() && { orderId: orderIdFilter.trim() })
     }),
-    [effectiveStartTime, effectiveEndTime, page, pageSize, orderId]
+    [effectiveStartTime, effectiveEndTime, page, pageSize, orderIdFilter]
   );
 
   // Fetch invoice list data
@@ -87,25 +87,26 @@ export default function InvoiceHistory({
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [effectiveStartTime, effectiveEndTime, orderId]);
+  }, [effectiveStartTime, effectiveEndTime, orderIdFilter]);
 
   // Filter invoice list based on orderId (client-side filtering if needed)
   const filteredInvoiceList = useMemo(() => {
     const invoices = data?.data?.invoices || [];
-    if (!orderId.trim()) return invoices;
+    if (!orderIdFilter.trim()) return invoices;
 
     // If server doesn't support orderId filtering, do it client-side
     return invoices.filter(
-      (invoice) => invoice.id.includes(orderId.trim()) || invoice.detail?.includes(orderId.trim())
+      (invoice) =>
+        invoice.id.includes(orderIdFilter.trim()) || invoice.detail?.includes(orderIdFilter.trim())
     );
-  }, [data?.data?.invoices, orderId]);
+  }, [data?.data?.invoices, orderIdFilter]);
 
   return (
     <InvoiceHistoryView
       dateRange={dateRange}
       onDateRangeChange={onDateRangeChange}
-      orderId={orderId}
-      onOrderIdChange={onOrderIdChange}
+      orderIdFilter={orderIdFilter}
+      onOrderIdFilterChange={onOrderIdFilterChange}
       invoiceList={filteredInvoiceList}
       isLoading={isLoading}
       totalItem={totalItem}

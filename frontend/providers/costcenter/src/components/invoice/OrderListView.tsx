@@ -36,36 +36,29 @@ export type CombinedRow = {
 export default function OrderListView({
   dateRange,
   onDateRangeChange,
-  orderId,
-  onOrderIdChange,
+  orderIdFilter,
+  onOrderIdFilterChange,
   onSelectionChange,
   mergedRows,
-  onObtainInvoice,
-  // Not accepting controlled values at this time
-  selectedBillings = [],
-  invoiceAmount = 0,
-  invoiceCount = 0
+  onObtainInvoice
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
-  orderId: string;
-  onOrderIdChange: (v: string) => void;
+  orderIdFilter: string;
+  onOrderIdFilterChange: (v: string) => void;
   onSelectionChange: (selected: CombinedRow[], amount: number, count: number) => void;
   mergedRows: CombinedRow[];
   onObtainInvoice?: () => void;
-  selectedBillings?: CombinedRow[];
-  invoiceAmount?: number;
-  invoiceCount?: number;
 }) {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
   // client-side filter by orderId (only recharge rows carry orderId)
   const filteredRows: CombinedRow[] = useMemo(() => {
-    const keyword = orderId.trim();
+    const keyword = orderIdFilter.trim();
     if (!keyword) return mergedRows;
     return mergedRows.filter((r) => r.id.includes(keyword));
-  }, [mergedRows, orderId]);
+  }, [mergedRows, orderIdFilter]);
 
   // selection (both recharge & subscription selectable)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -112,7 +105,7 @@ export default function OrderListView({
   // reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [orderId, mergedRows]);
+  }, [orderIdFilter, mergedRows]);
 
   return (
     <TableLayout>
@@ -128,8 +121,8 @@ export default function OrderListView({
             icon={<Search size={16} />}
             placeholder="Order ID"
             className="w-[15rem]"
-            value={orderId}
-            onChange={(e) => onOrderIdChange(e.target.value)}
+            value={orderIdFilter}
+            onChange={(e) => onOrderIdFilterChange(e.target.value)}
           />
         </div>
 
