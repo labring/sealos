@@ -102,7 +102,7 @@ async function setUserKubeconfig(
   kc: k8s.KubeConfig,
   uid: string,
   k8s_username: string,
-  userType: 'Subscription' | 'Payg'
+  userType: 'subscription' | 'payg'
 ) {
   const resourceKind = 'User';
   const group = 'user.sealos.io';
@@ -172,7 +172,7 @@ async function setUserTeamCreate(
   kc: k8s.KubeConfig,
   k8s_username: string,
   owner: string,
-  userType: 'Subscription' | 'Payg'
+  userType: 'subscription' | 'payg'
 ) {
   const group = 'user.sealos.io';
   const resourceKind = 'User';
@@ -278,7 +278,7 @@ export const getUserKubeconfigNotPatch = async (name: string) => {
 export const getUserKubeconfig = async (
   uid: string,
   k8s_username: string,
-  userType: 'Subscription' | 'Payg'
+  userType: 'subscription' | 'payg'
 ) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
@@ -299,7 +299,7 @@ export const getUserKubeconfig = async (
 export const getTeamKubeconfig = async (
   k8s_username: string,
   owner: string,
-  userType: 'Subscription' | 'Payg'
+  userType: 'subscription' | 'payg'
 ) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';

@@ -2,7 +2,6 @@ import { useConfigStore } from '@/stores/config';
 import useAppStore from '@/stores/app';
 import { useGuideModalStore } from '@/stores/guideModal';
 import {
-  Box,
   Center,
   Divider,
   Flex,
@@ -15,12 +14,13 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
-import { getAmount, getPlanInfo } from '@/api/auth';
+import { useMemo } from 'react';
+import { getAmount } from '@/api/auth';
 import Decimal from 'decimal.js';
 import { CurrencySymbol } from '@sealos/ui';
 import { formatMoney } from '@/utils/format';
 import useSessionStore from '@/stores/session';
+import { useSubscriptionStore } from '@/stores/subscription';
 import { MoreHorizontal } from 'lucide-react';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
 import { BalancePopover } from '@/components/account/BalancePopover';
@@ -45,6 +45,7 @@ export default function SecondaryLinks() {
   const currencySymbol = useConfigStore(
     (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
   );
+  const workspace = session?.user?.nsid || '';
 
   const user = session?.user;
 
@@ -77,14 +78,13 @@ export default function SecondaryLinks() {
     staleTime: 60 * 1000
   });
 
-  // Mock plan info for now
-  const mockPlanInfo = {
-    data: {
-      subscription: {
-        PlanName: 'hobby'
-      }
+  const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
+
+  useMemo(() => {
+    if (workspace) {
+      fetchSubscriptionInfo(workspace);
     }
-  };
+  }, [workspace, fetchSubscriptionInfo]);
 
   const getPlanBackground = (planName: string) => {
     const name = planName.toLowerCase();
@@ -122,7 +122,7 @@ export default function SecondaryLinks() {
           <Center
             mr={'12px'}
             borderRadius={'8px'}
-            bg={getPlanBackground(mockPlanInfo?.data?.subscription?.PlanName || 'payg')}
+            bg={getPlanBackground(subscriptionInfo?.subscription?.PlanName || 'payg')}
             h={'36px'}
             px={'12px'}
             py={'8px'}

@@ -128,7 +128,7 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
   createWorkspace: z
     .object({
       teamName: z.string(),
-      userType: z.enum(['Subscription', 'Payg'])
+      userType: z.enum(['subscription', 'payg'])
     })
     .optional()
 });

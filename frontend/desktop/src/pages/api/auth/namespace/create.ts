@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { teamName, userType } = req.body as {
       teamName?: string;
-      userType: 'Subscription' | 'Payg';
+      userType: 'subscription' | 'payg';
     };
     console.log('create team workspace', userType, teamName, payload);
 

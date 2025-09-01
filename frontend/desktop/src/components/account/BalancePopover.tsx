@@ -11,9 +11,9 @@ import {
   Button,
   Flex
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
-import { getPlanInfo } from '@/api/auth';
+import { useSubscriptionStore } from '@/stores/subscription';
+import { useMemo } from 'react';
 
 interface BalancePopoverProps {
   openCostCenterApp: () => void;
@@ -23,42 +23,17 @@ interface BalancePopoverProps {
 export function BalancePopover({ openCostCenterApp, children }: BalancePopoverProps) {
   const { session } = useSessionStore();
 
-  const workspace = session?.user?.ns_uid || '';
+  const workspace = session?.user?.nsid || '';
 
-  // const { data: subscriptionInfo } = useQuery({
-  //   queryKey: ['planInfo', workspace],
-  //   queryFn: () => getPlanInfo(workspace),
-  //   enabled: !!workspace,
-  //   staleTime: 5 * 60 * 1000 // 5 minutes
-  // });
+  const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
 
-  const mockInfo = {
-    data: {
-      subscription: {
-        ID: 'mock-id',
-        PlanName: 'hobby',
-        Workspace: workspace,
-        RegionDomain: 'sealos.io',
-        UserUID: 'user-123',
-        Status: 'Normal',
-        PayStatus: 'Active',
-        PayMethod: 'BALANCE',
-        Stripe: null,
-        TrafficStatus: 'Normal',
-        CurrentPeriodStartAt: '2024-01-01T00:00:00Z',
-        CurrentPeriodEndAt: '2024-02-01T00:00:00Z',
-        CancelAtPeriodEnd: false,
-        CancelAt: '',
-        CreateAt: '2024-01-01T00:00:00Z',
-        UpdateAt: '2024-01-01T00:00:00Z',
-        ExpireAt: '2024-09-14T00:00:00Z',
-        Traffic: null,
-        type: 'PAYG' as const
-      }
+  useMemo(() => {
+    if (workspace) {
+      fetchSubscriptionInfo(workspace);
     }
-  };
+  }, [workspace, fetchSubscriptionInfo]);
 
-  const subscription = mockInfo?.data?.subscription;
+  const subscription = subscriptionInfo?.subscription;
 
   const getPlanBackground = (planName: string) => {
     const name = planName.toLowerCase();
@@ -82,7 +57,7 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
   };
 
   return (
-    <Popover trigger="hover" isOpen placement="bottom-start">
+    <Popover trigger="hover" placement="bottom-start">
       <PopoverTrigger>{children}</PopoverTrigger>
       <PopoverContent
         w="300px"
