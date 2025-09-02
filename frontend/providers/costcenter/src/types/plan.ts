@@ -100,7 +100,8 @@ export const PaymentRecordSchema = z.object({
   Amount: z.number(),
   PlanName: z.string(),
   Workspace: z.string(),
-  Operator: z.string()
+  Operator: z.string(),
+  Type: z.string()
 });
 export type PaymentRecord = z.infer<typeof PaymentRecordSchema>;
 
