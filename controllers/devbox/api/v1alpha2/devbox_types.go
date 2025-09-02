@@ -133,10 +133,6 @@ type DevboxSpec struct {
 	// +kubebuilder:validation:Required
 	Resource corev1.ResourceList `json:"resource"`
 
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	Squash bool `json:"squash"`
-
 	// +kubebuilder:validation:Required
 	Image string `json:"image"`
 
