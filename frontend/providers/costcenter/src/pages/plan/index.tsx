@@ -18,6 +18,7 @@ import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
 import TransferModal from '@/components/TransferModal';
+import CongratulationsModal from '@/components/CongratulationsModal';
 import { useRef, useMemo, useEffect, useState } from 'react';
 import jsyaml from 'js-yaml';
 import { displayMoney, formatMoney } from '@/utils/format';
@@ -52,6 +53,13 @@ export default function Plan() {
       return;
     }
 
+    // Check for success state from Stripe callback
+    if (router.isReady && router.query.stripeState === 'success') {
+      console.log('Stripe payment success detected', router.query);
+      congratulationsRef.current?.onOpen();
+      return;
+    }
+
     // Method 2: Parse URL directly as fallback
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -67,6 +75,13 @@ export default function Plan() {
       if (upgradeMode) {
         setIsUpgradeMode(true);
         console.log('URL parsing method - upgradeMode set to true', window.location.search);
+        return;
+      }
+
+      const stripeSuccess = urlParams.get('stripeState') === 'success';
+      if (stripeSuccess) {
+        console.log('Stripe payment success detected via URL parsing', window.location.search);
+        congratulationsRef.current?.onOpen();
         return;
       }
     }
@@ -86,6 +101,7 @@ export default function Plan() {
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
+  const congratulationsRef = useRef<any>();
 
   // Get balance data
   const { data: balance_raw } = useQuery({
@@ -364,6 +380,34 @@ export default function Plan() {
           k8s_username={k8s_username}
         />
       )}
+
+      <CongratulationsModal
+        ref={congratulationsRef}
+        planName={subscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
+        maxResources={
+          subscriptionData?.data?.subscription?.PlanName
+            ? JSON.parse(
+                plansData?.data?.plans?.find(
+                  (p) => p.Name === subscriptionData?.data?.subscription?.PlanName
+                )?.MaxResources || '{}'
+              )
+            : undefined
+        }
+        traffic={
+          plansData?.data?.plans?.find(
+            (p) => p.Name === subscriptionData?.data?.subscription?.PlanName
+          )?.Traffic
+        }
+        onClose={() => {
+          // Clean up URL parameters after closing the modal
+          const url = new URL(window.location.href);
+          url.searchParams.delete('stripeState');
+          url.searchParams.delete('payId');
+          router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
+            shallow: true
+          });
+        }}
+      />
     </div>
   );
 }
