@@ -7,7 +7,7 @@ export const WorkspaceQuotaRequestSchema = z.object({
 export type WorkspaceQuotaRequest = z.infer<typeof WorkspaceQuotaRequestSchema>;
 
 export const UserQuotaItemSchema = z.object({
-  type: z.enum(['cpu', 'memory', 'storage', 'gpu']),
+  type: z.enum(['cpu', 'memory', 'storage', 'gpu', 'traffic', 'nodeport']),
   used: z.number(),
   limit: z.number()
 });
