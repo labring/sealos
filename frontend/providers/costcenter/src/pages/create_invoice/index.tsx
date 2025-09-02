@@ -82,18 +82,10 @@ function Invoice() {
             invoiceAmount={invoiceAmount}
             invoiceCount={invoiceCount}
             billings={selectBillings.map((item) => ({
-              ID: item.id,
-              UserUID: '',
-              CreatedAt: item.time,
-              Amount: item.amount,
-              Gift: 0,
-              RegionUID: item.region,
-              RegionUserOwner: '',
-              Method: 'stripe' as const,
-              TradeNO: 'number',
-              CodeURL: '',
-              InvoicedAt: false,
-              Status: 'PAID' as const
+              order_id: item.id,
+              regionUID: item.region,
+              createdTime: item.time,
+              amount: item.amount
             }))}
             onSuccess={() => {
               setSelectBillings([]);

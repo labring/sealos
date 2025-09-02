@@ -1,4 +1,4 @@
-import { ApiResp, ReqGenInvoice } from '@/types';
+import { ApiResp, InvoiceBillingItem, ReqGenInvoice, Tbilling } from '@/types';
 import {
   isValidBANKAccount,
   isValidCNTaxNumber,
@@ -14,7 +14,7 @@ import InvoiceFormView, { InvoiceFormData } from './InvoiceFormView';
 interface InvoiceFormProps {
   invoiceAmount: number;
   invoiceCount: number;
-  billings: ReqGenInvoice['billings'];
+  billings: InvoiceBillingItem[];
   onSubmit?: (data: InvoiceFormData) => void;
   onSuccess?: () => void;
   onBack?: () => void;
@@ -175,7 +175,7 @@ const InvoiceForm = ({
     }
 
     try {
-      if (!billings || billings.length === 0) {
+      if (billings.length === 0) {
         return;
       }
 
@@ -183,7 +183,7 @@ const InvoiceForm = ({
         '/api/invoice/verify',
         {
           token: '',
-          billings: billings,
+          billings,
           detail: {
             title: formData.invoiceTitle,
             tax: formData.taxId,
