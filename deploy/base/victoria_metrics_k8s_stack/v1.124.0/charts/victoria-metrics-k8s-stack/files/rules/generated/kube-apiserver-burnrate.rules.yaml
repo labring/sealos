@@ -1,0 +1,324 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ ($Values.kubeApiServer).enabled }}'
+name: kube-apiserver-burnrate.rules
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[1d]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[1d]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[1d]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[1d]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[1d]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[1d]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate1d
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[1h]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[1h]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[1h]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[1h]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[1h]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[1h]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate1h
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[2h]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[2h]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[2h]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[2h]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[2h]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[2h]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate2h
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[30m]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[30m]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[30m]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[30m]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[30m]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[30m]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate30m
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[3d]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[3d]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[3d]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[3d]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[3d]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[3d]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate3d
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[5m]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[5m]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[5m]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[5m]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[5m]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[5m]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate5m
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[6h]))
+        -
+        (
+          (
+            sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[6h]))
+            or
+            vector(0)
+          )
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[6h]))
+          +
+          sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[6h]))
+        )
+      )
+      +
+      # errors
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET",code=~"5.."}[6h]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[6h]))
+  labels:
+    verb: read
+  record: apiserver_request:burnrate6h
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[1d]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[1d]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[1d]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[1d]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate1d
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[1h]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[1h]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[1h]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[1h]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate1h
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[2h]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[2h]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[2h]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[2h]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate2h
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[30m]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[30m]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[30m]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[30m]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate30m
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[3d]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[3d]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[3d]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[3d]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate3d
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[5m]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[5m]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[5m]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[5m]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate5m
+- condition: '{{ true }}'
+  expr: |-
+    (
+      (
+        # too slow
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_count{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[6h]))
+        -
+        sum by ({{ $groupLabels }}) (rate(apiserver_request_sli_duration_seconds_bucket{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[6h]))
+      )
+      +
+      sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[6h]))
+    )
+    /
+    sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[6h]))
+  labels:
+    verb: write
+  record: apiserver_request:burnrate6h

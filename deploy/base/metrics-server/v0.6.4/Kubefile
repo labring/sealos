@@ -1,0 +1,1 @@
+FROM docker.io/labring/metrics-server:v0.6.4

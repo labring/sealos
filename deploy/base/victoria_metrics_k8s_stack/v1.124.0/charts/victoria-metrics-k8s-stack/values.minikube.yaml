@@ -1,0 +1,40 @@
+vmagent:
+  spec:
+    volumes:
+      - hostPath:
+          path: /var/lib/minikube/certs/etcd
+          type: DirectoryOrCreate
+        name: etcd-certs
+    volumeMounts:
+      - mountPath: /var/lib/minikube/certs/etcd
+        name: etcd-certs
+kubeScheduler:
+  vmScrape:
+    spec:
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: https
+          tlsConfig:
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecureSkipVerify: true
+kubeControllerManager:
+  vmScrape:
+    spec:
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: https
+          tlsConfig:
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecureSkipVerify: true
+kubeEtcd:
+  service:
+    port: 2381
+    targetPort: 2381
+  vmScrape:
+    spec:
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: http

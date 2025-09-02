@@ -1,0 +1,46 @@
+{{- $app := .Values.alertmanager }}
+{{- if $app.enabled }}
+  {{- $ctx := dict "helm" . "appKey" (list "alertmanager" "spec") "style" "managed" }}
+  {{- $ns := include "vm.namespace" $ctx }}
+  {{- if and $app.spec.configRawYaml $app.config }}
+    {{- fail "ERROR: Both .Values.alertmanager.spec.configRawYaml and .Values.alertmanager.config are set, but only one is allowed." }}
+  {{- end }}
+  {{- $fullname := include "vm.cr.fullname" $ctx }}
+  {{- if and (not $app.spec.configSecret) (not $app.spec.configRawYaml) }}
+  {{- if $app.useManagedConfig }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAlertmanagerConfig
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ $ns }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+spec: {{ toYaml .Values.alertmanager.config | nindent 2 }}
+  {{- else }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "vm.managed.fullname" $ctx }}
+  namespace: {{ $ns }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+stringData:
+  alertmanager.yaml: |{{ toYaml .Values.alertmanager.config | nindent 4 }}
+    templates:
+      - "/etc/vm/configs/**/*.tmpl"
+  {{- end }}
+  {{- end }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAlertmanager
+metadata:
+  {{- with .Values.alertmanager.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end  }}
+  name: {{ $fullname }}
+  namespace: {{ $ns }}
+  {{- $_ := set $ctx "extraLabels" ($app.labels | default dict) }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- $_ := unset $ctx "extraLabels" }}
+spec: {{ include "vm.alertmanager.spec" $ctx | nindent 2 }}
+{{- end }}

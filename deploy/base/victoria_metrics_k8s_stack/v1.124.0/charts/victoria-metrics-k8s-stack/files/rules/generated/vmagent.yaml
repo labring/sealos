@@ -1,0 +1,148 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+concurrency: 2
+condition: '{{ true }}'
+interval: 30s
+name: vmagent
+rules:
+- alert: PersistentQueueIsDroppingData
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=49&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Vmagent dropped {{`{{`}} $value | humanize1024 {{`}}`}} from persistent queue on instance {{`{{`}} $labels.instance {{`}}`}} for the last 10m.'
+    summary: 'Instance {{`{{`}} $labels.instance {{`}}`}} is dropping data from persistent queue'
+  condition: '{{ true }}'
+  expr: sum(increase(vm_persistentqueue_bytes_dropped_total[5m])) without (path) > 0
+  for: 10m
+  labels:
+    severity: critical
+- alert: RejectedRemoteWriteDataBlocksAreDropped
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=79&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Job "{{`{{`}} $labels.job {{`}}`}}" on instance {{`{{`}} $labels.instance {{`}}`}} drops the rejected by remote-write server data blocks. Check the logs to find the reason for rejects.'
+    summary: 'Vmagent is dropping data blocks that are rejected by remote storage'
+  condition: '{{ true }}'
+  expr: sum(increase(vmagent_remotewrite_packets_dropped_total[5m])) without (url) > 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: TooManyScrapeErrors
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=31&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Job "{{`{{`}} $labels.job {{`}}`}}" on instance {{`{{`}} $labels.instance {{`}}`}} fails to scrape targets for last 15m'
+    summary: 'Vmagent fails to scrape one or more targets'
+  condition: '{{ true }}'
+  expr: increase(vm_promscrape_scrapes_failed_total[5m]) > 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: ScrapePoolHasNoTargets
+  annotations:
+    description: 'Vmagent "{{`{{`}} $labels.job {{`}}`}}" has scrape_pool "{{`{{`}} $labels.scrape_job {{`}}`}}" with 0 discovered targets. It is likely a misconfiguration. Please follow https://docs.victoriametrics.com/victoriametrics/vmagent/#debugging-scrape-targets to troubleshoot the scraping config.'
+    summary: 'Vmagent has scrape_pool with 0 configured/discovered targets'
+  condition: '{{ true }}'
+  expr: sum(vm_promscrape_scrape_pool_targets) without (status, instance, pod) == 0
+  for: 30m
+  labels:
+    severity: warning
+- alert: TooManyWriteErrors
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=77&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Job "{{`{{`}} $labels.job {{`}}`}}" on instance {{`{{`}} $labels.instance {{`}}`}} responds with errors to write requests for last 15m.'
+    summary: 'Vmagent responds with too many errors on data ingestion protocols'
+  condition: '{{ true }}'
+  expr: |-
+    (sum(increase(vm_ingestserver_request_errors_total[5m])) without (name,net,type)
+    +
+    sum(increase(vmagent_http_request_errors_total[5m])) without (path,protocol)) > 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: TooManyRemoteWriteErrors
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=61&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "Vmagent fails to push data via remote write protocol to destination \"{{`{{`}} $labels.url {{`}}`}}\"\n Ensure that destination is up and reachable."
+    summary: 'Job "{{`{{`}} $labels.job {{`}}`}}" on instance {{`{{`}} $labels.instance {{`}}`}} fails to push to remote storage'
+  condition: '{{ true }}'
+  expr: rate(vmagent_remotewrite_retries_count_total[5m]) > 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: RemoteWriteConnectionIsSaturated
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=84&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "The remote write connection between vmagent \"{{`{{`}} $labels.job {{`}}`}}\" (instance {{`{{`}} $labels.instance {{`}}`}}) and destination \"{{`{{`}} $labels.url {{`}}`}}\" is saturated by more than 90% and vmagent won't be able to keep up.\n There could be the following reasons for this:\n * vmagent can't send data fast enough through the existing network connections. Increase `-remoteWrite.queues` cmd-line flag value to establish more connections per destination.\n * remote destination can't accept data fast enough. Check if remote destination has enough resources for processing."
+    summary: 'Remote write connection from "{{`{{`}} $labels.job {{`}}`}}" (instance {{`{{`}} $labels.instance {{`}}`}}) to {{`{{`}} $labels.url {{`}}`}} is saturated'
+  condition: '{{ true }}'
+  expr: "(\n rate(vmagent_remotewrite_send_duration_seconds_total[5m])\n / \n vmagent_remotewrite_queues\n) > 0.9"
+  for: 15m
+  labels:
+    severity: warning
+- alert: PersistentQueueForWritesIsSaturated
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=98&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Persistent queue writes for vmagent "{{`{{`}} $labels.job {{`}}`}}" (instance {{`{{`}} $labels.instance {{`}}`}}) are saturated by more than 90% and vmagent won''t be able to keep up with flushing data on disk. In this case, consider to decrease load on the vmagent or improve the disk throughput.'
+    summary: 'Persistent queue writes for instance {{`{{`}} $labels.instance {{`}}`}} are saturated'
+  condition: '{{ true }}'
+  expr: rate(vm_persistentqueue_write_duration_seconds_total[5m]) > 0.9
+  for: 15m
+  labels:
+    severity: warning
+- alert: PersistentQueueForReadsIsSaturated
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=99&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Persistent queue reads for vmagent "{{`{{`}} $labels.job {{`}}`}}" (instance {{`{{`}} $labels.instance {{`}}`}}) are saturated by more than 90% and vmagent won''t be able to keep up with reading data from the disk. In this case, consider to decrease load on the vmagent or improve the disk throughput.'
+    summary: 'Persistent queue reads for instance {{`{{`}} $labels.instance {{`}}`}} are saturated'
+  condition: '{{ true }}'
+  expr: rate(vm_persistentqueue_read_duration_seconds_total[5m]) > 0.9
+  for: 15m
+  labels:
+    severity: warning
+- alert: SeriesLimitHourReached
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=88&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Max series limit set via -remoteWrite.maxHourlySeries flag is close to reaching the max value. Then samples for new time series will be dropped instead of sending them to remote storage systems.'
+    summary: 'Instance {{`{{`}} $labels.instance {{`}}`}} reached 90% of the limit'
+  condition: '{{ true }}'
+  expr: (vmagent_hourly_series_limit_current_series / vmagent_hourly_series_limit_max_series) > 0.9
+  labels:
+    severity: critical
+- alert: SeriesLimitDayReached
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/G7Z9GzMGz?viewPanel=90&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Max series limit set via -remoteWrite.maxDailySeries flag is close to reaching the max value. Then samples for new time series will be dropped instead of sending them to remote storage systems.'
+    summary: 'Instance {{`{{`}} $labels.instance {{`}}`}} reached 90% of the limit'
+  condition: '{{ true }}'
+  expr: (vmagent_daily_series_limit_current_series / vmagent_daily_series_limit_max_series) > 0.9
+  labels:
+    severity: critical
+- alert: ConfigurationReloadFailure
+  annotations:
+    description: 'Configuration hot-reload failed for vmagent on instance {{`{{`}} $labels.instance {{`}}`}}. Check vmagent''s logs for detailed error message.'
+    summary: 'Configuration reload failed for vmagent instance {{`{{`}} $labels.instance {{`}}`}}'
+  condition: '{{ true }}'
+  expr: |-
+    vm_promscrape_config_last_reload_successful != 1
+    or
+    vmagent_relabel_config_last_reload_successful != 1
+  labels:
+    severity: warning
+- alert: StreamAggrFlushTimeout
+  annotations:
+    description: 'Stream aggregation process can''t keep up with the load and might produce incorrect aggregation results. Check logs for more details. Possible solutions: increase aggregation interval; aggregate smaller number of series; reduce samples'' ingestion rate to stream aggregation.'
+    summary: 'Streaming aggregation at "{{`{{`}} $labels.job {{`}}`}}" (instance {{`{{`}} $labels.instance {{`}}`}}) can''t be finished within the configured aggregation interval.'
+  condition: '{{ true }}'
+  expr: increase(vm_streamaggr_flush_timeouts_total[5m]) > 0
+  labels:
+    severity: warning
+- alert: StreamAggrDedupFlushTimeout
+  annotations:
+    description: 'Deduplication process can''t keep up with the load and might produce incorrect results. Check docs https://docs.victoriametrics.com/victoriametrics/stream-aggregation/#deduplication and logs for more details. Possible solutions: increase deduplication interval; deduplicate smaller number of series; reduce samples'' ingestion rate.'
+    summary: 'Deduplication "{{`{{`}} $labels.job {{`}}`}}" (instance {{`{{`}} $labels.instance {{`}}`}}) can''t be finished within configured deduplication interval.'
+  condition: '{{ true }}'
+  expr: increase(vm_streamaggr_dedup_flush_timeouts_total[5m]) > 0
+  labels:
+    severity: warning

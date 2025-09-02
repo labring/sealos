@@ -1,0 +1,264 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $multicluster := ((($Values.grafana).sidecar).dashboards).multicluster | default false }}
+{{- $defaultDatasource := "prometheus" -}}
+{{- range (((($Values.grafana).sidecar).datasources).victoriametrics | default list) }}
+  {{- if and .isDefault .type }}{{ $defaultDatasource = .type }}{{- end }}
+{{- end }}
+condition: {{ ($Values.alertmanager).enabled }}
+editable: false
+graphTooltip: 1
+panels:
+- collapsed: false
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 0
+  id: 1
+  panels: []
+  title: Alerts
+  type: row
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $datasource
+  description: current set of alerts stored in the Alertmanager
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        stacking:
+          mode: normal
+      unit: none
+  gridPos:
+    h: 7
+    w: 12
+    x: 0
+    'y': 1
+  id: 2
+  options:
+    legend:
+      showLegend: false
+    tooltip:
+      mode: multi
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: sum(alertmanager_alerts{namespace=~"$namespace",service=~"$service"}) by (namespace,service,instance)
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+  title: Alerts
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $datasource
+  description: rate of successful and invalid alerts received by the Alertmanager
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        stacking:
+          mode: normal
+      unit: ops
+  gridPos:
+    h: 7
+    w: 12
+    x: 12
+    'y': 1
+  id: 3
+  options:
+    legend:
+      showLegend: false
+    tooltip:
+      mode: multi
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: sum(rate(alertmanager_alerts_received_total{namespace=~"$namespace",service=~"$service"}[$__rate_interval])) by (namespace,service,instance)
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} Received'
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: sum(rate(alertmanager_alerts_invalid_total{namespace=~"$namespace",service=~"$service"}[$__rate_interval])) by (namespace,service,instance)
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} Invalid'
+  title: Alerts receive rate
+  type: timeseries
+- collapsed: false
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 8
+  id: 4
+  panels: []
+  title: Notifications
+  type: row
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $datasource
+  description: rate of successful and invalid notifications sent by the Alertmanager
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        stacking:
+          mode: normal
+      unit: ops
+  gridPos:
+    h: 7
+    w: 12
+    x: 0
+    'y': 9
+  id: 5
+  options:
+    legend:
+      showLegend: false
+    tooltip:
+      mode: multi
+  pluginVersion: v11.4.0
+  repeat: integration
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: sum(rate(alertmanager_notifications_total{namespace=~"$namespace",service=~"$service", integration="$integration"}[$__rate_interval])) by (integration,namespace,service,instance)
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} Total'
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: sum(rate(alertmanager_notifications_failed_total{namespace=~"$namespace",service=~"$service", integration="$integration"}[$__rate_interval])) by (integration,namespace,service,instance)
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} Failed'
+  title: '$integration: Notifications Send Rate'
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $datasource
+  description: latency of notifications sent by the Alertmanager
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        stacking:
+          mode: normal
+      unit: s
+  gridPos:
+    h: 7
+    w: 12
+    x: 12
+    'y': 9
+  id: 6
+  options:
+    legend:
+      showLegend: false
+    tooltip:
+      mode: multi
+  pluginVersion: v11.4.0
+  repeat: integration
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: |-
+      histogram_quantile(0.99,
+        sum(rate(alertmanager_notification_latency_seconds_bucket{namespace=~"$namespace",service=~"$service", integration="$integration"}[$__rate_interval])) by (le,namespace,service,instance)
+      )
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} 99th Percentile'
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: |-
+      histogram_quantile(0.50,
+        sum(rate(alertmanager_notification_latency_seconds_bucket{namespace=~"$namespace",service=~"$service", integration="$integration"}[$__rate_interval])) by (le,namespace,service,instance)
+      )
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} Median'
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $datasource
+    expr: |-
+      sum(rate(alertmanager_notification_latency_seconds_sum{namespace=~"$namespace",service=~"$service", integration="$integration"}[$__rate_interval])) by (namespace,service,instance)
+      /
+      sum(rate(alertmanager_notification_latency_seconds_count{namespace=~"$namespace",service=~"$service", integration="$integration"}[$__rate_interval])) by (namespace,service,instance)
+    intervalFactor: 2
+    legendFormat: '{{`{{`}}instance{{`}}`}} Average'
+  title: '$integration: Notification Duration'
+  type: timeseries
+schemaVersion: 39
+tags:
+- alertmanager-mixin
+- vm-k8s-stack
+templating:
+  list:
+  - current:
+      selected: false
+      text: Prometheus
+      value: Prometheus
+    hide: 0
+    label: Data Source
+    name: datasource
+    query: {{ $defaultDatasource }}
+    type: datasource
+  - current:
+      selected: false
+      text: ''
+      value: ''
+    datasource:
+      type: prometheus
+      uid: ${datasource}
+    includeAll: false
+    label: namespace
+    name: namespace
+    query: label_values(alertmanager_alerts, namespace)
+    refresh: 2
+    sort: 1
+    type: query
+  - current:
+      selected: false
+      text: ''
+      value: ''
+    datasource:
+      type: prometheus
+      uid: ${datasource}
+    includeAll: false
+    label: service
+    name: service
+    query: label_values(alertmanager_alerts, service)
+    refresh: 2
+    sort: 1
+    type: query
+  - current:
+      selected: false
+      text: $__all
+      value: $__all
+    datasource:
+      type: prometheus
+      uid: ${datasource}
+    hide: 2
+    includeAll: true
+    name: integration
+    query: label_values(alertmanager_notifications_total{integration=~".*"}, integration)
+    refresh: 2
+    sort: 1
+    type: query
+time:
+  from: now-1h
+  to: now
+timepicker:
+  refresh_intervals:
+  - 30s
+timezone: {{ default "utc" ($Values.defaultDashboards).defaultTimezone }}
+title: Alertmanager / Overview
+uid: alertmanager-overview

@@ -1,0 +1,19 @@
+grafana:
+  service:
+    type: NodePort
+#vmalert:
+#  spec:
+#    replicaCount: 1
+#vmsingle:
+#  enabled: true
+vmagent:
+  spec:
+    additionalScrapeConfigs:
+      key: prometheus-additional.yaml
+      name: kubeblocks-fix
+    replicaCount: 1
+    shardCount: 0
+    scrapeInterval: 40s
+    scrapeTimeout: 40s
+    extraArgs:
+      promscrape.maxScrapeSize: "1677721600"
