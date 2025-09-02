@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const SubscriptionTypeSchema = z.enum(['SUBSCRIPTION', 'PAYG']);
 export type SubscriptionType = z.infer<typeof SubscriptionTypeSchema>;
 
-export const PaymentMethodSchema = z.enum(['STRIPE', 'BALANCE']);
+export const PaymentMethodSchema = z.enum(['stripe', 'balance']);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
 export const OperatorSchema = z.enum(['created', 'upgraded', 'downgraded', 'renewed', 'canceled']);
@@ -123,7 +123,7 @@ export type UpgradeAmountRequest = z.infer<typeof UpgradeAmountRequestSchema>;
 export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
   planName: z.string(),
   period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
-  payMethod: PaymentMethodSchema, // 支付方式：STRIPE 或 BALANCE
+  payMethod: PaymentMethodSchema, // 支付方式：stripe 或 balance
   operator: OperatorSchema,
   cardId: z.string().optional(),
   createWorkspace: z

@@ -14,7 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 验证请求参数
     const parseResult = UpgradeAmountRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
       return jsonRes(res, {
@@ -26,11 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { workspace, regionDomain, planName, period, payMethod, operator } = parseResult.data;
 
-    // 创建 API 客户端
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
 
-    // 调用后端 API
     const response = await client.post<ApiResp<UpgradeAmountResponse>>(
       '/account/v1alpha1/workspace-subscription/upgrade-amount',
       {
@@ -42,31 +39,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         operator
       }
     );
-
-    // 尝试验证响应数据，但即使失败也返回数据
-    const validatedResponse = UpgradeAmountResponseSchema.safeParse(response.data?.data);
-    if (!validatedResponse.success) {
-      console.warn(
-        'Response validation failed, but returning data anyway:',
-        validatedResponse.error
-      );
-    }
+    console.log('response.data', response.data);
 
     return jsonRes<UpgradeAmountResponse>(res, {
       data: response.data?.data
     });
   } catch (error: any) {
-    console.error('Error in workspace subscription upgrade-amount API:', error);
-
-    // 处理后端 API 错误
-    if (error.response?.data) {
-      return jsonRes(res, {
-        code: error.response.status || 500,
-        message: error.response.data.message || 'Backend service error',
-        error: error.response.data
-      });
-    }
-
     return jsonRes(res, {
       code: 500,
       message: 'Internal server error'

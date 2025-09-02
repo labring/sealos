@@ -45,7 +45,7 @@ export const getLastTransaction = (data: { workspace: string; regionDomain: stri
 
 // Calculate upgrade amount
 export const getUpgradeAmount = (data: UpgradeAmountRequest) =>
-  request<any, ApiResp<UpgradeAmountResponse>>('/api/plan/amount', {
+  request<any, ApiResp<UpgradeAmountResponse>>('/api/plan/upgrade-amount', {
     method: 'POST',
     data
   });

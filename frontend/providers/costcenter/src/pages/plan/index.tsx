@@ -221,7 +221,7 @@ export default function Plan() {
           regionDomain: region?.domain || '',
           planName: 'Free', // No actual plan for PAYG
           period: '1m',
-          payMethod: 'BALANCE',
+          payMethod: 'balance',
           operator: 'created',
           createWorkspace: {
             teamName: workspaceName.trim(),
@@ -236,7 +236,7 @@ export default function Plan() {
           regionDomain: region?.domain || '',
           planName: plan.Name,
           period: '1m',
-          payMethod: 'STRIPE',
+          payMethod: 'stripe',
           operator: 'created',
           createWorkspace: {
             teamName: workspaceName.trim(),
@@ -283,7 +283,7 @@ export default function Plan() {
       regionDomain: region.domain,
       planName: plan.Name,
       period: '1m',
-      payMethod: 'STRIPE',
+      payMethod: 'stripe',
       operator: getOperator()
     };
 
