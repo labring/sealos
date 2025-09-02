@@ -38,7 +38,7 @@ spec:
         - name: devbox-frontend
           env:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
-              value: "{{ default "1" .tlsRejectUnauthorized }}"
+              value: {{ default "1" .tlsRejectUnauthorized }}
             - name: DOCUMENT_URL_ZH
               value: https://sealos.run/docs/overview/intro
             - name: DOCUMENT_URL_EN
@@ -69,6 +69,8 @@ spec:
               value: usd #  'shellCoin' | 'cny' | 'usd'
             - name: GPU_ENABLE
               value: 'false'
+            - name: STORAGE_LIMIT
+              value: 10Gi # default is 10Gi
             - name: PRIVACY_URL
               value: https://sealos.run/docs/msa/privacy-policy
             - name: RETAG_SVC_URL

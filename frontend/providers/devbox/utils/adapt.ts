@@ -55,16 +55,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
       name: '',
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
-    },
-    lastTerminatedReason: devbox.status
-      ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
-        : ''
-      : ''
+    }
   };
 };
 
@@ -109,16 +100,7 @@ export const adaptDevboxDetailV2 = ([
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: portInfos || [],
-    lastTerminatedReason: devbox.status
-      ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
-        : ''
-      : ''
+    networks: portInfos || []
   };
 };
 export const adaptDevboxVersionListItem = (

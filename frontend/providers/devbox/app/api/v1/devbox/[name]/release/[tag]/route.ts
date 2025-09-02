@@ -7,7 +7,10 @@ import { KBDevboxReleaseType } from '@/types/k8s';
 
 export const dynamic = 'force-dynamic';
 
-export async function DELETE(req: NextRequest, { params }: { params: { name: string; tag: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { name: string; tag: string } }
+) {
   try {
     const devboxName = params.name;
     const tag = params.tag;
@@ -20,7 +23,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
         message: 'Invalid devbox name format'
       });
     }
-
 
     if (!tag || tag.length === 0) {
       return jsonRes({
@@ -35,17 +37,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const targetRelease = releaseBody.items.find((item: any) => {
-      return (
-        item.spec &&
-        item.spec.devboxName === devboxName &&
-        item.spec.newTag === tag
-      );
+      return item.spec && item.spec.devboxName === devboxName && item.spec.newTag === tag;
     });
 
     if (!targetRelease) {
@@ -57,7 +55,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
 
     await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases',
       targetRelease.metadata.name
