@@ -42,7 +42,7 @@ export function AppIcon({
       <AvatarFallback className={cn(className?.avatar)}>
         {app.charAt(0).toUpperCase()}
       </AvatarFallback>
-      <AvatarImage src={uri} className={cn(className?.avatar)} />;
+      <AvatarImage src={uri} className={cn(className?.avatar)} />
     </Avatar>
   );
 }

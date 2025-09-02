@@ -1,20 +1,19 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types';
-import { RechargeBillingData } from '@/types/billing';
 import { Region } from '@/types/region';
 import { getPaymentList } from '@/api/plan';
 import { PaymentRecord } from '@/types/plan';
-import OrderListView, { CombinedRow } from './OrderListView';
+import OrderListView, { OrderListRow } from './OrderListView';
 
 interface OrderListProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
   orderIdFilter: string;
   onOrderIdFilterChange: (v: string) => void;
-  onSelectionChange: (selected: CombinedRow[], amount: number, count: number) => void;
+  onSelectionChange: (selected: OrderListRow[], amount: number, count: number) => void;
   onObtainInvoice?: () => void;
 }
 
@@ -61,13 +60,6 @@ export default function OrderList({
     }),
     [effectiveStartTime, effectiveEndTime]
   );
-
-  const { data: rechargeResp } = useQuery(['billing', 'invoice', rechargeBody], () => {
-    return request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
-      data: rechargeBody,
-      method: 'POST'
-    });
-  });
 
   // Namespace data fetching for all regions
   const { data: allNamespaces } = useQuery({
@@ -125,20 +117,8 @@ export default function OrderList({
   });
 
   // Merged rows with data processing logic
-  const mergedRows: CombinedRow[] = useMemo(() => {
-    const rechargePayments: CombinedRow[] = (rechargeResp?.data?.payments || [])
-      .filter((item) => !item.InvoicedAt && item.Status !== 'REFUNDED')
-      .map((item) => ({
-        id: item.ID,
-        region: regionUidToName.get(item.RegionUID) || item.RegionUID || '',
-        workspace: '-',
-        time: item.CreatedAt,
-        amount: item.Amount,
-        type: 'recharge',
-        raw: item
-      }));
-
-    const subscriptionPayments: CombinedRow[] = Object.entries(allPaymentsData || {}).flatMap(
+  const rows: OrderListRow[] = useMemo(() => {
+    const subscriptionPayments: OrderListRow[] = Object.entries(allPaymentsData || {}).flatMap(
       ([uid, payments]) =>
         (payments as PaymentRecord[]).map((p) => {
           return {
@@ -147,16 +127,16 @@ export default function OrderList({
             workspace: (allNamespaces || {})[p.Workspace] || p.Workspace || '-',
             time: p.Time,
             amount: p.Amount,
-            type: 'subscription',
+            type: p.Type === 'SUBSCRIPTION' ? 'subscription' : 'recharge',
             raw: p
           };
         })
     );
 
-    return [...rechargePayments, ...subscriptionPayments].sort(
+    return subscriptionPayments.sort(
       (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
     );
-  }, [rechargeResp, allPaymentsData, regionUidToName, allNamespaces]);
+  }, [allPaymentsData, regionUidToName, allNamespaces]);
 
   return (
     <OrderListView
@@ -165,10 +145,8 @@ export default function OrderList({
       orderIdFilter={orderIdFilter}
       onOrderIdFilterChange={onOrderIdFilterChange}
       onSelectionChange={onSelectionChange}
-      mergedRows={mergedRows}
+      rows={rows}
       onObtainInvoice={onObtainInvoice}
     />
   );
 }
-
-export type { CombinedRow };

@@ -23,7 +23,7 @@ function formatDateTime(iso: string) {
   return formatDate(new Date(iso), 'yyyy-MM-dd HH:mm:ss');
 }
 
-export type CombinedRow = {
+export type OrderListRow = {
   id: string;
   region: string;
   workspace: string;
@@ -39,26 +39,26 @@ export default function OrderListView({
   orderIdFilter,
   onOrderIdFilterChange,
   onSelectionChange,
-  mergedRows,
+  rows,
   onObtainInvoice
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
   orderIdFilter: string;
   onOrderIdFilterChange: (v: string) => void;
-  onSelectionChange: (selected: CombinedRow[], amount: number, count: number) => void;
-  mergedRows: CombinedRow[];
+  onSelectionChange: (selected: OrderListRow[], amount: number, count: number) => void;
+  rows: OrderListRow[];
   onObtainInvoice?: () => void;
 }) {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
   // client-side filter by orderId (only recharge rows carry orderId)
-  const filteredRows: CombinedRow[] = useMemo(() => {
+  const filteredRows: OrderListRow[] = useMemo(() => {
     const keyword = orderIdFilter.trim();
-    if (!keyword) return mergedRows;
-    return mergedRows.filter((r) => r.id.includes(keyword));
-  }, [mergedRows, orderIdFilter]);
+    if (!keyword) return rows;
+    return rows.filter((r) => r.id.includes(keyword));
+  }, [rows, orderIdFilter]);
 
   // selection (both recharge & subscription selectable)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -80,7 +80,7 @@ export default function OrderListView({
     setSelectedIds(next);
   };
 
-  const toggleSelect = (row: CombinedRow) => {
+  const toggleSelect = (row: OrderListRow) => {
     const next = new Set(selectedIds);
     if (next.has(row.id)) next.delete(row.id);
     else next.add(row.id);
@@ -89,8 +89,8 @@ export default function OrderListView({
 
   // emit selection change
   const selectedRows = useMemo(
-    () => mergedRows.filter((r) => selectedIds.has(r.id)),
-    [mergedRows, selectedIds]
+    () => rows.filter((r) => selectedIds.has(r.id)),
+    [rows, selectedIds]
   );
 
   const selectedAmount = useMemo(
@@ -105,7 +105,7 @@ export default function OrderListView({
   // reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [orderIdFilter, mergedRows]);
+  }, [orderIdFilter, rows]);
 
   return (
     <TableLayout>

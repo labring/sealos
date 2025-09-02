@@ -108,7 +108,10 @@ function Billing() {
           const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
             .then((res) => res?.data?.payments || [])
             .catch(() => [] satisfies PaymentRecord[]);
-          return [uid, payments] as const;
+
+          // This API will return both subscription and PAYG payments, we only need subscriptions
+          const subscriptionPayments = payments.filter((p) => p.Type === 'SUBSCRIPTION');
+          return [uid, subscriptionPayments] as const;
         })
       );
 
