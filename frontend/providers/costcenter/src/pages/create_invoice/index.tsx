@@ -6,15 +6,16 @@ import { useState } from 'react';
 import InvoiceForm from '@/components/invoice/InvoiceForm';
 import InvoiceInspection from '@/components/invoice/InvoiceInspection';
 import { DateRange } from 'react-day-picker';
-import OrderList, { CombinedRow } from '@/components/invoice/OrderList';
+import OrderList from '@/components/invoice/OrderList';
 import InvoiceHistory from '@/components/invoice/InvoiceHistory';
 import useInvoiceStore from '@/stores/invoce';
 import { InvoicePayload } from '@/types/invoice';
+import { OrderListRow } from '@/components/invoice/OrderListView';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
   const { data: invoiceInspectionData, setData: setInvoiceInspectionData } = useInvoiceStore();
-  const [selectBillings, setSelectBillings] = useState<CombinedRow[]>([]);
+  const [selectBillings, setSelectBillings] = useState<OrderListRow[]>([]);
   const [searchValue, setSearch] = useState('');
   const [orderID, setOrderID] = useState('');
   const [historySearchValue, setHistorySearchValue] = useState('');
