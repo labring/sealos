@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName,
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     // 3. create devbox release
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
     while (!isReleaseSuccess && retryCount < maxRetries) {
       const { body: currentReleaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxreleases'
       )) as { body: { items: KBDevboxReleaseType[] } };
