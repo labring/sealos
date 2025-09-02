@@ -4,13 +4,10 @@ set -e
 kubectl apply -f crds/
 kubectl create -f charts/kubeblocks/crds/kubeblocks_crds.yaml || kubectl replace -f charts/kubeblocks/crds/kubeblocks_crds.yaml
 sleep 2
-helm upgrade -i kubeblocks charts/kubeblocks --set snapshot-controller.enabled=false --insecure-skip-tls-verify -n kb-system --create-namespace
+helm upgrade -i kubeblocks charts/kubeblocks --set snapshot-controller.enabled=true --insecure-skip-tls-verify -n kb-system --create-namespace
 cp -rf opt/kbcli /usr/bin/
-kbcli addon enable apecloud-mysql
-kbcli addon enable redis
-kbcli addon enable postgresql
-kbcli addon enable mongodb
-kbcli addon enable csi-s3
+
+bash scripts/install_kbcli_addons.sh
 
 REPO_NAME="backup"
 if kbcli backuprepo list | awk -v repo="$REPO_NAME" 'NR>1 && $1 == repo {found=1; exit} END {exit !found}'; then
