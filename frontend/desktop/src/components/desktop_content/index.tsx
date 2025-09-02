@@ -10,7 +10,6 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
-import Cost from '../account/cost';
 import { ChakraIndicator } from './ChakraIndicator';
 // import Apps from './apps';
 import Assistant from './assistant';
