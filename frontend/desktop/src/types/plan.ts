@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const SubscriptionTypeSchema = z.enum(['SUBSCRIPTION', 'PAYG']);
 export type SubscriptionType = z.infer<typeof SubscriptionTypeSchema>;
 
-export const PaymentMethodSchema = z.enum(['STRIPE', 'BALANCE']);
+export const PaymentMethodSchema = z.enum(['stripe', 'balance']);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
 export const OperatorSchema = z.enum(['created', 'upgraded', 'downgraded', 'renewed', 'canceled']);
