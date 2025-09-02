@@ -5,7 +5,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { validate } from 'uuid';
 import { Role } from 'prisma/region/generated/client';
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAccessToken, callBillingService } from '@/services/backend/auth';
 import { getRegionUid } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -41,7 +41,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const regionUid = getRegionUid();
     // sync status, user add 1,
 
-    // try {
+    try {
+      await callBillingService(
+        '/account/v1alpha1/workspace-subscription/delete',
+        {
+          userUid: payload.userUid,
+          userId: payload.userId
+        },
+        {
+          workspace: ns_uid
+        }
+      );
+    } catch (e) {
+      console.log('delete workspace subscription error', e);
+    }
+
     const res1 = await setUserTeamDelete(creator);
     if (!res1) throw new Error('fail to update user ');
     const res2 = await applyDeleteRequest(creator);

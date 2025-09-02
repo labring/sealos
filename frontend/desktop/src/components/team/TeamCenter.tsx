@@ -118,16 +118,13 @@ export default function TeamCenter({
     }
   }, [isOpen]);
 
-  const openAccountCenterApp = (page?: string) => {
+  const openCostCenterApp = () => {
     openDesktopApp({
-      appKey: 'system-account-center',
+      appKey: 'system-costcenter',
+      pathname: '/',
       query: {
-        page: page || 'plan'
-      },
-      messageData: {
-        page: page || 'plan'
-      },
-      pathname: '/redirect'
+        mode: 'create'
+      }
     });
   };
 
@@ -222,7 +219,9 @@ export default function TeamCenter({
                   height={'40px'}
                   cursor={'pointer'}
                   onClick={() => {
-                    createTeamDisclosure.onOpen();
+                    console.log('create workspace');
+                    openCostCenterApp();
+                    onClose();
                   }}
                 >
                   <Plus size={20} color="#737373" />

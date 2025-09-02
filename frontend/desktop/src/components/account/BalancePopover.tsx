@@ -7,17 +7,36 @@ import {
   PopoverBody,
   VStack,
   HStack,
-  Badge,
-  Button,
   Flex
 } from '@chakra-ui/react';
 import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { useMemo } from 'react';
+import { Sparkles } from 'lucide-react';
+import { Button } from '@sealos/shadcn-ui';
+import { WorkspaceSubscription } from '@/types/plan';
+import Decimal from 'decimal.js';
+import { useQuery } from '@tanstack/react-query';
+import { getAmount } from '@/api/auth';
+import { formatMoney } from '@/utils/format';
 
 interface BalancePopoverProps {
   openCostCenterApp: () => void;
   children: React.ReactNode;
+}
+
+export function getPlanBackground(subscription?: WorkspaceSubscription) {
+  if (!subscription) return 'var(--background-image-plan-payg)';
+  const name = subscription?.PlanName ? subscription?.PlanName.toLowerCase() : 'Free';
+  const status = subscription?.Status;
+  if (status === 'Debt') return 'var(--background-debt)';
+  if (name.includes('free')) return 'var(--background-image-plan-hobby)';
+  if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
+  if (name.includes('starter')) return 'var(--background-image-plan-starter)';
+  if (name.includes('pro')) return 'var(--background-image-plan-pro)';
+  if (name.includes('team')) return 'var(--background-image-plan-team)';
+  if (name.includes('enterprise')) return 'var(--background-image-plan-enterprise)';
+  return 'var(--background-image-plan-payg)';
 }
 
 export function BalancePopover({ openCostCenterApp, children }: BalancePopoverProps) {
@@ -35,16 +54,6 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
 
   const subscription = subscriptionInfo?.subscription;
 
-  const getPlanBackground = (planName: string) => {
-    const name = planName.toLowerCase();
-    if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
-    if (name.includes('starter')) return 'var(--background-image-plan-starter)';
-    if (name.includes('pro')) return 'var(--background-image-plan-pro)';
-    if (name.includes('team')) return 'var(--background-image-plan-team)';
-    if (name.includes('enterprise')) return 'var(--background-image-plan-enterprise)';
-    return 'var(--background-image-plan-payg)';
-  };
-
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
     return new Date(dateStr).toLocaleString('zh-CN', {
@@ -55,6 +64,21 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
       minute: '2-digit'
     });
   };
+
+  const { data } = useQuery({
+    queryKey: ['getAmount', { userId: session?.user?.userCrUid }],
+    queryFn: getAmount,
+    enabled: !!session?.user,
+    staleTime: 60 * 1000
+  });
+
+  const balance = useMemo(() => {
+    let realBalance = new Decimal(data?.data?.balance || 0);
+    if (data?.data?.deductionBalance) {
+      realBalance = realBalance.minus(new Decimal(data.data.deductionBalance));
+    }
+    return realBalance.toNumber();
+  }, [data]);
 
   return (
     <Popover trigger="hover" placement="bottom-start">
@@ -69,57 +93,72 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
       >
         <PopoverBody p={4}>
           <VStack spacing={3} align="stretch">
-            <Box
-              p={'20px'}
-              bg={getPlanBackground(subscription?.PlanName || 'payg')}
-              borderRadius="12px"
-            >
-              {subscription?.PlanName && subscription.PlanName !== 'Free' ? (
-                <>
-                  {/* Plan Name */}
-                  <span className="text-base font-semibold">{subscription.PlanName} Plan</span>
+            <Box p={'20px'} bg={getPlanBackground(subscription)} borderRadius="12px">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold capitalize">
+                  {subscription?.PlanName ? subscription?.PlanName : 'Payg'} Plan
+                </span>
+                {subscriptionInfo?.subscription?.Status === 'Debt' && (
+                  <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
+                    Expired
+                  </div>
+                )}
+                {subscription?.PlanName === 'Free' && (
+                  <div className="border text-sm font-normal leading-3.5 bg-[#FFEDD5CC] border-none text-orange-500 rounded-full px-2 py-1">
+                    Limited Trial
+                  </div>
+                )}
+              </div>
+              {!subscription?.PlanName && (
+                <div className="flex items-center gap-2 justify-between">
+                  <div className="flex items-start flex-col">
+                    <div className="text-sm text-zinc-500">Balance</div>
+                    <div className="text-sm text-zinc-500">{formatMoney(balance).toFixed(2)}</div>
+                  </div>
+                  <Button variant="outline">Top Up</Button>
+                </div>
+              )}
 
+              {!!subscription?.PlanName &&
+                (subscription?.PlanName !== 'Free' &&
+                subscriptionInfo?.subscription?.Status === 'Debt' &&
+                subscription?.ExpireAt ? (
+                  <HStack>
+                    <span className="text-sm text-zinc-600">Expired on:</span>
+                    <span className="text-sm text-zinc-600">
+                      {formatDate(subscription?.ExpireAt)}
+                    </span>
+                  </HStack>
+                ) : (
                   <HStack>
                     <span className="text-sm text-zinc-600">Renewal Date:</span>
                     <span className="text-sm text-zinc-600">
                       {formatDate(subscription?.CurrentPeriodEndAt)}
                     </span>
                   </HStack>
-                </>
-              ) : (
-                <>
-                  {/* Free Plan */}
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" color="gray.600">
-                      Free Plan
-                    </Text>
-                    <Badge colorScheme="orange" variant="subtle" borderRadius="full" px={3} py={1}>
-                      Limited Trial
-                    </Badge>
-                  </HStack>
+                ))}
 
-                  <Box>
-                    <Text fontSize="sm" color="gray.700">
-                      Your trial will expire in 14 days. Upgrade to keep your services online.
-                    </Text>
-                  </Box>
-                </>
+              {subscription?.PlanName === 'Free' && (
+                <div className="text-zinc-600 text-sm font-normal mt-2">
+                  Your trial will expire in 14 days.
+                </div>
               )}
             </Box>
 
-            <div className="text-sm text-zinc-900 font-normal">
-              To upgrade your plan, you can visit the Cost Center.
-            </div>
+            {subscription?.PlanName !== 'Free' ? (
+              <div className="text-sm text-zinc-900 font-normal">
+                To upgrade your plan, you can visit the Cost Center.
+              </div>
+            ) : (
+              <div className="text-sm text-zinc-900 font-normal">
+                Your trial will expire in 14 days. Upgrade to keep your services online.
+              </div>
+            )}
 
-            <Button
-              size="sm"
-              colorScheme="blue"
-              leftIcon={<span>✨</span>}
-              onClick={openCostCenterApp}
-            >
+            <Button variant="outline" onClick={openCostCenterApp}>
+              <Sparkles size={16} />
               Upgrade Plan
             </Button>
-
             <HStack pt={2} borderTop="1px solid" borderColor="gray.100">
               <Flex
                 justifyContent={'space-between'}
