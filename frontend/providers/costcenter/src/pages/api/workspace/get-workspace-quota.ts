@@ -1,7 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { WorkspaceQuotaRequest, WorkspaceQuotaRequestSchema } from '@/types/workspace';
+import {
+  UserQuotaItem,
+  WorkspaceQuotaRequest,
+  WorkspaceQuotaRequestSchema
+} from '@/types/workspace';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
@@ -52,12 +56,6 @@ const memoryFormatToMi = (memory: string) => {
   return Number(value.toFixed(2));
 };
 
-export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu';
-  used: number;
-  limit: number;
-};
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return jsonRes(res, { code: 405, message: 'Method not allowed' });
@@ -87,24 +85,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { workspace }
     );
 
+    console.log('response', response.data);
     const hard = response?.data?.quota?.hard || {};
     const used = response?.data?.quota?.used || {};
 
-    const quota: UserQuotaItemType[] = [
+    const quota: UserQuotaItem[] = [
       {
         type: 'cpu',
-        limit: cpuFormatToM(hard['limits.cpu'] || '') / 1000,
-        used: cpuFormatToM(used['limits.cpu'] || '') / 1000
+        limit: cpuFormatToM(hard['limits.cpu'] || ''),
+        used: cpuFormatToM(used['limits.cpu'] || '')
       },
       {
         type: 'memory',
-        limit: memoryFormatToMi(hard['limits.memory'] || '') / 1024,
-        used: memoryFormatToMi(used['limits.memory'] || '') / 1024
+        limit: memoryFormatToMi(hard['limits.memory'] || ''),
+        used: memoryFormatToMi(used['limits.memory'] || '')
       },
       {
         type: 'storage',
-        limit: memoryFormatToMi(hard['requests.storage'] || '') / 1024,
-        used: memoryFormatToMi(used['requests.storage'] || '') / 1024
+        limit: memoryFormatToMi(hard['requests.storage'] || ''),
+        used: memoryFormatToMi(used['requests.storage'] || '')
+      },
+      {
+        type: 'nodeport',
+        limit: Number(hard['services.nodeports']) || 0,
+        used: Number(used['services.nodeports']) || 0
+      },
+      {
+        type: 'traffic',
+        limit: Number(hard['traffic']) || 0,
+        used: Number(used['traffic']) || 0
       },
       {
         type: 'gpu',
