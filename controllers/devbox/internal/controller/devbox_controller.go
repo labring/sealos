@@ -326,16 +326,16 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 		case 1:
 			// skip if pod is already created
 			if !podList.Items[0].DeletionTimestamp.IsZero() {
-				return r.handlePodDeleted(ctx, &podList.Items[0])
+				return r.handlePodDeleted(ctx, devbox, &podList.Items[0])
 			}
 			if podList.Items[0].Status.Phase != corev1.PodRunning && podList.Items[0].Status.Phase != corev1.PodPending {
-				return r.deletePod(ctx, &podList.Items[0])
+				return r.deletePod(ctx, devbox, &podList.Items[0])
 			}
 			return nil
 		default:
 			// more than one pod found, remove finalizer and delete them
 			for _, pod := range podList.Items {
-				r.deletePod(ctx, &pod)
+				r.deletePod(ctx, devbox, &pod)
 			}
 			logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
@@ -344,7 +344,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 	case devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped, devboxv1alpha2.DevboxStateShutdown:
 		if len(podList.Items) > 0 {
 			for _, pod := range podList.Items {
-				r.deletePod(ctx, &pod)
+				r.deletePod(ctx, devbox, &pod)
 			}
 		}
 		return nil
@@ -551,8 +551,20 @@ func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1
 	return false
 }
 
-func (r *DevboxReconciler) deletePod(ctx context.Context, pod *corev1.Pod) error {
+func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha2.Devbox, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: pod.Namespace, Name: pod.Name}, devbox)
+	if err != nil {
+		logger.Error(err, "failed to get devbox")
+		return err
+	}
+	if len(pod.Status.ContainerStatuses) > 0 {
+		devbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
+		if err := r.Status().Update(ctx, devbox); err != nil {
+			logger.Error(err, "failed to update devbox status")
+			return err
+		}
+	}
 	// remove finalizer and delete pod
 	controllerutil.RemoveFinalizer(pod, devboxv1alpha2.FinalizerName)
 	if err := r.Update(ctx, pod); err != nil {
@@ -566,12 +578,24 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, pod *corev1.Pod) error
 	return nil
 }
 
-func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, pod *corev1.Pod) error {
+func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv1alpha2.Devbox, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
 	controllerutil.RemoveFinalizer(pod, devboxv1alpha2.FinalizerName)
 	if err := r.Update(ctx, pod); err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
+	}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: pod.Namespace, Name: pod.Name}, devbox)
+	if err != nil {
+		logger.Error(err, "failed to get devbox")
+		return err
+	}
+	if len(pod.Status.ContainerStatuses) > 0 {
+		devbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
+		if err := r.Status().Update(ctx, devbox); err != nil {
+			logger.Error(err, "failed to update devbox status")
+			return err
+		}
 	}
 	return nil
 }

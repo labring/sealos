@@ -259,6 +259,9 @@ type DevboxStatus struct {
 	Phase DevboxPhase `json:"phase"`
 	// +kubebuilder:validation:Optional
 	Network NetworkStatus `json:"network"`
+
+	// +kubebuilder:validation:Optional
+	LastContainerStatus corev1.ContainerStatus `json:"lastContainerStatus"`
 }
 
 // +kubebuilder:object:root=true
