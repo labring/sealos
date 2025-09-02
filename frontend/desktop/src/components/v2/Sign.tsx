@@ -13,7 +13,7 @@ import {
 import useProtocol from '@/components/signin/auth/useProtocol';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, KeyRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'next-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +29,7 @@ import Link from 'next/link';
 import { WechatIcon } from '@sealos/ui';
 import { z } from 'zod';
 import { gtmLoginStart } from '@/utils/gtm';
+import UsernamePasswordSignin from './UsernamePasswordSignin';
 
 export default function SigninComponent() {
   const { t, i18n } = useTranslation();
@@ -37,9 +38,13 @@ export default function SigninComponent() {
   const router = useRouter();
   const needPhone = conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
   const needEmail = conf.authConfig?.idp.email.enabled;
+  const passwordSigninEnabled = conf.authConfig?.idp.password?.enabled;
   const { setSignupData, signupData } = useSignupStore();
   const authConfig = conf.authConfig;
   const { generateState, setProvider } = useSessionStore();
+
+  // State to control password login mode
+  const [isPasswordMode, setIsPasswordMode] = useState(false);
 
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -166,6 +171,11 @@ export default function SigninComponent() {
     }
   };
   const bg = useColorModeValue('white', 'gray.700');
+
+  // If in password mode, render the username/password signin component
+  if (isPasswordMode) {
+    return <UsernamePasswordSignin onBack={() => setIsPasswordMode(false)} />;
+  }
 
   return (
     <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
@@ -397,6 +407,22 @@ export default function SigninComponent() {
             {t('v2:privacy_policy')}
           </Box>
         </Box>
+
+        {/* Username/Password Login Button */}
+        {passwordSigninEnabled && (
+          <>
+            <Divider borderStyle={'dashed'} />
+
+            <Button
+              variant="link"
+              onClick={() => setIsPasswordMode(true)}
+              w={'100%'}
+              color={'#0A0A0A'}
+            >
+              {t('v2:username_password_signin')}
+            </Button>
+          </>
+        )}
       </Stack>
     </Flex>
   );

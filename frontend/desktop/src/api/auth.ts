@@ -25,10 +25,9 @@ export const _getRegionToken = (request: AxiosInstance) => () =>
   );
 
 export const getRegionToken = _getRegionToken(request);
-export const _passwordExistRequest = (request: AxiosInstance) => (data: { user: string }) =>
-  request.post<any, ApiResp<TUserExist>>('/api/auth/password/exist', data);
+
 export const _passwordLoginRequest =
-  (request: AxiosInstance, switchAuth: (token: string) => void) =>
+  (request: AxiosInstance) =>
   (
     data:
       | {
@@ -43,20 +42,12 @@ export const _passwordLoginRequest =
           password: string;
         }
   ) =>
-    request.post<any, ApiResp<{ token: string }>>('/api/auth/password', data).then(
-      ({ data }) => {
-        if (data) {
-          switchAuth(data.token);
-          return _getRegionToken(request)();
-        } else {
-          return null;
-        }
-      },
-      (err) => Promise.resolve(null)
-    );
+    request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/password', data);
+
 export const _passwordModifyRequest =
   (request: AxiosInstance) => (data: { oldPassword: string; newPassword: string }) =>
     request.post<any, ApiResp<{ message: string }>>('/api/auth/password/modify', data);
+
 export const _UserInfo = (request: AxiosInstance) => () =>
   request.post<
     any,
@@ -245,10 +236,7 @@ export const EmailSignUp = _EmailSignUp(request);
 export const EmailSignUpCheck = _EmailSignUpCheck(request);
 export const initRegionToken = _initRegionToken(request);
 
-export const passwordExistRequest = _passwordExistRequest(request);
-export const passwordLoginRequest = _passwordLoginRequest(request, (token) => {
-  useSessionStore.setState({ token });
-});
+export const passwordLoginRequest = _passwordLoginRequest(request);
 
 export const passwordModifyRequest = _passwordModifyRequest(request);
 export const UserInfo = _UserInfo(request);
