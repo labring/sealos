@@ -85,7 +85,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { workspace }
     );
 
-    console.log('response', response.data);
     const hard = response?.data?.quota?.hard || {};
     const used = response?.data?.quota?.used || {};
 

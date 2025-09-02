@@ -119,7 +119,7 @@ export const valuationMap = new Map([
   [
     'gpu',
     {
-      icon: HdmiPort,
+      icon: CircuitBoard,
       unit: 'GPU Unit',
       scale: 1,
       idx: 3
@@ -137,7 +137,7 @@ export const valuationMap = new Map([
   [
     'nodeport',
     {
-      icon: CircuitBoard,
+      icon: HdmiPort,
       unit: 'port_unit',
       scale: 1,
       idx: 5

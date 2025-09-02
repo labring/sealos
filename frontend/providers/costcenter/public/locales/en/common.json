@@ -251,5 +251,7 @@
   "storage": "Storage",
   "time": "time",
   "usage": "usage",
-  "workspace": "Workspace"
+  "workspace": "Workspace",
+  "nodeport": "Ports",
+  "traffic": "Traffic"
 }
