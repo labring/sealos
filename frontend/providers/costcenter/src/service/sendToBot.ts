@@ -1,5 +1,11 @@
 import { initAppConfig } from '@/pages/api/platform/getAppConfig';
-import { InvoicePayload, InvoicesCollection, RechargeBillingItem, ReqGenInvoice } from '@/types';
+import {
+  InvoiceBillingItem,
+  InvoicePayload,
+  InvoicesCollection,
+  RechargeBillingItem,
+  ReqGenInvoice
+} from '@/types';
 import { formatMoney } from '@/utils/format';
 import Dysmsapi, * as dysmsapi from '@alicloud/dysmsapi20170525';
 import * as OpenApi from '@alicloud/openapi-client';
@@ -45,7 +51,7 @@ const generateBotTemplate = ({
   payments
 }: {
   invoice: Omit<InvoicePayload, 'remark' | 'updatedAt'>;
-  payments: RechargeBillingItem[];
+  payments: InvoiceBillingItem[];
 }) => {
   const { contract, detail } = JSON.parse(invoice.detail) as InvoicesCollection;
   const invoiceDetail = [
@@ -101,10 +107,10 @@ const generateBotTemplate = ({
   const invoiceStatus: InvoicePayload['status'] = invoice.status;
   const invoiceAmount = formatMoney(invoice.totalAmount);
   const billingList = payments.map((v) => ({
-    order_id: v.ID,
-    regionUID: v.RegionUID,
-    createdTime: parseISO(v.CreatedAt).getTime(),
-    amount: formatMoney(v.Amount)
+    order_id: v.order_id,
+    regionUID: v.regionUID,
+    createdTime: parseISO(v.createdTime).getTime(),
+    amount: formatMoney(v.amount)
   }));
   const card = {
     type: 'template',
@@ -157,7 +163,7 @@ export const sendToBot = async ({
     detail: ReqGenInvoice['detail'];
     contract: Omit<ReqGenInvoice['contract'], 'code'>;
   };
-  payments: RechargeBillingItem[];
+  payments: InvoiceBillingItem[];
 }) => {
   // await updateTenantAccessToken()
   const card = generateBotTemplate({
@@ -195,7 +201,7 @@ export const sendToUpdateBot = async ({
   message_id
 }: {
   invoice: Omit<InvoicePayload, 'remark' | 'updateAt'>;
-  payments: RechargeBillingItem[];
+  payments: InvoiceBillingItem[];
   message_id: string;
 }) => {
   const card = generateBotTemplate({ invoice, payments });
@@ -240,8 +246,8 @@ export const callbackToUpdateBot = async (
     status
   }: {
     invoice: InvoicePayload;
-    payments: RechargeBillingItem[];
     status: InvoicePayload['status'];
+    payments: InvoiceBillingItem[];
   }
 ) => {
   const card = generateBotTemplate({ invoice, payments });
