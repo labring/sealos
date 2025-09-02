@@ -9,6 +9,7 @@
   "check_your_email": "检查您的电子邮件",
   "check_your_phone": "请输入6位验证码",
   "choose_a_region": "选择一个可用区",
+  "username_password_signin": "账号密码登录",
   "confirm_password": "确认密码",
   "continue": "继续",
   "copy_kubeconfig": "复制 Kubeconfig",
