@@ -1,7 +1,8 @@
-import { Modal, ModalContent, ModalOverlay, Flex, Text, Button, Box, Img } from '@chakra-ui/react';
+import { Modal, ModalContent, ModalOverlay, Flex, Text, Box, Img, Divider } from '@chakra-ui/react';
 import { CheckCircle } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 import congratulationsIcon from '@/../public/congratulations.svg';
+import { Button } from '@sealos/shadcn-ui';
 
 interface CongratulationsModalProps {
   planName?: string;
@@ -65,68 +66,42 @@ const CongratulationsModal = forwardRef<
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered>
+    <Modal isOpen={isOpen} onClose={handleClose} isCentered closeOnOverlayClick={false}>
       <ModalOverlay bg="rgba(0, 0, 0, 0.12)" backdropFilter="blur(15px)" />
       <ModalContent
-        maxW="520px"
+        maxW="378px"
         bg="white"
         borderRadius="16px"
         p="0"
         overflow="hidden"
         position="relative"
       >
-        {/* Background illustration */}
-        <Box
-          position="absolute"
-          top="0"
-          left="0"
-          right="0"
-          height="200px"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
+        <Box display="flex" alignItems="center" justifyContent="center" w="100%">
           <Img
             src={congratulationsIcon.src}
             alt="Congratulations"
             maxHeight="180px"
             objectFit="contain"
+            draggable={false}
           />
         </Box>
-
-        <Flex
-          direction="column"
-          align="center"
-          justify="center"
-          px="40px"
-          py="48px"
-          position="relative"
-          zIndex={1}
-        >
-          {/* Congratulations Header */}
+        <Flex direction="column" align="start" position="relative" p={'24px'}>
           <Text
             fontSize="28px"
             fontWeight="700"
             color="var(--color-zinc-900)"
-            mb="16px"
-            textAlign="center"
+            mb="8px"
+            textAlign="start"
           >
             Congratulations
           </Text>
 
-          <Text
-            fontSize="16px"
-            color="var(--color-zinc-600)"
-            mb="32px"
-            textAlign="center"
-            lineHeight="1.5"
-          >
+          <Text fontSize="16px" color="var(--color-zinc-600)" textAlign="start" lineHeight="1.5">
             You have upgraded to {props.planName || 'Pro Plan'}, these benefits are
             <br />
             already unlocked.
           </Text>
-
-          {/* Benefits List */}
+          <Divider my="8px" borderColor={'#F4F4F5'} />
           <Flex direction="column" gap="12px" mb="32px" w="100%">
             <Flex align="center" gap="12px">
               <CheckCircle size={20} color="#10B981" />
@@ -154,21 +129,7 @@ const CongratulationsModal = forwardRef<
             </Flex>
           </Flex>
 
-          {/* Close Button */}
-          <Button
-            w="100%"
-            h="48px"
-            bg="var(--color-zinc-100)"
-            color="var(--color-zinc-700)"
-            borderRadius="8px"
-            fontSize="16px"
-            fontWeight="500"
-            border="1px solid var(--color-zinc-200)"
-            _hover={{
-              bg: 'var(--color-zinc-200)'
-            }}
-            onClick={handleClose}
-          >
+          <Button variant={'outline'} className="w-full" onClick={handleClose}>
             Close
           </Button>
         </Flex>
