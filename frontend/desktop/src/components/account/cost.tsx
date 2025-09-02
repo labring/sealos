@@ -27,6 +27,9 @@ import Monitor from '../desktop_content/monitor';
 import { ClockIcon, HelpIcon, InfiniteIcon } from '../icons';
 import { BalancePopover } from './BalancePopover';
 
+/**
+ * @deprecated This component is deprecated. Use Cost Center to monitor balance instead.
+ */
 export default function Cost() {
   const { t } = useTranslation();
   const rechargeEnabled = useConfigStore().commonConfig?.rechargeEnabled;

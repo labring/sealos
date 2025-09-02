@@ -41,6 +41,7 @@ import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
 import { useSubscriptionStore } from '@/stores/subscription';
+import { getPlanBackground } from './BalancePopover';
 
 const baseItemStyle = {
   minW: '36px',
@@ -115,16 +116,6 @@ export default function Account() {
     }
   }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
   const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
-
-  const getPlanBackground = (planName: string) => {
-    const name = planName.toLowerCase();
-    if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
-    if (name.includes('starter')) return 'var(--background-image-plan-starter)';
-    if (name.includes('pro')) return 'var(--background-image-plan-pro)';
-    if (name.includes('team')) return 'var(--background-image-plan-team)';
-    if (name.includes('enterprise')) return 'var(--background-image-plan-enterprise)';
-    return 'var(--background-image-plan-payg)';
-  };
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>
@@ -288,9 +279,7 @@ export default function Account() {
                     </Text>
                     <div
                       style={{
-                        background: getPlanBackground(
-                          subscriptionInfo?.subscription?.PlanName || 'payg'
-                        )
+                        background: getPlanBackground(subscriptionInfo?.subscription)
                       }}
                       className="text-blue-600 rounded px-1 flex items-center justify-center uppercase text-xs font-medium"
                     >

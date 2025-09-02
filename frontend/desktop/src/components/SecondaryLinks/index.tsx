@@ -21,9 +21,9 @@ import { CurrencySymbol } from '@sealos/ui';
 import { formatMoney } from '@/utils/format';
 import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
-import { MoreHorizontal } from 'lucide-react';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
-import { BalancePopover } from '@/components/account/BalancePopover';
+import { MoreHorizontal, Sparkles } from 'lucide-react';
+import { BalancePopover, getPlanBackground } from '@/components/account/BalancePopover';
 
 const baseItemStyle = {
   minW: '36px',
@@ -86,16 +86,6 @@ export default function SecondaryLinks() {
     }
   }, [workspace, fetchSubscriptionInfo]);
 
-  const getPlanBackground = (planName: string) => {
-    const name = planName.toLowerCase();
-    if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
-    if (name.includes('starter')) return 'var(--background-image-plan-starter)';
-    if (name.includes('pro')) return 'var(--background-image-plan-pro)';
-    if (name.includes('team')) return 'var(--background-image-plan-team)';
-    if (name.includes('enterprise')) return 'var(--background-image-plan-enterprise)';
-    return 'var(--background-image-plan-payg)';
-  };
-
   const balance = useMemo(() => {
     let realBalance = new Decimal(data?.data?.balance || 0);
     if (data?.data?.deductionBalance) {
@@ -122,7 +112,7 @@ export default function SecondaryLinks() {
           <Center
             mr={'12px'}
             borderRadius={'8px'}
-            bg={getPlanBackground(subscriptionInfo?.subscription?.PlanName || 'payg')}
+            bg={getPlanBackground(subscriptionInfo?.subscription)}
             h={'36px'}
             px={'12px'}
             py={'8px'}
@@ -130,11 +120,55 @@ export default function SecondaryLinks() {
             fontSize={'14px'}
             fontWeight={'500'}
             cursor={'pointer'}
+            onClick={() => openCostCenterApp('upgrade')}
           >
-            <Text>{t('common:balance')}</Text>
-            <Divider orientation="vertical" mx={'12px'} />
-            <CurrencySymbol type={currencySymbol} />
-            <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
+            {subscriptionInfo?.subscription?.type === 'PAYG' ? (
+              <div className="flex items-center text-sm font-medium text-blue-600">
+                <Center
+                  mr={'8px'}
+                  bg={'#34D399'}
+                  w={'8px'}
+                  h={'8px'}
+                  borderRadius={'full'}
+                ></Center>
+                <CurrencySymbol type={currencySymbol} />
+                <Text>{formatMoney(balance).toFixed(2)}</Text>
+                <Divider
+                  orientation="vertical"
+                  mx={'12px'}
+                  borderColor={'rgba(0, 0, 0, 0.08)'}
+                  height={'16px'}
+                />
+                <span>Subscribe</span>
+                <Sparkles className="ml-[2px]" size={16} />
+              </div>
+            ) : (
+              <>
+                <Center
+                  mr={'8px'}
+                  bg={subscriptionInfo?.subscription?.Status === 'Debt' ? '#F87171' : '#34D399'}
+                  w={'8px'}
+                  h={'8px'}
+                  borderRadius={'full'}
+                ></Center>
+                <Text textTransform="capitalize">
+                  {subscriptionInfo?.subscription?.PlanName || 'Free'} Plan
+                </Text>
+                {subscriptionInfo?.subscription?.Status === 'Debt' && (
+                  <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
+                    Expired
+                  </div>
+                )}
+                <Divider
+                  orientation="vertical"
+                  mx={'12px'}
+                  borderColor={'rgba(0, 0, 0, 0.08)'}
+                  height={'16px'}
+                />
+                <span>Upgrade</span>
+                <Sparkles className="ml-[2px]" size={16} />
+              </>
+            )}
           </Center>
         </BalancePopover>
 

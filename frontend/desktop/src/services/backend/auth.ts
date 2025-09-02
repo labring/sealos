@@ -98,3 +98,31 @@ export const generateOnceToken = (props: OnceTokenPayload) =>
 
 export const generateCronJobToken = (props: CronJobTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '60000' });
+
+export const callBillingService = async (
+  endpoint: string,
+  payload: { userUid: string; userId: string },
+  body: Record<string, any>
+) => {
+  const billingUrl = global.AppConfig.desktop.auth.billingUrl;
+  if (!billingUrl) {
+    throw new Error('Billing service not configured');
+  }
+
+  const billingToken = generateBillingToken(payload);
+  const regionDomain = global.AppConfig.cloud.domain;
+
+  const response = await fetch(`${billingUrl}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${billingToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...body,
+      regionDomain
+    })
+  });
+
+  return response.json();
+};
