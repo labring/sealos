@@ -55,7 +55,12 @@ const nextConfig = {
         source: '/',
         destination: '/plan',
         permanent: true
-      }
+      },
+      {
+        source: '/cost_overview',
+        destination: '/plan',
+        permanent: false
+      },
     ]
   }
 }
