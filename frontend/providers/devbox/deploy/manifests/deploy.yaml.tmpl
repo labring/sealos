@@ -34,16 +34,6 @@ spec:
       labels:
         app: devbox-frontend
     spec:
-      initContainers:
-        - name: devbox-frontend-init
-          image: ghcr.io/labring/sealos-devbox-frontend:latest
-          imagePullPolicy: Always
-          env:
-            - name: REGION_UID
-              value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
-            - name: DATABASE_URL
-              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
-          command: ['/bin/bash', '-c', '/app/providers/devbox/init-database.sh']
       containers:
         - name: devbox-frontend
           env:

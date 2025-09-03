@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prisma-migrate-deploy
+  namespace: devbox-frontend
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      containers:
+      - name: migrate
+        image: ghcr.io/labring/sealos-devbox-frontend:latest
+        command:
+        - sh
+        - -c
+        args:
+        - cd /app/providers/devbox && npx prisma@5.10.2 migrate deploy
+        env:
+        - name: DATABASE_URL
+          value: {{ .databaseUrl }}
+      restartPolicy: Never
+  backoffLimit: 1
