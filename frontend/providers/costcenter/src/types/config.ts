@@ -12,6 +12,7 @@ export type Mongo = {
 
 export type Invoice = {
   enabled: boolean;
+  directDownload: boolean;
   feishApp: {
     appId: string;
     appSecret: string;
@@ -26,6 +27,11 @@ export type Invoice = {
   serviceToken: string;
   aliSms: AliSms;
   mongo: Mongo;
+  billingInfo: {
+    companyName: string;
+    addressLines: string[];
+    contactLines: string[];
+  };
 };
 
 export type PayMethods = {
@@ -96,6 +102,7 @@ export var DefaultAppConfig: AppConfigType = {
     currencyType: 'shellCoin',
     invoice: {
       enabled: false,
+      directDownload: true,
       feishApp: {
         appId: '',
         appSecret: '',
@@ -117,6 +124,11 @@ export var DefaultAppConfig: AppConfigType = {
       },
       mongo: {
         uri: ''
+      },
+      billingInfo: {
+        companyName: '',
+        addressLines: [],
+        contactLines: []
       }
     },
     recharge: {
