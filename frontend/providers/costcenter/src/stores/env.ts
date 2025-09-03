@@ -12,6 +12,12 @@ type EnvState = {
   openRecharge: boolean;
   i18nIsInitialized: boolean;
   currency: 'shellCoin' | 'cny' | 'usd';
+  billingInfo: {
+    companyName: string;
+    addressLines: string[];
+    contactLines: string[];
+  };
+  invoiceDirectDownload: boolean;
   stripePromise: ReturnType<typeof loadStripe>;
   setStripe: (pub: string) => void;
   setEnv: <T extends Exclude<keyof EnvState, 'setEnv' | 'setStripe' | 'stripePromise'>>(
@@ -32,6 +38,12 @@ const useEnvStore = create<EnvState>((set, get) => ({
   openRecharge: false,
   i18nIsInitialized: false,
   currency: 'shellCoin',
+  billingInfo: {
+    companyName: '',
+    addressLines: [],
+    contactLines: []
+  },
+  invoiceDirectDownload: false,
   stripePromise: Promise.resolve(null),
   setStripe: (pub: string) => set({ stripePromise: loadStripe(pub) }),
   setEnv: (k, v) => set({ [k]: v })

@@ -15,6 +15,12 @@ export type Response = {
   CURRENCY: 'shellCoin' | 'cny' | 'usd';
   INVOICE_ENABLED: boolean;
   GPU_ENABLED: boolean;
+  BILLING_INFO: {
+    companyName: string;
+    addressLines: string[];
+    contactLines: string[];
+  };
+  INVOICE_DIRECT_DOWNLOAD: boolean;
 };
 
 function getAppConfig(defaultConfig: AppConfigType, initConfig: AppConfigType): AppConfigType {
@@ -61,7 +67,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ALIPAY_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.alipay?.enabled || false,
         CURRENCY: global.AppConfig.costCenter.currencyType,
         INVOICE_ENABLED: global.AppConfig.costCenter?.invoice?.enabled || false,
-        GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false
+        GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false,
+        BILLING_INFO: global.AppConfig.costCenter.invoice.billingInfo,
+        INVOICE_DIRECT_DOWNLOAD: global.AppConfig.costCenter.invoice.directDownload
       } as Response
     });
   } catch (error) {
