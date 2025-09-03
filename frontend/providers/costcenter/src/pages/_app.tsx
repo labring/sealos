@@ -87,6 +87,11 @@ const App = ({ Component, pageProps }: AppProps) => {
         stripeE && state.setStripe(data?.STRIPE_PUB || '');
         state.setEnv('wechatEnabled', !!data?.WECHAT_ENABLED);
         state.setEnv('alipayEnabled', !!data?.ALIPAY_ENABLED);
+        state.setEnv(
+          'billingInfo',
+          data?.BILLING_INFO ?? { companyName: '', addressLines: [], contactLines: [] }
+        );
+        state.setEnv('invoiceDirectDownload', !!data?.INVOICE_DIRECT_DOWNLOAD);
       } catch (error) {
         console.error('get init config error');
       }
