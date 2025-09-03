@@ -5,7 +5,6 @@ import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Text } from '@chakra-ui/react';
 import { useMemo } from 'react';
-import { maxTime } from 'date-fns';
 import { DBTypeEnum } from '@/constants/db';
 import { useTranslation } from 'next-i18next';
 

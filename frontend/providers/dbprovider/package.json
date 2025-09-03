@@ -30,7 +30,7 @@
     "@tanstack/react-virtual": "^3.10.8",
     "ansi_up": "^5.2.1",
     "axios": "^1.5.1",
-    "date-fns": "^2.30.0",
+    "date-fns": "^3.0.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
     "framer-motion": "^10.16.4",

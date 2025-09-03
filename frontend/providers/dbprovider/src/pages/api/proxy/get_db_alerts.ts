@@ -55,11 +55,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await response.json();
     jsonRes(res, data);
   } catch (error) {
-    console.error('Database alerts proxy error:', error);
+    // 静默处理连接错误，避免在控制台打印完整堆栈
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isConnectionError =
+      errorMessage.includes('ECONNRESET') ||
+      errorMessage.includes('fetch failed') ||
+      errorMessage.includes('ENOTFOUND') ||
+      errorMessage.includes('ECONNREFUSED');
+
+    if (isConnectionError) {
+      // 连接错误时只记录简单日志，不打印完整堆栈
+      console.warn('Database alerts service unavailable:', errorMessage);
+    } else {
+      // 其他错误打印完整信息用于调试
+      console.error('Database alerts proxy error:', error);
+    }
+
     jsonRes(res, {
       code: 500,
       error: 'Failed to fetch database alerts',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: errorMessage
     });
   }
 }

@@ -66,6 +66,8 @@ spec:
               value: "{{ .guideEnabled }}"
             - name: BILLING_URL
               value: {{ .billingUrl }}
+            - name: MANAGED_DB_ENABLED
+              value: "false"
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

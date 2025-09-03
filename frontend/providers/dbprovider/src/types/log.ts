@@ -42,6 +42,8 @@ export type LogParserParams = {
   dbType: DBTypeEnum;
   keyword?: string;
   logType?: LogTypeEnum;
+  startTime?: number;
+  endTime?: number;
 };
 
 export interface ILogParser {

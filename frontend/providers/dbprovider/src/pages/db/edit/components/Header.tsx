@@ -10,7 +10,7 @@ import { useGlobalStore } from '@/store/global';
 import { useTranslation } from 'next-i18next';
 import { I18nCommonKey } from '@/types/i18next';
 import { useGuideStore } from '@/store/guide';
-import { Info, X } from 'lucide-react';
+import { Info, X, ArrowLeft } from 'lucide-react';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { track } from '@sealos/gtm';
@@ -46,11 +46,14 @@ const Header = ({
     );
   }, [dbName, yamlList]);
 
-  const { createCompleted } = useGuideStore();
+  const { createCompleted, _hasHydrated } = useGuideStore();
+
+  // 只在客户端 hydration 完成后才显示 guide 相关的内容
+  const shouldShowGuide = isClientSide && _hasHydrated;
 
   return (
     <Flex flexDirection={'column'} w={'100%'}>
-      {!createCompleted && isClientSide && (
+      {shouldShowGuide && !createCompleted && (
         <Center
           borderTop={'1px solid #BFDBFE'}
           borderBottom={'1px solid #BFDBFE'}
@@ -75,7 +78,7 @@ const Header = ({
             router.replace(lastRoute);
           }}
         >
-          <MyIcon name="arrowLeft" w={'24px'} />
+          <ArrowLeft width={'24px'} height={'24px'} />
           <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
             {t(title)}
           </Box>
@@ -97,12 +100,12 @@ const Header = ({
             h={'40px'}
             onClick={applyCb}
             _focusVisible={{ boxShadow: '' }}
-            outline={isClientSide && !createCompleted ? '1px solid #1C4EF5' : 'none'}
-            outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
+            outline={shouldShowGuide && !createCompleted ? '1px solid #1C4EF5' : 'none'}
+            outlineOffset={shouldShowGuide && !createCompleted ? '2px' : '0'}
           >
             {t(applyBtnText)}
           </Button>
-          {isClientSide && !createCompleted && (
+          {shouldShowGuide && !createCompleted && (
             <Box
               zIndex={1000}
               position={'absolute'}

@@ -2,6 +2,7 @@ import MyIcon from '@/components/Icon';
 import { DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Button, Flex } from '@chakra-ui/react';
+import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 
@@ -37,7 +38,7 @@ const Header = ({
           })
         }
       >
-        <MyIcon name="arrowLeft" w={'24px'} />
+        <ArrowLeft width={'24px'} height={'24px'} />
         <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
           {t(title)}
         </Box>

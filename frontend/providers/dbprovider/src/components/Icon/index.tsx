@@ -5,7 +5,6 @@ import { Icon } from '@chakra-ui/react';
 export const IconMap = {
   more: require('./icons/more.svg').default,
   podList: require('./icons/podList.svg').default,
-  arrowLeft: require('./icons/arrowLeft.svg').default,
   plus: require('./icons/plus.svg').default,
   delete: require('./icons/delete.svg').default,
   restart: require('./icons/restart.svg').default,

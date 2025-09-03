@@ -7,11 +7,13 @@ interface GuideState {
   detailCompleted: boolean;
   appName: string;
   startTimeMs: number | null;
+  _hasHydrated: boolean;
   setCreateCompleted: (completed: boolean) => void;
   setDetailCompleted: (completed: boolean) => void;
   setApplistCompleted: (completed: boolean) => void;
   resetGuideState: (completed: boolean) => void;
   setAppName: (name: string) => void;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useGuideStore = create<GuideState>()(
@@ -22,6 +24,7 @@ export const useGuideStore = create<GuideState>()(
       detailCompleted: true,
       appName: '',
       startTimeMs: null,
+      _hasHydrated: false,
       setCreateCompleted: (completed) => set({ createCompleted: completed }),
       setDetailCompleted: (completed) => set({ detailCompleted: completed }),
       setApplistCompleted: (completed) => set({ applistCompleted: completed }),
@@ -31,11 +34,15 @@ export const useGuideStore = create<GuideState>()(
           detailCompleted: completed,
           applistCompleted: completed
         }),
-      setAppName: (name) => set({ appName: name })
+      setAppName: (name) => set({ appName: name }),
+      setHasHydrated: (state) => set({ _hasHydrated: state })
     }),
     {
       name: 'user-guide',
-      storage: createJSONStorage(() => sessionStorage)
+      storage: createJSONStorage(() => sessionStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      }
     }
   )
 );
