@@ -76,8 +76,9 @@ export function UpgradePlanCard({
 
   const handleSubscribeClick = () => {
     if (isCreateMode) {
-      // In create mode, show confirmation modal
-      confirmationModalRef.current?.onOpen();
+      // In create mode, first select the plan, then show confirmation modal
+      onSelect?.(); // Select this plan first
+      confirmationModalRef.current?.onOpen(); // Then show confirmation modal
       return;
     }
 
@@ -151,9 +152,18 @@ export function UpgradePlanCard({
         </div>
 
         {isCreateMode ? (
-          <div className="mb-4">
-            <div className="border-t border-slate-200"></div>
-          </div>
+          <Button
+            className={cn(
+              'w-full mb-6 font-medium',
+              isSelected
+                ? 'bg-gray-900 text-white hover:bg-gray-800'
+                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+            )}
+            disabled={isLoading}
+            onClick={handleSubscribeClick}
+          >
+            {isLoading ? 'Creating...' : isSelected ? 'Create with this plan' : 'Select plan'}
+          </Button>
         ) : (
           <Button
             className={cn(
@@ -161,8 +171,8 @@ export function UpgradePlanCard({
               isCurrentPlan || isNextPlan
                 ? 'bg-gray-200 text-gray-600 cursor-not-allowed hover:bg-gray-200'
                 : actionType === 'contact'
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-900 text-white hover:bg-gray-800'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-900 text-white hover:bg-gray-800'
             )}
             disabled={isCurrentPlan || isNextPlan || isLoading}
             onClick={handleSubscribeClick}
@@ -178,10 +188,10 @@ export function UpgradePlanCard({
                 {resources.cpu === '16'
                   ? '1 vCPU'
                   : resources.cpu === '4'
-                  ? '4 vCPU'
-                  : resources.cpu === '8'
-                  ? 'More vCPU'
-                  : `${resources.cpu} CPU`}
+                    ? '4 vCPU'
+                    : resources.cpu === '8'
+                      ? 'More vCPU'
+                      : `${resources.cpu} CPU`}
               </span>
             </li>
           )}
@@ -192,10 +202,10 @@ export function UpgradePlanCard({
                 {resources.memory === '32Gi'
                   ? '2GB RAM'
                   : resources.memory === '8Gi'
-                  ? '8GB RAM'
-                  : resources.memory === '16Gi'
-                  ? 'More RAM'
-                  : resources.memory}
+                    ? '8GB RAM'
+                    : resources.memory === '16Gi'
+                      ? 'More RAM'
+                      : resources.memory}
               </span>
             </li>
           )}
@@ -206,10 +216,10 @@ export function UpgradePlanCard({
                 {resources.storage === '500Gi'
                   ? '2GB Disk'
                   : resources.storage === '100Gi'
-                  ? '2GB Disk'
-                  : resources.storage === '200Gi'
-                  ? 'More Disk'
-                  : resources.storage}
+                    ? '2GB Disk'
+                    : resources.storage === '200Gi'
+                      ? 'More Disk'
+                      : resources.storage}
               </span>
             </li>
           )}
@@ -219,10 +229,10 @@ export function UpgradePlanCard({
               {plan.Traffic === 50000
                 ? '3GB Traffic'
                 : plan.Traffic === 10000
-                ? '3GB Traffic'
-                : plan.Traffic === 20000
-                ? 'More Traffic'
-                : `${plan.Traffic}GB Traffic`}
+                  ? '3GB Traffic'
+                  : plan.Traffic === 20000
+                    ? 'More Traffic'
+                    : `${plan.Traffic}GB Traffic`}
             </span>
           </li>
           <li className="flex items-center gap-3">
@@ -231,10 +241,10 @@ export function UpgradePlanCard({
               {plan.MaxSeats === 50
                 ? '1 Port'
                 : plan.MaxSeats === 10
-                ? '2 Port'
-                : plan.MaxSeats === 20
-                ? 'More Port'
-                : `${plan.MaxSeats} Port`}
+                  ? '2 Port'
+                  : plan.MaxSeats === 20
+                    ? 'More Port'
+                    : `${plan.MaxSeats} Port`}
             </span>
           </li>
           {plan.Name.includes('medium') && (
