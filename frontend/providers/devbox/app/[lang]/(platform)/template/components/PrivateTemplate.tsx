@@ -74,9 +74,9 @@ export default function PrivateTemplate({ search }: { search: string }) {
 
   return (
     <div className="flex h-[calc(100vh-200px)] flex-col gap-3">
-      <ScrollArea className="h-[calc(100vh-200px)] min-w-[400px] pr-2">
+      <ScrollArea className="h-[calc(100vh-200px)] pr-2">
         {listPrivateTemplateRepository.isLoading ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,340px,640px),1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,340px,540px),1fr))] gap-3">
             {Array.from({ length: 9 }).map((_, idx) => (
               <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
                 <div className="flex items-center gap-2">
