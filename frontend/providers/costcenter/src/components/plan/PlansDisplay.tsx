@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import { UpgradePlanCard } from './UpgradePlanCard';
+import useSessionStore from '@/stores/session';
+import useBillingStore from '@/stores/billing';
+import PlanConfirmationModal from './PlanConfirmationModal';
 
 interface PlansDisplayProps {
   plans: SubscriptionPlan[];
@@ -15,6 +18,7 @@ interface PlansDisplayProps {
   stillChargeByVolume?: boolean;
   selectedPlanId?: string;
   onPlanSelect?: (planId: string) => void;
+  workspaceName?: string;
 }
 
 export function PlansDisplay({
@@ -26,10 +30,17 @@ export function PlansDisplay({
   isCreateMode = false,
   stillChargeByVolume = false,
   selectedPlanId,
-  onPlanSelect
+  onPlanSelect,
+  workspaceName
 }: PlansDisplayProps) {
+  const { session } = useSessionStore();
+  const { getRegion } = useBillingStore();
+  const region = getRegion();
+  const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
+
   const [showMorePlans, setShowMorePlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
 
   // Filter out free plans and separate main plans from additional plans
   const paidPlans = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
@@ -90,6 +101,7 @@ export function PlansDisplay({
             isCreateMode={isCreateMode}
             isSelected={isCreateMode && selectedPlanId === plan.ID}
             onSelect={isCreateMode ? () => onPlanSelect?.(plan.ID) : undefined}
+            workspaceName={workspaceName}
           />
         ))}
       </div>
@@ -181,8 +193,13 @@ export function PlansDisplay({
               }
               onClick={() => {
                 const plan = additionalPlans.find((p) => p.ID === selectedPlan);
-                if (plan && onSubscribe) {
-                  onSubscribe(plan);
+                if (plan) {
+                  if (isCreateMode) {
+                    onSubscribe?.(plan);
+                  } else {
+                    setPendingPlan(plan);
+                    confirmationModalRef.current?.onOpen();
+                  }
                 }
               }}
             >
@@ -211,6 +228,29 @@ export function PlansDisplay({
           )}
         </div>
       )}
+
+      {/* Plan Confirmation Modal for More Plans */}
+      <PlanConfirmationModal
+        ref={confirmationModalRef}
+        plan={pendingPlan || undefined}
+        workspace={session?.user?.nsid}
+        regionDomain={region?.domain}
+        period="1m"
+        payMethod="stripe"
+        operator="upgraded"
+        workspaceName={workspaceName}
+        isCreateMode={isCreateMode}
+        onConfirm={() => {
+          if (pendingPlan) {
+            onSubscribe?.(pendingPlan);
+            setPendingPlan(null);
+          }
+        }}
+        onCancel={() => {
+          setPendingPlan(null);
+          confirmationModalRef.current?.onClose();
+        }}
+      />
     </div>
   );
 }
