@@ -233,15 +233,28 @@ export class RemoteSSHConnector extends Disposable {
 
     Logger.info('Opening Devbox in VSCode')
 
-    await vscode.commands.executeCommand(
-      'vscode.openFolder',
-      vscode.Uri.parse(
-        `vscode-remote://ssh-remote+${sshHostLabel}${workingDir}`
-      ),
-      {
-        forceNewWindow: true,
-      }
-    )
+    // NOTE: CodeBuddy use other uri schema
+    if (vscode.env.uriScheme === 'codebuddy') {
+      await vscode.commands.executeCommand(
+        'vscode.openFolder',
+        vscode.Uri.parse(
+          `vscode-remote://codebuddy-remote-ssh+${sshHostLabel}${workingDir}`
+        ),
+        {
+          forceNewWindow: true,
+        }
+      )
+    } else {
+      await vscode.commands.executeCommand(
+        'vscode.openFolder',
+        vscode.Uri.parse(
+          `vscode-remote://ssh-remote+${sshHostLabel}${workingDir}`
+        ),
+        {
+          forceNewWindow: true,
+        }
+      )
+    }
 
     Logger.info('Devbox opened in VSCode')
 
@@ -252,22 +265,27 @@ export class RemoteSSHConnector extends Disposable {
   }
 
   private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
-    const isOfficialVscode =
-      vscode.env.uriScheme === 'vscode' ||
-      vscode.env.uriScheme === 'vscode-insiders' ||
-      vscode.env.uriScheme === 'cursor'
+    // this ide has remote-ssh inside already
+    const hasRemoteSSHInside =
+      vscode.env.uriScheme === 'windsurf' ||
+      vscode.env.uriScheme === 'trae' ||
+      vscode.env.uriScheme === 'trae-cn' ||
+      vscode.env.uriScheme === 'Qoder' ||
+      vscode.env.uriScheme === 'Lingma' ||
+      vscode.env.uriScheme === 'codebuddy'
 
-    // windsurf and trae has remote-ssh inside already
-    if (!isOfficialVscode) {
+    if (hasRemoteSSHInside) {
       return true
     }
+    console.log('test test est est est est est se ')
 
     const msRemoteSSHId = 'ms-vscode-remote.remote-ssh'
-
+    const openRemoteSSHId = 'jeanp413.open-remote-ssh' // kiro use this
     // cursor has their custom extension
     const cursorCustomRemoteSSHId = 'anysphere.remote-ssh'
 
     const msVscodeRemoteSSHExt = vscode.extensions.getExtension(msRemoteSSHId)
+    const openRemoteSSHExt = vscode.extensions.getExtension(openRemoteSSHId)
     const cursorCustomRemoteSSHExt = vscode.extensions.getExtension(
       cursorCustomRemoteSSHId
     )
@@ -275,7 +293,8 @@ export class RemoteSSHConnector extends Disposable {
     // If Remote-SSH extension is already installed（ms or anysphere）, return true
     if (
       msVscodeRemoteSSHExt ||
-      (vscode.env.uriScheme === 'cursor' && cursorCustomRemoteSSHExt)
+      (vscode.env.uriScheme === 'cursor' && cursorCustomRemoteSSHExt) ||
+      (vscode.env.uriScheme === 'kiro' && openRemoteSSHExt)
     ) {
       return true
     }
@@ -283,19 +302,19 @@ export class RemoteSSHConnector extends Disposable {
     const installRemoteSSHExtId =
       vscode.env.uriScheme === 'cursor'
         ? cursorCustomRemoteSSHId
+        : vscode.env.uriScheme === 'kiro'
+        ? openRemoteSSHId
         : msRemoteSSHId
 
     const install = message.Install
-    const cancel = message.Cancel
 
     const action = await vscode.window.showInformationMessage(
       message.PleaseInstallRemoteSSH,
       { modal: true },
-      install,
-      cancel
+      install
     )
 
-    if (action === cancel) {
+    if (action !== install) {
       return false
     }
 
