@@ -123,7 +123,7 @@ const TemplateCard = ({
     <>
       <Card
         className={cn(
-          'group relative flex w-full max-w-[375px] min-w-fit flex-col items-start border bg-white hover:border-zinc-900',
+          'group relative flex w-full max-w-[375px] flex-col items-start border bg-white hover:border-zinc-900',
           isDisabled &&
             'pointer-events-none cursor-not-allowed select-none before:absolute before:inset-0 before:z-10 before:bg-white/10 [&_*]:cursor-not-allowed [&_*]:opacity-80',
           forceHover && !guide3 && 'border-zinc-900'
