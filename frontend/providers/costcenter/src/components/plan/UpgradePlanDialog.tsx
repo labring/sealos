@@ -76,6 +76,7 @@ export function UpgradePlanDialog({
               currentPlan={currentPlan}
               lastTransaction={lastTransaction}
               onSubscribe={(plan) => onSubscribe?.(plan, workspaceName, false)}
+              workspaceName={workspaceName}
               isSubscribing={isSubscribing}
               isCreateMode={isCreateMode}
               stillChargeByVolume={stillChargeByVolume}
