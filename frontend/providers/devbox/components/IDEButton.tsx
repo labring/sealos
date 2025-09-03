@@ -14,7 +14,7 @@ import {
 import { Button } from '@sealos/shadcn-ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
-import { Separator, cn } from '@sealos/shadcn-ui';
+import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { IDEType, useIDEStore } from '@/stores/ide';
