@@ -148,7 +148,7 @@ export const valuationMap = new Map([
     {
       icon: Network,
       unit: 'GB',
-      scale: 1024,
+      scale: 1024 * 1024 * 1024,
       idx: 6
     }
   ]

@@ -1,6 +1,7 @@
 import { SubscriptionPlan } from '@/types/plan';
 import { CircleCheck } from 'lucide-react';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { formatMoney } from '@/utils/format';
 
 interface StaticPlanCardProps {
   plan: SubscriptionPlan;
@@ -45,7 +46,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           {plan.Name !== 'Hobby' && (
             <div className="flex items-baseline">
               <span className="text-4xl font-bold text-gray-900">
-                ${(monthlyPrice / 1000000).toFixed(0)}
+                ${formatMoney(monthlyPrice).toFixed(0)}
               </span>
               <span className="text-gray-600 ml-1">/month</span>
             </div>

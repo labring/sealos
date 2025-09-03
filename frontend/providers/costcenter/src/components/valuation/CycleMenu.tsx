@@ -1,27 +1,49 @@
 import { CYCLE } from '@/constants/valuation';
-import { FlexProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import BaseMenu from '../menu/BaseMenu';
+import { cn } from '@sealos/shadcn-ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@sealos/shadcn-ui/select';
 
 export default function CycleMenu({
   cycleIdx,
   setCycleIdx,
-  ...props
+  isDisabled,
+  className,
+  ...selectProps
 }: {
   cycleIdx: number;
   setCycleIdx: (x: number) => void;
-} & FlexProps) {
+  isDisabled?: boolean;
+  className?: {
+    trigger?: string;
+  };
+} & React.ComponentProps<typeof Select>) {
   const { t } = useTranslation();
+
   return (
-    <BaseMenu
-      itemIdx={cycleIdx}
-      isDisabled={false}
-      setItem={function (idx: number): void {
-        setCycleIdx(idx);
+    <Select
+      disabled={isDisabled}
+      value={cycleIdx.toString() ?? undefined}
+      onValueChange={(value) => {
+        setCycleIdx(Number.isSafeInteger(Number(value)) ? Number(value) : 0);
       }}
-      innerWidth={props.width}
-      itemlist={CYCLE.map((v) => t(v)) as unknown as string[]}
-      {...props}
-    />
+      {...selectProps}
+    >
+      <SelectTrigger className={cn(className?.trigger)}>
+        <SelectValue placeholder={t('Cycle')} />
+      </SelectTrigger>
+      <SelectContent>
+        {CYCLE.map((item, idx) => (
+          <SelectItem key={idx} value={idx.toString()}>
+            {t(item)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

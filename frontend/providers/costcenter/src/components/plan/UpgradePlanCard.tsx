@@ -6,6 +6,7 @@ import { useRef } from 'react';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import PlanConfirmationModal from './PlanConfirmationModal';
+import { formatMoney } from '@/utils/format';
 
 interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
@@ -140,7 +141,7 @@ export function UpgradePlanCard({
 
         <div className="mb-4">
           <span className="text-4xl font-bold text-gray-900">
-            ${(monthlyPrice / 1000000).toFixed(0)}
+            ${formatMoney(monthlyPrice).toFixed(0)}
           </span>
           <span className="text-gray-600 ml-1">/month</span>
         </div>

@@ -8,6 +8,7 @@ import {
   TableLayoutBody
 } from '@sealos/shadcn-ui/table-layout';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { formatMoney } from '@/utils/format';
 
 export type SubscriptionData = {
   time: string;
@@ -40,7 +41,7 @@ export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
       <TableCell>
         <Badge className={cn('font-medium', 'bg-plan-starter text-blue-600')}>{item.plan}</Badge>
       </TableCell>
-      <TableCell>${item.cost / 1000000}</TableCell>
+      <TableCell>${formatMoney(item.cost)}</TableCell>
     </TableRow>
   );
 

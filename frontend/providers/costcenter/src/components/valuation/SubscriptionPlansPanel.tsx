@@ -2,6 +2,7 @@ import { SubscriptionPlan } from '@/types/plan';
 import { StaticPlanCard } from './StaticPlanCard';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
+import { formatMoney } from '@/utils/format';
 
 interface SubscriptionPlansPanelProps {
   plansData?: SubscriptionPlan[];
@@ -36,7 +37,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
       {additionalPlans.length > 0 && (
         <div>
           <div className="text-lg font-medium mb-4 text-black">More Plans</div>
-          <div className="max-w-md">
+          <div className="w-full">
             <Select value={selectedMorePlan} onValueChange={setSelectedMorePlan}>
               <SelectTrigger className="w-full bg-white">
                 <SelectValue placeholder="Select a plan" />
@@ -50,7 +51,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                     resources = {};
                   }
 
-                  const monthlyPrice = (plan.Prices?.[0]?.Price || 0) / 1000000;
+                  const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
                   const trafficGB =
                     plan.Traffic > 1 ? (plan.Traffic / 1024).toFixed(0) : plan.Traffic;
 

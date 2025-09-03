@@ -2,6 +2,7 @@ import React from 'react';
 import { TransformComponent, TransformWrapper, useTransformContext } from 'react-zoom-pan-pinch';
 import { useMemo, useState } from 'react';
 import { getSmoothStepPath } from '@/utils/smooth-step-path';
+import { formatMoney } from '@/utils/format';
 
 const GRID_SIZE = '2.5rem';
 
@@ -54,7 +55,7 @@ function CostCard({
         className="text-gray-900 font-bold data-[selected=true]:text-blue-600"
         data-selected={selected}
       >
-        ${(cost / 1000000).toFixed(2)}
+        ${formatMoney(cost).toFixed(2)}
       </span>
     </button>
   );

@@ -1,39 +1,37 @@
-import {
-  Slider,
-  SliderFilledTrack,
-  SliderMark,
-  SliderProps,
-  SliderThumb,
-  SliderTrack
-} from '@chakra-ui/react';
+import { Slider } from '@sealos/shadcn-ui/slider';
+import React from 'react';
+
+interface CalculatorSliderProps {
+  unit: string;
+  rangeList: number[];
+  value: number;
+  onChange?: (value: number) => void;
+}
 
 export default function CalculatorSlider({
   rangeList,
   value,
   unit,
+  onChange,
   ...props
-}: { unit: string; rangeList: number[] } & SliderProps) {
+}: CalculatorSliderProps) {
+  const marks = rangeList.map((v, idx) => ({
+    label: `${v}${idx === rangeList.length - 1 ? unit : ''}`,
+    value: idx
+  }));
+
   return (
-    <Slider w={'400px'} min={0} max={4} step={1} value={value} {...props}>
-      {rangeList.map((v, idx) => (
-        <>
-          <SliderMark
-            value={idx}
-            key={idx}
-            mt={'6px'}
-            fontSize={'11px'}
-            transform={'translateX(-50%)'}
-            color={idx === value ? 'grayModern.900' : 'grayModern.400'}
-          >
-            {v}
-            {idx === rangeList.length - 1 && unit}
-          </SliderMark>
-        </>
-      ))}
-      <SliderTrack>
-        <SliderFilledTrack bgColor={'grayModern.900'} />
-      </SliderTrack>
-      <SliderThumb bgColor={'grayModern.900'} boxShadow="0px 2px 3px 1px #ABBDCE66" />
-    </Slider>
+    <div className="w-96">
+      <Slider
+        value={[value]}
+        onValueChange={(values) => onChange?.(values[0])}
+        min={0}
+        max={rangeList.length - 1}
+        step={1}
+        marks={marks}
+        className="w-full"
+        {...props}
+      />
+    </div>
   );
 }

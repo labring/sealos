@@ -13,6 +13,7 @@ import { Badge } from '@sealos/shadcn-ui/badge';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
+import { formatMoney } from '@/utils/format';
 
 export type PAYGData = {
   appName: string;
@@ -61,7 +62,7 @@ export function PAYGCostTableView({
           {t(item.appType)}
         </Badge>
       </TableCell>
-      <TableCell>${item.cost / 1000000}</TableCell>
+      <TableCell>${formatMoney(item.cost)}</TableCell>
       <TableCell>
         <Button variant="outline" size="sm" onClick={() => onUsageClick?.(item)}>
           Usage
