@@ -14,7 +14,7 @@ spec:
         - sh
         - -c
         args:
-        - cd /app/providers/devbox && npx prisma@5.10.2 migrate deploy
+        - cd /app/providers/devbox && prisma migrate deploy
         env:
         - name: DATABASE_URL
           value: {{ .databaseUrl }}
