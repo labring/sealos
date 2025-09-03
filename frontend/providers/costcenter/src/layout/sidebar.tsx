@@ -1,12 +1,4 @@
-import {
-  Calculator,
-  ChartLine,
-  ChartPie,
-  Dock,
-  ReceiptText,
-  BarChart3,
-  LucideIcon
-} from 'lucide-react';
+import { Calculator, ChartLine, ChartPie, Dock, ReceiptText, LucideIcon } from 'lucide-react';
 import useEnvStore from '@/stores/env';
 import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
@@ -53,13 +45,6 @@ export default function SideBar() {
       value: 'SideBar.Invoice',
       icon: ReceiptText,
       display: invoiceEnabled
-    },
-    {
-      id: 'CostOverview',
-      url: '/cost_overview',
-      value: 'SideBar.Index',
-      icon: BarChart3,
-      display: true
     },
     {
       id: 'Pricing Standard',
