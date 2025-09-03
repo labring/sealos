@@ -11,11 +11,13 @@ import InvoiceHistory from '@/components/invoice/InvoiceHistory';
 import useInvoiceStore from '@/stores/invoce';
 import { InvoicePayload } from '@/types/invoice';
 import { OrderListRow } from '@/components/invoice/OrderListView';
+import { InvoiceDownloadModal } from '@/components/invoice/InvoiceDownloadModal';
+import useEnvStore from '@/stores/env';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
   const { data: invoiceInspectionData, setData: setInvoiceInspectionData } = useInvoiceStore();
-  const [selectBillings, setSelectBillings] = useState<OrderListRow[]>([]);
+  const [selectdBillings, setSelectdBillings] = useState<OrderListRow[]>([]);
   const [searchValue, setSearch] = useState('');
   const [orderID, setOrderID] = useState('');
   const [historySearchValue, setHistorySearchValue] = useState('');
@@ -23,9 +25,12 @@ function Invoice() {
   const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
+  const invoiceDirectDownload = useEnvStore((state) => state.invoiceDirectDownload);
+
   const [processState, setProcessState] = useState(0);
-  const invoiceAmount = selectBillings.reduce((acc, cur) => acc + cur.amount, 0);
-  const invoiceCount = selectBillings.length;
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const invoiceAmount = selectdBillings.reduce((acc, cur) => acc + cur.amount, 0);
+  const invoiceCount = selectdBillings.length;
 
   const handleInvoiceClick = (invoice: InvoicePayload) => {
     setInvoiceInspectionData(invoice);
@@ -40,9 +45,11 @@ function Invoice() {
               <TabsTrigger variant="cleanUnderline" value="listing">
                 Order List
               </TabsTrigger>
-              <TabsTrigger variant="cleanUnderline" value="history">
-                Invoice History
-              </TabsTrigger>
+              {!invoiceDirectDownload && (
+                <TabsTrigger variant="cleanUnderline" value="history">
+                  Invoice History
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="listing">
@@ -55,26 +62,32 @@ function Invoice() {
                   setOrderID(v.trim());
                 }}
                 onSelectionChange={(items) => {
-                  setSelectBillings(items);
+                  setSelectdBillings(items);
                 }}
                 onObtainInvoice={() => {
-                  setProcessState(1);
+                  if (invoiceDirectDownload) {
+                    setShowDownloadModal(true);
+                  } else {
+                    setProcessState(1);
+                  }
                 }}
               />
             </TabsContent>
 
-            <TabsContent value="history">
-              <InvoiceHistory
-                dateRange={historyDateRange}
-                onDateRangeChange={setHistoryDateRange}
-                orderIdFilter={historySearchValue}
-                onOrderIdFilterChange={setHistorySearchValue}
-                toInvoiceDetail={() => {
-                  setProcessState(2);
-                }}
-                onInvoiceClick={handleInvoiceClick}
-              />
-            </TabsContent>
+            {!invoiceDirectDownload && (
+              <TabsContent value="history">
+                <InvoiceHistory
+                  dateRange={historyDateRange}
+                  onDateRangeChange={setHistoryDateRange}
+                  orderIdFilter={historySearchValue}
+                  onOrderIdFilterChange={setHistorySearchValue}
+                  toInvoiceDetail={() => {
+                    setProcessState(2);
+                  }}
+                  onInvoiceClick={handleInvoiceClick}
+                />
+              </TabsContent>
+            )}
           </Tabs>
         </section>
       ) : processState === 1 ? (
@@ -82,14 +95,14 @@ function Invoice() {
           <InvoiceForm
             invoiceAmount={invoiceAmount}
             invoiceCount={invoiceCount}
-            billings={selectBillings.map((item) => ({
+            billings={selectdBillings.map((item) => ({
               order_id: item.id,
               regionUID: item.region,
               createdTime: item.time,
               amount: item.amount
             }))}
             onSuccess={() => {
-              setSelectBillings([]);
+              setSelectdBillings([]);
               queryClient.invalidateQueries({
                 queryKey: ['billing'],
                 exact: false
@@ -112,6 +125,13 @@ function Invoice() {
           />
         </section>
       ) : null}
+
+      {/* Invoice Download Modal */}
+      <InvoiceDownloadModal
+        open={showDownloadModal}
+        onOpenChange={setShowDownloadModal}
+        items={selectdBillings}
+      />
     </>
   );
 }
@@ -119,6 +139,7 @@ function Invoice() {
 export default Invoice;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
+  console.log(global.AppConfig);
   if (!global.AppConfig.costCenter.invoice.enabled) {
     return {
       redirect: {
