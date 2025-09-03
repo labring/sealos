@@ -1,98 +1,98 @@
 import vector from '@/assert/Vector.svg';
-import {
-  Img,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputProps,
-  NumberInputStepper,
-  Text
-} from '@chakra-ui/react';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
 import { isNumber } from 'lodash';
+import React, { useState, useEffect } from 'react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+interface CalculatorNumberInputProps {
+  unit?: string;
+  value: number;
+  onChange?: (str: string, val: number) => void;
+  min?: number;
+  max?: number;
+  disabled?: boolean;
+  className?: string;
+}
+
 export default function CalculatorNumberInput({
   onChange,
   unit,
+  value,
+  min = 0,
+  max,
+  disabled = false,
+  className,
   ...props
-}: { unit?: string } & NumberInputProps) {
+}: CalculatorNumberInputProps) {
+  const [inputValue, setInputValue] = useState(value.toString());
+
+  useEffect(() => {
+    setInputValue(value.toString());
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const str = e.target.value;
+    setInputValue(str);
+
+    let val = 0;
+    const numVal = parseFloat(str);
+    if (isNumber(numVal) && !isNaN(numVal)) {
+      val = Math.max(min, max !== undefined ? Math.min(max, numVal) : numVal);
+    }
+    onChange?.(str, val);
+  };
+
+  const increment = () => {
+    const newVal = Math.min(max !== undefined ? max : Number.MAX_SAFE_INTEGER, value + 1);
+    const str = newVal.toString();
+    setInputValue(str);
+    onChange?.(str, newVal);
+  };
+
+  const decrement = () => {
+    const newVal = Math.max(min, value - 1);
+    const str = newVal.toString();
+    setInputValue(str);
+    onChange?.(str, newVal);
+  };
+
   return (
-    <NumberInput
-      clampValueOnBlur={false}
-      step={1}
-      min={0}
-      w="104px"
-      h="32px"
-      boxSizing="border-box"
-      background="grayModern.50"
-      px={'12px'}
-      py={'8px'}
-      border="1px solid"
-      borderColor={'grayModern.200'}
-      borderRadius="6px"
-      alignItems="center"
-      display={'flex'}
-      variant={'unstyled'}
-      onChange={(str, v) => {
-        let val = 0;
-        console.log(str, v);
-        if (isNumber(v) && !isNaN(v)) val = v;
-        onChange?.(str, val);
-      }}
-      _hover={{
-        borderColor: 'brightBlue.300'
-      }}
-      _focusWithin={{
-        borderColor: 'brightBlue.500',
-        boxShadow: '0px 0px 0px 2.4px #3370FF26;',
-        bgColor: 'white'
-      }}
-      {...props}
-    >
-      <NumberInputField
-        color={'grayModern.900'}
-        borderRadius={'none'}
-        fontSize={'12px'}
-        max={props.max}
-        min={props.min}
+    <div className={`relative flex items-center w-24 h-8 ${className}`}>
+      <Input
+        type="number"
+        value={inputValue}
+        onChange={handleInputChange}
+        disabled={disabled}
+        min={min}
+        max={max}
+        className="h-8 w-full bg-gray-50 border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 hover:border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/25 pr-8"
+        {...props}
       />
       {unit && (
-        <Text
-          right={'33px'}
-          position={'absolute'}
-          insetY={'auto'}
-          color={'grayModern.500'}
-          fontWeight={'500'}
-          fontSize={'12px'}
-        >
+        <span className="absolute right-8 text-gray-500 font-medium text-xs pointer-events-none">
           {unit}
-        </Text>
+        </span>
       )}
-      <NumberInputStepper borderColor={'grayModern.200'}>
-        <NumberIncrementStepper
-          width={'24px'}
-          borderColor={'grayModern.200'}
-          h={'16px'}
-          color={'grayModern.500'}
-          _disabled={{
-            cursor: 'not-allowed',
-            borderColor: 'grayModern.200'
-          }}
+      <div className="absolute right-0 flex flex-col border-l border-gray-200 h-full">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={increment}
+          disabled={disabled || (max !== undefined && value >= max)}
+          className="h-4 w-6 p-0 rounded-none border-b border-gray-200 hover:bg-gray-100"
         >
-          <Img src={vector.src}></Img>
-        </NumberIncrementStepper>
-        <NumberDecrementStepper
-          w="24px"
-          borderColor={'grayModern.200'}
-          h={'16px'}
-          color={'grayModern.500'}
-          _disabled={{
-            borderColor: 'grayModern.200',
-            cursor: 'not-allowed'
-          }}
+          <ChevronUp className="w-3 h-3 text-gray-500" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={decrement}
+          disabled={disabled || value <= min}
+          className="h-4 w-6 p-0 rounded-none hover:bg-gray-100"
         >
-          <Img src={vector.src} transform={'rotate(180deg)'}></Img>
-        </NumberDecrementStepper>
-      </NumberInputStepper>
-    </NumberInput>
+          <ChevronDown className="w-3 h-3 text-gray-500" />
+        </Button>
+      </div>
+    </div>
   );
 }
