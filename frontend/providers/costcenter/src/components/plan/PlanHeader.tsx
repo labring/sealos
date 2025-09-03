@@ -4,7 +4,7 @@ import { SubscriptionInfoResponse, SubscriptionPlan } from '@/types/plan';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { UpgradePlanDialog } from './UpgradePlanDialog';
 
-function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
+export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
   if (isPayg) return 'bg-plan-payg';
 
   const normalizedPlanName = planName.toLowerCase();
@@ -64,8 +64,6 @@ export function PlanHeader({
         .replace(/\//g, '/')
         .replace(',', '')
     : 'N/A';
-  console.log('subscription', subscription);
-
   const isPaygType = subscription?.type === 'PAYG';
   const planDisplayName = isPaygType ? 'PAYG' : planName;
   const backgroundClass = getPlanBackgroundClass(planName, isPaygType);
@@ -102,6 +100,7 @@ export function PlanHeader({
             plans={plans}
             isLoading={isLoading}
             currentPlan={subscription?.PlanName}
+            subscription={subscription}
             lastTransaction={lastTransaction}
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
@@ -131,6 +130,7 @@ export function PlanHeader({
             plans={plans}
             isLoading={isLoading}
             currentPlan={subscription?.PlanName}
+            subscription={subscription}
             lastTransaction={lastTransaction}
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}

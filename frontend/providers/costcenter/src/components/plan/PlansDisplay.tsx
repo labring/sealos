@@ -2,16 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
-import { SubscriptionPlan } from '@/types/plan';
+import { SubscriptionPlan, WorkspaceSubscription } from '@/types/plan';
 import { UpgradePlanCard } from './UpgradePlanCard';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import PlanConfirmationModal from './PlanConfirmationModal';
 import { formatMoney } from '@/utils/format';
+import DowngradeModal from './DowngradeModal';
 
 interface PlansDisplayProps {
   plans: SubscriptionPlan[];
   currentPlan?: string;
+  subscription?: WorkspaceSubscription; // 添加 subscription 信息
   lastTransaction?: any;
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
@@ -25,6 +27,7 @@ interface PlansDisplayProps {
 export function PlansDisplay({
   plans,
   currentPlan,
+  subscription,
   lastTransaction,
   onSubscribe,
   isSubscribing,
@@ -38,6 +41,7 @@ export function PlansDisplay({
   const { getRegion } = useBillingStore();
   const region = getRegion();
   const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
+  const downgradeModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
 
   const [showMorePlans, setShowMorePlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
@@ -97,6 +101,7 @@ export function PlansDisplay({
             isCurrentPlan={!isCreateMode && plan.Name === currentPlan}
             isNextPlan={!isCreateMode && plan.Name === nextPlanName}
             currentPlan={currentPlanObj}
+            subscription={subscription}
             onSubscribe={onSubscribe}
             isLoading={isSubscribing}
             isCreateMode={isCreateMode}
@@ -106,6 +111,7 @@ export function PlansDisplay({
           />
         ))}
       </div>
+
       {/* More Plans Section */}
       {additionalPlans.length > 0 && (
         <div
@@ -183,7 +189,8 @@ export function PlansDisplay({
               })}
             </SelectContent>
           </Select>
-          {showMorePlans && (
+
+          {showMorePlans && isCreateMode === false && (
             <Button
               disabled={
                 !selectedPlan ||
@@ -199,7 +206,13 @@ export function PlansDisplay({
                     onSubscribe?.(plan);
                   } else {
                     setPendingPlan(plan);
-                    confirmationModalRef.current?.onOpen();
+                    // Determine if it's upgrade or downgrade
+                    const isUpgrade = currentPlanObj?.UpgradePlanList?.includes(plan.Name);
+                    if (isUpgrade) {
+                      confirmationModalRef.current?.onOpen();
+                    } else {
+                      downgradeModalRef.current?.onOpen();
+                    }
                   }
                 }
               }}
@@ -229,7 +242,6 @@ export function PlansDisplay({
           )}
         </div>
       )}
-
       {/* Plan Confirmation Modal for More Plans */}
       <PlanConfirmationModal
         ref={confirmationModalRef}
@@ -250,6 +262,24 @@ export function PlansDisplay({
         onCancel={() => {
           setPendingPlan(null);
           confirmationModalRef.current?.onClose();
+        }}
+      />
+
+      {/* Downgrade Confirmation Modal for More Plans */}
+      <DowngradeModal
+        ref={downgradeModalRef}
+        currentPlan={currentPlanObj}
+        targetPlan={pendingPlan || undefined}
+        subscription={subscription}
+        onConfirm={() => {
+          if (pendingPlan) {
+            onSubscribe?.(pendingPlan);
+            setPendingPlan(null);
+          }
+        }}
+        onCancel={() => {
+          setPendingPlan(null);
+          downgradeModalRef.current?.onClose();
         }}
       />
     </div>

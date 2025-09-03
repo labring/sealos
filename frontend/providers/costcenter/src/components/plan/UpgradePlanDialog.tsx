@@ -9,7 +9,7 @@ import {
   Label
 } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
-import { SubscriptionPlan } from '@/types/plan';
+import { SubscriptionPlan, WorkspaceSubscription } from '@/types/plan';
 import { PlansDisplay } from './PlansDisplay';
 
 interface UpgradePlanDialogProps {
@@ -17,6 +17,7 @@ interface UpgradePlanDialogProps {
   plans?: SubscriptionPlan[];
   isLoading?: boolean;
   currentPlan?: string;
+  subscription?: WorkspaceSubscription; // 添加 subscription 信息
   lastTransaction?: any;
   onSubscribe?: (plan: SubscriptionPlan | null, workspaceName?: string, isPayg?: boolean) => void;
   isSubscribing?: boolean;
@@ -29,6 +30,7 @@ export function UpgradePlanDialog({
   plans,
   isLoading,
   currentPlan,
+  subscription,
   lastTransaction,
   onSubscribe,
   isSubscribing = false,
@@ -74,6 +76,7 @@ export function UpgradePlanDialog({
             <PlansDisplay
               plans={plans}
               currentPlan={currentPlan}
+              subscription={subscription}
               lastTransaction={lastTransaction}
               onSubscribe={(plan) => onSubscribe?.(plan, workspaceName, false)}
               workspaceName={workspaceName}
