@@ -11,7 +11,7 @@ fi
 
  while true; do
     # shellcheck disable=SC2126
-    NOT_READY=$(kubectl get pods -n sealos --no-headers | grep desktop-frontend | awk '
+    NOT_RUNNING=$(kubectl get pods -n sealos --no-headers | grep desktop-frontend | awk '
         {
             split($2, a, "/")
             if (a[1] != a[2] || $3 != "Running") count++
