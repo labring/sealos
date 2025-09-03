@@ -61,7 +61,10 @@ export const IconMap = {
   overview: require('./icons/overview.svg').default,
   textRecognition: require('./icons/textRecognition.svg').default,
   add: require('./icons/add.svg').default,
-  configmap: require('./icons/configmap.svg').default
+  configmap: require('./icons/configmap.svg').default,
+  calendar: require('./icons/calendar.svg').default,
+  to: require('./icons/to.svg').default,
+  refresh: require('./icons/refresh.svg').default
 };
 
 const MyIcon = ({
