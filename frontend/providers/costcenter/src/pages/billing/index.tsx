@@ -269,6 +269,24 @@ function Billing() {
     selectedRegion
   ]);
 
+  // Calculate the cost to display based on current selection
+  const displayCost = useMemo(() => {
+    // If workspace is selected, find the workspace node
+    if (selectedWorkspace) {
+      const workspaceNode = nodes.find(
+        (node) => node.id === selectedWorkspace && node.type === 'workspace'
+      );
+      return workspaceNode?.cost || 0;
+    }
+    // If region is selected, find the region node
+    if (selectedRegion) {
+      const regionNode = nodes.find((node) => node.id === selectedRegion && node.type === 'region');
+      return regionNode?.cost || 0;
+    }
+    // Default to total cost
+    return totalCost;
+  }, [selectedRegion, selectedWorkspace, nodes, totalCost]);
+
   // Transform query results for child components
   const subscriptionData = useMemo(() => {
     return (Object.values(allPaymentsData || {}).flat() || [])
@@ -370,7 +388,7 @@ function Billing() {
               <CostPanel
                 region={currentRegionName}
                 workspace={currentWorkspaceName}
-                totalCost={totalCost}
+                totalCost={displayCost}
               >
                 <SubscriptionCostTable data={subscriptionData} />
 
