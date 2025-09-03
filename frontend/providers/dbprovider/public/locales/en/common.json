@@ -240,12 +240,14 @@
     "error_log": "Error Log",
     "runtime_log": "Run Log",
     "search_content": "Search Log Content",
-    "slow_query": "Slow Log"
+    "slow_query": "Slow Log",
+    "export_log": "Export Log"
   },
   "event_analyze": "Intelligent Analytics",
   "event_analyze_error": "Intelligent analytics error",
   "external_address": "Public Domain",
   "external_network": "Internet Access",
+  "End": "End",
   "failed_to_turn_off_automatic_backup": "Auto Backup Disable Failed",
   "file": {
     "Upload Success": "File Uploaded",
@@ -276,6 +278,7 @@
   "limit_cpu": "CPU Limit",
   "limit_memory": "Memory Limit",
   "lost_file": "File Missing",
+  "log_number": "Log Number",
   "manage_data":"Manage Data",
   "manage_all_resources": "Manage",
   "manual_backup": "Manual Backup",
@@ -352,6 +355,7 @@
   "pod_completed": "Pod has ended, cannot view logs",
   "prompt": "Prompt",
   "query_operations": "Query Operations",
+  "recently": "Last",
   "receive": "receive",
   "remark": "Note",
   "remark_tip": "Contains up to 10 Chinese characters and 30 English characters",
@@ -369,6 +373,7 @@
   "restore_success": "Backup restored successfully",
   "rollbacks_per_second": "Rollbacks/s",
   "running_time": "Uptime",
+  "refresh": "Refresh",
   "sealaf": "sealaf",
   "search": "Search",
   "search_name_and_remark_placeholder": "Search by name or remark",
@@ -428,5 +433,6 @@
   "within_1_hour": "Within 1 hour",
   "within_5_minutes": "Within 5 minutes",
   "yaml_file": "YAML",
-  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!"
+  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
+  "log_count": "Log Count"
 }
