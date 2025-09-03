@@ -26,6 +26,7 @@ import { format, addHours } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { AppType } from '@/types/app';
+import { formatMoney } from '@/utils/format';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -182,7 +183,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.cpu ? `-$${(row.usage.cpu.cost / 100000).toFixed(6)}` : '-';
+        return row.usage.cpu ? `-$${formatMoney(row.usage.cpu.cost).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -200,7 +201,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.memory ? `-$${(row.usage.memory.cost / 100000).toFixed(6)}` : '-';
+        return row.usage.memory ? `-$${formatMoney(row.usage.memory.cost).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -218,7 +219,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.storage ? `-$${(row.usage.storage.cost / 100000).toFixed(6)}` : '-';
+        return row.usage.storage ? `-$${formatMoney(row.usage.storage.cost).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -236,7 +237,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.network ? `-$${(row.usage.network.cost / 100000).toFixed(6)}` : '-';
+        return row.usage.network ? `-$${formatMoney(row.usage.network.cost).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -254,7 +255,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.port ? `-$${(row.usage.port.cost / 100000).toFixed(6)}` : '-';
+        return row.usage.port ? `-$${formatMoney(row.usage.port.cost).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -272,7 +273,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return row.usage.gpu ? `-$${(row.usage.gpu.cost / 100000).toFixed(6)}` : '-';
+        return row.usage.gpu ? `-$${formatMoney(row.usage.gpu.cost).toFixed(6)}` : '-';
       }
     }),
     columnHelper.display({
@@ -281,7 +282,7 @@ export function PAYGAppBillingDrawerView({
       cell: (info) => {
         const row = info.row.original;
         if ('type' in row) return null;
-        return `-$${(row.amount / 1000000).toFixed(6)}`;
+        return `-$${formatMoney(row.amount).toFixed(6)}`;
       }
     })
   ];
