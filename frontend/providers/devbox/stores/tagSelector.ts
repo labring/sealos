@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type CategoryType = 'official' | 'language' | 'framework' | 'os' | 'mcp';
+type CategoryType = 'official' | 'unofficial' | 'language' | 'framework' | 'os' | 'mcp';
 
 interface TagSelectorState {
   selectedTagList: Set<string>;
@@ -17,6 +17,7 @@ export const useTagSelectorStore = create<TagSelectorState>((set, get) => ({
   selectedTagList: new Set<string>(),
   selectedTagsByCategory: {
     official: null,
+    unofficial: null,
     language: null,
     framework: null,
     os: null,
@@ -72,6 +73,7 @@ export const useTagSelectorStore = create<TagSelectorState>((set, get) => ({
       selectedTagList: new Set<string>(),
       selectedTagsByCategory: {
         official: null,
+        unofficial: null,
         language: null,
         framework: null,
         os: null,

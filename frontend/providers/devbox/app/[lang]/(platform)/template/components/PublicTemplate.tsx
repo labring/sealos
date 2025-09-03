@@ -20,11 +20,10 @@ import TemplateCard from './TemplateCard';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import Empty from './Empty';
 
-// Define view modes
 type ViewMode = 'overview' | 'category' | 'searchResults';
 
 // Define category types based on USE_CASE tag names
-type CategoryType = 'official' | 'language' | 'framework' | 'os' | 'mcp';
+type CategoryType = 'official' | 'unofficial' | 'language' | 'framework' | 'os' | 'mcp';
 
 const PublicTemplate = ({
   search,
@@ -106,6 +105,9 @@ const PublicTemplate = ({
         officialTags.forEach((tag) => {
           setSelectedTag(tag.uid, true);
         });
+      } else if (category === 'unofficial') {
+        // For unofficial category, don't auto-select any tags
+        // The filtering will be handled by excluding OFFICIAL_CONTENT tags
       } else {
         // Auto-select the corresponding USE_CASE tag for other categories
         const categoryTag = useCaseTags.find((tag) => tag.name === category);
@@ -201,12 +203,32 @@ const PublicTemplate = ({
   }, [resetTags]);
 
   // Query for category view and search results - normal pagination with tag filtering
-  const categoryQueryBody = {
-    page: pageQueryBody.page,
-    pageSize: pageQueryBody.pageSize,
-    search: viewMode === 'category' || viewMode === 'searchResults' ? search : '',
-    tags: viewMode === 'category' ? getSelectedTagList() : []
-  };
+  const categoryQueryBody = useMemo(() => {
+    const baseTags = viewMode === 'category' ? getSelectedTagList() : [];
+
+    // For non-official categories in category view, add OFFICIAL_CONTENT tags to only show official templates
+    if (
+      viewMode === 'category' &&
+      currentCategory &&
+      currentCategory !== 'official' &&
+      currentCategory !== 'unofficial'
+    ) {
+      const officialTags = allTags.filter((tag) => tag.type === TagType.OFFICIAL_CONTENT);
+      return {
+        page: pageQueryBody.page,
+        pageSize: pageQueryBody.pageSize,
+        search: search || '',
+        tags: [...baseTags, ...officialTags.map((tag) => tag.uid)]
+      };
+    }
+
+    return {
+      page: pageQueryBody.page,
+      pageSize: pageQueryBody.pageSize,
+      search: viewMode === 'category' || viewMode === 'searchResults' ? search : '',
+      tags: baseTags
+    };
+  }, [pageQueryBody, viewMode, search, getSelectedTagList, currentCategory, allTags]);
 
   const listTemplateRepository = useQuery(
     [
@@ -216,8 +238,11 @@ const PublicTemplate = ({
       viewMode,
       currentCategory
     ],
-    () => {
+    async () => {
       if (viewMode !== 'category' && viewMode !== 'searchResults') return null;
+
+      // For unofficial category, use excludeOfficial parameter
+      const excludeOfficial = viewMode === 'category' && currentCategory === 'unofficial';
 
       return listTemplateRepositoryApi(
         {
@@ -225,7 +250,8 @@ const PublicTemplate = ({
           pageSize: categoryQueryBody.pageSize
         },
         categoryQueryBody.tags,
-        categoryQueryBody.search
+        categoryQueryBody.search,
+        excludeOfficial
       );
     },
     {
@@ -250,10 +276,15 @@ const PublicTemplate = ({
           const categoryTag = useCaseTags.find((tag) => tag.name === categoryName);
           if (!categoryTag) return { categoryName, templates: [] };
 
-          // Get top 5 templates for this category by filtering with the specific tag
+          // For overview, language/framework/os/mcp categories should only show official templates
+          // So we need to include both the category tag AND OFFICIAL_CONTENT tags
+          const officialTags = allTags.filter((tag) => tag.type === TagType.OFFICIAL_CONTENT);
+          const tagsToFilter = [categoryTag.uid, ...officialTags.map((tag) => tag.uid)];
+
+          // Get top 5 templates for this category by filtering with both category and official tags
           const response = await listTemplateRepositoryApi(
             { page: 1, pageSize: 20 }, // Get more to ensure we have enough after filtering
-            [categoryTag.uid], // Filter by the specific category tag
+            tagsToFilter, // Filter by both the specific category tag and official tags
             ''
           );
 
@@ -356,6 +387,7 @@ const PublicTemplate = ({
   const tagListCollection = useMemo(() => {
     const collection = {
       official: [] as Tag[],
+      unofficial: [] as Tag[],
       language: [] as Tag[],
       framework: [] as Tag[],
       os: [] as Tag[],
@@ -365,10 +397,20 @@ const PublicTemplate = ({
     // For official category, add all OFFICIAL_CONTENT tags
     collection.official = allTags.filter((tag) => tag.type === TagType.OFFICIAL_CONTENT);
 
+    // For unofficial category, add all USE_CASE tags and PROGRAMMING_LANGUAGE tags
+    collection.unofficial = [
+      ...useCaseTags.filter((tag) => tag.name !== 'official'), // Exclude official USE_CASE tag
+      ...programmingLanguageTags
+    ];
+
     // Add USE_CASE tags to their respective categories, but exclude main category tags from their own secondary menus
     useCaseTags.forEach((tag) => {
       const categoryName = tag.name as CategoryType;
-      if (collection[categoryName] && categoryName !== 'official') {
+      if (
+        collection[categoryName] &&
+        categoryName !== 'official' &&
+        categoryName !== 'unofficial'
+      ) {
         // Don't add the main category tag to its own secondary menu
         // For example, don't add "language" tag to language category's secondary menu
         // or "framework" tag to framework category's secondary menu
@@ -541,6 +583,18 @@ const PublicTemplate = ({
                 </div>
               )}
             </div>
+
+            {/* Unofficial Templates */}
+            <div>
+              <div
+                className="flex h-9 w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1 hover:bg-[rgba(0,0,0,0.04)]"
+                onClick={() => {
+                  handleCategoryClick('unofficial');
+                }}
+              >
+                <span className="text-sm text-zinc-900">{t('unofficial')}</span>
+              </div>
+            </div>
           </div>
         </ScrollArea>
       </div>
@@ -636,17 +690,7 @@ const PublicTemplate = ({
             {/* Category mode header */}
             <div className="flex items-center justify-between pb-4">
               <h2 className="text-lg font-medium text-zinc-900">
-                {currentCategory === 'official'
-                  ? t('official')
-                  : currentCategory === 'language'
-                    ? t('language')
-                    : currentCategory === 'framework'
-                      ? t('framework')
-                      : currentCategory === 'os'
-                        ? t('os')
-                        : currentCategory === 'mcp'
-                          ? t('mcp')
-                          : t('templates')}
+                {getCategoryTitle(currentCategory, t)}
               </h2>
               <Button
                 variant="ghost"
@@ -828,6 +872,19 @@ const CategoryRadioGroup = ({ tags, category }: { tags: Tag[]; category: Categor
       ))}
     </RadioGroup>
   );
+};
+
+const getCategoryTitle = (category: CategoryType | null, t: (key: string) => string): string => {
+  const categoryMap: Record<CategoryType, string> = {
+    official: t('official'),
+    unofficial: t('unofficial'),
+    language: t('language'),
+    framework: t('framework'),
+    os: t('os'),
+    mcp: t('mcp')
+  };
+
+  return category ? categoryMap[category] : t('templates');
 };
 
 export default PublicTemplate;

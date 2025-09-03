@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const tags = searchParams.getAll('tags') || [];
     const search = searchParams.get('search') || '';
+    const excludeOfficial = searchParams.get('excludeOfficial') === 'true';
     const page =
       z
         .number()
@@ -49,6 +50,19 @@ export async function GET(req: NextRequest) {
               name: {
                 contains: search,
                 mode: 'insensitive'
+              }
+            }
+          : {}),
+        ...(excludeOfficial
+          ? {
+              NOT: {
+                templateRepositoryTags: {
+                  some: {
+                    tag: {
+                      type: 'OFFICIAL_CONTENT'
+                    }
+                  }
+                }
               }
             }
           : {})

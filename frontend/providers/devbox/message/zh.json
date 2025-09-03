@@ -282,6 +282,7 @@
   "notice": "注意事项",
   "official": "官方模板",
   "official_content": "官方内容",
+  "unofficial": "非官方模板",
   "oldest_first": "最早优先",
   "one_click_config": "一键配置",
   "open_link": "打开链接",
@@ -390,9 +391,6 @@
   "tag_length_error": "最大不超过 50 个字符",
   "tag_required": "需要填写版本号",
   "tags": "标签",
-  "tags_enum": {
-    "official": "官方精选"
-  },
   "template": "模板",
   "template_description": "简介",
   "template_description_placeholder": "请简要描述模板的主要功能和用途...",
