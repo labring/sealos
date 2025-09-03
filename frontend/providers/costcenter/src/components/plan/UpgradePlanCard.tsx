@@ -77,7 +77,7 @@ export function UpgradePlanCard({
   const handleSubscribeClick = () => {
     if (isCreateMode) {
       // In create mode, first select the plan, then show confirmation modal
-      onSelect?.(); // Select this plan first
+      // onSelect?.(); // Select this plan first
       confirmationModalRef.current?.onOpen(); // Then show confirmation modal
       return;
     }
@@ -151,20 +151,7 @@ export function UpgradePlanCard({
           <span className="text-gray-600 ml-1">/month</span>
         </div>
 
-        {isCreateMode ? (
-          <Button
-            className={cn(
-              'w-full mb-6 font-medium',
-              isSelected
-                ? 'bg-gray-900 text-white hover:bg-gray-800'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            )}
-            disabled={isLoading}
-            onClick={handleSubscribeClick}
-          >
-            {isLoading ? 'Creating...' : isSelected ? 'Create with this plan' : 'Select plan'}
-          </Button>
-        ) : (
+        {!isCreateMode && (
           <Button
             className={cn(
               'w-full mb-6 font-medium',

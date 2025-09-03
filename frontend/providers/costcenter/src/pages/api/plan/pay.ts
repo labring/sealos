@@ -109,7 +109,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Step 2: Create subscription
+    // Step 2: Create subscription (skip for PAYG)
+    if (createWorkspace && createWorkspace.userType === 'payg') {
+      // For PAYG workspaces, only workspace creation is needed, no subscription
+      return jsonRes<PaymentResponse>(res, {
+        data: {
+          success: true
+        }
+      });
+    }
+
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
 
