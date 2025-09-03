@@ -93,7 +93,7 @@ export function AllPlansSection() {
                   <TableHead className="bg-transparent">Workspace</TableHead>
                   <TableHead className="bg-transparent">Plan</TableHead>
                   <TableHead className="bg-transparent">Renewal Time</TableHead>
-                  <TableHead className="bg-transparent">Status</TableHead>
+                  <TableHead className="bg-transparent">Price</TableHead>
                 </TableLayoutHeadRow>
 
                 <TableLayoutBody>

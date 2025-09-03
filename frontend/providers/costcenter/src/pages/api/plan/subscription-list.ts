@@ -15,6 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const response = await client.post<WorkspaceSubscriptionListResponse>(
       '/account/v1alpha1/workspace-subscription/list'
     );
+    // console.log(response.data);
 
     return jsonRes<WorkspaceSubscriptionListResponse>(res, {
       data: response.data

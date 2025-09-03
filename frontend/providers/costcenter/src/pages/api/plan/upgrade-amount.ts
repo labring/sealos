@@ -28,7 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
 
-    const response = await client.post<ApiResp<UpgradeAmountResponse>>(
+    console.log('parseResult.data', parseResult.data);
+    const response = await client.post<UpgradeAmountResponse>(
       '/account/v1alpha1/workspace-subscription/upgrade-amount',
       {
         workspace,
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('response.data', response.data);
 
     return jsonRes<UpgradeAmountResponse>(res, {
-      data: response.data?.data
+      data: response.data
     });
   } catch (error: any) {
     return jsonRes(res, {

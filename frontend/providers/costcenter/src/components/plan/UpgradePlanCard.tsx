@@ -2,6 +2,10 @@ import { Button, cn } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/plan';
+import { useRef } from 'react';
+import useSessionStore from '@/stores/session';
+import useBillingStore from '@/stores/billing';
+import PlanConfirmationModal from './PlanConfirmationModal';
 
 interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
@@ -15,6 +19,7 @@ interface UpgradePlanCardProps {
   isCreateMode?: boolean;
   isSelected?: boolean;
   onSelect?: () => void;
+  workspaceName?: string;
 }
 
 export function UpgradePlanCard({
@@ -28,8 +33,14 @@ export function UpgradePlanCard({
   isLoading = false,
   isCreateMode = false,
   isSelected = false,
-  onSelect
+  onSelect,
+  workspaceName
 }: UpgradePlanCardProps) {
+  const { session } = useSessionStore();
+  const { getRegion } = useBillingStore();
+  const region = getRegion();
+  const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
+
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
 
   let resources: any = {};
@@ -49,6 +60,38 @@ export function UpgradePlanCard({
   };
 
   const actionType = getActionType();
+
+  // Get operator for upgrade amount calculation
+  const getOperator = () => {
+    if (!currentPlan) return 'upgraded';
+    if (currentPlan.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
+    if (currentPlan.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
+    return 'upgraded';
+  };
+
+  const handleSubscribeClick = () => {
+    if (isCreateMode) {
+      // In create mode, show confirmation modal
+      confirmationModalRef.current?.onOpen();
+      return;
+    }
+
+    if (isCurrentPlan || isNextPlan || actionType === 'contact') {
+      return;
+    }
+
+    // Only show confirmation modal for upgrades
+    if (getOperator() === 'upgraded') {
+      confirmationModalRef.current?.onOpen();
+    } else {
+      // For downgrades, directly call subscription
+      onSubscribe?.(plan);
+    }
+  };
+
+  const handleConfirmSubscription = () => {
+    onSubscribe?.(plan);
+  };
 
   // Get button text based on action type
   const getButtonText = () => {
@@ -117,11 +160,7 @@ export function UpgradePlanCard({
                   : 'bg-gray-900 text-white hover:bg-gray-800'
             )}
             disabled={isCurrentPlan || isNextPlan || isLoading}
-            onClick={() => {
-              if (!isCurrentPlan && !isNextPlan && actionType !== 'contact' && onSubscribe) {
-                onSubscribe(plan);
-              }
-            }}
+            onClick={handleSubscribeClick}
           >
             {getButtonText()}
           </Button>
@@ -201,6 +240,21 @@ export function UpgradePlanCard({
           )}
         </ul>
       </div>
+
+      {/* Plan Confirmation Modal */}
+      <PlanConfirmationModal
+        ref={confirmationModalRef}
+        plan={plan}
+        workspace={session?.user?.nsid}
+        regionDomain={region?.domain}
+        period="1m"
+        payMethod="stripe"
+        operator={isCreateMode ? 'created' : (getOperator() as any)}
+        isCreateMode={isCreateMode}
+        workspaceName={workspaceName}
+        onConfirm={handleConfirmSubscription}
+        onCancel={() => confirmationModalRef.current?.onClose()}
+      />
     </section>
   );
 }
