@@ -7,6 +7,7 @@ import { UpgradePlanCard } from './UpgradePlanCard';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import PlanConfirmationModal from './PlanConfirmationModal';
+import { formatMoney } from '@/utils/format';
 
 interface PlansDisplayProps {
   plans: SubscriptionPlan[];
@@ -136,7 +137,7 @@ export function PlansDisplay({
                   resources = {};
                 }
 
-                const monthlyPrice = (plan.Prices?.[0]?.Price || 0) / 1000000;
+                const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
                 const trafficGB =
                   plan.Traffic > 1 ? (plan.Traffic / 1024).toFixed(0) : plan.Traffic;
 
