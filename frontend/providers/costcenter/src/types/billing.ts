@@ -135,7 +135,8 @@ export type TransferBilling = {
 // Workspace Consumption API Schema
 export const WorkspaceConsumptionRequestSchema = z.object({
   startTime: z.iso.datetime(),
-  endTime: z.iso.datetime()
+  endTime: z.iso.datetime(),
+  regionUid: z.string()
 });
 
 export type WorkspaceConsumptionRequest = z.infer<typeof WorkspaceConsumptionRequestSchema>;
