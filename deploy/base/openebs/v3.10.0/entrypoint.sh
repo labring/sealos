@@ -10,8 +10,8 @@ HELM_OPTS=${HELM_OPTS:-" \
 --set localprovisioner.hostpathClass.isDefaultClass=true \
 --set lvm-localpv.enabled=true \
 "}
-
-
+rm -rf ./charts/openebs/crds/lvm*
+cp -r ./charts/openebs/charts/lvm-localpv/crds/*.yaml ./charts/openebs/crds/
 OPENEBS_STORAGE_PREFIX=${OPENEBS_STORAGE_PREFIX:-"/var/openebs"}
 OPENEBS_LOCAL_ENABLE=${OPENEBS_LOCAL_ENABLE:-"true"}
 
