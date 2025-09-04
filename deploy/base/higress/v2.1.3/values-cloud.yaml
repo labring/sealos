@@ -16,10 +16,7 @@ higress-core:
       type: NodePort
     kind: DaemonSet
     tolerations:
-      - effect: "NoExecute"
-        operator: "Exists"
-      - effect: "NoSchedule"
-        operator: "Exists"
+      - operator: Exists
     readinessTimeoutSeconds: 60
     resources:
       requests:
@@ -39,3 +36,17 @@ higress-core:
       requests:
         cpu: 256m
         memory: 256Mi
+  downstream:
+    idleTimeout: 600
+    maxRequestHeadersKb: 60
+    connectionBufferLimits: 32768
+    http2:
+      maxConcurrentStreams: 100
+      initialStreamWindowSize: 524288
+      initialConnectionWindowSize: 4194304
+    routeTimeout: 0
+
+  # Upstream config settings
+  upstream:
+    idleTimeout: 10 #30
+    connectionBufferLimits: 10485760
