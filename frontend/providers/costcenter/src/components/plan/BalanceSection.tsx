@@ -10,7 +10,7 @@ interface BalanceSectionProps {
 
 export function BalanceSection({ balance, rechargeEnabled, onTopUpClick }: BalanceSectionProps) {
   return (
-    <div className="p-2 border shadow-sm rounded-2xl">
+    <div className="p-2 border rounded-2xl">
       <div className="bg-plan-payg flex justify-between items-center rounded-xl px-6 py-5">
         <div className="flex flex-col gap-1">
           <span className="text-sm text-slate-500">Balance</span>
