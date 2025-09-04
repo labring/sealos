@@ -62,7 +62,7 @@ type Props = {
   pageSize: number;
   totalCount: number;
   onPageChange: (page: number) => void;
-  onOpenApp: () => void;
+  onOpenApp?: () => void;
   dateRange?: { from: Date; to: Date };
   onDateRangeChange?: (range: { from: Date; to: Date } | undefined) => void;
 };

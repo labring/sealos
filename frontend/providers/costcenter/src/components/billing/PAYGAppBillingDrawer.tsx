@@ -174,10 +174,10 @@ export function AppBillingDrawer({
       onPageChange={setAppBillingPage}
       dateRange={appDateRange}
       onDateRangeChange={setAppDateRange}
-      onOpenApp={() => {
-        // Handle open app logic
-        console.log('Open app:', selectedApp?.appName);
-      }}
+      // [TODO] Handle open app logic
+      // onOpenApp={() => {
+      //   console.log('Open app:', selectedApp?.appName);
+      // }}
     />
   );
 }
