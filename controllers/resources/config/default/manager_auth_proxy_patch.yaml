@@ -24,6 +24,12 @@ spec:
     spec:
       containers:
       - name: manager
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - "ALL"
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=:8080"

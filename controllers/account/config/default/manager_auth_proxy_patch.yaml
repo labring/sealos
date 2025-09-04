@@ -30,6 +30,9 @@ spec:
               optional: true
           - configMapRef:
               name: account-manager-env
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
         env:
           - name: ACCOUNT_NAMESPACE
             value: sealos-system
@@ -42,6 +45,8 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+        image: ghcr.io/labring/sealos-account-controller:latest
+        imagePullPolicy: Always
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=:8080"
@@ -50,3 +55,15 @@ spec:
         - containerPort: 8080
           protocol: TCP
           name: http-metrics
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "control-plane"
+                      operator: In
+                      values:
+                        - controller-manager
+                topologyKey: "kubernetes.io/hostname"
