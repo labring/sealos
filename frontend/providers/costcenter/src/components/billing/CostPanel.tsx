@@ -30,11 +30,12 @@ export function CostPanel({ children, region, workspace, totalCost }: CostPanelP
           <span className="text-blue-600">${formatMoney(totalCost).toFixed(2)}</span>
         </div>
 
-        <div className="font-semibold">
+        {/* // [TODO] AI is currently not available */}
+        {/* <div className="font-semibold">
           <Button variant="link" className="text-blue-600 p-0 h-fit">
             Questions about charges? Ask AI
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {children}
