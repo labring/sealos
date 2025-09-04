@@ -5,6 +5,7 @@ import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
+import usePlanStore from '@/stores/plan';
 import {
   getPlanList,
   getSubscriptionInfo,
@@ -24,38 +25,51 @@ import jsyaml from 'js-yaml';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
+import { Skeleton } from '@sealos/shadcn-ui';
 
 export default function Plan() {
   const router = useRouter();
   const { session } = useSessionStore();
-  const { getRegion, regionList } = useBillingStore();
+  const { getRegion } = useBillingStore();
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
   const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
   const stripePromise = useEnvStore((s) => s.stripePromise);
   const region = getRegion();
   const { toast } = useCustomToast();
 
+  const plansData = usePlanStore((state) => state.plansData);
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
+  const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
+  const setPlansData = usePlanStore((state) => state.setPlansData);
+  const setSubscriptionData = usePlanStore((state) => state.setSubscriptionData);
+  const setLastTransactionData = usePlanStore((state) => state.setLastTransactionData);
+  const isPaygType = usePlanStore((state) => state.isPaygType);
+
   // Check if we're in create mode - use state to persist across re-renders
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
+  const [isTopupMode, setIsTopupMode] = useState(false);
 
   useEffect(() => {
     // Method 1: Check router.query when ready
     if (router.isReady && router.query.mode === 'create') {
       setIsCreateMode(true);
-      console.log('router.query method - createMode set to true', router.query);
       return;
     }
 
     if (router.isReady && router.query.mode === 'upgrade') {
       setIsUpgradeMode(true);
-      console.log('router.query method - upgradeMode set to true', router.query);
+      return;
+    }
+
+    if (router.isReady && router.query.mode === 'topup') {
+      setIsTopupMode(true);
+      rechargeRef.current?.onOpen();
       return;
     }
 
     // Check for success state from Stripe callback
     if (router.isReady && router.query.stripeState === 'success') {
-      console.log('Stripe payment success detected', router.query);
       congratulationsRef.current?.onOpen();
       return;
     }
@@ -65,38 +79,31 @@ export default function Plan() {
       const urlParams = new URLSearchParams(window.location.search);
       const createMode = urlParams.get('mode') === 'create';
       const upgradeMode = urlParams.get('mode') === 'upgrade';
+      const topupMode = urlParams.get('mode') === 'topup';
 
       if (createMode) {
         setIsCreateMode(true);
-        console.log('URL parsing method - createMode set to true', window.location.search);
         return;
       }
 
       if (upgradeMode) {
         setIsUpgradeMode(true);
-        console.log('URL parsing method - upgradeMode set to true', window.location.search);
+        return;
+      }
+
+      if (topupMode) {
+        setIsTopupMode(true);
+        rechargeRef.current?.onOpen();
         return;
       }
 
       const stripeSuccess = urlParams.get('stripeState') === 'success';
       if (stripeSuccess) {
-        console.log('Stripe payment success detected via URL parsing', window.location.search);
         congratulationsRef.current?.onOpen();
         return;
       }
     }
-
-    console.log(
-      'router.query effect',
-      router.query,
-      'router.isReady',
-      router.isReady,
-      'window.location.search',
-      typeof window !== 'undefined' ? window.location.search : 'N/A'
-    );
   }, [router.isReady, router.query, router.asPath]);
-
-  console.log('session', session, regionList, region, 'isCreateMode', isCreateMode);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
@@ -110,34 +117,39 @@ export default function Plan() {
     staleTime: 0
   });
 
-  const { data: plansData, isLoading: plansLoading } = useQuery({
+  // Fetch plans data and sync to store
+  useQuery({
     queryKey: ['plan-list'],
-    queryFn: getPlanList
+    queryFn: getPlanList,
+    onSuccess: (data) => {
+      console.log('plansData', data.data);
+      setPlansData(data.data || null);
+    }
   });
-  console.log('plansData', plansData);
 
-  // Get current workspace subscription info
-  const { data: subscriptionData } = useQuery({
+  // Get current workspace subscription info and sync to store
+  const { isLoading } = useQuery({
     queryKey: ['subscription-info', session?.user?.nsid, region?.uid],
     queryFn: () =>
       getSubscriptionInfo({
         workspace: session?.user?.nsid || '',
         regionDomain: region?.domain || ''
       }),
-    enabled: !!(session?.user?.nsid && region?.uid)
+    enabled: !!(session?.user?.nsid && region?.uid),
+    onSuccess: (data) => setSubscriptionData(data.data || null)
   });
 
-  // Get last transaction to check if it was a downgrade
-  const { data: lastTransactionData } = useQuery({
+  // Get last transaction and sync to store
+  useQuery({
     queryKey: ['last-transaction', session?.user?.nsid, region?.uid],
     queryFn: () =>
       getLastTransaction({
         workspace: session?.user?.nsid || '',
         regionDomain: region?.domain || ''
       }),
-    enabled: !!(session?.user?.nsid && region?.uid)
+    enabled: !!(session?.user?.nsid && region?.uid),
+    onSuccess: (data) => setLastTransactionData(data.data || null)
   });
-  console.log('lastTransactionData', lastTransactionData);
 
   // Calculate balance
   let rechargAmount = balance_raw?.data?.balance || 0;
@@ -157,8 +169,6 @@ export default function Plan() {
     }
   }, [kubeconfig]);
 
-  console.log('subscriptionData', subscriptionData);
-
   // Subscription mutation
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
@@ -168,12 +178,11 @@ export default function Plan() {
       queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
 
       if (data.code === 200) {
-        console.log('data', data);
         if (data.data?.redirectUrl) {
           window.parent.location.href = data.data.redirectUrl;
         } else if (data.data?.success === true) {
           // Determine if it's an upgrade or downgrade based on the last transaction
-          const isDowngrade = lastTransactionData?.data?.transaction?.Operator === 'downgraded';
+          const isDowngrade = lastTransactionData?.transaction?.Operator === 'downgraded';
           toast({
             title: 'Payment Success',
             description: `Your subscription has been ${
@@ -189,7 +198,6 @@ export default function Plan() {
       queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
       queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
 
-      console.error('Subscription payment error:', error);
       toast({
         title: 'Payment Failed',
         description: error.message || 'Failed to process subscription payment',
@@ -268,8 +276,8 @@ export default function Plan() {
     }
 
     // Determine operator based on plan relationship
-    const currentPlanObj = plansData?.data?.plans?.find(
-      (p) => p.Name === subscriptionData?.data?.subscription?.PlanName
+    const currentPlanObj = plansData?.plans?.find(
+      (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
     const getOperator = () => {
       if (!currentPlanObj) return 'upgraded';
@@ -290,17 +298,50 @@ export default function Plan() {
     subscriptionMutation.mutate(paymentRequest);
   };
 
-  const isPaygType = subscriptionData?.data?.subscription?.type === 'PAYG';
+  const isPaygTypeValue = isPaygType();
+
+  if (isLoading) {
+    return (
+      <div className="bg-white gap-8 flex flex-col overflow-auto h-full pb-20 p-6">
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-4 p-6 border rounded-lg">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-8 w-16" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="flex gap-4">
+              <Skeleton className="h-20 flex-1" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white gap-8 flex flex-col overflow-auto h-full pb-20">
-      {isPaygType ? (
+      {isPaygTypeValue ? (
         <div className="flex gap-4">
           <div className="flex-2/3">
             <PlanHeader
-              plans={plansData?.data?.plans}
-              isLoading={plansLoading}
-              subscription={subscriptionData?.data?.subscription}
               onSubscribe={handleSubscribe}
               isSubscribing={subscriptionMutation.isLoading}
               isCreateMode={isCreateMode}
@@ -311,35 +352,29 @@ export default function Plan() {
             <BalanceSection
               balance={balance}
               rechargeEnabled={rechargeEnabled}
-              onTopUpClick={() => rechargeRef?.current!.onOpen()}
+              onTopUpClick={() => rechargeRef?.current?.onOpen()}
             />
           </div>
         </div>
       ) : (
         <>
-          {lastTransactionData?.data?.transaction?.Operator === 'downgraded' && (
+          {lastTransactionData?.transaction?.Operator === 'downgraded' && (
             <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
               <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
                 <Info className="text-orange-600" />
               </div>
               <div className="text-orange-600 text-sm leading-5">
                 Please ensure resources remain within
-                {lastTransactionData?.data?.transaction?.NewPlanName} plan limits by
-                {new Date(
-                  lastTransactionData?.data?.transaction?.StartAt || ''
-                ).toLocaleDateString()}
+                {lastTransactionData?.transaction?.NewPlanName} plan limits by
+                {new Date(lastTransactionData?.transaction?.StartAt || '').toLocaleDateString()}
                 to avoid charges.
               </div>
             </div>
           )}
 
           <PlanHeader
-            plans={plansData?.data?.plans}
-            isLoading={plansLoading}
-            subscription={subscriptionData?.data?.subscription}
             onSubscribe={handleSubscribe}
             isSubscribing={subscriptionMutation.isLoading}
-            lastTransaction={lastTransactionData?.data?.transaction}
             isCreateMode={isCreateMode}
             isUpgradeMode={isUpgradeMode}
           />
@@ -383,19 +418,19 @@ export default function Plan() {
 
       <CongratulationsModal
         ref={congratulationsRef}
-        planName={subscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
+        planName={subscriptionData?.subscription?.PlanName || 'Pro Plan'}
         maxResources={
-          subscriptionData?.data?.subscription?.PlanName
+          subscriptionData?.subscription?.PlanName
             ? JSON.parse(
-                plansData?.data?.plans?.find(
-                  (p) => p.Name === subscriptionData?.data?.subscription?.PlanName
+                plansData?.plans?.find(
+                  (p: SubscriptionPlan) => p.Name === subscriptionData?.subscription?.PlanName
                 )?.MaxResources || '{}'
               )
             : undefined
         }
         traffic={
-          plansData?.data?.plans?.find(
-            (p) => p.Name === subscriptionData?.data?.subscription?.PlanName
+          plansData?.plans?.find(
+            (p: SubscriptionPlan) => p.Name === subscriptionData?.subscription?.PlanName
           )?.Traffic
         }
         onClose={() => {
