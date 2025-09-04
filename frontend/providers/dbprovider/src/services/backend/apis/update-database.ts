@@ -28,7 +28,7 @@ export async function updateDatabase(
   const existingDatabase = adaptDBDetail(body);
   const mergedDatabase = {
     ...existingDatabase,
-    ...request.body.resource
+    ...request.body
   };
 
   const opsRequests = [];
