@@ -9,7 +9,6 @@ interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
   className?: string;
   isPopular?: boolean;
-  onSubscribe?: (plan: SubscriptionPlan) => void;
   isLoading?: boolean;
   isCreateMode?: boolean;
   isSelected?: boolean;
@@ -21,7 +20,6 @@ export function UpgradePlanCard({
   plan,
   className,
   isPopular = false,
-  onSubscribe,
   isLoading = false,
   isCreateMode = false,
   isSelected = false,
@@ -73,23 +71,13 @@ export function UpgradePlanCard({
   };
 
   const handleSubscribeClick = () => {
-    if (isCreateMode) {
-      // In create mode, show confirmation modal
-      showConfirmationModal(plan, { workspaceName, isCreateMode });
-      return;
-    }
-
     if (isCurrentPlan || isNextPlan || actionType === 'contact') {
       return;
     }
-
-    // Show different modals based on operation type
-    if (getOperator() === 'upgraded') {
-      showConfirmationModal(plan, { workspaceName, isCreateMode });
-    } else if (getOperator() === 'downgraded') {
-      // For downgrades, show downgrade confirmation modal
-      showDowngradeModal(plan, { workspaceName, isCreateMode });
+    if (getOperator() === 'downgraded') {
+      return showDowngradeModal(plan, { workspaceName, isCreateMode });
     }
+    return showConfirmationModal(plan, { workspaceName, isCreateMode });
   };
 
   // Get button text based on action type

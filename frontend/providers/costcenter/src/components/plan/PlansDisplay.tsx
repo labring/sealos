@@ -7,10 +7,9 @@ import { UpgradePlanCard } from './UpgradePlanCard';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
-import { formatMoney } from '@/utils/format';
+import { formatMoney, formatTrafficAuto } from '@/utils/format';
 
 interface PlansDisplayProps {
-  onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
   isCreateMode?: boolean;
   stillChargeByVolume?: boolean;
@@ -20,7 +19,6 @@ interface PlansDisplayProps {
 }
 
 export function PlansDisplay({
-  onSubscribe,
   isSubscribing,
   isCreateMode = false,
   stillChargeByVolume = false,
@@ -28,7 +26,6 @@ export function PlansDisplay({
   onPlanSelect,
   workspaceName
 }: PlansDisplayProps) {
-  const { session } = useSessionStore();
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
@@ -43,7 +40,7 @@ export function PlansDisplay({
   const [showMorePlans, setShowMorePlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>(''); // plan id
 
-  const { paidPlans, mainPlans, additionalPlans } = useMemo(() => {
+  const { mainPlans, additionalPlans } = useMemo(() => {
     const paid = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
     const main = paid.filter((plan) => !plan.Tags.includes('more'));
     const additional = paid.filter((plan) => plan.Tags.includes('more'));
@@ -51,7 +48,6 @@ export function PlansDisplay({
     const sortByOrder = (a: SubscriptionPlan, b: SubscriptionPlan) => a.Order - b.Order;
 
     return {
-      paidPlans: paid.sort(sortByOrder),
       mainPlans: main.sort(sortByOrder),
       additionalPlans: additional.sort(sortByOrder)
     };
@@ -61,13 +57,12 @@ export function PlansDisplay({
     return plans.find((plan) => plan.Name === currentPlan);
   }, [plans, currentPlan]);
 
-  const { isDowngrade, nextPlanName, currentPlanInMore } = useMemo(() => {
+  const { nextPlanName, currentPlanInMore } = useMemo(() => {
     const downgrade = lastTransaction?.Operator === 'downgraded';
     const nextPlan = downgrade ? lastTransaction?.NewPlanName : null;
     const planInMore = currentPlanObj && currentPlanObj.Tags.includes('more');
 
     return {
-      isDowngrade: downgrade,
       nextPlanName: nextPlan,
       currentPlanInMore: planInMore
     };
@@ -90,6 +85,13 @@ export function PlansDisplay({
     }
   }, [additionalPlans, currentPlanInMore, currentPlanObj, hasInitialized]);
 
+  // When user selects "charge by volume", uncheck More Plans
+  useEffect(() => {
+    if (stillChargeByVolume) {
+      setShowMorePlans(false);
+    }
+  }, [stillChargeByVolume]);
+
   return (
     <div className="pt-6 w-full">
       {/* Main Plans Grid */}
@@ -105,7 +107,6 @@ export function PlansDisplay({
             key={plan.ID}
             plan={plan}
             isPopular={index === 1}
-            onSubscribe={onSubscribe}
             isLoading={isSubscribing}
             isCreateMode={isCreateMode}
             isSelected={isCreateMode && selectedPlanId === plan.ID}
@@ -157,9 +158,6 @@ export function PlansDisplay({
                 }
 
                 const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
-                const trafficGB =
-                  plan.Traffic > 1 ? (plan.Traffic / 1024).toFixed(0) : plan.Traffic;
-
                 const isCurrentPlanInSelect = plan.Name === currentPlan;
                 const isNextPlanInSelect = plan.Name === nextPlanName;
 
@@ -193,8 +191,8 @@ export function PlansDisplay({
                         }}
                       />
                       <div className="text-xs text-gray-500">
-                        {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +
-                        {trafficGB} GB Traffic
+                        {resources.cpu} CPU + {resources.memory} RAM + {resources.storage} Disk +
+                        {formatTrafficAuto(plan.Traffic)}
                       </div>
                       <Separator
                         orientation="vertical"
@@ -232,17 +230,20 @@ export function PlansDisplay({
               }
               onClick={() => {
                 const plan = additionalPlans.find((p) => p.ID === selectedPlan);
+
                 if (plan) {
-                  if (isCreateMode) {
-                    onSubscribe?.(plan);
+                  // Determine operator type using the same logic as UpgradePlanCard
+                  const getOperator = () => {
+                    if (!currentPlanObj || isCreateMode) return 'created';
+                    if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
+                    if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
+                    return 'upgraded';
+                  };
+                  const operator = getOperator();
+                  if (operator === 'downgraded') {
+                    showDowngradeModal(plan, { workspaceName, isCreateMode });
                   } else {
-                    // Determine if it's upgrade or downgrade
-                    const isUpgrade = currentPlanObj?.UpgradePlanList?.includes(plan.Name);
-                    if (isUpgrade) {
-                      showConfirmationModal(plan, { workspaceName, isCreateMode });
-                    } else {
-                      showDowngradeModal(plan, { workspaceName, isCreateMode });
-                    }
+                    showConfirmationModal(plan, { workspaceName, isCreateMode });
                   }
                 }
               }}

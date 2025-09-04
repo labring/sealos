@@ -18,7 +18,7 @@ interface PlanConfirmationModalProps {
   onCancel?: () => void;
 }
 
-const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props) => {
+const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
   const { plan, workspaceName, isCreateMode = false, isOpen = false, onConfirm, onCancel } = props;
 
   const { session } = useSessionStore();
