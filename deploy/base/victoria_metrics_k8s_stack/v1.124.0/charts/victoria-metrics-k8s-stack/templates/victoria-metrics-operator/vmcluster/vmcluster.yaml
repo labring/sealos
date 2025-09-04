@@ -1,0 +1,27 @@
+{{- $app := .Values.vmcluster }}
+{{- if $app.enabled }}
+{{- if .Values.vmsingle.enabled }}
+  {{- fail "Only one of .vmsingle.enabled and .vmcluster.enabled can be true"}}
+{{- end }}
+{{- $ctx := dict "helm" . "appKey" (list "vmcluster" "spec") }}
+{{- $fullname := include "vm.cr.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMCluster
+metadata:
+  {{- with $app.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end  }}
+  name: {{ $fullname }}
+  namespace: {{ $ns }}
+  {{- $_ := set $ctx "style" "managed" }}
+  {{- $_ := set $ctx "extraLabels" ($app.labels | default dict) }}
+  {{- $labels := include "vm.labels" $ctx | fromYaml }}
+  {{- $_ := unset $ctx "extraLabels" }}
+  {{- if $app.spec.clusterVersion }}
+    {{- $_ := set $labels "app.kubernetes.io/version" $app.spec.clusterVersion }}
+  {{- end }}
+  labels: {{ toYaml $labels | nindent 4 }}
+spec: {{ include "vm.cluster.spec" $ctx | nindent 2 }}
+{{- end }}

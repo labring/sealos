@@ -1,0 +1,54 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ ($Values.kubeScheduler).enabled }}'
+name: kube-scheduler.rules
+rules:
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.99'
+  record: cluster_quantile:scheduler_e2e_scheduling_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.99, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.99'
+  record: cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.99, sum(rate(scheduler_binding_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.99'
+  record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.9, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.9'
+  record: cluster_quantile:scheduler_e2e_scheduling_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.9, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.9'
+  record: cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.9, sum(rate(scheduler_binding_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.9'
+  record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.5, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.5'
+  record: cluster_quantile:scheduler_e2e_scheduling_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.5, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.5'
+  record: cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile
+- condition: '{{ true }}'
+  expr: histogram_quantile(0.5, sum(rate(scheduler_binding_duration_seconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod))
+  labels:
+    quantile: '0.5'
+  record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile

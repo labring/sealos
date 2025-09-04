@@ -80,7 +80,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       const updateData = parseResult.data;
-
       await updateAppResources(name, updateData, k8s);
 
       const response = await getAppByName(name, k8s);

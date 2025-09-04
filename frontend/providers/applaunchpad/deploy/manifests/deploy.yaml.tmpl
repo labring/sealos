@@ -23,6 +23,11 @@ data:
       guideEnabled: false
       apiEnabled: false
     launchpad:
+      infrastructure:
+        provider: alibaba
+        requiresDomainReg: false
+        domainRegQueryLink: https://beian.miit.gov.cn/#/Integrated/index
+        domainBindingDocumentationLink: null
       eventAnalyze:
         enabled: false
         fastGPTKey: ""
@@ -31,6 +36,8 @@ data:
           url: {{ .monitorUrl }}
         billing:
           url: {{ .billingUrl }}
+        log:
+          url: {{ .logUrl }}
       appResourceFormSliderConfig:
         default:
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]

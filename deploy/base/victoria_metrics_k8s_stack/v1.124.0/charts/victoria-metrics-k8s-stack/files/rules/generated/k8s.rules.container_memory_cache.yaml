@@ -1,0 +1,16 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: k8s.rules.container_memory_cache
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    container_memory_cache{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}
+    * on (namespace,pod,{{ $groupLabels }}) group_left(node) topk by (namespace,pod,{{ $groupLabels }}) (1,
+      max by (namespace,pod,node,{{ $groupLabels }}) (kube_pod_info{node!=""})
+    )
+  record: node_namespace_pod_container:container_memory_cache

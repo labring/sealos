@@ -1,0 +1,153 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+concurrency: 2
+condition: '{{ true }}'
+interval: 30s
+name: vmcluster
+rules:
+- alert: DiskRunsOutOfSpaceIn3Days
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=20&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "Taking into account current ingestion rate, free disk space will be enough only for {{`{{`}} $value | humanizeDuration {{`}}`}} on instance {{`{{`}} $labels.instance {{`}}`}}.\n Consider to limit the ingestion rate, decrease retention or scale the disk space up if possible."
+    summary: 'Instance {{`{{`}} $labels.instance {{`}}`}} will run out of disk space in 3 days'
+  condition: '{{ true }}'
+  expr: |-
+    sum(vm_free_disk_space_bytes) without(path) /
+    (
+      (rate(vm_rows_added_to_storage_total[1d]) - sum(rate(vm_deduplicated_samples_total[1d])) without (type)) * (
+        sum(vm_data_size_bytes{type!~"indexdb.*"}) without(type) /
+        sum(vm_rows{type!~"indexdb.*"}) without(type)
+      )
+      +
+      rate(vm_new_timeseries_created_total[1d]) * (
+        sum(vm_data_size_bytes{type="indexdb/file"}) /
+        sum(vm_rows{type="indexdb/file"})
+      )
+    ) < 3 * 24 * 3600 > 0
+  for: 30m
+  labels:
+    severity: critical
+- alert: NodeBecomesReadonlyIn3Days
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=20&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "Taking into account current ingestion rate, free disk space and -storage.minFreeDiskSpaceBytes instance {{`{{`}} $labels.instance {{`}}`}} will remain writable for {{`{{`}} $value | humanizeDuration {{`}}`}}.\n Consider to limit the ingestion rate, decrease retention or scale the disk space up if possible."
+    summary: 'Instance {{`{{`}} $labels.instance {{`}}`}} will become read-only in 3 days'
+  condition: '{{ true }}'
+  expr: |-
+    sum(vm_free_disk_space_bytes - vm_free_disk_space_limit_bytes) without(path) /
+    (
+        (rate(vm_rows_added_to_storage_total[1d]) - sum(rate(vm_deduplicated_samples_total[1d])) without (type)) * (
+          sum(vm_data_size_bytes{type!~"indexdb.*"}) without(type) /
+          sum(vm_rows{type!~"indexdb.*"}) without(type)
+        )
+        +
+        rate(vm_new_timeseries_created_total[1d]) * (
+          sum(vm_data_size_bytes{type="indexdb/file"}) /
+          sum(vm_rows{type="indexdb/file"})
+        )
+    ) < 3 * 24 * 3600 > 0
+  for: 30m
+  labels:
+    severity: warning
+- alert: DiskRunsOutOfSpace
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=20&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "Disk utilisation on instance {{`{{`}} $labels.instance {{`}}`}} is more than 80%.\n Having less than 20% of free disk space could cripple merges processes and overall performance. Consider to limit the ingestion rate, decrease retention or scale the disk space if possible."
+    summary: 'Instance {{`{{`}} $labels.instance {{`}}`}} (job={{`{{`}} $labels.job {{`}}`}}) will run out of disk space soon'
+  condition: '{{ true }}'
+  expr: |-
+    sum(vm_data_size_bytes) by (job,instance,{{ $groupLabels }}) /
+    (
+     sum(vm_free_disk_space_bytes) by (job,instance,{{ $groupLabels }}) +
+     sum(vm_data_size_bytes) by (job,instance,{{ $groupLabels }})
+    ) > 0.8
+  for: 30m
+  labels:
+    severity: critical
+- alert: RequestErrorsToAPI
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=52&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: 'Requests to path {{`{{`}} $labels.path {{`}}`}} are receiving errors. Please verify if clients are sending correct requests.'
+    summary: 'Too many errors served for {{`{{`}} $labels.job {{`}}`}} path {{`{{`}} $labels.path {{`}}`}} (instance {{`{{`}} $labels.instance {{`}}`}})'
+  condition: '{{ true }}'
+  expr: increase(vm_http_request_errors_total[5m]) > 0
+  for: 15m
+  labels:
+    severity: warning
+    show_at: dashboard
+- alert: RPCErrors
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=44&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "RPC errors are interconnection errors between cluster components.\n Possible reasons for errors are misconfiguration, overload, network blips or unreachable components."
+    summary: 'Too many RPC errors for {{`{{`}} $labels.job {{`}}`}} (instance {{`{{`}} $labels.instance {{`}}`}})'
+  condition: '{{ true }}'
+  expr: |-
+    (
+     sum(increase(vm_rpc_connection_errors_total[5m])) by (job,instance,{{ $groupLabels }})
+     +
+     sum(increase(vm_rpc_dial_errors_total[5m])) by (job,instance,{{ $groupLabels }})
+     +
+     sum(increase(vm_rpc_handshake_errors_total[5m])) by (job,instance,{{ $groupLabels }})
+    ) > 0
+  for: 15m
+  labels:
+    severity: warning
+    show_at: dashboard
+- alert: TooHighChurnRate
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=102'
+    description: "VM constantly creates new time series.\n This effect is known as Churn Rate.\n High Churn Rate tightly connected with database performance and may result in unexpected OOM's or slow queries."
+    summary: 'Churn rate is more than 10% for the last 15m'
+  condition: '{{ true }}'
+  expr: |-
+    (
+       sum(rate(vm_new_timeseries_created_total[5m])) by (job,{{ $groupLabels }})
+       /
+       sum(rate(vm_rows_inserted_total[5m])) by (job,{{ $groupLabels }})
+     ) > 0.1
+  for: 15m
+  labels:
+    severity: warning
+- alert: TooHighChurnRate24h
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=102'
+    description: "The number of created new time series over last 24h is 3x times higher than current number of active series.\n This effect is known as Churn Rate.\n High Churn Rate tightly connected with database performance and may result in unexpected OOM's or slow queries."
+    summary: 'Too high number of new series created over last 24h'
+  condition: '{{ true }}'
+  expr: |-
+    sum(increase(vm_new_timeseries_created_total[24h])) by (job,{{ $groupLabels }})
+    >
+    (sum(vm_cache_entries{type="storage/hour_metric_ids"}) by (job,{{ $groupLabels }}) * 3)
+  for: 15m
+  labels:
+    severity: warning
+- alert: TooHighSlowInsertsRate
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=108'
+    description: 'High rate of slow inserts may be a sign of resource exhaustion for the current load. It is likely more RAM is needed for optimal handling of the current number of active time series. See also https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3976#issuecomment-1476883183'
+    summary: 'Percentage of slow inserts is more than 5% for the last 15m'
+  condition: '{{ true }}'
+  expr: |-
+    (
+       sum(rate(vm_slow_row_inserts_total[5m])) by (job,{{ $groupLabels }})
+       /
+       sum(rate(vm_rows_inserted_total[5m])) by (job,{{ $groupLabels }})
+     ) > 0.05
+  for: 15m
+  labels:
+    severity: warning
+- alert: VminsertVmstorageConnectionIsSaturated
+  annotations:
+    dashboard: '{{ $grafanaHost }}/d/oS7Bi_0Wz?viewPanel=139&var-instance={{`{{`}} $labels.instance {{`}}`}}'
+    description: "The connection between vminsert (instance {{`{{`}} $labels.instance {{`}}`}}) and vmstorage (instance {{`{{`}} $labels.addr {{`}}`}}) is saturated by more than 90% and vminsert won't be able to keep up.\n This usually means that more vminsert or vmstorage nodes must be added to the cluster in order to increase the total number of vminsert -> vmstorage links."
+    summary: 'Connection between vminsert on {{`{{`}} $labels.instance {{`}}`}} and vmstorage on {{`{{`}} $labels.addr {{`}}`}} is saturated'
+  condition: '{{ true }}'
+  expr: rate(vm_rpc_send_duration_seconds_total[5m]) > 0.9
+  for: 15m
+  labels:
+    severity: warning
+    show_at: dashboard

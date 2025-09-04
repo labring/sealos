@@ -1,0 +1,58 @@
+{{- if or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled ) .Values.grafana.forceDeployDatasource }}
+{{- $ctx := dict "helm" . }}
+{{- $grafanaOperator := .Values.defaultDatasources.grafanaOperator }}
+{{- $fullname := include "vm.fullname" $ctx }}
+{{- $output := include "vm.data.sources" . | fromYaml }}
+{{- if $grafanaOperator.enabled }}
+{{- range $ds := $output.datasources }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  namespace: {{ include "vm.namespace" $ }}
+  name: {{ $fullname }}-{{ regexReplaceAll "[-]+" (regexReplaceAll "[^\\w]" (lower $ds.name) "-") "-" | trimSuffix "-" }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- with $grafanaOperator.annotations }}
+  annotations:
+    {{- range $key, $val := . }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+  {{- end }}
+  {{- $spec := deepCopy $grafanaOperator.spec }}
+  {{- $_ := set $spec "datasource" $ds }}
+  {{- $_ := set $ctx "ds" $ds }}
+  {{- if eq (include "vm.data.source.enabled" $ctx) "false" -}}
+    {{- $_ := set $spec "plugins" (list (dict "name" $ds.type "version" $ds.version)) }}
+  {{- end }}
+  {{- $_ := unset $ds "version" }}
+spec: {{ toYaml $spec | nindent 2 }}
+{{- end }}
+{{- else }}
+  {{- $datasources := default list }}
+  {{- range $ds := $output.datasources }}
+    {{- $_ := set $ctx "ds" $ds }}
+    {{- if eq (include "vm.data.source.enabled" $ctx) "true" -}}
+      {{- $_ := unset $ds "version" }}
+      {{- $datasources = append $datasources $ds }}
+    {{- end -}}
+  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-grafana-ds
+  namespace: {{ include "vm.namespace" $ }}
+  {{- with $.Values.grafana.sidecar.datasources.annotations }}
+  annotations: {{ toYaml $ | nindent 4 }}
+  {{- end }}
+  labels:
+    {{ $.Values.grafana.sidecar.datasources.label }}: "1"
+    {{- $app := ((printf "%s-grafana" (include "vm.name" $ctx)) | trunc 63 | trimSuffix "-") }}
+    app: {{ $app }}
+    {{- include "vm.labels" $ctx | nindent 4 }}
+data:
+  datasource.yaml: |-
+    apiVersion: 1
+    datasources: {{ toYaml $datasources | nindent 6 }}
+{{- end }}
+{{- end }}

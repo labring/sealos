@@ -1,0 +1,28 @@
+victoria-metrics-operator:
+  image:
+    registry: "quay.io"
+  env:
+    - name: "VM_USECUSTOMCONFIGRELOADER"
+      value: "true"
+    - name: VM_CUSTOMCONFIGRELOADERIMAGE
+      value: "quay.io/victoriametrics/operator:config-reloader-v0.53.0"
+    - name: VM_VLOGSDEFAULT_IMAGE
+      value: "quay.io/victoriametrics/victoria-logs"
+    - name: "VM_VMALERTDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/vmalert"
+    - name: "VM_VMAGENTDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/vmagent"
+    - name: "VM_VMSINGLEDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/victoria-metrics"
+    - name: "VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/vmselect"
+    - name: "VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/vmstorage"
+    - name: "VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/vminsert"
+    - name: "VM_VMBACKUP_IMAGE"
+      value: "quay.io/victoriametrics/vmbackupmanager"
+    - name: "VM_VMAUTHDEFAULT_IMAGE"
+      value: "quay.io/victoriametrics/vmauth"
+    - name: "VM_VMALERTMANAGER_ALERTMANAGERDEFAULTBASEIMAGE"
+      value: "quay.io/prometheus/alertmanager"

@@ -1,0 +1,53 @@
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: '{{ include "grafana.fullname" . }}-test'
+    data:
+      var1: "value1"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: '{{ include "grafana.fullname" . }}-test'
+    type: Opaque
+    data:
+      var2: "dmFsdWUy"
+
+sidecar:
+  alerts:
+    enabled: true
+    envValueFrom:
+      VAR1:
+        configMapKeyRef:
+          name: '{{ include "grafana.fullname" . }}-test'
+          key: var1
+      VAR2:
+        secretKeyRef:
+          name: '{{ include "grafana.fullname" . }}-test'
+          key: var2
+      VAR3:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+  dashboards:
+    enabled: true
+    envValueFrom:
+      VAR1:
+        configMapKeyRef:
+          name: '{{ include "grafana.fullname" . }}-test'
+          key: var1
+      VAR2:
+        secretKeyRef:
+          name: '{{ include "grafana.fullname" . }}-test'
+          key: var2
+  datasources:
+    enabled: true
+    envValueFrom:
+      VAR1:
+        configMapKeyRef:
+          name: '{{ include "grafana.fullname" . }}-test'
+          key: var1
+      VAR2:
+        secretKeyRef:
+          name: '{{ include "grafana.fullname" . }}-test'
+          key: var2

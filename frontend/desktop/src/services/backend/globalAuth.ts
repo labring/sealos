@@ -418,36 +418,7 @@ export const getGlobalToken = async ({
       return null;
     }
     if (!_user) {
-      if (!enableSignUp()) throw new Error('Failed to signUp user');
-      const result = await signUpByPassword({
-        id: providerId,
-        name,
-        avatar_url,
-        password,
-        semData
-      });
-      if (!!result) {
-        user = result.user;
-        if (inviterId && result) {
-          inviteHandler({
-            inviterId: inviterId,
-            inviteeId: result?.user.name,
-            signResult: result
-          });
-        }
-        if (enableTracking()) {
-          await trackSignUp({
-            userId: result.user.id,
-            userUid: result.user.uid
-          });
-        }
-
-        if (adClickData) {
-          await uploadConvertData(adClickData).catch((e) => {
-            console.log('Failed to upload AD click data: ', e);
-          });
-        }
-      }
+      throw new Error('Username or password is invalid.');
     } else {
       const result = await signInByPassword({
         id: providerId,

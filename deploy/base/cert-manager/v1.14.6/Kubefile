@@ -1,0 +1,1 @@
+FROM docker.io/labring/cert-manager:v1.14.6

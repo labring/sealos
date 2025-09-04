@@ -1,0 +1,32 @@
+{{- $app := .Values.vmalert }}
+{{- if and $app.enabled $app.additionalNotifierConfigs }}
+{{- $ctx := dict "helm" . "appKey" (list "vmalert" "spec") }}
+{{- $fullname := include "vm.managed.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $fullname }}-additional-notifier
+  namespace: {{ $ns }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+stringData:
+  {{- $configs := $app.additionalNotifierConfigs.static_configs | default list -}}
+  {{- if (.Values.alertmanager).enabled }}
+    {{- $replicas := ((.Values.alertmanager).spec).replicaCount | int -}}
+    {{- if gt $replicas 0 }}
+      {{- $targets := default list -}}
+      {{- $ctx := dict "helm" . "appKey" "alertmanager" }}
+      {{- $_ := set $ctx "appSecure" (not (empty (((.Values.alertmanager).spec).webConfig).tls_server_config)) -}}
+      {{- $_ := set $ctx "appRoute" ((.Values.alertmanager).spec).routePrefix -}}
+      {{- $_ := set $ctx "style" "managed" -}}
+      {{- range until $replicas -}}
+        {{- $_ := set $ctx "appIdx" . -}}
+        {{- $targets = append $targets (include "vm.url" $ctx) -}}
+        {{- $_ := unset $ctx "appIdx" -}}
+      {{- end }}
+      {{- $configs = append $configs (dict "targets" $targets) -}}
+    {{- end }}
+  {{- end }}
+  {{- $_ := set $app.additionalNotifierConfigs "static_configs" $configs }}
+  notifier-configs.yaml: |{{ toYaml $app.additionalNotifierConfigs | nindent 4 }}
+{{- end }}

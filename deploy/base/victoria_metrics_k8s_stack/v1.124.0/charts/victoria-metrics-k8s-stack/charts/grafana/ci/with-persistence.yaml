@@ -1,0 +1,3 @@
+persistence:
+  type: pvc
+  enabled: true

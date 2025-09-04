@@ -1,0 +1,195 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: kubernetes-system-kubelet
+rules:
+- alert: KubeNodeNotReady
+  annotations:
+    description: '{{`{{`}} $labels.node {{`}}`}} has been unready for more than 15 minutes on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubenodenotready'
+    summary: 'Node is not ready.'
+  condition: '{{ true }}'
+  expr: |-
+    kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
+    and on (node,{{ $groupLabels }})
+    kube_node_spec_unschedulable{job="kube-state-metrics"} == 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: KubeNodePressure
+  annotations:
+    description: '{{`{{`}} $labels.node {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}} has active Condition {{`{{`}} $labels.condition {{`}}`}}. This is caused by resource usage exceeding eviction thresholds.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubenodepressure'
+    summary: 'Node has as active Condition.'
+  condition: '{{ true }}'
+  expr: |-
+    kube_node_status_condition{job="kube-state-metrics",condition=~"(MemoryPressure|DiskPressure|PIDPressure)",status="true"} == 1
+    and on (node,{{ $groupLabels }})
+    kube_node_spec_unschedulable{job="kube-state-metrics"} == 0
+  for: 10m
+  labels:
+    severity: info
+- alert: KubeNodeUnreachable
+  annotations:
+    description: '{{`{{`}} $labels.node {{`}}`}} is unreachable and some workloads may be rescheduled on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubenodeunreachable'
+    summary: 'Node is unreachable.'
+  condition: '{{ true }}'
+  expr: (kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} unless ignoring(key,value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"}) == 1
+  for: 15m
+  labels:
+    severity: warning
+- alert: KubeletTooManyPods
+  annotations:
+    description: 'Kubelet ''{{`{{`}} $labels.node {{`}}`}}'' is running at {{`{{`}} $value | humanizePercentage {{`}}`}} of its Pod capacity on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubelettoomanypods'
+    summary: 'Kubelet is running at capacity.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      max by (instance,{{ $groupLabels }}) (
+        kubelet_running_pods{job="kubelet", metrics_path="/metrics"} > 1
+      )
+      * on (instance,{{ $groupLabels }}) group_left(node)
+      max by (instance,node,{{ $groupLabels }}) (
+        kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+      )
+    )
+    / on (node,{{ $groupLabels }}) group_left()
+    max by (node,{{ $groupLabels }}) (
+      kube_node_status_capacity{job="kube-state-metrics", resource="pods"} != 1
+    ) > 0.95
+  for: 15m
+  labels:
+    severity: info
+- alert: KubeNodeReadinessFlapping
+  annotations:
+    description: 'The readiness status of node {{`{{`}} $labels.node {{`}}`}} has changed {{`{{`}} $value {{`}}`}} times in the last 15 minutes on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubenodereadinessflapping'
+    summary: 'Node readiness status is flapping.'
+  condition: '{{ true }}'
+  expr: |-
+    sum(changes(kube_node_status_condition{job="kube-state-metrics",status="true",condition="Ready"}[15m])) by (node,{{ $groupLabels }}) > 2
+    and on (node,{{ $groupLabels }})
+    kube_node_spec_unschedulable{job="kube-state-metrics"} == 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: KubeNodeEviction
+  annotations:
+    description: 'Node {{`{{`}} $labels.node {{`}}`}} on {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}} is evicting Pods due to {{`{{`}} $labels.eviction_signal {{`}}`}}.  Eviction occurs when eviction thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage limits.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubenodeeviction'
+    summary: 'Node is evicting pods.'
+  condition: '{{ true }}'
+  expr: |-
+    sum(rate(kubelet_evictions{job="kubelet", metrics_path="/metrics"}[15m])) by (eviction_signal,instance,{{ $groupLabels }})
+    * on (instance,{{ $groupLabels }}) group_left(node)
+    max by (instance,node,{{ $groupLabels }}) (
+      kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+    )
+    > 0
+  for: 0s
+  labels:
+    severity: info
+- alert: KubeletPlegDurationHigh
+  annotations:
+    description: 'The Kubelet Pod Lifecycle Event Generator has a 99th percentile duration of {{`{{`}} $value {{`}}`}} seconds on node {{`{{`}} $labels.node {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletplegdurationhigh'
+    summary: 'Kubelet Pod Lifecycle Event Generator is taking too long to relist.'
+  condition: '{{ true }}'
+  expr: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile{quantile="0.99"} >= 10
+  for: 5m
+  labels:
+    severity: warning
+- alert: KubeletPodStartUpLatencyHigh
+  annotations:
+    description: 'Kubelet Pod startup 99th percentile latency is {{`{{`}} $value {{`}}`}} seconds on node {{`{{`}} $labels.node {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletpodstartuplatencyhigh'
+    summary: 'Kubelet Pod startup latency is too high.'
+  condition: '{{ true }}'
+  expr: |-
+    histogram_quantile(0.99,
+      sum by (instance,le,{{ $groupLabels }}) (
+        topk by (instance,le,operation_type,{{ $groupLabels }}) (1,
+          rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])
+        )
+      )
+    )
+    * on (instance,{{ $groupLabels }}) group_left(node)
+    topk by (instance,node,{{ $groupLabels }}) (1,
+      kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+    )
+    > 60
+  for: 15m
+  labels:
+    severity: warning
+- alert: KubeletClientCertificateExpiration
+  annotations:
+    description: 'Client certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletclientcertificateexpiration'
+    summary: 'Kubelet client certificate is about to expire.'
+  condition: '{{ true }}'
+  expr: kubelet_certificate_manager_client_ttl_seconds < 604800
+  labels:
+    severity: warning
+- alert: KubeletClientCertificateExpiration
+  annotations:
+    description: 'Client certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletclientcertificateexpiration'
+    summary: 'Kubelet client certificate is about to expire.'
+  condition: '{{ true }}'
+  expr: kubelet_certificate_manager_client_ttl_seconds < 86400
+  labels:
+    severity: critical
+- alert: KubeletServerCertificateExpiration
+  annotations:
+    description: 'Server certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletservercertificateexpiration'
+    summary: 'Kubelet server certificate is about to expire.'
+  condition: '{{ true }}'
+  expr: kubelet_certificate_manager_server_ttl_seconds < 604800
+  labels:
+    severity: warning
+- alert: KubeletServerCertificateExpiration
+  annotations:
+    description: 'Server certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletservercertificateexpiration'
+    summary: 'Kubelet server certificate is about to expire.'
+  condition: '{{ true }}'
+  expr: kubelet_certificate_manager_server_ttl_seconds < 86400
+  labels:
+    severity: critical
+- alert: KubeletClientCertificateRenewalErrors
+  annotations:
+    description: 'Kubelet on node {{`{{`}} $labels.node {{`}}`}} has failed to renew its client certificate ({{`{{`}} $value | humanize {{`}}`}} errors in the last 5 minutes) on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletclientcertificaterenewalerrors'
+    summary: 'Kubelet has failed to renew its client certificate.'
+  condition: '{{ true }}'
+  expr: increase(kubelet_certificate_manager_client_expiration_renew_errors[5m]) > 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: KubeletServerCertificateRenewalErrors
+  annotations:
+    description: 'Kubelet on node {{`{{`}} $labels.node {{`}}`}} has failed to renew its server certificate ({{`{{`}} $value | humanize {{`}}`}} errors in the last 5 minutes) on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletservercertificaterenewalerrors'
+    summary: 'Kubelet has failed to renew its server certificate.'
+  condition: '{{ true }}'
+  expr: increase(kubelet_server_expiration_renew_errors[5m]) > 0
+  for: 15m
+  labels:
+    severity: warning
+- alert: KubeletDown
+  annotations:
+    description: 'Kubelet has disappeared from Prometheus target discovery.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeletdown'
+    summary: 'Target disappeared from Prometheus target discovery.'
+  condition: '{{ ($Values.kubelet).enabled }}'
+  expr: absent(up{job="kubelet", metrics_path="/metrics"} == 1)
+  for: 15m
+  labels:
+    severity: critical

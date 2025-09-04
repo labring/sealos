@@ -1,0 +1,4 @@
+{{ range .Values.extraObjects }}
+---
+{{ tpl (ternary . (toYaml .) (typeIs "string" .)) $ }}
+{{ end }}

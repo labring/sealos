@@ -1,0 +1,32 @@
+{{- if and .Values.rbac.create (not .Values.rbac.useExistingRole) -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "grafana.fullname" . }}
+  namespace: {{ include "grafana.namespace" . }}
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- if or .Values.rbac.pspEnabled (and .Values.rbac.namespaced (or .Values.sidecar.dashboards.enabled .Values.sidecar.datasources.enabled .Values.sidecar.plugins.enabled .Values.rbac.extraRoleRules)) }}
+rules:
+  {{- if and .Values.rbac.pspEnabled (.Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy") }}
+  - apiGroups:      ['extensions']
+    resources:      ['podsecuritypolicies']
+    verbs:          ['use']
+    resourceNames:  [{{ include "grafana.fullname" . }}]
+  {{- end }}
+  {{- if and .Values.rbac.namespaced (or .Values.sidecar.dashboards.enabled .Values.sidecar.datasources.enabled .Values.sidecar.plugins.enabled) }}
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "watch", "list"]
+  {{- end }}
+  {{- with .Values.rbac.extraRoleRules }}
+  {{- toYaml . | nindent 2 }}
+  {{- end}}
+{{- else }}
+rules: []
+{{- end }}
+{{- end }}

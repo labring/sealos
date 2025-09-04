@@ -1,0 +1,3 @@
+FROM scratch
+COPY . .
+CMD ["bash entrypoint.sh"]

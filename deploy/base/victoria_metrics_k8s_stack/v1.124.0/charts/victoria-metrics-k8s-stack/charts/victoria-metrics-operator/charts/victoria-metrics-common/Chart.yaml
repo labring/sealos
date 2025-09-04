@@ -1,0 +1,28 @@
+annotations:
+  artifacthub.io/category: monitoring-logging
+  artifacthub.io/changes: |
+    - Support custom case for list empty argument.
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Sources
+      url: https://github.com/VictoriaMetrics/helm-charts/tree/master/charts/victoria-metrics-common
+    - name: Charts repo
+      url: https://victoriametrics.github.io/helm-charts/
+apiVersion: v2
+description: Victoria Metrics Common - contains shared templates for all Victoria
+  Metrics helm charts
+keywords:
+- victoriametrics
+- monitoring
+- kubernetes
+- observability
+- tsdb
+- metrics
+- metricsql
+- timeseries
+kubeVersion: '>=1.23.0-0'
+name: victoria-metrics-common
+sources:
+- https://github.com/VictoriaMetrics/helm-charts
+type: library
+version: 0.0.42

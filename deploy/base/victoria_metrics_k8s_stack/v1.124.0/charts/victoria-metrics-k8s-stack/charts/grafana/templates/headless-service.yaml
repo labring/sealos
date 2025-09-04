@@ -1,0 +1,22 @@
+{{- $sts := list "sts" "StatefulSet" "statefulset" -}}
+{{- if or .Values.headlessService (and .Values.persistence.enabled (not .Values.persistence.existingClaim) (has .Values.persistence.type $sts)) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "grafana.fullname" . }}-headless
+  namespace: {{ include "grafana.namespace" . }}
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "grafana.selectorLabels" . | nindent 4 }}
+  type: ClusterIP
+  ports:
+  - name: {{ .Values.gossipPortName }}-tcp
+    port: 9094
+{{- end }}

@@ -1,0 +1,28 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: k8s.rules.container_memory_requests
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}  * on (namespace,pod,{{ $groupLabels }})
+    group_left() max by (namespace,pod,{{ $groupLabels }}) (
+      (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
+    )
+  record: cluster:namespace:pod_memory:active:kube_pod_container_resource_requests
+- condition: '{{ true }}'
+  expr: |-
+    sum by (namespace,{{ $groupLabels }}) (
+        sum by (namespace,pod,{{ $groupLabels }}) (
+            max by (namespace,pod,container,{{ $groupLabels }}) (
+              kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}
+            ) * on (namespace,pod,{{ $groupLabels }}) group_left() max by (namespace,pod,{{ $groupLabels }}) (
+              kube_pod_status_phase{phase=~"Pending|Running"} == 1
+            )
+        )
+    )
+  record: namespace_memory:kube_pod_container_resource_requests:sum

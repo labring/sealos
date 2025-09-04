@@ -103,4 +103,5 @@ export type EnvResponse = {
   DESKTOP_DOMAIN: string;
   PVC_STORAGE_MAX: number;
   GPU_ENABLED: boolean;
+  LOG_ENABLED: boolean;
 };

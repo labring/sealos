@@ -1,0 +1,75 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: kubernetes-system-apiserver
+rules:
+- alert: KubeClientCertificateExpiration
+  annotations:
+    description: 'A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeclientcertificateexpiration'
+    summary: 'Client certificate is about to expire.'
+  condition: '{{ true }}'
+  expr: |-
+    histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
+    and
+    on (job,instance,{{ $groupLabels }}) apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+  for: 5m
+  labels:
+    severity: warning
+- alert: KubeClientCertificateExpiration
+  annotations:
+    description: 'A client certificate used to authenticate to kubernetes apiserver is expiring in less than 24.0 hours on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeclientcertificateexpiration'
+    summary: 'Client certificate is about to expire.'
+  condition: '{{ true }}'
+  expr: |-
+    histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
+    and
+    on (job,instance,{{ $groupLabels }}) apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+  for: 5m
+  labels:
+    severity: critical
+- alert: KubeAggregatedAPIErrors
+  annotations:
+    description: 'Kubernetes aggregated API {{`{{`}} $labels.instance {{`}}`}}/{{`{{`}} $labels.name {{`}}`}} has reported {{`{{`}} $labels.reason {{`}}`}} errors on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeaggregatedapierrors'
+    summary: 'Kubernetes aggregated API has reported errors.'
+  condition: '{{ true }}'
+  expr: sum by (instance,name,reason,{{ $groupLabels }})(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[1m])) > 0
+  for: 10m
+  labels:
+    severity: warning
+- alert: KubeAggregatedAPIDown
+  annotations:
+    description: 'Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeaggregatedapidown'
+    summary: 'Kubernetes aggregated API is down.'
+  condition: '{{ true }}'
+  expr: (1 - max by (name,namespace,{{ $groupLabels }})(avg_over_time(aggregator_unavailable_apiservice{job="apiserver"}[10m]))) * 100 < 85
+  for: 5m
+  labels:
+    severity: warning
+- alert: KubeAPIDown
+  annotations:
+    description: 'KubeAPI has disappeared from Prometheus target discovery.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeapidown'
+    summary: 'Target disappeared from Prometheus target discovery.'
+  condition: '{{ ($Values.kubeApiServer).enabled }}'
+  expr: absent(up{job="apiserver"} == 1)
+  for: 15m
+  labels:
+    severity: critical
+- alert: KubeAPITerminatedRequests
+  annotations:
+    description: 'The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests on cluster {{`{{`}} $labels.{{ $clusterLabel }} {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubeapiterminatedrequests'
+    summary: 'The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.'
+  condition: '{{ true }}'
+  expr: sum by ({{ $groupLabels }}) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) / ( sum by ({{ $groupLabels }}) (rate(apiserver_request_total{job="apiserver"}[10m])) + sum by ({{ $groupLabels }}) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+  for: 5m
+  labels:
+    severity: warning

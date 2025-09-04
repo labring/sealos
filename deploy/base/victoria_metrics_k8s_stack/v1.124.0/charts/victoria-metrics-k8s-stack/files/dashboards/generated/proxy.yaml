@@ -1,0 +1,462 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $multicluster := ((($Values.grafana).sidecar).dashboards).multicluster | default false }}
+{{- $defaultDatasource := "prometheus" -}}
+{{- range (((($Values.grafana).sidecar).datasources).victoriametrics | default list) }}
+  {{- if and .isDefault .type }}{{ $defaultDatasource = .type }}{{- end }}
+{{- end }}
+condition: {{ $Values.kubeProxy.enabled }}
+editable: false
+links:
+- asDropdown: true
+  includeVars: true
+  keepTime: true
+  tags:
+  - kubernetes-mixin
+  targetBlank: false
+  title: Kubernetes
+  type: dashboards
+panels:
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      unit: none
+  gridPos:
+    h: 7
+    w: 4
+    x: 0
+    'y': 0
+  id: 1
+  interval: 1m
+  options:
+    colorMode: none
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(up{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy"})
+    instant: true
+  title: Up
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: ops
+  gridPos:
+    h: 7
+    w: 10
+    x: 4
+    'y': 0
+  id: 2
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(rate(kubeproxy_sync_proxy_rules_duration_seconds_count{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy", instance=~"$instance"}[$__rate_interval]))
+    legendFormat: rate
+  title: Rules Sync Rate
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: s
+  gridPos:
+    h: 7
+    w: 10
+    x: 14
+    'y': 0
+  id: 3
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: histogram_quantile(0.99,rate(kubeproxy_sync_proxy_rules_duration_seconds_bucket{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy", instance=~"$instance"}[$__rate_interval]))
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+  title: Rules Sync Latency 99th Quantile
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: ops
+  gridPos:
+    h: 7
+    w: 12
+    x: 0
+    'y': 7
+  id: 4
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(rate(kubeproxy_network_programming_duration_seconds_count{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy", instance=~"$instance"}[$__rate_interval]))
+    legendFormat: rate
+  title: Network Programming Rate
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: s
+  gridPos:
+    h: 7
+    w: 12
+    x: 12
+    'y': 7
+  id: 5
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: histogram_quantile(0.99, sum(rate(kubeproxy_network_programming_duration_seconds_bucket{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy", instance=~"$instance"}[$__rate_interval])) by (instance, le))
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+  title: Network Programming Latency 99th Quantile
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: ops
+  gridPos:
+    h: 7
+    w: 8
+    x: 0
+    'y': 14
+  id: 6
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(rate(rest_client_requests_total{ {{ $clusterLabel }}=~"$cluster",job="kube-proxy", instance=~"$instance",code=~"2.."}[$__rate_interval]))
+    legendFormat: 2xx
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(rate(rest_client_requests_total{ {{ $clusterLabel }}=~"$cluster",job="kube-proxy", instance=~"$instance",code=~"3.."}[$__rate_interval]))
+    legendFormat: 3xx
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(rate(rest_client_requests_total{ {{ $clusterLabel }}=~"$cluster",job="kube-proxy", instance=~"$instance",code=~"4.."}[$__rate_interval]))
+    legendFormat: 4xx
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: sum(rate(rest_client_requests_total{ {{ $clusterLabel }}=~"$cluster",job="kube-proxy", instance=~"$instance",code=~"5.."}[$__rate_interval]))
+    legendFormat: 5xx
+  title: Kube API Request Rate
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: ops
+  gridPos:
+    h: 7
+    w: 16
+    x: 8
+    'y': 14
+  id: 7
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: histogram_quantile(0.99, sum(rate(rest_client_request_duration_seconds_bucket{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy",instance=~"$instance",verb="POST"}[$__rate_interval])) by (verb, le))
+    legendFormat: '{{`{{`}}verb{{`}}`}}'
+  title: Post Request Latency 99th Quantile
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: s
+  gridPos:
+    h: 7
+    w: 24
+    x: 0
+    'y': 21
+  id: 8
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: histogram_quantile(0.99, sum(rate(rest_client_request_duration_seconds_bucket{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy", instance=~"$instance", verb="GET"}[$__rate_interval])) by (verb, le))
+    legendFormat: '{{`{{`}}verb{{`}}`}}'
+  title: Get Request Latency 99th Quantile
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: bytes
+  gridPos:
+    h: 7
+    w: 8
+    x: 0
+    'y': 28
+  id: 9
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: process_resident_memory_bytes{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy",instance=~"$instance"}
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+  title: Memory
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: short
+  gridPos:
+    h: 7
+    w: 8
+    x: 8
+    'y': 28
+  id: 10
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: rate(process_cpu_seconds_total{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy",instance=~"$instance"}[$__rate_interval])
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+  title: CPU usage
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: -- Mixed --
+  fieldConfig:
+    defaults:
+      custom:
+        fillOpacity: 10
+        showPoints: never
+        spanNulls: true
+      unit: short
+  gridPos:
+    h: 7
+    w: 8
+    x: 16
+    'y': 28
+  id: 11
+  interval: 1m
+  options:
+    legend:
+      asTable: true
+      calcs:
+      - lastNotNull
+      displayMode: table
+      placement: right
+      showLegend: true
+    tooltip:
+      mode: single
+  pluginVersion: v11.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: ${datasource}
+    expr: go_goroutines{ {{ $clusterLabel }}=~"$cluster", job="kube-proxy",instance=~"$instance"}
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+  title: Goroutines
+  type: timeseries
+refresh: 10s
+schemaVersion: 39
+tags:
+- kubernetes-mixin
+- vm-k8s-stack
+templating:
+  list:
+  - current:
+      selected: true
+      text: default
+      value: default
+    hide: 0
+    label: Data source
+    name: datasource
+    query: {{ $defaultDatasource }}
+    regex: ''
+    type: datasource
+  - datasource:
+      type: prometheus
+      uid: ${datasource}
+    hide: {{ ternary 0 2 $multicluster }}
+    label: cluster
+    name: cluster
+    query: {{ ternary (b64dec "ImxhYmVsX3ZhbHVlcyh1cHtqb2I9XCJrdWJlLXByb3h5XCJ9LCBjbHVzdGVyKSI=" | replace "cluster" $clusterLabel) ".*" $multicluster }}
+    refresh: 2
+    sort: 1
+    type: {{ ternary "query" "constant" $multicluster }}
+  - allValue: .+
+    datasource:
+      type: prometheus
+      uid: ${datasource}
+    hide: 0
+    includeAll: true
+    label: instance
+    name: instance
+    query: label_values(up{job="kube-proxy", {{ $clusterLabel }}=~"$cluster", job="kube-proxy"}, instance)
+    refresh: 2
+    type: query
+time:
+  from: now-1h
+  to: now
+timezone: {{ default "UTC" ($Values.defaultDashboards).defaultTimezone }}
+title: Kubernetes / Proxy
+uid: 632e265de029684c40b21cb76bca4f94

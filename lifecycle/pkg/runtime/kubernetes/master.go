@@ -20,6 +20,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
+
 	"github.com/labring/sreg/pkg/registry/crane"
 	"k8s.io/apimachinery/pkg/util/json"
 
@@ -112,7 +114,7 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join master kubeadm config: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.pathResolver.TmpPath(), defaultJoinMasterKubeadmFileName)
+	joinConfigPath := path.Join(k.pathResolver.TmpPath(), iputils.GetHostIP(master), defaultJoinMasterKubeadmFileName)
 	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {

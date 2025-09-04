@@ -1,0 +1,15 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: kube-prometheus-general.rules
+rules:
+- condition: '{{ true }}'
+  expr: count without(instance, pod, node) (up == 1)
+  record: count:up1
+- condition: '{{ true }}'
+  expr: count without(instance, pod, node) (up == 0)
+  record: count:up0

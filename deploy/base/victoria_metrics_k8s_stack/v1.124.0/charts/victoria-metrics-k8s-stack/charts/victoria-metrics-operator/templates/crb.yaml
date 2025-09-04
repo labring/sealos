@@ -1,0 +1,41 @@
+{{- $ctx := dict "helm" . }}
+{{- $fullname := include "vm.plain.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+{{- if .Values.rbac.create }}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $fullname }}
+  {{- $_ := set $ctx "extraLabels" .Values.extraLabels }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- $_ := unset $ctx "extraLabels" }}
+  {{- with .Values.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+subjects:
+- kind: ServiceAccount
+  name: {{ (.Values.serviceAccount).name | default $fullname }}
+  namespace: {{ $ns }}
+roleRef:
+  kind: ClusterRole
+  name: {{ $fullname }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end -}}
+{{- if and .Values.crds.enabled .Values.crds.cleanup.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $fullname }}-cleanup-hook
+  namespace: {{ $ns }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  annotations: {{ include "vm-operator.cleanup.annotations" (dict "hookWeight" "-4") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $fullname }}-cleanup-hook
+subjects:
+- kind: ServiceAccount
+  name: {{ $fullname }}-cleanup-hook
+  namespace: {{ $ns }}
+{{- end }}

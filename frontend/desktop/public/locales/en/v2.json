@@ -9,6 +9,7 @@
   "check_your_email": "Check your email",
   "check_your_phone": "Please input 6-digit Verification Code",
   "choose_a_region": "Choose a region",
+  "username_password_signin": "Username / Password Signin",
   "confirm_password": "Confirm Password",
   "continue": "Continue",
   "copy_kubeconfig": "Copy Kubeconfig",

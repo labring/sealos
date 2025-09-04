@@ -1,0 +1,61 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: kube-state-metrics
+rules:
+- alert: KubeStateMetricsListErrors
+  annotations:
+    description: 'kube-state-metrics is experiencing errors at an elevated rate in list operations. This is likely causing it to not be able to expose metrics about Kubernetes objects correctly or at all.'
+    runbook_url: '{{ $runbookUrl }}/kube-state-metrics/kubestatemetricslisterrors'
+    summary: 'kube-state-metrics is experiencing errors in list operations.'
+  condition: '{{ true }}'
+  expr: |-
+    (sum(rate(kube_state_metrics_list_total{job="kube-state-metrics",result="error"}[5m])) by ({{ $groupLabels }})
+      /
+    sum(rate(kube_state_metrics_list_total{job="kube-state-metrics"}[5m])) by ({{ $groupLabels }}))
+    > 0.01
+  for: 15m
+  labels:
+    severity: critical
+- alert: KubeStateMetricsWatchErrors
+  annotations:
+    description: 'kube-state-metrics is experiencing errors at an elevated rate in watch operations. This is likely causing it to not be able to expose metrics about Kubernetes objects correctly or at all.'
+    runbook_url: '{{ $runbookUrl }}/kube-state-metrics/kubestatemetricswatcherrors'
+    summary: 'kube-state-metrics is experiencing errors in watch operations.'
+  condition: '{{ true }}'
+  expr: |-
+    (sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics",result="error"}[5m])) by ({{ $groupLabels }})
+      /
+    sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics"}[5m])) by ({{ $groupLabels }}))
+    > 0.01
+  for: 15m
+  labels:
+    severity: critical
+- alert: KubeStateMetricsShardingMismatch
+  annotations:
+    description: 'kube-state-metrics pods are running with different --total-shards configuration, some Kubernetes objects may be exposed multiple times or not exposed at all.'
+    runbook_url: '{{ $runbookUrl }}/kube-state-metrics/kubestatemetricsshardingmismatch'
+    summary: 'kube-state-metrics sharding is misconfigured.'
+  condition: '{{ true }}'
+  expr: stdvar (kube_state_metrics_total_shards{job="kube-state-metrics"}) by ({{ $groupLabels }}) != 0
+  for: 15m
+  labels:
+    severity: critical
+- alert: KubeStateMetricsShardsMissing
+  annotations:
+    description: 'kube-state-metrics shards are missing, some Kubernetes objects are not being exposed.'
+    runbook_url: '{{ $runbookUrl }}/kube-state-metrics/kubestatemetricsshardsmissing'
+    summary: 'kube-state-metrics shards are missing.'
+  condition: '{{ true }}'
+  expr: |-
+    2^max(kube_state_metrics_total_shards{job="kube-state-metrics"}) by ({{ $groupLabels }}) - 1
+      -
+    sum( 2 ^ max by (shard_ordinal,{{ $groupLabels }}) (kube_state_metrics_shard_ordinal{job="kube-state-metrics"}) ) by ({{ $groupLabels }})
+    != 0
+  for: 15m
+  labels:
+    severity: critical

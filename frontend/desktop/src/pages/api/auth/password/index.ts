@@ -42,7 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     return jsonRes(res, {
       data: {
-        token: data.token
+        token: data.token,
+        needInit: data.needInit
       },
       code: 200,
       message: 'Successfully'

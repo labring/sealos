@@ -1,0 +1,1290 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $multicluster := ((($Values.grafana).sidecar).dashboards).multicluster | default false }}
+{{- $defaultDatasource := "prometheus" -}}
+{{- range (((($Values.grafana).sidecar).datasources).victoriametrics | default list) }}
+  {{- if and .isDefault .type }}{{ $defaultDatasource = .type }}{{- end }}
+{{- end }}
+__elements: {}
+__inputs: []
+__requires:
+- id: barchart
+  name: Bar chart
+  type: panel
+  version: ''
+- id: grafana
+  name: Grafana
+  type: grafana
+  version: 10.4.0
+- id: prometheus
+  name: Prometheus
+  type: datasource
+  version: 1.0.0
+- id: stat
+  name: Stat
+  type: panel
+  version: ''
+- id: table
+  name: Table
+  type: panel
+  version: ''
+- id: timeseries
+  name: Time series
+  type: panel
+  version: ''
+annotations:
+  list:
+  - builtIn: 1
+    datasource:
+      type: grafana
+      uid: -- Grafana --
+    enable: true
+    hide: true
+    iconColor: rgba(0, 211, 255, 1)
+    name: Annotations & Alerts
+    target:
+      limit: 100
+      matchAny: false
+      tags: []
+      type: dashboard
+    type: dashboard
+condition: {{ or (not (empty (((($Values).vmsingle).spec).vmBackup).destination)) (not (empty ((((($Values).vmcluster).spec).storage).vmBackup).destination)) }}
+description: Overview for VictoriaMetrics backupmanager v1.85.3 or higher
+editable: false
+fiscalYearStartMonth: 0
+graphTooltip: 0
+id: null
+links: []
+liveNow: false
+panels:
+- collapsed: false
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 0
+  id: 10
+  panels: []
+  title: Stats
+  type: row
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+    overrides: []
+  gridPos:
+    h: 5
+    w: 3
+    x: 0
+    'y': 1
+  id: 32
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: count(vm_app_version{job=~"$job", instance=~"$instance", version=~"^vmbackupmanager.+" })
+    instant: true
+    legendFormat: __auto
+    range: false
+    refId: A
+  title: Instances
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Status of last backup operation.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings:
+      - options:
+          '0':
+            index: 0
+            text: Success
+        type: value
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+    overrides: []
+  gridPos:
+    h: 5
+    w: 4
+    x: 3
+    'y': 1
+  id: 2
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(vm_backup_last_run_failed)
+    legendFormat: __auto
+    range: true
+    refId: A
+  title: Last backup status
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Number of backups stored in remote storage.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+    overrides: []
+  gridPos:
+    h: 5
+    w: 3
+    x: 7
+    'y': 1
+  id: 6
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(vm_backups_stored{job=~"$job", instance=~"$instance"})
+    legendFormat: __auto
+    range: true
+    refId: A
+  title: Total backups stored
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Space used in remote storage.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: decbytes
+    overrides: []
+  gridPos:
+    h: 5
+    w: 3
+    x: 10
+    'y': 1
+  id: 27
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(vm_backups_size_bytes{job=~"$job", instance=~"$instance"})
+    legendFormat: __auto
+    range: true
+    refId: A
+  title: Backups size
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: ''
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings:
+      - options:
+          '0':
+            index: 0
+            text: No errors
+        type: value
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 1
+    overrides: []
+  gridPos:
+    h: 5
+    w: 3
+    x: 13
+    'y': 1
+  id: 7
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(increase(vm_backup_errors_total{job=~"$job", instance=~"$instance"}[1h]))
+    legendFormat: __auto
+    range: true
+    refId: A
+  title: 'Backups errors '
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: 'Status of last retention run.
+
+
+    Retention is a process of removing old backups from remote storage.'
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings:
+      - options:
+          '0':
+            index: 0
+            text: Success
+        type: value
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+    overrides: []
+  gridPos:
+    h: 5
+    w: 4
+    x: 16
+    'y': 1
+  id: 5
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(vm_retention_last_run_failed)
+    legendFormat: __auto
+    range: true
+    refId: A
+  title: Last retention status
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings:
+      - options:
+          '0':
+            index: 0
+            text: No errors
+        type: value
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 1
+    overrides: []
+  gridPos:
+    h: 5
+    w: 4
+    x: 20
+    'y': 1
+  id: 8
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(increase(vm_retention_errors_total{job=~"$job", instance=~"$instance"}[1h]))
+    legendFormat: __auto
+    range: true
+    refId: A
+  title: Retention errors
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      custom:
+        align: auto
+        cellOptions:
+          type: auto
+        inspect: false
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+    overrides:
+    - matcher:
+        id: byName
+        options: name
+      properties:
+      - id: custom.width
+        value: 148
+    - matcher:
+        id: byName
+        options: value
+      properties:
+      - id: custom.width
+        value: 101
+  gridPos:
+    h: 6
+    w: 12
+    x: 0
+    'y': 6
+  id: 22
+  options:
+    cellHeight: sm
+    footer:
+      countRows: false
+      fields: ''
+      reducer:
+      - sum
+      show: false
+    showHeader: true
+    sortBy:
+    - desc: false
+      displayName: name
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(flag{job=~"$job", instance=~"$instance",name=~"disableDaily|disableHourly|disableWeekly|disableMonthly"}) by (name, value, instance)
+    format: table
+    instant: true
+    legendFormat: ''
+    range: false
+    refId: A
+  title: Backups configuration
+  transformations:
+  - id: groupBy
+    options:
+      fields:
+        instance:
+          aggregations:
+          - uniqueValues
+          operation: aggregate
+        name:
+          aggregations: []
+          operation: groupby
+        value:
+          aggregations: []
+          operation: groupby
+  type: table
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      custom:
+        align: auto
+        cellOptions:
+          type: auto
+        inspect: false
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+    overrides:
+    - matcher:
+        id: byName
+        options: value
+      properties:
+      - id: custom.width
+        value: 100
+    - matcher:
+        id: byName
+        options: name
+      properties:
+      - id: custom.width
+        value: 150
+  gridPos:
+    h: 6
+    w: 12
+    x: 12
+    'y': 6
+  id: 21
+  options:
+    cellHeight: sm
+    footer:
+      countRows: false
+      fields: ''
+      reducer:
+      - sum
+      show: false
+    showHeader: true
+    sortBy:
+    - desc: false
+      displayName: name
+  pluginVersion: 10.4.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(flag{job=~"$job", instance=~"$instance",name=~"keep(.*)", is_set="true"}) by (name, value, instance)
+    format: table
+    instant: true
+    legendFormat: ''
+    range: false
+    refId: A
+  title: Retention configuration
+  transformations:
+  - id: groupBy
+    options:
+      fields:
+        instance:
+          aggregations:
+          - uniqueValues
+          operation: aggregate
+        name:
+          aggregations: []
+          operation: groupby
+        value:
+          aggregations: []
+          operation: groupby
+  type: table
+- collapsed: true
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 12
+  id: 12
+  panels:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Max duration of backup run. Lower better.
+
+
+      Each backup starts with data upload during `latest` backup. Subsequent backups (`hourly`, `daily`, `weekly`, `monthly`)  are copying date by using server-side copy. '
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          fillOpacity: 80
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineWidth: 1
+          scaleDistribution:
+            type: linear
+        links:
+        - targetBlank: true
+          title: Drilldown
+          url: /d/gF-lxRdVz?viewPanel=36&var-ds=$ds&var-instance=$instance&var-job=$job&${__url_time_range}
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 13
+    id: 23
+    interval: 1h
+    options:
+      barRadius: 0
+      barWidth: 0.97
+      groupWidth: 0.7
+      legend:
+        calcs:
+        - max
+        - min
+        - mean
+        displayMode: list
+        placement: bottom
+        showLegend: false
+      orientation: auto
+      showValue: auto
+      stacking: none
+      tooltip:
+        mode: single
+        sort: none
+      xTickLabelRotation: 0
+      xTickLabelSpacing: 100
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: max(increase(vm_backup_duration_seconds_total{job=~"$job", instance=~"$instance"})) by (type) > 0
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Max backup duration
+    type: barchart
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: auto
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 13
+    id: 16
+    options:
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: true
+      tooltip:
+        mode: single
+        sort: none
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(increase(vm_backup_errors_total{job=~"$job", instance=~"$instance"})[$__interval]) by (instance) > 0
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Backup errors
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: auto
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: decbytes
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 21
+    id: 29
+    options:
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: false
+      tooltip:
+        mode: single
+        sort: none
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: vm_backups_size_bytes{job=~"$job", instance=~"$instance"}
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Backups size
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: thresholds
+        custom:
+          align: auto
+          cellOptions:
+            type: auto
+          inspect: false
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: decbytes
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 21
+    id: 28
+    options:
+      footer:
+        fields: ''
+        reducer:
+        - sum
+        show: false
+      showHeader: true
+      sortBy:
+      - desc: true
+        displayName: backup
+    pluginVersion: 9.0.4
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: topk(10, sum(vm_backups_size_bytes{job=~"$job", instance=~"$instance"}) by (backup, job, type))
+      format: table
+      instant: true
+      legendFormat: __auto
+      range: false
+      refId: A
+    title: Top 10 backups by size
+    transformations:
+    - id: groupBy
+      options:
+        fields:
+          Value:
+            aggregations: []
+            operation: groupby
+          backup:
+            aggregations: []
+            operation: groupby
+          job:
+            aggregations: []
+            operation: groupby
+          type:
+            aggregations: []
+            operation: groupby
+    type: table
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          fillOpacity: 80
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineWidth: 1
+          scaleDistribution:
+            type: linear
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: none
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 29
+    id: 30
+    interval: 1d
+    options:
+      barRadius: 0
+      barWidth: 0.97
+      groupWidth: 0.85
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: true
+      orientation: auto
+      showValue: auto
+      stacking: normal
+      tooltip:
+        mode: single
+        sort: none
+      xTickLabelRotation: 0
+      xTickLabelSpacing: 100
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(increase(vm_backups_total{job=~"$job", instance=~"$instance"}[24h])) by (type) > 0
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Backup runs
+    type: barchart
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: auto
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+        unit: binBps
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 29
+    id: 31
+    options:
+      legend:
+        calcs:
+        - max
+        - mean
+        displayMode: list
+        placement: right
+        showLegend: false
+      tooltip:
+        mode: single
+        sort: none
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rollup_rate(vm_backups_uploaded_bytes_total[$__rate_interval])) by (rollup)
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Backups upload speed
+    type: timeseries
+  title: Backups
+  type: row
+- collapsed: true
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 13
+  id: 18
+  panels:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Max duration of retention run. Lower better.
+
+
+      Retention is a process of removing old backups from remote storage.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: thresholds
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          fillOpacity: 80
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineWidth: 1
+          scaleDistribution:
+            type: linear
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 38
+    id: 26
+    interval: 1h
+    options:
+      barRadius: 0
+      barWidth: 0.97
+      groupWidth: 0.7
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: true
+      orientation: auto
+      showValue: auto
+      stacking: none
+      tooltip:
+        mode: single
+        sort: none
+      xTickLabelRotation: 0
+      xTickLabelSpacing: 0
+    pluginVersion: 9.0.4
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: max(increase(vm_retention_duration_seconds_total{job=~"$job", instance=~"$instance"})) > 0
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Max retention duration
+    type: barchart
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: auto
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 38
+    id: 25
+    options:
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: true
+      tooltip:
+        mode: single
+        sort: none
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(increase(vm_retention_errors_total{job=~"$job", instance=~"$instance"})[$__interval]) by (instance) > 0
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Retention errors
+    type: timeseries
+  title: Retention
+  type: row
+- collapsed: true
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 14
+  id: 34
+  panels:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Duration of backup run. Lower better.
+
+
+      Each backup starts with data upload during `latest` backup. Subsequent backups (`hourly`, `daily`, `weekly`, `monthly`)  are copying date by using server-side copy.
+
+      '
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisLabel: ''
+          axisPlacement: auto
+          fillOpacity: 80
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          lineWidth: 1
+          scaleDistribution:
+            type: linear
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+        unit: s
+      overrides: []
+    gridPos:
+      h: 11
+      w: 24
+      x: 0
+      'y': 39
+    id: 36
+    interval: 1h
+    options:
+      barRadius: 0
+      barWidth: 0.97
+      groupWidth: 0.7
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: false
+      orientation: auto
+      showValue: auto
+      stacking: none
+      tooltip:
+        mode: single
+        sort: none
+      xTickLabelRotation: 0
+      xTickLabelSpacing: 100
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: increase(vm_backup_duration_seconds_total{job=~"$job", instance=~"$instance"}) > 0
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Backup duration per instance
+    type: barchart
+  title: Drilldown
+  type: row
+refresh: 1m
+schemaVersion: 39
+tags:
+- victoriametrics
+- vm-k8s-stack
+templating:
+  list:
+  - current:
+      selected: true
+      text: VictoriaMetrics
+      value: VictoriaMetrics
+    hide: 0
+    includeAll: false
+    multi: false
+    name: ds
+    options: []
+    query: {{ $defaultDatasource }}
+    queryValue: ''
+    refresh: 1
+    regex: ''
+    skipUrlSync: false
+    type: datasource
+  - allValue: .*
+    current: {}
+    datasource:
+      uid: $ds
+    definition: label_values(vm_app_version{version=~"^vmbackupmanager.*"}, job)
+    hide: 0
+    includeAll: true
+    multi: true
+    name: job
+    options: []
+    query:
+      query: label_values(vm_app_version{version=~"^vmbackupmanager.*"}, job)
+      refId: StandardVariableQuery
+    refresh: 1
+    regex: ''
+    skipUrlSync: false
+    sort: 0
+    tagValuesQuery: ''
+    tagsQuery: ''
+    type: query
+    useTags: false
+  - allValue: .*
+    current: {}
+    datasource:
+      uid: $ds
+    definition: label_values(vm_app_version{job=~"$job"}, instance)
+    hide: 0
+    includeAll: true
+    multi: true
+    name: instance
+    options: []
+    query:
+      query: label_values(vm_app_version{job=~"$job"}, instance)
+      refId: VictoriaMetrics-instance-Variable-Query
+    refresh: 1
+    regex: ''
+    skipUrlSync: false
+    sort: 0
+    tagValuesQuery: ''
+    tagsQuery: ''
+    type: query
+    useTags: false
+  - datasource:
+      type: prometheus
+      uid: $ds
+    filters: []
+    hide: 0
+    name: adhoc
+    skipUrlSync: false
+    type: adhoc
+time:
+  from: now-7d
+  to: now
+timepicker: {}
+timezone: {{ default "utc" ($Values.defaultDashboards).defaultTimezone }}
+title: VictoriaMetrics - backupmanager
+uid: gF-lxRdVz
+version: 1
+weekStart: ''

@@ -31,7 +31,8 @@ import {
   ResourceSchema,
   PortConfigSchema,
   LaunchpadApplicationSchema,
-  imageRegistrySchema
+  imageRegistrySchema,
+  resourceConverters
 } from './schema';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
@@ -55,15 +56,40 @@ export const UpdateAppResourcesSchema = z
     // Resource configuration (use nested structure like CreateLaunchpadRequestSchema)
     resource: z
       .object({
-        cpu: z.number().optional().openapi({
-          description: 'CPU allocation in millicores'
-        }),
-        memory: z.number().optional().openapi({
-          description: 'Memory allocation in MB'
-        }),
-        replicas: z.number().min(0).optional().openapi({
-          description: 'Number of pod replicas'
-        })
+        cpu: z
+          .number()
+          .refine((val) => [0.1, 0.2, 0.5, 1, 2, 3, 4, 8].includes(val), {
+            message: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
+          })
+          .optional()
+          .openapi({
+            description: 'CPU allocation in cores',
+            enum: [0.1, 0.2, 0.5, 1, 2, 3, 4, 8]
+          }),
+        memory: z
+          .number()
+          .refine((val) => [0.1, 0.5, 1, 2, 4, 8, 16].includes(val), {
+            message: 'Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16'
+          })
+          .optional()
+          .openapi({
+            description: 'Memory allocation in GB',
+            enum: [0.1, 0.5, 1, 2, 4, 8, 16]
+          }),
+        replicas: z
+          .number()
+          .refine(
+            (val) =>
+              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(val),
+            {
+              message: 'Replicas must be between 1 and 20'
+            }
+          )
+          .optional()
+          .openapi({
+            description: 'Number of pod replicas',
+            enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+          })
       })
       .optional()
       .openapi({
@@ -217,8 +243,8 @@ export const CreateLaunchpadRequestSchema = z
 export function transformToLegacySchema(
   standardRequest: z.infer<typeof CreateLaunchpadRequestSchema>
 ): AppEditType {
-  const cpuValue = standardRequest.resource.cpu;
-  const memoryValue = standardRequest.resource.memory;
+  const cpuValue = resourceConverters.cpuToMillicores(standardRequest.resource.cpu);
+  const memoryValue = resourceConverters.memoryToMB(standardRequest.resource.memory);
 
   const networks = standardRequest.ports?.map((port) => ({
     serviceName: `service-${nanoid()}`, // 自动生成
@@ -357,8 +383,8 @@ export function transformFromLegacySchema(
     args: legacyData.cmdParam,
     resource: {
       replicas: legacyData.replicas || 1,
-      cpu: legacyData.cpu || 200,
-      memory: legacyData.memory || 256,
+      cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
+      memory: resourceConverters.mbToMemory(legacyData.memory || 256),
       gpu: legacyData.gpu
         ? {
             vendor: legacyData.gpu.manufacturers,
@@ -439,25 +465,55 @@ export const UpdateConfigMapSchema = z.object({
     })
 });
 
-export const UpdatePortsSchema = z.object({
+// POST - Create new ports (no identifiers needed)
+export const CreatePortsSchema = z.object({
   ports: z
     .array(
       z.object({
         port: z.number().default(80),
         protocol: z.enum(['TCP', 'UDP', 'SCTP']),
         appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
-        exposesPublicDomain: z.boolean(),
-
-        networkName: z.string().optional(),
-        portName: z.string().optional(),
-        serviceName: z.string().optional()
+        exposesPublicDomain: z.boolean()
       })
     )
     .min(1)
     .openapi({
-      description:
-        'Port/Network configurations to update. Include networkName/portName/serviceName for updates, omit for new ports'
+      description: 'Port configurations to create (new ports only)'
     })
+});
+
+// PATCH - Update existing ports (requires identifiers to locate)
+export const UpdatePortsSchema = z.object({
+  ports: z
+    .array(
+      z
+        .object({
+          port: z.number(),
+          protocol: z.enum(['TCP', 'UDP', 'SCTP']),
+          appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
+          exposesPublicDomain: z.boolean(),
+          // At least one identifier required to locate the port to update
+          networkName: z.string().optional(),
+          portName: z.string().optional(),
+          serviceName: z.string().optional()
+        })
+        .refine((data) => data.networkName || data.portName || data.serviceName, {
+          message:
+            'At least one identifier (networkName/portName/serviceName) is required to locate the port to update'
+        })
+    )
+    .min(1)
+    .openapi({
+      description:
+        'Port configurations to update. Must include at least one identifier (networkName/portName/serviceName) to locate existing port'
+    })
+});
+
+// DELETE - Delete ports by port number
+export const DeletePortsSchema = z.object({
+  ports: z.array(z.number()).min(1).openapi({
+    description: 'Array of port numbers to delete'
+  })
 });
 
 export const SimpleStorageSchema = z

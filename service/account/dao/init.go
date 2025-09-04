@@ -189,9 +189,6 @@ func Init(ctx context.Context) error {
 		Passwd:     os.Getenv(utils.EnvSMTPPassword),
 		EmailTitle: os.Getenv(utils.EnvSMTPTitle),
 	}
-	if SMTPConfig.ServerHost == "" || SMTPConfig.FromEmail == "" || SMTPConfig.Passwd == "" || SMTPConfig.EmailTitle == "" {
-		return fmt.Errorf("empty smtp config: %v", SMTPConfig)
-	}
 	setDefaultDebtPeriodWaitSecond()
 	SetDebtConfig()
 	scheme := runtime.NewScheme()

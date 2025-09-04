@@ -1,0 +1,51 @@
+{{- if and .Values.crds.enabled .Values.crds.cleanup.enabled }}
+{{- $app := .Values.crds.cleanup }}
+{{- if empty ($app.image).tag }}
+  {{- $tag := regexSplit "[+-]" .Capabilities.KubeVersion.Version -1 | first -}}
+  {{- $_ := set $app.image "tag" $tag }}
+{{- else if not (kindIs "string" ($app.image).tag) }}
+  {{- fail "`crd.cleanup.image.tag` is not string, most probably you need to enquote provided value" -}}
+{{- end }}
+{{- $ctx := dict "helm" . "noEnterprise" true }}
+{{- $fullname := include "vm.plain.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullname }}-cleanup-hook
+  namespace: {{ $ns }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  annotations: {{ include "vm-operator.cleanup.annotations" (dict "hookWeight" "-3") | nindent 4 }}
+spec:
+  template:
+    metadata:
+      name: {{ $fullname }}
+      labels: {{ include "vm.labels" $ctx | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $fullname }}-cleanup-hook
+      {{- with (.Values.imagePullSecrets | default .Values.global.imagePullSecrets) }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: kubectl
+          {{- $_ := set $ctx "appKey" (list "crds" "cleanup") }}
+          image: {{ include "vm.image" $ctx }}
+          imagePullPolicy: {{ $app.image.pullPolicy }}
+          resources: {{ toYaml $app.resources | nindent 12 }}
+          args:
+            - delete
+            - {{ (keys .Values.admissionWebhooks.enabledCRDValidation) | sortAlpha | join "," }}
+            - --all
+            - --ignore-not-found=true
+      restartPolicy: OnFailure
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

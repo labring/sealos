@@ -1,0 +1,13 @@
+{{- if .Values.printNotes }}
+{{- if .Values.vmcluster.enabled }}
+{{- $spec := .Values.vmcluster.spec }}
+{{- $replicationFactor := (int $spec.replicationFactor) | default 1 }}
+{{- $storageNodes := (int ($spec.vmstorage).replicaCount) | default 1 }}
+{{- $minStorageNodes := sub (mul 2 $replicationFactor) 1 }}
+{{- if gt $minStorageNodes $storageNodes }}
+#
+# WARNING: VMCluster storage nodes count {{ $storageNodes }} is smaller than expected {{ $minStorageNodes }}
+#
+{{- end }}
+{{- end }}
+{{- end }}

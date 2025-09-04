@@ -1,0 +1,27 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: kube-prometheus-node-recording.rules
+rules:
+- condition: '{{ true }}'
+  expr: sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal"}[3m])) BY (instance,{{ $groupLabels }})
+  record: instance:node_cpu:rate:sum
+- condition: '{{ true }}'
+  expr: sum(rate(node_network_receive_bytes_total[3m])) BY (instance,{{ $groupLabels }})
+  record: instance:node_network_receive_bytes:rate:sum
+- condition: '{{ true }}'
+  expr: sum(rate(node_network_transmit_bytes_total[3m])) BY (instance,{{ $groupLabels }})
+  record: instance:node_network_transmit_bytes:rate:sum
+- condition: '{{ true }}'
+  expr: sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal"}[5m])) WITHOUT (cpu, mode) / ON (instance,{{ $groupLabels }}) GROUP_LEFT() count(sum(node_cpu_seconds_total) BY (instance,cpu,{{ $groupLabels }})) BY (instance,{{ $groupLabels }})
+  record: instance:node_cpu:ratio
+- condition: '{{ true }}'
+  expr: sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal"}[5m])) BY ({{ $groupLabels }})
+  record: cluster:node_cpu:sum_rate5m
+- condition: '{{ true }}'
+  expr: cluster:node_cpu:sum_rate5m / count(sum(node_cpu_seconds_total) BY (instance,cpu,{{ $groupLabels }})) BY ({{ $groupLabels }})
+  record: cluster:node_cpu:ratio

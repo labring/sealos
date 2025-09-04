@@ -1,0 +1,107 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: kubernetes-storage
+rules:
+- alert: KubePersistentVolumeFillingUp
+  annotations:
+    description: 'The PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.{{ $clusterLabel }} -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} is only {{`{{`}} $value | humanizePercentage {{`}}`}} free.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubepersistentvolumefillingup'
+    summary: 'PersistentVolume is filling up.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      kubelet_volume_stats_available_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+        /
+      kubelet_volume_stats_capacity_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+    ) < 0.03
+    and
+    kubelet_volume_stats_used_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"} > 0
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+  for: 1m
+  labels:
+    severity: critical
+- alert: KubePersistentVolumeFillingUp
+  annotations:
+    description: 'Based on recent sampling, the PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.{{ $clusterLabel }} -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} is expected to fill up within four days. Currently {{`{{`}} $value | humanizePercentage {{`}}`}} is available.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubepersistentvolumefillingup'
+    summary: 'PersistentVolume is filling up.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      kubelet_volume_stats_available_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+        /
+      kubelet_volume_stats_capacity_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+    ) < 0.15
+    and
+    kubelet_volume_stats_used_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"} > 0
+    and
+    predict_linear(kubelet_volume_stats_available_bytes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+  for: 1h
+  labels:
+    severity: warning
+- alert: KubePersistentVolumeInodesFillingUp
+  annotations:
+    description: 'The PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.{{ $clusterLabel }} -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} only has {{`{{`}} $value | humanizePercentage {{`}}`}} free inodes.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubepersistentvolumeinodesfillingup'
+    summary: 'PersistentVolumeInodes are filling up.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      kubelet_volume_stats_inodes_free{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+        /
+      kubelet_volume_stats_inodes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+    ) < 0.03
+    and
+    kubelet_volume_stats_inodes_used{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"} > 0
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+  for: 1m
+  labels:
+    severity: critical
+- alert: KubePersistentVolumeInodesFillingUp
+  annotations:
+    description: 'Based on recent sampling, the PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.{{ $clusterLabel }} -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} is expected to run out of inodes within four days. Currently {{`{{`}} $value | humanizePercentage {{`}}`}} of its inodes are free.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubepersistentvolumeinodesfillingup'
+    summary: 'PersistentVolumeInodes are filling up.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      kubelet_volume_stats_inodes_free{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+        /
+      kubelet_volume_stats_inodes{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}
+    ) < 0.15
+    and
+    kubelet_volume_stats_inodes_used{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"} > 0
+    and
+    predict_linear(kubelet_volume_stats_inodes_free{job="kubelet", namespace=~"{{ .targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+    unless on (namespace,persistentvolumeclaim,{{ $groupLabels }})
+    kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+  for: 1h
+  labels:
+    severity: warning
+- alert: KubePersistentVolumeErrors
+  annotations:
+    description: 'The persistent volume {{`{{`}} $labels.persistentvolume {{`}}`}} {{`{{`}} with $labels.{{ $clusterLabel }} -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} has status {{`{{`}} $labels.phase {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubepersistentvolumeerrors'
+    summary: 'PersistentVolume is having issues with provisioning.'
+  condition: '{{ true }}'
+  expr: kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
+  for: 5m
+  labels:
+    severity: critical

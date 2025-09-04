@@ -1,0 +1,32 @@
+global:
+  environment: prod
+ingress:
+  enabled: true
+  hosts:
+    - monitoring-{{ .Values.global.environment }}.example.com
+
+route:
+  main:
+    enabled: true
+    labels:
+      app: monitoring-prometheus
+    hostnames:
+      - "*.example.com"
+      - "{{ .Values.global.environment }}.example.com"
+    filters:
+      - type: RequestHeaderModifier
+        requestHeaderModifier:
+          set:
+            - name: my-header-name
+              value: my-new-header-value
+    additionalRules:
+      - filters:
+          - type: RequestHeaderModifier
+            requestHeaderModifier:
+              set:
+                - name: my-header-name
+                  value: my-new-header-value
+        matches:
+          - path:
+              type: PathPrefix
+              value: /foo/
