@@ -29,12 +29,12 @@ import {
   ArrowLeftRight,
   Bell,
   Copy,
-  CreditCard,
+  Dock,
   FileCode,
   Gift,
   Globe,
   LogOut,
-  Plane,
+  ReceiptText,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
@@ -272,7 +272,7 @@ export default function Account() {
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
-                      <Plane size={16} color="#737373" />
+                      <Dock size={16} color="#737373" />
                     </Center>
                     <Text fontSize="14px" fontWeight="400">
                       {t('common:plan')}
@@ -298,7 +298,7 @@ export default function Account() {
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
-                      <CreditCard size={16} color="#737373" />
+                      <ReceiptText size={16} color="#737373" />
                     </Center>
                     <Text fontSize="14px" fontWeight="400">
                       {t('common:billing')}
