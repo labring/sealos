@@ -17,13 +17,14 @@ import {
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
 import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
+import { LucideIcon } from 'lucide-react';
 
 export type PricePayload = {
   price: number;
   title: string;
   unit: string;
   isGpu: boolean;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
 };
 
 export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
@@ -56,7 +57,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
           const Icon = props.row.original.icon;
           return (
             <div className="flex items-center">
-              <Icon className="h-4 w-4 mr-2" />
+              <Icon size={20} strokeWidth={1.5} className="h-4 w-4 mr-2 text-gray-400" />
               <div className="flex flex-col items-start">
                 <span className="capitalize text-center">{t(name)}</span>
               </div>
