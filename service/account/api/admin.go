@@ -248,7 +248,7 @@ func AdminPaymentRefund(c *gin.Context) {
 		return
 	}
 	postDo := func(p types.PaymentRefund) error {
-		svc, err := pay.NewPayHandler(p.Method)
+		svc, err := pay.NewPayHandler(string(p.Method))
 		if err != nil {
 			return fmt.Errorf("new payment handler failed: %v", err)
 		}

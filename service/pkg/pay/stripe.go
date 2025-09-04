@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -54,15 +55,47 @@ func getBaseURL() string {
 	return "https://cloud.sealos.io"
 }
 
+func buildURLs(s *StripeService, transaction *types.WorkspaceSubscriptionTransaction) (string, string, error) {
+	// 基础 URL
+	baseURL, err := url.Parse(s.Domain)
+	if err != nil {
+		return "", "", err
+	}
+
+	query := url.Values{}
+	query.Set("openapp", "system-costcenter")
+	query.Set("workspaceId", transaction.Workspace)
+	query.Set("payId", transaction.PayID)
+	query.Set("transactionId", transaction.ID.String())
+
+	// successURL
+	successQuery := query
+	successQuery.Set("stripeState", "success")
+	successURL := baseURL.ResolveReference(&url.URL{RawQuery: successQuery.Encode()}).String()
+
+	// cancelURL
+	cancelQuery := query
+	cancelQuery.Set("stripeState", "cancel")
+	cancelURL := baseURL.ResolveReference(&url.URL{RawQuery: cancelQuery.Encode()}).String()
+
+	return successURL, cancelURL, nil
+}
+
 // CreateWorkspaceSubscriptionSession creates a Stripe Checkout Session following official pattern
 func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction) (*StripeResponse, error) {
 	// 构造成功与取消回调URL，避免硬编码斜杠问题
-	successURL := fmt.Sprintf("%s/?openapp=system-costcenter%3FstripeState%3Dsuccess%3FpayID%3D%%s", s.Domain, transaction.PayID)
-	cancelURL := fmt.Sprintf("%s/?openapp=system-costcenter%3FstripeState%3Dsuccess%3FpayID%3D%%s", s.Domain, transaction.PayID)
+	// Assuming workspaceID and transaction.PayID are your custom variables
+	successURL, cancelURL, err := buildURLs(s, transaction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build return URLs: %v", err)
+	}
 	// Create checkout session following official example pattern
+	anchorTime := time.Now().AddDate(0, 0, 29).Unix()
+
 	checkoutParams := &stripe.CheckoutSessionParams{
 		Metadata: map[string]string{
-			"payment_id": transaction.PayID,
+			"region_domain": transaction.RegionDomain,
+			"payment_id":    transaction.PayID,
 		},
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
 			Metadata: map[string]string{
@@ -74,6 +107,7 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 				"subscription_operator": string(transaction.Operator),
 				"user_uid":              paymentReq.UserUID.String(),
 			},
+			BillingCycleAnchor: stripe.Int64(anchorTime),
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
@@ -162,7 +196,7 @@ func (s *StripeService) UpdatePlan(subscriptionID, newPriceID string) (*stripe.S
 				Price: stripe.String(newPriceID),
 			},
 		},
-		ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		//ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
 	}
 
 	updatedSub, err := subscription.Update(subscriptionID, params)
@@ -171,6 +205,43 @@ func (s *StripeService) UpdatePlan(subscriptionID, newPriceID string) (*stripe.S
 	}
 
 	return updatedSub, nil
+}
+
+func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string) (int64, error) {
+	// Retrieve the current subscription
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return 0, fmt.Errorf("subscription.Get: %v", err)
+	}
+
+	if len(sub.Items.Data) == 0 {
+		return 0, fmt.Errorf("subscription has no items to update")
+	}
+
+	inv, err := s.UpdatePreview(&stripe.InvoiceCreatePreviewParams{
+		Subscription: &subscriptionID,
+		SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
+			Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
+				{
+					ID:    &sub.Items.Data[0].ID,
+					Price: stripe.String(newPriceID),
+				},
+			},
+			ProrationDate:     stripe.Int64(time.Now().UTC().Unix()),
+			ProrationBehavior: stripe.String("create_prorations"), // 生成按比例费用
+			//BillingCycleAnchorNow: stripe.Bool(true),
+		},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get Stripe invoice preview: %v", err)
+	}
+	for _, line := range inv.Lines.Data {
+		if line.Amount > 0 {
+			return line.Amount, nil
+		}
+	}
+
+	return 0, fmt.Errorf("not found upgrade amount")
 }
 
 // getOrCreatePrice creates or retrieves a price using lookup key pattern

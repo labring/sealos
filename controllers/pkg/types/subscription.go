@@ -80,6 +80,7 @@ const (
 
 	TransactionFromUser     TransactionFrom = "user"
 	TransactionFromAdmin    TransactionFrom = "admin"
+	TransactionFromSystem   TransactionFrom = "system"
 	TransactionFromReferral TransactionFrom = "referral"
 )
 
@@ -123,11 +124,12 @@ func ParsePeriod(period SubscriptionPeriod) (time.Duration, error) {
 }
 
 type ProductPrice struct {
-	ID           uuid.UUID          `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
-	ProductID    uuid.UUID          `gorm:"type:uuid;not null;index:idx_product_cycle,unique"`
-	BillingCycle SubscriptionPeriod `gorm:"type:varchar(20);not null;index:idx_product_cycle,unique"` // 计费周期, 年/季/月/周/天/次
-	Price        int64              `gorm:"type:bigint;column:price"`                                 // 价格
-	StripePrice  *string            `gorm:"type:varchar(100);column:stripe_price"`                    // Stripe 价格 ID
+	ID            uuid.UUID          `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
+	ProductID     uuid.UUID          `gorm:"type:uuid;not null;index:idx_product_cycle,unique"`
+	BillingCycle  SubscriptionPeriod `gorm:"type:varchar(20);not null;index:idx_product_cycle,unique"` // 计费周期, 年/季/月/周/天/次
+	Price         int64              `gorm:"type:bigint;column:price"`                                 // 价格
+	OriginalPrice int64              `gorm:"type:bigint;column:original_price"`
+	StripePrice   *string            `gorm:"type:varchar(100);column:stripe_price"` // Stripe 价格 ID
 	// Currency  string    `gorm:"type:varchar(10);not null;column:currency"`  // 货币
 	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"` // 创建时间
 	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"` // 更新时间

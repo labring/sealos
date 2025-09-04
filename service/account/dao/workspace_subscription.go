@@ -16,6 +16,42 @@ func (g *Cockroach) GetWorkspaceSubscription(workspace, regionDomain string) (*t
 	return g.ck.GetWorkspaceSubscription(workspace, regionDomain)
 }
 
+func (g *Cockroach) GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, workspace string) (int64, error) {
+	db := g.ck.GetGlobalDB()
+	query := `"user_uid" = ? AND pay_status = ?`
+	params := []interface{}{userUID, types.SubscriptionPayStatusPaid}
+	if workspace != "" {
+		query += " AND workspace = ?"
+		params = append(params, workspace)
+	}
+
+	var totalAmount int64
+	err := db.Model(&types.WorkspaceSubscriptionTransaction{}).
+		Where(query, params...).
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&totalAmount).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to get subscription payment amount: %w", err)
+	}
+	return totalAmount, nil
+}
+
+func (g *Cockroach) ListWorkspaceSubscriptionWorkspace(userUID uuid.UUID) ([]string, error) {
+	db := g.ck.GetGlobalDB()
+	var workspaces []string
+	err := db.Model(&types.WorkspaceSubscriptionTransaction{}).Debug().
+		Where("user_uid = ? AND region_domain = ? AND pay_status = ?", userUID, g.GetLocalRegion().Domain, types.SubscriptionPayStatusPaid).
+		Distinct("workspace").
+		Pluck("workspace", &workspaces).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to list subscription workspaces: %w", err)
+	}
+	return workspaces, nil
+}
+
 func (g *Cockroach) GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error) {
 	return g.ck.GetWorkspaceSubscriptionTraffic(workspace, regionDomain)
 }

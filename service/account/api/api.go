@@ -720,6 +720,17 @@ func GetCostOverview(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost overview : %v", err)})
 		return
 	}
+	subscriptionAmount, err := dao.DBClient.GetWorkspaceSubscriptionPaymentAmount(req.Auth.UserUID, req.Namespace)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get subscription payment amount : %v", err)})
+		return
+	}
+	for i := range overview.Overviews {
+		if overview.Overviews[i].Namespace == req.Namespace {
+			overview.Overviews[i].Amount = subscriptionAmount
+			break
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": overview,
 	})

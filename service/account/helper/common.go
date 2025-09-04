@@ -46,6 +46,8 @@ const (
 	AdminSuspendUserTraffic      = "/suspend-user-traffic"
 	AdminResumeUserTraffic       = "/resume-user-traffic"
 
+	AdminWorkspaceSubscriptionProcessExpired = "/workspace-subscription/process-expired"
+
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"
 )

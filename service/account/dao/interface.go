@@ -105,10 +105,12 @@ type Interface interface {
 	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
 	GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error)
 	ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error)
+	ListWorkspaceSubscriptionWorkspace(userUID uuid.UUID) ([]string, error)
 	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlanPrice(planName string, period types.SubscriptionPeriod) (*types.ProductPrice, error)
 	GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain string) (*types.WorkspaceSubscriptionTransaction, error)
+	GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, workspace string) (int64, error)
 	CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transaction ...*types.WorkspaceSubscriptionTransaction) error
 }
 
@@ -1260,6 +1262,7 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 			"$gte": req.StartTime,
 			"$lte": req.EndTime,
 		},
+		"status": resources.Settled,
 	}
 	consumptionMatch := bson.M{
 		"owner":     owner,
@@ -1270,6 +1273,7 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 			"$gte": req.StartTime,
 			"$lte": req.EndTime,
 		},
+		"status": resources.Settled,
 	}
 	var pipeline mongo.Pipeline
 
@@ -2143,6 +2147,11 @@ func (m *Account) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 	if err := cur.Decode(&result); err != nil {
 		return nil, err
 	}
+	subNSList, err := m.ListWorkspaceSubscriptionWorkspace(req.UserUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list workspace subscription: %v", err)
+	}
+	result.Namespaces = append(result.Namespaces, subNSList...)
 	return m.GetWorkspaceName(result.Namespaces)
 }
 

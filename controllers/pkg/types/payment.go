@@ -10,13 +10,13 @@ import (
 )
 
 type PaymentRaw struct {
-	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
-	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
-	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text"`
-	Method          string    `gorm:"type:text;not null"`
-	Amount          int64     `gorm:"type:bigint;not null"`
-	Gift            int64     `gorm:"type:bigint"`
+	UserUID         uuid.UUID     `gorm:"column:userUid;type:uuid;not null"`
+	RegionUID       uuid.UUID     `gorm:"column:regionUid;type:uuid;not null"`
+	CreatedAt       time.Time     `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	RegionUserOwner string        `gorm:"column:regionUserOwner;type:text"`
+	Method          PaymentMethod `gorm:"type:text;not null"`
+	Amount          int64         `gorm:"type:bigint;not null"`
+	Gift            int64         `gorm:"type:bigint"`
 	// 订单号
 	TradeNO string `gorm:"type:text;unique;not null"`
 	// CodeURL is the codeURL of wechatpay
@@ -27,9 +27,9 @@ type PaymentRaw struct {
 	Message      string       `gorm:"type:text;not null"`
 	//TODO 初始化判断 新加字段
 	CardUID                 *uuid.UUID    `gorm:"type:uuid"`
-	Type                    PaymentType   `gorm:"type:text"`                        // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
-	ChargeSource            ChargeSource  `gorm:"type:text"`                        // 支付来源: 余额支付, 新卡支付, 绑卡支付, Stripe支付
-	Status                  PaymentStatus `gorm:"type:text;column:status;not null"` // 支付状态: PAID, REFUNDED
+	Type                    PaymentType   `gorm:"type:text"`                              // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
+	ChargeSource            ChargeSource  `gorm:"type:text"`                              // 支付来源: 余额支付, 新卡支付, 绑卡支付, Stripe支付
+	Status                  PaymentStatus `gorm:"type:text;column:status;default:'PAID'"` // 支付状态: PAID, REFUNDED, EXPIRED
 	WorkspaceSubscriptionID *uuid.UUID    `gorm:"type:uuid;column:workspace_subscription_id;not null"`
 	Stripe                  *StripePay    `gorm:"column:stripe;type:json"` // Stripe 相关信息
 }
@@ -73,10 +73,10 @@ func (s *StripePay) Scan(value interface{}) error {
 type ChargeSource string
 
 const (
-	ChargeSourceBalance  ChargeSource = "BALANCE"
+	ChargeSourceBalance  ChargeSource = "balance"
 	ChargeSourceNewCard  ChargeSource = "CARD"
 	ChargeSourceBindCard ChargeSource = "BIND_CARD"
-	ChargeSourceStripe   ChargeSource = "STRIPE" // Stripe 相关支付
+	ChargeSourceStripe   ChargeSource = "stripe" // Stripe 相关支付
 )
 
 type PaymentOrder struct {
@@ -270,9 +270,9 @@ func (c *CaptureResponse) Raw() []byte {
 }
 
 type PaymentRefund struct {
-	TradeNo string `json:"tradeNo" gorm:"type:uuid;not null"`
-	ID      string `json:"Id" gorm:"type:string;not null"`           //外键 跟payment关联
-	Method  string `json:"method" gorm:"type:varchar(255);not null"` // 退款方式
+	TradeNo string        `json:"tradeNo" gorm:"type:uuid;not null"`
+	ID      string        `json:"Id" gorm:"type:string;not null"`           //外键 跟payment关联
+	Method  PaymentMethod `json:"method" gorm:"type:varchar(255);not null"` // 退款方式
 	//OutTradeNo   string    `json:"outTradeNo" gorm:"type:uuid"`
 	RefundNo     string    `json:"refundNo" gorm:"type:string;not null"`
 	RefundAmount int64     `json:"refundAmount" gorm:"type:float;not null"`
