@@ -24,6 +24,24 @@ spec:
     spec:
       containers:
       - name: manager
+        envFrom:
+          - secretRef:
+              name: payment-secret
+              optional: true
+          - configMapRef:
+              name: account-manager-env
+        env:
+          - name: ACCOUNT_NAMESPACE
+            value: sealos-system
+          - name: NAMESPACE_NAME
+            value: user-system
+          - name: WHITELIST
+            value: licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
+          - name: ACCOUNT_SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=:8080"

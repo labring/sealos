@@ -28,7 +28,22 @@ spec:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=:8080"
         - "--leader-elect"
+        - "--config-file-path=/config.yaml"
+        volumeMounts:
+          - name: user-manager-volume
+            mountPath: /config.yaml
+            subPath: config.yaml
+        env:
+          - name: NAMESPACE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
         ports:
         - containerPort: 8080
           protocol: TCP
           name: http-metrics
+      volumes:
+      - name: user-manager-volume
+        configMap:
+          name: user-manager-config

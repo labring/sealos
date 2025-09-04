@@ -24,6 +24,19 @@ spec:
     spec:
       containers:
       - name: manager
+        env:
+          - name: OSNamespace
+            value: "objectstorage-system"
+          - name: OSAdminSecret
+            value: '{{ .OSAdminSecret }}'
+          - name: OSInternalEndpoint
+            value: '{{ .OSInternalEndpoint }}'
+          - name: OSExternalEndpoint
+            value: '{{ .OSExternalEndpoint }}'
+          - name: OSUDetectionCycleSeconds
+            value: "300"
+          - name: MinioBucketDetectionCycleSeconds
+            value: "300"
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=:8080"
