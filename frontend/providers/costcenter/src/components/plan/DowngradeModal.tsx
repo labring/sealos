@@ -17,7 +17,7 @@ interface DowngradeModalProps {
   onCancel?: () => void;
 }
 
-const DowngradeModal = forwardRef<never, DowngradeModalProps>((props) => {
+const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
   const { targetPlan, isOpen = false, onConfirm, onCancel } = props;
 
   const { session } = useSessionStore();
