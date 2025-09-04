@@ -109,6 +109,7 @@ export default function Cost() {
             if (!costcenter) return;
             openApp(costcenter);
           }}
+          openCostCenterTopup={() => {}}
         >
           <Flex
             borderRadius={'6px'}
