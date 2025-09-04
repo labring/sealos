@@ -87,7 +87,7 @@ export function PlanHeader({
 
   if (isPaygType) {
     return (
-      <div className="bg-white shadow-sm border p-2 rounded-2xl">
+      <div className="bg-white border p-2 rounded-2xl">
         <div
           className={`${backgroundClass} rounded-xl px-6 py-4 flex justify-between items-center`}
         >
@@ -118,7 +118,7 @@ export function PlanHeader({
   }
 
   return (
-    <div className="bg-white shadow-sm border p-2 rounded-2xl">
+    <div className="bg-white border p-2 rounded-2xl">
       <div className={`${backgroundClass} rounded-xl p-6 flex flex-col gap-4`}>
         <div className="flex justify-between items-center">
           <div>

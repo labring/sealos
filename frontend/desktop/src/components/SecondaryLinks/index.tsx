@@ -24,6 +24,7 @@ import { useSubscriptionStore } from '@/stores/subscription';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
 import { MoreHorizontal, Sparkles } from 'lucide-react';
 import { BalancePopover, getPlanBackground } from '@/components/account/BalancePopover';
+import { cn } from '@sealos/shadcn-ui';
 
 const baseItemStyle = {
   minW: '36px',
@@ -122,7 +123,7 @@ export default function SecondaryLinks() {
             cursor={'pointer'}
             onClick={() => openCostCenterApp('upgrade')}
           >
-            {subscriptionInfo?.subscription?.type === 'PAYG' ? (
+            {true ? (
               <div className="flex items-center text-sm font-medium text-blue-600">
                 <Center
                   mr={'8px'}
@@ -131,7 +132,11 @@ export default function SecondaryLinks() {
                   h={'8px'}
                   borderRadius={'full'}
                 ></Center>
-                <CurrencySymbol type={currencySymbol} />
+                <div
+                  className={cn('flex justify-center', { 'mr-1': currencySymbol === 'shellCoin' })}
+                >
+                  <CurrencySymbol type={currencySymbol} />
+                </div>
                 <Text>{formatMoney(balance).toFixed(2)}</Text>
                 <Divider
                   orientation="vertical"

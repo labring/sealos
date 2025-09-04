@@ -15,6 +15,7 @@ export interface AppBillingDrawerProps {
   currentRegionName: string | null;
   effectiveStartTime: string;
   effectiveEndTime: string;
+  nsListData?: [string, string][] | null;
 }
 
 export function AppBillingDrawer({
@@ -24,7 +25,8 @@ export function AppBillingDrawer({
   currentRegionUid,
   currentRegionName,
   effectiveStartTime,
-  effectiveEndTime
+  effectiveEndTime,
+  nsListData
 }: AppBillingDrawerProps) {
   const [appBillingPage, setAppBillingPage] = useState(1);
   const [appBillingPageSize] = useState(10);
@@ -42,6 +44,15 @@ export function AppBillingDrawer({
   }, [effectiveStartTime, effectiveEndTime]);
 
   const { getAppType: getAppTypeString } = useAppTypeStore();
+
+  // Get current namespace name for display using passed nsListData
+  const currentNamespaceName = useMemo(() => {
+    if (selectedApp?.namespace && nsListData) {
+      const workspace = nsListData.find(([id]: [string, string]) => id === selectedApp.namespace);
+      return workspace?.[1];
+    }
+    return selectedApp?.namespace || 'Unknown Workspace';
+  }, [selectedApp?.namespace, nsListData]);
 
   // App billing query for drawer
   const appBillingQueryBody = useMemo(() => {
@@ -76,6 +87,7 @@ export function AppBillingDrawer({
   const {
     data: appBillingData,
     isLoading,
+    isFetching,
     error
   } = useQuery({
     queryFn() {
@@ -162,11 +174,11 @@ export function AppBillingDrawer({
       open={open}
       onOpenChange={onOpenChange}
       appType={selectedApp.appType || ''}
-      namespace={selectedApp.namespace || ''}
+      namespaceName={currentNamespaceName}
       hasSubApps={selectedApp.appType === AppType.APP_STORE}
       data={appBillingDetails}
       appName={selectedApp.appName || 'Unknown App'}
-      region={currentRegionName || 'Unknown Region'}
+      regionName={currentRegionName || 'Unknown Region'}
       currentPage={appBillingPage}
       totalPages={totalPage}
       pageSize={appBillingPageSize}
@@ -174,6 +186,7 @@ export function AppBillingDrawer({
       onPageChange={setAppBillingPage}
       dateRange={appDateRange}
       onDateRangeChange={setAppDateRange}
+      isLoading={isFetching}
       // [TODO] Handle open app logic
       // onOpenApp={() => {
       //   console.log('Open app:', selectedApp?.appName);

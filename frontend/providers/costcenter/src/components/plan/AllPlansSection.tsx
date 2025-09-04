@@ -186,7 +186,7 @@ export function AllPlansSection() {
       <div className="text-black font-medium text-lg mb-4">All Plans</div>
       <div className="space-y-6">
         {allSubscriptions.map((regionData) => (
-          <TableLayout key={regionData.regionUid}>
+          <TableLayout key={regionData.regionUid} className="shadow-none">
             <TableLayoutCaption className="font-medium text-base bg-zinc-50">
               {regionData.regionName}
             </TableLayoutCaption>
