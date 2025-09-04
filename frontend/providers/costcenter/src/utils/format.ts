@@ -14,3 +14,17 @@ export const formatRelativeTime = (time: string | number | Date) => {
   const date = typeof time === 'string' ? parseISO(time) : time;
   return formatDistanceToNow(date, { addSuffix: true, locale: zhCN });
 };
+
+export const formatTrafficAuto = (mb: number, decimals: number = 0): string => {
+  if (mb === 0) return '0 MB';
+
+  if (mb < 1) {
+    return `${(mb * 1024).toFixed(decimals)} KB`;
+  } else if (mb < 1024) {
+    return `${mb.toFixed(decimals)} MB`;
+  } else if (mb < 1024 * 1024) {
+    return `${(mb / 1024).toFixed(decimals)} GB`;
+  } else {
+    return `${(mb / (1024 * 1024)).toFixed(decimals)} TB`;
+  }
+};
