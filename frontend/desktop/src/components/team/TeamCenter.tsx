@@ -121,6 +121,10 @@ export default function TeamCenter({
       pathname: '/',
       query: {
         mode: 'create'
+      },
+      messageData: {
+        type: 'InternalAppCall',
+        mode: 'create'
       }
     });
   };

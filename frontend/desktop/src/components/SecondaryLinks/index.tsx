@@ -68,6 +68,10 @@ export default function SecondaryLinks() {
       pathname: '/',
       query: {
         mode: mode
+      },
+      messageData: {
+        type: 'InternalAppCall',
+        mode: mode
       }
     });
   };
@@ -264,7 +268,6 @@ export default function SecondaryLinks() {
         <MenuItem
           borderRadius="8px"
           _hover={{ bg: 'rgba(129, 203, 252, 0.12)' }}
-          // onClick={() => openCostCenterApp('upgrade')}
           bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
           color="#2563EB"
           fontSize="14px"

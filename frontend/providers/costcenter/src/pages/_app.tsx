@@ -55,12 +55,17 @@ const App = ({ Component, pageProps }: AppProps) => {
     const handlePostMessage = (event: MessageEvent) => {
       try {
         const data = event.data;
-        if (data && typeof data === 'object') {
+        if (data && typeof data === 'object' && data.type === 'InternalAppCall') {
+          // Forward parameters to plan page
           const params = new URLSearchParams();
           if (data.page) params.set('page', data.page);
           if (data.mode) params.set('mode', data.mode);
+          if (data.stripeState) params.set('stripeState', data.stripeState);
+          if (data.payId) params.set('payId', data.payId);
+
           const queryString = params.toString();
           const targetUrl = queryString ? `/plan?${queryString}` : '/plan';
+
           router.push(targetUrl);
         }
       } catch (error) {
