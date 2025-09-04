@@ -24,6 +24,7 @@ import { useConfigStore } from '@/stores/config';
 
 interface BalancePopoverProps {
   openCostCenterApp: () => void;
+  openCostCenterTopup: () => void;
   children: React.ReactNode;
 }
 
@@ -41,7 +42,11 @@ export function getPlanBackground(subscription?: WorkspaceSubscription) {
   return 'var(--background-image-plan-payg)';
 }
 
-export function BalancePopover({ openCostCenterApp, children }: BalancePopoverProps) {
+export function BalancePopover({
+  openCostCenterApp,
+  openCostCenterTopup,
+  children
+}: BalancePopoverProps) {
   const { session } = useSessionStore();
   const currencySymbol = useConfigStore(
     (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
@@ -133,7 +138,9 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
                         <span>{formatMoney(balance).toFixed(2)}</span>
                       </div>
                     </div>
-                    <Button variant="outline">Top Up</Button>
+                    <Button variant="outline" onClick={openCostCenterTopup}>
+                      Top Up
+                    </Button>
                   </div>
                 </>
               )}

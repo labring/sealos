@@ -60,8 +60,15 @@ export default function Plan() {
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [isTopupMode, setIsTopupMode] = useState(false);
 
+  // important: useEffect to handle the router query
   useEffect(() => {
     // Method 1: Check router.query when ready
+    if (router.isReady && router.query.page) {
+      // Navigate to the specified page
+      router.push(`/${router.query.page}`);
+      return;
+    }
+
     if (router.isReady && router.query.mode === 'create') {
       setIsCreateMode(true);
       return;
@@ -87,6 +94,13 @@ export default function Plan() {
     // Method 2: Parse URL directly as fallback
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
+      const pageParam = urlParams.get('page');
+
+      if (pageParam) {
+        router.push(`/${pageParam}`);
+        return;
+      }
+
       const createMode = urlParams.get('mode') === 'create';
       const upgradeMode = urlParams.get('mode') === 'upgrade';
       const topupMode = urlParams.get('mode') === 'topup';
@@ -113,7 +127,7 @@ export default function Plan() {
         return;
       }
     }
-  }, [router.isReady, router.query, router.asPath]);
+  }, [router]);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();

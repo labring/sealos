@@ -268,7 +268,7 @@ export default function Account() {
                   px="8px"
                   borderRadius="8px"
                   _hover={{ bg: '#F4F4F5' }}
-                  onClick={() => openCostcenterApp({ page: 'plan', mode: '' })}
+                  onClick={() => openCostcenterApp({ page: 'plan' })}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
@@ -294,7 +294,7 @@ export default function Account() {
                   px="8px"
                   borderRadius="8px"
                   _hover={{ bg: '#F4F4F5' }}
-                  onClick={() => openCostcenterApp({ page: 'billing', mode: '' })}
+                  onClick={() => openCostcenterApp({ page: 'billing' })}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">

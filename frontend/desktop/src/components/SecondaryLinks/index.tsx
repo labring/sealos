@@ -62,7 +62,7 @@ export default function SecondaryLinks() {
     });
   };
 
-  const openCostCenterApp = (mode: 'create' | 'upgrade') => {
+  const openCostCenterApp = (mode: 'create' | 'upgrade' | 'topup') => {
     openDesktopApp({
       appKey: 'system-costcenter',
       pathname: '/',
@@ -109,7 +109,10 @@ export default function SecondaryLinks() {
   if (!isCollapsed) {
     return (
       <Flex gap={'4px'} ml={'auto'}>
-        <BalancePopover openCostCenterApp={() => openCostCenterApp('upgrade')}>
+        <BalancePopover
+          openCostCenterApp={() => openCostCenterApp('upgrade')}
+          openCostCenterTopup={() => openCostCenterApp('topup')}
+        >
           <Center
             mr={'12px'}
             borderRadius={'8px'}
