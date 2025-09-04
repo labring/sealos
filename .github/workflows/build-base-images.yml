@@ -1,0 +1,93 @@
+name: 🚀 Build public cloud base images
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  resolve-versions:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve Modules
+        id: set-matrix
+        run: |
+          bash ./.github/scripts/matrix.sh >> $GITHUB_OUTPUT
+  build-images-arm64:
+    runs-on: ubuntu-24.04
+    needs: [ resolve-versions ]
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJson(needs.resolve-versions.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install sealos
+        run: |
+          sudo bash ./.github/scripts/install.sh
+          cp ./.github/scripts/image_build_push.sh deploy/base/${{ matrix.project }}/${{ matrix.version }}/
+      - name: Build images
+        working-directory: deploy/base/${{ matrix.project }}/${{ matrix.version }}
+        run: |
+          if [ -f init.sh ]; then
+            echo "init.sh found, executing..."
+            sudo bash init.sh arm64
+          else
+            echo "init.sh not found! skip this step"
+          fi
+          sudo bash image_build_push.sh ${{ matrix.project }} ${{ matrix.version }} ${{ secrets.GITHUB_TOKEN }} arm64  ${{ github.repository_owner }} ${{ github.sha }}
+
+  build-images-amd64:
+    runs-on: ubuntu-24.04
+    needs: [ resolve-versions ]
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJson(needs.resolve-versions.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install sealos
+        run: |
+          sudo bash ./.github/scripts/install.sh
+          cp ./.github/scripts/image_build_push.sh deploy/base/${{ matrix.project }}/${{ matrix.version }}/
+
+      - name: Build images
+        working-directory: deploy/base/${{ matrix.project }}/${{ matrix.version }}
+        run: |
+          if [ -f init.sh ]; then
+            echo "init.sh found, executing..."
+            sudo bash init.sh amd64 ${{ secrets.GITHUB_TOKEN }}
+          else
+            echo "init.sh not found! skip this step"
+          fi
+          sudo bash image_build_push.sh ${{ matrix.project }} ${{ matrix.version }} ${{ secrets.GITHUB_TOKEN }} amd64 ${{ github.repository_owner }} ${{ github.sha }}
+
+  merge-manifests:
+      runs-on: ubuntu-24.04
+      needs: [ resolve-versions,build-images-amd64, build-images-arm64 ]
+      if: github.event_name != 'pull_request'
+      strategy:
+        fail-fast: true
+        matrix: ${{ fromJson(needs.resolve-versions.outputs.matrix) }}
+      steps:
+        - uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.repository_owner }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Create and push multi-platform manifests
+          run: |
+            IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/sealos/${{ matrix.project }}:${{ matrix.version }}"
+            docker pull --platform=linux/amd64 ${IMAGE_NAME}-amd64
+            docker pull --platform=linux/arm64 ${IMAGE_NAME}-arm64
+            docker manifest create ${IMAGE_NAME} \
+              ghcr.io/${IMAGE_NAME}-amd64 \
+              ghcr.io/${IMAGE_NAME}-arm64
+            docker manifest push ${IMAGE_NAME}
+            
