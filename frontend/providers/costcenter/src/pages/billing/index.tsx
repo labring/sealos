@@ -407,6 +407,7 @@ function Billing() {
               currentRegionName={currentRegionName || null}
               effectiveStartTime={effectiveStartTime}
               effectiveEndTime={effectiveEndTime}
+              nsListData={nsListData?.data || null}
             />
           </div>
         </TabsContent>
