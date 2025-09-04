@@ -50,7 +50,9 @@ function CostCard({
       onClick={() => onClick(id)}
       data-selected={selected}
     >
-      <h3 className="text-gray-600 text-sm">{name}</h3>
+      <h3 className="text-gray-600 text-sm text-nowrap truncate w-full text-start" title={name}>
+        {name}
+      </h3>
       <span
         className="text-gray-900 font-bold data-[selected=true]:text-blue-600"
         data-selected={selected}
