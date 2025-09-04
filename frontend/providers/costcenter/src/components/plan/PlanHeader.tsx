@@ -44,7 +44,6 @@ export function PlanHeader({
   isCreateMode = false,
   isUpgradeMode = false
 }: PlanHeaderProps) {
-  // 优化性能：只订阅需要的状态
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
@@ -53,6 +52,7 @@ export function PlanHeader({
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
   const planName = subscription?.PlanName || 'Free Plan';
+
   const renewalTime = subscription?.CurrentPeriodEndAt
     ? new Date(subscription.CurrentPeriodEndAt)
         .toLocaleString('zh-CN', {
@@ -72,7 +72,8 @@ export function PlanHeader({
   // Find current plan details from plans list
   const currentPlan = plans?.find((plan) => plan.Name === subscription?.PlanName);
   const monthlyPrice = currentPlan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
-  console.log('currentPlan', currentPlan, monthlyPrice);
+
+  console.log('PlanHeader.currentPlan', currentPlan, monthlyPrice);
 
   // Parse plan resources
   let planResources: any = {};
