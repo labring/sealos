@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { startTime, endTime, regionUid } = parseResult.data;
+    const { startTime, endTime } = parseResult.data;
 
     const client = await makeAPIClientByHeader(req, res);
     if (!client) {
@@ -29,8 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const requestBody: PaymentListRequest = {
       startTime,
-      endTime,
-      regionUid
+      endTime
     };
 
     const response = await client.post<PaymentListResponse>(
