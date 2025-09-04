@@ -1,0 +1,13 @@
+Use the following command to access the console:
+  hgctl dashboard console
+
+{{ if .Values.ingress.enabled -}}
+Because you choose to create an Ingress resource for Higress Console, you can use the following URL to access it as well:
+{{- range $path := .Values.ingress.paths }}
+  http{{ if $.Values.ingress.tlsSecretName }}s{{ end }}://{{ $.Values.ingress.domain }}{{ .path }}
+{{- end }}
+{{- if or .Values.global.local .Values.global.kind }}
+And since Higress Console is running in local mode, you may need to add the following line into your hosts file before accessing it:
+  127.0.0.1 {{ $.Values.ingress.domain }}
+{{- end }}
+{{- end }}

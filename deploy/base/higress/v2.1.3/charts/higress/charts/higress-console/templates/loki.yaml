@@ -1,0 +1,209 @@
+{{- $o11y := merge (dict) .Values.o11y .Values.global.o11y  }}
+{{- if $o11y.enabled }}
+{{- $appName := (include "higress-console-loki.name" .) }}
+{{- $config := $o11y.loki }}
+{{- $ports := $config.ports -}}
+{{- $storageClassName := $config.pvc.storageClassName }}
+{{- $existedPvc := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace $appName) }}
+{{- if $existedPvc }}
+  {{- if $existedPvc.spec }}
+    {{- if $existedPvc.spec.storageClassName }}
+      {{- $storageClassName = $existedPvc.spec.storageClassName }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- $pvc := merge (dict) .Values.pvc .Values.global.pvc}}
+{{- $existedDeployment := (lookup "apps/v1" "Deployment" .Release.Namespace $appName) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |
+    auth_enabled: false
+    common:
+      compactor_address: 'loki'
+      path_prefix: /var/loki
+      replication_factor: 1
+      storage:
+        filesystem:
+          chunks_directory: /var/loki/chunks
+          rules_directory: /var/loki/rules
+    frontend:
+      scheduler_address: ""
+    frontend_worker:
+      scheduler_address: ""
+    index_gateway:
+      mode: ring
+    limits_config:
+      max_cache_freshness_per_query: 10m
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      split_queries_by_interval: 15m
+    memberlist:
+      join_members:
+      - {{ $appName }}
+    query_range:
+      align_queries_with_step: true
+    ruler:
+      storage:
+        type: local
+    runtime_config:
+      file: /etc/loki/runtime-config/runtime-config.yaml
+    schema_config:
+      configs:
+      - from: "2022-01-11"
+        index:
+          period: 24h
+          prefix: loki_index_
+        object_store: filesystem
+        schema: v12
+        store: boltdb-shipper
+    server:
+      http_listen_port: {{ $ports.http }}
+      grpc_listen_port: {{ $ports.grpc }}
+    storage_config:
+      hedging:
+        at: 250ms
+        max_per_second: 20
+        up_to: 3
+    tracing:
+      enabled: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}-runtime
+  namespace: {{ .Release.Namespace }}
+data:
+  runtime-config.yaml: |
+    {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+  {{- if or (or .Values.global.local .Values.global.kind) (not $pvc.rwxSupported) }}
+  - ReadWriteOnce
+  {{- else }}
+  - ReadWriteMany
+  {{- end }}
+  storageClassName: {{ $storageClassName }}
+  resources:
+    requests:
+      storage: {{ $config.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $appName }}
+spec:
+  replicas: {{ $config.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $appName }}
+    spec:
+      securityContext:
+      {{- if $config.securityContext }}
+        {{- toYaml $config.securityContext | nindent 8 }}
+      {{- else if and ($existedDeployment) ($existedDeployment.spec.template.spec.securityContext) }}
+        {{- toYaml $existedDeployment.spec.template.spec.securityContext | nindent 8 }}
+      {{- else }}
+        runAsUser: 0
+      {{- end }}
+      containers:
+      - name: loki
+        args:
+        - -config.file=/etc/loki/config/config.yaml
+        - -target=all
+        image: {{ $config.image.repository }}:{{ $config.image.tag }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ $ports.http }}
+          name: http-metrics
+          protocol: TCP
+        - containerPort: {{ $ports.grpc }}
+          name: grpc
+          protocol: TCP
+        - containerPort: 7946
+          name: http-memberlist
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ready
+            port: http-metrics
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /etc/loki/config
+          name: config
+        - mountPath: /etc/loki/runtime-config
+          name: runtime-config
+        - mountPath: /var/loki
+          name: storage
+      restartPolicy: Always
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: {{ $appName }}
+      - name: tmp
+        emptyDir: {}
+      - name: config
+        configMap:
+          defaultMode: 420
+          items:
+          - key: config.yaml
+            path: config.yaml
+          name: {{ $appName }}
+      - name: runtime-config
+        configMap:
+          defaultMode: 420
+          name: {{ $appName }}-runtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - port: {{ $ports.http }}
+    protocol: TCP
+    name: http-metrics
+    targetPort: http-metrics
+  - port: {{ $ports.grpc }}
+    protocol: TCP
+    name: grpc
+    targetPort: grpc
+  - port: 7946
+    protocol: TCP
+    name: http-memberlist
+    targetPort: http-memberlist
+  selector:
+    app: {{ $appName }}
+  sessionAffinity: None
+  type: ClusterIP
+{{- end }}
