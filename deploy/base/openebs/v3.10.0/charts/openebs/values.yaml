@@ -946,7 +946,7 @@ zfs-localpv:
 # lvm local pv configuration goes here
 # ref - https://openebs.github.io/lvm-localpv
 lvm-localpv:
-  enabled: false
+  enabled: true
 
   # Sample configuration if you want to configure lvm localpv with custom values.
   # This is a small part of the full configuration. Full configuration available
