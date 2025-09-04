@@ -1,0 +1,18 @@
+{{- if .Values.podSecurityPolicy.create -}}
+{{- $fullName := include "logstash.fullname" . -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1" -}}
+apiVersion: policy/v1
+{{- else}}
+apiVersion: policy/v1beta1
+{{- end }}
+kind: PodSecurityPolicy
+metadata:
+  name: {{ default $fullName .Values.podSecurityPolicy.name | quote }}
+  labels:
+    app: "{{ template "logstash.fullname" . }}"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+{{ toYaml .Values.podSecurityPolicy.spec | indent 2 }}
+{{- end -}}

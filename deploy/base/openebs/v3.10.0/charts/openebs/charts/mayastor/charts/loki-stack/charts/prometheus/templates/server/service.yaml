@@ -1,0 +1,60 @@
+{{- if .Values.server.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.server.service.annotations }}
+  annotations:
+{{ toYaml .Values.server.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+{{- if .Values.server.service.labels }}
+{{ toYaml .Values.server.service.labels | indent 4 }}
+{{- end }}
+  name: {{ template "prometheus.server.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+{{- if .Values.server.service.clusterIP }}
+  clusterIP: {{ .Values.server.service.clusterIP }}
+{{- end }}
+{{- if .Values.server.service.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.server.service.externalIPs | indent 4 }}
+{{- end }}
+{{- if .Values.server.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.server.service.loadBalancerIP }}
+{{- end }}
+{{- if .Values.server.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := .Values.server.service.loadBalancerSourceRanges }}
+    - {{ $cidr }}
+  {{- end }}
+{{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.server.service.servicePort }}
+      protocol: TCP
+      targetPort: 9090
+    {{- if .Values.server.service.nodePort }}
+      nodePort: {{ .Values.server.service.nodePort }}
+    {{- end }}
+    {{- if .Values.server.service.gRPC.enabled }}
+    - name: grpc
+      port: {{ .Values.server.service.gRPC.servicePort }}
+      protocol: TCP
+      targetPort: 10901
+    {{- if .Values.server.service.gRPC.nodePort }}
+      nodePort: {{ .Values.server.service.gRPC.nodePort }}
+    {{- end }}
+    {{- end }}
+  selector:
+  {{- if and .Values.server.statefulSet.enabled .Values.server.service.statefulsetReplica.enabled }}
+    statefulset.kubernetes.io/pod-name: {{ template "prometheus.server.fullname" . }}-{{ .Values.server.service.statefulsetReplica.replica }}
+  {{- else -}}
+    {{- include "prometheus.server.matchLabels" . | nindent 4 }}
+{{- if .Values.server.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.server.service.sessionAffinity }}
+{{- end }}
+  {{- end }}
+  type: "{{ .Values.server.service.type }}"
+{{- end -}}

@@ -1,0 +1,17 @@
+{{- if and .Values.nodeExporter.enabled .Values.rbac.create }}
+{{- if or (default .Values.nodeExporter.podSecurityPolicy.enabled false) (.Values.podSecurityPolicy.enabled) }}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: Role
+metadata:
+  name: {{ template "prometheus.nodeExporter.fullname" . }}
+  labels:
+    {{- include "prometheus.nodeExporter.labels" . | nindent 4 }}
+{{ include "prometheus.namespace" . | indent 2 }}
+rules:
+- apiGroups: ['extensions']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - {{ template "prometheus.nodeExporter.fullname" . }}
+{{- end }}
+{{- end }}

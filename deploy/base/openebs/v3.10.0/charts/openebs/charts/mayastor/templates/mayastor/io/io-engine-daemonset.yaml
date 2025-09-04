@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-io-engine
+  labels:
+    app: io-engine
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  selector:
+    matchLabels:
+      app: io-engine
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  updateStrategy:
+    type: OnDelete
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: io-engine
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      hostNetwork: true
+      # To resolve services in the namespace
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector: {{- .Values.io_engine.nodeSelector | toYaml | nindent 8 }}
+      {{- if $pcName := include "priority_class" (dict "template" . "localPriorityClass" .Values.io_engine.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      {{- if $tolerations := include "tolerations" (dict "template" . "localTolerations" .Values.io_engine.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      initContainers:
+        {{- include "base_init_containers" . }}
+      containers:
+      {{- if .Values.base.metrics.enabled }}
+      - name: metrics-exporter-io-engine
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-metrics-exporter-io-engine:{{ default .Values.image.tag .Values.image.repoTags.extensions }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        args:
+        - "-p{{ .Values.base.metrics.pollingInterval }}"
+        - "--api-versions={{ .Values.io_engine.api }}"
+        ports:
+          - containerPort: 9502
+            protocol: TCP
+            name: metrics
+      {{- end }}
+      - name: io-engine
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-io-engine:{{ default .Values.image.tag .Values.image.repoTags.dataPlane }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: RUST_LOG
+          value: {{ .Values.io_engine.logLevel }}
+        - name: NVMF_TCP_MAX_QUEUE_DEPTH
+          value: "{{ .Values.io_engine.nvme.tcp.maxQueueDepth }}"
+        - name: NVME_TIMEOUT
+          value: "{{ .Values.io_engine.nvme.ioTimeout }}"
+        - name: NVME_TIMEOUT_ADMIN
+          value: "{{ .Values.io_engine.nvme.adminTimeout }}"
+        - name: NVME_KATO
+          value: "{{ .Values.io_engine.nvme.keepAliveTimeout }}"
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NEXUS_NVMF_ANA_ENABLE
+          value: "1"
+        - name: NEXUS_NVMF_RESV_ENABLE
+          value: "1"
+        args:
+        # The -l argument accepts cpu-list. Indexing starts at zero.
+        # For example -l 1,2,10-20 means use core 1, 2, 10 to 20.
+        # Note: Ensure that the CPU resources are updated accordingly.
+        #       If you use 2 CPUs, the CPU: field should also read 2.
+        - "-g$(MY_POD_IP)"
+        - "-N$(MY_NODE_NAME)"
+        - "-Rhttps://{{ .Release.Name }}-agent-core:50051"
+        - "-y/var/local/{{ .Release.Name }}/io-engine/config.yaml"
+        - "-l{{ include "cpuFlag" . }}"
+        - "-p={{ .Release.Name }}-etcd:{{ .Values.etcd.service.port }}"{{ if .Values.io_engine.target.nvmf.ptpl }}
+        - "--ptpl-dir=/var/local/{{ .Release.Name }}/io-engine/ptpl/"{{ end }}
+        - "--api-versions={{ .Values.io_engine.api }}"{{ if .Values.io_engine.target.nvmf.iface }}
+        - "-T={{ .Values.io_engine.target.nvmf.iface }}"{{ end }}{{ if .Values.io_engine.envcontext }}
+        - "--env-context=--{{ .Values.io_engine.envcontext }}"{{ end }}{{ if .Values.io_engine.reactorFreezeDetection.enabled }}
+        - "--reactor-freeze-detection"{{ end }}
+        - "--tgt-crdt={{ .Values.io_engine.target.nvmf.hostCmdRetryDelay.crdt1 }}"{{ if .Values.eventing.enabled }}
+        - "--events-url=nats://{{ .Release.Name }}-nats:4222"{{ end }}
+        command:
+        - io-engine
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: device
+          mountPath: /dev
+        - name: udev
+          mountPath: /run/udev
+        - name: dshm
+          mountPath: /dev/shm
+        - name: configlocation
+          mountPath: /var/local/{{ .Release.Name }}/io-engine/
+        - name: hugepage
+          mountPath: /dev/hugepages
+        resources:
+          limits:
+            cpu: {{ .Values.io_engine.resources.limits.cpu | default (include "coreCount" .) | quote }}
+            memory: {{ .Values.io_engine.resources.limits.memory | quote }}
+            hugepages-2Mi: {{ .Values.io_engine.resources.limits.hugepages2Mi | quote }}
+          requests:
+            cpu: {{ .Values.io_engine.resources.requests.cpu | default (include "coreCount" .) | quote }}
+            memory: {{ .Values.io_engine.resources.requests.memory | quote }}
+            hugepages-2Mi: {{ .Values.io_engine.resources.requests.hugepages2Mi | quote }}
+        ports:
+        - containerPort: 10124
+          protocol: TCP
+          name: io-engine
+      volumes:
+      - name: device
+        hostPath:
+          path: /dev
+          type: Directory
+      - name: udev
+        hostPath:
+          path: /run/udev
+          type: Directory
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: "1Gi"
+      - name: hugepage
+        emptyDir:
+          medium: HugePages
+      - name: configlocation
+        hostPath:
+          path: /var/local/{{ .Release.Name }}/io-engine/
+          type: DirectoryOrCreate

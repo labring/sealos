@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-api-rest
+  labels:
+    app: api-rest
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  type: {{ .Values.apis.rest.service.type }}
+  selector:
+    app: api-rest
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  ports:
+    - port: 8080
+      name: https
+      targetPort: 8080
+      protocol: TCP
+      {{- if eq .Values.apis.rest.service.type "NodePort" }}
+      nodePort: {{ .Values.apis.rest.service.nodePorts.https }}
+      {{- end }}
+    - port: 8081
+      name: http
+      targetPort: 8081
+      protocol: TCP
+      {{- if eq .Values.apis.rest.service.type "NodePort" }}
+      nodePort: {{ .Values.apis.rest.service.nodePorts.http }}
+      {{- end }}

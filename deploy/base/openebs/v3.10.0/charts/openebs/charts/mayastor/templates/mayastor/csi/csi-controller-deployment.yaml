@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-csi-controller
+  labels:
+    app: csi-controller
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-controller
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: csi-controller
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      hostNetwork: true
+      serviceAccount: {{ .Release.Name }}-service-account
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      initContainers:
+        {{- include "jaeger_agent_init_container" . }}
+        {{- include "rest_agent_init_container" . }}
+      {{- if $pcName := include "priority_class" (dict "template" . "localPriorityClass" .Values.csi.controller.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $tolerations := include "tolerations" (dict "template" . "localTolerations" .Values.csi.controller.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      containers:
+        - name: csi-provisioner
+          image: "{{ .Values.csi.image.registry }}/{{ .Values.csi.image.repo }}/csi-provisioner:{{ .Values.csi.image.provisionerTag }}"
+          args:
+            - "--v=2"
+            - "--csi-address=$(ADDRESS)"
+            - "--feature-gates=Topology=true"
+            - "--strict-topology=false"
+            - "--default-fstype=ext4"
+            - "--extra-create-metadata" # This is needed for volume group feature to work
+            - "--timeout=36s"
+            - "--worker-threads=10" # 10 for create and 10 for delete
+            {{- if default .Values.csi.controller.preventVolumeModeConversion }}
+            - "--prevent-volume-mode-conversion"
+            {{- end }}
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: {{ .Values.csi.image.pullPolicy }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-attacher
+          image: "{{ .Values.csi.image.registry }}/{{ .Values.csi.image.repo }}/csi-attacher:{{ .Values.csi.image.attacherTag }}"
+          args:
+            - "--v=2"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: {{ .Values.csi.image.pullPolicy }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-snapshotter
+          image: "{{ .Values.csi.image.registry }}/{{ .Values.csi.image.repo }}/csi-snapshotter:{{ .Values.csi.image.snapshotterTag }}"
+          args:
+            - "--v=2"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: {{ .Values.csi.image.pullPolicy }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-snapshot-controller
+          args:
+            - "--v=2"
+            - "--leader-election=false" # since we are running single container
+            {{- if default .Values.csi.controller.preventVolumeModeConversion }}
+            - "--prevent-volume-mode-conversion"
+            {{- end }}
+          image: "{{ .Values.csi.image.registry }}/{{ .Values.csi.image.repo }}/snapshot-controller:{{ .Values.csi.image.snapshotControllerTag }}"
+          imagePullPolicy: {{ .Values.csi.image.pullPolicy }}
+        - name: csi-controller
+          resources:
+            limits:
+              cpu: {{ .Values.csi.controller.resources.limits.cpu | quote }}
+              memory: {{ .Values.csi.controller.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.csi.controller.resources.requests.cpu | quote }}
+              memory: {{ .Values.csi.controller.resources.requests.memory | quote }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-csi-controller:{{ default .Values.image.tag .Values.image.repoTags.controlPlane }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--csi-socket=/var/lib/csi/sockets/pluginproxy/csi.sock"
+            - "--rest-endpoint=http://{{ .Release.Name }}-api-rest:8081"{{ if .Values.base.jaeger.enabled }}
+            - "--jaeger={{ .Values.base.jaeger.agent.name }}:{{ .Values.base.jaeger.agent.port }}"{{ end }}
+            {{- range $key, $val := .Values.csi.node.topology.segments }}
+            - "--node-selector={{ $key }}={{ $val }}"
+            {{- end }}
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.csi.controller.logLevel }}
+            {{- if default .Values.base.logSilenceLevel .Values.csi.controller.logSilenceLevel }}
+            - name: RUST_LOG_SILENCE
+              value: {{ default .Values.base.logSilenceLevel .Values.csi.controller.logSilenceLevel }}
+            {{- end }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+      volumes:
+        - name: socket-dir
+          emptyDir:

@@ -1,0 +1,37 @@
+{{- if not .Values.alertmanager.statefulSet.enabled -}}
+{{- if and .Values.alertmanager.enabled .Values.alertmanager.persistentVolume.enabled -}}
+{{- if not .Values.alertmanager.persistentVolume.existingClaim -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  {{- if .Values.alertmanager.persistentVolume.annotations }}
+  annotations:
+{{ toYaml .Values.alertmanager.persistentVolume.annotations | indent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
+  name: {{ template "prometheus.alertmanager.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+  accessModes:
+{{ toYaml .Values.alertmanager.persistentVolume.accessModes | indent 4 }}
+{{- if .Values.alertmanager.persistentVolume.storageClass }}
+{{- if (eq "-" .Values.alertmanager.persistentVolume.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.alertmanager.persistentVolume.storageClass }}"
+{{- end }}
+{{- end }}
+{{- if .Values.alertmanager.persistentVolume.volumeBindingMode }}
+  volumeBindingMode: "{{ .Values.alertmanager.persistentVolume.volumeBindingMode }}"
+{{- end }}
+  resources:
+    requests:
+      storage: "{{ .Values.alertmanager.persistentVolume.size }}"
+{{- if .Values.alertmanager.persistentVolume.selector }}
+  selector:
+  {{- toYaml .Values.alertmanager.persistentVolume.selector | nindent 4 }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

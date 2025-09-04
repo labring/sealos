@@ -1,0 +1,22 @@
+port:
+  tcp:5066:
+    listening: true
+    ip:
+      - "127.0.0.1"
+
+mount:
+  /usr/share/filebeat/data:
+    exists: true
+
+user:
+  filebeat:
+    exists: true
+    uid: 1000
+    gid: 1000
+
+http:
+  http://elasticsearch-master:9200/_cat/indices:
+    status: 200
+    timeout: 2000
+    body:
+      - "filebeat-oss-7.17.1"

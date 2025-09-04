@@ -1,0 +1,7 @@
+apiVersion: scheduling.k8s.io/v1
+description: Used for critical pods that must run in the cluster, which can be moved to another node if necessary.
+kind: PriorityClass
+metadata:
+  name: {{ .Release.Name }}-cluster-critical
+preemptionPolicy: PreemptLowerPriority
+value: 1000000000

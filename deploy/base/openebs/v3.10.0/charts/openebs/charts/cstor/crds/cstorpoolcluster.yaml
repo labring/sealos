@@ -1,0 +1,574 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorpoolclusters.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorPoolCluster
+    listKind: CStorPoolClusterList
+    plural: cstorpoolclusters
+    shortNames:
+      - cspc
+    singular: cstorpoolcluster
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: The number of healthy cStorPoolInstances
+          jsonPath: .status.healthyInstances
+          name: HealthyInstances
+          type: integer
+        - description: The number of provisioned cStorPoolInstances
+          jsonPath: .status.provisionedInstances
+          name: ProvisionedInstances
+          type: integer
+        - description: The number of desired cStorPoolInstances
+          jsonPath: .status.desiredInstances
+          name: DesiredInstances
+          type: integer
+        - description: Age of CStorPoolCluster
+          jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorPoolCluster describes a CStorPoolCluster custom resource.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorPoolClusterSpec is the spec for a CStorPoolClusterSpec
+                resource
+              properties:
+                auxResources:
+                  description: AuxResources are the compute resources required by the
+                    cstor-pool pod side car containers.
+                  nullable: true
+                  properties:
+                    claims:
+                      description: "Claims lists the names of resources, defined in
+                      spec.resourceClaims, that are used by this container. \n This
+                      is an alpha field and requires enabling the DynamicResourceAllocation
+                      feature gate. \n This field is immutable. It can only be set
+                      for containers."
+                      items:
+                        description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                        properties:
+                          name:
+                            description: Name must match the name of one entry in pod.spec.resourceClaims
+                              of the Pod where this field is used. It makes that resource
+                              available inside a container.
+                            type: string
+                        required:
+                          - name
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                        - name
+                      x-kubernetes-list-type: map
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute resources
+                      allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                      resources required. If Requests is omitted for a container,
+                      it defaults to Limits if that is explicitly specified, otherwise
+                      to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      type: object
+                  type: object
+                pools:
+                  description: Pools is the spec for pools for various nodes where it
+                    should be created.
+                  items:
+                    description: PoolSpec is the spec for pool on node where it should
+                      be created.
+                    properties:
+                      dataRaidGroups:
+                        description: DataRaidGroups is the raid group configuration
+                          for the given pool.
+                        items:
+                          description: RaidGroup contains the details of a raid group
+                            for the pool
+                          properties:
+                            blockDevices:
+                              items:
+                                description: CStorPoolInstanceBlockDevice contains the
+                                  details of block devices that constitutes a raid group.
+                                properties:
+                                  blockDeviceName:
+                                    description: BlockDeviceName is the name of the
+                                      block device.
+                                    type: string
+                                  capacity:
+                                    description: Capacity is the capacity of the block
+                                      device. It is system generated
+                                    format: int64
+                                    type: integer
+                                  devLink:
+                                    description: DevLink is the dev link for block devices
+                                    type: string
+                                required:
+                                  - blockDeviceName
+                                type: object
+                              type: array
+                          required:
+                            - blockDevices
+                          type: object
+                        type: array
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: NodeSelector is the labels that will be used to
+                          select a node for pool provisioning. Required field
+                        type: object
+                      poolConfig:
+                        description: PoolConfig is the default pool config that applies
+                          to the pool on node.
+                        properties:
+                          auxResources:
+                            description: AuxResources are the compute resources required
+                              by the cstor-pool pod side car containers.
+                            nullable: true
+                            properties:
+                              claims:
+                                description: "Claims lists the names of resources, defined
+                                in spec.resourceClaims, that are used by this container.
+                                \n This is an alpha field and requires enabling the
+                                DynamicResourceAllocation feature gate. \n This field
+                                is immutable. It can only be set for containers."
+                                items:
+                                  description: ResourceClaim references one entry in
+                                    PodSpec.ResourceClaims.
+                                  properties:
+                                    name:
+                                      description: Name must match the name of one entry
+                                        in pod.spec.resourceClaims of the Pod where
+                                        this field is used. It makes that resource available
+                                        inside a container.
+                                      type: string
+                                  required:
+                                    - name
+                                  type: object
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                  - name
+                                x-kubernetes-list-type: map
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount of
+                                compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                of compute resources required. If Requests is omitted
+                                for a container, it defaults to Limits if that is
+                                explicitly specified, otherwise to an implementation-defined
+                                value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                            type: object
+                          compression:
+                            description: 'Compression to enable compression Optional
+                            -- defaults to off Possible values : lz, off'
+                            type: string
+                          dataRaidGroupType:
+                            description: DataRaidGroupType is the  raid type.
+                            type: string
+                          priorityClassName:
+                            description: PriorityClassName if specified applies to this
+                              pool pod If left empty, DefaultPriorityClassName is applied.
+                              (See CStorPoolClusterSpec.DefaultPriorityClassName) If
+                              both are empty, not priority class is applied.
+                            nullable: true
+                            type: string
+                          resources:
+                            description: Resources are the compute resources required
+                              by the cstor-pool container.
+                            nullable: true
+                            properties:
+                              claims:
+                                description: "Claims lists the names of resources, defined
+                                in spec.resourceClaims, that are used by this container.
+                                \n This is an alpha field and requires enabling the
+                                DynamicResourceAllocation feature gate. \n This field
+                                is immutable. It can only be set for containers."
+                                items:
+                                  description: ResourceClaim references one entry in
+                                    PodSpec.ResourceClaims.
+                                  properties:
+                                    name:
+                                      description: Name must match the name of one entry
+                                        in pod.spec.resourceClaims of the Pod where
+                                        this field is used. It makes that resource available
+                                        inside a container.
+                                      type: string
+                                  required:
+                                    - name
+                                  type: object
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                  - name
+                                x-kubernetes-list-type: map
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount of
+                                compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                of compute resources required. If Requests is omitted
+                                for a container, it defaults to Limits if that is
+                                explicitly specified, otherwise to an implementation-defined
+                                value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                            type: object
+                          roThresholdLimit:
+                            description: 'ROThresholdLimit is threshold(percentage base)
+                            limit for pool read only mode. If ROThresholdLimit(%)
+                            amount of pool storage is reached then pool will set to
+                            readonly. NOTE: 1. If ROThresholdLimit is set to 100 then
+                            entire pool storage will be used by default it will be
+                            set to 85%. 2. ROThresholdLimit value will be 0 <= ROThresholdLimit
+                            <= 100.'
+                            nullable: true
+                            type: integer
+                          thickProvision:
+                            description: ThickProvision to enable thick provisioning
+                              Optional -- defaults to false
+                            type: boolean
+                          tolerations:
+                            description: Tolerations, if specified, the pool pod's tolerations.
+                            items:
+                              description: The pod this Toleration is attached to tolerates
+                                any taint that matches the triple <key,value,effect>
+                                using the matching operator <operator>.
+                              properties:
+                                effect:
+                                  description: Effect indicates the taint effect to
+                                    match. Empty means match all taint effects. When
+                                    specified, allowed values are NoSchedule, PreferNoSchedule
+                                    and NoExecute.
+                                  type: string
+                                key:
+                                  description: Key is the taint key that the toleration
+                                    applies to. Empty means match all taint keys. If
+                                    the key is empty, operator must be Exists; this
+                                    combination means to match all values and all keys.
+                                  type: string
+                                operator:
+                                  description: Operator represents a key's relationship
+                                    to the value. Valid operators are Exists and Equal.
+                                    Defaults to Equal. Exists is equivalent to wildcard
+                                    for value, so that a pod can tolerate all taints
+                                    of a particular category.
+                                  type: string
+                                tolerationSeconds:
+                                  description: TolerationSeconds represents the period
+                                    of time the toleration (which must be of effect
+                                    NoExecute, otherwise this field is ignored) tolerates
+                                    the taint. By default, it is not set, which means
+                                    tolerate the taint forever (do not evict). Zero
+                                    and negative values will be treated as 0 (evict
+                                    immediately) by the system.
+                                  format: int64
+                                  type: integer
+                                value:
+                                  description: Value is the taint value the toleration
+                                    matches to. If the operator is Exists, the value
+                                    should be empty, otherwise just a regular string.
+                                  type: string
+                              type: object
+                            nullable: true
+                            type: array
+                          writeCacheGroupType:
+                            description: WriteCacheGroupType is the write cache raid
+                              type.
+                            type: string
+                        required:
+                          - dataRaidGroupType
+                        type: object
+                      writeCacheRaidGroups:
+                        description: WriteCacheRaidGroups is the write cache raid group.
+                        items:
+                          description: RaidGroup contains the details of a raid group
+                            for the pool
+                          properties:
+                            blockDevices:
+                              items:
+                                description: CStorPoolInstanceBlockDevice contains the
+                                  details of block devices that constitutes a raid group.
+                                properties:
+                                  blockDeviceName:
+                                    description: BlockDeviceName is the name of the
+                                      block device.
+                                    type: string
+                                  capacity:
+                                    description: Capacity is the capacity of the block
+                                      device. It is system generated
+                                    format: int64
+                                    type: integer
+                                  devLink:
+                                    description: DevLink is the dev link for block devices
+                                    type: string
+                                required:
+                                  - blockDeviceName
+                                type: object
+                              type: array
+                          required:
+                            - blockDevices
+                          type: object
+                        nullable: true
+                        type: array
+                    required:
+                      - dataRaidGroups
+                      - nodeSelector
+                    type: object
+                  type: array
+                priorityClassName:
+                  description: DefaultPriorityClassName if specified applies to all
+                    the pool pods in the pool spec if the priorityClass at the pool
+                    level is not specified.
+                  type: string
+                resources:
+                  description: DefaultResources are the compute resources required by
+                    the cstor-pool container. If the resources at PoolConfig is not
+                    specified, this is written to CSPI PoolConfig.
+                  nullable: true
+                  properties:
+                    claims:
+                      description: "Claims lists the names of resources, defined in
+                      spec.resourceClaims, that are used by this container. \n This
+                      is an alpha field and requires enabling the DynamicResourceAllocation
+                      feature gate. \n This field is immutable. It can only be set
+                      for containers."
+                      items:
+                        description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                        properties:
+                          name:
+                            description: Name must match the name of one entry in pod.spec.resourceClaims
+                              of the Pod where this field is used. It makes that resource
+                              available inside a container.
+                            type: string
+                        required:
+                          - name
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                        - name
+                      x-kubernetes-list-type: map
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute resources
+                      allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                      resources required. If Requests is omitted for a container,
+                      it defaults to Limits if that is explicitly specified, otherwise
+                      to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      type: object
+                  type: object
+                tolerations:
+                  description: Tolerations, if specified, are the pool pod's tolerations
+                    If tolerations at PoolConfig is empty, this is written to CSPI PoolConfig.
+                  items:
+                    description: The pod this Toleration is attached to tolerates any
+                      taint that matches the triple <key,value,effect> using the matching
+                      operator <operator>.
+                    properties:
+                      effect:
+                        description: Effect indicates the taint effect to match. Empty
+                          means match all taint effects. When specified, allowed values
+                          are NoSchedule, PreferNoSchedule and NoExecute.
+                        type: string
+                      key:
+                        description: Key is the taint key that the toleration applies
+                          to. Empty means match all taint keys. If the key is empty,
+                          operator must be Exists; this combination means to match all
+                          values and all keys.
+                        type: string
+                      operator:
+                        description: Operator represents a key's relationship to the
+                          value. Valid operators are Exists and Equal. Defaults to Equal.
+                          Exists is equivalent to wildcard for value, so that a pod
+                          can tolerate all taints of a particular category.
+                        type: string
+                      tolerationSeconds:
+                        description: TolerationSeconds represents the period of time
+                          the toleration (which must be of effect NoExecute, otherwise
+                          this field is ignored) tolerates the taint. By default, it
+                          is not set, which means tolerate the taint forever (do not
+                          evict). Zero and negative values will be treated as 0 (evict
+                          immediately) by the system.
+                        format: int64
+                        type: integer
+                      value:
+                        description: Value is the taint value the toleration matches
+                          to. If the operator is Exists, the value should be empty,
+                          otherwise just a regular string.
+                        type: string
+                    type: object
+                  nullable: true
+                  type: array
+              type: object
+            status:
+              description: CStorPoolClusterStatus represents the latest available observations
+                of a CSPC's current state.
+              properties:
+                conditions:
+                  description: Current state of CSPC.
+                  items:
+                    description: CStorPoolClusterCondition describes the state of a
+                      CSPC at a certain point.
+                    properties:
+                      lastTransitionTime:
+                        description: Last time the condition transitioned from one status
+                          to another.
+                        format: date-time
+                        type: string
+                      lastUpdateTime:
+                        description: The last time this condition was updated.
+                        format: date-time
+                        type: string
+                      message:
+                        description: A human readable message indicating details about
+                          the transition.
+                        type: string
+                      reason:
+                        description: The reason for the condition's last transition.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                      type:
+                        description: Type of CSPC condition.
+                        type: string
+                    required:
+                      - status
+                      - type
+                    type: object
+                  nullable: true
+                  type: array
+                desiredInstances:
+                  description: DesiredInstances is the number of CSPI(s) that should
+                    be provisioned.
+                  format: int32
+                  nullable: true
+                  type: integer
+                healthyInstances:
+                  description: HealthyInstances is the number of CSPI(s) that are healthy.
+                  format: int32
+                  nullable: true
+                  type: integer
+                provisionedInstances:
+                  description: ProvisionedInstances is the the number of CSPI present
+                    at the current state.
+                  format: int32
+                  nullable: true
+                  type: integer
+              type: object
+            versionDetails:
+              description: VersionDetails provides the details for upgrade
+              properties:
+                autoUpgrade:
+                  description: If AutoUpgrade is set to true then the resource is upgraded
+                    automatically without any manual steps
+                  type: boolean
+                desired:
+                  description: Desired is the version that we want to upgrade or the
+                    control plane version
+                  type: string
+                status:
+                  description: Status gives the status of reconciliation triggered when
+                    the desired and current version are not same
+                  properties:
+                    current:
+                      description: Current is the version of resource
+                      type: string
+                    dependentsUpgraded:
+                      description: DependentsUpgraded gives the details whether all
+                        children of a resource are upgraded to desired version or not
+                      type: boolean
+                    lastUpdateTime:
+                      description: LastUpdateTime is the time the status was last  updated
+                      format: date-time
+                      nullable: true
+                      type: string
+                    message:
+                      description: Message is a human readable message if some error
+                        occurs
+                      type: string
+                    reason:
+                      description: Reason is the actual reason for the error state
+                      type: string
+                    state:
+                      description: State is the state of reconciliation
+                      type: string
+                  type: object
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources: {}

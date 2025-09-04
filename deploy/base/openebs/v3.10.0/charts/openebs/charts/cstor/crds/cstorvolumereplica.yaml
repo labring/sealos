@@ -1,0 +1,209 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorvolumereplicas.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorVolumeReplica
+    listKind: CStorVolumeReplicaList
+    plural: cstorvolumereplicas
+    shortNames:
+      - cvr
+    singular: cstorvolumereplica
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: The amount of disk space consumed by a dataset and all its descendents
+          jsonPath: .status.capacity.total
+          name: Allocated
+          type: string
+        - description: The amount of space that is logically consumed by this dataset
+          jsonPath: .status.capacity.used
+          name: Used
+          type: string
+        - description: Identifies the current state of the replicas
+          jsonPath: .status.phase
+          name: Status
+          type: string
+        - description: Age of CStorVolumeReplica
+          jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorVolumeReplica describes a cstor volume resource created
+            as custom resource
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorVolumeReplicaSpec is the spec for a CStorVolumeReplica
+                resource
+              properties:
+                blockSize:
+                  description: BlockSize is the logical block size in multiple of 512
+                    bytes BlockSize specifies the block size of the volume. The blocksize
+                    cannot be changed once the volume has been written, so it should
+                    be set at volume creation time. The default blocksize for volumes
+                    is 4 Kbytes. Any power of 2 from 512 bytes to 128 Kbytes is valid.
+                  format: int32
+                  type: integer
+                capacity:
+                  description: Represents the actual capacity of the underlying volume
+                  type: string
+                compression:
+                  description: 'Controls the compression algorithm used for this volumes
+                  examples: on|off|gzip|gzip-N|lz4|lzjb|zle'
+                  type: string
+                replicaid:
+                  description: ReplicaID is unique number to identify the replica
+                  type: string
+                targetIP:
+                  description: TargetIP represents iscsi target IP through which replica
+                    cummunicates IO workloads and other volume operations like snapshot
+                    and resize requests
+                  type: string
+                zvolWorkers:
+                  description: ZvolWorkers represents number of threads that executes
+                    client IOs
+                  type: string
+              type: object
+            status:
+              description: CStorVolumeReplicaStatus is for handling status of cvr.
+              properties:
+                capacity:
+                  description: CStorVolumeCapacityDetails represents capacity info of
+                    replica
+                  properties:
+                    total:
+                      description: The amount of space consumed by this volume replica
+                        and all its descendents
+                      type: string
+                    used:
+                      description: The amount of space that is "logically" accessible
+                        by this dataset. The logical space ignores the effect of the
+                        compression and copies properties, giving a quantity closer
+                        to the amount of data that applications see.  However, it does
+                        include space consumed by metadata
+                      type: string
+                  required:
+                    - total
+                    - used
+                  type: object
+                lastTransitionTime:
+                  description: LastTransitionTime refers to the time when the phase
+                    changes
+                  format: date-time
+                  nullable: true
+                  type: string
+                lastUpdateTime:
+                  description: The last updated time
+                  format: date-time
+                  nullable: true
+                  type: string
+                message:
+                  description: A human readable message indicating details about the
+                    transition.
+                  type: string
+                pendingSnapshots:
+                  additionalProperties:
+                    description: CStorSnapshotInfo represents the snapshot information
+                      related to particular snapshot
+                    properties:
+                      logicalReferenced:
+                        description: LogicalReferenced describes the amount of space
+                          that is "logically" accessable by this snapshot. This logical
+                          space ignores the effect of the compression and copies properties,
+                          giving a quantity closer to the amount of data that application
+                          see. It also includes space consumed by metadata.
+                        format: int64
+                        type: integer
+                    required:
+                      - logicalReferenced
+                    type: object
+                  description: PendingSnapshots contains list of pending snapshots that
+                    are not yet available on this replica
+                  type: object
+                phase:
+                  description: CStorVolumeReplicaPhase is to holds different phases
+                    of replica
+                  type: string
+                snapshots:
+                  additionalProperties:
+                    description: CStorSnapshotInfo represents the snapshot information
+                      related to particular snapshot
+                    properties:
+                      logicalReferenced:
+                        description: LogicalReferenced describes the amount of space
+                          that is "logically" accessable by this snapshot. This logical
+                          space ignores the effect of the compression and copies properties,
+                          giving a quantity closer to the amount of data that application
+                          see. It also includes space consumed by metadata.
+                        format: int64
+                        type: integer
+                    required:
+                      - logicalReferenced
+                    type: object
+                  description: Snapshots contains list of snapshots, and their properties,
+                    created on CVR
+                  type: object
+              type: object
+            versionDetails:
+              description: VersionDetails provides the details for upgrade
+              properties:
+                autoUpgrade:
+                  description: If AutoUpgrade is set to true then the resource is upgraded
+                    automatically without any manual steps
+                  type: boolean
+                desired:
+                  description: Desired is the version that we want to upgrade or the
+                    control plane version
+                  type: string
+                status:
+                  description: Status gives the status of reconciliation triggered when
+                    the desired and current version are not same
+                  properties:
+                    current:
+                      description: Current is the version of resource
+                      type: string
+                    dependentsUpgraded:
+                      description: DependentsUpgraded gives the details whether all
+                        children of a resource are upgraded to desired version or not
+                      type: boolean
+                    lastUpdateTime:
+                      description: LastUpdateTime is the time the status was last  updated
+                      format: date-time
+                      nullable: true
+                      type: string
+                    message:
+                      description: Message is a human readable message if some error
+                        occurs
+                      type: string
+                    reason:
+                      description: Reason is the actual reason for the error state
+                      type: string
+                    state:
+                      description: State is the state of reconciliation
+                      type: string
+                  type: object
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources: {}

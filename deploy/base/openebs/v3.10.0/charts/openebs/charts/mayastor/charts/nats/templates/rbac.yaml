@@ -1,0 +1,39 @@
+{{- if or (.Values.nats.serviceAccount.create) (and .Values.nats.externalAccess .Values.nats.advertise) }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "nats.serviceAccountName" . }}
+  namespace: {{ include "nats.namespace" . }}
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  {{- with .Values.nats.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.nats.externalAccess .Values.nats.advertise }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "nats.serviceAccountName" . }}
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "nats.serviceAccountName" . }}-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "nats.serviceAccountName" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "nats.serviceAccountName" . }}
+  namespace: {{ include "nats.namespace" . }}
+{{- end }}

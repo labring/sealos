@@ -1,0 +1,11 @@
+!WARNING! !WARNING! !WARNING! !WARNING! !WARNING!
+
+Please use the official fluent-bit chart 
+
+https://github.com/fluent/helm-charts
+
+!WARNING! !WARNING! !WARNING! !WARNING! !WARNING!
+
+Verify the application is working by running these commands:
+  kubectl --namespace {{ .Release.Namespace }} port-forward daemonset/{{ include "fluent-bit-loki.fullname" . }} {{ .Values.config.port }}
+  curl http://127.0.0.1:{{ .Values.config.port }}/api/v1/metrics/prometheus

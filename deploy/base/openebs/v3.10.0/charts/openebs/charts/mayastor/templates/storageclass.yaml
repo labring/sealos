@@ -1,0 +1,21 @@
+{{ if .Values.storageClass.enabled }}
+{{- $scName := (printf "%s-%s" .Release.Name .Values.storageClass.nameSuffix | trunc 63) }}
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ $scName }}
+  {{- if .Values.storageClass.default }}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  {{- end }}
+parameters:
+{{/*
+  Set StorageClass parameters by adding to the values.yaml 'storageClass.parameters' map.
+  Don't add the parameters to this template directly.
+  This is done so that during an upgrade, an existing default StorageClass's config can
+  be given preference over this chart's defaults.
+*/}}
+{{ $valuesParams := .Values.storageClass.parameters }}
+{{ (include "storageClass.parameters" (list $scName $valuesParams)) | indent 2 }}
+provisioner: io.openebs.csi-mayastor
+{{ end }}

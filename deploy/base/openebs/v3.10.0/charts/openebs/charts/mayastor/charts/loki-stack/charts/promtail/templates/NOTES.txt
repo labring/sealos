@@ -1,0 +1,10 @@
+***********************************************************************
+ Welcome to Grafana Promtail
+ Chart version: {{ .Chart.Version }}
+ Promtail version: {{ .Values.image.tag | default .Chart.AppVersion }}
+***********************************************************************
+
+Verify the application is working by running these commands:
+
+* kubectl --namespace {{ .Release.Namespace }} port-forward daemonset/{{ include "promtail.fullname" . }} {{ .Values.config.serverPort }}
+* curl http://127.0.0.1:{{ .Values.config.serverPort }}/metrics

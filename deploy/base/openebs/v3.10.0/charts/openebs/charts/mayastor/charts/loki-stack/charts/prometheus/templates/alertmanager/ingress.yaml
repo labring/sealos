@@ -1,0 +1,57 @@
+{{- if and .Values.alertmanager.enabled .Values.alertmanager.ingress.enabled -}}
+{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
+{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" .) "true" -}}
+{{- $releaseName := .Release.Name -}}
+{{- $serviceName := include "prometheus.alertmanager.fullname" . }}
+{{- $servicePort := .Values.alertmanager.service.servicePort -}}
+{{- $ingressPath := .Values.alertmanager.ingress.path -}}
+{{- $ingressPathType := .Values.alertmanager.ingress.pathType -}}
+{{- $extraPaths := .Values.alertmanager.ingress.extraPaths -}}
+apiVersion: {{ template "ingress.apiVersion" . }}
+kind: Ingress
+metadata:
+{{- if .Values.alertmanager.ingress.annotations }}
+  annotations:
+{{ toYaml .Values.alertmanager.ingress.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
+{{- range $key, $value := .Values.alertmanager.ingress.extraLabels }}
+    {{ $key }}: {{ $value }}
+{{- end }}
+  name: {{ template "prometheus.alertmanager.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+  {{- if and $ingressSupportsIngressClassName .Values.alertmanager.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.alertmanager.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+  {{- range .Values.alertmanager.ingress.hosts }}
+    {{- $url := splitList "/" . }}
+    - host: {{ first $url }}
+      http:
+        paths:
+{{ if $extraPaths }}
+{{ toYaml $extraPaths | indent 10 }}
+{{- end }}
+          - path: {{ $ingressPath }}
+            {{- if $ingressSupportsPathType }}
+            pathType: {{ $ingressPathType }}
+            {{- end }}
+            backend:
+              {{- if $ingressApiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+              {{- end }}
+  {{- end -}}
+{{- if .Values.alertmanager.ingress.tls }}
+  tls:
+{{ toYaml .Values.alertmanager.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}

@@ -1,0 +1,16 @@
+{{ if and (index .Values "localpv-provisioner" "enabled") .Values.etcd.persistence.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: "hostpath"
+      - name: BasePath
+        value: {{ tpl (.Values.etcd.localpvScConfig.basePath | quote) . }}
+    openebs.io/cas-type: local
+  name: {{ (tpl (.Values.etcd.localpvScConfig.name) .) | required (print "StorageClass name for etcd localpv storage cannot be empty") }}
+provisioner: openebs.io/local
+reclaimPolicy: {{ .Values.etcd.localpvScConfig.reclaimPolicy }}
+volumeBindingMode: {{ .Values.etcd.localpvScConfig.volumeBindingMode }}
+{{ end }}

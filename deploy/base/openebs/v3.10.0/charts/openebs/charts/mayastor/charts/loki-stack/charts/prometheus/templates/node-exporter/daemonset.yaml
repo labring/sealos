@@ -1,0 +1,146 @@
+{{- if .Values.nodeExporter.enabled -}}
+apiVersion: {{ template "prometheus.daemonset.apiVersion" . }}
+kind: DaemonSet
+metadata:
+{{- if .Values.nodeExporter.deploymentAnnotations }}
+  annotations:
+{{ toYaml .Values.nodeExporter.deploymentAnnotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "prometheus.nodeExporter.labels" . | nindent 4 }}
+  name: {{ template "prometheus.nodeExporter.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prometheus.nodeExporter.matchLabels" . | nindent 6 }}
+  {{- if .Values.nodeExporter.updateStrategy }}
+  updateStrategy:
+{{ toYaml .Values.nodeExporter.updateStrategy | indent 4 }}
+  {{- end }}
+  template:
+    metadata:
+    {{- if .Values.nodeExporter.podAnnotations }}
+      annotations:
+{{ toYaml .Values.nodeExporter.podAnnotations | indent 8 }}
+    {{- end }}
+      labels:
+        {{- include "prometheus.nodeExporter.labels" . | nindent 8 }}
+{{- if .Values.nodeExporter.pod.labels }}
+{{ toYaml .Values.nodeExporter.pod.labels | indent 8 }}
+{{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus.serviceAccountName.nodeExporter" . }}
+      {{- if .Values.nodeExporter.extraInitContainers }}
+      initContainers:
+{{ toYaml .Values.nodeExporter.extraInitContainers | indent 8 }}
+      {{- end }}
+{{- if .Values.nodeExporter.priorityClassName }}
+      priorityClassName: "{{ .Values.nodeExporter.priorityClassName }}"
+{{- end }}
+      containers:
+        - name: {{ template "prometheus.name" . }}-{{ .Values.nodeExporter.name }}
+          image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"
+          imagePullPolicy: "{{ .Values.nodeExporter.image.pullPolicy }}"
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+          {{- if .Values.nodeExporter.hostRootfs }}
+            - --path.rootfs=/host/root
+          {{- end }}
+          {{- if .Values.nodeExporter.hostNetwork }}
+            - --web.listen-address=:{{ .Values.nodeExporter.service.hostPort }}
+          {{- end }}
+          {{- range $key, $value := .Values.nodeExporter.extraArgs }}
+          {{- if $value }}
+            - --{{ $key }}={{ $value }}
+          {{- else }}
+            - --{{ $key }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - name: metrics
+              {{- if .Values.nodeExporter.hostNetwork }}
+              containerPort: {{ .Values.nodeExporter.service.hostPort }}
+              {{- else }}
+              containerPort: 9100
+              {{- end }}
+              hostPort: {{ .Values.nodeExporter.service.hostPort }}
+          resources:
+{{ toYaml .Values.nodeExporter.resources | indent 12 }}
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly:  true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+          {{- if .Values.nodeExporter.hostRootfs }}
+            - name: root
+              mountPath: /host/root
+              mountPropagation: HostToContainer
+              readOnly: true
+          {{- end }}
+          {{- range .Values.nodeExporter.extraHostPathMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly }}
+            {{- if .mountPropagation }}
+              mountPropagation: {{ .mountPropagation }}
+            {{- end }}
+          {{- end }}
+          {{- range .Values.nodeExporter.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+    {{- end }}
+    {{- if .Values.nodeExporter.hostNetwork }}
+      hostNetwork: true
+    {{- end }}
+    {{- if .Values.nodeExporter.hostPID }}
+      hostPID: true
+    {{- end }}
+    {{- if .Values.nodeExporter.tolerations }}
+      tolerations:
+{{ toYaml .Values.nodeExporter.tolerations | indent 8 }}
+    {{- end }}
+    {{- if .Values.nodeExporter.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- with .Values.nodeExporter.dnsConfig }}
+      dnsConfig:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- if .Values.nodeExporter.securityContext }}
+      securityContext:
+{{ toYaml .Values.nodeExporter.securityContext | indent 8 }}
+    {{- end }}
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+      {{- if .Values.nodeExporter.hostRootfs }}
+        - name: root
+          hostPath:
+            path: /
+      {{- end }}
+      {{- range .Values.nodeExporter.extraHostPathMounts }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .hostPath }}
+      {{- end }}
+      {{- range .Values.nodeExporter.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+      {{- end }}
+
+{{- end -}}

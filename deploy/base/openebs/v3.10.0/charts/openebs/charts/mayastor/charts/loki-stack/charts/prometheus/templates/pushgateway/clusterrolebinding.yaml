@@ -1,0 +1,16 @@
+{{- if and .Values.pushgateway.enabled .Values.rbac.create -}}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
+  name: {{ template "prometheus.pushgateway.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "prometheus.serviceAccountName.pushgateway" . }}
+{{ include "prometheus.namespace" . | indent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "prometheus.pushgateway.fullname" . }}
+{{- end }}

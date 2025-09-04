@@ -1,0 +1,6 @@
+http:
+  http://elasticsearch-master:9200/_cat/indices:
+    status: 200
+    timeout: 2000
+    body:
+      - "filebeat-7.17.1"

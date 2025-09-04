@@ -1,0 +1,744 @@
+image:
+  # -- Image registry to pull our product images
+  registry: docker.io
+  # -- Image registry's namespace
+  repo: openebs
+  # -- Release tag for our images
+  tag: v2.5.0
+  repoTags:
+    # Note: Below image tag configuration is optional and typically should never be
+    #       used. Setting specific image tags for the different repositories proves useful
+    #       for some integration testing scenarios. Use the 'tag' option above to set
+    #       release/pre-release container image tags.
+    #       The below tag values will be picked for images by default.
+    #       If not specified, 'tag' option provided above will be picked.
+    controlPlane: ""
+    dataPlane: ""
+    extensions: ""
+  # -- ImagePullPolicy for our images
+  pullPolicy: IfNotPresent
+
+# -- Node labels for pod assignment
+# ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+# Note that if multi-arch images support 'kubernetes.io/arch: amd64'
+# should be removed and set 'nodeSelector' to empty '{}' as default value.
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+# -- Pod scheduling priority.
+# Setting this value will apply to all components except the external Chart dependencies.
+# If any component has `priorityClassName` set, then this value would be overridden for that component.
+# For external components like etcd, jaeger or loki-stack, PriorityClass can only be set at component level.
+priorityClassName: ""
+
+earlyEvictionTolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 5
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 5
+
+# -- Tolerations to be applied to all components except external Chart dependencies.
+# If any component has tolerations set, then it would override this value.
+# For external components like etcd, jaeger and loki-stack, tolerations can only be set at component level.
+tolerations: []
+
+base:
+  # -- Request timeout for rest & core agents
+  default_req_timeout: 5s
+  # -- Cache timeout for core agent & diskpool deployment
+  cache_poll_period: 30s
+  # -- Silence specific module components
+  logSilenceLevel:
+  initContainers:
+    enabled: true
+    containers:
+      - name: agent-core-grpc-probe
+        image: busybox:latest
+        command: ['sh', '-c', 'trap "exit 1" TERM; until nc -vzw 5 {{ .Release.Name }}-agent-core 50051; do date; echo "Waiting for agent-core-grpc services..."; sleep 1; done;']
+      - name: etcd-probe
+        image: busybox:latest
+        command: ['sh', '-c', 'trap "exit 1" TERM; until nc -vzw 5 {{ .Release.Name }}-etcd {{.Values.etcd.service.port}}; do date; echo "Waiting for etcd..."; sleep 1; done;']
+  initHaNodeContainers:
+    enabled: true
+    containers:
+      - name: agent-cluster-grpc-probe
+        image: busybox:latest
+        command: ['sh', '-c', 'trap "exit 1" TERM; until nc -vzw 5 {{ .Release.Name }}-agent-core 50052; do date; echo "Waiting for agent-cluster-grpc services..."; sleep 1; done;']
+  initCoreContainers:
+    enabled: true
+    containers:
+      - name: etcd-probe
+        image: busybox:latest
+        command: ['sh', '-c', 'trap "exit 1" TERM; until nc -vzw 5 {{ .Release.Name }}-etcd {{.Values.etcd.service.port}}; do date; echo "Waiting for etcd..."; sleep 1; done;']
+  # docker-secrets required to pull images if the container registry from image.Registry is protected
+  imagePullSecrets:
+    # -- Enable imagePullSecrets for pulling our container images
+    enabled: false
+    # Name of the imagePullSecret in the installed namespace
+    secrets:
+      - name: login
+
+  metrics:
+    # -- Enable the metrics exporter
+    enabled: true
+    # metrics refresh time
+    # WARNING: Lowering pollingInterval value will affect performance adversely
+    pollingInterval: "5m"
+
+  jaeger:
+    # -- Enable jaeger tracing
+    enabled: false
+    initContainer: true
+    agent:
+      name: jaeger-agent
+      port: 6831
+      initContainer:
+        - name: jaeger-probe
+          image: busybox:latest
+          command: ['sh', '-c', 'trap "exit 1" TERM; until nc -vzw 5 -u {{.Values.base.jaeger.agent.name}} {{.Values.base.jaeger.agent.port}}; do date; echo "Waiting for jaeger..."; sleep 1; done;']
+  initRestContainer:
+    enabled: true
+    initContainer:
+      - name: api-rest-probe
+        image: busybox:latest
+        command: ['sh', '-c', 'trap "exit 1" TERM; until nc -vzw 5 {{ .Release.Name }}-api-rest 8081; do date; echo "Waiting for REST API endpoint to become available"; sleep 1; done;']
+
+operators:
+  pool:
+    # -- Log level for diskpool operator service
+    logLevel: info
+    resources:
+      limits:
+        # -- Cpu limits for diskpool operator
+        cpu: "100m"
+        # -- Memory limits for diskpool operator
+        memory: "32Mi"
+      requests:
+        # -- Cpu requests for diskpool operator
+        cpu: "50m"
+        # -- Memory requests for diskpool operator
+        memory: "16Mi"
+    # -- Set tolerations, overrides global
+    tolerations: []
+    # -- Set PriorityClass, overrides global
+    priorityClassName: ""
+
+jaeger-operator:
+  # Name of jaeger operator
+  name: "{{ .Release.Name }}"
+  crd:
+    # Install jaeger CRDs
+    install: false
+  jaeger:
+    # Install jaeger-operator
+    create: false
+  rbac:
+    # Create a clusterRole for Jaeger
+    clusterRole: true
+  tolerations: []
+  priorityClassName: ""
+
+agents:
+  core:
+    # -- Log level for the core service
+    logLevel: info
+    capacity:
+      thin:
+        # -- The allowed pool commitment limit when dealing with thin provisioned volumes.
+        # Example: If the commitment is 250 and the pool is 10GiB we can overcommit the pool
+        # up to 25GiB (create 2 10GiB and 1 5GiB volume) but no further.
+        poolCommitment: "250%"
+        # -- When creating replicas for an existing volume, each replica pool must have at least
+        # this much free space percentage of the volume size.
+        # Example: if this value is 40, the pool has 40GiB free, then the max volume size allowed
+        # to be created on the pool is 100GiB.
+        volumeCommitment: "40%"
+        # -- Same as the `volumeCommitment` argument, but applicable only when creating replicas
+        # for a new volume.
+        volumeCommitmentInitial: "40%"
+        # -- When creating snapshots for an existing volume, each replica pool must have at least
+        # this much free space percentage of the volume size.
+        # Example: if this value is 40, the pool has 40GiB free, then the max volume size allowed
+        # to be snapped on the pool is 100GiB.
+        snapshotCommitment: "40%"
+    resources:
+      limits:
+        # -- Cpu limits for core agents
+        cpu: "1000m"
+        # -- Memory limits for core agents
+        memory: "128Mi"
+      requests:
+        # -- Cpu requests for core agents
+        cpu: "500m"
+        # -- Memory requests for core agents
+        memory: "32Mi"
+    # -- If a faulted replica comes back online within this time period then it will be
+    # rebuilt using the partial rebuild capability (using a log of missed IO), hence a bit
+    # faster depending on the log size. Otherwise, the replica will be fully rebuilt.
+    # A blank value "" means internally derived value will be used.
+    partialRebuildWaitPeriod: ""
+    # -- Set tolerations, overrides global
+    tolerations: []
+    # -- Set PriorityClass, overrides global.
+    # If both local and global are not set, the final deployment manifest has a mayastor custom critical priority class assigned to the pod by default.
+    # Refer the `templates/_helpers.tpl` and `templates/mayastor/agents/core/agent-core-deployment.yaml` for more details.
+    priorityClassName: ""
+  ha:
+    enabled: true
+    node:
+      # -- Log level for the ha node service
+      logLevel: info
+      resources:
+        limits:
+          # -- Cpu limits for ha node agent
+          cpu: "100m"
+          # -- Memory limits for ha node agent
+          memory: "64Mi"
+        requests:
+          # -- Cpu requests for ha node agent
+          cpu: "100m"
+          # -- Memory requests for ha node agent
+          memory: "64Mi"
+      # -- Set tolerations, overrides global
+      tolerations: []
+      # -- Set PriorityClass, overrides global
+      priorityClassName: ""
+    cluster:
+      # -- Log level for the ha cluster service
+      logLevel: info
+      resources:
+        limits:
+          # -- Cpu limits for ha cluster agent
+          cpu: "100m"
+          # -- Memory limits for ha cluster agent
+          memory: "64Mi"
+        requests:
+          # -- Cpu requests for ha cluster agent
+          cpu: "100m"
+          # -- Memory requests for ha cluster agent
+          memory: "16Mi"
+
+apis:
+  rest:
+    # -- Log level for the rest service
+    logLevel: info
+    # -- Number of replicas of rest
+    replicaCount: 1
+    resources:
+      limits:
+        # -- Cpu limits for rest
+        cpu: "100m"
+        # -- Memory limits for rest
+        memory: "64Mi"
+      requests:
+        # -- Cpu requests for rest
+        cpu: "50m"
+        # -- Memory requests for rest
+        memory: "32Mi"
+    # Rest service parameters define how the rest service is exposed
+    service:
+      # -- Rest K8s service type
+      type: ClusterIP
+      # Ports from where rest endpoints are accessible from outside the cluster, only valid if type is NodePort
+      nodePorts:
+        # NodePort associated with http port
+        http: 30011
+        # NodePort associated with https port
+        https: 30010
+    # -- Set tolerations, overrides global
+    tolerations: []
+    # -- Set PriorityClass, overrides global.
+    # If both local and global are not set, the final deployment manifest has a mayastor custom critical priority class assigned to the pod by default.
+    # Refer the `templates/_helpers.tpl` and `templates/mayastor/apis/rest/api-rest-deployment.yaml` for more details.
+    priorityClassName: ""
+
+csi:
+  image:
+    # -- Image registry to pull all CSI Sidecar images
+    registry: registry.k8s.io
+    # -- Image registry's namespace
+    repo: sig-storage
+    # -- imagePullPolicy for all CSI Sidecar images
+    pullPolicy: IfNotPresent
+    # -- csi-provisioner image release tag
+    provisionerTag: v3.5.0
+    # -- csi-attacher image release tag
+    attacherTag: v4.3.0
+    # -- csi-snapshotter image release tag
+    snapshotterTag: v6.3.1
+    # -- csi-snapshot-controller image release tag
+    snapshotControllerTag: v6.3.1
+    # -- csi-node-driver-registrar image release tag
+    registrarTag: v2.9.0
+
+  controller:
+    # -- Log level for the csi controller
+    logLevel: info
+    resources:
+      limits:
+        # -- Cpu limits for csi controller
+        cpu: "32m"
+        # -- Memory limits for csi controller
+        memory: "128Mi"
+      requests:
+        # -- Cpu requests for csi controller
+        cpu: "16m"
+        # -- Memory requests for csi controller
+        memory: "64Mi"
+    # -- Set tolerations, overrides global
+    tolerations: []
+    # -- Set PriorityClass, overrides global
+    priorityClassName: ""
+    # -- Prevent modifying the volume mode when creating a PVC from an existing VolumeSnapshot
+    preventVolumeModeConversion: true
+  node:
+    logLevel: info
+    topology:
+      segments:
+        openebs.io/csi-node: mayastor
+      # -- Add topology segments to the csi-node daemonset node selector
+      nodeSelector: false
+    resources:
+      limits:
+        # -- Cpu limits for csi node plugin
+        cpu: "100m"
+        # -- Memory limits for csi node plugin
+        memory: "128Mi"
+      requests:
+        # -- Cpu requests for csi node plugin
+        cpu: "100m"
+        # -- Memory requests for csi node plugin
+        memory: "64Mi"
+    nvme:
+      # The nvme_core module and nvme block io timeout in humantime
+      # By default it uses the "io_engine.nvme.ioTimeout" + 10s
+      # Do not modify this unless you're really sure about its effects
+      io_timeout: ""
+      # -- The ctrl_loss_tmo (controller loss timeout) in seconds
+      ctrl_loss_tmo: "1980"
+      # Kato (keep alive timeout) in seconds
+      keep_alive_tmo: ""
+    # -- The kubeletDir directory for the csi-node plugin
+    kubeletDir: /var/lib/kubelet
+    pluginMounthPath: /csi
+    socketPath: csi.sock
+    # -- Set tolerations, overrides global
+    tolerations: []
+    # -- Set PriorityClass, overrides global
+    priorityClassName: ""
+
+io_engine:
+  # -- Log level for the io-engine service
+  logLevel: info
+  api: "v1"
+  target:
+    nvmf:
+      # -- NVMF target interface (ip, mac, name or subnet)
+      iface: ""
+      # -- Reservations Persist Through Power Loss State
+      ptpl: true
+      # NVMF target Command Retry Delay for volume target initiators
+      hostCmdRetryDelay:
+        # A command retry delay in milliseconds. A value of 0 means no delay, host may retry immediately
+        crdt1: 30
+  nvme:
+    # -- Timeout for IOs
+    # The default here is exaggerated for local disks but we've observed that in
+    # shared virtual environments having a higher timeout value is beneficial.
+    # In certain cases, you may have to set this to an even higher value. For example,
+    # in Hetzner we've had better results setting it to 300s.
+    # Please adjust this according to your hardware and needs.
+    ioTimeout: "110s"
+    # Timeout for admin commands
+    adminTimeout: "30s"
+    # Timeout for keep alives
+    keepAliveTimeout: "10s"
+    tcp:
+      # -- Max size setting (both initiator and target) for an NVMe queue
+      # -- You may need to increase this for a higher outstanding IOs per volume
+      maxQueueDepth: "32"
+
+  # -- Pass additional arguments to the Environment Abstraction Layer.
+  # Example: --set {product}.envcontext=iova-mode=pa
+  envcontext: ""
+  reactorFreezeDetection:
+    enabled: false
+  # -- The number of cores that each io-engine instance will bind to.
+  cpuCount: "2"
+  # -- If not empty, overrides the cpuCount and explicitly sets the list of cores.
+  # Example: --set='io_engine.coreList={30,31}'
+  coreList: []
+  # -- Node selectors to designate storage nodes for diskpool creation
+  # Note that if multi-arch images support 'kubernetes.io/arch: amd64'
+  # should be removed.
+  nodeSelector:
+    openebs.io/engine: mayastor
+    kubernetes.io/arch: amd64
+  resources:
+    limits:
+      # -- Cpu limits for the io-engine
+      cpu: ""
+      # -- Memory limits for the io-engine
+      memory: "1Gi"
+      # -- Hugepage size available on the nodes
+      hugepages2Mi: "2Gi"
+    requests:
+      # -- Cpu requests for the io-engine
+      cpu: ""
+      # -- Memory requests for the io-engine
+      memory: "1Gi"
+      # -- Hugepage size available on the nodes
+      hugepages2Mi: "2Gi"
+  # -- Set tolerations, overrides global
+  tolerations: []
+  # -- Set PriorityClass, overrides global
+  priorityClassName: ""
+
+etcd:
+  # Configuration for etcd's localpv hostpath storage class.
+  localpvScConfig:
+    # Name of etcd's localpv hostpath storage class.
+    name: "mayastor-etcd-localpv"
+    # -- Host path where local etcd data is stored in.
+    basePath: "/var/local/{{ .Release.Name }}/localpv-hostpath/etcd"
+    # -- ReclaimPolicy of etcd's localpv hostpath storage class.
+    reclaimPolicy: Delete
+    # -- VolumeBindingMode of etcd's localpv hostpath storage class.
+    volumeBindingMode: WaitForFirstConsumer
+  # Pod labels; okay to remove the openebs logging label if required
+  podLabels:
+    app: etcd
+    openebs.io/logging: "true"
+  # -- Number of replicas of etcd
+  replicaCount: 3
+  # Kubernetes Cluster Domain
+  clusterDomain: cluster.local
+  # TLS authentication for client-to-server communications
+  # ref: https://etcd.io/docs/current/op-guide/security/
+  client:
+    secureTransport: false
+  # TLS authentication for server-to-server communications
+  # ref: https://etcd.io/docs/current/op-guide/security/
+  peer:
+    secureTransport: false
+  # Enable persistence using Persistent Volume Claims
+  persistence:
+    # -- If true, use a Persistent Volume Claim. If false, use emptyDir.
+    enabled: true
+    # -- Will define which storageClass to use in etcd's StatefulSets. Options:
+    # <p> - `"manual"` - Will provision a hostpath PV on the same node. <br>
+    # - `""` (empty) - Will use the default StorageClass on the cluster. </p>
+    storageClass: "mayastor-etcd-localpv"
+    # -- Volume size
+    size: 2Gi
+    # -- PVC's reclaimPolicy
+    reclaimPolicy: "Delete"
+  # -- Use a PreStop hook to remove the etcd members from the etcd cluster on container termination
+  # Ignored if lifecycleHooks is set or replicaCount=1
+  removeMemberOnContainerTermination: false
+
+  # -- AutoCompaction
+  # Since etcd keeps an exact history of its keyspace, this history should be
+  # periodically compacted to avoid performance degradation
+  # and eventual storage space exhaustion.
+  # Auto compaction mode. Valid values: "periodic", "revision".
+  # - 'periodic' for duration based retention, defaulting to hours if no time unit is provided (e.g. 5m).
+  # - 'revision' for revision number based retention.
+  autoCompactionMode: revision
+  # -- Auto compaction retention length. 0 means disable auto compaction.
+  autoCompactionRetention: 100
+  extraEnvVars:
+    # -- Raise alarms when backend size exceeds the given quota.
+    - name: ETCD_QUOTA_BACKEND_BYTES
+      value: "8589934592"
+
+  auth:
+    rbac:
+      create: false
+      enabled: false
+      allowNoneAuthentication: true
+  # Init containers parameters:
+  # volumePermissions: Change the owner and group of the persistent volume mountpoint to runAsUser:fsGroup values from the securityContext section.
+  #
+  volumePermissions:
+    # chown the mounted volume; this is required if a statically provisioned hostpath volume is used
+    enabled: true
+  # extra debug information on logs
+  debug: false
+  initialClusterState: "new"
+
+  # -- Pod anti-affinity preset
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  podAntiAffinityPreset: "hard"
+  ## -- nodeSelector [object] Node labels for pod assignment
+  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: {}
+
+  # etcd service parameters defines how the etcd service is exposed
+  service:
+    # K8s service type
+    type: ClusterIP
+
+    # etcd client port
+    port: 2379
+
+    # Specify the nodePort(s) value(s) for the LoadBalancer and NodePort service types.
+    # ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+    #
+    nodePorts:
+      # Port from where etcd endpoints are accessible from outside cluster
+      clientPort: 31379
+      peerPort: ""
+  tolerations: []
+  priorityClassName: ""
+
+loki-stack:
+  # -- Enable loki log collection for our components
+  enabled: true
+  # Configuration for loki's localpv hostpath storage class.
+  localpvScConfig:
+    # Name of loki's localpv hostpath storage class.
+    name: "mayastor-loki-localpv"
+    # -- Host path where local etcd data is stored in.
+    basePath: "/var/local/{{ .Release.Name }}/localpv-hostpath/loki"
+    # -- ReclaimPolicy of loki's localpv hostpath storage class.
+    reclaimPolicy: Delete
+    # -- VolumeBindingMode of loki's localpv hostpath storage class.
+    volumeBindingMode: WaitForFirstConsumer
+  loki:
+    rbac:
+      # -- Create rbac roles for loki
+      create: true
+      pspEnabled: false
+    # -- Enable loki installation as part of loki-stack
+    enabled: true
+    # Install loki with persistence storage
+    persistence:
+      # -- Enable persistence storage for the logs
+      enabled: true
+      # -- StorageClass for Loki's centralised log storage. Options:
+      # <p> - `"manual"` - Will provision a hostpath PV on the same node. <br>
+      # - `""` (empty) - Will use the default StorageClass on the cluster. </p>
+      storageClassName: "mayastor-loki-localpv"
+      # -- PVC's ReclaimPolicy, can be Delete or Retain
+      reclaimPolicy: "Delete"
+      # -- Size of Loki's persistence storage
+      size: 10Gi
+    # loki process run & file permissions, required if sc=manual
+    securityContext:
+      fsGroup: 1001
+      runAsGroup: 1001
+      runAsNonRoot: false
+      runAsUser: 1001
+    # initContainers to chown the static hostpath PV by 1001 user
+    initContainers:
+      - command: ["/bin/bash", "-ec", "chown -R 1001:1001 /data"]
+        image: docker.io/bitnami/bitnami-shell:10
+        imagePullPolicy: IfNotPresent
+        name: volume-permissions
+        securityContext:
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /data
+            name: storage
+    config:
+      # Compactor is a BoltDB(loki term) Shipper specific service that reduces the index
+      # size by deduping the index and merging all the files to a single file per table.
+      # Ref: https://grafana.com/docs/loki/latest/operations/storage/retention/
+      compactor:
+        # Dictates how often compaction and/or retention is applied. If the
+        # Compactor falls behind, compaction and/or retention occur as soon as possible.
+        compaction_interval: 20m
+
+        # If not enabled compactor will only compact table but they will not get
+        # deleted
+        retention_enabled: true
+
+        # The delay after which the compactor will delete marked chunks
+        retention_delete_delay: 1h
+
+        # Specifies the maximum quantity of goroutine workers instantiated to
+        # delete chunks
+        retention_delete_worker_count: 50
+
+      # Rentention period of logs is configured within the limits_config section
+      limits_config:
+        # configuring retention period for logs
+        retention_period: 168h
+
+    # Loki service parameters defines how the Loki service is exposed
+    service:
+      # K8s service type
+      type: ClusterIP
+      port: 3100
+      # Port where REST endpoints of Loki are accessible from outside cluster
+      nodePort: 31001
+    tolerations: []
+    priorityClassName: ""
+
+  # promtail configuration
+  promtail:
+    rbac:
+      # create rbac roles for promtail
+      create: true
+      pspEnabled: false
+    # -- Enables promtail for scraping logs from nodes
+    enabled: true
+    # -- Disallow promtail from running on the master node
+    tolerations: []
+    priorityClassName: ""
+    config:
+      # -- The Loki address to post logs to
+      lokiAddress: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
+      snippets:
+        # Promtail will export logs to loki only based on based on below
+        # configuration, below scrape config will export only our services
+        # which are labeled with openebs.io/logging=true
+        scrapeConfigs: |
+          - job_name: {{ .Release.Name }}-pods-name
+            pipeline_stages:
+              - docker: {}
+              - replace:
+                  expression: '(\n)'
+                  replace: ''
+              - multiline:
+                  firstline: '^  \x1b\[2m(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{6})Z'
+                  max_wait_time: 3s
+              - multiline:
+                  firstline: '^  (\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{6})Z'
+                  max_wait_time: 3s
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            - source_labels:
+              - __meta_kubernetes_pod_node_name
+              target_label: hostname
+              action: replace
+            - action: labelmap
+              regex: __meta_kubernetes_pod_label_(.+)
+            - action: keep
+              source_labels:
+              - __meta_kubernetes_pod_label_openebs_io_logging
+              regex: true
+              target_label: {{ .Release.Name }}_component
+            - action: replace
+              replacement: $1
+              separator: /
+              source_labels:
+              - __meta_kubernetes_namespace
+              target_label: job
+            - action: replace
+              source_labels:
+              - __meta_kubernetes_pod_name
+              target_label: pod
+            - action: replace
+              source_labels:
+              - __meta_kubernetes_pod_container_name
+              target_label: container
+            - replacement: /var/log/pods/*$1/*.log
+              separator: /
+              source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+              target_label: __path__
+
+# Eventing which enables or disables eventing-related components.
+eventing:
+  enabled: true
+
+# Configuration for the nats message-bus. This is an eventing component, and is enabled when
+# 'eventing.enabled' is set to 'true'.
+nats:
+  nats:
+    image:
+      pullPolicy: IfNotPresent
+      # Defaults to docker.io
+      registry: ""
+    jetstream:
+      enabled: true
+      memStorage:
+        enabled: true
+        # Size of nats message is around 0.3 KB, so it can store around 10K messages.
+        size: "5Mi"
+      fileStorage:
+        enabled: false
+  cluster:
+    enabled: true
+    replicas: 3
+  # The nats box can be installed for debugging, by default its enabled.
+  natsbox:
+    enabled: false
+
+
+obs:
+  callhome:
+    # -- Enable callhome
+    enabled: true
+    # -- Log level for callhome
+    logLevel: "info"
+    sendReport: true
+    resources:
+      limits:
+        # -- Cpu limits for callhome
+        cpu: "100m"
+        # -- Memory limits for callhome
+        memory: "32Mi"
+      requests:
+        # -- Cpu requests for callhome
+        cpu: "50m"
+        # -- Memory requests for callhome
+        memory: "16Mi"
+    # -- Set tolerations, overrides global
+    tolerations: []
+    # -- Set PriorityClass, overrides global
+    priorityClassName: ""
+  # Eventing component enabled/disabled based on obs.callhome.enabled value
+  stats:
+    # -- Log level for stats
+    logLevel: "info"
+    resources:
+      limits:
+        # -- Cpu limits for stats
+        cpu: "100m"
+        # -- Memory limits for stats
+        memory: "32Mi"
+      requests:
+        # -- Cpu requests for stats
+        cpu: "50m"
+        # -- Memory requests for stats
+        memory: "16Mi"
+    service:
+      # -- Rest K8s service type
+      type: ClusterIP
+      # Ports from where rest endpoints are accessible from outside the cluster, only valid if type is NodePort
+      nodePorts:
+        # NodePort associated with http port
+        http: 90011
+        # NodePort associated with https port
+        https: 90010
+
+storageClass:
+  enabled: true
+  nameSuffix: single-replica
+  default: false
+  parameters:
+    protocol: nvmf
+    repl: 1
+
+localpv-provisioner:
+  # -- Enables the openebs dynamic-localpv provisioner. If disabled, modify etcd and loki-stack storage class accordingly.
+  enabled: true
+  # Enable/disable the openebs NDM sub-chart. It's recommended to keep this disabled.
+  openebsNDM:
+    enabled: false
+  # Enable/disable the creation of the openebs-device StorageClass. It's recommended to keep this disabled.
+  deviceClass:
+    enabled: false
+  hostpathClass:
+    enabled: false

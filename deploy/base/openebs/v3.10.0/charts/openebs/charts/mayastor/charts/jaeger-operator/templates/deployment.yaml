@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jaeger-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "jaeger-operator.labels" . | indent 4 }}
+{{- with .Values.extraLabels }}
+{{ . | toYaml | indent 4 }}
+{{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+{{ include "jaeger-operator.labels" . | indent 6 }}
+  template:
+    metadata:
+      name: {{ include "jaeger-operator.fullname" . }}
+      labels:
+{{ include "jaeger-operator.labels" . | indent 8 }}
+{{- with .Values.extraLabels }}
+{{ . | toYaml | indent 8 }}
+{{- end }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "jaeger-operator.serviceAccountName" . }}
+      {{- end }}
+      {{- with .Values.securityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+      {{- if and .Values.image.imagePullSecrets (not .Values.serviceAccount.create ) }}
+      imagePullSecrets:
+      {{- range .Values.image.imagePullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ include "jaeger-operator.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+          - containerPort: 8383
+            name: metrics
+          args: ["start"]
+          env:
+            - name: WATCH_NAMESPACE
+              {{- if .Values.rbac.clusterRole }}
+              value: ""
+              {{- else }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+              {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_NAME
+              value: {{ include "jaeger-operator.fullname" . | quote }}
+            {{- if .Values.extraEnv }}
+              {{- toYaml .Values.extraEnv | nindent 12 }}
+            {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

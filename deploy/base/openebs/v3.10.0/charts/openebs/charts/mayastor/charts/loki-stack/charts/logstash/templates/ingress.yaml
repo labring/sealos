@@ -1,0 +1,68 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "logstash.fullname" . -}}
+{{- $httpPort := .Values.httpPort -}}
+{{- $ingressPath := .Values.ingress.path -}}
+{{- $pathtype := .Values.ingress.pathtype -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ $fullName | quote}}
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- end }}
+{{- if .Values.ingress.tls }}
+  tls:
+  {{- if .ingressPath }}
+  {{- range  .Values.ingress.tls }}
+  - hosts:
+    {{- range  .hosts }}
+      - {{ . }}
+    {{- end }}
+    secretName: {{ .secretName }}
+  {{- end }}
+  {{- else }}
+{{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end }}
+{{- end}}
+  rules:
+  {{- range .Values.ingress.hosts }}
+    {{- /*
+    TODO: deprecate $ingressPath for Logstash 8.0.0
+    */}}
+    {{- if $ingressPath }}
+  - host: {{ . }}
+    http:
+      paths:
+      - path: {{ $ingressPath }}
+        pathType: {{ $pathtype }}
+        backend:
+          service:
+            name: {{ $fullName }}
+            port:
+              number: {{ $httpPort }}
+    {{- else }}
+  - host: {{ .host }}
+    http:
+      paths:
+      {{- range .paths }}
+      - path: {{ .path }}
+        pathType: {{ $pathtype }}
+        backend:
+          service:
+            name: {{ $fullName }}
+            port:
+              number: {{ .servicePort | default $httpPort }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

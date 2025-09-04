@@ -1,0 +1,23 @@
+{{- if .Values.base.jaeger.enabled }}
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: jaeger
+  namespace: {{ .Release.Namespace }}
+labels:
+  {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  strategy: allInOne
+  ingress:
+    enabled: false
+  {{- include "jaeger_scheduling" . }}
+  query:
+    serviceType: NodePort
+    nodePort: 30012
+  storage:
+    type: memory
+    options:
+      memory:
+        max-traces: 100000
+{{- end }}

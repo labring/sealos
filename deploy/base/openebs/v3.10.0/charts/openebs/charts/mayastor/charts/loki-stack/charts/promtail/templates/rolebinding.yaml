@@ -1,0 +1,16 @@
+{{- if and .Values.rbac.create .Values.rbac.pspEnabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "promtail.fullname" . }}-psp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "promtail.fullname" . }}-psp
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "promtail.serviceAccountName" . }}
+{{- end }}

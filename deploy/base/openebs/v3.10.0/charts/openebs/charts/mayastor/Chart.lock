@@ -1,0 +1,18 @@
+dependencies:
+- name: etcd
+  repository: https://charts.bitnami.com/bitnami
+  version: 8.6.0
+- name: jaeger-operator
+  repository: https://jaegertracing.github.io/helm-charts
+  version: 2.25.0
+- name: loki-stack
+  repository: https://grafana.github.io/helm-charts
+  version: 2.6.4
+- name: nats
+  repository: https://nats-io.github.io/k8s/helm/charts/
+  version: 0.19.14
+- name: localpv-provisioner
+  repository: https://openebs.github.io/dynamic-localpv-provisioner
+  version: 3.5.0
+digest: sha256:be4bff044f5efc6009797eb98526b5b1aed9f6881dff64fc28a5dcc348144c92
+generated: "2023-12-18T06:41:04.445802395Z"

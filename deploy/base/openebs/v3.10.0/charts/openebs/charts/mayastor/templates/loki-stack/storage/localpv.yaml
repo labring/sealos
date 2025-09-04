@@ -1,0 +1,20 @@
+---
+
+{{ if and (eq ( index .Values "loki-stack" "loki" "persistence" "storageClassName" ) "manual") ( index .Values "loki-stack" "loki" "persistence" "enabled" ) ( index .Values "loki-stack" "enabled" ) }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: loki-volume-0
+  labels:
+    statefulset.kubernetes.io/pod-name: {{ .Release.Name }}-loki-0
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: {{ index .Values "loki-stack" "loki" "persistence" "reclaimPolicy" }}
+  capacity:
+    storage: {{ index .Values "loki-stack" "loki" "persistence" "size" }}
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/var/local/{{ .Release.Name }}/loki"
+---
+{{- end }}

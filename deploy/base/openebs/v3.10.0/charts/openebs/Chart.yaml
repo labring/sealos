@@ -1,0 +1,57 @@
+apiVersion: v2
+appVersion: 3.10.0
+dependencies:
+- condition: openebs-ndm.enabled
+  name: openebs-ndm
+  repository: https://openebs.github.io/node-disk-manager
+  version: 2.1.0
+- condition: localpv-provisioner.enabled
+  name: localpv-provisioner
+  repository: https://openebs.github.io/dynamic-localpv-provisioner
+  version: 3.5.0
+- condition: cstor.enabled
+  name: cstor
+  repository: https://openebs.github.io/cstor-operators
+  version: 3.6.0
+- condition: jiva.enabled
+  name: jiva
+  repository: https://openebs.github.io/jiva-operator
+  version: 3.6.0
+- condition: zfs-localpv.enabled
+  name: zfs-localpv
+  repository: https://openebs.github.io/zfs-localpv
+  version: 2.4.0
+- condition: lvm-localpv.enabled
+  name: lvm-localpv
+  repository: https://openebs.github.io/lvm-localpv
+  version: 1.4.0
+- condition: nfs-provisioner.enabled
+  name: nfs-provisioner
+  repository: https://openebs.github.io/dynamic-nfs-provisioner
+  version: 0.11.0
+- condition: mayastor.enabled
+  name: mayastor
+  repository: https://openebs.github.io/mayastor-extensions
+  version: 2.5.0
+description: Containerized Attached Storage for Kubernetes
+home: http://www.openebs.io/
+icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
+keywords:
+- cloud-native-storage
+- block-storage
+- local-storage
+- iSCSI
+- NVMe
+- storage
+- kubernetes
+maintainers:
+- email: kiran.mova@mayadata.io
+  name: kmova
+- email: prateek.pandey@mayadata.io
+  name: prateekpandey14
+- email: shovan.maity@mayadata.io
+  name: shovanmaity
+name: openebs
+sources:
+- https://github.com/openebs/openebs
+version: 3.10.0

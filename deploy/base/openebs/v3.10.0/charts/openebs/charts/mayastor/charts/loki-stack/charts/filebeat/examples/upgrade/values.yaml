@@ -1,0 +1,4 @@
+---
+extraEnvs:
+  - name: ELASTICSEARCH_HOSTS
+    value: upgrade-master:9200

@@ -1,0 +1,19 @@
+podLabels:
+  customLableA: Aaaaa
+imageRenderer:
+  enabled: true
+  env:
+    RENDERING_ARGS: --disable-gpu,--window-size=1280x758
+    RENDERING_MODE: clustered
+  podLabels:
+    customLableB: Bbbbb
+  networkPolicy:
+    limitIngress: true
+    limitEgress: true
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1000Mi
+    requests:
+      cpu: 500m
+      memory: 50Mi

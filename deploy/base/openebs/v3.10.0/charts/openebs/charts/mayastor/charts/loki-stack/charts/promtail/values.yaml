@@ -1,0 +1,387 @@
+# -- Overrides the chart's name
+nameOverride: null
+
+# -- Overrides the chart's computed fullname
+fullnameOverride: null
+
+initContainer:
+  # -- Specifies whether the init container for setting inotify max user instances is to be enabled
+  enabled: false
+  image:
+    # -- The Docker registry for the init container
+    registry: docker.io
+    # -- Docker image repository for the init container
+    repository: busybox
+    # -- Docker tag for the init container
+    tag: 1.33
+    # -- Docker image pull policy for the init container image
+    pullPolicy: IfNotPresent
+  # -- The inotify max user instances to configure
+  fsInotifyMaxUserInstances: 128
+
+image:
+  # -- The Docker registry
+  registry: docker.io
+  # -- Docker image repository
+  repository: grafana/promtail
+  # -- Overrides the image tag whose default is the chart's appVersion
+  tag: null
+  # -- Docker image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets for Docker images
+imagePullSecrets: []
+
+# -- Annotations for the DaemonSet
+annotations: {}
+
+# -- The update strategy for the DaemonSet
+updateStrategy: {}
+
+# -- Pod labels
+podLabels: {}
+
+# -- Pod annotations
+podAnnotations: {}
+#  prometheus.io/scrape: "true"
+#  prometheus.io/port: "http-metrics"
+
+# -- The name of the PriorityClass
+priorityClassName: null
+
+# -- Liveness probe
+livenessProbe: {}
+
+# -- Readiness probe
+# @default -- See `values.yaml`
+readinessProbe:
+  failureThreshold: 5
+  httpGet:
+    path: /ready
+    port: http-metrics
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+# -- Resource requests and limits
+resources: {}
+#  limits:
+#    cpu: 200m
+#    memory: 128Mi
+#  requests:
+#    cpu: 100m
+#    memory: 128Mi
+
+# -- The security context for pods
+podSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+
+# -- The security context for containers
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  allowPrivilegeEscalation: false
+
+rbac:
+  # -- Specifies whether RBAC resources are to be created
+  create: true
+  # -- Specifies whether a PodSecurityPolicy is to be created
+  pspEnabled: false
+
+serviceAccount:
+  # -- Specifies whether a ServiceAccount should be created
+  create: true
+  # -- The name of the ServiceAccount to use.
+  # If not set and `create` is true, a name is generated using the fullname template
+  name: null
+  # -- Image pull secrets for the service account
+  imagePullSecrets: []
+  # -- Annotations for the service account
+  annotations: {}
+
+# -- Node selector for pods
+nodeSelector: {}
+
+# -- Affinity configuration for pods
+affinity: {}
+
+# -- Tolerations for pods. By default, pods will be scheduled on master/control-plane nodes.
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+# -- Default volumes that are mounted into pods. In most cases, these should not be changed.
+# Use `extraVolumes`/`extraVolumeMounts` for additional custom volumes.
+# @default -- See `values.yaml`
+defaultVolumes:
+  - name: containers
+    hostPath:
+      path: /var/lib/docker/containers
+  - name: pods
+    hostPath:
+      path: /var/log/pods
+
+# -- Default volume mounts. Corresponds to `volumes`.
+# @default -- See `values.yaml`
+defaultVolumeMounts:
+  - name: containers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+  - name: pods
+    mountPath: /var/log/pods
+    readOnly: true
+
+# Extra volumes to be added in addition to those specified under `defaultVolumes`.
+extraVolumes: []
+
+# Extra volume mounts together. Corresponds to `extraVolumes`.
+extraVolumeMounts: []
+
+# Extra args for the Promtail container.
+extraArgs: []
+# -- Example:
+# -- extraArgs:
+# --   - -client.external-labels=hostname=$(HOSTNAME)
+
+# -- Extra environment variables
+extraEnv: []
+
+# -- Extra environment variables from secrets or configmaps
+extraEnvFrom: []
+
+# ServiceMonitor configuration
+serviceMonitor:
+  # -- If enabled, ServiceMonitor resources for Prometheus Operator are created
+  enabled: false
+  # -- Alternative namespace for ServiceMonitor resources
+  namespace: null
+  # -- Namespace selector for ServiceMonitor resources
+  namespaceSelector: {}
+  # -- ServiceMonitor annotations
+  annotations: {}
+  # -- Additional ServiceMonitor labels
+  labels: {}
+  # -- ServiceMonitor scrape interval
+  interval: null
+  # -- ServiceMonitor scrape timeout in Go duration format (e.g. 15s)
+  scrapeTimeout: null
+  # -- ServiceMonitor relabel configs to apply to samples before scraping
+  # https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
+  relabelings: []
+
+# -- Configure additional ports and services. For each configured port, a corresponding service is created.
+# See values.yaml for details
+extraPorts: {}
+#  syslog:
+#    name: tcp-syslog
+#    containerPort: 1514
+#    protocol: TCP
+#    service:
+#      type: ClusterIP
+#      clusterIP: null
+#      port: 1514
+#      externalIPs: []
+#      nodePort: null
+#      annotations: {}
+#      labels: {}
+#      loadBalancerIP: null
+#      loadBalancerSourceRanges: []
+#      externalTrafficPolicy: null
+
+# -- PodSecurityPolicy configuration.
+# @default -- See `values.yaml`
+podSecurityPolicy:
+  privileged: true
+  allowPrivilegeEscalation: true
+  volumes:
+    - 'secret'
+    - 'hostPath'
+    - 'downwardAPI'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: true
+  requiredDropCapabilities:
+    - ALL
+
+# -- Section for crafting Promtails config file. The only directly relevant value is `config.file`
+# which is a templated string that references the other values and snippets below this key.
+# @default -- See `values.yaml`
+config:
+  # -- The log level of the Promtail server
+  # Must be reference in `config.file` to configure `server.log_level`
+  # See default config in `values.yaml`
+  logLevel: info
+  # -- The port of the Promtail server
+  # Must be reference in `config.file` to configure `server.http_listen_port`
+  # See default config in `values.yaml`
+  serverPort: 3101
+  # -- The Loki address to post logs to.
+  # Must be reference in `config.file` to configure `client.url`.
+  # See default config in `values.yaml`
+  lokiAddress: http://loki-gateway/loki/api/v1/push
+  # -- A section of reusable snippets that can be reference in `config.file`.
+  # Custom snippets may be added in order to reduce redundancy.
+  # This is especially helpful when multiple `kubernetes_sd_configs` are use which usually have large parts in common.
+  # @default -- See `values.yaml`
+  snippets:
+    pipelineStages:
+      - cri: {}
+    common:
+      - action: replace
+        source_labels:
+          - __meta_kubernetes_pod_node_name
+        target_label: node_name
+      - action: replace
+        source_labels:
+          - __meta_kubernetes_namespace
+        target_label: namespace
+      - action: replace
+        replacement: $1
+        separator: /
+        source_labels:
+          - namespace
+          - app
+        target_label: job
+      - action: replace
+        source_labels:
+          - __meta_kubernetes_pod_name
+        target_label: pod
+      - action: replace
+        source_labels:
+          - __meta_kubernetes_pod_container_name
+        target_label: container
+      - action: replace
+        replacement: /var/log/pods/*$1/*.log
+        separator: /
+        source_labels:
+          - __meta_kubernetes_pod_uid
+          - __meta_kubernetes_pod_container_name
+        target_label: __path__
+      - action: replace
+        replacement: /var/log/pods/*$1/*.log
+        regex: true/(.*)
+        separator: /
+        source_labels:
+          - __meta_kubernetes_pod_annotationpresent_kubernetes_io_config_hash
+          - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
+          - __meta_kubernetes_pod_container_name
+        target_label: __path__
+
+    # If set to true, adds an additional label for the scrape job.
+    # This helps debug the Promtail config.
+    addScrapeJobLabel: false
+
+    # -- You can put here any keys that will be directly added to the config file's 'client' block.
+    # @default -- empty
+    extraClientConfigs: ""
+
+    # -- You can put here any additional scrape configs you want to add to the config file.
+    # @default -- empty
+    extraScrapeConfigs: ""
+
+    # -- You can put here any additional relabel_configs to "kubernetes-pods" job
+    extraRelabelConfigs: []
+
+    scrapeConfigs: |
+      # See also https://github.com/grafana/loki/blob/master/production/ksonnet/promtail/scrape_config.libsonnet for reference
+      - job_name: kubernetes-pods
+        pipeline_stages:
+          {{- toYaml .Values.config.snippets.pipelineStages | nindent 4 }}
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_controller_name
+            regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+            action: replace
+            target_label: __tmp_controller_name
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_name
+              - __meta_kubernetes_pod_label_app
+              - __tmp_controller_name
+              - __meta_kubernetes_pod_name
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: app
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_component
+              - __meta_kubernetes_pod_label_component
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: component
+          {{- if .Values.config.snippets.addScrapeJobLabel }}
+          - replacement: kubernetes-pods
+            target_label: scrape_job
+          {{- end }}
+          {{- toYaml .Values.config.snippets.common | nindent 4 }}
+          {{- with .Values.config.snippets.extraRelabelConfigs }}
+          {{- toYaml . | nindent 4 }}
+          {{- end }}
+
+  # -- Config file contents for Promtail.
+  # Must be configured as string.
+  # It is templated so it can be assembled from reusable snippets in order to avoid redundancy.
+  # @default -- See `values.yaml`
+  file: |
+    server:
+      log_level: {{ .Values.config.logLevel }}
+      http_listen_port: {{ .Values.config.serverPort }}
+
+    client:
+      url: {{ tpl .Values.config.lokiAddress . }}
+      {{- tpl .Values.config.snippets.extraClientConfigs . | nindent 2 }}
+
+    positions:
+      filename: /run/promtail/positions.yaml
+
+    scrape_configs:
+      {{- tpl .Values.config.snippets.scrapeConfigs . | nindent 2 }}
+      {{- tpl .Values.config.snippets.extraScrapeConfigs . | nindent 2 }}
+
+networkPolicy:
+  # -- Specifies whether Network Policies should be created
+  enabled: false
+  metrics:
+    # -- Specifies the Pods which are allowed to access the metrics port.
+    # As this is cross-namespace communication, you also neeed the namespaceSelector.
+    podSelector: {}
+    # -- Specifies the namespaces which are allowed to access the metrics port
+    namespaceSelector: {}
+    # -- Specifies specific network CIDRs which are allowed to access the metrics port.
+    # In case you use namespaceSelector, you also have to specify your kubelet networks here.
+    # The metrics ports are also used for probes.
+    cidrs: []
+  k8sApi:
+    # -- Specify the k8s API endpoint port
+    port: 8443
+    # -- Specifies specific network CIDRs you want to limit access to
+    cidrs: []
+
+# -- Extra K8s manifests to deploy
+extraObjects: []
+  # - apiVersion: "kubernetes-client.io/v1"
+  #   kind: ExternalSecret
+  #   metadata:
+  #     name: promtail-secrets
+  #   spec:
+  #     backendType: gcpSecretsManager
+  #     data:
+  #       - key: promtail-oauth2-creds
+  #         name: client_secret

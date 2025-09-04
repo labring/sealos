@@ -1,0 +1,52 @@
+{{- range $key, $values := .Values.extraPorts }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "promtail.fullname" $ }}-{{ $key | lower }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" $ | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml $ | nindent 4 }}
+    {{- end }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $values.service }}
+  type: {{ .type | default "ClusterIP" }}
+  {{- with .clusterIP }}
+  clusterIP: {{ . }}
+  {{- end }}
+  {{- with .loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with .loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end -}}
+  {{- with .externalIPs }}
+  externalIPs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  ports:
+    - name: {{ .name | default $key }}
+      targetPort: {{ .name | default $key }}
+      protocol: TCP
+      {{- if $values.service }}
+      port: {{ $values.service.port | default $values.containerPort }}
+      {{- if $values.service.nodePort }}
+      nodePort: {{ $values.service.nodePort }}
+      {{- end }}
+      {{- else }}
+      port: {{ $values.containerPort }}
+      {{- end }}
+  selector:
+    {{- include "promtail.selectorLabels" $ | nindent 4 }}
+{{- end }}

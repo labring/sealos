@@ -1,0 +1,26 @@
+apiVersion: v2
+appVersion: 2.5.0
+dependencies:
+- name: etcd
+  repository: https://charts.bitnami.com/bitnami
+  version: 8.6.0
+- condition: base.jaeger.enabled
+  name: jaeger-operator
+  repository: https://jaegertracing.github.io/helm-charts
+  version: 2.25.0
+- condition: loki-stack.enabled
+  name: loki-stack
+  repository: https://grafana.github.io/helm-charts
+  version: 2.6.4
+- condition: eventing.enabled
+  name: nats
+  repository: https://nats-io.github.io/k8s/helm/charts/
+  version: 0.19.14
+- condition: localpv-provisioner.enabled
+  name: localpv-provisioner
+  repository: https://openebs.github.io/dynamic-localpv-provisioner
+  version: 3.5.0
+description: Mayastor Helm chart for Kubernetes
+name: mayastor
+type: application
+version: 2.5.0

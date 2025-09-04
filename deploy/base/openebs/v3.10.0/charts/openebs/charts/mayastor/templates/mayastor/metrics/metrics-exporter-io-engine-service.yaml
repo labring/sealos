@@ -1,0 +1,19 @@
+{{- if .Values.base.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-metrics-exporter-io-engine
+  labels:
+    app: metrics-exporter-io-engine
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  ports:
+    - name: metrics
+      port: 9502
+      targetPort: 9502
+      protocol: TCP
+  selector:
+    app: io-engine
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+{{- end }}

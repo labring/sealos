@@ -1,0 +1,54 @@
+{{- if and .Values.pushgateway.enabled .Values.pushgateway.ingress.enabled -}}
+{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
+{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" .) "true" -}}
+{{- $releaseName := .Release.Name -}}
+{{- $serviceName := include "prometheus.pushgateway.fullname" . }}
+{{- $servicePort := .Values.pushgateway.service.servicePort -}}
+{{- $ingressPath := .Values.pushgateway.ingress.path -}}
+{{- $ingressPathType := .Values.pushgateway.ingress.pathType -}}
+{{- $extraPaths := .Values.pushgateway.ingress.extraPaths -}}
+apiVersion: {{ template "ingress.apiVersion" . }}
+kind: Ingress
+metadata:
+{{- if .Values.pushgateway.ingress.annotations }}
+  annotations:
+{{ toYaml .Values.pushgateway.ingress.annotations | indent 4}}
+{{- end }}
+  labels:
+    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
+  name: {{ template "prometheus.pushgateway.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+  {{- if and $ingressSupportsIngressClassName .Values.pushgateway.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.pushgateway.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+  {{- range .Values.pushgateway.ingress.hosts }}
+    {{- $url := splitList "/" . }}
+    - host: {{ first $url }}
+      http:
+        paths:
+{{ if $extraPaths }}
+{{ toYaml $extraPaths | indent 10 }}
+{{- end }}
+          - path: {{ $ingressPath }}
+            {{- if $ingressSupportsPathType }}
+            pathType: {{ $ingressPathType }}
+            {{- end }}
+            backend:
+              {{- if $ingressApiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+              {{- end }}
+  {{- end -}}
+{{- if .Values.pushgateway.ingress.tls }}
+  tls:
+{{ toYaml .Values.pushgateway.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}

@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-csi-node
+  labels:
+    app: csi-node
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+    {{- range $key, $val := .Values.csi.node.topology.segments }}
+    {{ $key }}: {{ $val }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: csi-node
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: csi-node
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      serviceAccount: {{ .Release.Name }}-service-account
+      hostNetwork: true
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      {{- if $pcName := include "priority_class" (dict "template" . "localPriorityClass" .Values.csi.node.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      nodeSelector:
+        {{- if .Values.nodeSelector }}
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+        {{- end }}
+        {{- if .Values.csi.node.topology.nodeSelector }}
+        {{- range $key, $val := .Values.csi.node.topology.segments }}
+        {{ $key }}: {{ $val }}
+        {{- end }}
+        {{- end }}
+      {{- if $tolerations := include "tolerations" (dict "template" . "localTolerations" .Values.csi.node.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      # NOTE: Each container must have mem/cpu limits defined in order to
+      # belong to Guaranteed QoS class, hence can never get evicted in case of
+      # pressure unless they exceed those limits. limits and requests must be
+      # the same.
+      containers:
+      - name: csi-node
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-csi-node:{{ default .Values.image.tag .Values.image.repoTags.controlPlane }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        # we need privileged because we mount filesystems and use mknod
+        securityContext:
+          privileged: true
+        env:
+        - name: RUST_LOG
+          value: {{ .Values.csi.node.logLevel }}
+        {{- if default .Values.base.logSilenceLevel .Values.csi.node.logSilenceLevel }}
+        - name: RUST_LOG_SILENCE
+          value: {{ default .Values.base.logSilenceLevel .Values.csi.node.logSilenceLevel }}
+        {{- end }}
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: RUST_BACKTRACE
+          value: "1"
+        args:
+        - "--csi-socket={{ .Values.csi.node.pluginMounthPath }}/{{ .Values.csi.node.socketPath }}"
+        - "--node-name=$(MY_NODE_NAME)"
+        - "--grpc-endpoint=$(MY_POD_IP):10199"{{ if .Values.csi.node.nvme.io_timeout }}
+        - "--nvme-io-timeout={{ .Values.csi.node.nvme.io_timeout }}"
+        - "--nvme-core-io-timeout={{ .Values.csi.node.nvme.io_timeout }}"{{ else }}
+        - "--nvme-io-timeout={{ .Values.io_engine.nvme.ioTimeout }}10s"
+        - "--nvme-core-io-timeout={{ .Values.io_engine.nvme.ioTimeout }}10s"{{ end }}{{ if .Values.csi.node.nvme.ctrl_loss_tmo }}
+        - "--nvme-ctrl-loss-tmo={{ .Values.csi.node.nvme.ctrl_loss_tmo }}"{{ end }}{{ if .Values.csi.node.nvme.keep_alive_tmo }}
+        - "--nvme-keep-alive-tmo={{ .Values.csi.node.nvme.keep_alive_tmo }}"{{ end }}
+        - "--nvme-nr-io-queues={{ include "coreCount" . }}"
+        {{- range $key, $val := .Values.csi.node.topology.segments }}
+        - "--node-selector={{ $key }}={{ $val }}"
+        {{- end }}
+        command:
+        - csi-node
+        volumeMounts:
+        - name: device
+          mountPath: /dev
+        - name: sys
+          mountPath: /sys
+        - name: run-udev
+          mountPath: /run/udev
+        - name: plugin-dir
+          mountPath: {{ .Values.csi.node.pluginMounthPath }}
+        - name: kubelet-dir
+          mountPath: {{ .Values.csi.node.kubeletDir }}
+          mountPropagation: "Bidirectional"
+        resources:
+          limits:
+            cpu: {{ .Values.csi.node.resources.limits.cpu | quote }}
+            memory: {{ .Values.csi.node.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.csi.node.resources.requests.cpu | quote }}
+            memory: {{ .Values.csi.node.resources.requests.memory | quote }}
+      - name: csi-driver-registrar
+        image: "{{ .Values.csi.image.registry }}/{{ .Values.csi.image.repo }}/csi-node-driver-registrar:{{ .Values.csi.image.registrarTag }}"
+        imagePullPolicy: {{ .Values.csi.image.pullPolicy }}
+        args:
+        - "--csi-address={{ .Values.csi.node.pluginMounthPath }}/{{ .Values.csi.node.socketPath }}"
+        - "--kubelet-registration-path={{ .Values.csi.node.kubeletDir }}/plugins/io.openebs.mayastor/csi.sock"
+        volumeMounts:
+        - name: plugin-dir
+          mountPath: {{ .Values.csi.node.pluginMounthPath }}
+        - name: registration-dir
+          mountPath: /registration
+        resources:
+          limits:
+            cpu: "100m"
+            memory: "50Mi"
+          requests:
+            cpu: "100m"
+            memory: "50Mi"
+        # Mayastor node plugin gRPC server
+        ports:
+        - containerPort: 10199
+          protocol: TCP
+          name: mayastor-node
+      volumes:
+      - name: device
+        hostPath:
+          path: /dev
+          type: Directory
+      - name: sys
+        hostPath:
+          path: /sys
+          type: Directory
+      - name: run-udev
+        hostPath:
+          path: /run/udev
+          type: Directory
+      - name: registration-dir
+        hostPath:
+          path: {{ .Values.csi.node.kubeletDir }}/plugins_registry/
+          type: Directory
+      - name: plugin-dir
+        hostPath:
+          path: {{ .Values.csi.node.kubeletDir }}/plugins/io.openebs.mayastor/
+          type: DirectoryOrCreate
+      - name: kubelet-dir
+        hostPath:
+          path: {{ .Values.csi.node.kubeletDir }}
+          type: Directory

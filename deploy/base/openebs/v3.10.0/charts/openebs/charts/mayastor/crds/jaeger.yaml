@@ -1,0 +1,44 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: jaegers.jaegertracing.io
+  labels:
+    app: jaeger-operator
+spec:
+  group: jaegertracing.io
+  names:
+    kind: Jaeger
+    listKind: JaegerList
+    plural: jaegers
+    singular: jaeger
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
+      additionalPrinterColumns:
+        - description: Jaeger instance's status
+          jsonPath: .status.phase
+          name: Status
+          type: string
+        - description: Jaeger Version
+          jsonPath: .status.version
+          name: Version
+          type: string
+        - description: Jaeger deployment strategy
+          jsonPath: .spec.strategy
+          name: Strategy
+          type: string
+        - description: Jaeger storage type
+          jsonPath: .spec.storage.type
+          name: Storage
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      served: true
+      storage: true
+      subresources:
+        status: {}

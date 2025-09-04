@@ -1,0 +1,36 @@
+{{ if and .Values.exporter.enabled .Values.exporter.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "nats.fullname" . }}
+  {{- if .Values.exporter.serviceMonitor.namespace }}
+  namespace: {{ .Values.exporter.serviceMonitor.namespace }}
+  {{- else }}
+  namespace: {{ include "nats.namespace" . }}
+  {{- end }}
+  {{- if .Values.exporter.serviceMonitor.labels }}
+  labels:
+    {{- toYaml .Values.exporter.serviceMonitor.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.exporter.serviceMonitor.annotations }}
+  annotations:
+    {{- toYaml .Values.exporter.serviceMonitor.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  endpoints:
+  - port: {{ .Values.exporter.portName }}
+  {{- if .Values.exporter.serviceMonitor.path }}
+    path: {{ .Values.exporter.serviceMonitor.path }}
+  {{- end }}
+  {{- if .Values.exporter.serviceMonitor.interval }}
+    interval: {{ .Values.exporter.serviceMonitor.interval }}
+  {{- end }}
+  {{- if .Values.exporter.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.exporter.serviceMonitor.scrapeTimeout }}
+  {{- end }}
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      {{- include "nats.selectorLabels" . | nindent 6 }}
+{{- end }}

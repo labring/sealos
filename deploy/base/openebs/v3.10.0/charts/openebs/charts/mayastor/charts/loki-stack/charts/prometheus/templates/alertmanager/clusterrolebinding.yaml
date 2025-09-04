@@ -1,0 +1,20 @@
+{{- if and .Values.alertmanager.enabled .Values.rbac.create .Values.alertmanager.useClusterRole -}}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
+  name: {{ template "prometheus.alertmanager.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "prometheus.serviceAccountName.alertmanager" . }}
+{{ include "prometheus.namespace" . | indent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+{{- if (not .Values.alertmanager.useExistingRole) }}
+  name: {{ template "prometheus.alertmanager.fullname" . }}
+{{- else }}
+  name: {{ .Values.alertmanager.useExistingRole }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,19 @@
+{{- if and .Values.alertmanager.enabled (and (empty .Values.alertmanager.configMapOverrideName) (empty .Values.alertmanager.configFromSecret)) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
+  name: {{ template "prometheus.alertmanager.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+data:
+{{- $root := . -}}
+{{- range $key, $value := .Values.alertmanagerFiles }}
+  {{- if $key | regexMatch ".*\\.ya?ml$" }}
+  {{ $key }}: |
+{{ toYaml $value | default "{}" | indent 4 }}
+  {{- else }}
+  {{ $key }}: {{ toYaml $value | indent 4 }}
+  {{- end }}
+{{- end -}}
+{{- end -}}

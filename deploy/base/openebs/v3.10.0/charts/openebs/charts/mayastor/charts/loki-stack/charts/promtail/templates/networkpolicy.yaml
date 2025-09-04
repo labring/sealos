@@ -1,0 +1,126 @@
+{{- if .Values.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "promtail.name" . }}-namespace-only
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - to:
+        - podSelector: {}
+  ingress:
+    - from:
+        - podSelector: {}
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "promtail.name" . }}-egress-dns
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "promtail.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+      to:
+        - namespaceSelector: {}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "promtail.name" . }}-egress-k8s-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "promtail.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: {{ .Values.networkPolicy.k8sApi.port }}
+          protocol: TCP
+    {{- if len .Values.networkPolicy.k8sApi.cidrs }}
+      to:
+      {{- range $cidr := .Values.networkPolicy.k8sApi.cidrs }}
+        - ipBlock:
+            cidr: {{ $cidr }}
+      {{- end }}
+    {{- end }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "promtail.name" . }}-ingress-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "promtail.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: http-metrics
+          protocol: TCP
+    {{- if len .Values.networkPolicy.metrics.cidrs }}
+      from:
+      {{- range $cidr := .Values.networkPolicy.metrics.cidrs }}
+        - ipBlock:
+            cidr: {{ $cidr }}
+      {{- end }}
+      {{- if .Values.networkPolicy.metrics.namespaceSelector }}
+        - namespaceSelector:
+          {{- toYaml .Values.networkPolicy.metrics.namespaceSelector | nindent 12 }}
+          {{- if .Values.networkPolicy.metrics.podSelector }}
+          podSelector:
+          {{- toYaml .Values.networkPolicy.metrics.podSelector | nindent 12 }}
+          {{- end }}
+      {{- end }}
+    {{- end }}
+
+{{- if .Values.extraPorts }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "promtail.name" . }}-egress-extra-ports
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "promtail.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+  {{- range $extraPortConfig := .Values.extraPorts }}
+        - port: {{ $extraPortConfig.containerPort }}
+          protocol: {{ $extraPortConfig.protocol }}
+  {{- end }}
+{{- end }}
+{{- end }}

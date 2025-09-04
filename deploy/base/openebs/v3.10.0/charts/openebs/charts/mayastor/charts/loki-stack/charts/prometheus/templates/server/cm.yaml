@@ -1,0 +1,85 @@
+{{- if .Values.server.enabled -}}
+{{- if (empty .Values.server.configMapOverrideName) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+  name: {{ template "prometheus.server.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+data:
+{{- $root := . -}}
+{{- range $key, $value := .Values.ruleFiles }}
+  {{ $key }}: {{- toYaml $value | indent 2 }}
+{{- end }}
+{{- range $key, $value := .Values.serverFiles }}
+  {{ $key }}: |
+{{- if eq $key "prometheus.yml" }}
+    global:
+{{ $root.Values.server.global | toYaml | trimSuffix "\n" | indent 6 }}
+{{- if $root.Values.server.remoteWrite }}
+    remote_write:
+{{ $root.Values.server.remoteWrite | toYaml | indent 4 }}
+{{- end }}
+{{- if $root.Values.server.remoteRead }}
+    remote_read:
+{{ $root.Values.server.remoteRead | toYaml | indent 4 }}
+{{- end }}
+{{- end }}
+{{- if eq $key "alerts" }}
+{{- if and (not (empty $value)) (empty $value.groups) }}
+    groups:
+{{- range $ruleKey, $ruleValue := $value }}
+    - name: {{ $ruleKey -}}.rules
+      rules:
+{{ $ruleValue | toYaml | trimSuffix "\n" | indent 6 }}
+{{- end }}
+{{- else }}
+{{ toYaml $value | indent 4 }}
+{{- end }}
+{{- else }}
+{{ toYaml $value | default "{}" | indent 4 }}
+{{- end }}
+{{- if eq $key "prometheus.yml" -}}
+{{- if $root.Values.extraScrapeConfigs }}
+{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
+{{- end -}}
+{{- if or ($root.Values.alertmanager.enabled) ($root.Values.server.alertmanagers) }}
+    alerting:
+{{- if $root.Values.alertRelabelConfigs }}
+{{ $root.Values.alertRelabelConfigs | toYaml  | trimSuffix "\n" | indent 6 }}
+{{- end }}
+      alertmanagers:
+{{- if $root.Values.server.alertmanagers }}
+{{ toYaml $root.Values.server.alertmanagers | indent 8 }}
+{{- else }}
+      - kubernetes_sd_configs:
+          - role: pod
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        {{- if $root.Values.alertmanager.prefixURL }}
+        path_prefix: {{ $root.Values.alertmanager.prefixURL }}
+        {{- end }}
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: {{ $root.Release.Namespace }}
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          regex: {{ template "prometheus.name" $root }}
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_component]
+          regex: alertmanager
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_probe]
+          regex: {{ index $root.Values.alertmanager.podAnnotations "prometheus.io/probe" | default ".*" }}
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_container_port_number]
+          regex: "9093"
+          action: keep
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

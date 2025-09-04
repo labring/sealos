@@ -1,0 +1,22 @@
+image: docker.elastic.co/beats/filebeat-oss
+
+daemonset:
+  filebeatConfig:
+    filebeat.yml: |
+      filebeat.inputs:
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+        processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+      output.elasticsearch:
+        host: '${NODE_NAME}'
+        hosts: "elasticsearch-master:9200"
+        index: "filebeat-oss-%{[agent.version]}-%{+yyyy.MM.dd}"
+      setup.ilm.enabled: false
+      setup.template.name: "filebeat"
+      setup.template.pattern: "filebeat-oss-*"

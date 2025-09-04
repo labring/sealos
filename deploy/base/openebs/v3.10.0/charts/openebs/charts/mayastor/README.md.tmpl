@@ -1,0 +1,58 @@
+{{ template "chart.header" . }}
+{{ template "chart.description" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Installation Guide
+
+### Prerequisites
+
+ - Make sure the [system requirement pre-requisites](https://mayastor.gitbook.io/introduction/quickstart/prerequisites) are met.
+ - Label the storage nodes same as the mayastor.nodeSelector in values.yaml
+ - Create the namespace you want the chart to be installed, or pass the `--create-namespace` flag in the `helm install` command.
+   ```sh
+   kubectl create ns <mayastor-namespace>
+   ```
+ - Create secret if downloading the container images from a private repo.
+   ```sh
+   kubectl create secret docker-registry <same-as-base.imagePullSecrets.secrets>  --docker-server="https://index.docker.io/v1/" --docker-username="<user-name>" --docker-password="<password>" --docker-email="<user-email>" -n <mayastor-namespace>
+   ```
+
+### Installing the chart via the git repo
+
+Clone the mayastor charts repo.
+Sync the chart dependencies
+```console
+$ helm dependency update
+```
+Install the mayastor chart using the command.
+```console
+$ helm install mayastor . -n <mayastor-namespace>
+```
+
+### Installing the Chart via Helm Registry
+
+To install the chart with the release name `my-release`:
+
+```console
+$ helm repo add openebs https://openebs.github.io/mayastor-extensions/
+$ helm install my-release openebs/{{ template "chart.name" . }}
+```
+
+## Chart Dependencies
+
+{{ template "chart.requirementsTable" . }}
+
+{{ template "chart.valuesHeader" . }}
+
+| Key | Description | Default |
+|-----|-------------|:-------:|
+{{ range .Values }}
+{{- if or .Description .AutoDescription -}}
+{{ if eq .Type "object" -}}
+| {{ .Key | replace "." ".&ZeroWidthSpace;" }} | {{ .Description | default .AutoDescription }} | <pre>{{ replace "}" "<br>}" (replace "{" "{<br>" (replace "," ",<br>" (toJson (fromJson (trimAll "`" (.Default | default .AutoDefault)))))) }}</pre> |
+{{ else -}}
+| {{ .Key | replace "." ".&ZeroWidthSpace;" }} | {{ .Description | default .AutoDescription }} | {{ .Default | default .AutoDefault }} |
+{{ end -}}
+{{ end }}
+{{- end }}

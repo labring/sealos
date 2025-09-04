@@ -1,0 +1,118 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-service-account
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Release.Name }}-cluster-role
+  labels:
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+rules:
+  # must create mayastor crd if it doesn't exist, replace if exist,
+  # merge schema to existing CRD.
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["create", "get", "update", "list", "patch", "replace"]
+  # must update stored_version in status to include new schema only.
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions/status"]
+  verbs: ["get", "update", "patch"]
+  # must read mayastorpools info. This is needed to handle upgrades from v1.
+- apiGroups: [ "openebs.io" ]
+  resources: [ "mayastorpools" ]
+  verbs: ["get", "list", "patch", "delete", "deletecollection"]
+  # must read diskpool info
+- apiGroups: ["openebs.io"]
+  resources: ["diskpools"]
+  verbs: ["get", "list", "watch", "update", "replace", "patch", "create"]
+  # must update diskpool status
+- apiGroups: ["openebs.io"]
+  resources: ["diskpools/status"]
+  verbs: ["update", "patch"]
+  # must read cm info
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create", "get", "update", "patch"]
+  # must get deployments info
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list"]
+  # external provisioner & attacher
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "list", "watch", "update", "create", "delete", "patch"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch", "patch"]
+
+  # external provisioner
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "watch", "update"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["list", "watch", "create", "update", "patch"]
+
+  # external snapshotter and snapshot-controller
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshotclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshotcontents"]
+  verbs: ["create","get", "list", "watch", "update", "patch", "delete"]
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshotcontents/status"]
+  verbs: ["update", "patch"]
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshots"]
+  verbs: ["get", "list", "watch", "update", "patch", "delete"]
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshots/status"]
+  verbs: ["update", "patch"]
+
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+
+  # external attacher
+- apiGroups: ["storage.k8s.io"]
+  resources: ["volumeattachments"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["volumeattachments/status"]
+  verbs: ["patch"]
+  # CSI nodes must be listed
+- apiGroups: ["storage.k8s.io"]
+  resources: ["csinodes"]
+  verbs: ["get", "list", "watch"]
+  # get kube-system namespace to retrieve Uid
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Release.Name }}-cluster-role-binding
+  labels:
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Release.Name }}-service-account
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Release.Name }}-cluster-role
+  apiGroup: rbac.authorization.k8s.io

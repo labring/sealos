@@ -1,0 +1,10 @@
+{{- if and .Values.rbac.create .Values.rbac.pspEnabled }}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "promtail.fullname" . }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  {{- toYaml .Values.podSecurityPolicy | nindent 2 }}
+{{- end }}

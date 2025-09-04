@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "nats.fullname" . }}-test-request-reply"
+  labels:
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app: {{ include "nats.fullname" . }}-test-request-reply
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+  - name: nats-box
+    image: {{ include "nats.image" .Values.natsbox.image }}
+    env:
+    - name: NATS_HOST
+      value: {{ template "nats.fullname" . }}
+    command:
+    - /bin/sh
+    - -ec
+    - |
+      nats reply -s nats://$NATS_HOST:{{ .Values.nats.client.port }} 'name.>' --command "echo {{1}}" &
+    - |
+      "&&"
+    - |
+      name=$(nats request -s nats://$NATS_HOST:{{ .Values.nats.client.port }} name.test '' 2>/dev/null)
+    - |
+      "&&"
+    - |
+      [ $name = test ]
+
+  restartPolicy: Never

@@ -1,0 +1,121 @@
+{{- if .Values.natsbox.enabled }}
+{{- include "nats.fixImage" .Values.natsbox -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nats.fullname" . }}-box
+  namespace: {{ include "nats.namespace" . }}
+  labels:
+    app: {{ include "nats.fullname" . }}-box
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    {{- if .Values.natsbox.additionalLabels }}
+    {{- tpl (toYaml .Values.natsbox.additionalLabels) $ | nindent 4 }}
+    {{- end }}
+  {{- if .Values.natsbox.annotations }}
+  annotations:
+    {{- toYaml .Values.natsbox.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "nats.fullname" . }}-box
+  template:
+    metadata:
+      labels:
+        app: {{ include "nats.fullname" . }}-box
+        {{- if .Values.natsbox.podLabels }}
+        {{- tpl (toYaml .Values.natsbox.podLabels) $ | nindent 8 }}
+        {{- end }}
+      {{- if .Values.natsbox.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.natsbox.podAnnotations | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.natsbox.affinity }}
+      affinity:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+      {{- with .Values.natsbox.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.natsbox.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.natsbox.credentials }}
+      - name: nats-sys-creds
+        secret:
+          secretName: {{ .Values.natsbox.credentials.secret.name }}
+      {{- end }}
+      {{- if .Values.natsbox.extraVolumes }}
+      {{- toYaml .Values.natsbox.extraVolumes | nindent 6}}
+      {{- end }}
+      {{- with .Values.nats.tls }}
+      {{ $secretName := tpl .secret.name $ }}
+      - name: {{ $secretName }}-clients-volume
+        secret:
+          secretName: {{ $secretName }}
+      {{- end }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if hasKey .Values.natsbox "automountServiceAccountToken" }}
+      automountServiceAccountToken: {{ .Values.natsbox.automountServiceAccountToken }}
+      {{- end }}
+      containers:
+      - name: nats-box
+        image: {{ include "nats.image" .Values.natsbox.image }}
+        imagePullPolicy: {{ .Values.natsbox.image.pullPolicy }}
+        {{- if .Values.natsbox.securityContext }}
+        securityContext:
+          {{- toYaml .Values.natsbox.securityContext | nindent 10 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.natsbox.resources | nindent 10 }}
+        env:
+        - name: NATS_URL
+          value: {{ template "nats.fullname" . }}
+        {{- if .Values.natsbox.credentials }}
+        - name: NATS_CREDS
+          value: /etc/nats-config/creds/{{ .Values.natsbox.credentials.secret.key }}
+        {{- end }}
+        {{- with .Values.nats.tls }}
+        {{ $secretName := tpl .secret.name $ }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - cp /etc/nats-certs/clients/{{ $secretName }}/* /usr/local/share/ca-certificates && update-ca-certificates
+        {{- end }}
+        command:
+        - "tail"
+        - "-f"
+        - "/dev/null"
+        volumeMounts:
+        {{- if .Values.natsbox.credentials }}
+        - name: nats-sys-creds
+          mountPath: /etc/nats-config/creds
+        {{- end }}
+        {{- if .Values.natsbox.extraVolumeMounts }}
+        {{- toYaml .Values.natsbox.extraVolumeMounts | nindent 8 }}
+        {{- end }}
+        {{- with .Values.nats.tls }}
+        #######################
+        #                     #
+        #  TLS Volumes Mounts #
+        #                     #
+        #######################
+        {{ $secretName := tpl .secret.name $ }}
+        - name: {{ $secretName }}-clients-volume
+          mountPath: /etc/nats-certs/clients/{{ $secretName }}
+        {{- end }}
+{{- end }}

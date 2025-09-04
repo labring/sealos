@@ -1,0 +1,157 @@
+# Deploy singleton instance in the whole cluster for some unique data sources, like aws input
+{{- if .Values.deployment.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "filebeat.fullname" . }}
+  labels:
+    app: "{{ template "filebeat.fullname" . }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: '{{ .Release.Service }}'
+    release: {{ .Release.Name }}
+    {{- if .Values.deployment.labels }}
+    {{- range $key, $value := .Values.deployment.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- else }}
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+  {{- if .Values.deployment.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.deployment.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ template "filebeat.fullname" . }}"
+      release: {{ .Release.Name | quote }}
+  template:
+    metadata:
+      annotations:
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{/* This forces a restart if the configmap has changed */}}
+        {{- if or  .Values.filebeatConfig .Values.deployment.filebeatConfig }}
+        configChecksum: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+      labels:
+        app: '{{ template "filebeat.fullname" . }}'
+        chart: '{{ .Chart.Name }}-{{ .Chart.Version }}'
+        release: '{{ .Release.Name }}'
+        {{- if .Values.deployment.labels }}
+        {{- range $key, $value := .Values.deployment.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- else }}
+        {{- range $key, $value := .Values.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+      affinity: {{ toYaml .Values.deployment.affinity | nindent 8 }}
+      nodeSelector: {{ toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      tolerations: {{ toYaml ( .Values.tolerations | default .Values.deployment.tolerations ) | nindent 8 }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName  }}
+      {{- end }}
+      serviceAccountName: {{ template "filebeat.serviceAccount" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriod }}
+      {{- if .Values.deployment.hostAliases }}
+      hostAliases: {{ toYaml .Values.deployment.hostAliases | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- range .Values.secretMounts | default .Values.deployment.secretMounts }}
+      - name: {{ .name }}
+        secret:
+          secretName: {{ .secretName }}
+      {{- end }}
+      {{- if .Values.filebeatConfig }}
+      - name: filebeat-config
+        configMap:
+          defaultMode: 0600
+          name: {{ template "filebeat.fullname" . }}-config
+      {{- else if .Values.deployment.filebeatConfig }}
+      - name: filebeat-config
+        configMap:
+          defaultMode: 0600
+          name: {{ template "filebeat.fullname" . }}-deployment-config
+      {{- end }}
+      {{- if .Values.extraVolumes | default .Values.deployment.extraVolumes }}
+{{ toYaml ( .Values.extraVolumes | default .Values.deployment.extraVolumes ) | indent 6 }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.extraInitContainers }}
+      initContainers:
+      # All the other beats accept a string here while
+      # filebeat accepts a valid yaml array. We're keeping
+      # this as a backwards compatible change, while adding
+      # also a way to pass a string as other templates to
+      # make these implementations consistent.
+      # https://github.com/elastic/helm-charts/issues/490
+      {{- if eq "string" (printf "%T" .Values.extraInitContainers) }}
+{{ tpl .Values.extraInitContainers . | indent 6 }}
+      {{- else }}
+{{ toYaml .Values.extraInitContainers | indent 6 }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: "filebeat"
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "{{ .Values.imagePullPolicy }}"
+        args:
+          - "-e"
+          - "-E"
+          - "http.enabled=true"
+        livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 10 }}
+        resources: {{ toYaml ( .Values.resources | default .Values.deployment.resources ) | nindent 10 }}
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+{{- if .Values.extraEnvs | default .Values.deployment.extraEnvs }}
+{{ toYaml ( .Values.extraEnvs | default .Values.deployment.extraEnvs ) | indent 8 }}
+{{- end }}
+        envFrom: {{ toYaml ( .Values.envFrom | default .Values.deployment.envFrom ) | nindent 10 }}
+        securityContext: {{ toYaml ( .Values.podSecurityContext | default .Values.deployment.securityContext ) | nindent 10 }}
+        volumeMounts:
+        {{- range .Values.secretMounts | default .Values.deployment.secretMounts }}
+        - name: {{ .name }}
+          mountPath: {{ .path }}
+          {{- if .subPath }}
+          subPath: {{ .subPath }}
+          {{- end }}
+        {{- end }}
+        {{- range $path, $config := .Values.filebeatConfig }}
+        - name: filebeat-config
+          mountPath: /usr/share/filebeat/{{ $path }}
+          readOnly: true
+          subPath: {{ $path }}
+        {{ else }}
+        {{- range $path, $config := .Values.deployment.filebeatConfig }}
+        - name: filebeat-config
+          mountPath: /usr/share/filebeat/{{ $path }}
+          readOnly: true
+          subPath: {{ $path }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.extraVolumeMounts | default .Values.deployment.extraVolumeMounts }}
+{{ toYaml ( .Values.extraVolumeMounts | default .Values.deployment.extraVolumeMounts ) | indent 8 }}
+        {{- end }}
+      {{- if .Values.extraContainers }}
+{{ tpl .Values.extraContainers . | indent 6 }}
+      {{- end }}
+{{- end }}

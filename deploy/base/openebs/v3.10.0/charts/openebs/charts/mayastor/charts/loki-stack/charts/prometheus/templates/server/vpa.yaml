@@ -1,0 +1,24 @@
+{{- if .Values.server.enabled -}}
+{{- if .Values.server.verticalAutoscaler.enabled -}}
+apiVersion: autoscaling.k8s.io/v1beta2
+kind: VerticalPodAutoscaler
+metadata:
+  labels:
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+  name: {{ template "prometheus.server.fullname" . }}-vpa
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+{{- if .Values.server.statefulSet.enabled }}
+    kind: StatefulSet
+{{- else }}
+    kind: Deployment
+{{- end }}
+    name: {{ template "prometheus.server.fullname" . }}
+  updatePolicy:
+    updateMode: {{ .Values.server.verticalAutoscaler.updateMode | default "Off" | quote }}
+  resourcePolicy:
+    containerPolicies: {{ .Values.server.verticalAutoscaler.containerPolicies | default list | toYaml | trim | nindent 4 }}
+{{- end -}} {{/* if .Values.server.verticalAutoscaler.enabled */}}
+{{- end -}} {{/* .Values.server.enabled */}}

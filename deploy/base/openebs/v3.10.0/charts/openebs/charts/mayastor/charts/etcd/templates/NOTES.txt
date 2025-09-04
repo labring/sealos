@@ -1,0 +1,119 @@
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+{{- if and (eq .Values.service.type "LoadBalancer") .Values.auth.rbac.allowNoneAuthentication }}
+-------------------------------------------------------------------------------
+ WARNING
+
+    By specifying "service.type=LoadBalancer", "auth.rbac.enabled=false" and
+    "auth.rbac.allowNoneAuthentication=true" you have most likely exposed the etcd
+    service externally without any authentication mechanism.
+
+    For security reasons, we strongly suggest that you switch to "ClusterIP" or
+    "NodePort". As alternative, you can also switch to "auth.rbac.enabled=true"
+    providing a valid password on "auth.rbac.rootPassword" parameter.
+
+-------------------------------------------------------------------------------
+{{- end }}
+
+** Please be patient while the chart is being deployed **
+
+{{- if .Values.diagnosticMode.enabled }}
+The chart has been deployed in diagnostic mode. All probes have been disabled and the command has been overwritten with:
+
+  command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 4 }}
+  args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 4 }}
+
+Get the list of pods by executing:
+
+  kubectl get pods --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+Access the pod you want to debug by executing
+
+  kubectl exec --namespace {{ .Release.Namespace }} -ti <NAME OF THE POD> -- bash
+
+In order to replicate the container startup scripts execute this command:
+
+    /opt/bitnami/scripts/etcd/entrypoint.sh /opt/bitnami/scripts/etcd/run.sh
+
+{{- else }}
+
+etcd can be accessed via port {{ coalesce .Values.service.ports.client .Values.service.port }} on the following DNS name from within your cluster:
+
+    {{ template "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+
+To create a pod that you can use as a etcd client run the following command:
+
+    kubectl run {{ template "common.names.fullname" . }}-client --restart='Never' --image {{ template "etcd.image" . }}{{- if or .Values.auth.rbac.create .Values.auth.rbac.enabled }} --env ROOT_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "common.names.fullname" . }} -o jsonpath="{.data.etcd-root-password}" | base64 -d){{- end }} --env ETCDCTL_ENDPOINTS="{{ template "common.names.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ coalesce .Values.service.ports.client .Values.service.port }}" --namespace {{ .Release.Namespace }} --command -- sleep infinity
+
+Then, you can set/get a key using the commands below:
+
+    kubectl exec --namespace {{ .Release.Namespace }} -it {{ template "common.names.fullname" . }}-client -- bash
+    {{- $etcdAuthOptions := include "etcd.authOptions" . }}
+    etcdctl {{ $etcdAuthOptions }} put /message Hello
+    etcdctl {{ $etcdAuthOptions }} get /message
+
+To connect to your etcd server from outside the cluster execute the following commands:
+
+{{- if contains "NodePort" .Values.service.type }}
+
+    export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "common.names.fullname" . }})
+    echo "etcd URL: http://$NODE_IP:$NODE_PORT/"
+
+{{- else if contains "LoadBalancer" .Values.service.type }}
+
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "common.names.fullname" . }}'
+
+    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+    echo "etcd URL: http://$SERVICE_IP:{{ coalesce .Values.service.ports.client .Values.service.port }}/"
+
+{{- else if contains "ClusterIP" .Values.service.type }}
+
+    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ template "common.names.fullname" . }} {{ coalesce .Values.service.ports.client .Values.service.port }}:{{ coalesce .Values.service.ports.client .Values.service.port }} &
+    echo "etcd URL: http://127.0.0.1:{{ coalesce .Values.service.ports.client .Values.service.port }}"
+
+{{- end }}
+{{- if or .Values.auth.rbac.create .Values.auth.rbac.enabled }}
+
+ * As rbac is enabled you should add the flag `--user root:$ETCD_ROOT_PASSWORD` to the etcdctl commands. Use the command below to export the password:
+
+    export ETCD_ROOT_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "common.names.fullname" . }} -o jsonpath="{.data.etcd-root-password}" | base64 -d)
+
+{{- end }}
+{{- if .Values.auth.client.secureTransport }}
+{{- if .Values.auth.client.useAutoTLS }}
+
+ * As TLS is enabled you should add the flag `--cert-file /bitnami/etcd/data/fixtures/client/cert.pem --key-file /bitnami/etcd/data/fixtures/client/key.pem` to the etcdctl commands.
+
+{{- else }}
+
+ * As TLS is enabled you should add the flag `--cert-file /opt/bitnami/etcd/certs/client/{{ .Values.auth.client.certFilename }} --key-file /opt/bitnami/etcd/certs/client/{{ .Values.auth.client.certKeyFilename }}` to the etcdctl commands.
+
+{{- end }}
+
+ * You should also export a proper etcdctl endpoint using the https schema. Eg.
+
+    export ETCDCTL_ENDPOINTS=https://{{ template "common.names.fullname" . }}-0:{{ coalesce .Values.service.ports.client .Values.service.port }}
+
+{{- end }}
+{{- if .Values.auth.client.enableAuthentication }}
+
+ * As TLS host authentication is enabled you should add the flag `--ca-file /opt/bitnami/etcd/certs/client/{{ .Values.auth.client.caFilename | default "ca.crt" }}` to the etcdctl commands.
+
+{{- end }}
+{{- end }}
+
+{{- include "common.warnings.rollingTag" .Values.image }}
+{{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}
+{{- include "etcd.validateValues" . }}
+{{- $requiredPassword := list -}}
+{{- $secretName := include "etcd.secretName" . -}}
+{{- if and (or .Values.auth.rbac.create .Values.auth.rbac.enabled) (not .Values.auth.rbac.existingSecret) -}}
+  {{- $requiredEtcdPassword := dict "valueKey" "auth.rbac.rootPassword" "secret" $secretName "field" "etcd-root-password" -}}
+  {{- $requiredPassword = append $requiredPassword $requiredEtcdPassword -}}
+{{- end -}}
+{{- $requiredEtcdPasswordErrors := include "common.validations.values.multiple.empty" (dict "required" $requiredPassword "context" $) -}}
+{{- include "common.errors.upgrade.passwords.empty" (dict "validationErrors" (list $requiredEtcdPasswordErrors) "context" $) -}}

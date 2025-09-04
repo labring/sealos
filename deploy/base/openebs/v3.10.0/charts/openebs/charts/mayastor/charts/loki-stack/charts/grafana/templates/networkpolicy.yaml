@@ -1,0 +1,37 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "grafana.fullname" . }}
+  namespace: {{ template "grafana.namespace" . }}
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+{{- if .Values.labels }}
+{{ toYaml .Values.labels | indent 4 }}
+{{- end }}
+{{- with .Values.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  podSelector:
+    matchLabels:
+    {{- include "grafana.selectorLabels" . | nindent 6 }}
+  ingress:
+    - ports:
+      - port: {{ .Values.service.targetPort }}
+      {{- if not .Values.networkPolicy.allowExternal }}
+      from:
+        - podSelector:
+            matchLabels:
+              {{ template "grafana.fullname" . }}-client: "true"
+          {{- if .Values.networkPolicy.explicitNamespacesSelector }}
+          namespaceSelector:
+          {{ toYaml .Values.networkPolicy.explicitNamespacesSelector | indent 12 }}
+          {{- end }}
+        - podSelector:
+            matchLabels:
+              {{- include "grafana.labels" . | nindent 14 }}
+              role: read
+      {{- end }}
+{{- end }}

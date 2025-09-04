@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-agent-core
+  labels:
+    app: agent-core
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-core
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: agent-core
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      serviceAccount: {{ .Release.Name }}-service-account
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      initContainers:
+        {{- include "base_init_core_containers" . }}
+      {{- if $pcName := include "priority_class_with_default" (dict "template" . "localPriorityClass" .Values.agents.core.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $tolerations := include "tolerations_with_early_eviction" (dict "template" . "localTolerations" .Values.agents.core.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      containers:
+        - name: agent-core
+          resources:
+            limits:
+              cpu: {{ .Values.agents.core.resources.limits.cpu | quote }}
+              memory: {{ .Values.agents.core.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.agents.core.resources.requests.cpu | quote }}
+              memory: {{ .Values.agents.core.resources.requests.memory | quote }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-agent-core:{{ default .Values.image.tag .Values.image.repoTags.controlPlane }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "-s{{ .Release.Name }}-etcd:{{ .Values.etcd.service.port }}"
+            - "--request-timeout={{ .Values.base.default_req_timeout }}"
+            - "--cache-period={{ .Values.base.cache_poll_period }}"{{ if .Values.base.jaeger.enabled }}
+            - "--jaeger={{ .Values.base.jaeger.agent.name }}:{{ .Values.base.jaeger.agent.port }}"{{ end }}
+            - "--grpc-server-addr=0.0.0.0:50051"
+            - "--pool-commitment={{ .Values.agents.core.capacity.thin.poolCommitment }}"
+            - "--snapshot-commitment={{ .Values.agents.core.capacity.thin.snapshotCommitment }}"
+            - "--volume-commitment-initial={{ .Values.agents.core.capacity.thin.volumeCommitmentInitial }}"
+            - "--volume-commitment={{ .Values.agents.core.capacity.thin.volumeCommitment }}"{{ if .Values.agents.core.partialRebuildWaitPeriod }}
+            - "--faulted-child-wait-period={{ .Values.agents.core.partialRebuildWaitPeriod }}"{{ end }}{{ if .Values.eventing.enabled }}
+            - "--events-url=nats://{{ .Release.Name }}-nats:4222"{{ end }}
+            {{- if not .Values.agents.ha.enabled }}
+            - "--disable-ha"{{ end }}
+          ports:
+            - containerPort: 50051
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.agents.core.logLevel }}
+            {{- if default .Values.base.logSilenceLevel .Values.agents.core.logSilenceLevel }}
+            - name: RUST_LOG_SILENCE
+              value: {{ default .Values.base.logSilenceLevel .Values.agents.core.logSilenceLevel }}
+            {{- end }}
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+        - name: agent-ha-cluster
+          resources:
+            limits:
+              cpu: {{ .Values.agents.ha.cluster.resources.limits.cpu | quote }}
+              memory: {{ .Values.agents.ha.cluster.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.agents.ha.cluster.resources.requests.cpu | quote }}
+              memory: {{ .Values.agents.ha.cluster.resources.requests.memory | quote }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-agent-ha-cluster:{{ default .Values.image.tag .Values.image.repoTags.controlPlane }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "-g=0.0.0.0:50052"
+            - "--store=http://{{ .Release.Name }}-etcd:{{ .Values.etcd.service.port }}"
+            - "--core-grpc=https://{{ .Release.Name }}-agent-core:50051"{{ if .Values.base.jaeger.enabled }}
+            - "--jaeger={{ .Values.base.jaeger.agent.name }}:{{ .Values.base.jaeger.agent.port }}"{{ end }}{{ if .Values.eventing.enabled }}
+            - "--events-url=nats://{{ .Release.Name }}-nats:4222"{{ end }}
+          ports:
+            - containerPort: 50052
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.agents.core.logLevel }}
+            {{- if default .Values.base.logSilenceLevel .Values.agents.core.logSilenceLevel }}
+            - name: RUST_LOG_SILENCE
+              value: {{ default .Values.base.logSilenceLevel .Values.agents.core.logSilenceLevel }}
+            {{- end }}
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

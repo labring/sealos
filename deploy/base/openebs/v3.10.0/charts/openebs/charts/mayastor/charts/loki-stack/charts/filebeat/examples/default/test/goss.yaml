@@ -1,0 +1,47 @@
+port:
+  tcp:5066:
+    listening: true
+    ip:
+      - "127.0.0.1"
+
+mount:
+  /usr/share/filebeat/data:
+    exists: true
+  /run/docker.sock:
+    exists: true
+  /var/lib/docker/containers:
+    exists: true
+    opts:
+      - ro
+  /usr/share/filebeat/filebeat.yml:
+    exists: true
+    opts:
+      - ro
+
+user:
+  filebeat:
+    exists: true
+    uid: 1000
+    gid: 1000
+
+http:
+  http://elasticsearch-master:9200/_cat/indices:
+    status: 200
+    timeout: 2000
+    body:
+      - "filebeat-7.17.1"
+
+file:
+  /usr/share/filebeat/filebeat.yml:
+    exists: true
+    contains:
+      - "add_kubernetes_metadata"
+      - "output.elasticsearch"
+      - "elasticsearch-master:9200"
+
+command:
+  cd /usr/share/filebeat && filebeat test output:
+    exit-status: 0
+    stdout:
+      - "elasticsearch: http://elasticsearch-master:9200"
+      - "version: 7.17.1"

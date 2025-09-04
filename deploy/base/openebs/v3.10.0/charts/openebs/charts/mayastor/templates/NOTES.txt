@@ -1,0 +1,4 @@
+OpenEBS Mayastor has been installed. Check its status by running:
+$ kubectl get pods -n {{ .Release.Namespace }}
+
+For more information or to view the documentation, visit our website at https://mayastor.gitbook.io/introduction/.

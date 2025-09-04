@@ -1,0 +1,24 @@
+{{- if and .Values.alertmanager.enabled .Values.rbac.create (eq .Values.alertmanager.useClusterRole false) (not .Values.alertmanager.useExistingRole) -}}
+{{- range $.Values.alertmanager.namespaces }}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: Role
+metadata:
+  labels:
+    {{- include "prometheus.alertmanager.labels" $ | nindent 4 }}
+  name: {{ template "prometheus.alertmanager.fullname" $ }}
+  namespace: {{ . }}
+rules:
+{{- if $.Values.podSecurityPolicy.enabled }}
+  - apiGroups:
+    - extensions
+    resources:
+    - podsecuritypolicies
+    verbs:
+    - use
+    resourceNames:
+    - {{ template "prometheus.alertmanager.fullname" $ }}
+{{- else }}
+  []
+{{- end }}
+{{- end }}
+{{- end }}

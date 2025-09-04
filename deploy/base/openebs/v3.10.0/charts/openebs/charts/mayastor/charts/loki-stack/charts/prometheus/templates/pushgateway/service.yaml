@@ -1,0 +1,41 @@
+{{- if .Values.pushgateway.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.pushgateway.service.annotations }}
+  annotations:
+{{ toYaml .Values.pushgateway.service.annotations | indent 4}}
+{{- end }}
+  labels:
+    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
+{{- if .Values.pushgateway.service.labels }}
+{{ toYaml .Values.pushgateway.service.labels | indent 4}}
+{{- end }}
+  name: {{ template "prometheus.pushgateway.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+spec:
+{{- if .Values.pushgateway.service.clusterIP }}
+  clusterIP: {{ .Values.pushgateway.service.clusterIP }}
+{{- end }}
+{{- if .Values.pushgateway.service.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.pushgateway.service.externalIPs | indent 4 }}
+{{- end }}
+{{- if .Values.pushgateway.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.pushgateway.service.loadBalancerIP }}
+{{- end }}
+{{- if .Values.pushgateway.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := .Values.pushgateway.service.loadBalancerSourceRanges }}
+    - {{ $cidr }}
+  {{- end }}
+{{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.pushgateway.service.servicePort }}
+      protocol: TCP
+      targetPort: 9091
+  selector:
+    {{- include "prometheus.pushgateway.matchLabels" . | nindent 4 }}
+  type: "{{ .Values.pushgateway.service.type }}"
+{{- end }}

@@ -1,0 +1,56 @@
+{{- if .Values.rbac.kyvernoEnabled }}
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: require-user-groups
+  annotations:
+    policies.kyverno.io/category: Pod Security Standards (Privileged)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Containers should allow to run with a root primary or supplementary GID.
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+    - name: check-runasuser
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: >-
+          Running the user IDs are allowed.
+        pattern:
+          spec:
+            =(securityContext):
+              =(runAsUser): ">=0"
+            containers:
+              - =(securityContext):
+                  =(runAsUser): ">=0"
+    - name: check-supplementalGroups
+      match:
+        resources:
+           kinds:
+            - Pod
+      validate:
+        message: >-
+           Adding of supplemental group IDs is allowed.
+        pattern:
+          spec:
+             =(securityContext):
+               =(supplementalGroups):
+               - ">=0"
+    - name: check-fsGroup
+      match:
+        resources:
+           kinds:
+            - Pod
+      validate:
+        message: >-
+          Changing to root group ID is allowed.
+        pattern:
+           spec:
+             =(securityContext):
+               =(fsGroup): ">=0"
+{{- end }}

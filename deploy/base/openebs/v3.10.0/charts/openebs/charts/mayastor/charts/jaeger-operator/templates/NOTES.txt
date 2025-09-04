@@ -1,0 +1,8 @@
+jaeger-operator is installed.
+
+
+Check the jaeger-operator logs
+  export POD=$(kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -lapp.kubernetes.io/name=jaeger-operator --namespace {{ .Release.Namespace }} --output name)
+  kubectl logs $POD --namespace={{ .Release.Namespace }}
+
+

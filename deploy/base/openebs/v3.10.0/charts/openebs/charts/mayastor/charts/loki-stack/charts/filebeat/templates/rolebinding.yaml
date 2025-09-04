@@ -1,0 +1,19 @@
+{{- if .Values.managedServiceAccount }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "filebeat.serviceAccount" . }}-role-binding
+  labels:
+    app: "{{ template "filebeat.fullname" . }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+roleRef:
+  kind: Role
+  name: {{ template "filebeat.serviceAccount" . }}-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ template "filebeat.serviceAccount" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end -}}

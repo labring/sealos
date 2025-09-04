@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "jaeger-operator.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "jaeger-operator.labels" . | indent 4 }}
+{{- if .Values.service.annotations }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+{{- end }}
+spec:
+  ports:
+  - name: metrics
+    port: 8383
+    protocol: TCP
+    targetPort: 8383
+{{- if and (eq .Values.service.type "NodePort") (.Values.service.nodePort) }}
+    nodePort: {{ .Values.service.nodePort }}
+{{- end }}
+  selector:
+    app.kubernetes.io/name: {{ include "jaeger-operator.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  type: {{ .Values.service.type }}

@@ -1,0 +1,40 @@
+user:
+  logstash:
+    exists: true
+    uid: 1000
+    gid: 1000
+
+http:
+  http://localhost:9600?pretty:
+    status: 200
+    timeout: 2000
+    body:
+      - '"version" : "7.17.1"'
+      - '"http_address" : "0.0.0.0:9600"'
+      - '"status" : "green"'
+      - '"workers" : 1'
+      - '"batch_size" : 125'
+      - '"batch_delay" : 50'
+
+file:
+  /usr/share/logstash/config/logstash.yml:
+    exists: true
+    mode: "0644"
+    owner: logstash
+    group: root
+    filetype: file
+    contains:
+      - 'http.host: "0.0.0.0"'
+  /usr/share/logstash/pipeline/logstash.conf:
+    exists: true
+    mode: "0644"
+    owner: logstash
+    group: root
+    filetype: file
+    contains:
+      - "input {"
+      - "beats {"
+      - "port => 5044"
+      - "output {"
+      - "stdout {"
+      - "codec => rubydebug"

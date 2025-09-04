@@ -1,0 +1,15 @@
+apiVersion: v1
+appVersion: v2.1.0
+deprecated: true
+description: Uses fluent-bit Loki go plugin for gathering logs and sending them to
+  Loki
+home: https://grafana.com/loki
+icon: https://raw.githubusercontent.com/grafana/loki/master/docs/sources/logo.png
+kubeVersion: ^1.10.0-0
+maintainers:
+- email: lokiproject@googlegroups.com
+  name: Loki Maintainers
+name: fluent-bit
+sources:
+- https://github.com/grafana/loki
+version: 2.3.1

@@ -1,0 +1,17 @@
+{{- if .Values.rbac.create }}
+kind: {{ if .Values.rbac.clusterRole }}Cluster{{ end }}RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "jaeger-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "jaeger-operator.labels" . | indent 4 }}
+subjects:
+- kind: ServiceAccount
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "jaeger-operator.serviceAccountName" . }}
+roleRef:
+  kind: {{ if .Values.rbac.clusterRole }}Cluster{{ end }}Role
+  name: {{ include "jaeger-operator.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

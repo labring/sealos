@@ -1,0 +1,14 @@
+{{- if .Values.alertmanager.podDisruptionBudget.enabled }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "prometheus.alertmanager.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+  labels:
+    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.alertmanager.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "prometheus.alertmanager.labels" . | nindent 6 }}
+{{- end }}

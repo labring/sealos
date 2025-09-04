@@ -1,0 +1,18 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "promtail.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "promtail.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: http-metrics
+      port: {{ .Values.config.serverPort }}
+      targetPort: http-metrics
+      protocol: TCP
+  selector:
+    {{- include "promtail.selectorLabels" . | nindent 4 }}
+{{- end }}

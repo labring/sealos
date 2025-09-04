@@ -1,0 +1,79 @@
+{{- if .Values.networkPolicy.enabled }}
+kind: NetworkPolicy
+apiVersion: {{ template "networkPolicy.apiVersion" . }}
+metadata:
+  name: {{ include "nats.fullname" . }}
+  namespace: {{ include "nats.namespace" . }}
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "nats.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  - Egress
+  egress:
+  # Allow dns resolution
+  - ports:
+    - port: 53
+      protocol: UDP
+  # Allow outbound connections to other cluster pods
+  - ports:
+    - port: {{ .Values.nats.client.port }}
+      protocol: TCP
+    - port: 6222
+      protocol: TCP
+    - port: 8222
+      protocol: TCP
+    - port: 7777
+      protocol: TCP
+    - port: {{ .Values.leafnodes.port }}
+      protocol: TCP
+    - port: {{ .Values.gateway.port }}
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          {{- include "nats.selectorLabels" . | nindent 10 }}
+  {{- if .Values.networkPolicy.extraEgress }}
+  {{- include "tplvalues.render" ( dict "value" .Values.networkPolicy.extraEgress "context" $ ) | nindent 2 }}
+  {{- end }}
+  ingress:
+  # Allow inbound connections
+  - ports:
+    - port: {{ .Values.nats.client.port }}
+      protocol: TCP
+    - port: 6222
+      protocol: TCP
+    - port: 8222
+      protocol: TCP
+    - port: 7777
+      protocol: TCP
+    - port: {{ .Values.leafnodes.port }}
+      protocol: TCP
+    - port: {{ .Values.gateway.port }}
+      protocol: TCP
+    {{- if not .Values.networkPolicy.allowExternal }}
+    from:
+    - podSelector:
+        matchLabels:
+          {{ include "nats.fullname" . }}-client: "true"
+    - podSelector:
+        matchLabels:
+          {{- include "nats.selectorLabels" . | nindent 10 }}
+    {{- if .Values.networkPolicy.ingressNSMatchLabels }}
+    - namespaceSelector:
+        matchLabels:
+          {{- toYaml .Values.networkPolicy.ingressNSMatchLabels | nindent 10 }}
+      {{- if .Values.networkPolicy.ingressNSPodMatchLabels }}
+      podSelector:
+        matchLabels:
+          {{- toYaml .Values.networkPolicy.ingressNSPodMatchLabels | nindent 10 }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- if .Values.networkPolicy.extraIngress }}
+  {{- include "tplvalues.render" ( dict "value" .Values.networkPolicy.extraIngress "context" $ ) | nindent 2 }}
+  {{- end }}
+{{- end }}

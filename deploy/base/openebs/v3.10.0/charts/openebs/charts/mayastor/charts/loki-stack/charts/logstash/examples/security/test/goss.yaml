@@ -1,0 +1,62 @@
+mount:
+  /usr/share/logstash/data:
+    exists: true
+  /usr/share/logstash/config/logstash.yml:
+    exists: true
+    opts:
+      - ro
+  /usr/share/logstash/pipeline/uptime.conf:
+    exists: true
+    opts:
+      - ro
+
+user:
+  logstash:
+    exists: true
+    uid: 1000
+    gid: 1000
+
+http:
+  http://localhost:9600?pretty:
+    status: 200
+    timeout: 2000
+    body:
+      - '"version" : "7.17.1"'
+      - '"http_address" : "0.0.0.0:9600"'
+      - '"status" : "green"'
+      - '"workers" : 1'
+      - '"batch_size" : 125'
+      - '"batch_delay" : 50'
+  https://security-master:9200/_cat/indices:
+    status: 200
+    timeout: 2000
+    body:
+      - "logstash"
+    allow-insecure: true
+    username: "{{ .Env.ELASTICSEARCH_USERNAME }}"
+    password: "{{ .Env.ELASTICSEARCH_PASSWORD }}"
+
+file:
+  /usr/share/logstash/config/logstash.yml:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: logstash
+    filetype: file
+    contains:
+      - "http.host: 0.0.0.0"
+      - "xpack.monitoring.enabled: true"
+      - 'xpack.monitoring.elasticsearch.hosts: ["https://security-master:9200"]'
+      - "xpack.monitoring.elasticsearch.ssl.certificate_authority: /usr/share/logstash/config/certs/elastic-certificate.crt"
+  /usr/share/logstash/pipeline/uptime.conf:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: logstash
+    filetype: file
+    contains:
+      - 'input { exec { command => "uptime" interval => 30 } }'
+      - "output { elasticsearch {"
+      - 'hosts => ["https://security-master:9200"]'
+      - 'cacert => "/usr/share/logstash/config/certs/elastic-certificate.crt"'
+      - 'index => "logstash"'

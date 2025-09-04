@@ -1,0 +1,237 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "logstash.fullname" . }}
+  labels:
+    app: "{{ template "logstash.fullname" . }}"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  serviceName: {{ template "logstash.fullname" . }}-headless
+  selector:
+    matchLabels:
+      app: "{{ template "logstash.fullname" . }}"
+      release: {{ .Release.Name | quote }}
+  replicas: {{ .Values.replicas }}
+  podManagementPolicy: {{ .Values.podManagementPolicy }}
+  updateStrategy:
+    type: {{ .Values.updateStrategy }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ template "logstash.fullname" . }}
+    {{- with .Values.persistence.annotations  }}
+      annotations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    spec:
+{{ toYaml .Values.volumeClaimTemplate | indent 6 }}
+  {{- end }}
+  template:
+    metadata:
+      name: "{{ template "logstash.fullname" . }}"
+      labels:
+        app: "{{ template "logstash.fullname" . }}"
+        chart: "{{ .Chart.Name }}"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+        {{- range $key, $value := .Values.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      annotations:
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- /* This forces a restart if the configmap has changed */}}
+        {{- if .Values.logstashConfig }}
+        configchecksum: {{ include (print .Template.BasePath "/configmap-config.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+        {{- /* This forces a restart if the configmap has changed */}}
+        {{- if .Values.logstashPipeline }}
+        pipelinechecksum: {{ include (print .Template.BasePath "/configmap-pipeline.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+        {{- if .Values.logstashPattern }}
+        patternchecksum: {{ include (print .Template.BasePath "/configmap-pattern.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+        {{- if .Values.secrets }}
+        secretschecksum: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+    spec:
+      {{- if .Values.schedulerName }}
+      schedulerName: "{{ .Values.schedulerName }}"
+      {{- end }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
+      {{- if or .Values.rbac.create .Values.rbac.serviceAccountName }}
+      serviceAccountName: "{{ template "logstash.serviceAccount" . }}"
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 6 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if or (eq .Values.antiAffinity "hard") (eq .Values.antiAffinity "soft") .Values.nodeAffinity .Values.podAffinity }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      affinity:
+      {{- end }}
+      {{- if eq .Values.antiAffinity "hard" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - "{{ template "logstash.fullname" .}}"
+            topologyKey: {{ .Values.antiAffinityTopologyKey }}
+      {{- else if eq .Values.antiAffinity "soft" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: {{ .Values.antiAffinityTopologyKey }}
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "{{ template "logstash.fullname" . }}"
+      {{- end }}
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+      {{- with .Values.podAffinity }}
+        podAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriod }}
+      volumes:
+        {{- range .Values.secretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+        {{- if .Values.logstashConfig }}
+        - name: logstashconfig
+          configMap:
+            name: {{ template "logstash.fullname" . }}-config
+        {{- end }}
+        {{- if .Values.logstashPipeline }}
+        - name: logstashpipeline
+          configMap:
+            name: {{ template "logstash.fullname" . }}-pipeline
+        {{- end }}
+        {{- if .Values.logstashPattern }}
+        - name: logstashpattern
+          configMap:
+            name: {{ template "logstash.fullname" . }}-pattern
+        {{- end }}
+      {{- if .Values.extraVolumes }}
+      {{- if eq "string" (printf "%T" .Values.extraVolumes) }}
+{{ tpl .Values.extraVolumes . | indent 8 }}
+      {{- else }}
+{{ toYaml .Values.extraVolumes | indent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end}}
+      {{- if .Values.hostAliases }}
+      hostAliases: {{ toYaml .Values.hostAliases | nindent 6 }}
+      {{- end }}
+      {{- if .Values.extraInitContainers }}
+      initContainers:
+      {{- if eq "string" (printf "%T" .Values.extraInitContainers) }}
+{{ tpl .Values.extraInitContainers . | indent 6 }}
+      {{- else }}
+{{ toYaml .Values.extraInitContainers | indent 6 }}      
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: "{{ template "logstash.name" . }}"
+        securityContext:
+{{ toYaml .Values.securityContext | indent 10 }}
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: "{{ .Values.imagePullPolicy }}"
+        livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 10 }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.httpPort }}
+      {{- if .Values.extraPorts }}
+        {{- toYaml .Values.extraPorts | nindent 8 }}
+      {{- end }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        env:
+          - name: LS_JAVA_OPTS
+            value: "{{ .Values.logstashJavaOpts }}"
+{{- if .Values.extraEnvs }}
+{{ toYaml .Values.extraEnvs | indent 10 }}
+{{- end }}
+{{- if .Values.envFrom }}
+        envFrom:
+{{ toYaml .Values.envFrom | indent 10 }}
+{{- end }}
+        volumeMounts:
+          {{- if .Values.persistence.enabled }}
+          - name: "{{ template "logstash.fullname" . }}"
+            mountPath: /usr/share/logstash/data
+          {{- end }}
+          {{- range .Values.secretMounts }}
+          - name: {{ .name }}
+            mountPath: {{ .path }}
+            {{- if .subPath }}
+            subPath: {{ .subPath }}
+            {{- end }}
+          {{- end }}
+          {{- range $path, $config := .Values.logstashConfig }}
+          - name: logstashconfig
+            mountPath: /usr/share/logstash/config/{{ $path }}
+            subPath: {{ $path }}
+          {{- end -}}
+          {{- range $path, $config := .Values.logstashPipeline }}
+          - name: logstashpipeline
+            mountPath: /usr/share/logstash/pipeline/{{ $path }}
+            subPath: {{ $path }}
+          {{- end -}}
+          {{- if .Values.logstashPattern }}
+          {{- $logstashPatternDir := .Values.logstashPatternDir -}}
+          {{- range $path, $config := .Values.logstashPattern }}
+          - name: logstashpattern
+            mountPath: {{ $logstashPatternDir }}{{ $path }}
+            subPath: {{ $path }}
+          {{- end -}}
+          {{- end -}}
+        {{- if .Values.extraVolumeMounts }}
+        {{- if eq "string" (printf "%T" .Values.extraVolumeMounts) }}
+{{ tpl .Values.extraVolumeMounts . | indent 10 }}
+        {{- else }}
+{{ toYaml .Values.extraVolumeMounts | indent 10 }}
+        {{- end }}
+        {{- end }}
+{{- if .Values.lifecycle }}
+        lifecycle:
+{{ toYaml .Values.lifecycle | indent 10 }}
+{{- end }}
+      {{- if .Values.extraContainers }}
+      {{- if eq "string" (printf "%T" .Values.extraContainers) }}
+{{ tpl .Values.extraContainers . | indent 6 }}
+      {{- else }}
+{{ toYaml .Values.extraContainers | indent 6 }}
+      {{- end }}      
+      {{- end }}

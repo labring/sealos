@@ -1,0 +1,112 @@
+{{- if .Values.server.enabled -}}
+The Prometheus server can be accessed via port {{ .Values.server.service.servicePort }} on the following DNS name from within your cluster:
+{{ template "prometheus.server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+
+{{ if .Values.server.ingress.enabled -}}
+From outside the cluster, the server URL(s) are:
+{{- range .Values.server.ingress.hosts }}
+http://{{ . }}
+{{- end }}
+{{- else }}
+Get the Prometheus server URL by running these commands in the same shell:
+{{- if contains "NodePort" .Values.server.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus.server.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.server.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "prometheus.server.fullname" . }}'
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.server.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ .Values.server.service.servicePort }}
+{{- else if contains "ClusterIP"  .Values.server.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.server.name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9090
+{{- end }}
+{{- end }}
+
+{{- if .Values.server.persistentVolume.enabled }}
+{{- else }}
+#################################################################################
+######   WARNING: Persistence is disabled!!! You will lose your data when   #####
+######            the Server pod is terminated.                             #####
+#################################################################################
+{{- end }}
+{{- end }}
+
+{{ if .Values.alertmanager.enabled }}
+The Prometheus alertmanager can be accessed via port {{ .Values.alertmanager.service.servicePort }} on the following DNS name from within your cluster:
+{{ template "prometheus.alertmanager.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+
+{{ if .Values.alertmanager.ingress.enabled -}}
+From outside the cluster, the alertmanager URL(s) are:
+{{- range .Values.alertmanager.ingress.hosts }}
+http://{{ . }}
+{{- end }}
+{{- else }}
+Get the Alertmanager URL by running these commands in the same shell:
+{{- if contains "NodePort" .Values.alertmanager.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus.alertmanager.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.alertmanager.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "prometheus.alertmanager.fullname" . }}'
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.alertmanager.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ .Values.alertmanager.service.servicePort }}
+{{- else if contains "ClusterIP"  .Values.alertmanager.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.alertmanager.name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9093
+{{- end }}
+{{- end }}
+
+{{- if .Values.alertmanager.persistentVolume.enabled }}
+{{- else }}
+#################################################################################
+######   WARNING: Persistence is disabled!!! You will lose your data when   #####
+######            the AlertManager pod is terminated.                       #####
+#################################################################################
+{{- end }}
+{{- end }}
+
+{{- if .Values.nodeExporter.podSecurityPolicy.enabled }}
+{{- else }}
+#################################################################################
+######   WARNING: Pod Security Policy has been moved to a global property.  #####
+######            use .Values.podSecurityPolicy.enabled with pod-based      #####
+######            annotations                                               #####
+######            (e.g. .Values.nodeExporter.podSecurityPolicy.annotations) #####
+#################################################################################
+{{- end }}
+
+{{ if .Values.pushgateway.enabled }}
+The Prometheus PushGateway can be accessed via port {{ .Values.pushgateway.service.servicePort }} on the following DNS name from within your cluster:
+{{ template "prometheus.pushgateway.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+
+{{ if .Values.pushgateway.ingress.enabled -}}
+From outside the cluster, the pushgateway URL(s) are:
+{{- range .Values.pushgateway.ingress.hosts }}
+http://{{ . }}
+{{- end }}
+{{- else }}
+Get the PushGateway URL by running these commands in the same shell:
+{{- if contains "NodePort" .Values.pushgateway.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus.pushgateway.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.pushgateway.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "prometheus.pushgateway.fullname" . }}'
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.pushgateway.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ .Values.pushgateway.service.servicePort }}
+{{- else if contains "ClusterIP"  .Values.pushgateway.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.pushgateway.name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9091
+{{- end }}
+{{- end }}
+{{- end }}
+
+For more information on running Prometheus, visit:
+https://prometheus.io/

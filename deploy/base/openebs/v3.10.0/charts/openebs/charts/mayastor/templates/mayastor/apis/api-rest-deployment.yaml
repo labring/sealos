@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-api-rest
+  labels:
+    app: api-rest
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  replicas: {{ .Values.apis.rest.replicaCount }}
+  selector:
+    matchLabels:
+      app: api-rest
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: api-rest
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      initContainers:
+        {{- include "base_init_containers" . }}
+      {{- if $pcName := include "priority_class_with_default" (dict "template" . "localPriorityClass" .Values.apis.rest.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $tolerations := include "tolerations_with_early_eviction" (dict "template" . "localTolerations" .Values.apis.rest.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      containers:
+        - name: api-rest
+          resources:
+            limits:
+              cpu: {{ .Values.apis.rest.resources.limits.cpu | quote }}
+              memory: {{ .Values.apis.rest.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.apis.rest.resources.requests.cpu | quote }}
+              memory: {{ .Values.apis.rest.resources.requests.memory | quote }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-api-rest:{{ default .Values.image.tag .Values.image.repoTags.controlPlane }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--dummy-certificates"
+            - "--no-auth"
+            - "--http=0.0.0.0:8081"
+            - "--request-timeout={{ .Values.base.default_req_timeout }}"{{ if .Values.base.jaeger.enabled }}
+            - "--jaeger={{ .Values.base.jaeger.agent.name }}:{{ .Values.base.jaeger.agent.port }}"{{ end }}
+            - "--core-grpc=https://{{ .Release.Name }}-agent-core:50051"
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.apis.rest.logLevel }}
+            {{- if default .Values.base.logSilenceLevel .Values.apis.rest.logSilenceLevel }}
+            - name: RUST_LOG_SILENCE
+              value: {{ default .Values.base.logSilenceLevel .Values.apis.rest.logSilenceLevel }}
+            {{- end }}

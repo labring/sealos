@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+{{- if .Values.autosharding.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: {{ template "kube-state-metrics.fullname" . }}
+  namespace: {{ template "kube-state-metrics.namespace" . }}
+  labels:
+    {{- include "kube-state-metrics.labels" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kube-state-metrics.selectorLabels" . | indent 6 }}
+  replicas: {{ .Values.replicas }}
+  {{- if .Values.autosharding.enabled }}
+  serviceName: {{ template "kube-state-metrics.fullname" . }}
+  volumeClaimTemplates: []
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "kube-state-metrics.labels" . | indent 8 }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      hostNetwork: {{ .Values.hostNetwork }}
+      serviceAccountName: {{ template "kube-state-metrics.serviceAccountName" . }}
+      {{- if .Values.securityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+      {{- end }}
+    {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+    {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}
+        {{- if .Values.autosharding.enabled }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- end }}
+        args:
+        {{-  if .Values.extraArgs  }}
+        {{- range .Values.extraArgs  }}
+        - {{ . }}
+        {{- end  }}
+        {{-  end  }}
+        {{- if .Values.service.port }}
+        - --port={{ .Values.service.port | default 8080}}
+        {{-  end  }}
+        {{-  if .Values.collectors  }}
+        - --resources={{ .Values.collectors | join "," }}
+        {{-  end  }}
+        {{- if .Values.metricLabelsAllowlist }}
+        - --metric-labels-allowlist={{ .Values.metricLabelsAllowlist | join "," }}
+        {{- end }}
+        {{- if .Values.metricAnnotationsAllowList }}
+        - --metric-annotations-allowlist={{ .Values.metricAnnotationsAllowList | join "," }}
+        {{- end }}
+        {{- if .Values.metricAllowlist }}
+        - --metric-allowlist={{ .Values.metricAllowlist | join "," }}
+        {{- end }}
+        {{- if .Values.metricDenylist }}
+        - --metric-denylist={{ .Values.metricDenylist | join "," }}
+        {{- end }}
+        {{- if .Values.namespaces }}
+        - --namespaces={{ tpl (.Values.namespaces | join ",") $ }}
+        {{- end }}
+        {{- if .Values.autosharding.enabled }}
+        - --pod=$(POD_NAME)
+        - --pod-namespace=$(POD_NAMESPACE)
+        {{- end }}
+        {{- if .Values.kubeconfig.enabled }}
+        - --kubeconfig=/opt/k8s/.kube/config
+        {{- end }}
+        {{- if .Values.selfMonitor.telemetryHost }}
+        - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
+        {{- end }}
+        - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
+        {{- if .Values.kubeconfig.enabled }}
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /opt/k8s/.kube/
+          readOnly: true
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.service.port | default 8080}}
+          name: "http"
+        {{- if .Values.selfMonitor.enabled }}
+        - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
+          name: "metrics"
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.service.port | default 8080}}
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.port | default 8080}}
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        {{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+{{- end }}
+{{- if .Values.containerSecurityContext }}
+        securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 10 }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.kubeconfig.enabled}}
+      volumes:
+        - name: kubeconfig
+          secret:
+            secretName: {{ template "kube-state-metrics.fullname" . }}-kubeconfig
+      {{- end }}

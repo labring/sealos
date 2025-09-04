@@ -1,0 +1,51 @@
+{{- if and .Values.server.enabled .Values.rbac.create .Values.podSecurityPolicy.enabled }}
+apiVersion: {{ template "prometheus.podSecurityPolicy.apiVersion" . }}
+kind: PodSecurityPolicy
+metadata:
+  name: {{ template "prometheus.server.fullname" . }}
+  labels:
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+  annotations:
+{{- if .Values.server.podSecurityPolicy.annotations }}
+{{ toYaml .Values.server.podSecurityPolicy.annotations | indent 4 }}
+{{- end }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  allowedCapabilities:
+    - 'CHOWN'
+  volumes:
+    - 'configMap'
+    - 'persistentVolumeClaim'
+    - 'emptyDir'
+    - 'secret'
+    - 'hostPath'
+  allowedHostPaths:
+    - pathPrefix: /etc
+      readOnly: true
+    - pathPrefix: {{ .Values.server.persistentVolume.mountPath }}
+  {{- range .Values.server.extraHostPathMounts }}
+    - pathPrefix: {{ .hostPath }}
+      readOnly: {{ .readOnly }}
+  {{- end }}
+  hostNetwork: false
+  hostPID: false
+  hostIPC: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: false
+{{- end }}

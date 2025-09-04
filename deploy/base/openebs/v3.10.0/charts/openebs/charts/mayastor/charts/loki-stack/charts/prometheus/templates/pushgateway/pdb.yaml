@@ -1,0 +1,14 @@
+{{- if .Values.pushgateway.podDisruptionBudget.enabled }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "prometheus.pushgateway.fullname" . }}
+{{ include "prometheus.namespace" . | indent 2 }}
+  labels:
+    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.pushgateway.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "prometheus.pushgateway.labels" . | nindent 6 }}
+{{- end }}

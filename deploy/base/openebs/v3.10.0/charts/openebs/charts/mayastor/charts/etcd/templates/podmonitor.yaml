@@ -1,0 +1,42 @@
+{{- if and .Values.metrics.enabled .Values.metrics.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ ternary .Values.metrics.podMonitor.namespace .Release.Namespace (not (empty .Values.metrics.podMonitor.namespace)) }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.metrics.podMonitor.additionalLabels }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.metrics.podMonitor.additionalLabels "context" $) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  podMetricsEndpoints:
+    - port: client
+      path: /metrics
+      {{- if .Values.metrics.podMonitor.interval }}
+      interval: {{ .Values.metrics.podMonitor.interval }}
+      {{- end }}
+      {{- if .Values.metrics.podMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.metrics.podMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.metrics.podMonitor.scheme }}
+      scheme: {{ .Values.metrics.podMonitor.scheme }}
+      {{- end }}
+      {{- if .Values.metrics.podMonitor.tlsConfig }}
+      tlsConfig: {{- include "common.tplvalues.render" ( dict "value" .Values.metrics.podMonitor.tlsConfig "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.metrics.podMonitor.relabelings }}
+      relabelings: 
+      {{- include "common.tplvalues.render" (dict "value" .Values.metrics.podMonitor.relabelings "context" $) | nindent 8 }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+{{- end }}

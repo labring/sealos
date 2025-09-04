@@ -1,0 +1,19 @@
+project:
+  name: OpenEBS Mayastor
+  shortName: Mayastor
+  url: https://openebs.io/mayastor
+  description: Fast NVMe backed storage for enterprise users on Kubernetes
+repository:
+  url: https://openebs.github.io/mayastor-extensions/
+  name: mayastor
+chart:
+  name: mayastor
+  version: 2.5.0
+  values: "-- generate from values file --"
+  valuesExample: "-- generate from values file --"
+prerequisites:
+  - "Kubernetes v1.21+"
+  - Linux Kernel 5.4+ on Worker Nodes with required nvme modules loaded
+release:
+  name: mayastor
+  namespace: mayastor

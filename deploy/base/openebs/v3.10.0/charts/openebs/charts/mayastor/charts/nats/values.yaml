@@ -1,0 +1,827 @@
+###############################
+#                             #
+#  NATS Server Configuration  #
+#                             #
+###############################
+nats:
+  image:
+    repository: nats
+    tag: 2.9.17-alpine
+    pullPolicy: IfNotPresent
+    # registry: docker.io
+
+  # The servers name prefix, must be used for example when we want a NATS cluster
+  # spanning multiple Kubernetes clusters.
+  serverNamePrefix: ""
+
+  # Server Tags
+  serverTags:
+  # - "foo"
+  # - "bar"
+
+  # Sets GOMEMLIMIT environment variable which makes the Go GC be aware of memory limits
+  # from the container. Recommended to be set to about 90% of the resource memory limits.
+  #
+  # More info about the Go GC: https://go.dev/doc/gc-guide
+  #
+  # gomemlimit: "4GiB"
+
+  # Toggle profiling.
+  # This enables nats-server pprof (profiling) port, so you can see goroutines
+  # stacks, memory heap sizes, etc.
+  profiling:
+    enabled: false
+    port: 6000
+
+  # Toggle using health check probes to better detect failures.
+  healthcheck:
+    # /healthz health check endpoint was introduced in NATS Server 2.7.1
+    # Attempt to detect /healthz support by inspecting if tag is >=2.7.1
+    detectHealthz: true
+    # Enable /healthz startupProbe for controlled upgrades of NATS JetStream
+    enableHealthz: true
+    # Enable /healthz liveness and readiness probes (supported in >=2.9.0)
+    # This is a feature flag and will be removed in future releases
+    enableHealthzLivenessReadiness: false
+
+    # Enable liveness checks.  If this fails, then the NATS Server will restarted.
+    liveness:
+      enabled: true
+
+      initialDelaySeconds: 10
+      timeoutSeconds: 5
+      # NOTE: liveness check + terminationGracePeriodSeconds can introduce unnecessarily long outages
+      # due to the coupling between liveness probe and terminationGracePeriodSeconds.
+      # To avoid this, we make the periodSeconds of the liveness check to be about half the default
+      # time that it takes for lame duck graceful stop.
+      #
+      # In case of using Kubernetes +1.22 with probe-level terminationGracePeriodSeconds
+      # we could revise this but for now keep a minimal liveness check.
+      #
+      # More info:
+      #
+      #  https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#probe-level-terminationgraceperiodseconds
+      #  https://github.com/kubernetes/kubernetes/issues/64715
+      #
+      periodSeconds: 30
+      successThreshold: 1
+      failureThreshold: 3
+
+      # Override the health check path
+      # httpGet:
+      #   path: /healthz?js-enabled=true
+
+      # Only for Kubernetes +1.22 that have pod level probes enabled.
+      # terminationGracePeriodSeconds: 5
+
+    # Periodically check for the server to be ready for connections while
+    # the NATS container is running.
+    readiness:
+      enabled: true
+
+      initialDelaySeconds: 10
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+
+      # Override the health check path
+      # httpGet:
+      #   path: /healthz?js-server-only=true
+
+    # Enable startup checks to confirm server is ready for traffic.
+    # This is recommended for JetStream deployments since in cluster mode
+    # it will try to ensure that the server is ready to serve streams.
+    startup:
+      enabled: true
+
+      initialDelaySeconds: 10
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 90
+
+      # Override the health check path
+      # httpGet:
+      #   path: /healthz
+
+  ## hostNetwork
+  hostNetwork: false
+
+  ## Pod Dns Policy. Default is ClusterFirst
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+  dnsPolicy: ClusterFirst
+
+  # Adds a hash of the ConfigMap as a pod annotation
+  # This will cause the StatefulSet to roll when the ConfigMap is updated
+  configChecksumAnnotation: true
+
+  # securityContext for the nats container
+  securityContext: {}
+
+  # Toggle whether to enable external access.
+  # This binds a host port for clients, gateways and leafnodes.
+  externalAccess: false
+
+  # Toggle to disable client advertisements (connect_urls),
+  # in case of running behind a load balancer
+  # it might be required to disable advertisements.
+  advertise: true
+
+  # In case both external access and advertise are enabled
+  # then a service account would be required to be able to
+  # gather the public ip from a node.
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  # Toggle whether to automatically mount Service Account token in the pod
+  # not set means default value, boolean true/false overrides default value
+  # automountServiceAccountToken: true
+
+  # The number of connect attempts against discovered routes.
+  connectRetries: 120
+
+  # selector matchLabels for the server and service.
+  # If left empty defaults are used.
+  # This is helpful if you are updating from Chart version <=7.4
+  selectorLabels: {}
+
+  # Resources to add to the container
+  # ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+
+  client:
+    port: 4222
+    portName: "client"
+
+  # extraEnv is the list of environment variables to add to the nats-server container
+  extraEnv: []
+
+  # Server settings.
+  limits:
+    maxConnections:
+    maxSubscriptions:
+    maxControlLine:
+    maxPayload:
+
+    writeDeadline:
+    maxPending:
+    maxPings:
+
+    # How many seconds should pass before sending a PING
+    # to a client that has no activity.
+    pingInterval:
+
+    # grace period after pod begins shutdown before starting to close client connections
+    lameDuckGracePeriod: "10s"
+
+    # duration over which to slowly close close client connections after lameDuckGracePeriod has passed
+    lameDuckDuration: "30s"
+
+  # terminationGracePeriodSeconds determines how long to wait for graceful shutdown
+  # this should be at least `lameDuckGracePeriod` + `lameDuckDuration` + 20s shutdown overhead
+  terminationGracePeriodSeconds: 60
+
+  logging:
+    debug:
+    trace:
+    logtime:
+    connectErrorReports:
+    reconnectErrorReports:
+
+  # customConfigSecret can be used to use an custom secret for the config
+  # of the NATS Server.
+  # NOTE: For this to work the name of the configuration has to be
+  # called `nats.conf`.
+  #
+  # e.g. kubectl create secret generic custom-nats-conf --from-file nats.conf
+  #
+  # customConfigSecret:
+  #  name:
+  #
+  # Alternately, the generated config can be extended with extra imports using the below syntax.
+  # The benefit of this is that cluster settings can be built up via helm values, but external
+  # secrets can be referenced and imported alongside it.
+  #
+  # config:
+  #   <name-of-config-item>:
+  #     <configMap|secret>
+  #       name: "<configMap|secret name>"
+  #
+  # e.g:
+  #
+  #  config:
+  #    - name: ssh-key
+  #      secret:
+  #        secretName: ssh-key
+  #    - name: config-vol
+  #      configMap:
+  #        name: log-config
+
+  # mappings is used to configure subject mapping
+  # https://docs.nats.io/running-a-nats-service/configuration/configuring_subject_mapping
+  # e.g:
+  # mappings:
+  #   foo: bar
+  #   foo.cluster.scoped:
+  #     - destination: bar.cluster.scoped
+  #       weight: 70%
+  #       cluster: us-west-1
+  #     - destination: foobar.cluster.scoped
+  #       weight: 30%
+  #       cluster: us-east-1
+  mappings: {}
+
+  jetstream:
+    enabled: false
+
+    # Jetstream Domain
+    domain:
+
+    # Jetstream Unique Tag prevent placing a stream in the same availability zone twice.
+    uniqueTag:
+
+    max_outstanding_catchup:
+
+    ##########################
+    #                        #
+    #  Jetstream Encryption  #
+    #                        #
+    ##########################
+    encryption:
+      # Use key if you want to provide the key via Helm Values
+      # key: random_key
+
+      # Use a secret reference if you want to get a key from a secret
+      # secret:
+      #   name: "nats-jetstream-encryption"
+      #   key: "key"
+
+      # Use cipher if you want to choose a different cipher from the default.
+      # cipher: aes
+
+    #############################
+    #                           #
+    #  Jetstream Memory Storage #
+    #                           #
+    #############################
+    memStorage:
+      enabled: true
+      size: 1Gi
+
+    ############################
+    #                          #
+    #  Jetstream File Storage  #
+    #                          #
+    ############################
+    fileStorage:
+      enabled: true
+      storageDirectory: /data
+
+      # Set for use with existing PVC
+      # existingClaim: jetstream-pvc
+      # claimStorageSize: 10Gi
+
+      # Use below block to create new persistent volume
+      # only used if existingClaim is not specified
+      size: 10Gi
+      # storageClassName: ""
+      accessModes:
+        - ReadWriteOnce
+      annotations:
+      # key: "value"
+
+    # Use below if fileStorage is not enabled but you are persisting
+    # data using an alternative to PVC (e.g. hostPath)
+    # These set the corresponding jetstream configuration in nats.conf.
+    # store_dir: "/data"
+    # max_file: "10Gi"
+
+  #######################
+  #                     #
+  #  TLS Configuration  #
+  #                     #
+  #######################
+  #
+  #  # You can find more on how to setup and trouble shoot TLS connnections at:
+  #
+  #  # https://docs.nats.io/nats-server/configuration/securing_nats/tls
+  #
+
+  # tls:
+  #   allowNonTLS: false
+  #   secret:
+  #     name: nats-client-tls
+  #   ca: "ca.crt"
+  #   cert: "tls.crt"
+  #   key: "tls.key"
+
+mqtt:
+  enabled: false
+  ackWait: 1m
+  maxAckPending: 100
+
+  #######################
+  #                     #
+  #  TLS Configuration  #
+  #                     #
+  #######################
+  #
+  #  # You can find more on how to setup and trouble shoot TLS connnections at:
+  #
+  #  # https://docs.nats.io/nats-server/configuration/securing_nats/tls
+  #
+
+  #
+  # tls:
+  #   secret:
+  #     name: nats-mqtt-tls
+  #   ca: "ca.crt"
+  #   cert: "tls.crt"
+  #   key: "tls.key"
+
+nameOverride: ""
+namespaceOverride: ""
+
+# An array of imagePullSecrets, and they have to be created manually in the same namespace
+# ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+
+# Toggle whether to use setup a Pod Security Context
+# ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+securityContext: {}
+# securityContext:
+#   fsGroup: 1000
+#   runAsUser: 1000
+#   runAsNonRoot: true
+
+# Affinity for pod assignment
+# ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+## Pod priority class name
+## ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+priorityClassName: null
+
+# Service topology
+# ref: https://kubernetes.io/docs/concepts/services-networking/service-topology/
+topologyKeys: []
+
+# Pod Topology Spread Constraints
+# ref https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+topologySpreadConstraints: []
+# - maxSkew: 1
+#   topologyKey: zone
+#   whenUnsatisfiable: DoNotSchedule
+
+# Annotations to add to the NATS pods
+# ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# key: "value"
+
+# Define a Pod Disruption Budget for the stateful set
+# ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+  # minAvailable: 1
+
+# Node labels for pod assignment
+# Ref: https://kubernetes.io/docs/user-guide/node-selection/
+nodeSelector: {}
+
+# Node tolerations for server scheduling to nodes with taints
+# Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+#
+tolerations: []
+#  - key: "key"
+#    operator: "Equal|Exists"
+#    value: "value"
+#    effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+# Annotations to add to the NATS StatefulSet
+statefulSetAnnotations: {}
+
+# Labels to add to the pods of the NATS StatefulSet
+statefulSetPodLabels: {}
+
+# Annotations to add to the NATS Service
+serviceAnnotations: {}
+
+# additionalContainers are the sidecar containers to add to the NATS StatefulSet
+additionalContainers: []
+
+# additionalVolumes are the additional volumes to add to the NATS StatefulSet
+additionalVolumes: []
+
+# additionalVolumeMounts are the additional volume mounts to add to the nats-server and nats-server-config-reloader containers
+additionalVolumeMounts: []
+
+cluster:
+  enabled: false
+  replicas: 3
+  noAdvertise: false
+
+  # Explicitly set routes for clustering.
+  # When JetStream is enabled, the serverName must be unique in the cluster.
+  extraRoutes: []
+
+  # authorization:
+  #   user: foo
+  #   password: pwd
+  #   timeout: 0.5
+
+# Leafnode connections to extend a cluster:
+#
+# https://docs.nats.io/nats-server/configuration/leafnodes
+#
+leafnodes:
+  enabled: false
+  port: 7422
+  noAdvertise: false
+  # remotes:
+  #   - url: "tls://connect.ngs.global:7422"
+
+  #######################
+  #                     #
+  #  TLS Configuration  #
+  #                     #
+  #######################
+  #
+  #  # You can find more on how to setup and trouble shoot TLS connnections at:
+  #
+  #  # https://docs.nats.io/nats-server/configuration/securing_nats/tls
+  #
+
+  #
+  # tls:
+  #   secret:
+  #     name: nats-client-tls
+  #   ca: "ca.crt"
+  #   cert: "tls.crt"
+  #   key: "tls.key"
+
+# Gateway connections to create a super cluster
+#
+# https://docs.nats.io/nats-server/configuration/gateways
+#
+gateway:
+  enabled: false
+  port: 7522
+  name: "default"
+  # authorization:
+  #   user: foo
+  #   password: pwd
+  #   timeout: 0.5
+  # rejectUnknownCluster: false
+
+  # You can add an implicit advertise address instead of using from Node's IP
+  # could also be a fqdn address
+  # advertise: "nats.example.com"
+
+  #############################
+  #                           #
+  #  List of remote gateways  #
+  #                           #
+  #############################
+  # gateways:
+  #   - name: other
+  #     url: nats://my-gateway-url:7522
+
+  #######################
+  #                     #
+  #  TLS Configuration  #
+  #                     #
+  #######################
+  #
+  #  # You can find more on how to setup and trouble shoot TLS connnections at:
+  #
+  #  # https://docs.nats.io/nats-server/configuration/securing_nats/tls
+  #
+  # tls:
+  #   secret:
+  #     name: nats-client-tls
+  #   ca: "ca.crt"
+  #   cert: "tls.crt"
+  #   key: "tls.key"
+
+# In case of both external access and advertisements being
+# enabled, an initializer container will be used to gather
+# the public ips.
+bootconfig:
+  image:
+    repository: natsio/nats-boot-config
+    tag: 0.10.1
+    pullPolicy: IfNotPresent
+    # registry: docker.io
+
+  securityContext: {}
+
+  # Resources to add to the container
+  # ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+
+# NATS Box
+#
+# https://github.com/nats-io/nats-box
+#
+natsbox:
+  enabled: true
+  image:
+    repository: natsio/nats-box
+    tag: 0.13.8
+    pullPolicy: IfNotPresent
+    # registry: docker.io
+
+  securityContext: {}
+
+  # Resources to add to the container
+  # ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+
+  # Annotations to add to the natsbox deployment
+  # ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+  #  key: "value"
+
+  # Labels to add to the natsbox deployment
+  # ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  additionalLabels: {}
+
+  # An array of imagePullSecrets, and they have to be created manually in the same namespace
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+  #  - name: dockerhub
+
+  # credentials:
+  #   secret:
+  #     name: nats-sys-creds
+  #     key: sys.creds
+
+  # Annotations to add to the box pods
+  # ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  podAnnotations: {}
+  #  key: "value"
+
+  # Labels to add to the box pods
+  # ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  podLabels: {}
+  # key: "value"
+
+  # Affinity for nats box pod assignment
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity: {}
+
+  # Node labels for pod assignment
+  # Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: {}
+
+  # Node tolerations for server scheduling to nodes with taints
+  # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  #
+  tolerations: []
+  #  - key: "key"
+  #    operator: "Equal|Exists"
+  #    value: "value"
+  #    effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+  # Additional nats-box server Volume mounts
+  extraVolumeMounts: []
+
+  # Additional nats-box server Volumes
+  extraVolumes: []
+
+  # Toggle whether to automatically mount Service Account token in the pod
+  # not set means default value, boolean true/false overrides default value
+  # automountServiceAccountToken: true
+
+# The NATS config reloader image to use.
+reloader:
+  enabled: true
+  image:
+    repository: natsio/nats-server-config-reloader
+    tag: 0.10.1
+    pullPolicy: IfNotPresent
+    # registry: docker.io
+
+  securityContext: {}
+
+  # Resources to add to the container
+  # ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+
+  extraConfigs: []
+
+# Prometheus NATS Exporter configuration.
+exporter:
+  enabled: true
+  image:
+    repository: natsio/prometheus-nats-exporter
+    tag: 0.11.0
+    pullPolicy: IfNotPresent
+    # registry: docker.io
+
+  portName: metrics
+  securityContext: {}
+
+  # Resources to add to the container
+  # ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+
+  # override the default args passed to the exporter
+  # see https://github.com/nats-io/prometheus-nats-exporter#usage
+  # make sure to pass HTTP monitoring port URL as last arg, e.g ["-connz", "http://localhost:8222/"]
+  args: []
+  # Prometheus operator ServiceMonitor support. Exporter has to be enabled
+  serviceMonitor:
+    enabled: false
+    ## Specify the namespace where Prometheus Operator is running
+    ##
+    # namespace: monitoring
+    labels: {}
+    annotations: {}
+    path: /metrics
+    # interval:
+    # scrapeTimeout:
+
+# Authentication setup
+auth:
+  enabled: false
+
+  # basic:
+  #   noAuthUser:
+  #   # List of users that can connect with basic auth,
+  #   # that belong to the global account.
+  #   users:
+
+  #   defaultPermissions:
+  #     publish: ["SANDBOX.*"]
+  #     subscribe: ["SANDBOX.>"]
+
+  #   # List of accounts with users that can connect
+  #   # using basic auth.
+  #   accounts:
+
+  # Reference to the Operator JWT.
+  # operatorjwt:
+  #   configMap:
+  #     name: operator-jwt
+  #     key: KO.jwt
+
+  # Token authentication
+  # token:
+
+  # NKey authentication
+  # nkeys:
+  #   users:
+
+  # Public key of the System Account
+  # systemAccount:
+
+  resolver:
+    # Disables the resolver by default
+    type: none
+
+    ##########################################
+    #                                        #
+    # Embedded NATS Account Server Resolver  #
+    #                                        #
+    ##########################################
+    # type: full
+
+    # If the resolver type is 'full', delete when enabled will rename the jwt.
+    allowDelete: false
+
+    # Interval at which a nats-server with a nats based account resolver will compare
+    # it's state with one random nats based account resolver in the cluster and if needed,
+    # exchange jwt and converge on the same set of jwt.
+    interval: 2m
+
+    # Operator JWT
+    operator:
+
+    # System Account Public NKEY
+    systemAccount:
+
+    # resolverPreload:
+    #   <ACCOUNT>: <JWT>
+
+    # Directory in which the account JWTs will be stored.
+    store:
+      dir: "/accounts/jwt"
+
+      # Size of the account JWT storage.
+      size: 1Gi
+
+      # StorageClass of JWT storage claim.
+      # storageClassName: ""
+
+    ##############################
+    #                            #
+    # Memory resolver settings   #
+    #                            #
+    ##############################
+    # type: memory
+    #
+    # Use a configmap reference which will be mounted
+    # into the container.
+    #
+    # configMap:
+    #   name: nats-accounts
+    #   key: resolver.conf
+
+    ##########################
+    #                        #
+    #  URL resolver settings #
+    #                        #
+    ##########################
+    # type: URL
+    # url: "http://nats-account-server:9090/jwt/v1/accounts/"
+
+websocket:
+  enabled: false
+  port: 443
+  noTLS: true
+
+  sameOrigin: false
+  allowedOrigins: []
+
+  # This will optionally specify what host:port for websocket
+  # connections to be advertised in the cluster.
+  # advertise: "host:port"
+
+  # Set the handshake timeout for websocket connections
+  # handshakeTimeout: 5s
+
+# Network Policy configuration
+networkPolicy:
+  enabled: false
+  # Don't require client label for connections
+  # When set to false, only pods with the correct client label will have network access to the ports
+  # NATS is listening on. When true, NATS will accept connections from any source
+  # (with the correct destination port).
+  allowExternal: true
+  # Add extra ingress rules to the NetworkPolicy
+  # e.g:
+  # extraIngress:
+  #   - ports:
+  #       - port: 1234
+  #     from:
+  #       - podSelector:
+  #           - matchLabels:
+  #               - role: frontend
+  #       - podSelector:
+  #           - matchExpressions:
+  #               - key: role
+  #                 operator: In
+  #                 values:
+  #                   - frontend
+  extraIngress: []
+  # Add extra ingress rules to the NetworkPolicy
+  # e.g:
+  # extraEgress:
+  #   - ports:
+  #       - port: 1234
+  #     to:
+  #       - podSelector:
+  #           - matchLabels:
+  #               - role: frontend
+  #       - podSelector:
+  #           - matchExpressions:
+  #               - key: role
+  #                 operator: In
+  #                 values:
+  #                   - frontend
+  extraEgress: []
+  # Labels to match to allow traffic from other namespaces
+  ingressNSMatchLabels: {}
+  # Pod labels to match to allow traffic from other namespaces
+  ingressNSPodMatchLabels: {}
+
+# Cluster Domain configured on the kubelets
+# https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+k8sClusterDomain: cluster.local
+
+# Define if NATS is using FQDN name for clustering (i.e. nats-0.nats.default.svc.cluster.local) or short name (i.e. nats-0.nats.default).
+useFQDN: true
+
+# Add labels to all the deployed resources
+commonLabels: {}
+
+# podManagementPolicy controls how pods are created during initial scale up,
+# when replacing pods on nodes, or when scaling down.
+podManagementPolicy: Parallel
+
+# Shared volume to be mounted in pods for pid
+pidVolume:
+  emptyDir: {}
+
+# Shared volume to be mounted in pods for advertiseconfig
+advertiseconfigVolume:
+  emptyDir: {}

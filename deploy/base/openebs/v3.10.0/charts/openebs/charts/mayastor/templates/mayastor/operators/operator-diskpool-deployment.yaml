@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-operator-diskpool
+  labels:
+    app: operator-diskpool
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: operator-diskpool
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: operator-diskpool
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      serviceAccount: {{ .Release.Name }}-service-account
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      initContainers:
+        {{- include "base_init_containers" . }}
+      {{- if $pcName := include "priority_class" (dict "template" . "localPriorityClass" .Values.operators.pool.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $tolerations := include "tolerations" (dict "template" . "localTolerations" .Values.operators.pool.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      containers:
+        - name: operator-diskpool
+          resources:
+            limits:
+              cpu: {{ .Values.operators.pool.resources.limits.cpu | quote }}
+              memory: {{ .Values.operators.pool.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.operators.pool.resources.requests.cpu | quote }}
+              memory: {{ .Values.operators.pool.resources.requests.memory | quote }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-operator-diskpool:{{ default .Values.image.tag .Values.image.repoTags.controlPlane }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "-e http://{{ .Release.Name }}-api-rest:8081"
+            - "-n{{ .Release.Namespace }}"
+            - "--request-timeout={{ .Values.base.default_req_timeout }}"
+            - "--interval={{ .Values.base.cache_poll_period }}"{{ if .Values.base.jaeger.enabled }}
+            - "--jaeger={{ .Values.base.jaeger.agent.name }}:{{ .Values.base.jaeger.agent.port }}"{{ end }}
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.operators.pool.logLevel }}
+            {{- if default .Values.base.logSilenceLevel .Values.operators.pool.logSilenceLevel }}
+            - name: RUST_LOG_SILENCE
+              value: {{ default .Values.base.logSilenceLevel .Values.operators.pool.logSilenceLevel }}
+            {{- end }}
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name

@@ -1,0 +1,23 @@
+{{- if and (.Values.apiserver.enabled) (.Values.legacy.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "openebs.fullname" . }}-apiservice
+  labels:
+    app: {{ template "openebs.name" . }}
+    chart: {{ template "openebs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    openebs.io/component-name: maya-apiserver-svc
+spec:
+  ports:
+  - name: api
+    port: {{ .Values.apiserver.ports.externalPort }}
+    targetPort: {{ .Values.apiserver.ports.internalPort }}
+    protocol: TCP
+  selector:
+    app: {{ template "openebs.name" . }}
+    release: {{ .Release.Name }}
+    component: apiserver
+  sessionAffinity: None
+{{- end }}

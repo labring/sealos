@@ -1,0 +1,74 @@
+{{- $appProtocol := semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}
+  namespace: {{ include "nats.namespace" . }}
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  {{- if .Values.serviceAnnotations}}
+  annotations:
+    {{- toYaml .Values.serviceAnnotations | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+  clusterIP: None
+  publishNotReadyAddresses: true
+  {{- if .Values.topologyKeys }}
+  topologyKeys:
+    {{- toYaml .Values.topologyKeys | nindent 4 }}
+  {{- end }}
+  ports:
+  {{- if .Values.websocket.enabled }}
+  - name: websocket
+    port: {{ .Values.websocket.port }}
+    {{- if $appProtocol }}
+    appProtocol: tcp
+    {{- end }}
+  {{- end }}
+  {{- if .Values.nats.profiling.enabled }}
+  - name: profiling
+    port: {{ .Values.nats.profiling.port }}
+    {{- if $appProtocol }}
+    appProtocol: http
+    {{- end }}
+  {{- end }}
+  - name: {{ .Values.nats.client.portName }}
+    port: {{ .Values.nats.client.port }}
+    {{- if $appProtocol }}
+    appProtocol: tcp
+    {{- end }}
+  - name: cluster
+    port: 6222
+    {{- if $appProtocol }}
+    appProtocol: tcp
+    {{- end }}
+  - name: monitor
+    port: 8222
+    {{- if $appProtocol }}
+    appProtocol: http
+    {{- end }}
+  - name: {{ .Values.exporter.portName }}
+    port: 7777
+    {{- if $appProtocol }}
+    appProtocol: http
+    {{- end }}
+  - name: leafnodes
+    port: {{ .Values.leafnodes.port }}
+    {{- if $appProtocol }}
+    appProtocol: tcp
+    {{- end }}
+  - name: gateways
+    port: {{ .Values.gateway.port }}
+    {{- if $appProtocol }}
+    appProtocol: tcp
+    {{- end }}
+  {{- if .Values.mqtt.enabled }}
+  - name: mqtt
+    port: 1883
+    {{- if $appProtocol }}
+    appProtocol: tcp
+    {{- end }}
+  {{- end }}

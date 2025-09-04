@@ -1,0 +1,34 @@
+extraPorts:
+  syslog:
+    name: tcp-syslog
+    containerPort: 1514
+    service:
+      port: 1234
+      type: NodePort
+  httpPush:
+    name: http-push
+    containerPort: 3500
+  grpcPush:
+    name: grpc-push
+    containerPort: 3600
+
+config:
+  snippets:
+    extraScrapeConfigs: |
+      - job_name: syslog
+        syslog:
+          listen_address: 0.0.0.0:{{ .Values.extraPorts.syslog.containerPort }}
+          labels:
+            job: syslog
+        relabel_configs:
+          - source_labels:
+              - __syslog_message_hostname
+            target_label: host
+
+      - job_name: push1
+        loki_push_api:
+          server:
+            http_listen_port: {{ .Values.extraPorts.httpPush.containerPort }}
+            grpc_listen_port: {{ .Values.extraPorts.grpcPush.containerPort }}
+          labels:
+            pushserver: push1

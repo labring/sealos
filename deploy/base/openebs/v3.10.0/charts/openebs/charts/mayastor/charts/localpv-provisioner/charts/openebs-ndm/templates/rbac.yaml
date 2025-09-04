@@ -1,0 +1,44 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "openebs-ndm.serviceAccountName" . }}
+{{- end }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "openebs-ndm.fullname" . }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["nodes", "pods", "events", "configmaps", "jobs"]
+    verbs:
+      - '*'
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs:
+      - '*'
+  - apiGroups:
+      - openebs.io
+    resources:
+      - blockdevices
+      - blockdeviceclaims
+    verbs:
+      - '*'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "openebs-ndm.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "openebs-ndm.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+  - kind: User
+    name: system:serviceaccount:default:default
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: {{ include "openebs-ndm.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io
+---

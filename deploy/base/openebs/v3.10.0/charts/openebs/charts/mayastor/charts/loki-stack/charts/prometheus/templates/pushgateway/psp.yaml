@@ -1,0 +1,42 @@
+{{- if and .Values.pushgateway.enabled .Values.rbac.create .Values.podSecurityPolicy.enabled }}
+apiVersion: {{ template "prometheus.podSecurityPolicy.apiVersion" . }}
+kind: PodSecurityPolicy
+metadata:
+  name: {{ template "prometheus.pushgateway.fullname" . }}
+  labels:
+    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
+  annotations:
+{{- if .Values.pushgateway.podSecurityPolicy.annotations }}
+{{ toYaml .Values.pushgateway.podSecurityPolicy.annotations | indent 4 }}
+{{- end }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'persistentVolumeClaim'
+    - 'secret'
+  allowedHostPaths:
+    - pathPrefix: {{ .Values.pushgateway.persistentVolume.mountPath }}
+  hostNetwork: false
+  hostPID: false
+  hostIPC: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: true
+{{- end }}

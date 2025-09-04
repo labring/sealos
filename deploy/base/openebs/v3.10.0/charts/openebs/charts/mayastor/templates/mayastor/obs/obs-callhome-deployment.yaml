@@ -1,0 +1,80 @@
+{{- if .Values.obs.callhome.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-obs-callhome
+  labels:
+    app: obs-callhome
+    {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+    {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: obs-callhome
+      {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: obs-callhome
+        {{ include "label_prefix" . }}/release: {{ .Release.Name }}
+        {{ include "label_prefix" . }}/version: {{ .Chart.Version }}
+        {{ include "label_prefix" . }}/logging: "true"
+    spec:
+      serviceAccountName: {{ .Release.Name }}-service-account
+      imagePullSecrets:
+        {{- include "base_pull_secrets" . }}
+      {{- if $pcName := include "priority_class" (dict "template" . "localPriorityClass" .Values.obs.callhome.priorityClassName) }}
+      priorityClassName: {{ $pcName }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $tolerations := include "tolerations" (dict "template" . "localTolerations" .Values.obs.callhome.tolerations) }}
+      tolerations: {{ $tolerations }}
+      {{- end }}
+      containers:
+        - name: obs-callhome
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-obs-callhome:{{ default .Values.image.tag .Values.image.repoTags.extensions }}"
+          args:
+            - "-e http://{{ .Release.Name }}-api-rest:8081"
+            - "-n {{ .Release.Namespace }}"{{ if .Values.eventing.enabled }}
+            - "--aggregator-url=http://{{ .Release.Name }}-obs-callhome-stats:9090/stats"{{ end }}
+            {{ if .Values.obs.callhome.sendReport }}
+            - "--send-report"
+            {{ end }}
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.obs.callhome.logLevel }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            limits:
+              cpu: {{ .Values.obs.callhome.resources.limits.cpu | quote }}
+              memory: {{ .Values.obs.callhome.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.obs.callhome.resources.requests.cpu | quote }}
+              memory: {{ .Values.obs.callhome.resources.requests.memory | quote }}
+        {{- if .Values.eventing.enabled }}
+        - name: obs-callhome-stats
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repo }}/{{ .Chart.Name }}-obs-callhome-stats:{{ default .Values.image.tag .Values.image.repoTags.extensions }}"
+          args:
+            - "--namespace={{ .Release.Namespace }}"
+            - "--release-name={{ .Release.Name }}"
+            - "--mbus-url=nats://{{ .Release.Name }}-nats:4222"
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+              name: stats
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.obs.stats.logLevel }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            limits:
+              cpu: {{ .Values.obs.stats.resources.limits.cpu | quote }}
+              memory: {{ .Values.obs.stats.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.obs.stats.resources.requests.cpu | quote }}
+              memory: {{ .Values.obs.stats.resources.requests.memory | quote }}
+        {{- end }}
+{{- end }}

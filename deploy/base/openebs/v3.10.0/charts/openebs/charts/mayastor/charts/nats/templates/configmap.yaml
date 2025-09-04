@@ -1,0 +1,614 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nats.fullname" . }}-config
+  namespace: {{ include "nats.namespace" . }}
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+data:
+  nats.conf: |
+    # NATS Clients Port
+    port: {{ .Values.nats.client.port }}
+
+    # PID file shared with configuration reloader.
+    pid_file: "/var/run/nats/nats.pid"
+
+    {{- if .Values.nats.config }}
+    ###########
+    #         #
+    # Imports #
+    #         #
+    ###########
+    {{- range .Values.nats.config }}
+    include ./{{ .name }}/{{ .name }}.conf
+    {{- end}}
+    {{- end }}
+
+    ###############
+    #             #
+    # Monitoring  #
+    #             #
+    ###############
+    http: 8222
+    server_name: {{- if .Values.nats.serverNamePrefix  }}$SERVER_NAME{{- else }}$POD_NAME{{- end }}
+
+    {{- if .Values.nats.serverTags }}
+    server_tags: [
+      {{- range .Values.nats.serverTags }}
+        "{{ . }}",
+      {{- end }}
+    ]
+    {{- end }}
+
+    {{- if .Values.nats.tls }}
+    #####################
+    #                   #
+    # TLS Configuration #
+    #                   #
+    #####################
+    {{- with .Values.nats.tls }}
+    {{- $nats_tls := merge (dict) . }}
+    {{- $_ := set $nats_tls "secretPath" "/etc/nats-certs/clients" }}
+    {{- tpl (include "nats.tlsConfig" $nats_tls) $ | nindent 4}}
+    {{- end }}
+
+    {{- if .Values.nats.tls.allowNonTLS }}
+    allow_non_tls: {{ .Values.nats.tls.allowNonTLS }}
+    {{- end }}
+
+    {{- end }}
+
+    {{- if .Values.nats.jetstream.enabled }}
+    ###################################
+    #                                 #
+    # NATS JetStream                  #
+    #                                 #
+    ###################################
+    jetstream {
+      {{- if .Values.nats.jetstream.encryption }}
+      {{- if .Values.nats.jetstream.encryption.key }}
+      key: {{ .Values.nats.jetstream.encryption.key | quote }}
+      {{- else if .Values.nats.jetstream.encryption.secret }}
+      key: $JS_KEY
+      {{- end}}
+      {{- if .Values.nats.jetstream.encryption.cipher }}
+      cipher: {{ .Values.nats.jetstream.encryption.cipher }}
+      {{- end}}
+      {{- end}}
+
+      {{- if .Values.nats.jetstream.memStorage.enabled }}
+      max_mem: {{ .Values.nats.jetstream.memStorage.size }}
+      {{- end }}
+
+      {{- if .Values.nats.jetstream.domain }}
+      domain: {{ .Values.nats.jetstream.domain }}
+      {{- end }}
+
+      {{- if .Values.nats.jetstream.fileStorage.enabled }}
+      store_dir: {{ .Values.nats.jetstream.fileStorage.storageDirectory }}
+
+      max_file:
+      {{- if .Values.nats.jetstream.fileStorage.existingClaim }}
+      {{- .Values.nats.jetstream.fileStorage.claimStorageSize  }}
+      {{- else }}
+      {{- .Values.nats.jetstream.fileStorage.size }}
+      {{- end }}
+      {{- else }}
+      {{- if .Values.nats.jetstream.store_dir }}
+      store_dir: {{ .Values.nats.jetstream.store_dir }}
+      {{- end }}
+      {{- if .Values.nats.jetstream.max_file }}
+      max_file: {{ .Values.nats.jetstream.max_file }}
+      {{- end }}
+      {{- end }}
+
+      {{- if .Values.nats.jetstream.uniqueTag }}
+      unique_tag: {{ .Values.nats.jetstream.uniqueTag }}
+      {{- end }}
+
+      {{- if .Values.nats.jetstream.maxOutstandingCatchup }}
+      max_outstanding_catchup: {{ .Values.nats.jetstream.maxOutstandingCatchup }}
+      {{- end }}
+    }
+    {{- end }}
+    
+    {{- if .Values.nats.mappings }}
+    ###################################
+    #                                 #
+    # Mappings                        #
+    #                                 #
+    ###################################
+    mappings: {{ toRawJson .Values.nats.mappings }}
+    {{- end }}
+
+    {{- if .Values.mqtt.enabled }}
+    ###################################
+    #                                 #
+    # NATS MQTT                       #
+    #                                 #
+    ###################################
+    mqtt {
+      port: 1883
+
+      {{- with .Values.mqtt.tls }}
+      {{-  $mqtt_tls := merge (dict) . }}
+      {{- $_ := set $mqtt_tls "secretPath" "/etc/nats-certs/mqtt" }}
+      {{- tpl (include "nats.tlsConfig" $mqtt_tls) $ | nindent 6}}
+      {{- end }}
+
+      {{- if .Values.mqtt.noAuthUser }}
+      no_auth_user: {{ .Values.mqtt.noAuthUser | quote }}
+      {{- end }}
+
+      ack_wait: {{ .Values.mqtt.ackWait | quote }}
+      max_ack_pending: {{ .Values.mqtt.maxAckPending }}
+    }
+    {{- end }}
+
+    {{- if .Values.cluster.enabled }}
+    ###################################
+    #                                 #
+    # NATS Full Mesh Clustering Setup #
+    #                                 #
+    ###################################
+    cluster {
+      port: 6222
+
+      {{- if .Values.nats.jetstream.enabled }}
+      {{- if .Values.cluster.name }}
+      name: {{ .Values.cluster.name }}
+      {{- else }}
+      name: {{ template "nats.name" . }}
+      {{- end }}
+      {{- else }}
+      {{- with .Values.cluster.name }}
+      name: {{ . }}
+      {{- end }}
+      {{- end }}
+
+      {{- with .Values.cluster.tls }}
+      {{-  $cluster_tls := merge (dict) . }}
+      {{- $_ := set $cluster_tls "secretPath" "/etc/nats-certs/cluster" }}
+      {{- tpl (include "nats.tlsConfig" $cluster_tls) $ | nindent 6}}
+      {{- end }}
+
+      {{- if .Values.cluster.authorization }}
+      authorization {
+        {{- with .Values.cluster.authorization.user }}
+        user: {{ . }}
+        {{- end }}
+        {{- with .Values.cluster.authorization.password }}
+        password: {{ . }}
+        {{- end }}
+        {{- with .Values.cluster.authorization.timeout }}
+        timeout: {{ . }}
+        {{- end }}
+      }
+      {{- end }}
+
+      routes = [
+        {{ include "nats.clusterRoutes" . }}
+        {{ include "nats.extraRoutes" . }}
+      ]
+      cluster_advertise: $CLUSTER_ADVERTISE
+
+      {{- with .Values.cluster.noAdvertise }}
+      no_advertise: {{ . }}
+      {{- end }}
+
+      connect_retries: {{ .Values.nats.connectRetries }}
+    }
+    {{- end }}
+
+    {{- if and .Values.nats.advertise .Values.nats.externalAccess }}
+    include "advertise/client_advertise.conf"
+    {{- end }}
+
+    {{- if or .Values.leafnodes.enabled .Values.leafnodes.remotes }}
+    #################
+    #               #
+    # NATS Leafnode #
+    #               #
+    #################
+    leafnodes {
+      {{- if .Values.leafnodes.enabled }}
+      listen: "0.0.0.0:{{ .Values.leafnodes.port }}"
+      {{- end }}
+
+      {{- if and .Values.nats.advertise .Values.nats.externalAccess }}
+      include "advertise/gateway_advertise.conf"
+      {{- end }}
+
+      {{- with .Values.leafnodes.noAdvertise }}
+      no_advertise: {{ . }}
+      {{- end }}
+
+      {{- with .Values.leafnodes.authorization }}
+      authorization: {
+        {{- with .user }}
+        user: {{ . }}
+        {{- end }}
+        {{- with .password }}
+        password: {{ . }}
+        {{- end }}
+        {{- with .account }}
+        account: {{ . | quote }}
+        {{- end }}
+        {{- with .timeout }}
+        timeout: {{ . }}
+        {{- end }}
+        {{- with .users }}
+        users: [
+          {{- range . }}
+          {{- toRawJson . | nindent 10 }},
+          {{- end }}
+        ]
+        {{- end }}
+      }
+      {{- end }}
+
+      {{- with .Values.leafnodes.tls }}
+      {{- if .custom }}
+      tls {
+        {{- .custom | nindent 8 }}
+      }
+      {{- else }}
+      {{-  $leafnode_tls := merge (dict) . }}
+      {{- $_ := set $leafnode_tls "secretPath" "/etc/nats-certs/leafnodes" }}
+      {{- tpl (include "nats.tlsConfig" $leafnode_tls) $ | nindent 6}}
+      {{- end }}
+      {{- end }}
+
+      remotes: [
+      {{- range .Values.leafnodes.remotes }}
+      {
+        {{- with .url }}
+        url: {{ . | quote }}
+        {{- end }}
+
+        {{- with .urls }}
+        urls: {{ toRawJson . }}
+        {{- end }}
+
+        {{- with .account }}
+        account: {{ . | quote }}
+        {{- end }}
+
+        {{- with .credentials }}
+        credentials: "/etc/nats-creds/{{ .secret.name }}/{{ .secret.key }}"
+        {{- end }}
+
+        {{- with .tls }}
+        tls: {
+          {{- if .custom }}
+          {{- .custom | nindent 10 }}
+          {{- else }}
+          {{ $secretName := tpl .secret.name $ }}
+          {{- with .cert }}
+          cert_file: /etc/nats-certs/leafnodes/{{ $secretName }}/{{ . }}
+          {{- end }}
+
+          {{- with .key }}
+          key_file: /etc/nats-certs/leafnodes/{{ $secretName }}/{{ . }}
+          {{- end }}
+
+          {{- with .ca }}
+          ca_file: /etc/nats-certs/leafnodes/{{ $secretName }}/{{ . }}
+          {{- end }}
+          {{- end }}
+        }
+        {{- end }}
+      }
+      {{- end }}
+      ]
+    }
+    {{- end }}
+
+    {{- if .Values.gateway.enabled }}
+    #################
+    #               #
+    # NATS Gateways #
+    #               #
+    #################
+    gateway {
+      name: {{ .Values.gateway.name }}
+      port: {{ .Values.gateway.port }}
+
+      {{- if .Values.gateway.advertise }}
+      advertise: {{ .Values.gateway.advertise }}
+      {{- end }}
+
+      {{- if .Values.gateway.rejectUnknownCluster }}
+      reject_unknown_cluster: {{ .Values.gateway.rejectUnknownCluster }}
+      {{- end }}
+
+      {{- if .Values.gateway.authorization }}
+      authorization {
+        {{- with .Values.gateway.authorization.user }}
+        user: {{ . }}
+        {{- end }}
+        {{- with .Values.gateway.authorization.password }}
+        password: {{ . }}
+        {{- end }}
+        {{- with .Values.gateway.authorization.timeout }}
+        timeout: {{ . }}
+        {{- end }}
+      }
+      {{- end }}
+
+      {{- if and .Values.nats.advertise .Values.nats.externalAccess }}
+      include "advertise/gateway_advertise.conf"
+      {{- end }}
+
+      {{- if .Values.gateway.connectRetries }}
+      connect_retries: {{ .Values.gateway.connectRetries }}
+      {{- end }}
+
+      {{- with .Values.gateway.tls }}
+      {{-  $gateway_tls := merge (dict) . }}
+      {{- $_ := set $gateway_tls "secretPath" "/etc/nats-certs/gateways" }}
+      {{- tpl (include "nats.tlsConfig" $gateway_tls) $ | nindent 6}}
+      {{- end }}
+
+      # Gateways array here
+      gateways: [
+        {{- range .Values.gateway.gateways }}
+        {
+          {{- with .name }}
+          name: {{ . }}
+          {{- end }}
+
+          {{- with .url }}
+          url: {{ . | quote }}
+          {{- end }}
+
+          {{- with .urls }}
+          urls: [{{ join "," . }}]
+          {{- end }}
+        },
+        {{- end }}
+      ]
+    }
+    {{- end }}
+
+    {{- with .Values.nats.logging.debug }}
+    debug: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.logging.trace }}
+    trace:  {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.logging.logtime }}
+    logtime: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.logging.connectErrorReports }}
+    connect_error_reports: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.logging.reconnectErrorReports }}
+    reconnect_error_reports: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.maxConnections }}
+    max_connections: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.maxSubscriptions }}
+    max_subscriptions: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.maxPending }}
+    max_pending: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.maxControlLine }}
+    max_control_line: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.maxPayload }}
+    max_payload: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.pingInterval }}
+    ping_interval: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.maxPings }}
+    ping_max: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.writeDeadline }}
+    write_deadline: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.lameDuckGracePeriod }}
+    lame_duck_grace_period: {{ . }}
+    {{- end }}
+
+    {{- with .Values.nats.limits.lameDuckDuration }}
+    lame_duck_duration: {{ . }}
+    {{- end }}
+
+    {{- if .Values.websocket.enabled }}
+    ##################
+    #                #
+    # Websocket      #
+    #                #
+    ##################
+    websocket {
+      port: {{ .Values.websocket.port }}
+      {{- with .Values.websocket.tls }}
+        {{ $secretName := tpl .secret.name $ }}
+        tls {
+        {{- with .cert }}
+        cert_file: /etc/nats-certs/ws/{{ $secretName }}/{{ . }}
+        {{- end }}
+
+        {{- with .key }}
+        key_file: /etc/nats-certs/ws/{{ $secretName }}/{{ . }}
+        {{- end }}
+
+        {{- with .ca }}
+        ca_file: /etc/nats-certs/ws/{{ $secretName }}/{{ . }}
+        {{- end }}
+        }
+      {{- else }}
+      no_tls: {{ .Values.websocket.noTLS }}
+      {{- end }}
+      same_origin: {{ .Values.websocket.sameOrigin }}
+      {{- with .Values.websocket.allowedOrigins }}
+      allowed_origins: {{ toRawJson . }}
+      {{- end }}
+      {{- with .Values.websocket.advertise }}
+      advertise: {{ . }}
+      {{- end }}
+      {{- with .Values.websocket.handshakeTimeout }}
+      handshake_timeout: {{ . | quote }}
+      {{- end }}
+    }
+    {{- end }}
+
+    {{- if .Values.auth.enabled }}
+    ##################
+    #                #
+    # Authorization  #
+    #                #
+    ##################
+    {{- if .Values.auth.resolver }}
+      {{- if eq .Values.auth.resolver.type "memory" }}
+        resolver: MEMORY
+        include "accounts/{{ .Values.auth.resolver.configMap.key }}"
+      {{- end }}
+
+      {{- if eq .Values.auth.resolver.type "full" }}
+        {{- if .Values.auth.resolver.configMap }}
+        include "accounts/{{ .Values.auth.resolver.configMap.key }}"
+        {{- else }}
+          {{- with .Values.auth.resolver }}
+            {{- if $.Values.auth.timeout }}
+            authorization {
+              timeout: {{ $.Values.auth.timeout }}
+             }
+            {{- end }}
+
+            {{- if .operator }}
+            operator: {{ .operator }}
+            {{- end }}
+
+            {{- if .systemAccount }}
+            system_account: {{ .systemAccount | quote }}
+            {{- end }}
+          {{- end }}
+
+          resolver: {
+            type: full
+            {{- with .Values.auth.resolver }}
+            dir: {{ .store.dir | quote }}
+
+            allow_delete: {{ .allowDelete }}
+
+            interval: {{ .interval | quote }}
+            {{- end }}
+          }
+        {{- end }}
+      {{- end }}
+
+      {{- if .Values.auth.resolver.resolverPreload }}
+      resolver_preload: {{ toRawJson .Values.auth.resolver.resolverPreload }}
+      {{- end }}
+
+      {{- if eq .Values.auth.resolver.type "URL" }}
+        {{- with .Values.auth.resolver.url }}
+        resolver: URL({{ . }})
+        {{- end }}
+        operator: /etc/nats-config/operator/{{ .Values.auth.operatorjwt.configMap.key }}
+      {{- end }}
+    {{- end }}
+
+    {{- with .Values.auth.systemAccount }}
+    system_account: {{ . | quote }}
+    {{- end }}
+
+    {{- with .Values.auth.token }}
+    authorization {
+      token: "{{ . }}"
+
+
+      {{- if $.Values.auth.timeout }}
+      timeout: {{ $.Values.auth.timeout }}
+      {{- end }}
+    }
+    {{- end }}
+
+    {{- with .Values.auth.nkeys }}
+    {{- with .users }}
+    authorization {
+      {{- if $.Values.auth.timeout }}
+      timeout: {{ $.Values.auth.timeout }}
+      {{- end }}
+
+      users: [
+        {{- range . }}
+        {{- toRawJson . | nindent 8 }},
+        {{- end }}
+      ]
+    }
+    {{- end }}
+    {{- end }}
+
+    {{- with .Values.auth.basic }}
+
+    {{- with .noAuthUser }}
+    no_auth_user: {{ . }}
+    {{- end }}
+
+    {{- if or .users (or .timeout .defaultPermissions) }}
+    authorization {
+      {{- if $.Values.auth.timeout }}
+      timeout: {{ $.Values.auth.timeout }}
+      {{- end }}
+
+      {{- with .users }}
+      users: [
+        {{- range . }}
+        {{- toRawJson . | nindent 8 }},
+        {{- end }}
+      ]
+      {{- end }}
+
+      {{- with $.Values.auth.basic.defaultPermissions }}
+      default_permissions: {
+        {{- if .publish }}
+        publish: [
+          {{- range .publish }}
+          {{- toRawJson . | nindent 10 }},
+          {{- end }}
+        ],
+        {{- end }}
+        {{- if .subscribe }}
+        subscribe: [
+          {{- range .subscribe }}
+          {{- toRawJson . | nindent 10 }},
+          {{- end }}
+        ],
+        {{- end }}
+      }
+      {{- end }}
+    }
+    {{- end }}
+
+    {{- with .accounts }}
+    authorization {
+      {{- if $.Values.auth.timeout }}
+      timeout: {{ $.Values.auth.timeout }}
+      {{- end }}
+    }
+    accounts: {{- toRawJson . }}
+    {{- end }}
+
+    {{- end }}
+
+    {{- end }}

@@ -1,0 +1,9 @@
+http:
+  https://security-master:9200/_cat/indices:
+    status: 200
+    timeout: 2000
+    body:
+      - "filebeat-7.17.1"
+    allow-insecure: true
+    username: "{{ .Env.ELASTICSEARCH_USERNAME }}"
+    password: "{{ .Env.ELASTICSEARCH_PASSWORD }}"

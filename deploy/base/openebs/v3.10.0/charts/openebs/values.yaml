@@ -1,0 +1,1001 @@
+# Default values for openebs.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  pspEnabled: false
+  # rbac.kyvernoEnabled: `true` if Kyverno Policy resources should be created
+  kyvernoEnabled: false
+
+serviceAccount:
+  create: true
+  name:
+
+imagePullSecrets: []
+  #  - name: image-pull-secret
+
+release:
+  # "openebs.io/version" label for control plane components
+  version: "3.10.0"
+
+# Legacy components will be installed if it is enabled.
+# Legacy components are - admission-server, maya api-server, snapshot-operator
+# and k8s-provisioner
+legacy:
+  enabled: false
+
+image:
+  pullPolicy: IfNotPresent
+  repository: ""
+
+apiserver:
+  enabled: true
+  image: "openebs/m-apiserver"
+  imageTag: "2.12.2"
+  replicas: 1
+  ports:
+    externalPort: 5656
+    internalPort: 5656
+  sparse:
+    enabled: "false"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  ## apiserver resource requests and limits
+  ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 2Gi
+    # requests:
+    #   cpu: 500m
+    #   memory: 1Gi
+
+
+defaultStorageConfig:
+  enabled: "true"
+
+# Directory used by the OpenEBS to store debug information and so forth
+# that are generated in the course of running OpenEBS containers.
+varDirectoryPath:
+  baseDir: "/var/openebs"
+
+provisioner:
+  enabled: true
+  image: "openebs/openebs-k8s-provisioner"
+  imageTag: "2.12.2"
+  replicas: 1
+  enableLeaderElection: true
+  patchJivaNodeAffinity: enabled
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  ## provisioner resource requests and limits
+  ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 2Gi
+    # requests:
+    #   cpu: 500m
+    #   memory: 1Gi
+
+# If you want to enable local pv as a dependency chart then set
+# `localprovisioner.enabled: false` and enable it as dependency chart.
+# If you are using custom configuration then update those configuration
+# under `localpv-provisioner` key.
+localprovisioner:
+  enabled: true
+  image: "openebs/provisioner-localpv"
+  imageTag: "3.5.0"
+  replicas: 1
+  enableLeaderElection: true
+  # These fields are deprecated. Please use the fields (see below)
+  # - deviceClass.enabled
+  # - hostpathClass.enabled
+  enableDeviceClass: true
+  enableHostpathClass: true
+  # This sets default directory used by the provisioner to provision
+  # hostpath volumes.
+  basePath: "/var/openebs/local"
+  # This sets the number of times the provisioner should try
+  # with a polling interval of 5 seconds, to get the Blockdevice
+  # Name from a BlockDeviceClaim, before the BlockDeviceClaim
+  # is deleted. E.g. 12 * 5 seconds = 60 seconds timeout
+  waitForBDBindTimeoutRetryCount: "12"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  ## localprovisioner resource requests and limits
+  ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 2Gi
+    # requests:
+    #   cpu: 500m
+    #   memory: 1Gi
+
+  deviceClass:
+    # Name of default device StorageClass.
+    name: openebs-device
+    # If true, enables creation of the openebs-device StorageClass
+    enabled: true
+    # Available reclaim policies: Delete/Retain, defaults: Delete.
+    reclaimPolicy: Delete
+    # If true, sets the openebs-device StorageClass as the default StorageClass
+    isDefaultClass: false
+    # Custom node affinity label(s) for example "openebs.io/node-affinity-value"
+    # that will be used instead of hostnames
+    # This helps in cases where the hostname changes when the node is removed and
+    # added back with the disks still intact.
+    # Example:
+    #          nodeAffinityLabels:
+    #            - "openebs.io/node-affinity-key-1"
+    #            - "openebs.io/node-affinity-key-2"
+    nodeAffinityLabels: []
+    # Sets the filesystem to be written to the blockdevice before
+    # mounting (filesystem volumes)
+    # This is only usable if the selected BlockDevice does not already
+    # have a filesystem
+    # Valid values: "ext4", "xfs"
+    fsType: "ext4"
+    # Label block devices in the cluster that you would like the openEBS localPV
+    # Provisioner to pick up those specific block devices available on the node.
+    # Set the label key and value as shown in the example below.
+    #
+    # To read more: https://github.com/openebs/dynamic-localpv-provisioner/blob/develop/docs/tutorials/device/blockdevicetag.md
+    #
+    # Example:
+    #          blockDeviceSelectors:
+    #            ndm.io/driveType: "SSD"
+    #            ndm.io/fsType: "none"
+    blockDeviceSelectors: {}
+
+  hostpathClass:
+    # Name of the default hostpath StorageClass
+    name: openebs-hostpath
+    # If true, enables creation of the openebs-hostpath StorageClass
+    enabled: true
+    # Available reclaim policies: Delete/Retain, defaults: Delete.
+    reclaimPolicy: Delete
+    # If true, sets the openebs-hostpath StorageClass as the default StorageClass
+    isDefaultClass: false
+    # Path on the host where local volumes of this storage class are mounted under.
+    # NOTE: If not specified, this defaults to the value of localprovisioner.basePath.
+    basePath: ""
+    # Custom node affinity label(s) for example "openebs.io/node-affinity-value"
+    # that will be used instead of hostnames
+    # This helps in cases where the hostname changes when the node is removed and
+    # added back with the disks still intact.
+    # Example:
+    #          nodeAffinityLabels:
+    #            - "openebs.io/node-affinity-key-1"
+    #            - "openebs.io/node-affinity-key-2"
+    nodeAffinityLabels: []
+    # Prerequisite: XFS Quota requires an XFS filesystem mounted with
+    # the 'pquota' or 'prjquota' mount option.
+    xfsQuota:
+      # If true, enables XFS project quota
+      enabled: false
+      # Detailed configuration options for XFS project quota.
+      # If XFS Quota is enabled with the default values, the usage limit
+      # is set at the storage capacity specified in the PVC.
+      softLimitGrace: "0%"
+      hardLimitGrace: "0%"
+    # Prerequisite: EXT4 Quota requires an EXT4 filesystem mounted with
+    # the 'prjquota' mount option.
+    ext4Quota:
+      # If true, enables XFS project quota
+      enabled: false
+      # Detailed configuration options for EXT4 project quota.
+      # If EXT4 Quota is enabled with the default values, the usage limit
+      # is set at the storage capacity specified in the PVC.
+      softLimitGrace: "0%"
+      hardLimitGrace: "0%"
+
+snapshotOperator:
+  enabled: true
+  controller:
+    image: "openebs/snapshot-controller"
+    imageTag: "2.12.2"
+    ## snapshot controller resource requests and limits
+    ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+    resources: {}
+      # limits:
+      #   cpu: 1000m
+      #   memory: 2Gi
+      # requests:
+      #   cpu: 500m
+      #   memory: 1Gi
+  provisioner:
+    image: "openebs/snapshot-provisioner"
+    imageTag: "2.12.2"
+    ## snapshot provisioner resource requests and limits
+    ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+    resources: {}
+      # limits:
+      #   cpu: 1000m
+      #   memory: 2Gi
+      # requests:
+      #   cpu: 500m
+      #   memory: 1Gi
+  replicas: 1
+  enableLeaderElection: true
+  upgradeStrategy: "Recreate"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+
+# If you want to enable openebs as a dependency chart then set `ndm.enabled: false`,
+# `ndmOperator.enabled: false` and enable it as dependency chart. If you are using
+# custom configuration then update those configuration under `openebs-ndm` key.
+ndm:
+  enabled: true
+  image: "openebs/node-disk-manager"
+  imageTag: "2.1.0"
+  sparse:
+    path: "/var/openebs/sparse"
+    size: "10737418240"
+    count: "0"
+  filters:
+    enableOsDiskExcludeFilter: true
+    osDiskExcludePaths: "/,/etc/hosts,/boot"
+    enableVendorFilter: true
+    excludeVendors: "CLOUDBYT,OpenEBS"
+    enablePathFilter: true
+    includePaths: ""
+    excludePaths: "/dev/loop,/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
+  probes:
+    enableSeachest: false
+  nodeSelector: {}
+  tolerations: []
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  ## ndm resource requests and limits
+  ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 2Gi
+    # requests:
+    #   cpu: 500m
+    #   memory: 1Gi
+
+# If you want to enable openebs as a dependency chart then set `ndm.enabled: false`,
+# `ndmOperator.enabled: false` and enable it as dependency chart. If you are using
+# custom configuration then update those configuration under `openebs-ndm` key.
+ndmOperator:
+  enabled: true
+  image: "openebs/node-disk-operator"
+  imageTag: "2.1.0"
+  replicas: 1
+  upgradeStrategy: Recreate
+  nodeSelector: {}
+  tolerations: []
+  healthCheck:
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readinessCheck:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  ## ndmOperator resource requests and limits
+  ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 2Gi
+    # requests:
+    #   cpu: 500m
+    #   memory: 1Gi
+
+ndmExporter:
+  enabled: false
+  image:
+    registry:
+    repository: openebs/node-disk-exporter
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 2.1.0
+  nodeExporter:
+    name: ndm-node-exporter
+    podLabels:
+      name: openebs-ndm-node-exporter
+    # The TCP port number used for exposing ndm-node-exporter metrics.
+    # If not set, service will not be created to expose metrics endpoint to serviceMonitor
+    # and listen-port flag will not be set and container port will be empty.
+    metricsPort: 9101
+  clusterExporter:
+    name: ndm-cluster-exporter
+    podLabels:
+      name: openebs-ndm-cluster-exporter
+    # The TCP port number used for exposing ndm-cluster-exporter metrics.
+    # If not set, service will not be created to expose metrics endpoint to serviceMonitor
+    # and listen-port flag will not be set and container port will be empty.
+    metricsPort: 9100
+
+webhook:
+  enabled: true
+  image: "openebs/admission-server"
+  imageTag: "2.12.2"
+  failurePolicy: "Fail"
+  replicas: 1
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  hostNetwork: false
+  ## admission-server resource requests and limits
+  ## Reference: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #   cpu: 500m
+    #   memory: 1Gi
+    # requests:
+    #   cpu: 250m
+    #   memory: 500Mi
+
+# If you are migrating from 2.x to 3.x and if you are using custom values
+# then put this configuration under `localpv-provisioner` and `openebs-ndm` key.
+helper:
+  image: "openebs/linux-utils"
+  imageTag: "3.5.0"
+
+# These are ndm related configuration. If you want to enable openebs as a dependency
+# chart then set `ndm.enabled: false`, `ndmOperator.enabled: false` and enable it as
+# dependency chart. If you are using custom configuration then update those configuration
+# under `openebs-ndm` key.
+featureGates:
+  enabled: true
+  GPTBasedUUID:
+    enabled: true
+    featureGateFlag: "GPTBasedUUID"
+  APIService:
+    enabled: false
+    featureGateFlag: "APIService"
+    address: "0.0.0.0:9115"
+  UseOSDisk:
+    enabled: false
+    featureGateFlag: "UseOSDisk"
+  ChangeDetection:
+    enabled: false
+    featureGateFlag: "ChangeDetection"
+  PartitionTableUUID:
+    enabled: false
+    featureGateFlag: "PartitionTableUUID"
+
+crd:
+  enableInstall: true
+
+# If you are migrating from 2.x to 3.x and if you are using custom values
+# then put these configuration under `cstor` key.
+policies:
+  monitoring:
+    enabled: true
+    image: "openebs/m-exporter"
+    imageTag: "2.12.2"
+
+analytics:
+  enabled: true
+  # Specify in hours the duration after which a ping event needs to be sent.
+  pingInterval: "24h"
+
+mayastor:
+  # -- Enable Mayastor storage engine
+  # Note: Enabling this will remove LocalPV Provisioner and NDM (default chart components).
+  enabled: false
+
+  # Sample configuration, if you want to configure mayastor with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://github.com/openebs/mayastor-extensions/blob/v2.5.0/chart/values.yaml
+
+  image:
+    # -- Image registry to pull Mayastor product images
+    registry: docker.io
+    # -- Image registry's namespace
+    repo: openebs
+    # -- Release tag for Mayastor images
+    tag: v2.5.0
+    # -- ImagePullPolicy for Mayastor images
+    pullPolicy: IfNotPresent
+
+  # -- Pod scheduling priority
+  # ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+  # priorityClassName: ""
+
+  # base:
+  #   # docker-secrets required to pull images if the container registry from image.Registry is protected
+  #   imagePullSecrets:
+  #     # -- Enable imagePullSecrets for pulling our container images
+  #     enabled: false
+  #     # Name of the imagePullSecret in the installed namespace
+  #     secrets:
+  #       - name: login
+
+  #   metrics:
+  #     # -- Enable the metrics exporter
+  #     enabled: true
+
+  #   jaeger:
+  #     # -- Enable jaeger tracing
+  #     enabled: false
+
+  # operators:
+  #   pool:
+  #     # -- Log level for diskpool operator service
+  #     logLevel: info
+
+  # jaeger-operator:
+  #   # Name of jaeger operator
+  #   name: "{{ .Release.Name }}"
+  #   crd:
+  #     # Install jaeger CRDs
+  #     install: false
+  #   jaeger:
+  #     # Install jaeger-operator
+  #     create: false
+  #   rbac:
+  #     # Create a clusterRole for Jaeger
+  #     clusterRole: true
+
+  # agents:
+  #   core:
+  #     # -- Log level for the core service
+  #     logLevel: info
+  #     capacity:
+  #       thin:
+  #       # -- The allowed pool commitment limit when dealing with thin provisioned volumes.
+  #       # Example: If the commitment is 250 and the pool is 10GiB we can overcommit the pool
+  #       # up to 25GiB (create 2 10GiB and 1 5GiB volume) but no further.
+  #       poolCommitment: "250%"
+  #       # -- When creating replicas for an existing volume, each replica pool must have at least
+  #       # this much free space percentage of the volume size.
+  #       # Example: if this value is 40, the pool has 40GiB free, then the max volume size allowed
+  #       # to be created on the pool is 100GiB.
+  #       volumeCommitment: "40%"
+  #       # -- Same as the `volumeCommitment` argument, but applicable only when creating replicas
+  #       # for a new volume.
+  #       volumeCommitmentInitial: "40%"
+  #   ha:
+  #     enabled: true
+  #     node:
+  #       # -- Log level for the ha node service
+  #       logLevel: info
+  #     cluster:
+  #       # -- Log level for the ha cluster service
+  #       logLevel: info
+
+  # apis:
+  #   rest:
+  #     # -- Log level for the rest service
+  #     logLevel: info
+  #     # -- Number of replicas of rest
+  #     replicaCount: 1
+
+  # csi:
+  #   image:
+  #     # -- Image registry to pull all CSI Sidecar images
+  #     registry: registry.k8s.io
+  #     # -- Image registry's namespace
+  #     repo: sig-storage
+  #     # -- imagePullPolicy for all CSI Sidecar images
+  #     pullPolicy: IfNotPresent
+  #     # -- csi-provisioner image release tag
+  #     provisionerTag: v3.5.0
+  #     # -- csi-attacher image release tag
+  #     attacherTag: v4.3.0
+  #     # -- csi-snapshotter image release tag
+  #     snapshotterTag: v6.3.1
+  #     # -- csi-snapshot-controller image release tag
+  #     snapshotControllerTag: v6.3.1
+  #     # -- csi-node-driver-registrar image release tag
+  #     registrarTag: v2.9.0
+
+  #   controller:
+  #     # -- Log level for the csi controller
+  #     logLevel: info
+  #     resources:
+  #       limits:
+  #         # -- Cpu limits for csi controller
+  #         cpu: "32m"
+  #         # -- Memory limits for csi controller
+  #         memory: "128Mi"
+  #       requests:
+  #         # -- Cpu requests for csi controller
+  #         cpu: "16m"
+  #         # -- Memory requests for csi controller
+  #         memory: "64Mi"
+  #     # -- Set tolerations, overrides global
+  #     tolerations: []
+  #     # -- Set PriorityClass, overrides global
+  #     priorityClassName: ""
+  #     # -- Prevent modifying the volume mode when creating a PVC from an existing VolumeSnapshot
+  #     preventVolumeModeConversion: true
+  #   node:
+  #     logLevel: info
+  #     topology:
+  #       segments:
+  #         openebs.io/csi-node: mayastor
+  #       # -- Add topology segments to the csi-node daemonset node selector
+  #       nodeSelector: false
+  #     resources:
+  #       limits:
+  #         # -- Cpu limits for csi node plugin
+  #         cpu: "100m"
+  #         # -- Memory limits for csi node plugin
+  #         memory: "128Mi"
+  #       requests:
+  #         # -- Cpu requests for csi node plugin
+  #         cpu: "100m"
+  #         # -- Memory requests for csi node plugin
+  #         memory: "64Mi"
+  #     nvme:
+  #       # The nvme_core module and nvme block io timeout in humantime
+  #       # By default it uses the "io_engine.nvme.ioTimeout" + 10s
+  #       # Do not modify this unless you're really sure about its effects
+  #       io_timeout: ""
+  #       # -- The ctrl_loss_tmo (controller loss timeout) in seconds
+  #       ctrl_loss_tmo: "1980"
+  #       # Kato (keep alive timeout) in seconds
+  #       keep_alive_tmo: ""
+  #     # -- The kubeletDir directory for the csi-node plugin
+  #     kubeletDir: /var/lib/kubelet
+  #     pluginMounthPath: /csi
+  #     socketPath: csi.sock
+  #     # -- Set tolerations, overrides global
+  #     tolerations: []
+  #     # -- Set PriorityClass, overrides global
+  #     priorityClassName: ""
+
+  # io_engine:
+  #   # -- Log level for the io-engine service
+  #   logLevel: info
+  #   api: "v1"
+  #   target:
+  #     nvmf:
+  #       # -- NVMF target interface (ip, mac, name or subnet)
+  #       iface: ""
+  #       # -- Reservations Persist Through Power Loss State
+  #       ptpl: true
+  #       # NVMF target Command Retry Delay for volume target initiators
+  #       hostCmdRetryDelay:
+  #         # A command retry delay in seconds. A value of 0 means no delay, host may retry immediately
+  #         crdt1: 30
+
+  # etcd:
+  #   # Pod labels; okay to remove the openebs logging label if required
+  #   podLabels:
+  #     app: etcd
+  #     openebs.io/logging: "true"
+  #   # -- Number of replicas of etcd
+  #   replicaCount: 3
+  #   persistence:
+  #     # -- If true, use a Persistent Volume Claim. If false, use emptyDir.
+  #     enabled: true
+  #     # -- Will define which storageClass to use in etcd's StatefulSets
+  #     # a `manual` storageClass will provision a hostpath PV on the same node
+  #     # an empty storageClass will use the default StorageClass on the cluster
+  #     storageClass: ""
+  #     # -- Volume size
+  #     size: 2Gi
+  #   podAntiAffinityPreset: "hard"
+
+  #   nvme:
+  #     # -- Timeout for IOs
+  #     # The default here is exaggerated for local disks but we've observed that in
+  #     # shared virtual environments having a higher timeout value is beneficial.
+  #     # In certain cases, you may have to set this to an even higher value. For example,
+  #     # in Hetzner we've had better results setting it to 300s.
+  #     # Please adjust this according to your hardware and needs.
+  #     ioTimeout: "110s"
+  #     # Timeout for admin commands
+  #     adminTimeout: "30s"
+  #     # Timeout for keep alives
+  #     keepAliveTimeout: "10s"
+  #     tcp:
+  #       # -- Max size setting (both initiator and target) for an NVMe queue
+  #       # -- You may need to increase this for a higher outstanding IOs per volume
+  #       maxQueueDepth: "32"
+
+  # loki-stack:
+  #   # -- Enable loki log collection for Mayastor components
+  #   enabled: true
+
+  # obs:
+  #   callhome:
+  #     # -- Enable callhome
+  #     enabled: true
+  #     # -- Log level for callhome
+  #     logLevel: "info"
+
+  # localpv-provisioner:
+  #   # -- Enables the openebs dynamic-localpv provisioner. If disabled, modify etcd and loki-stack storage class accordingly.
+  #   enabled: true
+  #   # Enable/disable the openebs NDM sub-chart. It's recommended to keep this disabled.
+  #   openebsNDM:
+  #     enabled: false
+  #   # Enable/disable the creation of the openebs-device StorageClass. It's recommended to keep this disabled.
+  #   deviceClass:
+  #     enabled: false
+  #   hostpathClass:
+  #     enabled: false
+
+
+jiva:
+  # non csi configuration
+  image: "openebs/jiva"
+  imageTag: "2.12.2"
+  replicas: 3
+  defaultStoragePath: "/var/openebs"
+
+  # jiva csi driver configuration
+  # do not enable or configure any sub dependency here
+  # only jiva csi related settings can be added here
+  # ref - https://openebs.github.io/jiva-operator
+
+  # jiva chart dependency tree is here -
+  # jiva
+  # | - localpv-provisioner
+  # | | - openebs-ndm
+
+  # Enable localpv-provisioner and openebs-ndm as root dependency not as
+  # sub dependency.
+  # openebs
+  # | - jiva(enable)
+  # | | - localpv-provisioner(disable)
+  # | | | - openebs-ndm(disable)
+  # | - localpv-provisioner(enable)
+  # | - openebs-ndm(enable)
+
+  enabled: false
+  openebsLocalpv:
+    enabled: false
+  localpv-provisioner:
+    openebsNDM:
+      enabled: false
+
+  # Sample configuration if you want to configure jiva csi driver with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/jiva-operator
+
+#  rbac:
+#    create: true
+#    pspEnabled: false
+#
+#  jivaOperator:
+#    controller:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/jiva
+#        tag: 3.6.0
+#    replica:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/jiva
+#        tag: 3.6.0
+#    image:
+#      registry: quay.io/
+#      repository: openebs/jiva-operator
+#      pullPolicy: IfNotPresent
+#      tag: 3.6.0
+#
+#  jivaCSIPlugin:
+#    remount: "true"
+#    image:
+#      registry: quay.io/
+#      repository: openebs/jiva-csi
+#      pullPolicy: IfNotPresent
+#      tag: 3.6.0
+
+cstor:
+
+  # non csi configuration
+  pool:
+    image: "openebs/cstor-pool"
+    imageTag: "2.12.2"
+  poolMgmt:
+    image: "openebs/cstor-pool-mgmt"
+    imageTag: "2.12.2"
+  target:
+    image: "openebs/cstor-istgt"
+    imageTag: "2.12.2"
+  volumeMgmt:
+    image: "openebs/cstor-volume-mgmt"
+    imageTag: "2.12.2"
+
+  # cstor csi driver configuration
+  # do not enable or configure any sub dependency here
+  # only cstor csi related settings can be added here
+  # ref - https://openebs.github.io/cstor-operators
+
+  # cstor chart dependency tree is here -
+  # cstor
+  # | - openebs-ndm
+
+  # Enable openebs-ndm as root dependency not as sub dependency.
+  # openebs
+  # | - cstor(enable)
+  # | | - openebs-ndm(disable)
+  # | - openebs-ndm(enable)
+  enabled: false
+  openebsNDM:
+    enabled: false
+
+  # Sample configuration if you want to configure cstor csi driver with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/cstor-operators
+
+#  imagePullSecrets: []
+#
+#  rbac:
+#    create: true
+#    pspEnabled: false
+#
+#  cspcOperator:
+#    poolManager:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/cstor-pool-manager
+#        tag: 3.6.0
+#    cstorPool:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/cstor-pool
+#        tag: 3.6.0
+#    cstorPoolExporter:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/m-exporter
+#        tag: 3.6.0
+#    image:
+#      registry: quay.io/
+#      repository: openebs/cspc-operator
+#      pullPolicy: IfNotPresent
+#      tag: 3.6.0
+#
+#  cvcOperator:
+#    target:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/cstor-istgt
+#        tag: 3.6.0
+#    volumeMgmt:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/cstor-volume-manager
+#        tag: 3.6.0
+#    volumeExporter:
+#      image:
+#        registry: quay.io/
+#        repository: openebs/m-exporter
+#        tag: 3.6.0
+#    image:
+#      registry: quay.io/
+#      repository: openebs/cvc-operator
+#      pullPolicy: IfNotPresent
+#      tag: 3.6.0
+#
+#  cstorCSIPlugin:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/cstor-csi-driver
+#      pullPolicy: IfNotPresent
+#      tag: 3.6.0
+#
+#  admissionServer:
+#    componentName: cstor-admission-webhook
+#    image:
+#      registry: quay.io/
+#      repository: openebs/cstor-webhook
+#      pullPolicy: IfNotPresent
+#      tag: 3.6.0
+
+# ndm configuration goes here
+# https://openebs.github.io/node-disk-manager
+openebs-ndm:
+  enabled: false
+
+  # Sample configuration if you want to configure openebs ndm with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/node-disk-manager
+
+#  imagePullSecrets: []
+#
+#  ndm:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/node-disk-manager
+#      pullPolicy: IfNotPresent
+#      tag: 2.1.0
+#    sparse:
+#      path: "/var/openebs/sparse"
+#      size: "10737418240"
+#      count: "0"
+#    filters:
+#      enableOsDiskExcludeFilter: true
+#      osDiskExcludePaths: "/,/etc/hosts,/boot"
+#      enableVendorFilter: true
+#      excludeVendors: "CLOUDBYT,OpenEBS"
+#      enablePathFilter: true
+#      includePaths: ""
+#      excludePaths: "loop,fd0,sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
+#    probes:
+#      enableSeachest: false
+#      enableUdevProbe: true
+#      enableSmartProbe: true
+#
+#  ndmOperator:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/node-disk-operator
+#      pullPolicy: IfNotPresent
+#      tag: 2.1.0
+#
+#  helperPod:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/linux-utils
+#      pullPolicy: IfNotPresent
+#      tag: 3.5.0
+#
+#  featureGates:
+#    enabled: true
+#    GPTBasedUUID:
+#      enabled: true
+#      featureGateFlag: "GPTBasedUUID"
+#    APIService:
+#      enabled: false
+#      featureGateFlag: "APIService"
+#      address: "0.0.0.0:9115"
+#    UseOSDisk:
+#      enabled: false
+#      featureGateFlag: "UseOSDisk"
+#    ChangeDetection:
+#      enabled: false
+#      featureGateFlag: "ChangeDetection"
+#
+#  varDirectoryPath:
+#    baseDir: "/var/openebs"
+
+  # local pv provisioner configuration goes here
+  # do not enable or configure any sub dependency here
+  # ref - https://openebs.github.io/dynamic-localpv-provisioner
+
+  # local pv chart dependency tree is here -
+  # localpv-provisioner
+  # | - openebs-ndm
+
+  # Enable openebs-ndm as root dependency not as sub dependency.
+  # openebs
+  # | - localpv-provisioner(enable)
+  # | | - openebs-ndm(disable)
+  # | - openebs-ndm(enable)
+localpv-provisioner:
+  enabled: false
+  openebsNDM:
+    enabled: false
+
+  # Sample configuration if you want to configure openebs locapv with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/dynamic-localpv-provisioner
+
+#  imagePullSecrets: []
+#
+#  rbac:
+#    create: true
+#    pspEnabled: false
+#
+#  localpv:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/provisioner-localpv
+#      tag: 3.5.0
+#      pullPolicy: IfNotPresent
+#    healthCheck:
+#      initialDelaySeconds: 30
+#      periodSeconds: 60
+#    replicas: 1
+#    enableLeaderElection: true
+#    basePath: "/var/openebs/local"
+#
+#  helperPod:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/linux-utils
+#      pullPolicy: IfNotPresent
+#      tag: 3.5.0
+
+# zfs local pv configuration goes here
+# ref - https://openebs.github.io/zfs-localpv
+zfs-localpv:
+  enabled: false
+
+  # Sample configuration if you want to configure zfs locapv with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/zfs-localpv
+
+#  imagePullSecrets: []
+#
+#  rbac:
+#    pspEnabled: false
+#
+#  zfsPlugin:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/zfs-driver
+#      pullPolicy: IfNotPresent
+#      tag: 2.4.0
+
+# lvm local pv configuration goes here
+# ref - https://openebs.github.io/lvm-localpv
+lvm-localpv:
+  enabled: false
+
+  # Sample configuration if you want to configure lvm localpv with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/lvm-localpv
+
+#  imagePullSecrets: []
+#
+#  rbac:
+#    pspEnabled: false
+#
+#  lvmPlugin:
+#    image:
+#      registry: quay.io/
+#      repository: openebs/lvm-driver
+#      pullPolicy: IfNotPresent
+#      tag: 1.4.0
+
+# openebs nfs provisioner configuration goes here
+# ref - https://openebs.github.io/dynamic-nfs-provisioner
+nfs-provisioner:
+  enabled: false
+
+  # Sample configuration if you want to configure nfs-provisioner with custom values.
+  # This is a small part of the full configuration. Full configuration available
+  # here - https://openebs.github.io/dynamic-nfs-provisioner
+
+#  imagePullSecrets: []
+#
+#  rbac:
+#    pspEnabled: false
+#
+#  nfsProvisioner:
+#    image:
+#      registry:
+#      repository: openebs/provisioner-nfs
+#      tag: 0.11.0
+#      pullPolicy: IfNotPresent
+#    enableLeaderElection: "true"
+#    nfsServerAlpineImage:
+#      registry:
+#      repository: openebs/nfs-server-alpine
+#      tag: 0.11.0
+
+cleanup:
+  image:
+    # Make sure that registry name end with a '/'.
+    # For example : quay.io/ is a correct value here and quay.io is incorrect
+    registry:
+    repository: bitnami/kubectl
+    tag:
+    imagePullSecrets: []
+      #  - name: image-pull-secret
