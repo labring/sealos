@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     }
 
-    const requestBody: WorkspaceConsumptionRequest = {
+    const requestBody = {
       startTime,
       endTime
     };
