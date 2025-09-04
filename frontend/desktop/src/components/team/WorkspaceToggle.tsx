@@ -69,6 +69,10 @@ export default function WorkspaceToggle() {
       pathname: '/',
       query: {
         mode: 'create'
+      },
+      messageData: {
+        type: 'InternalAppCall',
+        mode: 'create'
       }
     });
   };
