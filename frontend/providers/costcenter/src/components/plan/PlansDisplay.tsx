@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
@@ -7,9 +7,7 @@ import { UpgradePlanCard } from './UpgradePlanCard';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
-import PlanConfirmationModal from './PlanConfirmationModal';
 import { formatMoney } from '@/utils/format';
-import DowngradeModal from './DowngradeModal';
 
 interface PlansDisplayProps {
   onSubscribe?: (plan: SubscriptionPlan) => void;
@@ -34,28 +32,28 @@ export function PlansDisplay({
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
+  const showConfirmationModal = usePlanStore((state) => state.showConfirmationModal);
+  const showDowngradeModal = usePlanStore((state) => state.showDowngradeModal);
 
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
   const currentPlan = subscription?.PlanName;
-  const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
-  const downgradeModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
 
   const [showMorePlans, setShowMorePlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>(''); // plan id
-  const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
 
-  // 使用 useMemo 优化计算性能
   const { paidPlans, mainPlans, additionalPlans } = useMemo(() => {
     const paid = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
     const main = paid.filter((plan) => !plan.Tags.includes('more'));
     const additional = paid.filter((plan) => plan.Tags.includes('more'));
 
+    const sortByOrder = (a: SubscriptionPlan, b: SubscriptionPlan) => a.Order - b.Order;
+
     return {
-      paidPlans: paid,
-      mainPlans: main,
-      additionalPlans: additional
+      paidPlans: paid.sort(sortByOrder),
+      mainPlans: main.sort(sortByOrder),
+      additionalPlans: additional.sort(sortByOrder)
     };
   }, [plans]);
 
@@ -84,9 +82,8 @@ export function PlansDisplay({
         setShowMorePlans(true);
         setSelectedPlan(currentPlanObj?.ID || '');
       } else {
-        const hobbyPlusPlan = additionalPlans.find((plan) => plan.Name === 'Hobby+');
-        if (hobbyPlusPlan) {
-          setSelectedPlan(hobbyPlusPlan.ID);
+        if (additionalPlans.length > 0) {
+          setSelectedPlan(additionalPlans[0].ID);
         }
       }
       setHasInitialized(true);
@@ -136,7 +133,17 @@ export function PlansDisplay({
             </label>
           </div>
 
-          <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+          <Select
+            value={selectedPlan}
+            onValueChange={(value) => {
+              const currentPlan = additionalPlans.find((p) => p.ID === value);
+              if (currentPlan?.Name === 'Customized' && currentPlan?.Description) {
+                window.open(currentPlan?.Description, '_blank', 'noopener,noreferrer');
+              } else {
+                setSelectedPlan(value);
+              }
+            }}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a plan" />
             </SelectTrigger>
@@ -155,6 +162,24 @@ export function PlansDisplay({
 
                 const isCurrentPlanInSelect = plan.Name === currentPlan;
                 const isNextPlanInSelect = plan.Name === nextPlanName;
+
+                if (plan.Name === 'Customized') {
+                  return (
+                    <SelectItem key={plan.ID} value={plan.ID} className="w-full">
+                      <div className="flex w-full items-center">
+                        <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
+                        <Separator
+                          orientation="vertical"
+                          style={{
+                            height: '16px',
+                            margin: '0 12px'
+                          }}
+                        />
+                        <span>Contact us</span>
+                      </div>
+                    </SelectItem>
+                  );
+                }
 
                 return (
                   <SelectItem key={plan.ID} value={plan.ID} className="w-full">
@@ -211,13 +236,12 @@ export function PlansDisplay({
                   if (isCreateMode) {
                     onSubscribe?.(plan);
                   } else {
-                    setPendingPlan(plan);
                     // Determine if it's upgrade or downgrade
                     const isUpgrade = currentPlanObj?.UpgradePlanList?.includes(plan.Name);
                     if (isUpgrade) {
-                      confirmationModalRef.current?.onOpen();
+                      showConfirmationModal(plan, { workspaceName, isCreateMode });
                     } else {
-                      downgradeModalRef.current?.onOpen();
+                      showDowngradeModal(plan, { workspaceName, isCreateMode });
                     }
                   }
                 }
@@ -248,39 +272,6 @@ export function PlansDisplay({
           )}
         </div>
       )}
-      {/* Plan Confirmation Modal for More Plans */}
-      <PlanConfirmationModal
-        ref={confirmationModalRef}
-        plan={pendingPlan || undefined}
-        workspaceName={workspaceName}
-        isCreateMode={isCreateMode}
-        onConfirm={() => {
-          if (pendingPlan) {
-            onSubscribe?.(pendingPlan);
-            setPendingPlan(null);
-          }
-        }}
-        onCancel={() => {
-          setPendingPlan(null);
-          confirmationModalRef.current?.onClose();
-        }}
-      />
-
-      {/* Downgrade Confirmation Modal for More Plans */}
-      <DowngradeModal
-        ref={downgradeModalRef}
-        targetPlan={pendingPlan || undefined}
-        onConfirm={() => {
-          if (pendingPlan) {
-            onSubscribe?.(pendingPlan);
-            setPendingPlan(null);
-          }
-        }}
-        onCancel={() => {
-          setPendingPlan(null);
-          downgradeModalRef.current?.onClose();
-        }}
-      />
     </div>
   );
 }

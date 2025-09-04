@@ -2,13 +2,8 @@ import { Button, cn } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/plan';
-import { useRef } from 'react';
-import useSessionStore from '@/stores/session';
-import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
-import PlanConfirmationModal from './PlanConfirmationModal';
-import { formatMoney } from '@/utils/format';
-import DowngradeModal from './DowngradeModal';
+import { formatMoney, formatTrafficAuto } from '@/utils/format';
 
 interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
@@ -33,10 +28,11 @@ export function UpgradePlanCard({
   onSelect,
   workspaceName
 }: UpgradePlanCardProps) {
-  // 优化性能：只订阅需要的状态
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
   const getCurrentPlan = usePlanStore((state) => state.getCurrentPlan);
+  const showConfirmationModal = usePlanStore((state) => state.showConfirmationModal);
+  const showDowngradeModal = usePlanStore((state) => state.showDowngradeModal);
 
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
@@ -46,10 +42,9 @@ export function UpgradePlanCard({
     !isCreateMode &&
     plan.Name === lastTransaction?.NewPlanName &&
     lastTransaction?.Operator === 'downgraded';
-  const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
-  const downgradeModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
 
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+  const originalPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.OriginalPrice || 0;
 
   let resources: any = {};
   try {
@@ -71,7 +66,7 @@ export function UpgradePlanCard({
 
   // Get operator for upgrade amount calculation
   const getOperator = () => {
-    if (!currentPlan) return 'upgraded';
+    if (!currentPlan) return 'created';
     if (currentPlan.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
     if (currentPlan.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
     return 'upgraded';
@@ -79,9 +74,8 @@ export function UpgradePlanCard({
 
   const handleSubscribeClick = () => {
     if (isCreateMode) {
-      // In create mode, first select the plan, then show confirmation modal
-      // onSelect?.(); // Select this plan first
-      confirmationModalRef.current?.onOpen(); // Then show confirmation modal
+      // In create mode, show confirmation modal
+      showConfirmationModal(plan, { workspaceName, isCreateMode });
       return;
     }
 
@@ -91,15 +85,11 @@ export function UpgradePlanCard({
 
     // Show different modals based on operation type
     if (getOperator() === 'upgraded') {
-      confirmationModalRef.current?.onOpen();
-    } else {
+      showConfirmationModal(plan, { workspaceName, isCreateMode });
+    } else if (getOperator() === 'downgraded') {
       // For downgrades, show downgrade confirmation modal
-      downgradeModalRef.current?.onOpen();
+      showDowngradeModal(plan, { workspaceName, isCreateMode });
     }
-  };
-
-  const handleConfirmSubscription = () => {
-    onSubscribe?.(plan);
   };
 
   // Get button text based on action type
@@ -148,6 +138,11 @@ export function UpgradePlanCard({
         <p className="text-sm text-gray-600 mb-4 leading-relaxed">{plan.Description}</p>
 
         <div className="mb-4">
+          {originalPrice > 0 && (
+            <span className="text-4xl font-bold text-gray-400 line-through">
+              ${formatMoney(originalPrice).toFixed(0)}
+            </span>
+          )}
           <span className="text-4xl font-bold text-gray-900">
             ${formatMoney(monthlyPrice).toFixed(0)}
           </span>
@@ -174,68 +169,24 @@ export function UpgradePlanCard({
           {resources.cpu && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">
-                {resources.cpu === '16'
-                  ? '1 vCPU'
-                  : resources.cpu === '4'
-                    ? '4 vCPU'
-                    : resources.cpu === '8'
-                      ? 'More vCPU'
-                      : `${resources.cpu} CPU`}
-              </span>
+              <span className="text-sm text-gray-700">{resources.cpu} CPU</span>
             </li>
           )}
           {resources.memory && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">
-                {resources.memory === '32Gi'
-                  ? '2GB RAM'
-                  : resources.memory === '8Gi'
-                    ? '8GB RAM'
-                    : resources.memory === '16Gi'
-                      ? 'More RAM'
-                      : resources.memory}
-              </span>
+              <span className="text-sm text-gray-700">{resources.memory} RAM</span>
             </li>
           )}
           {resources.storage && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">
-                {resources.storage === '500Gi'
-                  ? '2GB Disk'
-                  : resources.storage === '100Gi'
-                    ? '2GB Disk'
-                    : resources.storage === '200Gi'
-                      ? 'More Disk'
-                      : resources.storage}
-              </span>
+              <span className="text-sm text-gray-700">{resources.storage} Disk</span>
             </li>
           )}
           <li className="flex items-center gap-3">
             <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-sm text-gray-700">
-              {plan.Traffic === 50000
-                ? '3GB Traffic'
-                : plan.Traffic === 10000
-                  ? '3GB Traffic'
-                  : plan.Traffic === 20000
-                    ? 'More Traffic'
-                    : `${plan.Traffic}GB Traffic`}
-            </span>
-          </li>
-          <li className="flex items-center gap-3">
-            <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-sm text-gray-700">
-              {plan.MaxSeats === 50
-                ? '1 Port'
-                : plan.MaxSeats === 10
-                  ? '2 Port'
-                  : plan.MaxSeats === 20
-                    ? 'More Port'
-                    : `${plan.MaxSeats} Port`}
-            </span>
+            <span className="text-sm text-gray-700">{formatTrafficAuto(plan.Traffic)}</span>
           </li>
           {plan.Name.includes('medium') && (
             <li className="flex items-center gap-3">
@@ -245,24 +196,6 @@ export function UpgradePlanCard({
           )}
         </ul>
       </div>
-
-      {/* Plan Confirmation Modal */}
-      <PlanConfirmationModal
-        ref={confirmationModalRef}
-        plan={plan}
-        isCreateMode={isCreateMode}
-        workspaceName={workspaceName}
-        onConfirm={handleConfirmSubscription}
-        onCancel={() => confirmationModalRef.current?.onClose()}
-      />
-
-      {/* Downgrade Confirmation Modal */}
-      <DowngradeModal
-        ref={downgradeModalRef}
-        targetPlan={plan}
-        onConfirm={handleConfirmSubscription}
-        onCancel={() => downgradeModalRef.current?.onClose()}
-      />
     </section>
   );
 }

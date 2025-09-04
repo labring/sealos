@@ -13,10 +13,30 @@ export interface PlanStoreState {
   subscriptionData: SubscriptionInfoResponse | null;
   lastTransactionData: LastTransactionResponse | null;
 
-  // Actions
+  // Modal state
+  pendingPlan: SubscriptionPlan | null;
+  modalType: 'confirmation' | 'downgrade' | null;
+  modalContext: {
+    workspaceName?: string;
+    isCreateMode?: boolean;
+  };
+
+  // Data actions
   setPlansData: (data: PlanListResponse | null) => void;
   setSubscriptionData: (data: SubscriptionInfoResponse | null) => void;
   setLastTransactionData: (data: LastTransactionResponse | null) => void;
+
+  // Modal actions
+  showConfirmationModal: (
+    plan: SubscriptionPlan,
+    context?: { workspaceName?: string; isCreateMode?: boolean }
+  ) => void;
+  showDowngradeModal: (
+    plan: SubscriptionPlan,
+    context?: { workspaceName?: string; isCreateMode?: boolean }
+  ) => void;
+  hideModal: () => void;
+  confirmPendingPlan: () => SubscriptionPlan | null;
 
   // Computed getters
   getCurrentPlan: () => SubscriptionPlan | null;
@@ -35,10 +55,47 @@ const usePlanStore = create<PlanStoreState>()(
     subscriptionData: null,
     lastTransactionData: null,
 
-    // Actions
+    // Modal initial state
+    pendingPlan: null,
+    modalType: null,
+    modalContext: {},
+
+    // Data actions
     setPlansData: (data) => set({ plansData: data }),
     setSubscriptionData: (data) => set({ subscriptionData: data }),
     setLastTransactionData: (data) => set({ lastTransactionData: data }),
+
+    // Modal actions
+    showConfirmationModal: (plan, context = {}) =>
+      set({
+        pendingPlan: plan,
+        modalType: 'confirmation',
+        modalContext: context
+      }),
+
+    showDowngradeModal: (plan, context = {}) =>
+      set({
+        pendingPlan: plan,
+        modalType: 'downgrade',
+        modalContext: context
+      }),
+
+    hideModal: () =>
+      set({
+        pendingPlan: null,
+        modalType: null,
+        modalContext: {}
+      }),
+
+    confirmPendingPlan: () => {
+      const plan = get().pendingPlan;
+      set({
+        pendingPlan: null,
+        modalType: null,
+        modalContext: {}
+      });
+      return plan;
+    },
 
     // Computed getters
     getCurrentPlan: () => {
@@ -77,7 +134,10 @@ const usePlanStore = create<PlanStoreState>()(
       set({
         plansData: null,
         subscriptionData: null,
-        lastTransactionData: null
+        lastTransactionData: null,
+        pendingPlan: null,
+        modalType: null,
+        modalContext: {}
       })
   }))
 );

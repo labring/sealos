@@ -24,7 +24,8 @@ export const PlanPriceSchema = z.object({
   BillingCycle: z.string(),
   Price: z.number(),
   CreatedAt: z.string(),
-  UpdatedAt: z.string()
+  UpdatedAt: z.string(),
+  OriginalPrice: z.number()
 });
 export type PlanPrice = z.infer<typeof PlanPriceSchema>;
 
@@ -41,7 +42,8 @@ export const SubscriptionPlanSchema = z.object({
   Prices: z.array(PlanPriceSchema),
   CreatedAt: z.string(),
   UpdatedAt: z.string(),
-  Tags: z.array(z.string())
+  Tags: z.array(z.string()),
+  Order: z.number()
 });
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;

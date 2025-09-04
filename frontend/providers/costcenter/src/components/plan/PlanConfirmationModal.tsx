@@ -1,5 +1,5 @@
 import { CheckCircle } from 'lucide-react';
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import { forwardRef } from 'react';
 import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
 import { displayMoney, formatMoney } from '@/utils/format';
@@ -7,49 +7,40 @@ import { getUpgradeAmount } from '@/api/plan';
 import { useQuery } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
+import usePlanStore from '@/stores/plan';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
   workspaceName?: string;
   isCreateMode?: boolean;
+  isOpen?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
 }
 
-const PlanConfirmationModal = forwardRef<
-  { onOpen: () => void; onClose: () => void },
-  PlanConfirmationModalProps
->((props, ref) => {
-  const { plan, workspaceName, isCreateMode = false, onConfirm, onCancel } = props;
+const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props) => {
+  const { plan, workspaceName, isCreateMode = false, isOpen = false, onConfirm, onCancel } = props;
 
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
+  const isPaygType = usePlanStore((state) => state.isPaygType);
 
   const region = getRegion();
   const workspace = session?.user?.nsid || '';
   const regionDomain = region?.domain || '';
   const period = '1m';
   const payMethod: PaymentMethod = 'stripe';
-  const operator = isCreateMode ? 'created' : 'upgraded';
-  const [isOpen, setIsOpen] = useState(false);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      onOpen: () => setIsOpen(true),
-      onClose: () => {
-        setIsOpen(false);
-        onCancel?.();
-      }
-    }),
-    [onCancel]
-  );
+  // For payg users, operator should always be 'created'
+  const isPaygUser = isPaygType();
+  const operator = isCreateMode || isPaygUser ? 'created' : 'upgraded';
 
-  // Get upgrade amount (only for upgrade mode, not create mode)
+  // Get upgrade amount (only for upgrade mode, not create mode, and not for payg users)
   const { data: upgradeAmountData, isLoading: amountLoading } = useQuery({
     queryKey: ['upgrade-amount', plan?.Name, workspace, regionDomain, period, payMethod, operator],
     queryFn: () => {
-      if (!plan || !workspace || !regionDomain || operator !== 'upgraded') return null;
+      if (!plan || !workspace || !regionDomain || operator !== 'upgraded' || isPaygUser)
+        return null;
       return getUpgradeAmount({
         workspace,
         regionDomain,
@@ -59,11 +50,11 @@ const PlanConfirmationModal = forwardRef<
         operator: 'upgraded'
       });
     },
-    enabled: isOpen && !!(plan && workspace && regionDomain && operator === 'upgraded')
+    enabled:
+      isOpen && !!(plan && workspace && regionDomain && operator === 'upgraded' && !isPaygUser)
   });
 
   const handleConfirm = () => {
-    setIsOpen(false);
     onConfirm?.();
   };
 
@@ -99,11 +90,18 @@ const PlanConfirmationModal = forwardRef<
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === period)?.Price || 0;
   const upgradeAmount = upgradeAmountData?.data?.amount || 0;
 
-  // For create mode, use full monthly price
-  const dueToday = isCreateMode ? monthlyPrice : upgradeAmount;
+  // For create mode or payg users, use full monthly price; otherwise use upgrade amount
+  const dueToday = isCreateMode || isPaygUser ? monthlyPrice : upgradeAmount;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onCancel?.();
+        }
+      }}
+    >
       <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
       <DialogContent className="max-w-[400px] pb-8 pt-0 px-10 gap-0">
         {/* Header */}
@@ -168,8 +166,8 @@ const PlanConfirmationModal = forwardRef<
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-900">Due today</span>
               <span className="text-sm font-semibold text-gray-900">
-                {isCreateMode || amountLoading
-                  ? isCreateMode
+                {isCreateMode || isPaygUser || amountLoading
+                  ? isCreateMode || isPaygUser
                     ? `$${displayMoney(formatMoney(dueToday))}`
                     : 'Calculating...'
                   : `$${displayMoney(formatMoney(dueToday))}`}
@@ -195,9 +193,9 @@ const PlanConfirmationModal = forwardRef<
           className="w-full mt-5"
           size="lg"
           onClick={handleConfirm}
-          disabled={!isCreateMode && amountLoading}
+          disabled={!(isCreateMode || isPaygUser) && amountLoading}
         >
-          {!isCreateMode && amountLoading
+          {!(isCreateMode || isPaygUser) && amountLoading
             ? 'Calculating...'
             : isCreateMode
               ? 'Create Workspace'
