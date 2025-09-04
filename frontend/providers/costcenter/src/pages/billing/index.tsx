@@ -12,8 +12,6 @@ import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import useOverviewStore from '@/stores/overview';
 import { getPaymentList } from '@/api/plan';
-import { Region } from '@/types/region';
-import { ApiResp } from '@/types';
 import { BillingNode, CostTree } from '@/components/billing/CostTree';
 import { PAYGCostTable } from '@/components/billing/PAYGCostTable';
 import {
@@ -32,7 +30,7 @@ import { getWorkspacesConsumptions } from '@/api/billing';
 function Billing() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { getRegion } = useBillingStore();
+  const { getRegion, regionList: regions } = useBillingStore();
   const { startTime, endTime } = useOverviewStore();
 
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
@@ -65,13 +63,6 @@ function Billing() {
     ? dateRange.to.toISOString()
     : new Date(endTime).toISOString();
 
-  // Query regions list
-  // [TODO] This is a temporary implementation, we should use region/namespace list from billing store
-  const { data: regionData } = useQuery({
-    queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
-    queryKey: ['regionList', 'menu']
-  });
-
   // Query namespaces for current region
   // [TODO] This is a temporary implementation, we should use region/namespace list from billing store
   const { data: nsListData } = useQuery({
@@ -100,7 +91,7 @@ function Billing() {
   );
 
   // Fetch payments for ALL regions and merge
-  const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
+  const regionUids = useMemo(() => (regions || []).map((r) => r.uid), [regions]);
   const { data: allPaymentsData } = useQuery({
     queryFn: async () => {
       const entries = await Promise.all(
@@ -131,7 +122,8 @@ function Billing() {
       try {
         const response = await getWorkspacesConsumptions({
           startTime: effectiveStartTime,
-          endTime: effectiveEndTime
+          endTime: effectiveEndTime,
+          regionUid: currentRegionUid
         });
 
         // Fail silently
@@ -177,7 +169,6 @@ function Billing() {
   });
 
   const { nodes, totalCost } = useMemo(() => {
-    const regions = regionData?.data || [];
     const namespaces = (nsListData?.data || []) as [string, string][];
     const paymentsByRegion = allPaymentsData || {};
     const paymentList = Object.values(paymentsByRegion).flat();
@@ -261,7 +252,7 @@ function Billing() {
 
     return { nodes, totalCost };
   }, [
-    regionData,
+    regions,
     nsListData,
     allPaymentsData,
     allRegionConsumptions,
@@ -337,11 +328,11 @@ function Billing() {
   // Get current region and workspace names for display
   const currentRegionName = useMemo(() => {
     if (selectedRegion) {
-      const region = (regionData?.data || []).find((r) => r.uid === selectedRegion);
+      const region = regions.find((r) => r.uid === selectedRegion);
       return region?.name.en;
     }
     return null; // No region selected
-  }, [selectedRegion, regionData]);
+  }, [selectedRegion, regions]);
 
   const currentWorkspaceName = useMemo(() => {
     if (selectedWorkspace) {

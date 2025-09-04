@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, Button, TableCell, TableHead, TableRow } from '@sealos/shadcn-ui';
+import { Avatar, AvatarFallback, TableCell, TableHead, TableRow } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -8,18 +8,96 @@ import {
   TableLayoutBody,
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
-import { getWorkspaceSubscriptionList } from '@/api/plan';
+import { getWorkspaceSubscriptionList, getPaymentList } from '@/api/plan';
+import { getWorkspacesConsumptions } from '@/api/billing';
+import { PaymentRecord } from '@/types/plan';
 import useBillingStore from '@/stores/billing';
+import request from '@/service/request';
+import { useMemo } from 'react';
+import { formatMoney } from '@/utils/format';
 
 export function AllPlansSection() {
-  const { regionList } = useBillingStore();
+  const { regionList: regions } = useBillingStore();
 
-  const { data: subscriptionListData, isLoading } = useQuery({
+  // Set default time range: 31 days ago to now
+  const effectiveStartTime = useMemo(() => {
+    return new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+  }, []);
+  const effectiveEndTime = useMemo(() => {
+    return new Date().toISOString();
+  }, []);
+
+  const regionUids = useMemo(() => (regions || []).map((r) => r.uid), [regions]);
+
+  const { data: subscriptionListData, isLoading: subscriptionListLoading } = useQuery({
     queryKey: ['workspace-subscription-list'],
     queryFn: getWorkspaceSubscriptionList
   });
 
-  const subscriptions = subscriptionListData?.data?.subscriptions || [];
+  // Query body for subscription payments (region scope)
+  // We need this for calculating costs
+  const paymentListQueryBodyBase = useMemo(
+    () => ({
+      endTime: effectiveEndTime,
+      startTime: effectiveStartTime
+    }),
+    [effectiveEndTime, effectiveStartTime]
+  );
+
+  // Query namespaces for ALL regions to get workspace names across regions
+  const { data: nsListData, isLoading: nsListLoading } = useQuery({
+    queryFn: async () => {
+      const entries = await Promise.all(
+        (regionUids || []).map(async (uid) => {
+          const namespaces = await request
+            .post('/api/billing/getNamespaceList', {
+              startTime: effectiveStartTime,
+              endTime: effectiveEndTime,
+              regionUid: uid
+            })
+            .then((res) => (res?.data as [string, string][]) || [])
+            .catch(() => []);
+
+          return [uid, namespaces] as const;
+        })
+      );
+
+      return entries.reduce<Record<string, [string, string][]>>((acc, [uid, namespaces]) => {
+        acc[uid] = namespaces;
+        return acc;
+      }, {});
+    },
+    queryKey: [
+      'nsListAllRegions',
+      'menu',
+      { startTime: effectiveStartTime, endTime: effectiveEndTime, regionUids }
+    ],
+    enabled: (regionUids?.length || 0) > 0
+  });
+
+  // Fetch payments for ALL regions and merge
+  const { data: allPaymentsData, isLoading: allPaymentsLoading } = useQuery({
+    queryFn: async () => {
+      const entries = await Promise.all(
+        (regionUids || []).map(async (uid) => {
+          const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
+            .then((res) => res?.data?.payments || [])
+            .catch(() => [] satisfies PaymentRecord[]);
+
+          // This API will return both subscription and PAYG payments, we only need subscriptions
+          const subscriptionPayments = payments.filter((p) => p.Type === 'SUBSCRIPTION');
+          return [uid, subscriptionPayments] as const;
+        })
+      );
+
+      return entries.reduce<Record<string, PaymentRecord[]>>((acc, [uid, payments]) => {
+        acc[uid] = payments;
+        return acc;
+      }, {});
+    },
+    queryKey: ['paymentListAllRegions', paymentListQueryBodyBase, regionUids],
+    enabled: (regionUids?.length || 0) > 0
+  });
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
@@ -46,12 +124,48 @@ export function AllPlansSection() {
     }
   };
 
-  const getRegionName = (regionDomain?: string) => {
-    const region = regionList.find((r) => r.domain === regionDomain);
-    return region?.name?.en || region?.name?.zh || regionDomain || 'Unknown Region';
-  };
+  const subscriptions = useMemo(
+    () => subscriptionListData?.data?.subscriptions || [],
+    [subscriptionListData]
+  );
 
-  if (isLoading) {
+  const allSubscriptions = useMemo(
+    () =>
+      Object.entries(nsListData ?? {}).map(([regionUid, namespaces]) => ({
+        regionUid,
+        regionName: (() => {
+          const region = regions.find((r) => r.uid === regionUid);
+          return region?.name?.en || region?.name?.zh || region?.domain || regionUid;
+        })(),
+        workspaces: namespaces.map(([namespaceId, workspaceName]) => {
+          const subscription = subscriptions.find((sub) => sub.Workspace === namespaceId);
+          if (subscription) {
+            const paymentRecord = (allPaymentsData?.[regionUid] ?? []).find(
+              (p) => p.Type === 'SUBSCRIPTION' && p.Workspace === namespaceId
+            );
+
+            return {
+              namespaceId,
+              workspaceName,
+              plan: subscription.PlanName,
+              renewalTime: subscription.CurrentPeriodStartAt,
+              price: paymentRecord?.Amount ?? null
+            };
+          } else {
+            return {
+              namespaceId,
+              workspaceName,
+              plan: 'PAYG',
+              renewalTime: null,
+              price: null
+            };
+          }
+        })
+      })),
+    [allPaymentsData, nsListData, regions, subscriptions]
+  );
+
+  if (subscriptionListLoading || nsListLoading || allPaymentsLoading) {
     return (
       <div className="flex justify-center py-12">
         <div>Loading subscriptions...</div>
@@ -67,81 +181,63 @@ export function AllPlansSection() {
     );
   }
 
-  // Group subscriptions by region
-  const subscriptionsByRegion = subscriptions.reduce((acc: any, subscription: any) => {
-    const regionKey = subscription.region_domain || subscription.RegionDomain || 'unknown';
-    if (!acc[regionKey]) {
-      acc[regionKey] = [];
-    }
-    acc[regionKey].push(subscription);
-    return acc;
-  }, {});
-
   return (
     <div>
       <div className="text-black font-medium text-lg mb-4">All Plans</div>
       <div className="space-y-6">
-        {Object.entries(subscriptionsByRegion).map(
-          ([regionDomain, regionSubscriptions]: [string, any]) => (
-            <TableLayout key={regionDomain}>
-              <TableLayoutCaption className="font-medium text-base bg-zinc-50">
-                {getRegionName(regionDomain)}
-              </TableLayoutCaption>
+        {allSubscriptions.map((regionData) => (
+          <TableLayout key={regionData.regionUid}>
+            <TableLayoutCaption className="font-medium text-base bg-zinc-50">
+              {regionData.regionName}
+            </TableLayoutCaption>
 
-              <TableLayoutContent>
-                <TableLayoutHeadRow>
-                  <TableHead className="bg-transparent">Workspace</TableHead>
-                  <TableHead className="bg-transparent">Plan</TableHead>
-                  <TableHead className="bg-transparent">Renewal Time</TableHead>
-                  <TableHead className="bg-transparent">Price</TableHead>
-                </TableLayoutHeadRow>
+            <TableLayoutContent>
+              <TableLayoutHeadRow>
+                <TableHead className="bg-transparent">Workspace</TableHead>
+                <TableHead className="bg-transparent">Plan</TableHead>
+                <TableHead className="bg-transparent">Renewal Time</TableHead>
+                <TableHead className="bg-transparent">Price</TableHead>
+              </TableLayoutHeadRow>
 
-                <TableLayoutBody>
-                  {regionSubscriptions.map((subscription: any, index: number) => (
-                    <TableRow key={subscription.id || subscription.ID || index}>
-                      <TableCell className="h-14">
-                        <div className="flex items-center gap-2.5">
-                          <Avatar className="size-5">
-                            <AvatarFallback>
-                              {(subscription.workspace ||
-                                subscription.Workspace)?.[0]?.toUpperCase() || 'W'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            {subscription.workspace ||
-                              subscription.Workspace ||
-                              'Unknown Workspace'}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${getPlanBadgeColor(subscription.type)} font-medium`}>
-                          {subscription.plan_name ||
-                            subscription.PlanName ||
-                            subscription.type ||
-                            'Unknown'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {formatDate(
-                          subscription.current_period_end_at || subscription.CurrentPeriodEndAt
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col text-sm">
-                          <span>{subscription.status || subscription.Status || 'Unknown'}</span>
-                          <span className="text-gray-500">
-                            {subscription.pay_status || subscription.PayStatus || 'Unknown'}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableLayoutBody>
-              </TableLayoutContent>
-            </TableLayout>
-          )
-        )}
+              <TableLayoutBody>
+                {regionData.workspaces.map((workspace) => (
+                  <TableRow key={`${regionData.regionName}-${workspace.namespaceId}`}>
+                    <TableCell className="h-14">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="size-5">
+                          <AvatarFallback>
+                            {workspace.workspaceName?.[0]?.toUpperCase() || 'W'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>{workspace.workspaceName || 'Unknown Workspace'}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${getPlanBadgeColor(
+                          workspace.plan === 'PAYG' ? 'PAYG' : 'SUBSCRIPTION'
+                        )} font-medium`}
+                      >
+                        {workspace.plan || 'Unknown'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {workspace.renewalTime ? formatDate(workspace.renewalTime) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col text-sm">
+                        <span>{workspace.price ? `$${formatMoney(workspace.price)}` : '-'}</span>
+                        <span className="text-gray-500">
+                          {workspace.plan === 'PAYG' ? 'Pay-as-you-go' : 'Subscription'}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableLayoutBody>
+            </TableLayoutContent>
+          </TableLayout>
+        ))}
       </div>
     </div>
   );
