@@ -28,7 +28,7 @@ export const baseResourceSchema = z.object({
 });
 export const allResourceSchema = baseResourceSchema.and(
   z.object({
-    replicas: z.number().min(1).max(3).default(1)
+    replicas: z.number().min(1).max(20).default(1)
   })
 );
 export const dbEditSchema = z.object({
