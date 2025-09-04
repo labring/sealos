@@ -1,18 +1,15 @@
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { getUpgradeAmount } from '@/api/plan';
 import { useQuery } from '@tanstack/react-query';
+import useSessionStore from '@/stores/session';
+import useBillingStore from '@/stores/billing';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
-  workspace?: string;
-  regionDomain?: string;
-  period?: '1m' | '1y';
-  payMethod?: PaymentMethod;
-  operator?: 'upgraded' | 'created';
   workspaceName?: string;
   isCreateMode?: boolean;
   onConfirm?: () => void;
@@ -23,18 +20,17 @@ const PlanConfirmationModal = forwardRef<
   { onOpen: () => void; onClose: () => void },
   PlanConfirmationModalProps
 >((props, ref) => {
-  const {
-    plan,
-    workspace,
-    regionDomain,
-    period = '1m',
-    payMethod = 'stripe',
-    operator = 'upgraded',
-    workspaceName,
-    isCreateMode = false,
-    onConfirm,
-    onCancel
-  } = props;
+  const { plan, workspaceName, isCreateMode = false, onConfirm, onCancel } = props;
+
+  const { session } = useSessionStore();
+  const { getRegion } = useBillingStore();
+
+  const region = getRegion();
+  const workspace = session?.user?.nsid || '';
+  const regionDomain = region?.domain || '';
+  const period = '1m';
+  const payMethod: PaymentMethod = 'stripe';
+  const operator = isCreateMode ? 'created' : 'upgraded';
   const [isOpen, setIsOpen] = useState(false);
 
   useImperativeHandle(

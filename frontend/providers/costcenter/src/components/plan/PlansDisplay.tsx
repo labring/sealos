@@ -2,19 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
-import { SubscriptionPlan, WorkspaceSubscription } from '@/types/plan';
+import { SubscriptionPlan } from '@/types/plan';
 import { UpgradePlanCard } from './UpgradePlanCard';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
+import usePlanStore from '@/stores/plan';
 import PlanConfirmationModal from './PlanConfirmationModal';
 import { formatMoney } from '@/utils/format';
 import DowngradeModal from './DowngradeModal';
 
 interface PlansDisplayProps {
-  plans: SubscriptionPlan[];
-  currentPlan?: string;
-  subscription?: WorkspaceSubscription; // 添加 subscription 信息
-  lastTransaction?: any;
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isSubscribing?: boolean;
   isCreateMode?: boolean;
@@ -25,10 +22,6 @@ interface PlansDisplayProps {
 }
 
 export function PlansDisplay({
-  plans,
-  currentPlan,
-  subscription,
-  lastTransaction,
   onSubscribe,
   isSubscribing,
   isCreateMode = false,
@@ -39,7 +32,15 @@ export function PlansDisplay({
 }: PlansDisplayProps) {
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
-  const region = getRegion();
+  // 优化性能：只订阅需要的状态
+  const plansData = usePlanStore((state) => state.plansData);
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
+  const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
+
+  const plans = plansData?.plans || [];
+  const subscription = subscriptionData?.subscription;
+  const lastTransaction = lastTransactionData?.transaction;
+  const currentPlan = subscription?.PlanName;
   const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
   const downgradeModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
 
@@ -98,10 +99,6 @@ export function PlansDisplay({
             key={plan.ID}
             plan={plan}
             isPopular={index === 1}
-            isCurrentPlan={!isCreateMode && plan.Name === currentPlan}
-            isNextPlan={!isCreateMode && plan.Name === nextPlanName}
-            currentPlan={currentPlanObj}
-            subscription={subscription}
             onSubscribe={onSubscribe}
             isLoading={isSubscribing}
             isCreateMode={isCreateMode}
@@ -246,11 +243,6 @@ export function PlansDisplay({
       <PlanConfirmationModal
         ref={confirmationModalRef}
         plan={pendingPlan || undefined}
-        workspace={session?.user?.nsid}
-        regionDomain={region?.domain}
-        period="1m"
-        payMethod="stripe"
-        operator="upgraded"
         workspaceName={workspaceName}
         isCreateMode={isCreateMode}
         onConfirm={() => {
@@ -268,9 +260,7 @@ export function PlansDisplay({
       {/* Downgrade Confirmation Modal for More Plans */}
       <DowngradeModal
         ref={downgradeModalRef}
-        currentPlan={currentPlanObj}
         targetPlan={pendingPlan || undefined}
-        subscription={subscription}
         onConfirm={() => {
           if (pendingPlan) {
             onSubscribe?.(pendingPlan);

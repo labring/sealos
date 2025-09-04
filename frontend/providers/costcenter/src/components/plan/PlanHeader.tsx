@@ -1,8 +1,9 @@
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { CircleCheck, Sparkles } from 'lucide-react';
-import { SubscriptionInfoResponse, SubscriptionPlan } from '@/types/plan';
+import { SubscriptionPlan } from '@/types/plan';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { UpgradePlanDialog } from './UpgradePlanDialog';
+import usePlanStore from '@/stores/plan';
 
 export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
   if (isPayg) return 'bg-plan-payg';
@@ -31,26 +32,26 @@ export function getPlanBackgroundClass(planName: string, isPayg: boolean): strin
 }
 
 interface PlanHeaderProps {
-  plans?: SubscriptionPlan[];
-  isLoading?: boolean;
-  subscription?: SubscriptionInfoResponse['subscription'];
   onSubscribe?: (plan: SubscriptionPlan | null, workspaceName?: string, isPayg?: boolean) => void;
   isSubscribing?: boolean;
-  lastTransaction?: any;
   isCreateMode?: boolean;
   isUpgradeMode?: boolean;
 }
 
 export function PlanHeader({
-  plans,
-  isLoading,
-  subscription,
   onSubscribe,
   isSubscribing = false,
-  lastTransaction,
   isCreateMode = false,
   isUpgradeMode = false
 }: PlanHeaderProps) {
+  // 优化性能：只订阅需要的状态
+  const plansData = usePlanStore((state) => state.plansData);
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
+  const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
+
+  const plans = plansData?.plans;
+  const subscription = subscriptionData?.subscription;
+  const lastTransaction = lastTransactionData?.transaction;
   const planName = subscription?.PlanName || 'Free Plan';
   const renewalTime = subscription?.CurrentPeriodEndAt
     ? new Date(subscription.CurrentPeriodEndAt)
@@ -97,11 +98,6 @@ export function PlanHeader({
           </div>
 
           <UpgradePlanDialog
-            plans={plans}
-            isLoading={isLoading}
-            currentPlan={subscription?.PlanName}
-            subscription={subscription}
-            lastTransaction={lastTransaction}
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
             isCreateMode={isCreateMode}
@@ -127,11 +123,6 @@ export function PlanHeader({
           </div>
 
           <UpgradePlanDialog
-            plans={plans}
-            isLoading={isLoading}
-            currentPlan={subscription?.PlanName}
-            subscription={subscription}
-            lastTransaction={lastTransaction}
             onSubscribe={onSubscribe}
             isSubscribing={isSubscribing}
             isCreateMode={isCreateMode}

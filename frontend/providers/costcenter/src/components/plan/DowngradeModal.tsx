@@ -1,30 +1,35 @@
 import { AlertTriangle } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import { Button, Dialog, DialogContent, DialogOverlay, Separator } from '@sealos/shadcn-ui';
-import { SubscriptionPlan, WorkspaceSubscription } from '@/types/plan';
+import { SubscriptionPlan } from '@/types/plan';
 import { getWorkspaceQuota } from '@/api/workspace';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
+import usePlanStore from '@/stores/plan';
 import { UserQuotaItem } from '@/types/workspace';
 import { useQuery } from '@tanstack/react-query';
 import { formatTime } from '@/utils/format';
 
 interface DowngradeModalProps {
-  currentPlan?: SubscriptionPlan;
   targetPlan?: SubscriptionPlan;
-  subscription?: WorkspaceSubscription; // 添加 subscription 信息
   onConfirm?: () => void;
   onCancel?: () => void;
 }
 
 const DowngradeModal = forwardRef<{ onOpen: () => void; onClose: () => void }, DowngradeModalProps>(
   (props, ref) => {
-    const { currentPlan, targetPlan, subscription, onConfirm, onCancel } = props;
+    const { targetPlan, onConfirm, onCancel } = props;
     const [isOpen, setIsOpen] = useState(false);
 
     const { session } = useSessionStore();
     const { getRegion } = useBillingStore();
+    // 优化性能：只订阅需要的状态
+    const getCurrentPlan = usePlanStore((state) => state.getCurrentPlan);
+    const subscriptionData = usePlanStore((state) => state.subscriptionData);
     const region = getRegion();
+
+    const currentPlan = getCurrentPlan();
+    const subscription = subscriptionData?.subscription;
 
     // Use React Query to fetch workspace quota
     const { data: quotaResponse, isLoading } = useQuery({

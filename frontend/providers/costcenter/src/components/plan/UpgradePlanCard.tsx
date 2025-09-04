@@ -1,10 +1,11 @@
 import { Button, cn } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck } from 'lucide-react';
-import { SubscriptionPlan, WorkspaceSubscription } from '@/types/plan';
+import { SubscriptionPlan } from '@/types/plan';
 import { useRef } from 'react';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
+import usePlanStore from '@/stores/plan';
 import PlanConfirmationModal from './PlanConfirmationModal';
 import { formatMoney } from '@/utils/format';
 import DowngradeModal from './DowngradeModal';
@@ -13,10 +14,6 @@ interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
   className?: string;
   isPopular?: boolean;
-  isCurrentPlan?: boolean;
-  isNextPlan?: boolean;
-  currentPlan?: SubscriptionPlan;
-  subscription?: WorkspaceSubscription; // 添加 subscription 信息
   onSubscribe?: (plan: SubscriptionPlan) => void;
   isLoading?: boolean;
   isCreateMode?: boolean;
@@ -29,10 +26,6 @@ export function UpgradePlanCard({
   plan,
   className,
   isPopular = false,
-  isCurrentPlan = false,
-  isNextPlan = false,
-  currentPlan,
-  subscription,
   onSubscribe,
   isLoading = false,
   isCreateMode = false,
@@ -40,9 +33,19 @@ export function UpgradePlanCard({
   onSelect,
   workspaceName
 }: UpgradePlanCardProps) {
-  const { session } = useSessionStore();
-  const { getRegion } = useBillingStore();
-  const region = getRegion();
+  // 优化性能：只订阅需要的状态
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
+  const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
+  const getCurrentPlan = usePlanStore((state) => state.getCurrentPlan);
+
+  const subscription = subscriptionData?.subscription;
+  const lastTransaction = lastTransactionData?.transaction;
+  const currentPlan = getCurrentPlan() || undefined;
+  const isCurrentPlan = !isCreateMode && plan.Name === subscription?.PlanName;
+  const isNextPlan =
+    !isCreateMode &&
+    plan.Name === lastTransaction?.NewPlanName &&
+    lastTransaction?.Operator === 'downgraded';
   const confirmationModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
   const downgradeModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
 
@@ -247,11 +250,6 @@ export function UpgradePlanCard({
       <PlanConfirmationModal
         ref={confirmationModalRef}
         plan={plan}
-        workspace={session?.user?.nsid}
-        regionDomain={region?.domain}
-        period="1m"
-        payMethod="stripe"
-        operator={isCreateMode ? 'created' : (getOperator() as any)}
         isCreateMode={isCreateMode}
         workspaceName={workspaceName}
         onConfirm={handleConfirmSubscription}
@@ -261,9 +259,7 @@ export function UpgradePlanCard({
       {/* Downgrade Confirmation Modal */}
       <DowngradeModal
         ref={downgradeModalRef}
-        currentPlan={currentPlan}
         targetPlan={plan}
-        subscription={subscription}
         onConfirm={handleConfirmSubscription}
         onCancel={() => downgradeModalRef.current?.onClose()}
       />

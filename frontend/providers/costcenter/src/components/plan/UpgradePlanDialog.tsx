@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Button,
   Dialog,
@@ -9,16 +9,12 @@ import {
   Label
 } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
-import { SubscriptionPlan, WorkspaceSubscription } from '@/types/plan';
+import { SubscriptionPlan } from '@/types/plan';
 import { PlansDisplay } from './PlansDisplay';
+import usePlanStore from '@/stores/plan';
 
 interface UpgradePlanDialogProps {
   children: React.ReactNode;
-  plans?: SubscriptionPlan[];
-  isLoading?: boolean;
-  currentPlan?: string;
-  subscription?: WorkspaceSubscription; // 添加 subscription 信息
-  lastTransaction?: any;
   onSubscribe?: (plan: SubscriptionPlan | null, workspaceName?: string, isPayg?: boolean) => void;
   isSubscribing?: boolean;
   isCreateMode?: boolean;
@@ -27,16 +23,14 @@ interface UpgradePlanDialogProps {
 
 export function UpgradePlanDialog({
   children,
-  plans,
-  isLoading,
-  currentPlan,
-  subscription,
-  lastTransaction,
   onSubscribe,
   isSubscribing = false,
   isCreateMode = false,
   isUpgradeMode = false
 }: UpgradePlanDialogProps) {
+  // 优化性能：只订阅需要的状态
+  const plansData = usePlanStore((state) => state.plansData);
+  const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const [workspaceName, setWorkspaceName] = useState('');
   const [stillChargeByVolume, setStillChargeByVolume] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -68,16 +62,8 @@ export function UpgradePlanDialog({
             <h1 className="text-3xl font-semibold text-left">Choose Your Workspace Plan</h1>
           </section>
 
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div>Loading plans...</div>
-            </div>
-          ) : plans && plans.length > 0 ? (
+          {plans && plans.length > 0 ? (
             <PlansDisplay
-              plans={plans}
-              currentPlan={currentPlan}
-              subscription={subscription}
-              lastTransaction={lastTransaction}
               onSubscribe={(plan) => onSubscribe?.(plan, workspaceName, false)}
               workspaceName={workspaceName}
               isSubscribing={isSubscribing}
