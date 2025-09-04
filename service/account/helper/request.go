@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/types"
@@ -780,6 +781,7 @@ func ParseWorkspaceSubscriptionOperatorReq(c *gin.Context) (*WorkspaceSubscripti
 	if req.Period == "" {
 		req.Period = types.SubscriptionPeriodMonthly
 	}
+	req.PayMethod = types.PaymentMethod(strings.ToLower(string(req.PayMethod)))
 	if req.Operator == "" {
 		return nil, fmt.Errorf("operator cannot be empty")
 	}

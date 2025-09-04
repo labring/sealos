@@ -227,7 +227,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 			Gift:            gift,
 			CreatedAt:       payment.CreationTimestamp.Time,
 			RegionUserOwner: getUsername(payment.Namespace),
-			Method:          payment.Spec.PaymentMethod,
+			Method:          pkgtypes.PaymentMethod(payment.Spec.PaymentMethod),
 			TradeNO:         payment.Status.TradeNO,
 			CodeURL:         payment.Status.CodeURL,
 		}

@@ -73,6 +73,24 @@ func (c *Cockroach) GetLastWorkspaceSubscriptionTransaction(workspace, regionDom
 	return transaction, nil
 }
 
+// GetExpiredWorkspaceSubscriptions gets all expired workspace subscriptions with normal status and pay status
+func (c *Cockroach) GetExpiredWorkspaceSubscriptions(regionDomain string) ([]types.WorkspaceSubscription, error) {
+	var subscriptions []types.WorkspaceSubscription
+	now := time.Now()
+
+	err := c.DB.Where(`
+		region_domain = ? AND 
+		current_period_end_at <= ? AND 
+		status = ? AND 
+		pay_status IN (?, ?)
+	`, regionDomain, now, types.SubscriptionStatusNormal, types.SubscriptionPayStatusPaid, types.SubscriptionPayStatusNoNeed).Find(&subscriptions).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get expired workspace subscriptions: %v", err)
+	}
+	return subscriptions, nil
+}
+
 func AddWorkspaceSubscriptionTrafficPackage(globalDB *gorm.DB, subscriptionID uuid.UUID, totalMiB int64, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
 	totalBytes := totalMiB * 1024 * 1024 // Convert MiB to Bytes
 	// Get workspace subscription

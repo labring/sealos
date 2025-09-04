@@ -1744,7 +1744,7 @@ func (c *Cockroach) InitTables() error {
 	for _, query := range enumTypes {
 		err := c.DB.Exec(query).Error
 		if err != nil {
-			return fmt.Errorf("failed to create ENUM : %w", err)
+			return fmt.Errorf("failed to create exec : %w", err)
 		}
 	}
 	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
@@ -2169,7 +2169,7 @@ func (c *Cockroach) CreateCorporate(account *types.Corporate) error {
 		if err != nil {
 			return fmt.Errorf("failed to get user uid: %v", err)
 		}
-		pay.Method = "corporate"
+		pay.Method = types.PaymentMethodCorporate
 		pay.TradeNO = account.ReceiptSerialNumber
 		pay.Amount = account.PaymentAmount
 		pay.Gift = account.GiftAmount

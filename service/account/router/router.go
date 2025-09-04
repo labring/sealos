@@ -96,7 +96,8 @@ func RegisterPayRouter() {
 		POST(helper.AdminChargeBilling, api.AdminChargeBilling).
 		POST(helper.AdminFlushDebtResourceStatus, api.AdminFlushDebtResourceStatus).
 		POST(helper.AdminSuspendUserTraffic, api.AdminSuspendUserTraffic).
-		POST(helper.AdminResumeUserTraffic, api.AdminResumeUserTraffic)
+		POST(helper.AdminResumeUserTraffic, api.AdminResumeUserTraffic).
+		POST(helper.AdminWorkspaceSubscriptionProcessExpired, api.AdminProcessExpiredWorkspaceSubscriptions)
 	paymentGroup := router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
 		POST(helper.Notify, api.NewPayNotifyHandler).
@@ -161,6 +162,9 @@ func RegisterPayRouter() {
 
 	// process hourly archive
 	go startHourlyBillingActiveArchive(ctx)
+
+	// process expired workspace subscriptions
+	go startExpiredWorkspaceSubscriptionProcessing(ctx)
 
 	// Wait for interrupt signal.
 	<-rootCtx.Done()
@@ -257,6 +261,43 @@ func startHourlyBillingActiveArchive(ctx context.Context) {
 				StartTime: currentHour,
 			})
 			nextHour = nextHour.Add(time.Hour)
+		}
+	}
+}
+
+func startExpiredWorkspaceSubscriptionProcessing(ctx context.Context) {
+	logrus.Info("Starting expired workspace subscription processing service")
+
+	// 设置处理间隔，默认每小时处理一次
+	intervalStr := env.GetEnvWithDefault("WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL", "1h")
+	interval, err := time.ParseDuration(intervalStr)
+	if err != nil {
+		logrus.Errorf("Failed to parse WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL: %v, using default 1h", err)
+		interval = time.Hour
+	}
+
+	logrus.Infof("Expired workspace subscription processing interval: %s", interval.String())
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	// 启动后立即执行一次
+	//if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
+	//	logrus.Errorf("Initial expired workspace subscription processing failed: %v", err)
+	//}
+
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Info("Stopping expired workspace subscription processing service")
+			return
+		case <-ticker.C:
+			logrus.Debug("Processing expired workspace subscriptions...")
+			//if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
+			//	logrus.Errorf("Expired workspace subscription processing failed: %v", err)
+			//} else {
+			//	logrus.Debug("Expired workspace subscription processing completed successfully")
+			//}
 		}
 	}
 }

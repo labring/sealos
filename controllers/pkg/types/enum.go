@@ -68,8 +68,10 @@ func (o *SubscriptionOperator) Value() (driver.Value, error) {
 type PaymentMethod string
 
 const (
-	PaymentMethodBalance PaymentMethod = "BALANCE" // 余额支付
-	PaymentMethodStripe  PaymentMethod = "STRIPE"  // Stripe 支付
+	PaymentMethodErrAndUseBalance PaymentMethod = "err_and_use_balance" // 支付失败转余额支付
+	PaymentMethodCorporate        PaymentMethod = "corporate"           // 企业转账支付
+	PaymentMethodBalance          PaymentMethod = "balance"             // 余额支付
+	PaymentMethodStripe           PaymentMethod = "stripe"              // Stripe 支付
 )
 
 type SubscriptionPayStatus string

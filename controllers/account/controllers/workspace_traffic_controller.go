@@ -94,9 +94,9 @@ func (c *WorkspaceTrafficController) processWorkspaceTraffic(resultMap map[strin
 func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types.WorkspaceSubscription, consumedBytes int64) error {
 	// Get available traffic packages ordered by expiry date (nearest expiry first)
 	var availablePackages []types.WorkspaceTraffic
-	err := c.GlobalDB.Where("workspace_subscription_id = ? AND status = ? AND expire_at > ? AND total_bytes > used_bytes",
+	err := c.GlobalDB.Model(&types.WorkspaceTraffic{}).Where("workspace_subscription_id = ? AND status = ? AND expired_at > ? AND total_bytes > used_bytes",
 		subscription.ID, types.WorkspaceTrafficStatusActive, time.Now()).
-		Order("expire_at ASC").
+		Order("expired_at ASC").
 		Find(&availablePackages).Error
 
 	if err != nil {

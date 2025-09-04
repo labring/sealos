@@ -316,7 +316,7 @@ func (r *AccountReconciler) handleProbationPeriodWorkspaceSubscription(ctx conte
 			Operator:     types.SubscriptionTransactionTypeCreated,
 			PayStatus:    types.SubscriptionPayStatusNoNeed,
 			NewPlanName:  plan.Name,
-			Period:       types.DayPeriod(14),
+			Period:       types.DayPeriod(7),
 		})
 	})
 }
