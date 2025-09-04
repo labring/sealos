@@ -162,7 +162,7 @@ export function PAYGAppBillingDrawerView({
   ) => {
     switch (row.type) {
       case 'skeleton':
-        return <Skeleton className="h-4 w-16" />;
+        return <Skeleton className="h-4 w-12" />;
       case 'separator':
         return null;
       case 'data': {
@@ -183,7 +183,7 @@ export function PAYGAppBillingDrawerView({
   ) => {
     switch (row.type) {
       case 'skeleton':
-        return <Skeleton className="h-4 w-20" />;
+        return <Skeleton className="h-4 w-12" />;
       case 'separator':
         return null;
       case 'data': {
@@ -207,10 +207,10 @@ export function PAYGAppBillingDrawerView({
             return hasSubApps ? (
               <div className="flex gap-2 items-center">
                 <Skeleton className="size-5 rounded-full" />
-                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-16" />
               </div>
             ) : (
-              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-12" />
             );
 
           case 'separator':
@@ -329,7 +329,7 @@ export function PAYGAppBillingDrawerView({
         const row = info.row.original;
         switch (row.type) {
           case 'skeleton':
-            return <Skeleton className="h-4 w-20" />;
+            return <Skeleton className="h-4 w-12" />;
           case 'separator':
             return null;
           case 'data':
@@ -394,13 +394,19 @@ export function PAYGAppBillingDrawerView({
             <TableLayoutContent>
               <TableLayoutHeadRow>
                 {table.getHeaderGroups().map((headerGroup) =>
-                  headerGroup.headers.map((header, index) => (
+                  headerGroup.headers.map((header, index, arr) => (
                     <TableHead
                       key={header.id}
                       className={cn(
                         'sticky top-0 z-20 bg-card',
-                        index > 0 && index % 2 === 1 && 'border-l pl-4 pr-2 text-center',
-                        index > 0 && index % 2 === 0 && 'border-r pl-2 pr-4 text-center'
+                        index > 0 &&
+                          index !== arr.length - 1 &&
+                          index % 2 === 1 &&
+                          'border-l pl-4 pr-2 text-center',
+                        index > 0 &&
+                          index !== arr.length - 1 &&
+                          index % 2 === 0 &&
+                          'border-r pl-2 pr-4 text-center'
                       )}
                     >
                       {header.isPlaceholder
@@ -418,7 +424,7 @@ export function PAYGAppBillingDrawerView({
 
                   return (
                     <TableRow key={row.id} className={cn({ 'h-14': !isSeparator })}>
-                      {row.getVisibleCells().map((cell, index) => {
+                      {row.getVisibleCells().map((cell, index, arr) => {
                         if (isSeparator) {
                           // Only the first cell in separator row is useful.
                           if (index !== 0) return null;
@@ -438,8 +444,14 @@ export function PAYGAppBillingDrawerView({
                           <TableCell
                             key={cell.id}
                             className={cn(
-                              index > 0 && index % 2 === 1 && 'border-l pl-4 pr-2 text-center',
-                              index > 0 && index % 2 === 0 && 'border-r pl-2 pr-4 text-center'
+                              index > 0 &&
+                                index !== arr.length - 1 &&
+                                index % 2 === 1 &&
+                                'border-l pl-4 pr-2 text-center',
+                              index > 0 &&
+                                index !== arr.length - 1 &&
+                                index % 2 === 0 &&
+                                'border-r pl-2 pr-4 text-center'
                             )}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
