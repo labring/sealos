@@ -20,6 +20,8 @@ import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
 import TransferModal from '@/components/TransferModal';
 import CongratulationsModal from '@/components/CongratulationsModal';
+import PlanConfirmationModal from '@/components/plan/PlanConfirmationModal';
+import DowngradeModal from '@/components/plan/DowngradeModal';
 import { useRef, useMemo, useEffect, useState } from 'react';
 import jsyaml from 'js-yaml';
 import { displayMoney, formatMoney } from '@/utils/format';
@@ -37,13 +39,21 @@ export default function Plan() {
   const region = getRegion();
   const { toast } = useCustomToast();
 
-  const plansData = usePlanStore((state) => state.plansData);
-  const subscriptionData = usePlanStore((state) => state.subscriptionData);
-  const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
-  const setPlansData = usePlanStore((state) => state.setPlansData);
-  const setSubscriptionData = usePlanStore((state) => state.setSubscriptionData);
-  const setLastTransactionData = usePlanStore((state) => state.setLastTransactionData);
-  const isPaygType = usePlanStore((state) => state.isPaygType);
+  // Performance impact is minimal, keeping it simple is also a good choice
+  const {
+    plansData,
+    subscriptionData,
+    lastTransactionData,
+    setPlansData,
+    setSubscriptionData,
+    setLastTransactionData,
+    isPaygType,
+    pendingPlan,
+    modalType,
+    modalContext,
+    hideModal,
+    confirmPendingPlan
+  } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
   const [isCreateMode, setIsCreateMode] = useState(false);
@@ -124,7 +134,8 @@ export default function Plan() {
     onSuccess: (data) => {
       console.log('plansData', data.data);
       setPlansData(data.data || null);
-    }
+    },
+    refetchOnMount: true
   });
 
   // Get current workspace subscription info and sync to store
@@ -136,7 +147,8 @@ export default function Plan() {
         regionDomain: region?.domain || ''
       }),
     enabled: !!(session?.user?.nsid && region?.uid),
-    onSuccess: (data) => setSubscriptionData(data.data || null)
+    onSuccess: (data) => setSubscriptionData(data.data || null),
+    refetchOnMount: true
   });
 
   // Get last transaction and sync to store
@@ -280,7 +292,7 @@ export default function Plan() {
       (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
     const getOperator = () => {
-      if (!currentPlanObj) return 'upgraded';
+      if (!currentPlanObj) return 'created';
       if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
       if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
       return 'upgraded';
@@ -441,6 +453,39 @@ export default function Plan() {
           router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
             shallow: true
           });
+        }}
+      />
+
+      {/* Global Modal Instances */}
+      <PlanConfirmationModal
+        plan={pendingPlan || undefined}
+        workspaceName={modalContext.workspaceName}
+        isCreateMode={modalContext.isCreateMode || false}
+        isOpen={modalType === 'confirmation'}
+        onConfirm={() => {
+          const plan = confirmPendingPlan();
+          if (plan) {
+            handleSubscribe(plan, modalContext.workspaceName, false);
+          }
+          hideModal();
+        }}
+        onCancel={() => {
+          hideModal();
+        }}
+      />
+
+      <DowngradeModal
+        targetPlan={pendingPlan || undefined}
+        isOpen={modalType === 'downgrade'}
+        onConfirm={() => {
+          const plan = confirmPendingPlan();
+          if (plan) {
+            handleSubscribe(plan, modalContext.workspaceName, false);
+          }
+          hideModal();
+        }}
+        onCancel={() => {
+          hideModal();
         }}
       />
     </div>
