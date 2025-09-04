@@ -49,18 +49,6 @@ export default function OrderList({
 
   const regionUids = useMemo(() => (regionData?.data || []).map((r) => r.uid), [regionData]);
 
-  // Recharge billing data fetching
-  const rechargeBody = useMemo(
-    () => ({
-      startTime: effectiveStartTime,
-      endTime: effectiveEndTime,
-      page: 1,
-      pageSize: 9999,
-      invoiced: false
-    }),
-    [effectiveStartTime, effectiveEndTime]
-  );
-
   // Namespace data fetching for all regions
   const { data: allNamespaces } = useQuery({
     queryKey: ['allNamespacesForInvoice', regionUids, effectiveStartTime, effectiveEndTime],
@@ -74,17 +62,30 @@ export default function OrderList({
               endTime: effectiveEndTime,
               regionUid: uid
             });
-            return res.data as [string, string][];
+            return {
+              regionUid: uid,
+              data: res.data as [string, string][]
+            };
           } catch (e) {
-            return [] as [string, string][];
+            return null;
           }
         })
       );
-      const merged = ([] as [string, string][]).concat(...results);
-      return merged.reduce<Record<string, string>>((acc, [id, name]) => {
-        acc[id] = name;
-        return acc;
-      }, {});
+
+      return results.reduce<Array<{ regionUid: string; namespace: string; workspaceName: string }>>(
+        (acc, data) => {
+          if (!data) return acc;
+
+          return acc.concat(
+            data.data.map(([namespace, workspaceName]) => ({
+              regionUid: data.regionUid,
+              namespace,
+              workspaceName
+            }))
+          );
+        },
+        []
+      );
     }
   });
 
@@ -98,40 +99,28 @@ export default function OrderList({
   );
 
   const { data: allPaymentsData } = useQuery({
-    queryFn: async () => {
-      const entries = await Promise.all(
-        (regionUids || []).map(async (uid) => {
-          const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
-            .then((res) => res?.data?.payments || [])
-            .catch(() => []);
-          return [uid, payments] as const;
-        })
-      );
-      return entries.reduce<Record<string, any[]>>((acc, [uid, payments]) => {
-        acc[uid] = payments;
-        return acc;
-      }, {});
-    },
-    queryKey: ['paymentListAllRegions', paymentListQueryBodyBase, regionUids],
-    enabled: (regionUids?.length || 0) > 0
+    queryFn: () =>
+      getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
+    queryKey: ['paymentList', paymentListQueryBodyBase]
   });
 
   // Merged rows with data processing logic
   const rows: OrderListRow[] = useMemo(() => {
-    const subscriptionPayments: OrderListRow[] = Object.entries(allPaymentsData || {}).flatMap(
-      ([uid, payments]) =>
-        (payments as PaymentRecord[]).map((p) => {
-          return {
-            id: p.ID,
-            region: regionUidToName.get(uid) || uid || '',
-            workspace: (allNamespaces || {})[p.Workspace] || p.Workspace || '-',
-            time: p.Time,
-            amount: p.Amount,
-            type: p.Type === 'SUBSCRIPTION' ? 'subscription' : 'recharge',
-            raw: p
-          };
-        })
-    );
+    const subscriptionPayments: OrderListRow[] = (allPaymentsData ?? []).map((p) => {
+      return {
+        id: p.ID,
+        region:
+          regionUidToName.get(
+            allNamespaces?.find(({ namespace }) => p.Workspace === namespace)?.regionUid ?? ''
+          ) ?? '-',
+        workspace:
+          allNamespaces?.find(({ namespace }) => p.Workspace === namespace)?.workspaceName ?? '-',
+        time: p.Time,
+        amount: p.Amount,
+        type: p.Type === 'SUBSCRIPTION' ? 'subscription' : 'recharge',
+        raw: p
+      };
+    });
 
     return subscriptionPayments.sort(
       (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()

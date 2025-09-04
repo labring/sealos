@@ -63,22 +63,66 @@ function Billing() {
     ? dateRange.to.toISOString()
     : new Date(endTime).toISOString();
 
-  // Query namespaces for current region
-  // [TODO] This is a temporary implementation, we should use region/namespace list from billing store
-  const { data: nsListData } = useQuery({
-    queryFn: () =>
-      request.post('/api/billing/getNamespaceList', {
-        startTime: effectiveStartTime,
-        endTime: effectiveEndTime,
-        regionUid: currentRegionUid
-      }),
-    queryKey: [
-      'nsList',
-      'menu',
-      { startTime: effectiveStartTime, endTime: effectiveEndTime, regionUid: currentRegionUid }
-    ],
-    enabled: !!currentRegionUid
+  // Still need regionUids for region consumption queries
+  const regionUids = useMemo(() => (regions || []).map((r) => r.uid), [regions]);
+
+  // Create region UID to name mapping
+  const regionUidToName = useMemo(() => {
+    const map = new Map<string, string>();
+    (regions || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
+    return map;
+  }, [regions]);
+
+  // Fetch namespace data for all regions
+  const { data: allNamespaces } = useQuery({
+    queryKey: ['allNamespacesForBilling', regionUids, effectiveStartTime, effectiveEndTime],
+    enabled: (regionUids?.length || 0) > 0,
+    queryFn: async () => {
+      const results = await Promise.all(
+        (regionUids || []).map(async (uid) => {
+          try {
+            const res = await request.post('/api/billing/getNamespaceList', {
+              startTime: effectiveStartTime,
+              endTime: effectiveEndTime,
+              regionUid: uid
+            });
+            return {
+              regionUid: uid,
+              data: res.data as [string, string][]
+            };
+          } catch (e) {
+            return null;
+          }
+        })
+      );
+
+      return results.reduce<Array<{ regionUid: string; namespace: string; workspaceName: string }>>(
+        (acc, data) => {
+          if (!data) return acc;
+
+          return acc.concat(
+            data.data.map(([namespace, workspaceName]) => ({
+              regionUid: data.regionUid,
+              namespace,
+              workspaceName
+            }))
+          );
+        },
+        []
+      );
+    }
   });
+
+  // Query namespaces for current region (for backward compatibility)
+  const nsListData = useMemo(() => {
+    if (!allNamespaces || !currentRegionUid) return null;
+
+    const currentRegionNamespaces = allNamespaces
+      .filter((item) => item.regionUid === currentRegionUid)
+      .map((item) => [item.namespace, item.workspaceName] as [string, string]);
+
+    return { data: currentRegionNamespaces };
+  }, [allNamespaces, currentRegionUid]);
 
   // Query body for subscription payments (region scope)
   // We need this for calculating costs
@@ -90,29 +134,11 @@ function Billing() {
     [effectiveEndTime, effectiveStartTime]
   );
 
-  // Fetch payments for ALL regions and merge
-  const regionUids = useMemo(() => (regions || []).map((r) => r.uid), [regions]);
+  // Fetch payments - now gets all regions data in single API call
   const { data: allPaymentsData } = useQuery({
-    queryFn: async () => {
-      const entries = await Promise.all(
-        (regionUids || []).map(async (uid) => {
-          const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
-            .then((res) => res?.data?.payments || [])
-            .catch(() => [] satisfies PaymentRecord[]);
-
-          // This API will return both subscription and PAYG payments, we only need subscriptions
-          const subscriptionPayments = payments.filter((p) => p.Type === 'SUBSCRIPTION');
-          return [uid, subscriptionPayments] as const;
-        })
-      );
-
-      return entries.reduce<Record<string, PaymentRecord[]>>((acc, [uid, payments]) => {
-        acc[uid] = payments;
-        return acc;
-      }, {});
-    },
-    queryKey: ['paymentListAllRegions', paymentListQueryBodyBase, regionUids],
-    enabled: (regionUids?.length || 0) > 0
+    queryFn: () =>
+      getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
+    queryKey: ['paymentList', paymentListQueryBodyBase]
   });
 
   // Fetch workspace-level PAYG consumption using new API
@@ -170,8 +196,7 @@ function Billing() {
 
   const { nodes, totalCost } = useMemo(() => {
     const namespaces = (nsListData?.data || []) as [string, string][];
-    const paymentsByRegion = allPaymentsData || {};
-    const paymentList = Object.values(paymentsByRegion).flat();
+    const paymentList = (allPaymentsData || []).filter((p) => p.Type === 'SUBSCRIPTION');
     const workspaceConsumptions = workspaceConsumptionData || {};
 
     // Build workspaceCosts using consumption and payments
@@ -194,13 +219,24 @@ function Billing() {
 
     // Build region costs
     const regionConsumptions: Record<string, number> = allRegionConsumptions || {};
-    const regionPayments: Record<string, number> = Object.entries(paymentsByRegion).reduce<
-      Record<string, number>
-    >((acc, [regionKey, payments]) => {
-      const sum = (payments || []).reduce((s: number, p: any) => s + (p.Amount || 0), 0);
-      acc[regionKey] = (acc[regionKey] || 0) + sum;
-      return acc;
-    }, {});
+
+    // Map payments to regions using namespace-region association (following OrderList.tsx pattern)
+    const regionPayments: Record<string, number> = paymentList.reduce<Record<string, number>>(
+      (acc, payment) => {
+        // Find the region for this payment's workspace using allNamespaces
+        const workspaceInfo = allNamespaces?.find(
+          ({ namespace }) => payment.Workspace === namespace
+        );
+        const regionUid = workspaceInfo?.regionUid;
+
+        if (regionUid) {
+          acc[regionUid] = (acc[regionUid] || 0) + payment.Amount;
+        }
+
+        return acc;
+      },
+      {}
+    );
 
     const allRegionKeys = Array.from(
       new Set([...Object.keys(regionConsumptions), ...Object.keys(regionPayments)])
@@ -257,7 +293,8 @@ function Billing() {
     allPaymentsData,
     allRegionConsumptions,
     workspaceConsumptionData,
-    selectedRegion
+    selectedRegion,
+    allNamespaces
   ]);
 
   // Calculate the cost to display based on current selection
@@ -280,12 +317,15 @@ function Billing() {
 
   // Transform query results for child components
   const subscriptionData = useMemo(() => {
-    return (Object.values(allPaymentsData || {}).flat() || [])
-      .filter((data: any) => {
+    return (allPaymentsData || [])
+      .filter((data: PaymentRecord) => {
+        // Filter only SUBSCRIPTION type payments
+        if (data.Type !== 'SUBSCRIPTION') return false;
+        // Filter by workspace if selected
         return selectedWorkspace ? data.Workspace === selectedWorkspace : true;
       })
       .map(
-        (data: any) =>
+        (data: PaymentRecord) =>
           ({
             time: data.Time,
             plan: data.PlanName,

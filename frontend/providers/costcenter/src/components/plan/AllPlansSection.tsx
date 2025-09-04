@@ -75,28 +75,10 @@ export function AllPlansSection() {
     enabled: (regionUids?.length || 0) > 0
   });
 
-  // Fetch payments for ALL regions and merge
   const { data: allPaymentsData, isLoading: allPaymentsLoading } = useQuery({
-    queryFn: async () => {
-      const entries = await Promise.all(
-        (regionUids || []).map(async (uid) => {
-          const payments = await getPaymentList({ ...paymentListQueryBodyBase, regionUid: uid })
-            .then((res) => res?.data?.payments || [])
-            .catch(() => [] satisfies PaymentRecord[]);
-
-          // This API will return both subscription and PAYG payments, we only need subscriptions
-          const subscriptionPayments = payments.filter((p) => p.Type === 'SUBSCRIPTION');
-          return [uid, subscriptionPayments] as const;
-        })
-      );
-
-      return entries.reduce<Record<string, PaymentRecord[]>>((acc, [uid, payments]) => {
-        acc[uid] = payments;
-        return acc;
-      }, {});
-    },
-    queryKey: ['paymentListAllRegions', paymentListQueryBodyBase, regionUids],
-    enabled: (regionUids?.length || 0) > 0
+    queryFn: () =>
+      getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
+    queryKey: ['paymentList', paymentListQueryBodyBase]
   });
 
   const formatDate = (dateStr?: string) => {
@@ -140,7 +122,7 @@ export function AllPlansSection() {
         workspaces: namespaces.map(([namespaceId, workspaceName]) => {
           const subscription = subscriptions.find((sub) => sub.Workspace === namespaceId);
           if (subscription) {
-            const paymentRecord = (allPaymentsData?.[regionUid] ?? []).find(
+            const paymentRecord = (allPaymentsData ?? []).find(
               (p) => p.Type === 'SUBSCRIPTION' && p.Workspace === namespaceId
             );
 
