@@ -14,13 +14,14 @@ import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { FC, useMemo, useState } from 'react';
+import { LucideIcon } from 'lucide-react';
 
 type CardItem = {
   title: string;
   price: number;
   unit: string;
   idx: number; // used to sort
-  icon: FC;
+  icon: LucideIcon;
   isGpu: boolean;
 };
 // 1 ,24,
