@@ -10,6 +10,13 @@ global:
   enableRedis: false
 console:
   enabled: false
+higress-console:
+  domain: higress-console.svc.cluster.local
+  replicaCount: 0
+  resources:
+    requests:
+      cpu: 256m
+      memory: 256Mi
 higress-core:
   gateway:
     hostNetwork: true
@@ -39,15 +46,15 @@ higress-core:
         memory: 256Mi
   downstream:
     idleTimeout: 600
-    maxRequestHeadersKb: 60
-    connectionBufferLimits: 32768
+    maxRequestHeadersKb: 8192
+    connectionBufferLimits: 65535
     http2:
-      maxConcurrentStreams: 100
+      maxConcurrentStreams: 150
       initialStreamWindowSize: 524288
       initialConnectionWindowSize: 4194304
     routeTimeout: 0
 
   # Upstream config settings
   upstream:
-    idleTimeout: 10 #30
-    connectionBufferLimits: 10485760
+    idleTimeout: 30
+    connectionBufferLimits: 2097152
