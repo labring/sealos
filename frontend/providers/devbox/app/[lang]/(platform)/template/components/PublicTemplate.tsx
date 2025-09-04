@@ -19,6 +19,7 @@ import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
 import TemplateCard from './TemplateCard';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import Empty from './Empty';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 type ViewMode = 'overview' | 'category' | 'searchResults';
 
@@ -620,16 +621,16 @@ const PublicTemplate = ({
           // Search results mode - paginated list with header
           <>
             {/* Search results mode header */}
-            <div className="flex items-center justify-between pb-4">
-              <h2 className="text-lg font-medium text-zinc-900">{t('search_results')}</h2>
+            <div className="flex items-center gap-2 pb-4">
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-8 text-sm text-zinc-600 hover:text-zinc-900"
+                size="icon"
                 onClick={switchFromSearchToOverview}
+                className="h-6 w-6"
               >
-                <span>{t('back')}</span>
+                <ArrowLeft className="h-4 w-4 text-zinc-400" />
               </Button>
+              <h2 className="font-medium text-zinc-900">{t('search_results')}</h2>
             </div>
 
             <ScrollArea className="select-runtime-container h-[calc(100vh-250px)] pr-2">
@@ -688,18 +689,11 @@ const PublicTemplate = ({
           // Category mode - paginated list with header
           <>
             {/* Category mode header */}
-            <div className="flex items-center justify-between pb-4">
-              <h2 className="text-lg font-medium text-zinc-900">
-                {getCategoryTitle(currentCategory, t)}
-              </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-sm text-zinc-600 hover:text-zinc-900"
-                onClick={switchToOverview}
-              >
-                <span>{t('back')}</span>
+            <div className="flex items-center gap-2 pb-4">
+              <Button variant="ghost" size="sm" className="h-6 w-6" onClick={switchToOverview}>
+                <ArrowLeft className="h-4 w-4 text-zinc-400" />
               </Button>
+              <h2 className="font-medium text-zinc-900">{getCategoryTitle(currentCategory, t)}</h2>
             </div>
 
             <ScrollArea className="select-runtime-container h-[calc(100vh-250px)] pr-2">
@@ -776,15 +770,16 @@ const TemplateSection = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-zinc-900">{title}</h3>
+      <div className="flex items-center gap-3">
+        <h3 className="font-medium text-zinc-900">{title}</h3>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
-          className="h-8 text-sm text-zinc-600 hover:text-zinc-900"
           onClick={onMoreClick}
+          className="h-6 gap-1 rounded-full p-2 text-zinc-600"
         >
-          <span>{templates.length > 0 && t('more')} </span>
+          <span>{t('more_templates')} </span>
+          <ArrowRight className="h-4 w-4 text-zinc-400" />
         </Button>
       </div>
 
