@@ -9,13 +9,6 @@ global:
   onDemandRDS: false
 console:
   enabled: false
-higress-console:
-  domain: higress-console.svc.cluster.local
-  replicaCount: 0
-  resources:
-    requests:
-      cpu: 256m
-      memory: 256Mi
 higress-core:
   gateway:
     hostNetwork: true
