@@ -29,10 +29,6 @@ dependencies:
   name: nfs-provisioner
   repository: https://openebs.github.io/dynamic-nfs-provisioner
   version: 0.11.0
-- condition: mayastor.enabled
-  name: mayastor
-  repository: https://openebs.github.io/mayastor-extensions
-  version: 2.5.0
 description: Containerized Attached Storage for Kubernetes
 home: http://www.openebs.io/
 icon: https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/icon/color/openebs-icon-color.png
