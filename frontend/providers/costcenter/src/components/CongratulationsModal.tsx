@@ -1,8 +1,8 @@
 import { Modal, ModalContent, ModalOverlay, Flex, Text, Box, Img, Divider } from '@chakra-ui/react';
 import { CheckCircle } from 'lucide-react';
-import { forwardRef, useImperativeHandle, useState } from 'react';
 import congratulationsIcon from '@/../public/congratulations.svg';
 import { Button } from '@sealos/shadcn-ui';
+import { formatTrafficAuto } from '@/utils/format';
 
 interface CongratulationsModalProps {
   planName?: string;
@@ -12,32 +12,12 @@ interface CongratulationsModalProps {
     storage: string;
   };
   traffic?: number;
-  onClose?: () => void;
+  onClose: () => void;
+  isOpen: boolean;
 }
 
-const CongratulationsModal = forwardRef<
-  { onOpen: () => void; onClose: () => void },
-  CongratulationsModalProps
->((props, ref) => {
-  const { onClose } = props;
-  const [isOpen, setIsOpen] = useState(false);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      onOpen: () => setIsOpen(true),
-      onClose: () => {
-        setIsOpen(false);
-        onClose?.();
-      }
-    }),
-    [onClose]
-  );
-
-  const handleClose = () => {
-    setIsOpen(false);
-    onClose?.();
-  };
+export default function CongratulationsModal(props: CongratulationsModalProps) {
+  const { onClose, isOpen } = props;
 
   // Format plan resources
   const formatCpu = (cpu: string) => {
@@ -53,20 +33,15 @@ const CongratulationsModal = forwardRef<
     return storage.replace('Gi', 'GB Disk');
   };
 
-  const formatTraffic = (traffic: number) => {
-    const trafficGB = Math.floor(traffic / 1024);
-    return `${trafficGB}GB Traffic`;
-  };
-
   const benefits = {
     cpu: props.maxResources?.cpu ? formatCpu(props.maxResources.cpu) : '2 vCPU',
     memory: props.maxResources?.memory ? formatMemory(props.maxResources.memory) : '2GB RAM',
     storage: props.maxResources?.storage ? formatStorage(props.maxResources.storage) : '5GB Disk',
-    traffic: props.traffic ? formatTraffic(props.traffic) : '1GB Traffic'
+    traffic: props.traffic ? formatTrafficAuto(props.traffic) : '1GB Traffic'
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered closeOnOverlayClick={false}>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
       <ModalOverlay bg="rgba(0, 0, 0, 0.12)" backdropFilter="blur(15px)" />
       <ModalContent
         maxW="378px"
@@ -129,15 +104,11 @@ const CongratulationsModal = forwardRef<
             </Flex>
           </Flex>
 
-          <Button variant={'outline'} className="w-full" onClick={handleClose}>
+          <Button variant={'outline'} className="w-full" onClick={onClose}>
             Close
           </Button>
         </Flex>
       </ModalContent>
     </Modal>
   );
-});
-
-CongratulationsModal.displayName = 'CongratulationsModal';
-
-export default CongratulationsModal;
+}

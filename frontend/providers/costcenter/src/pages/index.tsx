@@ -7,6 +7,7 @@ export default function Home() {
   useEffect(() => {
     // Only redirect if we're actually on the root path
     if (router.isReady && (router.asPath === '/' || router.asPath.startsWith('/?'))) {
+      console.log('router.index', router.query);
       // Forward all query parameters to /plan page
       const { query } = router;
       const params = new URLSearchParams();
@@ -29,9 +30,5 @@ export default function Home() {
   }, [router]);
 
   // Show minimal loading state while redirecting
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-gray-600">Redirecting...</div>
-    </div>
-  );
+  return <div className="flex items-center justify-center min-h-screen"></div>;
 }
