@@ -185,6 +185,9 @@ export default function Plan() {
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
     onSuccess: (data) => {
+      // Close any open modals first
+      hideModal();
+
       // Refresh subscription data
       queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
       queryClient.invalidateQueries({ queryKey: ['last-transaction'] });

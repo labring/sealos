@@ -63,7 +63,6 @@ export function UpgradePlanDialog({
 
           {plans && plans.length > 0 ? (
             <PlansDisplay
-              onSubscribe={(plan) => onSubscribe?.(plan, workspaceName, false)}
               workspaceName={workspaceName}
               isSubscribing={isSubscribing}
               isCreateMode={isCreateMode}
@@ -83,7 +82,9 @@ export function UpgradePlanDialog({
                 <Checkbox
                   id="charge-by-volume"
                   checked={stillChargeByVolume}
-                  onCheckedChange={(checked) => setStillChargeByVolume(checked === true)}
+                  onCheckedChange={(checked) => {
+                    setStillChargeByVolume(checked === true);
+                  }}
                 />
                 <Label htmlFor="charge-by-volume" className="text-sm">
                   Still want to charge by volume?
