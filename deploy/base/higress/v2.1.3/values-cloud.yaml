@@ -18,7 +18,10 @@ higress-console:
       cpu: 256m
       memory: 256Mi
 higress-core:
+  sealos:
+    domain: cloud.sealos.io
   gateway:
+    httpsPort: 443
     hostNetwork: true
     service:
       type: NodePort

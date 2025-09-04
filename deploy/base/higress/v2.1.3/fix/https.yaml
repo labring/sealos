@@ -9,8 +9,8 @@ data:
     renewBeforeDays: 1
     credentialConfig:
     - domains:
-        - '*.{{ .Values.cloud.domain }}'
-        - '{{ .Values.cloud.domain }}'
+        - '*.{{ .Values.sealos.domain }}'
+        - '{{ .Values.sealos.domain }}'
       tlsSecret: sealos-system/wildcard-cert
 kind: ConfigMap
 metadata:
