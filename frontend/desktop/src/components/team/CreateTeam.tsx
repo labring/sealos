@@ -52,16 +52,6 @@ export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClo
     mutation.mutate({ teamName });
   };
 
-  const openCostCenterApp = () => {
-    openDesktopApp({
-      appKey: 'system-costcenter',
-      pathname: '/',
-      query: {
-        mode: 'create'
-      }
-    });
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
