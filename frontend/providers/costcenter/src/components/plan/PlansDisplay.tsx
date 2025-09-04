@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { Checkbox } from '@sealos/shadcn-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
@@ -31,13 +31,11 @@ export function PlansDisplay({
   workspaceName
 }: PlansDisplayProps) {
   const { session } = useSessionStore();
-  const { getRegion } = useBillingStore();
-  // 优化性能：只订阅需要的状态
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
 
-  const plans = plansData?.plans || [];
+  const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
   const currentPlan = subscription?.PlanName;
@@ -45,26 +43,37 @@ export function PlansDisplay({
   const downgradeModalRef = useRef<{ onOpen: () => void; onClose: () => void }>(null);
 
   const [showMorePlans, setShowMorePlans] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [selectedPlan, setSelectedPlan] = useState<string>(''); // plan id
   const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
 
-  // Filter out free plans and separate main plans from additional plans
-  const paidPlans = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
+  // 使用 useMemo 优化计算性能
+  const { paidPlans, mainPlans, additionalPlans } = useMemo(() => {
+    const paid = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
+    const main = paid.filter((plan) => !plan.Tags.includes('more'));
+    const additional = paid.filter((plan) => plan.Tags.includes('more'));
 
-  // Move plans with 'more' tag to additional plans
-  const mainPlans = paidPlans.filter((plan) => !plan.Tags.includes('more'));
+    return {
+      paidPlans: paid,
+      mainPlans: main,
+      additionalPlans: additional
+    };
+  }, [plans]);
 
-  const additionalPlans = paidPlans.filter((plan) => plan.Tags.includes('more'));
+  const currentPlanObj = useMemo(() => {
+    return plans.find((plan) => plan.Name === currentPlan);
+  }, [plans, currentPlan]);
 
-  // Find the current plan object
-  const currentPlanObj = plans.find((plan) => plan.Name === currentPlan);
+  const { isDowngrade, nextPlanName, currentPlanInMore } = useMemo(() => {
+    const downgrade = lastTransaction?.Operator === 'downgraded';
+    const nextPlan = downgrade ? lastTransaction?.NewPlanName : null;
+    const planInMore = currentPlanObj && currentPlanObj.Tags.includes('more');
 
-  // Check if there's a downgrade and determine next plan
-  const isDowngrade = lastTransaction?.Operator === 'downgraded';
-  const nextPlanName = isDowngrade ? lastTransaction?.NewPlanName : null;
-
-  // Check if current plan is in more plans (has 'more' tag)
-  const currentPlanInMore = currentPlanObj && currentPlanObj.Tags.includes('more');
+    return {
+      isDowngrade: downgrade,
+      nextPlanName: nextPlan,
+      currentPlanInMore: planInMore
+    };
+  }, [lastTransaction, currentPlanObj]);
 
   // Set initial state for More Plans checkbox and selection
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -73,7 +82,7 @@ export function PlansDisplay({
     if (!hasInitialized && additionalPlans.length > 0) {
       if (currentPlanInMore) {
         setShowMorePlans(true);
-        setSelectedPlan(currentPlanObj.ID);
+        setSelectedPlan(currentPlanObj?.ID || '');
       } else {
         const hobbyPlusPlan = additionalPlans.find((plan) => plan.Name === 'Hobby+');
         if (hobbyPlusPlan) {
