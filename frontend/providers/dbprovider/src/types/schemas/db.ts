@@ -17,13 +17,17 @@ export const dbTypeSchema = z.enum([
 export const kubeBlockClusterTerminationPolicySchema = z.enum(['Delete', 'WipeOut']);
 export const baseResourceSchema = z.object({
   cpu: z
-    .enum(['0.5', '1', '2', '3', '4', '5', '6', '7', '8'])
-    .pipe(z.coerce.number())
-    .default('1' as any),
+    .number()
+    .refine((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val), {
+      message: 'CPU must be one of: 0.5, 1, 2, 3, 4, 5, 6, 7, 8'
+    })
+    .default(1),
   memory: z
-    .enum(['0.5', '1', '2', '4', '6', '8', '12', '16', '32'])
-    .pipe(z.coerce.number())
-    .default('1' as any),
+    .number()
+    .refine((val) => [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val), {
+      message: 'Memory must be one of: 0.5, 1, 2, 4, 6, 8, 12, 16, 32'
+    })
+    .default(1),
   storage: z.number().min(1).max(300).default(3)
 });
 export const allResourceSchema = baseResourceSchema.and(

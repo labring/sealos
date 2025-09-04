@@ -8,14 +8,26 @@ import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
 import { DBEditType } from '@/types/db';
 import { raw2schema } from './get-database';
+
+// Resource conversion utilities
+const resourceConverters = {
+  // Convert CPU cores to millicores (e.g., 1 -> 1000, 0.5 -> 500)
+  cpuToMillicores: (cores: number): number => cores * 1000,
+
+  // Convert GB to MB (e.g., 1 -> 1024, 0.5 -> 512)
+  memoryToMB: (gb: number): number => gb * 1024
+};
+
 const schema2Raw = (raw: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
   return {
     dbType: raw.type,
     dbVersion: raw.version,
     dbName: raw.name,
     replicas: raw.resource.replicas,
-    cpu: raw.resource.cpu,
-    memory: raw.resource.memory,
+    // Convert CPU from cores to millicores
+    cpu: resourceConverters.cpuToMillicores(raw.resource.cpu),
+    // Convert memory from GB to MB
+    memory: resourceConverters.memoryToMB(raw.resource.memory),
     storage: raw.resource.storage,
     labels: {},
     terminationPolicy: raw.terminationPolicy,

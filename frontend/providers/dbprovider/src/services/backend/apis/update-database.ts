@@ -9,6 +9,15 @@ import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { updateTerminationPolicyApi } from '@/pages/api/createDB';
 import { raw2schema } from './get-database';
 
+// Resource conversion utilities
+const resourceConverters = {
+  // Convert CPU cores to millicores (e.g., 1 -> 1000, 0.5 -> 500)
+  cpuToMillicores: (cores: number): number => cores * 1000,
+
+  // Convert GB to MB (e.g., 1 -> 1024, 0.5 -> 512)
+  memoryToMB: (gb: number): number => gb * 1024
+};
+
 export async function updateDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
   request: {
@@ -26,9 +35,27 @@ export async function updateDatabase(
     body: KbPgClusterType;
   };
   const existingDatabase = adaptDBDetail(body);
+
+  // Convert resource units if provided
+  const convertedBody = {
+    ...request.body,
+    ...(request.body.resource?.cpu && {
+      resource: {
+        ...request.body.resource,
+        cpu: resourceConverters.cpuToMillicores(request.body.resource.cpu)
+      }
+    }),
+    ...(request.body.resource?.memory && {
+      resource: {
+        ...request.body.resource,
+        memory: resourceConverters.memoryToMB(request.body.resource.memory)
+      }
+    })
+  };
+
   const mergedDatabase = {
     ...existingDatabase,
-    ...request.body
+    ...convertedBody
   };
 
   const opsRequests = [];

@@ -19,6 +19,15 @@ import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 import { createDatabaseSchemas } from '@/types/apis';
 import { z } from 'zod';
 
+// Resource conversion utilities
+const resourceConverters = {
+  // Convert CPU cores to millicores (e.g., 1 -> 1000, 0.5 -> 500)
+  cpuToMillicores: (cores: number): number => cores * 1000,
+
+  // Convert GB to MB (e.g., 1 -> 1024, 0.5 -> 512)
+  memoryToMB: (gb: number): number => gb * 1024
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { type, version, name, resource, terminationPolicy, autoBackup, isEdit, backupInfo } =
@@ -33,8 +42,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       dbVersion: version,
       dbName: name,
       replicas: resource.replicas,
-      cpu: resource.cpu,
-      memory: resource.memory,
+      // Convert CPU from cores to millicores
+      cpu: resourceConverters.cpuToMillicores(resource.cpu),
+      // Convert memory from GB to MB
+      memory: resourceConverters.memoryToMB(resource.memory),
       storage: resource.storage,
       labels: {},
       terminationPolicy: terminationPolicy as any,

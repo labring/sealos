@@ -26,6 +26,21 @@ export * as logsFileSchemas from './logs/file';
 
 import * as databaseVersionListSchemas from './database/version/list';
 
+import * as createBackupSchemas from './backup/create-backup';
+export * as createBackupSchemas from './backup/create-backup';
+
+import * as deleteBackupSchemas from './backup/delete-backup';
+export * as deleteBackupSchemas from './backup/delete-backup';
+
+import * as restoreBackupSchemas from './backup/restore-backup';
+export * as restoreBackupSchemas from './backup/restore-backup';
+
+import * as enablePublicAccessSchemas from './network/enable-public-access';
+export * as enablePublicAccessSchemas from './network/enable-public-access';
+
+import * as disablePublicAccessSchemas from './network/disable-public-access';
+export * as disablePublicAccessSchemas from './network/disable-public-access';
+
 export const document = createDocument({
   openapi: '3.1.0',
   info: {
@@ -140,6 +155,9 @@ export const document = createDocument({
         summary: 'Delete a Database',
         description: 'Delete a database by name.',
         security: [{ KubeconfigAuth: [] }],
+        requestParams: {
+          path: deleteDatabaseSchemas.pathParams
+        },
         responses: {
           '200': {
             description: 'OK',
@@ -248,6 +266,153 @@ export const document = createDocument({
                 schema: logsFileSchemas.response
               }
             }
+          }
+        }
+      }
+    },
+    '/backup/create': {
+      post: {
+        summary: 'Create Backup',
+        description: 'Create a manual backup for a database.',
+        security: [{ KubeconfigAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: createBackupSchemas.body
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: createBackupSchemas.response
+              }
+            }
+          },
+          '400': {
+            description: 'Bad Request - Invalid parameters'
+          },
+          '500': {
+            description: 'Internal Server Error'
+          }
+        }
+      }
+    },
+    '/backup/delete': {
+      delete: {
+        summary: 'Delete Backup',
+        description: 'Delete a backup by name.',
+        security: [{ KubeconfigAuth: [] }],
+        requestParams: {
+          query: deleteBackupSchemas.queryParams
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: deleteBackupSchemas.response
+              }
+            }
+          },
+          '404': {
+            description: 'Backup not found'
+          },
+          '500': {
+            description: 'Internal Server Error'
+          }
+        }
+      }
+    },
+    '/backup/restore': {
+      post: {
+        summary: 'Restore Backup',
+        description: 'Restore a database from a backup by creating a new database.',
+        security: [{ KubeconfigAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: restoreBackupSchemas.body
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: restoreBackupSchemas.response
+              }
+            }
+          },
+          '400': {
+            description: 'Bad Request - Invalid parameters'
+          },
+          '404': {
+            description: 'Backup not found'
+          },
+          '500': {
+            description: 'Internal Server Error'
+          }
+        }
+      }
+    },
+    '/applyYamlList': {
+      post: {
+        summary: 'Apply YAML List',
+        description:
+          'Apply a list of YAML resources to Kubernetes cluster. Used for enabling public access by creating network services.',
+        security: [{ KubeconfigAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: enablePublicAccessSchemas.body
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: enablePublicAccessSchemas.response
+              }
+            }
+          },
+          '400': {
+            description: 'Bad Request - Invalid parameters'
+          },
+          '500': {
+            description: 'Internal Server Error'
+          }
+        }
+      }
+    },
+    '/delServiceByName': {
+      delete: {
+        summary: 'Delete Service by Name',
+        description:
+          'Delete a Kubernetes service by name. Used for disabling public access by removing network services.',
+        security: [{ KubeconfigAuth: [] }],
+        requestParams: {
+          query: disablePublicAccessSchemas.queryParams
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: disablePublicAccessSchemas.response
+              }
+            }
+          },
+          '404': {
+            description: 'Service not found'
+          },
+          '500': {
+            description: 'Internal Server Error'
           }
         }
       }

@@ -38,17 +38,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       body.items.forEach((item: any) => {
         const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
-        if (
-          DBVersionMap[db] &&
-          item?.metadata?.name &&
-          !DBVersionMap[db].find((db) => db.id === item.metadata.name)
-        ) {
-          DBVersionMap[db].unshift(item.metadata.name);
+        if (DBVersion[db] && item?.metadata?.name && !DBVersion[db].includes(item.metadata.name)) {
+          DBVersion[db].unshift(item.metadata.name);
         }
       });
 
       jsonRes(res, {
-        data: DBVersionMap
+        data: DBVersion
       });
     } catch (err) {
       console.log('error get db by name', err);
