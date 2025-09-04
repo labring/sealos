@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp, AppOverviewBilling } from '@/types';
@@ -48,7 +48,9 @@ export function PAYGCostTable({
     [effectiveEndTime, effectiveStartTime, currentRegionUid, selectedWorkspace, page, pageSize]
   );
 
-  const { data: appOverviewData } = useQuery({
+  const [lastValidTotalPage, setLastValidTotalPage] = useState(1);
+
+  const { data: appOverviewData, isFetching } = useQuery({
     queryFn() {
       return request.post<
         any,
@@ -63,19 +65,24 @@ export function PAYGCostTable({
     enabled: !!currentRegionUid && !!selectedRegion
   });
 
-  // Calculate pagination info
+  // Calculate pagination info and preserve last valid page count during loading
   const { total, totalPage } = useMemo(() => {
     if (!appOverviewData?.data) {
-      return { total: 0, totalPage: 1 };
+      // During loading, keep the last valid total page to prevent reset to 1
+      return { total: 0, totalPage: lastValidTotalPage };
     }
 
     const { total, totalPage } = appOverviewData.data;
+    const calculatedTotalPage = totalPage === 0 ? 1 : totalPage;
+
+    // Update last valid total page when we get new data
+    setLastValidTotalPage(calculatedTotalPage);
 
     return {
       total: totalPage === 0 ? 1 : total,
-      totalPage: totalPage === 0 ? 1 : totalPage
+      totalPage: calculatedTotalPage
     };
-  }, [appOverviewData]);
+  }, [appOverviewData, lastValidTotalPage]);
 
   const paygData: PAYGData[] = useMemo(() => {
     const result: PAYGData[] = [];
@@ -108,6 +115,7 @@ export function PAYGCostTable({
       pageSize={pageSize}
       totalCount={total}
       onPageChange={onPageChange}
+      isLoading={isFetching}
     />
   );
 }

@@ -11,6 +11,7 @@ import {
 } from '@sealos/shadcn-ui/table-layout';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
@@ -31,6 +32,7 @@ type PAYGCostTableViewProps = {
   pageSize: number;
   totalCount: number;
   onPageChange: (page: number) => void;
+  isLoading?: boolean;
 };
 
 /**
@@ -45,7 +47,8 @@ export function PAYGCostTableView({
   totalPages,
   pageSize,
   totalCount,
-  onPageChange
+  onPageChange,
+  isLoading = false
 }: PAYGCostTableViewProps) {
   const { t } = useTranslation('applist');
 
@@ -71,6 +74,26 @@ export function PAYGCostTableView({
     </TableRow>
   );
 
+  const SkeletonRow = () => (
+    <TableRow>
+      <TableCell>
+        <div className="flex gap-1 items-center">
+          <Skeleton className="size-5 rounded-full" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-6 w-16 rounded" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-16" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-8 w-16 rounded" />
+      </TableCell>
+    </TableRow>
+  );
+
   return (
     <TableLayout className="border-r-0 rounded-r-none">
       <TableLayoutCaption className="font-medium text-sm bg-zinc-50">
@@ -89,15 +112,20 @@ export function PAYGCostTableView({
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
-          {data.map((item, index) => (
-            <PAYGRow key={index} item={item} />
-          ))}
+          {isLoading
+            ? // Show skeleton rows during loading
+              Array.from({ length: pageSize }, (_, index) => (
+                <SkeletonRow key={`skeleton-${index}`} />
+              ))
+            : data.map((item, index) => <PAYGRow key={index} item={item} />)}
         </TableLayoutBody>
       </TableLayoutContent>
 
       <TableLayoutFooter>
         <div className="px-4 py-2 flex justify-between">
-          <div className="flex items-center text-zinc-500">Total: {totalCount}</div>
+          <div className="flex items-center text-zinc-500">
+            Total: {isLoading ? <Skeleton className="h-4 w-8 inline-block ml-1" /> : totalCount}
+          </div>
           <div className="flex items-center gap-3">
             <Pagination
               currentPage={currentPage}
