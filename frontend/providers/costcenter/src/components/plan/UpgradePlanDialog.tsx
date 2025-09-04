@@ -28,7 +28,6 @@ export function UpgradePlanDialog({
   isCreateMode = false,
   isUpgradeMode = false
 }: UpgradePlanDialogProps) {
-  // 优化性能：只订阅需要的状态
   const plansData = usePlanStore((state) => state.plansData);
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const [workspaceName, setWorkspaceName] = useState('');
