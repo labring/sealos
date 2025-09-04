@@ -13,12 +13,14 @@ import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
-import { Button } from '@sealos/shadcn-ui';
+import { Button, cn, Separator } from '@sealos/shadcn-ui';
 import { WorkspaceSubscription } from '@/types/plan';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount } from '@/api/auth';
 import { formatMoney } from '@/utils/format';
+import { CurrencySymbol } from '@sealos/ui';
+import { useConfigStore } from '@/stores/config';
 
 interface BalancePopoverProps {
   openCostCenterApp: () => void;
@@ -41,6 +43,9 @@ export function getPlanBackground(subscription?: WorkspaceSubscription) {
 
 export function BalancePopover({ openCostCenterApp, children }: BalancePopoverProps) {
   const { session } = useSessionStore();
+  const currencySymbol = useConfigStore(
+    (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
+  );
 
   const workspace = session?.user?.nsid || '';
 
@@ -110,13 +115,27 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
                 )}
               </div>
               {!subscription?.PlanName && (
-                <div className="flex items-center gap-2 justify-between">
-                  <div className="flex items-start flex-col">
-                    <div className="text-sm text-zinc-500">Balance</div>
-                    <div className="text-sm text-zinc-500">{formatMoney(balance).toFixed(2)}</div>
+                <>
+                  <Separator className="my-2" />
+
+                  <div className="flex items-center gap-2 justify-between">
+                    <div className="flex items-start flex-col">
+                      <div className="text-sm text-zinc-500">Balance</div>
+                      <div className="text-2xl font-semibold text-zinc-900 flex">
+                        <span
+                          className={cn(
+                            'flex items-center justify-center',
+                            currencySymbol === 'shellCoin' && 'mr-1'
+                          )}
+                        >
+                          <CurrencySymbol type={currencySymbol} />
+                        </span>
+                        <span>{formatMoney(balance).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <Button variant="outline">Top Up</Button>
                   </div>
-                  <Button variant="outline">Top Up</Button>
-                </div>
+                </>
               )}
 
               {!!subscription?.PlanName &&
@@ -151,7 +170,7 @@ export function BalancePopover({ openCostCenterApp, children }: BalancePopoverPr
               </div>
             ) : (
               <div className="text-sm text-zinc-900 font-normal">
-                Your trial will expire in 14 days. Upgrade to keep your services online.
+                Your trial will expire in 14 days. Upgradeto keep your services online.
               </div>
             )}
 
