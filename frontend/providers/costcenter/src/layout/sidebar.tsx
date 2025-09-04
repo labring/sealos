@@ -1,4 +1,4 @@
-import { Calculator, ChartLine, ChartPie, Dock, ReceiptText, LucideIcon } from 'lucide-react';
+import { Calculator, ChartPie, Dock, ReceiptText, LucideIcon, TicketMinus } from 'lucide-react';
 import useEnvStore from '@/stores/env';
 import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
@@ -29,8 +29,15 @@ export default function SideBar() {
       id: 'Billing',
       url: '/billing',
       value: 'SideBar.Billing',
-      icon: ChartLine,
+      icon: ReceiptText,
       display: true
+    },
+    {
+      id: 'Invoice',
+      url: '/create_invoice',
+      value: 'SideBar.Invoice',
+      icon: TicketMinus,
+      display: invoiceEnabled
     },
     {
       id: 'Usage',
@@ -38,13 +45,6 @@ export default function SideBar() {
       value: 'SideBar.Usage',
       icon: ChartPie,
       display: true
-    },
-    {
-      id: 'Invoice',
-      url: '/create_invoice',
-      value: 'SideBar.Invoice',
-      icon: ReceiptText,
-      display: invoiceEnabled
     },
     {
       id: 'Pricing Standard',
