@@ -139,8 +139,7 @@ export type SubscriptionPayRequest = z.infer<typeof SubscriptionPayRequestSchema
 
 export const PaymentListRequestSchema = z.object({
   startTime: z.iso.datetime(),
-  endTime: z.iso.datetime(),
-  regionUid: z.string()
+  endTime: z.iso.datetime()
 });
 export type PaymentListRequest = z.infer<typeof PaymentListRequestSchema>;
 
