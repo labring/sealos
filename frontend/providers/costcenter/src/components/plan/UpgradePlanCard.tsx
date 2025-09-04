@@ -107,7 +107,7 @@ export function UpgradePlanCard({
     <section
       className={cn(
         'flex flex-col border rounded-xl bg-white cursor-pointer',
-        isCreateMode && isSelected ? 'border-zinc-900 border-2' : 'border-gray-200 border-2',
+        isCreateMode && isSelected ? 'border-zinc-900' : 'border-gray-200',
         className
       )}
       style={{ width: '258px' }}
