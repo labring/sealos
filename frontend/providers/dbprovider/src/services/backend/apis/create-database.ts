@@ -19,7 +19,15 @@ const schema2Raw = (raw: z.Infer<typeof createDatabaseSchemas.body>): DBEditType
     storage: raw.resource.storage,
     labels: {},
     terminationPolicy: raw.terminationPolicy,
-    autoBackup: raw.autoBackup
+    autoBackup: {
+      start: true,
+      type: 'day',
+      week: [],
+      hour: '12',
+      minute: '00',
+      saveTime: 100,
+      saveType: 'd'
+    }
   };
 };
 export async function createDatabase(
@@ -51,9 +59,9 @@ export async function createDatabase(
   await k8s.applyYamlList([updateAccountYaml], 'replace');
 
   try {
-    if (BackupSupportedDBTypeList.includes(rawData.dbType) && rawData?.autoBackup) {
+    if (BackupSupportedDBTypeList.includes(rawData.dbType)) {
       const autoBackup = convertBackupFormToSpec({
-        autoBackup: rawData?.autoBackup,
+        autoBackup: rawData.autoBackup,
         dbType: rawData.dbType
       });
 
