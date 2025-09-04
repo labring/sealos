@@ -50,10 +50,31 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   useEffect(() => {
     sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+
+    // Add postMessage listener to handle external communication
+    const handlePostMessage = (event: MessageEvent) => {
+      try {
+        const data = event.data;
+        if (data && typeof data === 'object') {
+          const params = new URLSearchParams();
+          if (data.page) params.set('page', data.page);
+          if (data.mode) params.set('mode', data.mode);
+          const queryString = params.toString();
+          const targetUrl = queryString ? `/plan?${queryString}` : '/plan';
+          router.push(targetUrl);
+        }
+      } catch (error) {
+        console.error('Error handling postMessage:', error);
+      }
+    };
+
+    window.addEventListener('message', handlePostMessage);
+
     return () => {
       sealosApp.removeAppEventListen(EVENT_NAME.CHANGE_I18N);
+      window.removeEventListener('message', handlePostMessage);
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     state.setEnv('i18nIsInitialized', false);

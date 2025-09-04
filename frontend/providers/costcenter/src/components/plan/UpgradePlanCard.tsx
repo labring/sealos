@@ -157,7 +157,7 @@ export function UpgradePlanCard({
           {resources.cpu && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.cpu} CPU</span>
+              <span className="text-sm text-gray-700">{resources.cpu} vCPU</span>
             </li>
           )}
           {resources.memory && (
