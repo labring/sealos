@@ -24,7 +24,6 @@ import PlanConfirmationModal from '@/components/plan/PlanConfirmationModal';
 import DowngradeModal from '@/components/plan/DowngradeModal';
 import { useRef, useMemo, useEffect, useState } from 'react';
 import jsyaml from 'js-yaml';
-import { displayMoney, formatMoney } from '@/utils/format';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
 import { Skeleton } from '@sealos/shadcn-ui';
@@ -59,9 +58,12 @@ export default function Plan() {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [isTopupMode, setIsTopupMode] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // important: useEffect to handle the router query
   useEffect(() => {
+    console.log('router.query', router.query);
+
     // Method 1: Check router.query when ready
     if (router.isReady && router.query.page) {
       // Navigate to the specified page
@@ -81,13 +83,18 @@ export default function Plan() {
 
     if (router.isReady && router.query.mode === 'topup') {
       setIsTopupMode(true);
-      rechargeRef.current?.onOpen();
+      // Add delay to ensure ref is ready
+      setTimeout(() => {
+        console.log('Trying to open recharge modal', rechargeRef.current);
+        rechargeRef.current?.onOpen();
+      }, 1000);
       return;
     }
 
     // Check for success state from Stripe callback
     if (router.isReady && router.query.stripeState === 'success') {
-      congratulationsRef.current?.onOpen();
+      console.log('Setting showCongratulations to true');
+      setShowCongratulations(true);
       return;
     }
 
@@ -117,13 +124,18 @@ export default function Plan() {
 
       if (topupMode) {
         setIsTopupMode(true);
-        rechargeRef.current?.onOpen();
+        // Add delay to ensure ref is ready
+        setTimeout(() => {
+          console.log('Trying to open recharge modal (fallback)', rechargeRef.current);
+          rechargeRef.current?.onOpen();
+        }, 1000);
         return;
       }
 
       const stripeSuccess = urlParams.get('stripeState') === 'success';
       if (stripeSuccess) {
-        congratulationsRef.current?.onOpen();
+        console.log('Setting showCongratulations to true (fallback)');
+        setShowCongratulations(true);
         return;
       }
     }
@@ -132,7 +144,6 @@ export default function Plan() {
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
-  const congratulationsRef = useRef<any>();
 
   // Get balance data
   const { data: balance_raw } = useQuery({
@@ -446,7 +457,7 @@ export default function Plan() {
       )}
 
       <CongratulationsModal
-        ref={congratulationsRef}
+        isOpen={showCongratulations}
         planName={subscriptionData?.subscription?.PlanName || 'Pro Plan'}
         maxResources={
           subscriptionData?.subscription?.PlanName
@@ -463,6 +474,7 @@ export default function Plan() {
           )?.Traffic
         }
         onClose={() => {
+          setShowCongratulations(false);
           // Clean up URL parameters after closing the modal
           const url = new URL(window.location.href);
           url.searchParams.delete('stripeState');
