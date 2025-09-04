@@ -1,0 +1,14 @@
+{{ if or (.Capabilities.APIVersions.Has "snapshot.storage.k8s.io/v1beta1/VolumeSnapshotClass") (.Capabilities.APIVersions.Has "snapshot.storage.k8s.io/v1/VolumeSnapshotClass") }}
+kind: VolumeSnapshotClass
+apiVersion: {{ if .Capabilities.APIVersions.Has "snapshot.storage.k8s.io/v1beta1/VolumeSnapshotClass" -}}
+  snapshot.storage.k8s.io/v1beta1
+{{- else -}}
+  snapshot.storage.k8s.io/v1
+{{- end }}
+metadata:
+  name: csi-cstor-snapshotclass
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: cstor.csi.openebs.io
+deletionPolicy: Delete
+{{- end }}

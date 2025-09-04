@@ -1,0 +1,117 @@
+{{- $o11y := merge (dict) .Values.o11y .Values.global.o11y }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "higress-console.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "higress-console.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "higress-console.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "higress-console.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "higress-console.name" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: HIGRESS_CONSOLE_NS
+              value: {{ .Release.Namespace }}
+            - name: HIGRESS_CONSOLE_SECRET_NAME
+              value: {{ include "higress-console.name" . }}
+            - name: HIGRESS_CONSOLE_CONFIG_MAP_NAME
+              value: {{ include "higress-console.name" . }}
+            - name: HIGRESS_CONSOLE_SERVICE_HOST
+              value: {{ include "higress-console.name" . }}.{{ .Release.Namespace }}.svc.{{ .Values.global.proxy.clusterDomain }}
+            - name: HIGRESS_CONSOLE_SERVICE_PORT
+              value: {{ .Values.service.port | quote }}
+            - name: HIGRESS_CONSOLE_CONTROLLER_SERVICE_NAME
+              value: {{ .Values.controller.serviceName }}
+            - name: HIGRESS_CONSOLE_CONTROLLER_JWT_POLICY
+              value: {{ include "higress-console.controller.jwtPolicy" . }}
+            {{- if $o11y.enabled }}
+            - name: HIGRESS_CONSOLE_DASHBOARD_BASE_URL
+              value: http://{{ include "higress-console-grafana.name" . }}.{{ .Release.Namespace }}:{{ $o11y.grafana.port }}{{ include "higress-console-grafana.path" . }}
+            - name: HIGRESS_CONSOLE_DASHBOARD_DATASOURCE_PROM_URL
+              value: http://{{ include "higress-console-prometheus.name" . }}.{{ .Release.Namespace }}:{{ $o11y.prometheus.port }}{{ include "higress-console-prometheus.path" . }}
+            - name: HIGRESS_CONSOLE_DASHBOARD_DATASOURCE_LOKI_URL
+              value: http://{{ include "higress-console-loki.name" . }}.{{ .Release.Namespace }}:{{ $o11y.loki.ports.http }}
+            {{- end }}
+            {{- if .Values.global.ingressClass }}
+            - name: HIGRESS_CONSOLE_CONTROLLER_INGRESS_CLASS_NAME
+              value: {{ .Values.global.ingressClass }}
+            {{- end }}
+            {{- if .Values.global.watchNamespace }}
+            - name: HIGRESS_CONSOLE_CONTROLLER_WATCHED_NAMESPACE
+              value: {{ .Values.global.watchNamespace }}
+            {{- end }}
+            - name: SPRINGDOC_API_DOCS_ENABLED
+              value: "{{ .Values.swagger.enabled }}"
+            - name: SPRINGDOC_SWAGGER_UI_ENABLED
+              value: "{{ .Values.swagger.enabled }}"
+            {{- if .Values.podEnvs }}
+            {{- range $key, $val := .Values.podEnvs }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          {{- if eq (include "higress-console.controller.jwtPolicy" .) "third-party-jwt" }}
+            - mountPath: /var/run/secrets/access-token
+              name: access-token
+          {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      schedulerName: {{ .Values.schedulerName }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if eq (include "higress-console.controller.jwtPolicy" .) "third-party-jwt" }}
+        - name: access-token
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                audience: istio-ca
+                expirationSeconds: 3600
+                path: token
+      {{- end }}

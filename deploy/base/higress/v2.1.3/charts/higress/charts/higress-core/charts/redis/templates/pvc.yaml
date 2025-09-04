@@ -1,0 +1,16 @@
+{{- if .Values.redis.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "redis.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+  {{- range .Values.redis.persistence.accessModes }}
+    - {{ . | quote }}
+  {{- end }}
+  storageClassName: {{ .Values.redis.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.redis.persistence.size | quote }}
+{{- end }}

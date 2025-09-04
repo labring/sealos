@@ -1,0 +1,30 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "higress-console.name" . }}-{{ .Release.Namespace }}
+  labels:
+    {{- include "higress-console.labels" . | nindent 4 }}
+rules:
+  # ingress controller
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["*"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["*"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "ingressclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["*"]
+  - apiGroups: ["networking.higress.io"]
+    resources: ["mcpbridges"]
+    verbs: ["*"]
+  - apiGroups: ["extensions.higress.io"]
+    resources: ["wasmplugins"]
+    verbs: ["*"]
+  - apiGroups: ["networking.istio.io"]
+    resources: ["envoyfilters"]
+    verbs: ["*"]

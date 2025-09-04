@@ -1,0 +1,60 @@
+global:
+  disableAlpnH2: false
+  enableGatewayAPI: true
+  enableIstioAPI: true
+  enableSRDS: true
+  enableStatus: false
+  hostRDSMergeSubset: false
+  ingressClass: nginx
+  onDemandRDS: false
+  enableRedis: false
+console:
+  enabled: false
+higress-console:
+  domain: higress-console.svc.cluster.local
+  replicaCount: 0
+  resources:
+    requests:
+      cpu: 256m
+      memory: 256Mi
+higress-core:
+  gateway:
+    hostNetwork: true
+    service:
+      type: NodePort
+    kind: DaemonSet
+    tolerations:
+      - operator: Exists
+    readinessTimeoutSeconds: 60
+    resources:
+      requests:
+        cpu: 256m
+        memory: 256Mi
+      limits:
+        memory: 4Gi
+  controller:
+    autoscaling:
+      enabled: false
+    tolerations:
+      - effect: "NoExecute"
+        operator: "Exists"
+      - effect: "NoSchedule"
+        operator: "Exists"
+    resources:
+      requests:
+        cpu: 256m
+        memory: 256Mi
+  downstream:
+    idleTimeout: 600
+    maxRequestHeadersKb: 8192
+    connectionBufferLimits: 65535
+    http2:
+      maxConcurrentStreams: 150
+      initialStreamWindowSize: 524288
+      initialConnectionWindowSize: 4194304
+    routeTimeout: 0
+
+  # Upstream config settings
+  upstream:
+    idleTimeout: 30
+    connectionBufferLimits: 2097152

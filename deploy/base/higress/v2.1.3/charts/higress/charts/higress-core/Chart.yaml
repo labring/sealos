@@ -1,0 +1,18 @@
+apiVersion: v2
+appVersion: 2.1.3
+dependencies:
+- condition: global.enableRedis
+  name: redis
+  repository: file://../redis
+  version: 0.0.1
+description: Helm chart for deploying higress gateways
+home: http://higress.io/
+icon: https://higress.io/img/higress_logo_small.png
+keywords:
+- higress
+- gateways
+name: higress-core
+sources:
+- http://github.com/alibaba/higress
+type: application
+version: 2.1.3

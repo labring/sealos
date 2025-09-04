@@ -1,0 +1,39 @@
+# HELM first deletes RBAC, then it tries to delete other resources like CSPC and PVC. 
+# We've got validating webhook on CSPC and PVC.
+# But even that the policy of this webhook is Ignore, it fails because the ServiceAccount 
+# does not have permission to access resources like BDC anymore which are used for validation.
+# Therefore we first need to delete webhook so we can delete the rest of the deployments.
+{{- $kubeMinor := .Capabilities.KubeVersion.Minor | replace "+" "" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "cstor.fullname" . }}-webhook-cleanup
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+  labels:
+    app: {{ template "cstor.name" . }}
+spec:
+  template:
+    metadata:
+      name: {{ template "cstor.fullname" . }}-webhook-cleanup
+      labels:
+        app: {{ template "cstor.name" . }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.cstorOperator.name }}
+      containers:
+        - name: kubectl
+          {{- /* bitnami maintains an image for all k8s versions */}}
+          {{- /* see: https://hub.docker.com/r/bitnami/kubectl */}}
+          {{- if .Values.cleanup.image.tag }}
+          image: "{{ .Values.cleanup.image.registry }}{{ .Values.cleanup.image.repository }}:{{ .Values.cleanup.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.cleanup.image.registry }}{{ .Values.cleanup.image.repository }}:{{ .Capabilities.KubeVersion.Major }}.{{ $kubeMinor }}"
+          {{- end }}
+          command:
+          - /bin/sh
+          - -c
+          - >
+              kubectl delete validatingWebhookConfiguration openebs-cstor-validation-webhook || true;
+      restartPolicy: OnFailure

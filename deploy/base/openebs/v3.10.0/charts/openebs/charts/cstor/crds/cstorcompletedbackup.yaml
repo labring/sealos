@@ -1,0 +1,73 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorcompletedbackups.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorCompletedBackup
+    listKind: CStorCompletedBackupList
+    plural: cstorcompletedbackups
+    shortNames:
+      - ccompletedbackup
+    singular: cstorcompletedbackup
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: Volume name on which backup is performed
+          jsonPath: .spec.volumeName
+          name: Volume
+          type: string
+        - description: Name of the backup or scheduled backup
+          jsonPath: .spec.backupName
+          name: Backup/Schedule
+          type: string
+        - description: Last successfully backup snapshot
+          jsonPath: .spec.lastSnapName
+          name: LastSnap
+          type: string
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorCompletedBackup describes a cstor completed-backup resource
+            created as custom resource
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorCompletedBackupSpec is the spec for a CStorBackup resource
+              properties:
+                backupName:
+                  description: BackupName is the name of backup or scheduled backup
+                  type: string
+                lastSnapName:
+                  description: LastSnapName is the name of last completed-backup's snapshot
+                    name
+                  type: string
+                secondLastSnapName:
+                  description: SecondLastSnapName is the name of second last 'successfully'
+                    completed-backup's snapshot
+                  type: string
+                volumeName:
+                  description: VolumeName is the name of volume for which this backup
+                    is destined
+                  type: string
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources: {}
