@@ -10,7 +10,7 @@ global:
   defaultUpstreamConcurrencyThreshold: 10000
   enableSRDS: true
   # -- Whether to enable Redis(redis-stack-server) for Higress, default is false.
-  enableRedis: true
+  enableRedis: false
   onDemandRDS: false
   hostRDSMergeSubset: false
   onlyPushRouteCluster: true

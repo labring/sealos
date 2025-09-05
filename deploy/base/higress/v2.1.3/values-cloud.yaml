@@ -8,9 +8,8 @@ global:
   ingressClass: nginx
   onDemandRDS: false
   enableRedis: false
-console:
-  enabled: false
 higress-console:
+  enabled: false
   domain: higress-console.svc.cluster.local
   replicaCount: 0
   resources:
@@ -18,7 +17,10 @@ higress-console:
       cpu: 256m
       memory: 256Mi
 higress-core:
+  sealos:
+    domain: cloud.sealos.io
   gateway:
+    httpsPort: 443
     hostNetwork: true
     service:
       type: NodePort
