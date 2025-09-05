@@ -1,8 +1,6 @@
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { CircleCheck, Sparkles } from 'lucide-react';
-import { SubscriptionPlan } from '@/types/plan';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
-import { UpgradePlanDialog } from './UpgradePlanDialog';
 import usePlanStore from '@/stores/plan';
 
 export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
@@ -33,18 +31,10 @@ export function getPlanBackgroundClass(planName: string, isPayg: boolean): strin
 }
 
 interface PlanHeaderProps {
-  onSubscribe?: (plan: SubscriptionPlan | null, workspaceName?: string, isPayg?: boolean) => void;
-  isSubscribing?: boolean;
-  isCreateMode?: boolean;
-  isUpgradeMode?: boolean;
+  children?: ({ trigger }: { trigger: React.ReactNode }) => React.ReactNode;
 }
 
-export function PlanHeader({
-  onSubscribe,
-  isSubscribing = false,
-  isCreateMode = false,
-  isUpgradeMode = false
-}: PlanHeaderProps) {
+export function PlanHeader({ children }: PlanHeaderProps) {
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
@@ -74,8 +64,6 @@ export function PlanHeader({
   const currentPlan = plans?.find((plan) => plan.Name === subscription?.PlanName);
   const monthlyPrice = currentPlan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
 
-  console.log('PlanHeader.currentPlan', currentPlan, monthlyPrice);
-
   // Parse plan resources
   let planResources: any = {};
   try {
@@ -99,17 +87,13 @@ export function PlanHeader({
             <h1 className="font-semibold text-2xl">{planDisplayName}</h1>
           </div>
 
-          <UpgradePlanDialog
-            onSubscribe={onSubscribe}
-            isSubscribing={isSubscribing}
-            isCreateMode={isCreateMode}
-            isUpgradeMode={isUpgradeMode}
-          >
-            <Button size="lg" variant="outline">
-              <Sparkles />
-              <span>{isCreateMode ? 'Create Workspace' : 'Subscribe Plan'}</span>
-            </Button>
-          </UpgradePlanDialog>
+          {children?.({
+            trigger: (
+              <Button size="lg" variant="outline">
+                <span>{'Subscribe Plan'}</span>
+              </Button>
+            )
+          })}
         </div>
       </div>
     );
@@ -124,17 +108,14 @@ export function PlanHeader({
             <h1 className="font-semibold text-2xl">{isPaygType ? 'PAYG' : planName}</h1>
           </div>
 
-          <UpgradePlanDialog
-            onSubscribe={onSubscribe}
-            isSubscribing={isSubscribing}
-            isCreateMode={isCreateMode}
-            isUpgradeMode={isUpgradeMode}
-          >
-            <Button size="lg">
-              <Sparkles />
-              <span>{isCreateMode ? 'Create Workspace' : 'Upgrade Plan'}</span>
-            </Button>
-          </UpgradePlanDialog>
+          {children?.({
+            trigger: (
+              <Button size="lg">
+                <Sparkles />
+                <span>{'Upgrade Plan'}</span>
+              </Button>
+            )
+          })}
         </div>
 
         <Separator className="border-slate-200" />
