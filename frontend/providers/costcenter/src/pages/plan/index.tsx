@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info, Sparkles } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
@@ -22,11 +22,12 @@ import TransferModal from '@/components/TransferModal';
 import CongratulationsModal from '@/components/CongratulationsModal';
 import PlanConfirmationModal from '@/components/plan/PlanConfirmationModal';
 import DowngradeModal from '@/components/plan/DowngradeModal';
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import jsyaml from 'js-yaml';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
-import { Skeleton } from '@sealos/shadcn-ui';
+import { Button, Skeleton } from '@sealos/shadcn-ui';
+import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
 
 export default function Plan() {
   const router = useRouter();
@@ -59,6 +60,21 @@ export default function Plan() {
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [isTopupMode, setIsTopupMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+
+  const handleSubscriptionModalOpenChange = useCallback(
+    (open: boolean) => {
+      setSubscriptionModalOpen(open);
+
+      // Clean up URL parameters after opening or closing the modal
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
+        shallow: true
+      });
+    },
+    [router]
+  );
 
   // important: useEffect to handle the router query
   useEffect(() => {
@@ -73,11 +89,13 @@ export default function Plan() {
 
     if (router.isReady && router.query.mode === 'create') {
       setIsCreateMode(true);
+      handleSubscriptionModalOpenChange(true);
       return;
     }
 
     if (router.isReady && router.query.mode === 'upgrade') {
       setIsUpgradeMode(true);
+      handleSubscriptionModalOpenChange(true);
       return;
     }
 
@@ -114,11 +132,13 @@ export default function Plan() {
 
       if (createMode) {
         setIsCreateMode(true);
+        handleSubscriptionModalOpenChange(true);
         return;
       }
 
       if (upgradeMode) {
         setIsUpgradeMode(true);
+        handleSubscriptionModalOpenChange(true);
         return;
       }
 
@@ -139,7 +159,7 @@ export default function Plan() {
         return;
       }
     }
-  }, [router]);
+  }, [router, handleSubscriptionModalOpenChange]);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
@@ -381,12 +401,20 @@ export default function Plan() {
       {isPaygTypeValue ? (
         <div className="flex gap-4">
           <div className="flex-2/3">
-            <PlanHeader
-              onSubscribe={handleSubscribe}
-              isSubscribing={subscriptionMutation.isLoading}
-              isCreateMode={isCreateMode}
-              isUpgradeMode={isUpgradeMode}
-            />
+            <PlanHeader>
+              {({ trigger }) => (
+                <UpgradePlanDialog
+                  onSubscribe={handleSubscribe}
+                  isSubscribing={subscriptionMutation.isLoading}
+                  isCreateMode={isCreateMode}
+                  isUpgradeMode={isUpgradeMode}
+                  isOpen={subscriptionModalOpen}
+                  onOpenChange={handleSubscriptionModalOpenChange}
+                >
+                  {trigger}
+                </UpgradePlanDialog>
+              )}
+            </PlanHeader>
           </div>
           <div className="flex-1/3">
             <BalanceSection
@@ -412,12 +440,20 @@ export default function Plan() {
             </div>
           )}
 
-          <PlanHeader
-            onSubscribe={handleSubscribe}
-            isSubscribing={subscriptionMutation.isLoading}
-            isCreateMode={isCreateMode}
-            isUpgradeMode={isUpgradeMode}
-          />
+          <PlanHeader>
+            {({ trigger }) => (
+              <UpgradePlanDialog
+                onSubscribe={handleSubscribe}
+                isSubscribing={subscriptionMutation.isLoading}
+                isCreateMode={isCreateMode}
+                isUpgradeMode={isUpgradeMode}
+                isOpen={subscriptionModalOpen}
+                onOpenChange={handleSubscriptionModalOpenChange}
+              >
+                {trigger}
+              </UpgradePlanDialog>
+            )}
+          </PlanHeader>
 
           <BalanceSection
             balance={balance}
