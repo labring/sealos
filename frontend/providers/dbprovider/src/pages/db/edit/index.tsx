@@ -37,7 +37,7 @@ const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
   ...defaultDBEditValue,
-  dbVersion: DBVersionMap.postgresql[0]?.id
+  dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0'
 };
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {

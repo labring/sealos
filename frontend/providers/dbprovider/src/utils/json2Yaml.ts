@@ -374,7 +374,7 @@ export const json2VolumeExpansion = ({ dbName, storage, dbType }: DBEditType) =>
       type: 'VolumeExpansion',
       volumeExpansion: [
         {
-          componentName: DBComponentNameMap[dbType],
+          componentName: DBComponentNameMap[dbType] || [dbType],
           volumeClaimTemplates: [
             {
               name: 'data',
@@ -454,7 +454,7 @@ export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBTyp
       type: 'Restart',
       restart: [
         {
-          componentName: DBComponentNameMap[dbType]
+          componentName: DBComponentNameMap[dbType] || [dbType]
         }
       ]
     }
@@ -968,13 +968,7 @@ export const json2ParameterConfig = (
               configSpec: {
                 constraintRef: 'postgresql14-cc',
                 defaultMode: 292,
-                keys: [
-                  {
-                    'postgresql.conf': {
-                      parameters: pgParams
-                    }
-                  }
-                ],
+                keys: ['postgresql.conf'],
                 name: 'postgresql-configuration',
                 namespace: 'kb-system',
                 templateRef: 'postgresql-configuration',
@@ -1037,13 +1031,7 @@ export const json2ParameterConfig = (
               configSpec: {
                 constraintRef: 'postgresql12-cc',
                 defaultMode: 292,
-                keys: [
-                  {
-                    'postgresql.conf': {
-                      parameters: pgParams
-                    }
-                  }
-                ],
+                keys: ['postgresql.conf'],
                 name: 'postgresql-configuration',
                 namespace: 'kb-system',
                 templateRef: 'postgresql12-configuration',
@@ -1211,16 +1199,6 @@ export const json2ParameterConfig = (
           },
           {
             configSpec: {
-              defaultMode: 292,
-              name: 'agamotto-configuration',
-              namespace: 'kb-system',
-              templateRef: 'apecloud-mysql8-agamotto-configuration',
-              volumeName: 'agamotto-configuration'
-            },
-            name: 'agamotto-configuration'
-          },
-          {
-            configSpec: {
               constraintRef: 'mysql-scale-vttablet-config-constraints',
               name: 'vttablet-config',
               namespace: 'kb-system',
@@ -1272,12 +1250,7 @@ export const json2ParameterConfig = (
             configSpec: {
               constraintRef: 'mongodb-config-constraints',
               defaultMode: 256,
-              keys: [
-                'mongodb.conf',
-                {
-                  ...(Object.keys(mongoParams).length > 0 && { parameters: mongoParams })
-                }
-              ],
+              keys: ['mongodb.conf'],
               name: 'mongodb-config',
               namespace: 'kb-system',
               templateRef: 'mongodb5.0-config-template',
@@ -1306,28 +1279,6 @@ export const json2ParameterConfig = (
               volumeName: 'mongodb-env'
             },
             name: 'mongodb-environment'
-          },
-          {
-            configSpec: {
-              defaultMode: 292,
-              name: 'mongodb-metrics-config-new',
-              namespace: 'kb-system',
-              templateRef: 'mongodb-metrics-config-new',
-              volumeName: 'mongodb-metrics-config'
-            },
-            name: 'mongodb-metrics-config-new'
-          },
-          {
-            configSpec: {
-              asEnvFrom: ['mongodb'],
-              constraintRef: 'mongodb-env-constraints',
-              keys: ['env'],
-              name: 'mongodb-env',
-              namespace: 'kb-system',
-              templateRef: 'mongodb-env-tpl',
-              volumeName: 'mongodb-env'
-            },
-            name: 'mongodb-env'
           }
         ]
       }

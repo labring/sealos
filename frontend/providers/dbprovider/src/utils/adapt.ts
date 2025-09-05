@@ -107,7 +107,9 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
 }
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
-  const dbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  const rawDbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  // Convert mysql to apecloud-mysql for frontend display
+  const dbType = (rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType;
   // compute store amount
   return {
     id: db.metadata?.uid || ``,
@@ -131,6 +133,10 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 };
 
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
+  const rawDbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  // Convert mysql to apecloud-mysql for frontend display
+  const dbType = (rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType;
+
   return {
     id: db.metadata?.uid || ``,
     createTime: dayjs(db.metadata?.creationTimestamp)
@@ -140,7 +146,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
+    dbType: dbType,
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
     replicas: db.spec?.componentSpecs?.[0]?.replicas || 1,

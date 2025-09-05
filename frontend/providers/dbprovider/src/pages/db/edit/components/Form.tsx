@@ -623,7 +623,10 @@ const Form = ({
                           onClick={() => {
                             if (isEdit) return;
                             setValue('dbType', item.id);
-                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
+                            const versions = DBVersionMap[item.id] || [];
+                            if (versions.length > 0) {
+                              setValue('dbVersion', versions[0].id);
+                            }
                           }}
                         >
                           <Image
@@ -653,7 +656,7 @@ const Form = ({
                   width={'200px'}
                   placeholder={`${t('DataBase')} ${t('version')}`}
                   value={getValues('dbVersion')}
-                  list={DBVersionMap[getValues('dbType')].map((i) => ({
+                  list={(DBVersionMap[getValues('dbType')] || []).map((i) => ({
                     label: i.label,
                     value: i.id
                   }))}
