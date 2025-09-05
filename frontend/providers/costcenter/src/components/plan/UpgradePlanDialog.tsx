@@ -19,6 +19,8 @@ interface UpgradePlanDialogProps {
   isSubscribing?: boolean;
   isCreateMode?: boolean;
   isUpgradeMode?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function UpgradePlanDialog({
@@ -26,19 +28,19 @@ export function UpgradePlanDialog({
   onSubscribe,
   isSubscribing = false,
   isCreateMode = false,
-  isUpgradeMode = false
+  isUpgradeMode = false,
+  isOpen,
+  onOpenChange
 }: UpgradePlanDialogProps) {
   const plansData = usePlanStore((state) => state.plansData);
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const [workspaceName, setWorkspaceName] = useState('');
   const [stillChargeByVolume, setStillChargeByVolume] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
 
-  // Auto-open dialog when in create mode or upgrade mode and set default selected plan
+  // Set default selected plan
   useEffect(() => {
     if (isCreateMode || isUpgradeMode) {
-      setIsOpen(true);
       // Set default selected plan to the most popular one (index 1)
       if (plans && plans.length > 1) {
         const mainPlans = plans.filter(
@@ -52,7 +54,7 @@ export function UpgradePlanDialog({
   }, [isCreateMode, isUpgradeMode, plans]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="min-w-[1200px] py-12 px-14 bg-zinc-50">
         <DialogTitle className="sr-only">Choose Your Workspace Plan</DialogTitle>
@@ -109,7 +111,8 @@ export function UpgradePlanDialog({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setIsOpen(false);
+                    onOpenChange?.(false);
+
                     setWorkspaceName('');
                     setStillChargeByVolume(false);
                     setSelectedPlanId('');
