@@ -335,7 +335,10 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 		default:
 			// more than one pod found, remove finalizer and delete them
 			for _, pod := range podList.Items {
-				r.deletePod(ctx, devbox, &pod)
+				if err := r.deletePod(ctx, devbox, &pod); err != nil {
+					logger.Error(err, "failed to delete pod", "pod", pod.Name)
+					return err
+				}
 			}
 			logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
@@ -344,7 +347,10 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 	case devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped, devboxv1alpha2.DevboxStateShutdown:
 		if len(podList.Items) > 0 {
 			for _, pod := range podList.Items {
-				r.deletePod(ctx, devbox, &pod)
+				if err := r.deletePod(ctx, devbox, &pod); err != nil {
+					logger.Error(err, "failed to delete pod", "pod", pod.Name)
+					return err
+				}
 			}
 		}
 		return nil

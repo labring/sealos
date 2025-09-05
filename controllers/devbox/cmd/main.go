@@ -307,7 +307,9 @@ func main() {
 			"eventSourceHost", event.Source.Host,
 			"eventType", event.Type,
 			"eventReason", event.Reason)
-		stateChangeHandler.Handle(context.Background(), event)
+		if err := stateChangeHandler.Handle(context.TODO(), event); err != nil {
+			setupLog.Error(err, "failed to handle event", "event", event.Name)
+		}
 	})
 	defer watcher.Stop()
 
