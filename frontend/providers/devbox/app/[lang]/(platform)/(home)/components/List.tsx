@@ -477,6 +477,9 @@ const DevboxList = ({
                 sshPort={item.sshPort}
                 status={item.status}
                 runtimeType={item.template.templateRepository.iconId as string}
+                leftButtonProps={{
+                  className: 'border-r-1 w-32 rounded-r-none px-2'
+                }}
               />
               <Button
                 variant="secondary"
