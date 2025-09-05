@@ -1,8 +1,8 @@
 import { SubscriptionPlan } from '@/types/plan';
 import { StaticPlanCard } from './StaticPlanCard';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
-import { formatMoney } from '@/utils/format';
+import { formatMoney, formatTrafficAuto } from '@/utils/format';
 
 interface SubscriptionPlansPanelProps {
   plansData?: SubscriptionPlan[];
@@ -11,6 +11,22 @@ interface SubscriptionPlansPanelProps {
 export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProps) {
   const [selectedMorePlan, setSelectedMorePlan] = useState<string>('');
 
+  const { mainPlans, additionalPlans } = useMemo(() => {
+    if (!plansData || plansData.length === 0) {
+      return { mainPlans: [], additionalPlans: [] };
+    }
+    const paid = plansData.filter((plan) => plan.Prices && plan.Prices.length > 0);
+    const main = paid.filter((plan) => !plan.Tags.includes('more'));
+    const additional = paid.filter((plan) => plan.Tags.includes('more'));
+
+    const sortByOrder = (a: SubscriptionPlan, b: SubscriptionPlan) => a.Order - b.Order;
+
+    return {
+      mainPlans: main.sort(sortByOrder),
+      additionalPlans: additional.sort(sortByOrder)
+    };
+  }, [plansData]);
+
   if (!plansData || plansData.length === 0) {
     return (
       <div className="flex justify-center py-12">
@@ -18,11 +34,6 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
       </div>
     );
   }
-
-  // Filter out free plans and separate main plans from additional plans
-  const paidPlans = plansData.filter((plan) => plan.Prices && plan.Prices.length > 0);
-  const mainPlans = paidPlans.filter((plan) => !plan.Tags.includes('more'));
-  const additionalPlans = paidPlans.filter((plan) => plan.Tags.includes('more'));
 
   return (
     <div className="w-full px-6 py-6 bg-gray-50 min-h-full">
@@ -38,7 +49,17 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
         <div>
           <div className="text-lg font-medium mb-4 text-black">More Plans</div>
           <div className="w-full">
-            <Select value={selectedMorePlan} onValueChange={setSelectedMorePlan}>
+            <Select
+              value={selectedMorePlan}
+              onValueChange={(value) => {
+                const currentPlan = additionalPlans.find((p) => p.ID === value);
+                if (currentPlan?.Name === 'Customized' && currentPlan?.Description) {
+                  window.open(currentPlan?.Description, '_blank', 'noopener,noreferrer');
+                } else {
+                  setSelectedMorePlan(value);
+                }
+              }}
+            >
               <SelectTrigger className="w-full bg-white">
                 <SelectValue placeholder="Select a plan" />
               </SelectTrigger>
@@ -52,8 +73,16 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                   }
 
                   const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
-                  const trafficGB =
-                    plan.Traffic > 1 ? (plan.Traffic / 1024).toFixed(0) : plan.Traffic;
+
+                  if (plan.Name === 'Customized') {
+                    return (
+                      <SelectItem key={plan.ID} value={plan.ID}>
+                        <div className="flex w-full items-center">
+                          <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  }
 
                   return (
                     <SelectItem key={plan.ID} value={plan.ID}>
@@ -61,7 +90,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                         <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
                         <div className="text-xs text-gray-500 ml-3">
                           {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +{' '}
-                          {trafficGB} GB Traffic - ${monthlyPrice.toFixed(0)}
+                          {formatTrafficAuto(plan.Traffic)} - ${monthlyPrice.toFixed(0)}
                         </div>
                       </div>
                     </SelectItem>

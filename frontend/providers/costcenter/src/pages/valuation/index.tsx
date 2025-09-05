@@ -137,10 +137,6 @@ function Valuation() {
         <TabPanel>
           <PriceTablePanel priceData={PriceTableData} />
         </TabPanel>
-        {/* // [TODO] We chose to hide this tab */}
-        {/* <TabPanel>
-          <CalculatorPanel priceData={data} />
-        </TabPanel> */}
       </TabPanels>
     </Tabs>
   );

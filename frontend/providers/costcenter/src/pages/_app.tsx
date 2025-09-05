@@ -66,7 +66,7 @@ const App = ({ Component, pageProps }: AppProps) => {
           const queryString = params.toString();
           const targetUrl = queryString ? `/plan?${queryString}` : '/plan';
 
-          router.push(targetUrl);
+          router.replace(targetUrl, undefined, { shallow: false });
         }
       } catch (error) {
         console.error('Error handling postMessage:', error);
