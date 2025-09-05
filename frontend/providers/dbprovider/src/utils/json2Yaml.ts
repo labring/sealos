@@ -945,7 +945,7 @@ export const json2ParameterConfig = (
     }
 
     if (parameterConfig?.timeZone) {
-      pgParams['time_zone'] = `${parameterConfig.timeZone}`;
+      pgParams['timezone'] = `${parameterConfig.timeZone}`;
     }
 
     if (majorVersion === '14') {
@@ -965,26 +965,18 @@ export const json2ParameterConfig = (
           componentName: 'postgresql',
           configItemDetails: [
             {
+              configFileParams: {
+                'postgresql.conf': {
+                  parameters: pgParams
+                }
+              },
               configSpec: {
-                constraintRef: 'postgresql14-cc',
-                defaultMode: 292,
-                keys: ['postgresql.conf'],
-                name: 'postgresql-configuration',
-                namespace: 'kb-system',
                 templateRef: 'postgresql-configuration',
-                volumeName: 'postgresql-config'
+                volumeName: 'postgresql-config',
+                namespace: 'kb-system',
+                name: 'postgresql-configuration'
               },
               name: 'postgresql-configuration'
-            },
-            {
-              configSpec: {
-                defaultMode: 292,
-                name: 'postgresql-custom-metrics',
-                namespace: 'kb-system',
-                templateRef: 'postgresql14-custom-metrics',
-                volumeName: 'postgresql-custom-metrics'
-              },
-              name: 'postgresql-custom-metrics'
             },
             {
               configSpec: {
@@ -996,6 +988,16 @@ export const json2ParameterConfig = (
                 volumeName: 'pgbouncer-config'
               },
               name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql14-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
             },
             {
               configSpec: {
@@ -1028,14 +1030,16 @@ export const json2ParameterConfig = (
           componentName: 'postgresql',
           configItemDetails: [
             {
+              configFileParams: {
+                'postgresql.conf': {
+                  parameters: pgParams
+                }
+              },
               configSpec: {
-                constraintRef: 'postgresql12-cc',
-                defaultMode: 292,
-                keys: ['postgresql.conf'],
-                name: 'postgresql-configuration',
+                templateRef: 'postgresql-configuration',
+                volumeName: 'postgresql-config',
                 namespace: 'kb-system',
-                templateRef: 'postgresql12-configuration',
-                volumeName: 'postgresql-config'
+                name: 'postgresql-configuration'
               },
               name: 'postgresql-configuration'
             },
@@ -1101,6 +1105,12 @@ export const json2ParameterConfig = (
 
     // Check if this is MySQL 5.7.42 version
     if (dbVersion === 'mysql-5.7.42') {
+      if (parameterConfig?.timeZone === 'UTC') {
+        mysqlParams['default-time-zone'] = '+00:00';
+      } else if (parameterConfig?.timeZone === 'Asia/Shanghai') {
+        mysqlParams['default-time-zone'] = '+08:00';
+      }
+
       const replicationItem: any = {
         ...(Object.keys(mysqlParams).length > 0 && {
           configFileParams: {
