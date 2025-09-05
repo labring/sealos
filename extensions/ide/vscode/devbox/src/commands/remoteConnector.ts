@@ -234,7 +234,10 @@ export class RemoteSSHConnector extends Disposable {
     Logger.info('Opening Devbox in VSCode')
 
     // NOTE: CodeBuddy use other uri schema
-    if (vscode.env.uriScheme === 'codebuddy') {
+    if (
+      vscode.env.uriScheme === 'codebuddy' ||
+      vscode.env.uriScheme === 'codebuddycn'
+    ) {
       await vscode.commands.executeCommand(
         'vscode.openFolder',
         vscode.Uri.parse(
@@ -272,7 +275,8 @@ export class RemoteSSHConnector extends Disposable {
       vscode.env.uriScheme === 'trae-cn' ||
       vscode.env.uriScheme === 'Qoder' ||
       vscode.env.uriScheme === 'Lingma' ||
-      vscode.env.uriScheme === 'codebuddy'
+      vscode.env.uriScheme === 'codebuddy' ||
+      vscode.env.uriScheme === 'codebuddycn'
 
     if (hasRemoteSSHInside) {
       return true
