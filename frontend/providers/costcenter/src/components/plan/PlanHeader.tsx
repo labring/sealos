@@ -1,7 +1,7 @@
 import { Button, Separator } from '@sealos/shadcn-ui';
 import { CircleCheck, Sparkles } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/plan';
-import { displayMoney, formatMoney } from '@/utils/format';
+import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import { UpgradePlanDialog } from './UpgradePlanDialog';
 import usePlanStore from '@/stores/plan';
 
@@ -150,7 +150,9 @@ export function PlanHeader({
           {currentPlan?.Traffic && (
             <div className="flex gap-2 items-center">
               <CircleCheck size={16} className="text-blue-600"></CircleCheck>
-              <span className="text-gray-600 text-sm">Traffic: {currentPlan.Traffic}GB</span>
+              <span className="text-gray-600 text-sm">
+                {formatTrafficAuto(currentPlan.Traffic)}
+              </span>
             </div>
           )}
         </div>
