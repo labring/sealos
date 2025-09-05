@@ -121,7 +121,7 @@ export const json2CreateCluster = (
               podAntiAffinity: 'Preferred',
               tenancy: 'SharedNode'
             },
-            clusterDefinitionRef: dbType,
+            clusterDefinitionRef: 'mysql',
             clusterVersionRef: data.dbVersion,
             componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
               return {
@@ -189,6 +189,7 @@ export const json2CreateCluster = (
                 componentDefRef: key,
                 monitor: true,
                 name: key,
+                noCreatePDB: false,
                 replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
                 resources: resourceData.cpuMemory,
                 serviceAccountName: data.dbName,
@@ -927,14 +928,14 @@ export const json2ParameterConfig = (
   },
   dynamicMaxConnections?: number
 ) => {
+  console.log('dbType', dbType);
+  console.log('dbVersion', dbVersion);
   function buildPostgresYaml() {
     // Parse PostgreSQL version to get major version (e.g., "postgresql-12.14.0" -> "12", "16.4.0" -> "16")
     const majorVersion = dbVersion.replace(/^postgresql-/, '').split('.')[0];
 
-    // Build PostgreSQL configuration parameters
     const pgParams: Record<string, string> = {};
 
-    // Add max_connections parameter
     const maxConnections = parameterConfig?.isMaxConnectionsCustomized
       ? parameterConfig?.maxConnections
       : dynamicMaxConnections?.toString();
@@ -943,7 +944,6 @@ export const json2ParameterConfig = (
       pgParams['max_connections'] = `${maxConnections}`;
     }
 
-    // Add timezone parameter for PostgreSQL
     if (parameterConfig?.timeZone) {
       pgParams['time_zone'] = `${parameterConfig.timeZone}`;
     }
@@ -1093,24 +1093,95 @@ export const json2ParameterConfig = (
   function buildMysqlYaml() {
     const mysqlParams: Record<string, string> = {};
 
-    // Add max_connections parameter (use custom value or dynamic calculation)
     const maxConnections = parameterConfig?.isMaxConnectionsCustomized
       ? parameterConfig?.maxConnections
       : dynamicMaxConnections?.toString();
 
     if (maxConnections) {
-      mysqlParams['max_connections'] = maxConnections;
+      mysqlParams['max_connections'] = String(maxConnections);
     }
 
     if (parameterConfig?.timeZone) {
-      mysqlParams['default-time-zone'] = `${parameterConfig.timeZone}`;
+      mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
     }
+
     const lowerCaseTableNames =
       parameterConfig?.lowerCaseTableNames !== undefined
         ? parameterConfig.lowerCaseTableNames
         : '0';
+    mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
 
-    mysqlParams['lower_case_table_names'] = lowerCaseTableNames;
+    // Check if this is MySQL 5.7.42 version
+    if (dbVersion === 'mysql-5.7.42') {
+      const replicationItem: any = {
+        ...(Object.keys(mysqlParams).length > 0 && {
+          configFileParams: {
+            'my.cnf': {
+              parameters: mysqlParams
+            }
+          }
+        }),
+        configSpec: {
+          constraintRef: 'oracle-mysql8.0-config-constraints',
+          name: 'mysql-replication-config',
+          namespace: 'kb-system',
+          templateRef: 'oracle-mysql5.7-config-template',
+          volumeName: 'mysql-config'
+        },
+        name: 'mysql-replication-config'
+      };
+
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': dbName,
+            'app.kubernetes.io/managed-by': 'kubeblocks'
+          },
+          name: `${dbName}-mysql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: dbName,
+          componentName: 'mysql',
+          configItemDetails: [
+            replicationItem,
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'agamotto-configuration',
+                namespace: 'kb-system',
+                templateRef: 'mysql-agamotto-configuration',
+                volumeName: 'agamotto-configuration'
+              },
+              name: 'agamotto-configuration'
+            }
+          ]
+        }
+      };
+
+      return yaml.dump(template);
+    }
+
+    // Default MySQL 8.0 configuration for other versions
+    const consensusItem: any = {
+      ...(Object.keys(mysqlParams).length > 0 && {
+        configFileParams: {
+          'my.cnf': {
+            parameters: mysqlParams
+          }
+        }
+      }),
+      configSpec: {
+        constraintRef: 'mysql8.0-config-constraints',
+        name: 'mysql-consensusset-config',
+        namespace: 'kb-system',
+        templateRef: 'mysql8.0-config-template',
+        volumeName: 'mysql-config'
+      },
+      name: 'mysql-consensusset-config'
+    };
 
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -1127,27 +1198,7 @@ export const json2ParameterConfig = (
         clusterRef: dbName,
         componentName: 'mysql',
         configItemDetails: [
-          ...(Object.keys(mysqlParams).length > 0
-            ? [
-                {
-                  configFileParams: {
-                    'my.cnf': {
-                      parameters: mysqlParams
-                    }
-                  }
-                }
-              ]
-            : []),
-          {
-            configSpec: {
-              constraintRef: 'mysql8.0-config-constraints',
-              name: 'mysql-consensusset-config',
-              namespace: 'kb-system',
-              templateRef: 'mysql8.0-auditlog-config-template',
-              volumeName: 'mysql-config'
-            },
-            name: 'mysql-consensusset-config'
-          },
+          consensusItem,
           {
             configSpec: {
               defaultMode: 292,
@@ -1171,19 +1222,18 @@ export const json2ParameterConfig = (
         ]
       }
     };
+
     return yaml.dump(template);
   }
   function buildMongodbYaml() {
-    // Build MongoDB configuration parameters
     const mongoParams: Record<string, string> = {};
 
-    // Add max_connections parameter (MongoDB uses maxIncomingConnections)
     const maxConnections = parameterConfig?.isMaxConnectionsCustomized
       ? parameterConfig?.maxConnections
       : dynamicMaxConnections?.toString();
 
     if (maxConnections) {
-      mongoParams['maxIncomingConnections'] = maxConnections;
+      mongoParams['net.maxIncomingConnections'] = maxConnections;
     }
 
     const template = {
@@ -1202,21 +1252,45 @@ export const json2ParameterConfig = (
         componentName: 'mongodb',
         configItemDetails: [
           {
+            ...(Object.keys(mongoParams).length > 0 && {
+              configFileParams: {
+                'mongodb.conf': {
+                  parameters: mongoParams
+                }
+              }
+            }),
             configSpec: {
               constraintRef: 'mongodb-config-constraints',
               defaultMode: 256,
-              keys: [
-                'mongodb.conf',
-                {
-                  ...(Object.keys(mongoParams).length > 0 && { parameters: mongoParams })
-                }
-              ],
+              keys: ['mongodb.conf'],
               name: 'mongodb-config',
               namespace: 'kb-system',
               templateRef: 'mongodb5.0-config-template',
               volumeName: 'mongodb-config'
             },
             name: 'mongodb-config'
+          },
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'mongodb-metrics-config-new',
+              namespace: 'kb-system',
+              templateRef: 'mongodb-metrics-config-new',
+              volumeName: 'mongodb-metrics-config'
+            },
+            name: 'mongodb-metrics-config'
+          },
+          {
+            configSpec: {
+              asEnvFrom: ['mongodb'],
+              constraintRef: 'mongodb-env-constraints',
+              keys: ['env'],
+              name: 'mongodb-env',
+              namespace: 'kb-system',
+              templateRef: 'mongodb-env-tpl',
+              volumeName: 'mongodb-env'
+            },
+            name: 'mongodb-environment'
           },
           {
             configSpec: {
@@ -1246,17 +1320,33 @@ export const json2ParameterConfig = (
     return yaml.dump(template);
   }
   function buildRedisYaml() {
-    // Build Redis configuration parameters
     const redisParams: Record<string, string> = {};
 
-    // Add max_connections parameter (Redis uses maxclients)
     const maxConnections = parameterConfig?.isMaxConnectionsCustomized
       ? parameterConfig?.maxConnections
       : dynamicMaxConnections?.toString();
 
     if (maxConnections) {
-      redisParams['maxclients'] = maxConnections;
+      redisParams['maxclients'] = String(maxConnections);
     }
+
+    const replicationItem: any = {
+      ...(Object.keys(redisParams).length > 0 && {
+        configFileParams: {
+          'redis.conf': {
+            parameters: redisParams
+          }
+        }
+      }),
+      configSpec: {
+        constraintRef: 'redis7-config-constraints',
+        name: 'redis-replication-config',
+        namespace: 'kb-system',
+        templateRef: 'redis7-config-template',
+        volumeName: 'redis-config'
+      },
+      name: 'redis-replication-config'
+    };
 
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -1273,27 +1363,7 @@ export const json2ParameterConfig = (
         clusterRef: dbName,
         componentName: 'redis',
         configItemDetails: [
-          ...(Object.keys(redisParams).length > 0
-            ? [
-                {
-                  configFileParams: {
-                    'redis.conf': {
-                      parameters: redisParams
-                    }
-                  }
-                }
-              ]
-            : []),
-          {
-            configSpec: {
-              constraintRef: 'redis7-config-constraints',
-              name: 'redis-replication-config',
-              namespace: 'kb-system',
-              templateRef: 'redis7-config-template',
-              volumeName: 'redis-config'
-            },
-            name: 'redis-replication-config'
-          },
+          replicationItem,
           {
             configSpec: {
               defaultMode: 292,
@@ -1307,6 +1377,7 @@ export const json2ParameterConfig = (
         ]
       }
     };
+
     return yaml.dump(template);
   }
   // Support for multiple database types
