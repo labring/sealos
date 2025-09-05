@@ -95,11 +95,12 @@ export function UpgradePlanDialog({
 
               <div className="border-t border-dashed border-slate-200 my-4"></div>
 
-              <div className="space-y-2 flex gap-8 items-center">
-                <Label htmlFor="workspace-name" className="flex-shrink-0 mb-0">
+              <div className="flex gap-8 items-center">
+                <Label htmlFor="workspace-name" className="flex-shrink-0 mb-0!">
                   Workspace Name
                 </Label>
                 <Input
+                  className="bg-white"
                   id="workspace-name"
                   placeholder="Enter Workspace Name"
                   value={workspaceName}

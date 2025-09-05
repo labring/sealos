@@ -27,8 +27,16 @@ export default function Home() {
       // Replace current route to avoid adding to history
       router.replace(targetUrl);
     }
-  }, [router]);
+  }, [router, router.query]);
 
   // Show minimal loading state while redirecting
   return <div className="flex items-center justify-center min-h-screen"></div>;
+}
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      locale
+    }
+  };
 }
