@@ -130,7 +130,7 @@ export default function SecondaryLinks() {
             cursor={'pointer'}
             onClick={() => openCostCenterApp('upgrade')}
           >
-            {true ? (
+            {subscriptionInfo?.subscription?.type === 'PAYG' ? (
               <div className="flex items-center text-sm font-medium text-blue-600">
                 <Center
                   mr={'8px'}
