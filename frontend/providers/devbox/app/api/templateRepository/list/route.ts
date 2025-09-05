@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const tags = searchParams.getAll('tags') || [];
     const search = searchParams.get('search') || '';
+    const excludeOfficial = searchParams.get('excludeOfficial') === 'true';
     const page =
       z
         .number()
@@ -51,6 +52,19 @@ export async function GET(req: NextRequest) {
                 mode: 'insensitive'
               }
             }
+          : {}),
+        ...(excludeOfficial
+          ? {
+              NOT: {
+                templateRepositoryTags: {
+                  some: {
+                    tag: {
+                      type: 'OFFICIAL_CONTENT'
+                    }
+                  }
+                }
+              }
+            }
           : {})
       };
       const [templateRepositoryList, totalItems] = await Promise.all([
@@ -80,15 +94,22 @@ export async function GET(req: NextRequest) {
             uid: true,
             description: true,
             iconId: true,
-            createdAt: true
+            createdAt: true,
+            usageCount: true
           }
         }),
         tx.templateRepository.count({
           where
         })
       ]);
-      // Sort repositories by PROGRAMMING_LANGUAGE tag name, then by creation date
+      // Sort repositories by usage count (descending), then by PROGRAMMING_LANGUAGE tag name, then by creation date
       const sortedList = [...templateRepositoryList].sort((a, b) => {
+        // First priority: usage count (higher usage first)
+        if (a.usageCount !== b.usageCount) {
+          return b.usageCount - a.usageCount;
+        }
+
+        // Second priority: programming language tag name
         const aLangTag =
           a.templateRepositoryTags.find((t) => t.tag.type === 'PROGRAMMING_LANGUAGE')?.tag.name ||
           '';
@@ -100,8 +121,8 @@ export async function GET(req: NextRequest) {
           return aLangTag.localeCompare(bLangTag);
         }
 
-        // If programming language tags are the same, sort by creation date
-        return a.createdAt.getTime() - b.createdAt.getTime();
+        // Third priority: creation date (newer first for same usage and language)
+        return b.createdAt.getTime() - a.createdAt.getTime();
       });
 
       // Apply pagination after sorting
