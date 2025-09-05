@@ -61,6 +61,7 @@ export default function Plan() {
   const [isTopupMode, setIsTopupMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState('');
 
   const handleSubscriptionModalOpenChange = useCallback(
     (open: boolean) => {
@@ -112,6 +113,11 @@ export default function Plan() {
       return;
     }
 
+    // Handle workspaceId parameter
+    if (router.isReady && router.query.workspaceId) {
+      setWorkspaceId(router.query.workspaceId as string);
+    }
+
     // Check for success state from Stripe callback
     if (router.isReady && router.query.stripeState === 'success') {
       console.log('Setting showCongratulations to true');
@@ -155,6 +161,12 @@ export default function Plan() {
         return;
       }
 
+      // Handle workspaceId parameter as fallback
+      const workspaceIdParam = urlParams.get('workspaceId');
+      if (workspaceIdParam) {
+        setWorkspaceId(workspaceIdParam);
+      }
+
       const stripeSuccess = urlParams.get('stripeState') === 'success';
       if (stripeSuccess) {
         console.log('Setting showCongratulations to true (fallback)');
@@ -196,6 +208,18 @@ export default function Plan() {
       }),
     enabled: !!(session?.user?.nsid && region?.uid),
     onSuccess: (data) => setSubscriptionData(data.data || null),
+    refetchOnMount: true
+  });
+
+  // Get specific workspace subscription info for congratulations modal
+  const { data: workspaceSubscriptionData } = useQuery({
+    queryKey: ['workspace-subscription', workspaceId, region?.uid],
+    queryFn: () =>
+      getSubscriptionInfo({
+        workspace: workspaceId || '',
+        regionDomain: region?.domain || ''
+      }),
+    enabled: !!(workspaceId && region?.uid),
     refetchOnMount: true
   });
 
@@ -497,27 +521,31 @@ export default function Plan() {
 
       <CongratulationsModal
         isOpen={showCongratulations}
-        planName={subscriptionData?.subscription?.PlanName || 'Pro Plan'}
+        planName={workspaceSubscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
         maxResources={
-          subscriptionData?.subscription?.PlanName
+          workspaceSubscriptionData?.data?.subscription?.PlanName
             ? JSON.parse(
                 plansData?.plans?.find(
-                  (p: SubscriptionPlan) => p.Name === subscriptionData?.subscription?.PlanName
+                  (p: SubscriptionPlan) =>
+                    p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
                 )?.MaxResources || '{}'
               )
             : undefined
         }
         traffic={
           plansData?.plans?.find(
-            (p: SubscriptionPlan) => p.Name === subscriptionData?.subscription?.PlanName
+            (p: SubscriptionPlan) =>
+              p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
           )?.Traffic
         }
         onClose={() => {
           setShowCongratulations(false);
+          setWorkspaceId('');
           // Clean up URL parameters after closing the modal
           const url = new URL(window.location.href);
           url.searchParams.delete('stripeState');
           url.searchParams.delete('payId');
+          url.searchParams.delete('workspaceId');
           router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
             shallow: true
           });
