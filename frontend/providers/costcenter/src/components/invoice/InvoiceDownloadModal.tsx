@@ -84,7 +84,7 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
           </div>
 
           {/* Invoice Preview */}
-          <div className="fixed -top-[9999rem] -left-[9999rem] -z-50">
+          <div className="fixed -top-[1000vh] -left-[1000vw] -z-50">
             <InvoicePrintable
               ref={invoicePrintableRef}
               invoiceNumber={invoiceNumber}
