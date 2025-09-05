@@ -322,8 +322,6 @@ function Billing() {
         // Filter only SUBSCRIPTION type payments
         if (data.Type !== 'SUBSCRIPTION') return false;
 
-        console.log(selectedRegion, selectedWorkspace);
-
         // Display all entries if no filter
         if (!selectedRegion && !selectedWorkspace) {
           return true;
