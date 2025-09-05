@@ -131,11 +131,11 @@ async function setUserKubeconfig(
     const resourceObj = {
       apiVersion: 'user.sealos.io/v1',
       kind: resourceKind,
-      annotations: {
-        'user.sealos.io/workspace-status': userType
-      },
       metadata: {
         name: k8s_username,
+        annotations: {
+          'user.sealos.io/workspace-status': userType
+        },
         labels: {
           uid,
           updateTime

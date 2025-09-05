@@ -17,6 +17,7 @@ export function getPlanBackgroundClass(planName: string, isPayg: boolean): strin
       return 'bg-plan-pro';
     case 'enterprise':
       return 'bg-plan-enterprise';
+    case 'free':
     case 'hobby':
       return 'bg-plan-hobby';
     case 'hobby plus':
