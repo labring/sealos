@@ -6,5 +6,6 @@ export const queryParams = z.object({
 
 export const response = z.object({
   code: z.number(),
-  message: z.string()
+  message: z.string(),
+  data: z.any().optional()
 });

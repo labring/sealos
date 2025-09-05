@@ -300,7 +300,7 @@ export const document = createDocument({
         }
       }
     },
-    '/backup/delete': {
+    '/backup/delBackup': {
       delete: {
         summary: 'Delete Backup',
         description: 'Delete a backup by name.',
