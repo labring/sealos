@@ -2,7 +2,7 @@ import { CheckCircle } from 'lucide-react';
 import { forwardRef } from 'react';
 import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
-import { displayMoney, formatMoney } from '@/utils/format';
+import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import { getUpgradeAmount } from '@/api/plan';
 import { useQuery } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
@@ -74,11 +74,6 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     return storage.replace('Gi', 'GB Disk');
   };
 
-  const formatTraffic = (traffic: number) => {
-    const trafficGB = Math.floor(traffic / 1024);
-    return `${trafficGB}GB Traffic`;
-  };
-
   // Parse plan resources
   let planResources: any = {};
   try {
@@ -148,7 +143,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
             {plan.Traffic && (
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatTraffic(plan.Traffic)}</span>
+                <span className="text-sm text-gray-600">{formatTrafficAuto(plan.Traffic)}</span>
               </div>
             )}
           </div>

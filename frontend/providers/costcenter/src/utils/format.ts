@@ -16,15 +16,15 @@ export const formatRelativeTime = (time: string | number | Date) => {
 };
 
 export const formatTrafficAuto = (mb: number, decimals: number = 0): string => {
-  if (mb === 0) return '0 MB';
+  if (mb === 0) return '0 MB Traffic';
 
   if (mb < 1) {
-    return `${(mb * 1024).toFixed(decimals)} KB`;
+    return `${(mb * 1024).toFixed(decimals)} KB Traffic`;
   } else if (mb < 1024) {
-    return `${mb.toFixed(decimals)} MB`;
+    return `${mb.toFixed(decimals)} MB Traffic`;
   } else if (mb < 1024 * 1024) {
-    return `${(mb / 1024).toFixed(decimals)} GB`;
+    return `${(mb / 1024).toFixed(decimals)} GB Traffic`;
   } else {
-    return `${(mb / (1024 * 1024)).toFixed(decimals)} TB`;
+    return `${(mb / (1024 * 1024)).toFixed(decimals)} TB Traffic`;
   }
 };

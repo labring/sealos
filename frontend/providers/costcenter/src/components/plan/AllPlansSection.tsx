@@ -31,7 +31,8 @@ export function AllPlansSection() {
 
   const { data: subscriptionListData, isLoading: subscriptionListLoading } = useQuery({
     queryKey: ['workspace-subscription-list'],
-    queryFn: getWorkspaceSubscriptionList
+    queryFn: getWorkspaceSubscriptionList,
+    refetchOnMount: true
   });
 
   // Query body for subscription payments (region scope)
