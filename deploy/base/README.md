@@ -82,7 +82,7 @@ sealos run ghcr.io/labring/sealos/helm:v3.16.2
 
 **Changes:**
 - Base on helm chart from [higress.io](https://higress.io/helm-charts)
-- Added condition for higress console (charts/higress/Chart.yaml line 10: `condition: console.enabled`)
+- Added condition for higress console (charts/higress/Chart.yaml line 10: `condition: higress-console.enabled`)
 - Custom configuration files for cloud deployment
 
 **Environment Variables:**

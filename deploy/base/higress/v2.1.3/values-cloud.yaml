@@ -8,9 +8,8 @@ global:
   ingressClass: nginx
   onDemandRDS: false
   enableRedis: false
-console:
-  enabled: false
 higress-console:
+  enabled: false
   domain: higress-console.svc.cluster.local
   replicaCount: 0
   resources:
