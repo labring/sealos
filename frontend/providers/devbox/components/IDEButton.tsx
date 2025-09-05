@@ -198,30 +198,67 @@ const IDEButton = memo(
               <div className="flex">
                 {/* left column */}
                 <div className="w-[180px] space-y-1">
-                  {leftColumnItems.map((item) => (
-                    <DropdownMenuItem
-                      key={item.value}
-                      className={cn(
-                        'h-9 justify-between text-zinc-600',
-                        currentIDE === item.value && 'text-zinc-900'
-                      )}
-                      onClick={() => {
-                        updateDevboxIDE(item.value, devboxName);
-                        handleGotoIDE(item.value);
-                      }}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <Image
-                          width={18}
-                          height={18}
-                          alt={item.value}
-                          src={`/images/ide/${item.value}.svg`}
-                        />
-                        <span>{item?.menuLabel}</span>
+                  {leftColumnItems.map((item) =>
+                    item.group ? (
+                      <div key={item.value} className="flex gap-1">
+                        {item.options?.map((option, index) => (
+                          <div key={option.value} className="flex items-center">
+                            <DropdownMenuItem
+                              className={cn(
+                                'w-[85px] text-zinc-600',
+                                index === 0 && 'pr-1 pl-2',
+                                index === 1 && 'pr-2 text-zinc-600',
+                                currentIDE === option.value && 'text-zinc-900'
+                              )}
+                              onClick={() => {
+                                updateDevboxIDE(option.value, devboxName);
+                                handleGotoIDE(option.value);
+                              }}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Image
+                                  width={18}
+                                  height={18}
+                                  alt={option.value}
+                                  src={`/images/ide/${option.value}.svg`}
+                                />
+                                <span className="text-xs whitespace-nowrap">
+                                  {option.menuLabel}
+                                </span>
+                                {currentIDE === option.value && (
+                                  <Check className="h-4 w-4 text-blue-600" />
+                                )}
+                              </div>
+                            </DropdownMenuItem>
+                            {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
+                          </div>
+                        ))}
                       </div>
-                      {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
-                    </DropdownMenuItem>
-                  ))}
+                    ) : (
+                      <DropdownMenuItem
+                        key={item.value}
+                        className={cn(
+                          'h-9 justify-between text-zinc-600',
+                          currentIDE === item.value && 'text-zinc-900'
+                        )}
+                        onClick={() => {
+                          updateDevboxIDE(item.value, devboxName);
+                          handleGotoIDE(item.value);
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Image
+                            width={18}
+                            height={18}
+                            alt={item.value}
+                            src={`/images/ide/${item.value}.svg`}
+                          />
+                          <span>{item?.menuLabel}</span>
+                        </div>
+                        {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
+                      </DropdownMenuItem>
+                    )
+                  )}
                 </div>
                 {/* vertical divider */}
                 <div className="mx-1.5 w-px bg-gray-200"></div>
@@ -387,7 +424,16 @@ export const ideObj = {
     prefix: 'codebuddy://',
     value: 'codebuddy',
     sortId: 6,
-    group: ''
+    group: 'codebuddy'
+  },
+  codebuddyCN: {
+    label: 'Codebuddy CN',
+    menuLabel: 'Codebuddy CN',
+    icon: 'codebuddy',
+    prefix: 'codebuddycn://',
+    value: 'codebuddyCN',
+    sortId: 6,
+    group: 'codebuddy'
   },
   lingma: {
     label: 'Lingma',
@@ -440,7 +486,15 @@ const leftColumnItems: MenuItem[] = [
   { value: 'windsurf', menuLabel: 'Windsurf' },
   { value: 'kiro', menuLabel: 'Kiro' },
   { value: 'qoder', menuLabel: 'Qoder' },
-  { value: 'codebuddy', menuLabel: 'Codebuddy' },
+  {
+    value: 'codebuddy-group' as IDEType,
+    menuLabel: 'Codebuddy',
+    group: 'codebuddy',
+    options: [
+      { value: 'codebuddy', menuLabel: 'Codebuddy' },
+      { value: 'codebuddyCN', menuLabel: 'Codebuddy CN' }
+    ]
+  },
   { value: 'lingma', menuLabel: 'Lingma' }
 ];
 const rightColumnItems: MenuItem[] = [

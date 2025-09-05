@@ -10,6 +10,7 @@ export type IDEType =
   | 'kiro'
   | 'qoder'
   | 'codebuddy'
+  | 'codebuddyCN'
   | 'lingma'
   | 'trae'
   | 'traeCN'
@@ -32,6 +33,7 @@ const validIDETypes: IDEType[] = [
   'kiro',
   'qoder',
   'codebuddy',
+  'codebuddyCN',
   'lingma',
   'trae',
   'traeCN',
