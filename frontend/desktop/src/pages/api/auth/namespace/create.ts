@@ -162,6 +162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (e) {
       console.log('workspace创建过程发生错误:', e);
+      console.error('modifyWorkspaceRole error:', e);
       // 补偿事务
       try {
         await globalPrisma.workspaceUsage.delete({

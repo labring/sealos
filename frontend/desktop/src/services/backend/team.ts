@@ -44,6 +44,11 @@ const _applyRoleRequest =
         createCR()
           .then((res) => resolve(res))
           .catch((err) => {
+            console.error('Operationrequest CRD error', {
+              k8s_username,
+              action,
+              error: err?.message || err
+            });
             if (times > 0) {
               times--;
               wrap();
@@ -113,6 +118,12 @@ export const modifyWorkspaceRole = async ({
         pre_role: UserRole;
       }
   )) => {
+  console.log('modifyWorkspaceRole', {
+    k8s_username,
+    workspaceId,
+    action: props.action,
+    role: props.role
+  });
   const kc = K8sApiDefault();
   const applyRoleRequest = _applyRoleRequest(kc, workspaceId);
   const grantApply = applyRoleRequest('Grant');
