@@ -321,8 +321,27 @@ function Billing() {
       .filter((data: PaymentRecord) => {
         // Filter only SUBSCRIPTION type payments
         if (data.Type !== 'SUBSCRIPTION') return false;
+
+        console.log(selectedRegion, selectedWorkspace);
+
+        // Display all entries if no filter
+        if (!selectedRegion && !selectedWorkspace) {
+          return true;
+        }
+
+        // Filter by region if selected
+        if (selectedRegion && !selectedWorkspace) {
+          return allNamespaces
+            ?.filter((ns) => ns.regionUid === selectedRegion)
+            .some((ns) => ns.namespace === data.Workspace);
+        }
+
         // Filter by workspace if selected
-        return selectedWorkspace ? data.Workspace === selectedWorkspace : true;
+        if (selectedRegion && selectedWorkspace) {
+          return data.Workspace === selectedWorkspace;
+        }
+
+        return false;
       })
       .map(
         (data: PaymentRecord) =>
@@ -332,7 +351,7 @@ function Billing() {
             cost: data.Amount
           }) satisfies SubscriptionData
       );
-  }, [allPaymentsData, selectedWorkspace]);
+  }, [allPaymentsData, selectedWorkspace, allNamespaces, selectedRegion]);
 
   /** Sync date range with store values */
   useEffect(() => {
