@@ -206,4 +206,3 @@ ghcr.io/labring/sealos/<component>:<version>
 For issues and documentation, visit:
 - [Sealos GitHub Repository](https://github.com/labring/sealos)
 - [Sealos Documentation](https://docs.sealos.io/)
-- [Sealos Documentation](https://docs.sealos.io/)
