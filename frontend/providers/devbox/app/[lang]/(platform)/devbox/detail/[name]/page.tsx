@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import Logs from './components/Logs';
 import Basic from './components/Basic';
 import Header from './components/Header';
 import Monitor from './components/Monitor';

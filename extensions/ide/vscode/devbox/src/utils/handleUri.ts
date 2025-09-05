@@ -12,17 +12,17 @@ export class UriHandler {
   constructor() {}
 
   public handle(uri: vscode.Uri): void {
-    Logger.info(`Handling URI: ${uri.toString()}`)
-    if (
-      uri.scheme !== 'vscode' &&
-      uri.scheme !== 'cursor' &&
-      uri.scheme !== 'vscode-insiders' &&
-      uri.scheme !== 'windsurf' &&
-      uri.scheme !== 'trae' &&
-      uri.scheme !== 'trae-cn'
-    ) {
-      return
-    }
+    Logger.info(`Handling URI: ${uri.toString()}`) 
+    // if (
+    //   uri.scheme !== 'vscode' &&
+    //   uri.scheme !== 'cursor' &&
+    //   uri.scheme !== 'vscode-insiders' &&
+    //   uri.scheme !== 'windsurf' &&
+    //   uri.scheme !== 'trae' &&
+    //   uri.scheme !== 'trae-cn'
+    // ) {
+    //   return
+    // }
 
     const queryParams = new URLSearchParams(uri.query)
     const params = this.extractParams(queryParams)
