@@ -161,7 +161,7 @@ const IDEButton = memo(
             <TooltipTrigger asChild>
               <Button
                 variant="secondary"
-                className="w-30 rounded-r-none px-2"
+                className="w-32 rounded-r-none px-2"
                 onClick={() => handleGotoIDE(currentIDE)}
                 disabled={status.value !== 'Running' || loading}
                 {...leftButtonProps}
@@ -197,7 +197,7 @@ const IDEButton = memo(
             <DropdownMenuContent className="p-1.5" align="end">
               <div className="flex">
                 {/* left column */}
-                <div className="w-[180px] space-y-1">
+                <div className="w-[210px] space-y-1">
                   {leftColumnItems.map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
@@ -205,7 +205,8 @@ const IDEButton = memo(
                           <div key={option.value} className="flex items-center">
                             <DropdownMenuItem
                               className={cn(
-                                'w-[85px] text-zinc-600',
+                                index === 0 ? 'w-[120px]' : 'w-[80px]',
+                                'text-zinc-600',
                                 index === 0 && 'pr-1 pl-2',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
@@ -365,151 +366,86 @@ IDEButton.displayName = 'IDEButton';
 export const ideObj = {
   vscode: {
     label: 'VSCode',
-    menuLabel: 'VSCode',
-    icon: 'vscode',
-    prefix: 'vscode://',
-    value: 'vscode',
-    sortId: 0,
-    group: ''
+    prefix: 'vscode://'
   },
   vscodeInsiders: {
     label: 'Insiders',
-    menuLabel: 'VSCode Insiders',
-    icon: 'vscodeInsiders',
-    prefix: 'vscode-insiders://',
-    value: 'vscodeInsiders',
-    sortId: 1,
-    group: ''
+    prefix: 'vscode-insiders://'
   },
   cursor: {
     label: 'Cursor',
-    menuLabel: 'Cursor',
-    icon: 'cursor',
-    prefix: 'cursor://',
-    value: 'cursor',
-    sortId: 2,
-    group: ''
+    prefix: 'cursor://'
   },
   windsurf: {
     label: 'Windsurf',
-    menuLabel: 'Windsurf',
-    icon: 'windsurf',
-    prefix: 'windsurf://',
-    value: 'windsurf',
-    sortId: 3,
-    group: ''
+    prefix: 'windsurf://'
   },
   kiro: {
     label: 'Kiro',
-    menuLabel: 'Kiro',
-    icon: 'kiro',
-    prefix: 'kiro://',
-    value: 'kiro',
-    sortId: 4,
-    group: ''
+    prefix: 'kiro://'
   },
   qoder: {
     label: 'Qoder',
-    menuLabel: 'Qoder',
-    icon: 'qoder',
-    prefix: 'qoder://',
-    value: 'qoder',
-    sortId: 5,
-    group: ''
+    prefix: 'qoder://'
   },
   codebuddy: {
-    label: 'Codebuddy',
-    menuLabel: 'Codebuddy',
-    icon: 'codebuddy',
-    prefix: 'codebuddy://',
-    value: 'codebuddy',
-    sortId: 6,
-    group: 'codebuddy'
+    label: 'CodeBuddy',
+    prefix: 'codebuddy://'
   },
   codebuddyCN: {
-    label: 'Codebuddy CN',
-    menuLabel: 'Codebuddy CN',
-    icon: 'codebuddy',
-    prefix: 'codebuddycn://',
-    value: 'codebuddyCN',
-    sortId: 6,
-    group: 'codebuddy'
+    label: 'CN',
+    prefix: 'codebuddycn://'
   },
   lingma: {
     label: 'Lingma',
-    menuLabel: 'Lingma',
-    icon: 'lingma',
-    prefix: 'lingma://',
-    value: 'lingma',
-    sortId: 7,
-    group: ''
+    prefix: 'lingma://'
   },
   trae: {
     label: 'Trae',
-    menuLabel: 'Trae',
-    icon: 'trae',
-    prefix: 'trae://',
-    value: 'trae',
-    sortId: 8,
-    group: 'trae'
+    prefix: 'trae://'
   },
   traeCN: {
     label: 'Trae CN',
-    menuLabel: 'Trae CN',
-    icon: 'trae',
-    prefix: 'trae-cn://',
-    value: 'traeCN',
-    sortId: 8,
-    group: 'trae'
+    prefix: 'trae-cn://'
   },
   toolbox: {
     label: 'Toolbox',
-    icon: 'toolbox',
-    menuLabel: 'Toolbox',
-    prefix: '-',
-    value: 'toolbox',
-    sortId: 9,
-    group: 'jetbrains'
+    prefix: '-'
   },
   gateway: {
     label: 'Gateway',
-    icon: 'gateway',
-    menuLabel: 'Gateway',
-    prefix: '-',
-    value: 'gateway',
-    sortId: 9,
-    group: 'jetbrains'
+    prefix: '-'
   }
 } as const;
 
 const leftColumnItems: MenuItem[] = [
-  { value: 'windsurf', menuLabel: 'Windsurf' },
   { value: 'kiro', menuLabel: 'Kiro' },
   { value: 'qoder', menuLabel: 'Qoder' },
-  {
-    value: 'codebuddy-group' as IDEType,
-    menuLabel: 'Codebuddy',
-    group: 'codebuddy',
-    options: [
-      { value: 'codebuddy', menuLabel: 'Codebuddy' },
-      { value: 'codebuddyCN', menuLabel: 'Codebuddy CN' }
-    ]
-  },
-  { value: 'lingma', menuLabel: 'Lingma' }
-];
-const rightColumnItems: MenuItem[] = [
-  { value: 'cursor', menuLabel: 'Cursor' },
-  { value: 'vscode', menuLabel: 'VSCode' },
-  { value: 'vscodeInsiders', menuLabel: 'VSCode Insiders' },
+  { value: 'lingma', menuLabel: 'Lingma' },
   {
     value: 'trae-group' as IDEType,
     menuLabel: 'Trae',
     group: 'trae',
     options: [
       { value: 'trae', menuLabel: 'Trae' },
-      { value: 'traeCN', menuLabel: 'Trae CN' }
+      { value: 'traeCN', menuLabel: 'CN' }
     ]
   },
+  {
+    value: 'codebuddy-group' as IDEType,
+    menuLabel: 'CodeBuddy',
+    group: 'codebuddy',
+    options: [
+      { value: 'codebuddy', menuLabel: 'CodeBuddy' },
+      { value: 'codebuddyCN', menuLabel: 'CN' }
+    ]
+  }
+];
+const rightColumnItems: MenuItem[] = [
+  { value: 'cursor', menuLabel: 'Cursor' },
+  { value: 'vscode', menuLabel: 'VSCode' },
+  { value: 'vscodeInsiders', menuLabel: 'Insiders' },
+  { value: 'windsurf', menuLabel: 'Windsurf' },
   {
     value: 'jetbrains-group' as IDEType,
     menuLabel: 'JetBrains',
