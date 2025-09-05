@@ -44,19 +44,23 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
 
   const dateOfIssue = format(new Date(), 'MMM dd, yyyy');
 
+  // Crypto API returns async values.
   useEffect(() => {
     const itemIds = items.map((item) => item.id);
-    const hash = window.crypto.subtle
+
+    window.crypto.subtle
       .digest('SHA-1', new TextEncoder().encode(itemIds.join(',')))
-      .then((hash) => btoa(String.fromCharCode(...new Uint8Array(hash))))
-      .then((hash) => setInvoiceNumber(hash.slice(0, 16)));
+      .then((hash) => btoa(String.fromCharCode(...new Uint8Array(hash.slice(0, 12)))))
+      .then((hash) =>
+        setInvoiceNumber(hash.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', ''))
+      );
   }, [items]);
 
   const handleDownload = async () => {
     if (!invoicePrintableRef.current) return;
 
     const result = await snapdom(invoicePrintableRef.current, { dpr: 4 });
-    await result.download({ format: 'png', filename: 'invoice-' + invoiceNumber + '.png' });
+    await result.download({ format: 'png', filename: 'invoice-' + invoiceNumber });
 
     onOpenChange(false);
   };
