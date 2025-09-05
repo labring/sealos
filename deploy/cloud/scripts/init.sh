@@ -378,6 +378,17 @@ function install {
 
   # sealos run desktop
   sealos_run_desktop
+  while true; do
+    # shellcheck disable=SC2126
+    NOT_RUNNING=$(kubectl get pods -n sealos --no-headers | grep desktop-frontend | grep -v "Running" | wc -l)
+    if [[ $NOT_RUNNING -eq 0 ]]; then
+        echo "All pods are in Running state for desktop-frontend !"
+        break
+    else
+        echo "Waiting for pods to be in Running state for desktop-frontend..."
+        sleep 2
+    fi
+  done
 
   # sealos run controllers
   sealos_run_controller
