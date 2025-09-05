@@ -437,6 +437,7 @@ function Billing() {
                 region={currentRegionName}
                 workspace={currentWorkspaceName}
                 totalCost={displayCost}
+                className="w-full"
               >
                 <SubscriptionCostTable data={subscriptionData} />
 

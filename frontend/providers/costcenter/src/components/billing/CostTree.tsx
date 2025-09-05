@@ -342,7 +342,9 @@ export function CostTree({
         <span className="absolute z-20 text-sm pointer-events-none top-5 left-5 text-zinc-600">
           Select a card to view cost details
         </span>
-        <div className="absolute top-0 right-0 z-20 overflow-y-auto p-0">{children}</div>
+        <div className="absolute top-0 right-0 z-20 overflow-y-auto p-0 w-[clamp(22.5rem,50%,36.5rem)]">
+          {children}
+        </div>
         <svg className="absolute z-10 bg-zinc-50 flex-1 w-full h-full">
           <pattern
             id="pattern-circles"
