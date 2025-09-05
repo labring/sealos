@@ -1,7 +1,7 @@
 import { SubscriptionPlan } from '@/types/plan';
 import { CircleCheck } from 'lucide-react';
 import { Badge } from '@sealos/shadcn-ui/badge';
-import { formatMoney } from '@/utils/format';
+import { formatMoney, formatTrafficAuto } from '@/utils/format';
 
 interface StaticPlanCardProps {
   plan: SubscriptionPlan;
@@ -10,6 +10,7 @@ interface StaticPlanCardProps {
 
 export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps) {
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+  const originalPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.OriginalPrice || 0;
 
   let resources: any = {};
   try {
@@ -36,21 +37,17 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
         <p className="text-sm text-gray-600 mb-4 leading-relaxed">{plan.Description}</p>
 
         <div className="mb-4">
-          {plan.Name === 'Hobby' && (
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-gray-400 line-through">$40</span>
-              <span className="text-4xl font-bold text-gray-900">$14</span>
-              <span className="text-gray-600 ml-1">/month</span>
-            </div>
-          )}
-          {plan.Name !== 'Hobby' && (
-            <div className="flex items-baseline">
-              <span className="text-4xl font-bold text-gray-900">
-                ${formatMoney(monthlyPrice).toFixed(0)}
+          <div className="flex items-baseline">
+            {originalPrice > 0 && (
+              <span className="text-4xl font-bold text-gray-400 line-through">
+                ${formatMoney(originalPrice).toFixed(0)}
               </span>
-              <span className="text-gray-600 ml-1">/month</span>
-            </div>
-          )}
+            )}
+            <span className="text-4xl font-bold text-gray-900">
+              ${formatMoney(monthlyPrice).toFixed(0)}
+            </span>
+            <span className="text-gray-600 ml-1">/month</span>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -61,33 +58,13 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           {resources.cpu && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">
-                {resources.cpu === '16'
-                  ? '4 vCPU'
-                  : resources.cpu === '4'
-                    ? '2 vCPU'
-                    : resources.cpu === '8'
-                      ? '8 vCPU'
-                      : resources.cpu === '64'
-                        ? '64 vCPU'
-                        : `${resources.cpu} CPU`}
-              </span>
+              <span className="text-sm text-gray-700">{resources.cpu} vCPU</span>
             </li>
           )}
           {resources.memory && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">
-                {resources.memory === '32Gi'
-                  ? '4GB RAM'
-                  : resources.memory === '8Gi'
-                    ? '2GB RAM'
-                    : resources.memory === '16Gi'
-                      ? '16GB RAM'
-                      : resources.memory === '128Gi'
-                        ? '128GB RAM'
-                        : resources.memory}
-              </span>
+              <span className="text-sm text-gray-700">{resources.memory} RAM</span>
             </li>
           )}
           {resources.storage && (
@@ -108,29 +85,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           )}
           <li className="flex items-center gap-3">
             <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-sm text-gray-700">
-              {plan.Traffic === 50000
-                ? '? Traffic'
-                : plan.Traffic === 10000
-                  ? '1GB Traffic'
-                  : plan.Traffic === 20000
-                    ? '100GB Traffic'
-                    : plan.Traffic === 1000000
-                      ? '1T Traffic'
-                      : `${plan.Traffic}GB Traffic`}
-            </span>
-          </li>
-          <li className="flex items-center gap-3">
-            <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-sm text-gray-700">
-              {plan.MaxSeats === 50
-                ? '? Traffic'
-                : plan.MaxSeats === 10
-                  ? '? Traffic'
-                  : plan.MaxSeats === 20
-                    ? '? Traffic'
-                    : `${plan.MaxSeats} Port`}
-            </span>
+            <span className="text-sm text-gray-700">{formatTrafficAuto(plan.Traffic)}</span>
           </li>
           {plan.Name.includes('medium') && (
             <li className="flex items-center gap-3">
