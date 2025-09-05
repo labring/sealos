@@ -223,7 +223,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 
 	// sync devbox state
-	if r.syncDevboxState(ctx, devbox) {
+	if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName && r.syncDevboxState(ctx, devbox) {
 		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
 		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
 		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
