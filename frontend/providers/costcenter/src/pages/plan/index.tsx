@@ -65,7 +65,10 @@ export default function Plan() {
   const handleSubscriptionModalOpenChange = useCallback(
     (open: boolean) => {
       setSubscriptionModalOpen(open);
-
+      if (!open) {
+        setIsCreateMode(false);
+        setIsUpgradeMode(false);
+      }
       // Clean up URL parameters after opening or closing the modal
       const url = new URL(window.location.href);
       url.searchParams.delete('mode');
