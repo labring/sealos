@@ -3,20 +3,61 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
-import { BackupItemType, DBEditType } from '@/types/db';
+import {
+  BackupItemType,
+  DBEditType,
+  CPUResourceEnum,
+  MemoryResourceEnum,
+  ReplicasResourceEnum
+} from '@/types/db';
 import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
+import { createDatabaseSchemas } from '@/types/apis';
+import { z } from 'zod';
+
+// Resource conversion utilities
+const resourceConverters = {
+  // Convert CPU cores to millicores (e.g., 1 -> 1000, 0.5 -> 500)
+  cpuToMillicores: (cores: number): number => cores * 1000,
+
+  // Convert GB to MB (e.g., 1 -> 1024, 0.5 -> 512)
+  memoryToMB: (gb: number): number => gb * 1024
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { dbForm, isEdit, backupInfo } = req.body as {
-      dbForm: DBEditType;
-      isEdit: boolean;
-      backupInfo?: BackupItemType;
+    const { type, version, name, resource, terminationPolicy, autoBackup, isEdit, backupInfo } =
+      req.body as z.Infer<typeof createDatabaseSchemas.body> & {
+        isEdit: boolean;
+        backupInfo?: BackupItemType;
+        autoBackup?: any;
+      };
+
+    const dbForm: DBEditType = {
+      dbType: type as any,
+      dbVersion: version,
+      dbName: name,
+      replicas: resource.replicas,
+      // Convert CPU from cores to millicores
+      cpu: resourceConverters.cpuToMillicores(resource.cpu),
+      // Convert memory from GB to MB
+      memory: resourceConverters.memoryToMB(resource.memory),
+      storage: resource.storage,
+      labels: {},
+      terminationPolicy: terminationPolicy as any,
+      autoBackup: autoBackup || {
+        start: true,
+        type: 'day',
+        week: [],
+        hour: '12',
+        minute: '00',
+        saveTime: 100,
+        saveType: 'd'
+      }
     };
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
@@ -29,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         'v1alpha1',
         namespace,
         'clusters',
-        dbForm.dbName
+        name
       )) as {
         body: KbPgClusterType;
       };
@@ -108,9 +149,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await applyYamlList([updateAccountYaml], 'replace');
 
     try {
-      if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
+      if (BackupSupportedDBTypeList.includes(dbForm.dbType)) {
         const autoBackup = convertBackupFormToSpec({
-          autoBackup: dbForm?.autoBackup,
+          autoBackup: dbForm.autoBackup,
           dbType: dbForm.dbType
         });
 
