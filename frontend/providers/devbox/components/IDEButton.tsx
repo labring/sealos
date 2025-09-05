@@ -393,7 +393,7 @@ export const ideObj = {
     prefix: 'codebuddy://'
   },
   codebuddyCN: {
-    label: 'CN',
+    label: 'CodeBuddy CN',
     prefix: 'codebuddycn://'
   },
   lingma: {
