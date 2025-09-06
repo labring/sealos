@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
 
     const quota = await getUserQuota();
 
-    const filteredQuota = GPU_ENABLE ? quota : quota.filter((item) => item.type !== 'gpu');
+    const filteredQuota =
+      GPU_ENABLE === 'true' ? quota : quota.filter((item) => item.type !== 'gpu');
 
     return jsonRes({
       data: {

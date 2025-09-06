@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       // Start: set state to Running
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxes',
         devboxName,
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       // Stop: set state to Stopped
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxes',
         devboxName,
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       // Restart: stopped + wait pod deleted + running
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxes',
         devboxName,
@@ -265,7 +265,7 @@ export async function POST(req: NextRequest) {
       // set state to Running
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxes',
         devboxName,

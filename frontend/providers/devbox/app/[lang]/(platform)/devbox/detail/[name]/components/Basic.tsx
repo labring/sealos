@@ -199,36 +199,7 @@ const Basic = () => {
           </div>
         </div>
       </div>
-      {/* bottom: event */}
-      <div
-        className={cn(
-          'flex h-13 w-full flex-col items-start justify-center border-t border-zinc-100 px-6 py-3',
-          devboxDetail?.lastTerminatedReason && 'rounded-b-xl bg-red-50'
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'text-sm text-zinc-900',
-              devboxDetail?.lastTerminatedReason && 'text-red-600'
-            )}
-          >
-            {t('last_event')}:
-          </span>
-          <div
-            className={cn(
-              'text-sm/5 text-zinc-600',
-              devboxDetail?.lastTerminatedReason && 'font-semibold text-red-600'
-            )}
-          >
-            {devboxDetail?.lastTerminatedReason ? (
-              <span>{devboxDetail?.lastTerminatedReason}</span>
-            ) : (
-              <span>{t('none_event_available')}</span>
-            )}
-          </div>
-        </div>
-      </div>
+
       {!!sshConfigData && (
         <SshConnectDrawer
           jetbrainsGuideData={sshConfigData}
