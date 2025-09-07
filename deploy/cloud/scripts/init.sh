@@ -250,7 +250,6 @@ function update_sealos_config {
 
 
 function sealos_run_desktop {
-    echo "run desktop frontend"
     run_and_log "sealos run tars/frontend-desktop.tar \
       --env cloudDomain=$cloudDomain \
       --env cloudPort=\"$cloudPort\" \
