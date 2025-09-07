@@ -76,10 +76,6 @@ print() {
   echo -e "\033[1;32m\033[1m INFO [$flag] >> $* \033[0m"
 }
 
-# =====================
-# 版本比较（用于内核版本比较）
-# returns: 0 if v1 >= v2 else 1
-# =====================
 ver_ge() {
   # usage: ver_ge "4.19.57" "4.18"
   awk -v a="$1" -v b="$2" 'BEGIN{
@@ -115,14 +111,13 @@ setMongoVersion() {
   fi
   set -e
 }
-# =====================
-# 执行 sealos run 并记录
-# =====================
+
 run_and_log() {
   local cmd="$1"
-  debug "[Step] 执行: $cmd"
+  debug "[Step] Running command: $cmd"
   echo "$(date '+%Y-%m-%d %H:%M:%S') $cmd" >> "$sealos_cloud_config_dir/install.log"
   eval "$cmd"
+  debug "[Step] Command completed: $cmd"
 }
 
 
@@ -137,7 +132,6 @@ install_pull_images() {
             k8s_ready="y"
         fi
     fi
-    mkdir -p $sealos_cloud_config_dir
     if [  -f "$sealos_cloud_config_dir/install.log" ]; then
         cp -r "$sealos_cloud_config_dir/install.log" "$sealos_cloud_config_dir/install.log.bak"
     fi
@@ -182,40 +176,39 @@ show_commercial_notice() {
 }
 
 pre_check() {
-  print "[Step 1] 环境与依赖检查..."
-  mkdir -p "$sealos_cloud_config_dir"
+  print "[Step 1] Environment and dependency checks..."
   if [[ -z "$sealos_cloud_domain" ]]; then
-    error "请设置 sealos_cloud_domain 变量，示例: sealos.io"
+    error "Environment sealos_cloud_domain is not set. Please set it, e.g.: sealos.io"
   fi
   if [[ -z "$master_ips" ]]; then
-    error "请设置 master_ips 变量，示例: 192.168.1.2:22,192.168.1.3:22"
+    error "Environment master_ips is not set. Please set it, e.g.: 192.168.1.2:22,192.168.1.3:22"
   fi
   if [[ $EUID -ne 0 ]]; then
-    error "请使用 root 用户运行此脚本。"
+    error "This script must be run as root. Please re-run as root or with sudo."
   fi
   if [[ "$(uname -s)" != "Linux" ]]; then
-    error "仅支持 Linux 系统。"
+    error "This script only supports Linux."
   fi
   for cmd in curl iptables; do
     if ! command -v $cmd &>/dev/null; then
-      error "$cmd 未安装，请先安装 $cmd。"
+      error "The $cmd is not installed. Please install $cmd and re-run the script."
     fi
   done
   if ! command -v lvm &>/dev/null; then
-    warn "警告：lvm 未安装，无法升级商业版本。"
+    warn "Warning: lvm is not installed. Some commercial features (such as upgrades) may be unavailable."
   fi
   arch=$(uname -m)
   if [[ "$arch" != "x86_64" && "$arch" != "aarch64" ]]; then
-    error "主机架构需为 AMD64 或 AArch64。当前: $arch"
+    error "Host CPU architecture must be AMD64 (x86_64) or AArch64 (aarch64). Current: $arch"
   fi
   kernel_full=$(uname -r)
   if [ "$(ver_ge "$kernel_full" "4.19.57")" -ne 0 ]; then
     if [[ "$kernel_full" != *"el8"* && "$kernel_full" != *"el9"* ]]; then
-      error "Linux 内核需 >= 4.19.57 或等效版本（例如 RHEL8 的 4.18）。当前: $kernel_full"
+      error "Linux kernel must be >= 4.19.57 or an equivalent supported version (for example RHEL8's 4.18). Current: $kernel_full"
     fi
   fi
-
-  info "环境与依赖检查通过。"
+  mkdir -p "$sealos_cloud_config_dir"
+  info "Environment and dependency checks passed."
 }
 prepare_configs() {
     if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
@@ -241,7 +234,7 @@ spec:
         # Create tls-secret.yaml file
         echo "$tls_config" > $sealos_cloud_config_dir/tls-secret.yaml
     fi
-    print "[Step 2] 已生成 TLS Secret 配置: $sealos_cloud_config_dir/tls-secret.yaml"
+    print "[Step 2] TLS secret manifest generated: $sealos_cloud_config_dir/tls-secret.yaml"
 
     sealos_init_cmd="sealos run ${image_registry}/${image_repository}/kubernetes:${kubernetes_version}\
         ${master_ips:+--masters $master_ips}\
@@ -255,7 +248,7 @@ spec:
 
 }
 execute_commands() {
-    print "[Step 3] 开始安装 Kubernetes 及基础组件,kubernetes 状态 ${k8s_installed}..."
+    print "[Step 3] Starting Kubernetes and core components installation; kubernetes status: ${k8s_installed}..."
     [[ $k8s_installed == "y" ]] || run_and_log "$sealos_init_cmd"
     run_and_log "sealos run ${image_registry}/${image_repository}/helm:${helm_version}"
     [[ $k8s_ready == "y" ]] || run_and_log "sealos run ${image_registry}/${image_repository}/cilium:${cilium_version} --env ExtraValues=\"ipam.mode=kubernetes\""
@@ -269,7 +262,7 @@ execute_commands() {
     run_and_log "sealos run --env CLOUD_PORT=${sealos_cloud_port} --env CLOUD_DOMAIN=${sealos_cloud_domain} ${image_registry}/${image_repository}/higress:${higress_version}"
     run_and_log "sealos run ${image_registry}/${image_repository}/kubeblocks:${kubeblocks_version}"
     setMongoVersion
-    print "[Step 4] 开始安装 Sealos Cloud..."
+    print "[Step 4] Starting Sealos Cloud installation..."
     if [[ -n "$tls_crt_base64" ]] || [[ -n "$tls_key_base64" ]]; then
         run_and_log "sealos run ${sealos_cloud_image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --config-file $sealos_cloud_config_dir/tls-secret.yaml --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log"
     else
@@ -279,11 +272,12 @@ execute_commands() {
 }
 finish_info() {
     print "Installation complete!"
-    print "Kubernetes: ${kubernetes_version}"
-    print "Sealos Cloud Version: ${sealos_cloud_version}"
-    print "URL: https://${sealos_cloud_domain}:${sealos_cloud_port}"
-    print "Username: admin"
-    print "Password: sealos2023"
+    print "Kubernetes version: ${kubernetes_version}"
+    print "Sealos Cloud version: ${sealos_cloud_version}"
+    print "Access URL: https://${sealos_cloud_domain}:${sealos_cloud_port}"
+    print "Default admin credentials:"
+    print "  Username: admin"
+    print "  Password: sealos2023"
 }
 
 {
