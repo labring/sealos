@@ -10,5 +10,6 @@ ENV mongodbUri=""
 ENV mongodbVersion="mongodb-5.0"
 ENV acmednsHost="auth.acme-dns.io"
 ENV acmednsSecret=""
+ENV loggerfile="/root/.sealos/cloud/cloud-install.log"
 
 CMD ["bash scripts/init.sh"]

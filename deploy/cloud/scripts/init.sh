@@ -8,6 +8,7 @@ cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
 localRegionUID=""
+loggerfile="/root/.sealos/cloud/cloud-install.log"
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 acmednsSecretPlaceholder="<acmedns-secret-placeholder>"
@@ -31,6 +32,13 @@ jwtRegional=""
 jwtGlobal=""
 
 source etc/sealos/.env
+
+run_and_log() {
+  local cmd="$1"
+  echo "[Step] Exec: $cmd"
+  echo "$(date '+%Y-%m-%d %H:%M:%S') $cmd" >> "$loggerfile"
+  eval "$cmd"
+}
 
 function prepare {
   # kubectl apply namespace, secret and mongodb
@@ -243,66 +251,66 @@ function update_sealos_config {
 
 function sealos_run_desktop {
     echo "run desktop frontend"
-    sealos run tars/frontend-desktop.tar \
+    run_and_log "sealos run tars/frontend-desktop.tar \
       --env cloudDomain=$cloudDomain \
-      --env cloudPort="$cloudPort" \
-      --env certSecretName="wildcard-cert" \
-      --env passwordEnabled="true" \
-      --env passwordSalt="$saltKey" \
-      --env regionUID="$localRegionUID" \
-      --env databaseMongodbURI="${mongodbUri}/sealos-auth?authSource=admin" \
-      --env databaseLocalCockroachdbURI="$cockroachdbLocalUri" \
-      --env databaseGlobalCockroachdbURI="$cockroachdbGlobalUri" \
-      --env jwtInternal="$jwtInternal" \
-      --env jwtRegional="$jwtRegional" \
-      --env jwtGlobal="$jwtGlobal"
+      --env cloudPort=\"$cloudPort\" \
+      --env certSecretName=\"wildcard-cert\" \
+      --env passwordEnabled=\"true\" \
+      --env passwordSalt=\"$saltKey\" \
+      --env regionUID=\"$localRegionUID\" \
+      --env databaseMongodbURI=\"${mongodbUri}/sealos-auth?authSource=admin\" \
+      --env databaseLocalCockroachdbURI=\"$cockroachdbLocalUri\" \
+      --env databaseGlobalCockroachdbURI=\"$cockroachdbGlobalUri\" \
+      --env jwtInternal=\"$jwtInternal\" \
+      --env jwtRegional=\"$jwtRegional\" \
+      --env jwtGlobal=\"$jwtGlobal\" "
 }
 
 function sealos_run_controller {
   # run user controller
-  sealos run tars/user.tar \
-  --env cloudDomain="$cloudDomain" \
-  --env apiserverPort="6443"
+  run_and_log "sealos run tars/user.tar \
+  --env cloudDomain=\"$cloudDomain\" \
+  --env apiserverPort=\"6443\" "
 
   # run terminal controller
-  sealos run tars/terminal.tar \
-  --env cloudDomain="$cloudDomain" \
-  --env cloudPort="$cloudPort" \
-  --env userNamespace="user-system" \
-  --env wildcardCertSecretName="wildcard-cert" \
-  --env wildcardCertSecretNamespace="sealos-system"
+  run_and_log "sealos run tars/terminal.tar \
+  --env cloudDomain=\"$cloudDomain\" \
+  --env cloudPort=\"$cloudPort\" \
+  --env userNamespace=\"user-system\" \
+  --env wildcardCertSecretName=\"wildcard-cert\" \
+  --env wildcardCertSecretNamespace=\"sealos-system\" "
 
   # run app controller
-  sealos run tars/app.tar
+  run_and_log "sealos run tars/app.tar"
 
   # kubectl apply default desktop apps
   retry_kubectl_apply "manifests/default_apps.yaml"
 
   # run resources monitoring controller
-  sealos run tars/monitoring.tar \
-  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
+  run_and_log "sealos run tars/monitoring.tar \
+  --env MONGO_URI=\"$mongodbUri\" --env DEFAULT_NAMESPACE=\"resources-system\" "
 
   # run account controller
-  sealos run tars/account.tar \
-  --env MONGO_URI="$mongodbUri" \
-  --env cloudDomain="$cloudDomain" \
-  --env cloudPort="$cloudPort" \
-  --env DEFAULT_NAMESPACE="account-system" \
-  --env GLOBAL_COCKROACH_URI="$cockroachdbGlobalUri" \
-  --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
-  --env LOCAL_REGION="$localRegionUID" \
-  --env ACCOUNT_API_JWT_SECRET="$jwtInternal"
+  run_and_log "sealos run tars/account.tar \
+  --env MONGO_URI=\"$mongodbUri\" \
+  --env cloudDomain=\"$cloudDomain\" \
+  --env cloudPort=\"$cloudPort\" \
+  --env DEFAULT_NAMESPACE=\"account-system\" \
+  --env GLOBAL_COCKROACH_URI=\"$cockroachdbGlobalUri\" \
+  --env LOCAL_COCKROACH_URI=\"$cockroachdbLocalUri\" \
+  --env LOCAL_REGION=\"$localRegionUID\" \
+  --env ACCOUNT_API_JWT_SECRET=\"$jwtInternal\" "
 
-  sealos run tars/account-service.tar --env cloudDomain="$cloudDomain" --env cloudPort="$cloudPort"
+  run_and_log "sealos run tars/account-service.tar --env cloudDomain=\"$cloudDomain\" --env cloudPort=\"$cloudPort\" "
 
   # run license controller
-  sealos run tars/license.tar
+  run_and_log "sealos run tars/license.tar"
 }
 
 
 function sealos_authorize {
-  sealos run tars/job-init.tar --env PASSWORD_SALT="$(echo -n "$saltKey")"
-  sealos run tars/job-heartbeat.tar
+  run_and_log "sealos run tars/job-init.tar --env PASSWORD_SALT=$(echo -n \"$saltKey\") "
+  run_and_log "sealos run tars/job-heartbeat.tar"
 
   # wait for admin user create
   echo "Waiting for admin user create"
@@ -313,58 +321,49 @@ function sealos_authorize {
 }
 
 function sealos_run_frontend {
-  echo "run applaunchpad frontend"
-  sealos run tars/frontend-applaunchpad.tar \
+  run_and_log "sealos run tars/frontend-applaunchpad.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" "
 
-  echo "run terminal frontend"
-  sealos run tars/frontend-terminal.tar \
+  run_and_log "sealos run tars/frontend-terminal.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" "
 
-  echo "run dbprovider frontend"
-  sealos run tars/frontend-dbprovider.tar \
+  run_and_log "sealos run tars/frontend-dbprovider.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" "
 
-  echo "run cost center frontend"
-  sealos run tars/frontend-costcenter.tar \
+  run_and_log "sealos run tars/frontend-costcenter.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert" \
-  --env transferEnabled="true" \
-  --env rechargeEnabled="false" \
-  --env jwtInternal="$jwtInternal"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" \
+  --env transferEnabled=\"true\" \
+  --env rechargeEnabled=\"false\" \
+  --env jwtInternal=\"$jwtInternal\" "
 
-  echo "run template frontend"
-  sealos run tars/frontend-template.tar \
+  run_and_log "sealos run tars/frontend-template.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" "
 
-  echo "run license frontend"
-  sealos run tars/frontend-license.tar \
+  run_and_log "sealos run tars/frontend-license.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert" \
-  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
-  --env licensePurchaseDomain="license.sealos.io"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" \
+  --env MONGODB_URI=\"${mongodbUri}/sealos-license?authSource=admin\" \
+  --env licensePurchaseDomain=\"license.sealos.io\" "
 
-  echo "run cronjob frontend"
-  sealos run tars/frontend-cronjob.tar \
+  run_and_log "sealos run tars/frontend-cronjob.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert"
+  --env cloudPort=\"$cloudPort\" \
+  --env certSecretName=\"wildcard-cert\" "
 
-  echo "run database monitoring"
-  sealos run tars/database-service.tar
+  run_and_log "sealos run tars/database-service.tar"
 
-  echo "run launchpad monitoring"
-  sealos run tars/launchpad-service.tar
+  run_and_log "sealos run tars/launchpad-service.tar"
 }
 
 function resource_exists {
@@ -401,4 +400,5 @@ function install {
   sealos_run_frontend
 }
 
+echo "" > $loggerfile
 install
