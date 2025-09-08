@@ -114,9 +114,11 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var item string
 	fmt.Println("时间查询参数")
 	fmt.Println(req.Time)
-	if req.Time != "" {
+	if len(req.Time) != 0 {
+		fmt.Printf("进入1")
 		item = fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
 	} else {
+		fmt.Printf("进入2")
 		item = fmt.Sprintf(`app:="%s" `, req.App)
 	}
 	builder.WriteString(item)
