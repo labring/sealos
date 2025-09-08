@@ -68,7 +68,7 @@ global:
   # -- Default hub for Istio images.
   # Releases are published to docker hub under 'istio' project.
   # Dev builds from prow are on gcr.io
-  hub: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+  hub: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
 
   # -- Specify image pull policy if default behavior isn't desired.
   # Default behavior: latest images will be Always else IfNotPresent.
@@ -361,7 +361,7 @@ global:
     enabled: false
     promtail:
       image:
-        repository: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/promtail
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/promtail
         tag: 2.9.4
       port: 3101
       resources:
@@ -376,7 +376,7 @@ global:
   # The default value is "" and when caName="", the CA will be configured by other
   # mechanisms (e.g., environmental variable CA_PROVIDER).
   caName: ""
-hub: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+hub: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
 
 clusterName: ""
 # -- meshConfig defines runtime configuration of components, including Istiod and istio-agent behavior
@@ -432,7 +432,7 @@ gateway:
   # -- The readiness timeout seconds
   readinessTimeoutSeconds: 3
 
-  hub: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+  hub: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
   tag: ""
   # -- revision declares which revision this gateway is a part of
   revision: ""
@@ -547,7 +547,7 @@ controller:
   replicas: 1
   image: higress
 
-  hub: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+  hub: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
   tag: ""
   env: {}
 
@@ -642,7 +642,7 @@ pilot:
   rollingMaxSurge: 100%
   rollingMaxUnavailable: 25%
 
-  hub: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+  hub: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
   tag: ""
 
   # -- Can be a full hub/image:tag
