@@ -47,6 +47,8 @@ set -o noglob
 #   SEALOS_V2_CONTAINERD_STORAGE   - Optional. Containerd data path (default: "/var/lib/containerd").
 #   SEALOS_V2_POD_CIDR             - Optional. Pod network CIDR (default: "100.64.0.0/10").
 #   SEALOS_V2_SERVICE_CIDR         - Optional. Service network CIDR (default: "10.96.0.0/22").
+#   SEALOS_V2_SERVICE_NODEPORT_RANGE - Optional. Service NodePort range (default: "30000-50000").
+#   SEALOS_V2_CILIUM_MASKSIZE      - Optional. Cilium mask size (default: "24").
 #
 # TLS / certificate
 #   SEALOS_V2_CERT_PATH            - Optional. Path to TLS certificate file to use for Cloud (PEM). If not provided, a self-signed cert is used.
@@ -76,7 +78,7 @@ set -o noglob
 
 ###
 kubernetes_version="v1.28.15"
-cilium_version="v1.15.8"
+cilium_version="v1.17.1"
 cert_manager_version="v1.14.6"
 helm_version="v3.16.2"
 openebs_version="v3.10.0"
@@ -100,7 +102,9 @@ export max_pod=${SEALOS_V2_MAX_POD:-"120"}
 export openebs_storage=${SEALOS_V2_OPENEBS_STORAGE:-"/var/openebs"}
 export containerd_storage=${SEALOS_V2_CONTAINERD_STORAGE:-"/var/lib/containerd"}
 export pod_cidr=${SEALOS_V2_POD_CIDR:-"100.64.0.0/10"}
+export cilium_masksize=${SEALOS_V2_CILIUM_MASKSIZE:-"24"}
 export service_cidr=${SEALOS_V2_SERVICE_CIDR:-"10.96.0.0/22"}
+export service_nodeport_range=${SEALOS_V2_SERVICE_NODEPORT_RANGE:-"30000-50000"}
 export cert_path=${SEALOS_V2_CERT_PATH:-""}
 export key_path=${SEALOS_V2_KEY_PATH:-""}
 
@@ -132,6 +136,8 @@ Cluster / resource settings
   SEALOS_V2_CONTAINERD_STORAGE Containerd data path (default: /var/lib/containerd)
   SEALOS_V2_POD_CIDR           Pod network CIDR (default: 100.64.0.0/10)
   SEALOS_V2_SERVICE_CIDR       Service network CIDR (default: 10.96.0.0/22)
+  SEALOS_V2_SERVICE_NODEPORT_RANGE Service NodePort range (default: 30000-50000)
+  SEALOS_V2_CILIUM_MASKSIZE    Cilium mask size (default: 24)
 
 TLS / certificate
   SEALOS_V2_CERT_PATH          Path to TLS certificate PEM file (if omitted, self-signed cert is used)
@@ -386,16 +392,22 @@ spec:
         --env KUBEADM_POD_SUBNET=${pod_cidr} \
         --env KUBEADM_SERVICE_SUBNET=${service_cidr}\
         --env KUBEADM_MAX_PODS=${max_pod}\
+        --env KUBEADM_SERVICE_RANGE=${SEALOS_V2_SERVICE_NODEPORT_RANGE}
         --env criData=${containerd_storage}\
         --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
         --passwd=${ssh_password}"
+
+    sealos_cilium_cmd="sealos run ${image_registry}/${image_repository}/cilium:${cilium_version}\
+        --env KUBEADM_POD_SUBNET=${pod_cidr} \
+        --env KUBEADM_SERVICE_RANGE=${SEALOS_V2_SERVICE_NODEPORT_RANGE} \
+        --env CILIUM_MASKSIZE=${cilium_masksize}
 
 }
 execute_commands() {
     print "[Step 3] Starting Kubernetes and core components installation; kubernetes status: ${k8s_installed}..."
     [[ $k8s_installed == "y" ]] || run_and_log "$sealos_init_cmd"
     run_and_log "sealos run ${image_registry}/${image_repository}/helm:${helm_version}"
-    [[ $k8s_ready == "y" ]] || run_and_log "sealos run ${image_registry}/${image_repository}/cilium:${cilium_version} --env ExtraValues=\"ipam.mode=kubernetes\""
+    [[ $k8s_ready == "y" ]] || run_and_log "$sealos_cilium_cmd"
     if [[ "${dry_run,,}" == "false" ]]; then
       wait_cluster_ready
     fi
