@@ -272,6 +272,19 @@ execute_commands() {
         run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log "
     fi
     run_and_log "sealos cert --alt-names \"${sealos_cloud_domain}\""
+    openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | awk -F', ' '
+    {
+        for(i=1;i<=NF;i++) {
+            if ($i ~ /^DNS:/) {
+                gsub(/^DNS:/, "🌐 DNS: ", $i)
+                print $i
+            }
+            else if ($i ~ /^IP Address:/) {
+                gsub(/^IP Address:/, "📡 IP:   ", $i)
+                print $i
+            }
+        }
+    }'
 }
 finish_info() {
     print "Installation complete!"
@@ -283,6 +296,22 @@ finish_info() {
     print "  Password: sealos2023"
 }
 
+tls_tips() {
+    print "TLS certificate information:"
+    if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
+        print "A custom TLS certificate and private key were provided."
+        print "Ensure the DNS name ${sealos_cloud_domain} resolves to this server's IP so the certificate is valid."
+        if [[ -f "${sealos_cloud_config_dir}/tls-secret.yaml" ]]; then
+            print "TLS secret manifest created at: ${sealos_cloud_config_dir}/tls-secret.yaml"
+        fi
+        print "If you encounter certificate errors in clients, verify the certificate chain and that the hostname matches."
+    else
+        print "No TLS certificate provided — a self-signed certificate will be used by Sealos Cloud."
+        print "Browsers and clients will show a warning unless the self-signed certificate is trusted."
+        print "To trust the certificate, follow the guide: https://sealos.run/docs/self-hosting/install#信任自签名证书"
+    fi
+}
+
 {
   show_commercial_notice
   proxy_github
@@ -291,4 +320,5 @@ finish_info() {
   prepare_configs
   execute_commands
   finish_info
+  tls_tips
 }
