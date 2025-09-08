@@ -1,27 +1,28 @@
-import vector from '@/assert/Vector.svg';
+import { cn } from '@sealos/shadcn-ui';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { isNumber } from 'lodash';
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
+
 interface CalculatorNumberInputProps {
-  unit?: string;
   value: number;
   onChange?: (str: string, val: number) => void;
   min?: number;
   max?: number;
   disabled?: boolean;
   className?: string;
+  unit?: string;
 }
 
 export default function CalculatorNumberInput({
   onChange,
-  unit,
   value,
   min = 0,
   max,
   disabled = false,
   className,
+  unit,
   ...props
 }: CalculatorNumberInputProps) {
   const [inputValue, setInputValue] = useState(value.toString());
@@ -57,42 +58,46 @@ export default function CalculatorNumberInput({
   };
 
   return (
-    <div className={`relative flex items-center w-24 h-8 ${className}`}>
-      <Input
-        type="number"
-        value={inputValue}
-        onChange={handleInputChange}
-        disabled={disabled}
-        min={min}
-        max={max}
-        className="h-8 w-full bg-gray-50 border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 hover:border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/25 pr-8"
-        {...props}
-      />
-      {unit && (
-        <span className="absolute right-8 text-gray-500 font-medium text-xs pointer-events-none">
-          {unit}
-        </span>
-      )}
-      <div className="absolute right-0 flex flex-col border-l border-gray-200 h-full">
+    <div className="flex gap-3 items-center">
+      <div
+        className={cn('relative rounded-md transition-shadow focus-within:outline-none', className)}
+      >
+        {/* Decrement button on the left */}
         <Button
+          type="button"
           variant="ghost"
-          size="sm"
-          onClick={increment}
-          disabled={disabled || (max !== undefined && value >= max)}
-          className="h-4 w-6 p-0 rounded-none border-b border-gray-200 hover:bg-gray-100"
-        >
-          <ChevronUp className="w-3 h-3 text-gray-500" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
           onClick={decrement}
           disabled={disabled || value <= min}
-          className="h-4 w-6 p-0 rounded-none hover:bg-gray-100"
+          className="absolute left-px top-1/2 -translate-y-1/2 h-[calc(100%-2px)] p-3 disabled:cursor-not-allowed disabled:opacity-20 z-10 border-r rounded-l-[calc(var(--radius-md)-1px)] rounded-r-none"
         >
-          <ChevronDown className="w-3 h-3 text-gray-500" />
+          <Minus className="w-4 h-4" />
+        </Button>
+
+        {/* Input field */}
+        <Input
+          type="number"
+          value={inputValue}
+          onChange={handleInputChange}
+          disabled={disabled}
+          min={min}
+          max={max}
+          className="h-9 w-full rounded-md border border-input outline-none bg-transparent px-10 py-1 text-center text-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          {...props}
+        />
+
+        {/* Increment button on the right */}
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={increment}
+          disabled={disabled || (max !== undefined && value >= max)}
+          className="absolute right-px top-1/2 -translate-y-1/2 h-[calc(100%-2px)] p-3 disabled:cursor-not-allowed disabled:opacity-20 z-10 border-l rounded-r-[calc(var(--radius-md)-1px)] rounded-l-none"
+        >
+          <Plus className="w-4 h-4" />
         </Button>
       </div>
+
+      {unit && <span className=" text-gray-500 text-sm">{unit}</span>}
     </div>
   );
 }
