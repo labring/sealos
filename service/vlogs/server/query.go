@@ -112,6 +112,8 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
 	var item string
+	fmt.Println("时间查询参数")
+	fmt.Println(req.Time)
 	if req.Time != "" {
 		item = fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
 	} else {
