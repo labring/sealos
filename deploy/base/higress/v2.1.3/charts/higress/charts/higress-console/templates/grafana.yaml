@@ -1,0 +1,145 @@
+{{- $o11y := merge (dict) .Values.o11y .Values.global.o11y  }}
+{{- if $o11y.enabled }}
+{{- $appName := (include "higress-console-grafana.name" .) }}
+{{- $config := $o11y.grafana }}
+{{- $port := $config.port -}}
+{{- $storageClassName := $config.pvc.storageClassName }}
+{{- $existedPvc := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace $appName) }}
+{{- if $existedPvc }}
+  {{- if $existedPvc.spec }}
+    {{- if $existedPvc.spec.storageClassName }}
+      {{- $storageClassName = $existedPvc.spec.storageClassName }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- $pvc := merge (dict) .Values.pvc .Values.global.pvc}}
+{{- $existedDeployment := (lookup "apps/v1" "Deployment" .Release.Namespace $appName) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  grafana.ini: |
+    [server]
+    protocol=http
+    domain=localhost
+    root_url="%(protocol)s://%(domain)s{{ include "higress-console-grafana.path" . }}"
+    serve_from_sub_path=true
+
+    [auth]
+    disable_login_form=true
+    disable_signout_menu=true
+    
+    [auth.anonymous]
+    enabled=true
+    org_name=Main Org.
+    org_role=Viewer
+
+    [users]
+    default_theme=light
+    viewers_can_edit=true
+
+    [security]
+    allow_embedding=true
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+  {{- if or (or .Values.global.local .Values.global.kind) (not $pvc.rwxSupported) }}
+  - ReadWriteOnce
+  {{- else }}
+  - ReadWriteMany
+  {{- end }}
+  storageClassName: {{ $storageClassName }}
+  resources:
+    requests:
+      storage: {{ $config.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $appName }}
+spec:
+  replicas: {{ $config.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $appName }}
+    spec:
+      securityContext:
+      {{- if $config.securityContext }}
+        {{- toYaml $config.securityContext | nindent 8 }}
+      {{- else if and ($existedDeployment) ($existedDeployment.spec.template.spec.securityContext) }}
+        {{- toYaml $existedDeployment.spec.template.spec.securityContext | nindent 8 }}
+      {{- else }}
+        runAsUser: 0
+        fsGroup: 472
+        supplementalGroups:
+        - 0
+      {{- end }}
+      containers:
+      - name: grafana
+        image: {{ $config.image.repository }}:{{ $config.image.tag }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ $port }}
+          name: http-grafana
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /robots.txt
+            port: {{ $port }}
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: {{ $port }}
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: {{ $appName }}
+        - name: config
+          mountPath: "/etc/grafana/grafana.ini"
+          subPath: grafana.ini
+      volumes:
+      - name: {{ $appName }}
+        persistentVolumeClaim:
+          claimName: {{ $appName }}
+      - name: config
+        configMap:
+          name:  {{ $appName }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - port: {{ $port }}
+    protocol: TCP
+    targetPort: http-grafana
+  selector:
+    app: {{ $appName }}
+  sessionAffinity: None
+  type: ClusterIP
+{{- end }}

@@ -1,0 +1,164 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ template "zfslocalpv.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.zfsNode.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "zfslocalpv.zfsNode.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "zfslocalpv.zfsNode.matchLabels" . | nindent 6 }}
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      {{- with .Values.zfsNode.podAnnotations }}
+      annotations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "zfslocalpv.zfsNode.labels" . | nindent 8 }}
+        {{- with .Values.zfsNode.podLabels}}
+        {{ toYaml . | nindent 8 }}
+        {{- end}}
+    spec:
+{{- if .Values.zfsNode.priorityClass.create }}
+      priorityClassName: {{ template "zfslocalpv.zfsNode.priorityClassName" . }}
+{{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.zfsNode.name }}
+      hostNetwork: true
+{{- if .Values.zfsNode.initContainers }}
+      initContainers:
+{{- range $key, $value := .Values.zfsNode.initContainers }}
+        - name: {{ $key }}
+{{ toYaml $value | indent 10 }}
+{{- end }}
+{{- end }}
+      containers:
+        - name: {{ .Values.zfsNode.driverRegistrar.name }}
+          image: "{{ .Values.zfsNode.driverRegistrar.image.registry }}{{ .Values.zfsNode.driverRegistrar.image.repository }}:{{ .Values.zfsNode.driverRegistrar.image.tag }}"
+          imagePullPolicy: {{ .Values.zfsNode.driverRegistrar.image.pullPolicy }}
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/zfs-localpv /registration/zfs-localpv-reg.sock"]
+          env:
+            - name: ADDRESS
+              value: /plugin/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: {{ .Values.zfsNode.kubeletDir }}plugins/zfs-localpv/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NODE_DRIVER
+              value: openebs-zfs
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: registration-dir
+              mountPath: /registration
+        - name: {{ .Values.zfsPlugin.name }}
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+          image: "{{ .Values.zfsPlugin.image.registry }}{{ .Values.zfsPlugin.image.repository }}:{{ .Values.zfsPlugin.image.tag }}"
+          imagePullPolicy: {{ .Values.zfsPlugin.image.pullPolicy }}
+          args:
+            - "--nodename=$(OPENEBS_NODE_NAME)"
+            - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
+            - "--plugin=$(OPENEBS_NODE_DRIVER)"
+          env:
+            - name: OPENEBS_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OPENEBS_CSI_ENDPOINT
+              value: unix:///plugin/csi.sock
+            - name: OPENEBS_NODE_DRIVER
+              value: agent
+            - name: OPENEBS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ALLOWED_TOPOLOGIES
+              value: "{{ .Values.zfsNode.allowedTopologyKeys }}"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: device-dir
+              mountPath: /dev
+            - name: encr-keys
+              mountPath: /home/keys
+            - name: chroot-zfs
+              mountPath: /sbin/zfs
+              subPath: zfs
+            - name: host-root
+              mountPath: /host
+              mountPropagation: "HostToContainer"
+              readOnly: true
+            - name: pods-mount-dir
+              mountPath: {{ .Values.zfsNode.kubeletDir }}
+              # needed so that any mounts setup inside this container are
+              # propagated back to the host machine.
+              mountPropagation: "Bidirectional"
+      volumes:
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: encr-keys
+          hostPath:
+            path: {{ .Values.zfsNode.encrKeysDir }}
+            type: DirectoryOrCreate
+        - name: chroot-zfs
+          configMap:
+            defaultMode: 0555
+            name: openebs-zfspv-bin
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: {{ .Values.zfsNode.kubeletDir }}plugins_registry/
+            type: DirectoryOrCreate
+        - name: plugin-dir
+          hostPath:
+            path: {{ .Values.zfsNode.kubeletDir }}plugins/zfs-localpv/
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: {{ .Values.zfsNode.kubeletDir }}
+            type: Directory
+{{- if .Values.zfsNode.additionalVolumes }}
+{{- range $name, $config := .Values.zfsNode.additionalVolumes }}
+        - name: {{ $name }}
+{{- tpl (toYaml $config) $ | nindent 10 }}
+{{- end }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+{{- end }}
+{{- if .Values.zfsNode.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.zfsNode.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.zfsNode.securityContext }}
+      securityContext:
+{{ toYaml .Values.zfsNode.securityContext | indent 8 }}
+{{- end }}
+{{- if .Values.zfsNode.tolerations }}
+      tolerations:
+{{ toYaml .Values.zfsNode.tolerations | indent 8 }}
+{{- end }}

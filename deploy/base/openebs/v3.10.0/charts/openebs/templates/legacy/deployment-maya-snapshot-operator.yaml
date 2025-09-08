@@ -1,0 +1,147 @@
+{{- if and (.Values.snapshotOperator.enabled) (.Values.legacy.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "openebs.fullname" . }}-snapshot-operator
+  labels:
+    app: {{ template "openebs.name" . }}
+    chart: {{ template "openebs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: snapshot-operator
+    openebs.io/component-name: openebs-snapshot-operator
+    openebs.io/version: {{ .Values.release.version }}
+spec:
+  replicas: {{ .Values.snapshotOperator.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "openebs.name" . }}
+      release: {{ .Release.Name }}
+  strategy:
+    type: "Recreate"
+    rollingUpdate: null
+  template:
+    metadata:
+      labels:
+        app: {{ template "openebs.name" . }}
+        release: {{ .Release.Name }}
+        component: snapshot-operator
+        name: openebs-snapshot-operator
+        openebs.io/version: {{ .Values.release.version }}
+        openebs.io/component-name: openebs-snapshot-operator
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "openebs.serviceAccountName" . }}
+      containers:
+      - name: {{ template "openebs.name" . }}-snapshot-controller
+        image: "{{ .Values.image.repository }}{{ .Values.snapshotOperator.controller.image }}:{{ .Values.snapshotOperator.controller.imageTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.snapshotOperator.controller.resources }}
+        resources:
+{{ toYaml .Values.snapshotOperator.controller.resources | trimSuffix "\n" | indent 10 }}
+{{- end }}
+        env:
+        # OPENEBS_IO_K8S_MASTER enables openebs snapshot controller to connect to K8s
+        # based on this address. This is ignored if empty.
+        # This is supported for openebs snapshot controller version 0.6-RC1 onwards
+        #- name: OPENEBS_IO_K8S_MASTER
+        #  value: "http://10.128.0.12:8080"
+        # OPENEBS_IO_KUBE_CONFIG enables openebs snapshot controller to connect to K8s
+        # based on this config. This is ignored if empty.
+        # This is supported for openebs snapshot controller version 0.6-RC1 onwards
+        #- name: OPENEBS_IO_KUBE_CONFIG
+        #  value: "/home/ubuntu/.kube/config"
+        # OPENEBS_NAMESPACE is the namespace that this snapshot controller will
+        # lookup to find maya api service
+        - name: OPENEBS_NAMESPACE
+          value: "{{ .Release.Namespace }}"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        # OPENEBS_MAYA_SERVICE_NAME provides the maya-apiserver K8s service name,
+        # that snapshot controller should forward the volume snapshot requests.
+        # If not present, "maya-apiserver-service" will be used for lookup.
+        # This is supported for openebs snapshot controller version 0.6-RC1 onwards
+        - name: OPENEBS_MAYA_SERVICE_NAME
+          value: "{{ template "openebs.fullname" . }}-apiservice"
+         # Process name used for matching is limited to the 15 characters
+         # present in the pgrep output.
+         # So fullname can't be used here with pgrep (>15 chars).A regular expression
+         # that matches the entire command name has to specified.
+         # Anchor `^` : matches any string that starts with `snapshot-contro`
+         # `.*`: matches any string that has `snapshot-contro` followed by zero or more char
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test `pgrep -c "^snapshot-contro.*"` = 1
+          initialDelaySeconds: {{ .Values.snapshotOperator.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.snapshotOperator.healthCheck.periodSeconds }}
+      - name: {{ template "openebs.name" . }}-snapshot-provisioner
+        image: "{{ .Values.image.repository }}{{ .Values.snapshotOperator.provisioner.image }}:{{ .Values.snapshotOperator.provisioner.imageTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.snapshotOperator.provisioner.resources }}
+        resources:
+{{ toYaml .Values.snapshotOperator.provisioner.resources | trimSuffix "\n" | indent 10 }}
+{{- end }}
+        env:
+        # OPENEBS_IO_K8S_MASTER enables openebs snapshot provisioner to connect to K8s
+        # based on this address. This is ignored if empty.
+        # This is supported for openebs snapshot provisioner version 0.6-RC1 onwards
+        #- name: OPENEBS_IO_K8S_MASTER
+        #  value: "http://10.128.0.12:8080"
+        # OPENEBS_IO_KUBE_CONFIG enables openebs snapshot provisioner to connect to K8s
+        # based on this config. This is ignored if empty.
+        # This is supported for openebs snapshot provisioner version 0.6-RC1 onwards
+        #- name: OPENEBS_IO_KUBE_CONFIG
+        #  value: "/home/ubuntu/.kube/config"
+        # OPENEBS_NAMESPACE is the namespace that this snapshot provisioner will
+        # lookup to find maya api service
+        - name: OPENEBS_NAMESPACE
+          value: "{{ .Release.Namespace }}"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        # OPENEBS_MAYA_SERVICE_NAME provides the maya-apiserver K8s service name,
+        # that snapshot provisioner should forward the volume snapshot PV requests.
+        # If not present, "maya-apiserver-service" will be used for lookup.
+        # This is supported for openebs snapshot provisioner version 0.6-RC1 onwards
+        - name: OPENEBS_MAYA_SERVICE_NAME
+          value: "{{ template "openebs.fullname" . }}-apiservice"
+        # LEADER_ELECTION_ENABLED is used to enable/disable leader election. By default
+        # leader election is enabled.
+        - name: LEADER_ELECTION_ENABLED
+          value: "{{ .Values.snapshotOperator.enableLeaderElection }}"
+         # Process name used for matching is limited to the 15 characters
+         # present in the pgrep output.
+         # So fullname can't be used here with pgrep (>15 chars).A regular expression
+         # that matches the entire command name has to specified.
+         # Anchor `^` : matches any string that starts with `snapshot-provis`
+         # `.*`: matches any string that has `snapshot-provis` followed by zero or more char
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test `pgrep -c "^snapshot-provis.*"` = 1
+          initialDelaySeconds: {{ .Values.snapshotOperator.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.snapshotOperator.healthCheck.periodSeconds }}
+{{- if .Values.snapshotOperator.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.snapshotOperator.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.snapshotOperator.tolerations }}
+      tolerations:
+{{ toYaml .Values.snapshotOperator.tolerations | indent 8 }}
+{{- end }}
+{{- if .Values.snapshotOperator.affinity }}
+      affinity:
+{{ toYaml .Values.snapshotOperator.affinity | indent 8 }}
+{{- end }}
+{{- end }}

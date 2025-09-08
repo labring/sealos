@@ -1,0 +1,50 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if .Values.ndm.enabled }}
+{{- $ndmValues := index .Values "openebs-ndm" }}
+{{- if not $ndmValues.enabled }}
+# This is the node-disk-manager related config.
+# It can be used to customize the disks probes and filters
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "openebs.fullname" . }}-ndm-config
+  labels:
+    app: {{ template "openebs.name" . }}
+    chart: {{ template "openebs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: ndm-config
+    openebs.io/component-name: ndm-config
+data:
+  # udev-probe is default or primary probe which should be enabled to run ndm
+  # filterconfigs contains configs of filters - in the form of include
+  # and exclude comma separated strings
+  node-disk-manager.config: |
+    probeconfigs:
+      - key: udev-probe
+        name: udev probe
+        state: true
+      - key: seachest-probe
+        name: seachest probe
+        state: {{ .Values.ndm.probes.enableSeachest }}
+      - key: smart-probe
+        name: smart probe
+        state: true
+    filterconfigs:
+      - key: os-disk-exclude-filter
+        name: os disk exclude filter
+        state: {{ .Values.ndm.filters.enableOsDiskExcludeFilter }}
+        exclude: "{{ .Values.ndm.filters.osDiskExcludePaths }}"
+      - key: vendor-filter
+        name: vendor filter
+        state: {{ .Values.ndm.filters.enableVendorFilter }}
+        include: ""
+        exclude: "{{ .Values.ndm.filters.excludeVendors }}"
+      - key: path-filter
+        name: path filter
+        state: {{ .Values.ndm.filters.enablePathFilter }}
+        include: "{{ .Values.ndm.filters.includePaths }}"
+        exclude: "{{ .Values.ndm.filters.excludePaths }}"
+{{- end }}
+{{- end }}
+{{- end }}

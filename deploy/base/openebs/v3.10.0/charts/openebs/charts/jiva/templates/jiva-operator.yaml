@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "jiva.fullname" . }}-operator
+  {{- with .Values.jivaOperator.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "jiva.operator.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "jiva.operator.matchLabels" . | nindent 6 }}
+  replicas: {{ .Values.jivaOperator.replicas }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "jiva.operator.labels" . | nindent 8 }}
+        {{- if .Values.jivaOperator.podLabels }}
+        {{ toYaml .Values.jivaOperator.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.jivaOperator.name }}
+      containers:
+        - name: {{ template "jiva.fullname" . }}-operator
+          imagePullPolicy: {{ .Values.jivaOperator.image.pullPolicy }}
+          image: "{{ .Values.jivaOperator.image.registry }}{{ .Values.jivaOperator.image.repository }}:{{ .Values.jivaOperator.image.tag }}"
+          command:
+          - jiva-operator
+          resources:
+{{ toYaml .Values.jivaOperator.resources | indent 12 }}
+          env:
+            - name: OPENEBS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "jiva-operator"
+            - name: OPENEBS_SERVICEACCOUNT_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
+            - name: OPENEBS_IO_JIVA_CONTROLLER_IMAGE
+              value: "{{ .Values.jivaOperator.controller.image.registry }}{{ .Values.jivaOperator.controller.image.repository }}:{{ .Values.jivaOperator.controller.image.tag }}"
+            - name: OPENEBS_IO_JIVA_REPLICA_IMAGE
+              value: "{{ .Values.jivaOperator.replica.image.registry }}{{ .Values.jivaOperator.replica.image.repository }}:{{ .Values.jivaOperator.replica.image.tag }}"
+            - name: OPENEBS_IO_MAYA_EXPORTER_IMAGE
+              value: "{{ .Values.jivaOperator.exporter.image.registry }}{{ .Values.jivaOperator.exporter.image.repository }}:{{ .Values.jivaOperator.exporter.image.tag }}"
+{{- if .Values.imagePullSecrets }}
+            - name: OPENEBS_IO_IMAGE_PULL_SECRETS
+              value: "{{- range $.Values.imagePullSecrets }}{{ .name }},{{- end }}"
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | nindent 8 }}
+{{- end }}
+{{- if .Values.jivaOperator.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.jivaOperator.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.jivaOperator.securityContext }}
+      securityContext:
+{{ toYaml .Values.jivaOperator.securityContext | indent 8 }}
+{{- end }}
+{{- if .Values.jivaOperator.tolerations }}
+      tolerations:
+{{ toYaml .Values.jivaOperator.tolerations | indent 8 }}
+{{- end }}

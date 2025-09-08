@@ -1,0 +1,9 @@
+{{- if .Values.csiDriver.create -}}
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: jiva.csi.openebs.io
+spec:
+  podInfoOnMount: {{ .Values.csiDriver.podInfoOnMount }}
+  attachRequired: {{ .Values.csiDriver.attachRequired }}
+{{- end }}

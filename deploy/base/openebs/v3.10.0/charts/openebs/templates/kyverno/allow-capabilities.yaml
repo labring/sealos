@@ -1,0 +1,30 @@
+{{- if .Values.rbac.kyvernoEnabled }}
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: allow-add-capabilities
+  annotations:
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Provides a list of capabilities that are allowed to be added to a container.
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+    - name: capabilities
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: >-
+          Default set of capabilities are allowed.        
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(capabilities):
+                    =(add): "*"
+{{- end }}

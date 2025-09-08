@@ -1,0 +1,188 @@
+# Default values for openebs-lvmlocalpv.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+release:
+  version: "1.4.0"
+
+imagePullSecrets:
+# - name: "image-pull-secret"
+
+# enable storage capacity tracking feature
+# Ref: https://kubernetes:io/docs/concepts/storage/storage-capacity
+storageCapacity: true
+
+rbac:
+  # rbac.pspEnabled: `true` if PodSecurityPolicy resources should be created
+  pspEnabled: false
+
+# lvmNode contains the configurables for
+# the lvm node daemonset
+lvmNode:
+  componentName: openebs-lvm-node
+  driverRegistrar:
+    name: "csi-node-driver-registrar"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-node-driver-registrar
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v2.8.0
+  updateStrategy:
+    type: RollingUpdate
+  annotations: {}
+  podAnnotations: {}
+  # This can be configured to run on various different k8s distributions like
+  # microk8s where kubelet dir is different
+  kubeletDir: "/var/lib/kubelet/"
+  resources: {}
+#    limits:
+#      cpu: 10m
+#      memory: 32Mi
+#    requests:
+#      cpu: 10m
+#      memory: 32Mi
+  ## Labels to be added to openebs-lvm node pods
+  podLabels:
+    app: openebs-lvm-node
+  nodeSelector: {}
+  tolerations: []
+  securityContext: {}
+  labels: {}
+  priorityClass:
+    create: true
+    name: lvm-localpv-csi-node-critical
+  logLevel: 5
+  # Configure kubernetes client API requests rate.
+  kubeClientRateLimiter:
+    # Configure the number of queries per second.
+    qps: 0
+    # Configure the maximum number of queries allowed after
+    # accounting for rolled over qps from previous seconds.
+    burst: 0
+
+
+# lvmController contains the configurables for
+# the lvm controller statefulset
+lvmController:
+  componentName: openebs-lvm-controller
+  replicas: 1
+  serviceName: openebs-lvm
+  logLevel: 5
+  resizer:
+    name: "csi-resizer"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-resizer
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v1.8.0
+  snapshotter:
+    name: "csi-snapshotter"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-snapshotter
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v6.2.2
+  snapshotController:
+    name: "snapshot-controller"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/snapshot-controller
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v6.2.2
+  provisioner:
+    name: "csi-provisioner"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-provisioner
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v3.5.0
+  updateStrategy:
+    type: RollingUpdate
+  annotations: {}
+  podAnnotations: {}
+  resources: {}
+#    limits:
+#      cpu: 10m
+#      memory: 32Mi
+#    requests:
+#      cpu: 10m
+#      memory: 32Mi
+  ## Labels to be added to openebs-lvm controller pods
+  podLabels:
+    name: openebs-lvm-controller
+  nodeSelector: {}
+  tolerations: []
+  securityContext: {}
+  priorityClass:
+    create: true
+    name: lvm-localpv-csi-controller-critical
+  # Configure kubernetes client API requests rate.
+  kubeClientRateLimiter:
+    # Configure the number of queries per second.
+    qps: 0
+    # Configure the maximum number of queries allowed after
+    # accounting for rolled over qps from previous seconds.
+    burst: 0
+
+# lvmPlugin is the common csi container used by the
+# controller statefulset and node daemonset
+lvmPlugin:
+  name: "openebs-lvm-plugin"
+  image:
+    # Make sure that registry name end with a '/'.
+    # For example : registry.k8s.io/ is a correct value here and quay.io is incorrect
+    registry:
+    repository: openebs/lvm-driver
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 1.4.0
+  ioLimits:
+    enabled: false
+    containerRuntime: containerd
+    readIopsPerGB: ""
+    writeIopsPerGB: ""
+  # The TCP port number used for exposing lvm-metrics.
+  # If not set, service will not be created to expose metrics endpoint
+  # to serviceMonitor andlisten-address flag will not be set.
+  metricsPort: 9500
+  # Comma seperated list of k8s worker node topologies
+  allowedTopologies: "kubernetes.io/hostname,"
+
+role: openebs-lvm
+
+crd:
+  enableInstall: true
+  # Specify installation of the kubernetes-csi volume snapshot CRDs if your Kubernetes distribution
+  # or another storage operator already manages them.
+  volumeSnapshot: true
+
+serviceAccount:
+  lvmController:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: openebs-lvm-controller-sa
+  lvmNode:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: openebs-lvm-node-sa
+
+analytics:
+  enabled: true

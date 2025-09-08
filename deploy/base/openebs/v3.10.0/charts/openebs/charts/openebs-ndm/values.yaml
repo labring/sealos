@@ -1,0 +1,156 @@
+# Default values for ndm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+release:
+  version: "2.1.0"
+
+imagePullSecrets:
+#  - name: "image-pull-secret"
+
+ndm:
+  componentName: ndm
+  enabled: true
+  image:
+    # Make sure that registry name end with a '/'.
+    # For example : quay.io/ is a correct value here and quay.io is incorrect
+    registry:
+    repository: openebs/node-disk-manager
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 2.1.0
+  sparse:
+    path: "/var/openebs/sparse"
+    size: "10737418240"
+    count: "0"
+  updateStrategy:
+    type: RollingUpdate
+  annotations: {}
+  podAnnotations: {}
+  resources: {}
+  # limits:
+  #   cpu: 10m
+  #   memory: 32Mi
+  # requests:
+  #   cpu: 10m
+  #   memory: 32Mi
+  ## Labels to be added to ndm daemonset pods
+  podLabels:
+    name: openebs-ndm
+  nodeSelector: {}
+  tolerations: []
+  securityContext: {}
+  filters:
+    enableOsDiskExcludeFilter: true
+    osDiskExcludePaths: "/,/etc/hosts,/boot"
+    enableVendorFilter: true
+    excludeVendors: "CLOUDBYT,OpenEBS"
+    enablePathFilter: true
+    includePaths: ""
+    excludePaths: "loop,fd0,sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
+  probes:
+    enableSeachest: false
+    enableUdevProbe: true
+    enableSmartProbe: true
+  metaConfig:
+    nodeLabelPattern: ""
+    deviceLabelTypes: ""
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+
+ndmOperator:
+  name: operator
+  enabled: true
+  image:
+    registry:
+    repository: openebs/node-disk-operator
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 2.1.0
+  podLabels:
+    name: openebs-ndm-operator
+  annotations: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  resources: {}
+  securityContext: {}
+  tolerations: []
+  healthCheck:
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readinessCheck:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  replicas: 1
+  upgradeStrategy: Recreate
+
+ndmExporter:
+  enabled: false
+  image:
+    registry:
+    repository: openebs/node-disk-exporter
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 2.1.0
+  nodeExporter:
+    name: node-exporter
+    podLabels:
+      name: openebs-ndm-node-exporter
+    # The TCP port number used for exposing ndm-node-exporter metrics.
+    # If not set, service will not be created to expose metrics endpoint to serviceMonitor
+    # and listen-port flag will not be set and container port will be empty.
+    metricsPort: 9101
+    nodeSelector: {}
+    tolerations: []
+  clusterExporter:
+    name: cluster-exporter
+    podLabels:
+      name: openebs-ndm-cluster-exporter
+    # The TCP port number used for exposing ndm-cluster-exporter metrics.
+    # If not set, service will not be created to expose metrics endpoint to serviceMonitor
+    # and listen-port flag will not be set and container port will be empty.
+    metricsPort: 9100
+    nodeSelector: {}
+    tolerations: []
+
+helperPod:
+  image:
+    registry: ""
+    repository: openebs/linux-utils
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 3.4.0
+
+crd:
+  enableInstall: false
+
+featureGates:
+  enabled: true
+  GPTBasedUUID:
+    enabled: true
+    featureGateFlag: "GPTBasedUUID"
+  APIService:
+    enabled: false
+    featureGateFlag: "APIService"
+    address: "0.0.0.0:9115"
+  UseOSDisk:
+    enabled: false
+    featureGateFlag: "UseOSDisk"
+  ChangeDetection:
+    enabled: false
+    featureGateFlag: "ChangeDetection"
+  PartitionTableUUID:
+    enabled: false
+    featureGateFlag: "PartitionTableUUID"
+
+# Directory used by the OpenEBS to store debug information and so forth
+# that are generated in the course of running OpenEBS containers.
+varDirectoryPath:
+  baseDir: "/var/openebs"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: openebs-ndm

@@ -1,0 +1,11 @@
+The OpenEBS cstor has been installed check its status by running:
+$ kubectl get pods -n {{ .Release.Namespace }}
+
+Use `kubectl get bd -n {{ .Release.Namespace }} ` to see the list of 
+blockdevices attached to the Kubernetes cluster nodes.
+
+For more information, visit our Slack at https://openebs.io/community or view 
+the documentation online at http://docs.openebs.io/.
+
+For more information related to cstor pool and volume provisioning, visit
+https://github.com/openebs/cstor-operators/tree/master/docs .

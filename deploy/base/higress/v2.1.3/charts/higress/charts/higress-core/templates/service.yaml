@@ -1,0 +1,51 @@
+{{- if not (eq .Values.gateway.service.type "None") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gateway.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+    {{- with .Values.gateway.networkGateway }}
+    topology.istio.io/network: "{{.}}"
+    {{- end }}
+  annotations:
+    {{- merge (deepCopy .Values.gateway.service.annotations) .Values.gateway.annotations | toYaml | nindent 4 }}
+spec:
+{{- with .Values.gateway.service.loadBalancerIP }}
+  loadBalancerIP: "{{ . }}"
+{{- end }}
+{{- with .Values.gateway.service.loadBalancerClass }}
+  loadBalancerClass: "{{ . }}"
+{{- end }}
+{{- with .Values.gateway.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.gateway.service.externalTrafficPolicy }}
+  externalTrafficPolicy: "{{ . }}"
+{{- end }}
+{{- with .Values.gateway.service.loadBalancerClass}}
+  loadBalancerClass: "{{ . }}"
+{{- end }}
+  type: {{ .Values.gateway.service.type }}
+  ports:
+{{- if .Values.gateway.networkGateway }}
+  - name: status-port
+    port: 15021
+    targetPort: 15021
+  - name: tls
+    port: 15443
+    targetPort: 15443
+  - name: tls-istiod
+    port: 15012
+    targetPort: 15012
+  - name: tls-webhook
+    port: 15017
+    targetPort: 15017
+{{- else }}
+{{ .Values.gateway.service.ports | toYaml | indent 4 }}
+{{- end }}
+  selector:
+    {{- include "gateway.selectorLabels" . | nindent 4 }}
+{{- end }}

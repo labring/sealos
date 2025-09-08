@@ -1,0 +1,250 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: upgradetasks.openebs.io
+spec:
+  group: openebs.io
+  names:
+    kind: UpgradeTask
+    listKind: UpgradeTaskList
+    plural: upgradetasks
+    singular: upgradetask
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: UpgradeTask represents an upgrade task
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec i.e. specifications of the UpgradeTask
+            properties:
+              cstorPool:
+                description: CStorPool contains the details of the cstor pool to be
+                  upgraded
+                properties:
+                  options:
+                    description: Options can be used to change the default behaviour
+                      of upgrade
+                    properties:
+                      ignoreStepsOnError:
+                        description: IgnoreStepsOnError allows to ignore steps which
+                          failed
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  poolName:
+                    description: PoolName contains the name of the cstor pool to be
+                      upgraded
+                    type: string
+                type: object
+              cstorPoolCluster:
+                description: CStorPoolCluster contains the details of the storage
+                  pool claim to be upgraded
+                properties:
+                  cspcName:
+                    description: CSPCName contains the name of the storage pool claim
+                      to be upgraded
+                    type: string
+                  options:
+                    description: Options can be used to change the default behaviour
+                      of upgrade
+                    properties:
+                      ignoreStepsOnError:
+                        description: IgnoreStepsOnError allows to ignore steps which
+                          failed
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                type: object
+              cstorPoolInstance:
+                description: CStorPoolInstance contains the details of the cstor pool
+                  to be upgraded
+                properties:
+                  cspiName:
+                    description: CSPCName contains the name of the storage pool claim
+                      to be upgraded
+                    type: string
+                  options:
+                    description: Options can be used to change the default behaviour
+                      of upgrade
+                    properties:
+                      ignoreStepsOnError:
+                        description: IgnoreStepsOnError allows to ignore steps which
+                          failed
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                type: object
+              cstorVolume:
+                description: CStorVolume contains the details of the cstor volume
+                  to be upgraded
+                properties:
+                  options:
+                    description: Options can be used to change the default behaviour
+                      of upgrade
+                    properties:
+                      ignoreStepsOnError:
+                        description: IgnoreStepsOnError allows to ignore steps which
+                          failed
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  pvName:
+                    description: PVName contains the name of the pv associated with
+                      the cstor volume
+                    type: string
+                type: object
+              fromVersion:
+                description: FromVersion is the current version of the resource.
+                type: string
+              imagePrefix:
+                description: ImagePrefix contains the url prefix of the image url.
+                  This field is optional. If not present upgrade takes the previously
+                  present ImagePrefix.
+                type: string
+              imageTag:
+                description: ImageTag contains the customized tag for ToVersion if
+                  any. This field is optional. If not present upgrade takes the ToVersion
+                  as the ImageTag
+                type: string
+              jivaVolume:
+                description: JivaVolume contains the details of the jiva volume to
+                  be upgraded
+                properties:
+                  options:
+                    description: Options can be used to change the default behaviour
+                      of upgrade
+                    properties:
+                      ignoreStepsOnError:
+                        description: IgnoreStepsOnError allows to ignore steps which
+                          failed
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  pvName:
+                    description: PVName contains the name of the pv associated with
+                      the jiva volume
+                    type: string
+                type: object
+              options:
+                description: Options contains the optional flags that can be passed
+                  during upgrade.
+                properties:
+                  timeout:
+                    description: Timeout is maximum seconds to wait at any given step
+                      in the upgrade
+                    type: integer
+                type: object
+              storagePoolClaim:
+                description: StoragePoolClaim contains the details of the storage
+                  pool claim to be upgraded
+                properties:
+                  options:
+                    description: Options can be used to change the default behaviour
+                      of upgrade
+                    properties:
+                      ignoreStepsOnError:
+                        description: IgnoreStepsOnError allows to ignore steps which
+                          failed
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  spcName:
+                    description: SPCName contains the name of the storage pool claim
+                      to be upgraded
+                    type: string
+                type: object
+              toVersion:
+                description: ToVersion is the upgraded version of the resource. It
+                  should be same as the version of control plane components version.
+                type: string
+            required:
+            - fromVersion
+            - toVersion
+            type: object
+          status:
+            description: Status of UpgradeTask
+            properties:
+              completedTime:
+                description: CompletedTime of Upgrade
+                format: date-time
+                nullable: true
+                type: string
+              phase:
+                description: Phase indicates if a upgradeTask is started, success
+                  or errored
+                type: string
+              retries:
+                description: Retries is the number of times the job attempted to upgrade
+                  the resource
+                type: integer
+              startTime:
+                description: StartTime of Upgrade
+                format: date-time
+                nullable: true
+                type: string
+              upgradeDetailedStatuses:
+                description: UpgradeDetailedStatuses contains the list of statuses
+                  of each step
+                items:
+                  description: UpgradeDetailedStatuses represents the latest available
+                    observations of a UpgradeTask current state.
+                  properties:
+                    lastUpdatedAt:
+                      description: LastUpdatedTime of a UpgradeStep
+                      format: date-time
+                      nullable: true
+                      type: string
+                    message:
+                      description: A human-readable message indicating details about
+                        why the upgradeStep is in this state
+                      type: string
+                    phase:
+                      description: Phase indicates if the UpgradeStep is waiting,
+                        errored or completed.
+                      type: string
+                    reason:
+                      description: Reason is a brief CamelCase string that describes
+                        any failure and is meant for machine parsing and tidy display
+                        in the CLI
+                      type: string
+                    startTime:
+                      description: StartTime of a UpgradeStep
+                      format: date-time
+                      nullable: true
+                      type: string
+                    step:
+                      description: UpgradeStep is the current step being performed
+                        for a particular resource upgrade
+                      type: string
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+---

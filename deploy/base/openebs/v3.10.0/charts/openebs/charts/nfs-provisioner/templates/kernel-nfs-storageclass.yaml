@@ -1,0 +1,65 @@
+---
+# Storage classes for OpenEBS NFS Dynamic PV
+{{- if .Values.nfsStorageClass.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.nfsStorageClass.name }}
+  annotations:
+    openebs.io/cas-type: nfsrwx
+    cas.openebs.io/config: |
+      - name: NFSServerType
+        value: {{ .Values.nfsStorageClass.nfsServerType }}
+{{- if .Values.nfsStorageClass.backendStorageClass }}
+      - name: BackendStorageClass
+        value: {{ .Values.nfsStorageClass.backendStorageClass }}
+{{- end }}
+{{- if .Values.nfsStorageClass.customServerConfig }}
+      - name: CustomServerConfig
+        value: {{ .Values.nfsStorageClass.customServerConfig }}
+{{- end }}
+{{- if .Values.nfsStorageClass.leaseTime }}
+      - name: LeaseTime
+        value: {{ .Values.nfsStorageClass.leaseTime }}
+{{- end }}
+{{- if .Values.nfsStorageClass.graceTime }}
+      - name: GraceTime
+        value: {{ .Values.nfsStorageClass.graceTime }}
+{{- end }}
+{{- if .Values.nfsStorageClass.nfsServerResources }}
+{{- if .Values.nfsStorageClass.nfsServerResources.requests }}
+      - name: NFSServerResourceRequests
+        value: |-
+{{ toYaml .Values.nfsStorageClass.nfsServerResources.requests | indent 10 }}
+{{- end }}
+{{- if .Values.nfsStorageClass.nfsServerResources.limits }}
+      - name: NFSServerResourceLimits
+        value: |-
+{{ toYaml .Values.nfsStorageClass.nfsServerResources.limits | indent 10 }}
+{{- end }}
+{{- end }}
+{{- if .Values.nfsStorageClass.filePermissions }}
+      - name: FilePermissions
+        data:
+{{- if .Values.nfsStorageClass.filePermissions.UID }}
+          UID: {{ .Values.nfsStorageClass.filePermissions.UID | quote }}
+{{- end }}
+{{- if .Values.nfsStorageClass.filePermissions.GID }}
+          GID: {{ .Values.nfsStorageClass.filePermissions.GID | quote }}
+{{- end }}
+{{- if .Values.nfsStorageClass.filePermissions.mode }}
+          mode: {{ .Values.nfsStorageClass.filePermissions.mode | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.nfsStorageClass.isDefaultClass }}
+    storageclass.kubernetes.io/is-default-class: "true"
+{{- end }}
+provisioner: openebs.io/nfsrwx
+reclaimPolicy: {{ .Values.nfsStorageClass.reclaimPolicy }}
+{{- if .Values.nfsStorageClass.mountOptions }}
+mountOptions:
+  {{- range .Values.nfsStorageClass.mountOptions }}
+  - {{ . }}
+  {{- end }}
+{{- end }}
+{{- end }}

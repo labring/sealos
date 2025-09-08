@@ -1,0 +1,54 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if and .Values.ndm.enabled .Values.ndmExporter.enabled }}
+{{- $ndmValues := index .Values "openebs-ndm" }}
+{{- if not $ndmValues.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "openebs.ndm-node-exporter.fullname" . }}
+  labels:
+    {{- include "openebs.ndm-node-exporter.labels" . | nindent 4 }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "openebs.ndm-node-exporter.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "openebs.ndm-node-exporter.labels" . | nindent 8 }}
+        {{- with .Values.ndmExporter.nodeExporter.podLabels }}
+        {{ toYaml . }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "openebs.serviceAccountName" . }}
+      containers:
+        - name: {{ template "openebs.ndm-node-exporter.fullname" . }}
+          image: "{{ .Values.ndmExporter.image.registry }}{{ .Values.ndmExporter.image.repository }}:{{ .Values.ndmExporter.image.tag }}"
+          command:
+            - /usr/local/bin/exporter
+          args:
+            - "start"
+            - "--mode=node"
+            - "--port=$(METRICS_LISTEN_PORT)"
+            - "--metrics=/metrics"
+          ports:
+            - containerPort: {{ .Values.ndmExporter.nodeExporter.metricsPort }}
+              protocol: TCP
+              name: metrics
+          imagePullPolicy: {{ .Values.ndmExporter.image.pullPolicy }}
+          securityContext:
+            privileged: true
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if .Values.ndmExporter.nodeExporter.metricsPort }}
+            - name: METRICS_LISTEN_PORT
+              value: :{{ .Values.ndmExporter.nodeExporter.metricsPort }}
+            {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

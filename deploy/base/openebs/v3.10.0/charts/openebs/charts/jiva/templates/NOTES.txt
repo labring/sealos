@@ -1,0 +1,8 @@
+The OpenEBS jiva has been installed check its status by running:
+$ kubectl get pods -n {{ .Release.Namespace }}
+
+For more information, visit our Slack at https://openebs.io/community or view 
+the documentation online at http://docs.openebs.io/.
+
+For more information related to jiva volume provisioning, visit
+https://github.com/openebs/jiva-operator/tree/master/docs .

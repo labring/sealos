@@ -1,0 +1,117 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: migrationtasks.openebs.io
+spec:
+  group: openebs.io
+  names:
+    kind: MigrationTask
+    listKind: MigrationTaskList
+    plural: migrationtasks
+    shortNames:
+      - mtask
+    singular: migrationtask
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: MigrationTask represents an migration task
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: Spec i.e. specifications of the MigrationTask
+              properties:
+                cstorPool:
+                  description: MigrateCStorPool contains the details of the cstor pool
+                    to be migrated
+                  properties:
+                    rename:
+                      description: If a CSPC with the same name as SPC already exists
+                        then we can rename SPC during migration using Rename
+                      type: string
+                    spcName:
+                      description: SPCName contains the name of the storage pool claim
+                        to be migrated
+                      type: string
+                  type: object
+                cstorVolume:
+                  description: MigrateCStorVolume contains the details of the cstor
+                    volume to be migrated
+                  properties:
+                    pvName:
+                      description: PVName contains the name of the pv associated with
+                        the cstor volume to be migrated
+                      type: string
+                  type: object
+              type: object
+            status:
+              description: Status of MigrationTask
+              properties:
+                completedTime:
+                  description: CompletedTime of Migrate
+                  format: date-time
+                  type: string
+                migrationDetailedStatuses:
+                  description: MigrationDetailedStatuses contains the list of statuses
+                    of each step
+                  items:
+                    description: MigrationDetailedStatuses represents the latest available
+                      observations of a MigrationTask current state.
+                    properties:
+                      lastUpdatedAt:
+                        description: LastUpdatedTime of a MigrateStep
+                        format: date-time
+                        type: string
+                      message:
+                        description: A human-readable message indicating details about
+                          why the migrationStep is in this state
+                        type: string
+                      phase:
+                        description: Phase indicates if the MigrateStep is waiting,
+                          errored or completed.
+                        type: string
+                      reason:
+                        description: Reason is a brief CamelCase string that describes
+                          any failure and is meant for machine parsing and tidy display
+                          in the CLI
+                        type: string
+                      startTime:
+                        description: StartTime of a MigrateStep
+                        format: date-time
+                        type: string
+                      step:
+                        type: string
+                    type: object
+                  type: array
+                phase:
+                  description: Phase indicates if a migrationTask is started, success
+                    or errored
+                  type: string
+                retries:
+                  description: Retries is the number of times the job attempted to migration
+                    the resource
+                  type: integer
+                startTime:
+                  description: StartTime of Migrate
+                  format: date-time
+                  type: string
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true

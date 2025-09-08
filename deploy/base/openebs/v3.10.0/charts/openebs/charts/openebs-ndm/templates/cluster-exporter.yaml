@@ -1,0 +1,60 @@
+{{- if .Values.ndmExporter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "openebs-ndm.cluster-exporter.fullname" . }}
+  labels:
+    {{- include "openebs-ndm.cluster-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "openebs-ndm.cluster-exporter.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "openebs-ndm.cluster-exporter.labels" . | nindent 8 }}
+        {{- with .Values.ndmExporter.clusterExporter.podLabels }}
+        {{ toYaml . }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "openebs-ndm.serviceAccountName" . }}
+      containers:
+        - name: {{ template "openebs-ndm.cluster-exporter.fullname" . }}
+          image: "{{ .Values.ndmExporter.image.registry }}{{ .Values.ndmExporter.image.repository }}:{{ .Values.ndmExporter.image.tag }}"
+          command:
+            - /usr/local/bin/exporter
+          args:
+            - "start"
+            - "--mode=cluster"
+            - "--port=$(METRICS_LISTEN_PORT)"
+            - "--metrics=/metrics"
+          ports:
+            - containerPort: {{ .Values.ndmExporter.clusterExporter.metricsPort }}
+              protocol: TCP
+              name: metrics
+          imagePullPolicy: {{ .Values.ndmExporter.image.pullPolicy }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if .Values.ndmExporter.clusterExporter.metricsPort }}
+            - name: METRICS_LISTEN_PORT
+              value: :{{ .Values.ndmExporter.clusterExporter.metricsPort }}
+            {{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+{{- if .Values.ndmExporter.clusterExporter.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.ndmExporter.clusterExporter.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.ndmExporter.clusterExporter.tolerations }}
+      tolerations:
+{{ toYaml .Values.ndmExporter.clusterExporter.tolerations | indent 8 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "redis.name" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  redis-stack.conf: |
+    {{- if .Values.redis.password }}
+    requirepass {{ .Values.redis.password }}
+    {{- end }}

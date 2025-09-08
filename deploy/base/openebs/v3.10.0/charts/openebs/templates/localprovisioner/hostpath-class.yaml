@@ -1,0 +1,49 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if .Values.localprovisioner.enabled }}
+{{- $localpvprovisionerValues := index .Values "localpv-provisioner" }}
+{{- if not $localpvprovisionerValues.enabled }}
+# The second operand in the AND operation can be removed
+# when enableHostpathClass is deprecated.
+{{- if and .Values.localprovisioner.hostpathClass.enabled .Values.localprovisioner.enableHostpathClass }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.localprovisioner.hostpathClass.name }}
+  annotations:
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: "hostpath"
+{{- if or .Values.localprovisioner.basePath .Values.localprovisioner.hostpathClass.basePath }}
+      - name: BasePath
+        value: {{ .Values.localprovisioner.hostpathClass.basePath | default .Values.localprovisioner.basePath | quote }}
+{{- end }}
+{{- if .Values.localprovisioner.hostpathClass.nodeAffinityLabels }}
+      - name: NodeAffinityLabels
+        list:
+{{ toYaml .Values.localprovisioner.hostpathClass.nodeAffinityLabels | indent 10 }}
+{{- end }}
+{{- if .Values.localprovisioner.hostpathClass.xfsQuota.enabled }}
+      - name: XFSQuota
+        enabled: "{{ .Values.localprovisioner.hostpathClass.xfsQuota.enabled }}"
+        data:
+          softLimitGrace: "{{ .Values.localprovisioner.hostpathClass.xfsQuota.softLimitGrace }}"
+          hardLimitGrace: "{{ .Values.localprovisioner.hostpathClass.xfsQuota.hardLimitGrace }}"
+{{- end }}
+{{- if .Values.localprovisioner.hostpathClass.ext4Quota.enabled }}
+      - name: EXT4Quota
+        enabled: "{{ .Values.localprovisioner.hostpathClass.ext4Quota.enabled }}"
+        data:
+          softLimitGrace: "{{ .Values.localprovisioner.hostpathClass.ext4Quota.softLimitGrace }}"
+          hardLimitGrace: "{{ .Values.localprovisioner.hostpathClass.ext4Quota.hardLimitGrace }}"
+{{- end }}
+{{- if .Values.localprovisioner.hostpathClass.isDefaultClass }}
+    storageclass.kubernetes.io/is-default-class: "true"
+{{- end }}
+provisioner: openebs.io/local
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: {{ .Values.localprovisioner.hostpathClass.reclaimPolicy }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

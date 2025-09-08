@@ -1,0 +1,150 @@
+# Default values for nfspv-provisioner.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+rbac:
+  # rbac.create: `true` if rbac resources should be created
+  create: true
+  # rbac.pspEnabled: `true` if PodSecurityPolicy resources should be created
+  pspEnabled: false
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+imagePullSecrets:
+# - name: image-pull-secret
+
+fullnameOverride: ""
+nameOverride: ""
+
+nfsProvisioner:
+  name: nfs-provisioner
+  enabled: true
+  annotations: {}
+  podLabels:
+    name: openebs-nfs-provisioner
+  image:
+    # Make sure that registry name end with a '/'.
+    # For example : quay.io/ is a correct value here and quay.io is incorrect
+    registry:
+    repository: openebs/provisioner-nfs
+    tag:
+    pullPolicy: IfNotPresent
+  enableLeaderElection: "true"
+  # Provide a switch to turn off the function of clearing stale pvc to avoid
+  # garbage collecting an NFS backend PVC if the NFS PVC is deleted.
+  enableGarbageCollection: true
+  # Specify image name of nfs-server-alpine used for creating nfs server deployment
+  # If not mentioned, default value openebs/nfs-server-alpine:tag will be used where
+  # the tag will be the same as a provisioner-nfs image tag
+  nfsServerAlpineImage:
+    registry:
+    repository: openebs/nfs-server-alpine
+    tag:
+  resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  #   ## Normal cases CPU and memory usage are around ~10 millicores and
+  #   ## memory usage is around ~16Mb(after provisioing 70 volumes)
+  #   requests:
+  #     cpu: 50m
+  #     memory: 50M
+  #   ## During provisioning(large no.of pvcs at a time) time CPU and memory usage
+  #   ## are around ~67 millicores(6.7% of cpu) and memory usage is around ~34Mb
+  #   limits:
+  #     cpu: 200m
+  #     memory: 200Mi
+  # If set to false, containers created by the nfs provisioner will run without extra privileges.
+  privileged: true
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  # namespace in which nfs server objects should be created
+  # By default, nfs provisioner will create these resources in nfs provisioner's namespace
+  # nfsServerNamespace: openebs
+  #
+  # nfsServerNodeAffinity defines the node affinity rules to place NFS Server
+  # instance. It accepts affinity rules in multiple ways:
+  # - If NFS Server needs to be placed on storage nodes as well as only in
+  #   zone-1 & zone-2 then value can be: "kubernetes.io/zone:[zone-1,zone-2],kubernetes.io/storage-node".
+  # - If NFS Server needs to be placed only on storage nodes & nfs nodes then
+  #   value can be: "kubernetes.io/storage-node,kubernetes.io/nfs-node"
+  # nfsServerNodeAffinity: "kubernetes.io/storage-node,kubernetes.io/nfs-node"
+  #
+  # nfsHookConfigMap represent the ConfigMap name to be used for hook configuration.
+  # By default, nfsHookConfigMap is set to empty.
+  # If nfsHookConfigMap is set then chart will mount the configmap using volume, named `hook-config`
+  nfsHookConfigMap: ""
+
+nfsStorageClass:
+  name: openebs-kernel-nfs
+  # If true, enables creation of the openebs-kernel-nfs StorageClass
+  enabled: true
+  reclaimPolicy: Delete
+  nfsServerType: kernel
+  isDefaultClass: false
+  backendStorageClass: ""
+  # NFS Mount Options to be applied to the storage class.
+  # For more information: https://linux.die.net/man/5/nfs
+  mountOptions: []
+  # The customServerConfig key passes a custom /etc/exports configuration to
+  # the NFS servers created using this StorageClass.
+  # The configuration settings are not validated, and can lead to security
+  # vulnerability.
+  # USING THIS IS NOT RECOMMENDED
+  customServerConfig: ""
+  # leaseTime defines the renewal period(in seconds) for client state
+  leaseTime:
+  # graceTime defines the recovery period(in seconds) to reclaim locks
+  # setting graceTime and leaseTime lower will reduce the io pause time during nfs server restart
+  graceTime:
+  # filePermissions defines the file ownership and mode specifications
+  # for the NFS server's shared filesystem volume.
+  # File permission changes are applied recursively if the root of the
+  # volume's filesystem does not match the specified value.
+  # For more info: https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/tutorial/file-permissions.md
+  filePermissions: {}
+  # The UID value is used to set the user-owner of NFS shared directory. Only valid
+  # UIDs are accepted.
+  # The ownership change is carried out recursively down the directory tree.
+  #  UID: ""
+  # The GID value is used to set the group-owner of NFS shared directory. Only valid
+  # GIDs are accepted.
+  # The ownership change is carried out recursively down the directory tree.
+  #  GID: ""
+  # The mode value is used to set the file mode of NFS shared directory. Both octals (e.g. 0744)
+  # and incremental/decremental (e.g. "u+r", "o+rw") values are accepted.
+  # The file mode change is carried out recursively down the directory tree.
+  #  mode: ""
+
+  # nfsServerResources defines the NFS server resource requests and limits
+  # Usually, below request and limits are good enough for NFS Server to work
+  # seamlessly(IOs will be taken care by kerner space process i.e nfsd).
+  nfsServerResources: {}
+  #  requests:
+  #    memory: 50Mi
+  #    cpu: 50m
+  #  limits:
+  #    memory: 100Mi
+  #    cpu: 100m
+
+nfsServer:
+  useClusterIP: "true"
+  imagePullSecret: ""
+
+analytics:
+  enabled: "true"

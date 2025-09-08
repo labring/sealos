@@ -1,0 +1,40 @@
+{{- if .Values.hostpathClass.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ tpl (.Values.hostpathClass.name) .}}
+  annotations:
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: "hostpath"
+{{- if or .Values.localpv.basePath .Values.hostpathClass.basePath }}
+      - name: BasePath
+        value: {{ tpl (.Values.hostpathClass.basePath | default .Values.localpv.basePath | quote) . }}
+{{- end }}
+{{- if .Values.hostpathClass.nodeAffinityLabels }}
+      - name: NodeAffinityLabels
+        list:
+{{ toYaml .Values.hostpathClass.nodeAffinityLabels | indent 10 }}
+{{- end }}
+{{- if .Values.hostpathClass.xfsQuota.enabled }}
+      - name: XFSQuota
+        enabled: "{{ .Values.hostpathClass.xfsQuota.enabled }}"
+        data:
+          softLimitGrace: "{{ .Values.hostpathClass.xfsQuota.softLimitGrace }}"
+          hardLimitGrace: "{{ .Values.hostpathClass.xfsQuota.hardLimitGrace }}"
+{{- end }}
+{{- if .Values.hostpathClass.ext4Quota.enabled }}
+      - name: EXT4Quota
+        enabled: "{{ .Values.hostpathClass.ext4Quota.enabled }}"
+        data:
+          softLimitGrace: "{{ .Values.hostpathClass.ext4Quota.softLimitGrace }}"
+          hardLimitGrace: "{{ .Values.hostpathClass.ext4Quota.hardLimitGrace }}"
+{{- end }}
+{{- if .Values.hostpathClass.isDefaultClass }}
+    storageclass.kubernetes.io/is-default-class: "true"
+{{- end }}
+provisioner: openebs.io/local
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: {{ .Values.hostpathClass.reclaimPolicy }}
+{{- end }}

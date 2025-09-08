@@ -1,0 +1,40 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if .Values.localprovisioner.enabled }}
+{{- $localpvprovisionerValues := index .Values "localpv-provisioner" }}
+{{- if not $localpvprovisionerValues.enabled }}
+# The second operand in the AND operation can be removed
+# when enableDeviceClass is deprecated.
+{{- if and .Values.localprovisioner.deviceClass.enabled .Values.localprovisioner.enableDeviceClass }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.localprovisioner.deviceClass.name }}
+  annotations:
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: "device"
+{{- if .Values.localprovisioner.deviceClass.fsType }}
+      - name: FSType
+        value: {{ .Values.localprovisioner.deviceClass.fsType | quote }}
+{{- end }}
+{{- if .Values.localprovisioner.deviceClass.blockDeviceSelectors }}
+      - name: BlockDeviceSelectors
+        data:
+{{ toYaml .Values.localprovisioner.deviceClass.blockDeviceSelectors | indent 10 }}
+{{- end }}
+{{- if .Values.localprovisioner.deviceClass.nodeAffinityLabels }}
+      - name: NodeAffinityLabels
+        list:
+{{ toYaml .Values.localprovisioner.deviceClass.nodeAffinityLabels | indent 10 }}
+{{- end }}
+{{- if .Values.localprovisioner.deviceClass.isDefaultClass }}
+    storageclass.kubernetes.io/is-default-class: "true"
+{{- end }}
+provisioner: openebs.io/local
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: {{ .Values.localprovisioner.deviceClass.reclaimPolicy }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

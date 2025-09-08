@@ -1,0 +1,19 @@
+{{- if .Values.csiController.priorityClass.create }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ template "cstor.csiController.priorityClassName" . }}
+value: {{ .Values.csiController.priorityClass.value }}
+globalDefault: false
+description: "This priority class should be used for the CStor CSI driver controller deployment only."
+{{- end }}
+---
+{{- if .Values.csiNode.priorityClass.create }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ template "cstor.csiNode.priorityClassName" . }}
+value: {{ .Values.csiNode.priorityClass.value }}
+globalDefault: false
+description: "This priority class should be used for the CStor CSI driver node deployment only."
+{{- end }}

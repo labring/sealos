@@ -1,1 +1,3 @@
-FROM docker.io/labring/openebs:v3.10.0
+FROM scratch
+COPY . .
+CMD ["bash entrypoint.sh"]

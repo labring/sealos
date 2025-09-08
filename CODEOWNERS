@@ -6,7 +6,7 @@
 /frontend/ @labring/sealos-frontend-reviewer
 
 /controllers/ @labring/sealos-backend-reviewer
-/deploy/ @labring/sealos-backend-reviewer
+/deploy/ @labring/sealos-ci-reviewer
 /service/ @labring/sealos-backend-reviewer
 /webhooks/ @labring/sealos-backend-reviewer
 

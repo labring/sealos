@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 kubectl apply -f manifests/deploy.yaml -f manifests/rbac.yaml -f manifests/ingress.yaml
 

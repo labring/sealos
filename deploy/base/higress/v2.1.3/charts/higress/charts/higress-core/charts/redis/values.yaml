@@ -1,0 +1,48 @@
+# Default values for redis.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  # -- Specify the image registry and pull policy
+  hub: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+  # -- Specify image pull policy if default behavior isn't desired.
+  # Default behavior: latest images will be Always else IfNotPresent.
+  imagePullPolicy: ""
+  # -- Specify the image pull secrets
+  imagePullSecrets: []
+
+redis:
+  # -- Specify the name
+  name: redis-stack-server
+  # -- Specify the image
+  image: "redis-stack-server"
+  # -- Specify the tag
+  tag: "7.4.0-v3"
+  # -- Specify the number of replicas
+  replicas: 1
+  # -- Specify the password, if not set, no password is used
+  password: ""
+  # -- Service parameters
+  service:
+    # -- Exporter service type
+    type: ClusterIP
+    # -- Exporter service port
+    port: 6379
+  # -- Specify the resources
+  resources: {}
+  # -- NodeSelector Node labels for Redis
+  nodeSelector: {}
+  # -- Tolerations for Redis
+  tolerations: []
+  # -- Affinity for Redis
+  affinity: {}
+  persistence:
+    # -- Enable persistence on Redis
+    enabled: false
+    # -- If defined, storageClassName: <storageClass>
+    # -- If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
+    storageClass: ""
+    # -- Persistent Volume access modes
+    accessModes:
+      - ReadWriteOnce
+    # -- Persistent Volume size
+    size: 1Gi

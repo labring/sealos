@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 kubectl create cm -n account-system region-info --from-file=manifests/config.json || true
 

@@ -1,0 +1,45 @@
+{{- if .Values.gateway.metrics.enabled }}
+{{- include "gateway.podMonitor.gvk" . }}
+metadata:
+  name: {{ printf "%s-metrics" (include "gateway.name" .) | trunc 63 | trimSuffix "-" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4}}
+  annotations:
+    {{- .Values.gateway.annotations | toYaml | nindent 4 }}
+spec:
+  jobLabel: "app.kubernetes.io/name"
+  selector:
+    matchLabels:
+      {{- include "gateway.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  podMetricsEndpoints:
+    - port: istio-prom
+      path: /stats/prometheus
+      {{- if .Values.gateway.metrics.interval }}
+      interval: {{ .Values.gateway.metrics.interval }}
+      {{- end }}
+      {{- if .Values.gateway.metrics.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.gateway.metrics.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.gateway.metrics.honorLabels }}
+      honorLabels: {{ .Values.gateway.metrics.honorLabels }}
+      {{- end }}
+      {{- if .Values.gateway.metrics.metricRelabelings }}
+      metricRelabelings: {{ toYaml .Values.gateway.metrics.metricRelabelings | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gateway.metrics.relabelings }}
+      relabelings: {{ toYaml .Values.gateway.metrics.relabelings | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gateway.metrics.metricRelabelConfigs }}
+      metricRelabelings: {{ toYaml .Values.gateway.metrics.metricRelabelConfigs | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gateway.metrics.relabelConfigs }}
+      relabelings: {{ toYaml .Values.gateway.metrics.relabelConfigs | nindent 8 }}
+      {{- end }}
+      {{- if $.Values.gateway.metrics.rawSpec }}
+      {{- $.Values.gateway.metrics.rawSpec | toYaml | nindent 6 }}
+      {{- end }}
+{{- end }}

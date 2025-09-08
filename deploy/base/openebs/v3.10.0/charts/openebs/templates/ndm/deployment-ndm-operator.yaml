@@ -1,0 +1,93 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if .Values.ndmOperator.enabled }}
+{{- $ndmValues := index .Values "openebs-ndm" }}
+{{- if not $ndmValues.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "openebs.fullname" . }}-ndm-operator
+  labels:
+    app: {{ template "openebs.name" . }}
+    chart: {{ template "openebs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: ndm-operator
+    openebs.io/component-name: ndm-operator
+    openebs.io/version: {{ .Values.release.version }}
+    name: ndm-operator
+spec:
+  replicas: {{ .Values.ndmOperator.replicas }}
+  strategy:
+    type: "Recreate"
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      app: {{ template "openebs.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "openebs.name" . }}
+        release: {{ .Release.Name }}
+        component: ndm-operator
+        name: ndm-operator
+        openebs.io/component-name: ndm-operator
+        openebs.io/version: {{ .Values.release.version }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "openebs.serviceAccountName" . }}
+      containers:
+      - name: {{ template "openebs.fullname" . }}-ndm-operator
+        image: "{{ .Values.image.repository }}{{ .Values.ndmOperator.image }}:{{ .Values.ndmOperator.imageTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.ndmOperator.resources }}
+        resources:
+{{ toYaml .Values.ndmOperator.resources | trimSuffix "\n" | indent 10 }}
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8585
+          initialDelaySeconds: {{ .Values.ndmOperator.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.ndmOperator.healthCheck.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8585
+          initialDelaySeconds: {{ .Values.ndmOperator.readinessCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.ndmOperator.readinessCheck.periodSeconds }}
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        - name: OPERATOR_NAME
+          value: "node-disk-operator"
+        - name: CLEANUP_JOB_IMAGE
+          value: "{{ .Values.image.repository }}{{ .Values.helper.image }}:{{ .Values.helper.imageTag }}"
+{{- if .Values.imagePullSecrets }}
+        - name: OPENEBS_IO_IMAGE_PULL_SECRETS
+          value: "{{- range $index, $secret := .Values.imagePullSecrets}}{{if $index}},{{end}}{{ $secret.name }}{{- end}}"
+{{- end }}
+{{- if .Values.ndmOperator.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.ndmOperator.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.ndmOperator.tolerations }}
+      tolerations:
+{{ toYaml .Values.ndmOperator.tolerations | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

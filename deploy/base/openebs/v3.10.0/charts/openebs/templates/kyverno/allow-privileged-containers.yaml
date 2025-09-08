@@ -1,0 +1,30 @@
+{{- if .Values.rbac.kyvernoEnabled }}
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: allow-privileged-containers
+  annotations:
+    policies.kyverno.io/category: Pod Security Standards (Privileged)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Privileged policies only allow the OpenEBS containers to use privileged mode.
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+    - name: priviledged-containers
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: >-
+          Privileged mode is allowed. The fields spec.containers[*].securityContext.privileged
+          must be defined or set to true.
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(privileged): "true"
+{{- end }}

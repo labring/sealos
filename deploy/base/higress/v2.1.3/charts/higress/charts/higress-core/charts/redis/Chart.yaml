@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 7.4.0-v3
+description: A Helm chart for Kubernetes
+name: redis
+type: application
+version: 0.0.1

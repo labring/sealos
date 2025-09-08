@@ -1,0 +1,31 @@
+{{- if eq .Values.gateway.kind "DaemonSet" -}}
+{{- $o11y := .Values.global.o11y  }}
+{{- if eq .Values.gateway.unprivilegedPortSupported nil -}}
+  {{- $unprivilegedPortSupported := true }}
+  {{- range $index, $node := (lookup "v1" "Node" "default" "").items }}
+    {{- $kernelVersion := $node.status.nodeInfo.kernelVersion }}
+    {{- if $kernelVersion }}
+      {{- $kernelVersion = regexFind "^(\\d+\\.\\d+\\.\\d+)" $kernelVersion }}
+      {{- if and $kernelVersion (semverCompare "<4.11.0" $kernelVersion) }}
+      {{- $unprivilegedPortSupported = false }}
+      {{- end }}
+    {{- end }}
+  {{- end -}}
+  {{- $_ := set .Values.gateway "unprivilegedPortSupported" $unprivilegedPortSupported -}}
+{{- end -}}
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "gateway.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4}}
+  annotations:
+    {{- .Values.gateway.annotations | toYaml | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "gateway.selectorLabels" . | nindent 6 }}
+  {{- include "gateway.podTemplate" $ | nindent 2 -}}
+{{- end }}

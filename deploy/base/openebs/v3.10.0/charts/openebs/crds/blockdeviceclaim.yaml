@@ -1,0 +1,144 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: blockdeviceclaims.openebs.io
+spec:
+  group: openebs.io
+  names:
+    kind: BlockDeviceClaim
+    listKind: BlockDeviceClaimList
+    plural: blockdeviceclaims
+    shortNames:
+    - bdc
+    singular: blockdeviceclaim
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.blockDeviceName
+      name: BlockDeviceName
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: BlockDeviceClaim is the Schema for the blockdeviceclaims API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeviceClaimSpec defines the request details for a BlockDevice
+            properties:
+              blockDeviceName:
+                description: BlockDeviceName is the reference to the block-device backing this claim
+                type: string
+              blockDeviceNodeAttributes:
+                description: BlockDeviceNodeAttributes is the attributes on the node from which a BD should be selected for this claim. It can include nodename, failure domain etc.
+                properties:
+                  hostName:
+                    description: HostName represents the hostname of the Kubernetes node resource where the BD should be present
+                    type: string
+                  nodeName:
+                    description: NodeName represents the name of the Kubernetes node resource where the BD should be present
+                    type: string
+                type: object
+              deviceClaimDetails:
+                description: Details of the device to be claimed
+                properties:
+                  allowPartition:
+                    description: AllowPartition represents whether to claim a full block device or a device that is a partition
+                    type: boolean
+                  blockVolumeMode:
+                    description: 'BlockVolumeMode represents whether to claim a device in Block mode or Filesystem mode. These are use cases of BlockVolumeMode: 1) Not specified: VolumeMode check will not be effective 2) VolumeModeBlock: BD should not have any filesystem or mountpoint 3) VolumeModeFileSystem: BD should have a filesystem and mountpoint. If DeviceFormat is    specified then the format should match with the FSType in BD'
+                    type: string
+                  formatType:
+                    description: Format of the device required, eg:ext4, xfs
+                    type: string
+                type: object
+              deviceType:
+                description: DeviceType represents the type of drive like SSD, HDD etc.,
+                nullable: true
+                type: string
+              hostName:
+                description: Node name from where blockdevice has to be claimed. To be deprecated. Use NodeAttributes.HostName instead
+                type: string
+              resources:
+                description: Resources will help with placing claims on Capacity, IOPS
+                properties:
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum resources required. eg: if storage resource of 10G is requested minimum capacity of 10G should be available TODO for validating'
+                    type: object
+                required:
+                - requests
+                type: object
+              selector:
+                description: Selector is used to find block devices to be considered for claiming
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+            type: object
+          status:
+            description: DeviceClaimStatus defines the observed state of BlockDeviceClaim
+            properties:
+              phase:
+                description: Phase represents the current phase of the claim
+                type: string
+            required:
+            - phase
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

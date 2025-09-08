@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 kubectl create ns devbox-system || true
 

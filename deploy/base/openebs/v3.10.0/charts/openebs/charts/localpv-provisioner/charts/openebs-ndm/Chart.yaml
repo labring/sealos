@@ -1,0 +1,23 @@
+apiVersion: v2
+appVersion: 2.1.0
+description: Helm chart for OpenEBS Node Disk Manager - a Kubernetes native storage
+  device management solution. For instructions on how to install, refer to https://openebs.github.io/node-disk-manager/.
+home: http://www.openebs.io/
+icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/openebs/icon/color/openebs-icon-color.png
+keywords:
+- cloud-native-storage
+- block-storage
+- ndm
+- disk-inventory
+- storage
+maintainers:
+- email: akhil.mohan@mayadata.io
+  name: akhilerm
+- email: michaelfornaro@gmail.com
+  name: xUnholy
+- email: prateek.pandey@mayadata.io
+  name: prateekpandey14
+name: openebs-ndm
+sources:
+- https://github.com/openebs/node-disk-manager
+version: 2.1.0
