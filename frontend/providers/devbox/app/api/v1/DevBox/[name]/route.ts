@@ -486,7 +486,6 @@ async function deletePort(
         await k8sNetworkingApp.deleteNamespacedIngress(portToDelete.networkName, namespace);
       } catch (error: any) {
         if (error.response?.statusCode !== 404) {
-          console.warn(`Failed to delete ingress ${portToDelete.networkName}:`, error);
         }
       }
     }
