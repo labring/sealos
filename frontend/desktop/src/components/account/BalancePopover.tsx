@@ -106,7 +106,7 @@ export function BalancePopover({
             <Box p={'20px'} bg={getPlanBackground(subscription)} borderRadius="12px">
               <div className="flex items-center gap-2">
                 <span className="text-base font-semibold capitalize">
-                  {subscription?.PlanName ? subscription?.PlanName : 'Payg'} Plan
+                  {subscription?.PlanName ? `${subscription?.PlanName} Plan` : 'PAYG'}
                 </span>
                 {subscriptionInfo?.subscription?.Status === 'Debt' && (
                   <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
