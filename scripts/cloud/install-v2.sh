@@ -59,6 +59,7 @@ set -o noglob
 #   SEALOS_V2_NODES            - Optional. Worker node list, comma separated.
 #   SEALOS_V2_SSH_KEY              - Optional. Path to SSH private key used to connect nodes (default: $HOME/.ssh/id_rsa).
 #   SEALOS_V2_SSH_PASSWORD         - Optional. SSH password (if not using key-based auth).
+#   SEALOS_V2_REGISTRY_PASSWORD    - Optional. Password for the local image registry (default: "passw0rd").
 #
 # Debug / runtime
 #   SEALOS_V2_DEBUG                - Optional. Enable debug logs when set to "true" or "1" (default: "false").
@@ -112,6 +113,7 @@ export master_ips=${SEALOS_V2_MASTERS:-""}
 export node_ips=${SEALOS_V2_NODES:-""}
 export ssh_private_key=${SEALOS_V2_SSH_KEY:-"$HOME/.ssh/id_rsa"}
 export ssh_password=${SEALOS_V2_SSH_PASSWORD:-""}
+export registry_password=${SEALOS_V2_REGISTRY_PASSWORD:-"passw0rd"}
 export sealos_exec_debug=${SEALOS_V2_DEBUG:-"false"}
 export dry_run=${SEALOS_V2_DRY_RUN:-"false"}
 export sealos_cloud_port=${SEALOS_V2_CLOUD_PORT:-"443"}
@@ -148,6 +150,7 @@ Nodes / SSH (for cluster install)
   SEALOS_V2_NODES              Worker nodes list, comma separated
   SEALOS_V2_SSH_KEY            SSH private key path (default: $HOME/.ssh/id_rsa)
   SEALOS_V2_SSH_PASSWORD       SSH password (optional, not recommended)
+  SEALOS_V2_REGISTRY_PASSWORD  Password for local image registry (default: passw0rd)
 
 Debug / runtime
   SEALOS_V2_DEBUG              Enable debug logs when set to "true" or "1" (default: false)
@@ -392,8 +395,9 @@ spec:
         --env KUBEADM_POD_SUBNET=${pod_cidr} \
         --env KUBEADM_SERVICE_SUBNET=${service_cidr}\
         --env KUBEADM_MAX_PODS=${max_pod}\
-        --env KUBEADM_SERVICE_RANGE=${SEALOS_V2_SERVICE_NODEPORT_RANGE}
+        --env KUBEADM_SERVICE_RANGE=${SEALOS_V2_SERVICE_NODEPORT_RANGE}\
         --env criData=${containerd_storage}\
+        --env registryPassword=${registry_password}\
         --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
         --passwd=${ssh_password}"
 
