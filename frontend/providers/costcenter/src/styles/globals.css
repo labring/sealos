@@ -88,6 +88,18 @@ iframe {
   background-color: transparent;
 }
 
+/* Hide spin button in inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  display: none;
+  -webkit-appearance: none;
+  margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+input[type='number'] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
 div.rdp {
   --rdp-cell-size: 40px;
   --rdp-accent-color: black;

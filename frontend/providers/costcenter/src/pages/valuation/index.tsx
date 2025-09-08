@@ -15,6 +15,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { FC, useMemo, useState } from 'react';
 import { LucideIcon } from 'lucide-react';
+import CalculatorPanel from '@/components/valuation/CalculatorPanel';
 
 type CardItem = {
   title: string;
@@ -120,8 +121,7 @@ function Valuation() {
       <TabList mx={'24px'}>
         <Tab>{t('Subscription Plans')}</Tab>
         <Tab>{t('Price Table')}</Tab>
-        {/* // [TODO] We chose to hide this tab */}
-        {/* <Tab>{t('price_calculator')}</Tab> */}
+        <Tab>{t('price_calculator')}</Tab>
 
         <Flex ml="auto" gap={'12px'}>
           {(tabIdx === 1 || tabIdx === 2) && <RegionMenu isDisabled={false} />}
@@ -136,6 +136,9 @@ function Valuation() {
         </TabPanel>
         <TabPanel>
           <PriceTablePanel priceData={PriceTableData} />
+        </TabPanel>
+        <TabPanel>
+          <CalculatorPanel priceData={PriceTableData} />
         </TabPanel>
       </TabPanels>
     </Tabs>

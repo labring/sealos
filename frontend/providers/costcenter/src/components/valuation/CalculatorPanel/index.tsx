@@ -1,11 +1,9 @@
 import CurrencySymbol from '@/components/CurrencySymbol';
 import { PricePayload } from '../PriceTablePanel';
-import { CYCLE } from '@/constants/valuation';
 import { PRICE_CYCLE_SCALE } from '@/pages/valuation';
 import useEnvStore from '@/stores/env';
 import { formatMoney } from '@/utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
-import { Separator } from '@sealos/shadcn-ui/separator';
 import {
   Select,
   SelectContent,
@@ -19,7 +17,16 @@ import React, { useMemo, useState } from 'react';
 import CycleMenu from '../CycleMenu';
 import CalculatorNumberInput from './NumberInput';
 import CalculatorSlider from './Slider';
-import { Cpu } from 'lucide-react';
+import {
+  Boxes,
+  CircuitBoard,
+  Clock3,
+  Cpu,
+  HardDrive,
+  HdmiPort,
+  MemoryStick,
+  Network
+} from 'lucide-react';
 const rangeValToIdx = (val: number, range: number[]) => {
   if (val <= 1) return 0;
   if (val >= range[range.length - 1]) return range.length - 1;
@@ -31,7 +38,7 @@ const rangeValToIdx = (val: number, range: number[]) => {
 const CPU_RANGE = [1, 8, 16, 24, 32];
 const MEMORY_RANGE = [1, 16, 32, 64, 128];
 
-export default function CalculatorPanel({ priceData, ...props }: { priceData: PricePayload[] }) {
+export default function CalculatorPanel({ priceData }: { priceData: PricePayload[] }) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const currencyType = useEnvStore((state) => state.currency);
@@ -215,20 +222,28 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
   ]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <Card className="w-full border border-gray-200 rounded-2xl">
-        <CardHeader className="bg-gray-50 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-1 h-2.5 bg-blue-500 rounded-full" />
-            <span className="text-gray-900 font-medium">{t('resource')}</span>
+    <div>
+      <Card>
+        <CardHeader className="gap-0 p-5 bg-blue-50">
+          <CardTitle className="font-semibold text-xl flex items-center justify-center">
+            <span className="text-foreground mr-3">{t('Total Amount')}: </span>
+            <CurrencySymbol type={currencyType} className="w-5 h-5 mr-1 text-blue-600" />
+            <span className="text-blue-600">{totalAmount}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-6">
+
+        <CardHeader className="border-y gap-0 p-4 font-medium text-sm rounded-none">
+          <CardTitle>
+            <span>{t('resource')}</span>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="px-8 py-6 flex flex-col gap-9 text-sm">
           {/** cpu */}
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('CPU')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <Cpu size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('CPU')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorSlider
@@ -240,18 +255,18 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
                 unit="C"
               />
               <CalculatorNumberInput
-                unit={'C'}
                 value={config.resources.cpu.val}
                 onChange={(str, v) => updateCpuVal(v)}
                 min={0}
+                unit={'C'}
               />
             </div>
           </div>
           {/** memory */}
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('memory')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <MemoryStick size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('memory')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorSlider
@@ -273,16 +288,15 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
             </div>
           </div>
           {/* storage*/}
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('storage')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <HardDrive size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('storage')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
                 unit="G"
                 value={config.resources.storage}
-                className="w-72"
                 onChange={(str, val) => {
                   if (val < 0) return;
                   updateStorageVal(val);
@@ -292,16 +306,15 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
             </div>
           </div>
           {/*network*/}
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('network')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <Network size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('network')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
                 unit="M"
                 value={config.resources.network}
-                className="w-72"
                 onChange={(str, val) => {
                   if (val < 0) return;
                   updateNetworkVal(val);
@@ -312,18 +325,18 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
           </div>
           {/*gpu*/}
           {gpuEnabled && (
-            <div className="flex items-center h-9 gap-10">
-              <div className="flex items-center gap-1.5 min-w-[147px]">
-                <Cpu size={20} />
-                <span className="text-sm font-medium text-gray-900">{t('GPU')}</span>
+            <div className="flex items-center">
+              <div className="flex items-center gap-2 w-[15ch]">
+                <CircuitBoard size={20} strokeWidth={1.33} className="text-gray-400" />
+                <span>{t('GPU')}</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-5">
                 <Select
                   disabled={gpuData.length === 0}
                   value={config.resources.gpu.idx.toString()}
                   onValueChange={(value) => updateGpuVal(parseInt(value))}
                 >
-                  <SelectTrigger className="w-72">
+                  <SelectTrigger>
                     <SelectValue>
                       {gpuData[config.resources.gpu.idx] && (
                         <div className="flex items-center gap-2">
@@ -350,7 +363,6 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
                   unit={t('GPU Unit')}
                   value={config.resources.gpu.count}
                   disabled={gpuData.length === 0}
-                  className="w-24"
                   onChange={(str, count) => {
                     if (count < 0) return;
                     updateGpuCount(count);
@@ -360,16 +372,15 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
               </div>
             </div>
           )}
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('Port')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <HdmiPort size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('Port')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
                 unit={t('port_unit')}
                 value={config.resources.ports}
-                className="w-72"
                 onChange={(str, val) => {
                   if (val < 0) return;
                   updatePortVal(val);
@@ -379,25 +390,23 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
             </div>
           </div>
         </CardContent>
-      </Card>
-      <Card className="w-full border border-gray-200 rounded-2xl">
-        <CardHeader className="bg-gray-50 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-1 h-2.5 bg-blue-500 rounded-full" />
-            <span className="text-gray-900 font-medium">{t('usage')}</span>
+
+        <CardHeader className="border-y gap-0 p-4 font-medium text-sm rounded-none">
+          <CardTitle>
+            <span>{t('usage')}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-10">
+
+        <CardContent className="px-8 py-6 flex flex-col gap-9 text-sm">
           {/*quantity*/}
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('quantity')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <Boxes size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('quantity')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
                 value={config.usage.quantity}
-                className="w-72"
                 onChange={(str, val) => {
                   console.log(val);
                   updateQuantity(val);
@@ -407,15 +416,14 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
               />
             </div>
           </div>
-          <div className="flex items-center h-9 gap-10">
-            <div className="flex items-center gap-1.5 min-w-[147px]">
-              <Cpu size={20} />
-              <span className="text-sm font-medium text-gray-900">{t('duration')}</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 w-[15ch]">
+              <Clock3 size={20} strokeWidth={1.33} className="text-gray-400" />
+              <span>{t('duration')}</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-5">
               <CalculatorNumberInput
                 value={config.usage.duration}
-                className="w-72"
                 onChange={(str, val) => {
                   if (val < 0) return;
                   updateDuration(val);
@@ -424,7 +432,6 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
                 max={1000000}
               />
               <CycleMenu
-                className={{ trigger: 'w-24' }}
                 cycleIdx={config.usage.timeUnit}
                 setCycleIdx={(x) => {
                   updateTimeUnit(x);
@@ -434,17 +441,6 @@ export default function CalculatorPanel({ priceData, ...props }: { priceData: Pr
           </div>
         </CardContent>
       </Card>
-      <Separator className="w-full border-gray-200" />
-      <div className="flex justify-center">
-        <div className="flex items-center gap-1 mx-auto">
-          <span className="text-gray-900 text-base font-medium">{t('Total Amount')}: </span>
-          <span className="text-blue-600 font-medium text-4xl">{totalAmount}</span>
-          <CurrencySymbol type={currencyType} className="w-5 h-5" />
-          <span className="text-gray-900 text-base font-medium">
-            /{t(CYCLE[config.usage.timeUnit])}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }
