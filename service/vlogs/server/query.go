@@ -32,7 +32,14 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 
 func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	var builder strings.Builder
-	item := fmt.Sprintf(`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.Time, req.App)
+	var item string
+	if len(req.Time) != 0 {
+		fmt.Printf("进入11")
+		item = fmt.Sprintf(`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.Time, req.App)
+	} else {
+		fmt.Printf("进入22")
+		item = fmt.Sprintf(`{namespace="%s"}  app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.App)
+	}
 	builder.WriteString(item)
 	v.query += builder.String()
 	return v.query
