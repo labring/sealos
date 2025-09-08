@@ -95,22 +95,18 @@ async function waitForDevboxReady(
           );
           
           if (readyPod) {
-            console.log(`DevBox ${devboxName} is ready for port creation`);
             return true;
           }
         } catch (podError) {
-          console.log('Pod not ready yet, waiting...');
         }
       }
     } catch (error) {
-      console.log(`DevBox ${devboxName} not ready yet, waiting... (${retries + 1}/${maxRetries})`);
     }
     
     await sleep(interval);
     retries++;
   }
   
-  console.warn(`DevBox ${devboxName} not fully ready after ${maxRetries} retries, proceeding anyway`);
   return false;
 }
 
@@ -154,7 +150,6 @@ async function createNewPort(
          if (!existingPortInfo) {
            throw new Error(`Port ${port} found in service but port info is missing`);
          }
-         console.log(`Port ${port} already exists in service`);
         
       
         let networkName = '';
@@ -163,7 +158,6 @@ async function createNewPort(
         
         if (exposesPublicDomain && INGRESS_SECRET) {
           const newNetworkName = `${devboxName}-${nanoid()}`;
-          console.log(`Creating ingress for existing port ${port} with network name ${newNetworkName}`);
           const networkConfig = {
             name: devboxName,
             networks: [
@@ -209,7 +203,6 @@ async function createNewPort(
         }
       ];
       
-      console.log(`Adding port ${port} to existing service with name ${portName}`);
       await k8sCore.patchNamespacedService(
         devboxName,
         namespace,
@@ -227,7 +220,6 @@ async function createNewPort(
       );
     } else {
  
-      console.log(`Creating new service for port ${port} with name ${portName}`);
       const networkConfig = {
         name: devboxName,
         networks: [
@@ -247,7 +239,6 @@ async function createNewPort(
     
    
     if (exposesPublicDomain && INGRESS_SECRET) {
-      console.log(`Creating ingress for port ${port} with network name ${networkName}`);
       const networkConfig = {
         name: devboxName,
         networks: [
@@ -281,7 +272,6 @@ async function createNewPort(
     console.log(`Successfully created port:`, result);
     return result;
   } catch (error: any) {
-    console.error(`Failed to create port ${port}:`, error);
     throw new Error(`Failed to create port ${port}: ${error.message}`);
   }
 }
@@ -307,7 +297,6 @@ async function createPortsAndNetworks(
 
   for (const portConfig of ports) {
     try {
-      console.log(`Creating port ${portConfig.number}`);
       const createdPort = await createNewPort(
         portConfig,
         devboxName,
@@ -317,9 +306,7 @@ async function createPortsAndNetworks(
         applyYamlList
       );
       createdPorts.push(createdPort);
-      console.log(`Successfully created port: ${createdPort.portName}:${createdPort.number}`);
     } catch (error: any) {
-      console.error(`Failed to create port ${portConfig.number}:`, error);
    
       createdPorts.push({
         portName: `port-${portConfig.number}-failed`,
@@ -492,7 +479,6 @@ export async function POST(req: NextRequest) {
    
     let createdPorts: any[] = [];
     if (devboxForm.ports && devboxForm.ports.length > 0) {
-      console.log(`Creating ${devboxForm.ports.length} ports for DevBox`);
       try {
         createdPorts = await createPortsAndNetworks(
           devboxForm.ports,
@@ -503,9 +489,7 @@ export async function POST(req: NextRequest) {
           applyYamlList,
           k8sCustomObjects
         );
-        console.log(`Successfully created ${createdPorts.length} ports`);
       } catch (error: any) {
-        console.error('Failed to create ports:', error);
        
         return jsonRes({
           code: 201, 
