@@ -18,9 +18,9 @@ sealos_cli_proxy_prefix=""
 image_registry="ghcr.io"
 
 
-export image_repository="cuisongliu/sealos"
+export image_repository="labring/sealos"
 export sealos_cloud_image_repository="labring"
-export sealos_cloud_version="latest"
+export sealos_cloud_version="v5.0.1"
 export sealos_cloud_config_dir="/root/.sealos/cloud"
 export sealos_cli_version="v5.0.1"
 export github_use_proxy="false"
@@ -297,7 +297,7 @@ finish_info() {
 }
 
 tls_tips() {
-    print "TLS certificate information:"
+    print "TLS certificate information (important - please review):"
     if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
         print "A custom TLS certificate and private key were provided."
         print "Ensure the DNS name ${sealos_cloud_domain} resolves to this server's IP so the certificate is valid."
