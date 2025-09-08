@@ -3,6 +3,8 @@ package request
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -34,7 +36,23 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 		return nil, fmt.Errorf("HTTP req error: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("res error,err info: %+v", resp)
+		// 读取错误响应体
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("HTTP %d error, 无法读取错误详情: %v", resp.StatusCode, readErr)
+		}
+
+		resp.Body.Close()
+
+		// 详细的错误日志
+		log.Printf("=== Victoria Logs 查询失败 ===")
+		log.Printf("状态码: %d", resp.StatusCode)
+		log.Printf("服务器: %s", resp.Header.Get("X-Server-Hostname"))
+		log.Printf("请求URL: %s", req.URL.String())
+		log.Printf("错误内容: %s", string(body))
+		log.Printf("=============================")
+
+		return nil, fmt.Errorf("Victoria Logs查询失败 [%d]: %s", resp.StatusCode, string(body))
 	}
 	return resp, nil
 }
