@@ -7,24 +7,16 @@ import (
 	"net/url"
 )
 
-func generateReq(path string, username string, password string, query string) (*http.Request, error) {
-	baseURL, err := url.Parse(path + "/select/logsql/query")
-	if err != nil {
-		return nil, fmt.Errorf("can not parser API URL: %v", err)
-	}
-	params := url.Values{}
-	params.Add("query", query)
-	baseURL.RawQuery = params.Encode()
-	req, err := http.NewRequest("GET", baseURL.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("create HTTP req error: %v", err)
-	}
-
-	req.SetBasicAuth(username, password)
-	return req, nil
+type QueryParams struct {
+	Path      string
+	Username  string
+	Password  string
+	Query     string
+	StartTime string
+	EndTime   string
 }
 
-func QueryLogsByParams(path string, username string, password string, query string) (*http.Response, error) {
+func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			// nosemgrep
@@ -33,7 +25,7 @@ func QueryLogsByParams(path string, username string, password string, query stri
 			},
 		},
 	}
-	req, err := generateReq(path, username, password, query)
+	req, err := generateReq(query)
 	if err != nil {
 		return nil, err
 	}
@@ -45,4 +37,22 @@ func QueryLogsByParams(path string, username string, password string, query stri
 		return nil, fmt.Errorf("res error,err info: %+v", resp)
 	}
 	return resp, nil
+}
+
+func generateReq(query *QueryParams) (*http.Request, error) {
+	baseURL, err := url.Parse(query.path + "/select/logsql/query")
+	if err != nil {
+		return nil, fmt.Errorf("can not parser API URL: %v", err)
+	}
+	params := url.Values{}
+	params.Add("query", query.query)
+	params.Add("start", query.startTime)
+	params.Add("end", query.endTime)
+	baseURL.RawQuery = params.Encode()
+	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("create HTTP req error: %v", err)
+	}
+	req.SetBasicAuth(query.username, query.password)
+	return req, nil
 }
