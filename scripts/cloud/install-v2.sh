@@ -114,6 +114,64 @@ export sealos_cloud_port=${SEALOS_V2_CLOUD_PORT:-"443"}
 export sealos_cloud_domain=${SEALOS_V2_CLOUD_DOMAIN:-""}
 
 
+# Print supported environment variables and usage (triggered by -h or --help)
+print_env_help() {
+  cat <<'HELP'
+Supported environment variables (all optional unless noted):
+
+General image & version settings
+  SEALOS_V2_IMAGE_REPO         Image repo for runtime components (default: labring/sealos)
+  SEALOS_V2_CLOUD_IMAGE_REPO   Image repo for Sealos Cloud image (default: labring)
+  SEALOS_V2_CLOUD_VERSION      Sealos Cloud image tag (default: v5.0.1)
+  SEALOS_V2_CLI_VERSION        Sealos CLI version to install (default: v5.0.1)
+  SEALOS_V2_PROXY              Use proxy for GitHub/images when "true" (default: false)
+
+Cluster / resource settings
+  SEALOS_V2_MAX_POD            Max pods per node (default: 120)
+  SEALOS_V2_OPENEBS_STORAGE    OpenEBS storage path (default: /var/openebs)
+  SEALOS_V2_CONTAINERD_STORAGE Containerd data path (default: /var/lib/containerd)
+  SEALOS_V2_POD_CIDR           Pod network CIDR (default: 100.64.0.0/10)
+  SEALOS_V2_SERVICE_CIDR       Service network CIDR (default: 10.96.0.0/22)
+
+TLS / certificate
+  SEALOS_V2_CERT_PATH          Path to TLS certificate PEM file (if omitted, self-signed cert is used)
+  SEALOS_V2_KEY_PATH           Path to TLS private key PEM file
+
+Nodes / SSH (for cluster install)
+  SEALOS_V2_MASTERS            Master nodes list, comma separated (e.g. 192.0.2.10:22)
+  SEALOS_V2_NODES              Worker nodes list, comma separated
+  SEALOS_V2_SSH_KEY            SSH private key path (default: $HOME/.ssh/id_rsa)
+  SEALOS_V2_SSH_PASSWORD       SSH password (optional, not recommended)
+
+Debug / runtime
+  SEALOS_V2_DEBUG              Enable debug logs when set to "true" or "1" (default: false)
+  SEALOS_V2_DRY_RUN            If "true", perform a dry run (no changes; commands will be printed)
+  SEALOS_V2_CLOUD_PORT         Cloud HTTPS port (default: 443)
+  SEALOS_V2_CLOUD_DOMAIN       Cloud domain to expose Sealos Cloud (recommended for TLS)
+
+Usage examples
+  Inline (one-shot):
+    curl -fsSL https://.../install-v2.sh | SEALOS_V2_CLOUD_DOMAIN=example.nip.io SEALOS_V2_MASTERS="127.0.0.1:22" sh -
+
+  Exported (safer for automation):
+    export SEALOS_V2_CLOUD_DOMAIN=cloud.example.com
+    export SEALOS_V2_MASTERS="203.0.113.5:22"
+    ./install-v2.sh
+
+Security note
+  Do not run random scripts from the internet. Prefer reviewing the script and using exported env vars or secret managers for sensitive values.
+HELP
+}
+
+# Detect -h or --help and print supported ENV then exit
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      print_env_help
+      exit 0
+      ;;
+  esac
+done
 
 timestamp() {
   date +"%Y-%m-%d %T"
@@ -137,7 +195,7 @@ warn() {
 
 debug() {
   local dbg="${sealos_exec_debug:-}"
-  dbg="${dbg,,}"  # 转小写
+  dbg="${dbg,,}"
   if [[ "$dbg" != "1" && "$dbg" != "true" ]]; then
     return 0
   fi
