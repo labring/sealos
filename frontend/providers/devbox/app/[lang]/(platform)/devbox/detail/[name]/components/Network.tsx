@@ -80,7 +80,11 @@ const Network = () => {
     GRPC: 'grpcs://',
     WS: 'wss://'
   };
-
+  const internalProtocolMap = {
+    HTTP: 'http://',
+    GRPC: 'grpc://',
+    WS: 'ws://'
+  };
   const networkColumn: {
     title: string;
     dataIndex?: keyof NetworkType;
@@ -100,19 +104,19 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const prefix = item.openPublicDomain ? protocolMap[item.protocol] : 'https://';
+        const prefix = item.openPublicDomain ? internalProtocolMap[item.protocol] : 'http://';
         const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div
-                className="flex cursor-pointer break-all hover:underline"
+              <span
+                className="inline-block cursor-pointer break-all hover:underline"
                 onClick={() => copyData(address)}
               >
                 {address.replace('.svc.cluster.local', '')}
-              </div>
+              </span>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{t('copy')}</TooltipContent>
+            <TooltipContent  side="top" align="center"><p className="text-sm">{t('copy')}</p></TooltipContent>
           </Tooltip>
         );
       },

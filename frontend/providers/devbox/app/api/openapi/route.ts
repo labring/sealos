@@ -4,23 +4,23 @@ import {
   RequestSchema as DelDevboxRequestSchema,
   SuccessResponseSchema as DelDevboxSuccessResponseSchema,
   ErrorResponseSchema as DelDevboxErrorResponseSchema
-} from '../v1/DevBox/delete/schema';
+} from '../v1/devbox/delete/schema';
 
 import {
   RequestSchema as CreateDevboxPortRequestSchema,
   SuccessResponseSchema as CreateDevboxPortSuccessResponseSchema,
   ErrorResponseSchema as CreateDevboxPortErrorResponseSchema
-} from '../v1/DevBox/ports/create/schema';
+} from '../v1/devbox/ports/create/schema';
 import {
   RequestSchema as ReleaseDevboxRequestSchema,
   SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
   ErrorResponseSchema as ReleaseDevboxErrorResponseSchema
-} from '../v1/DevBox/release/schema';
+} from '../v1/devbox/release/schema';
 import {
   RequestSchema as GetDevboxVersionListRequestSchema,
   SuccessResponseSchema as GetDevboxVersionListSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxVersionListErrorResponseSchema
-} from '../v1/DevBox/releases/schema';
+} from '../v1/devbox/releases/schema';
 import {
   DeployDevboxRequestSchema,
   DeployDevboxSuccessResponseSchema,
@@ -30,22 +30,80 @@ import {
   RequestSchema as GetDevboxByNameRequestSchema,
   SuccessResponseSchema as GetDevboxByNameSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
-} from '../v1/DevBox/get/schema';
-import { ResponseSchema as GetDevboxListResponseSchema } from '../v1/DevBox/list/schema';
+} from '../v1/devbox/get/schema';
+import { ResponseSchema as GetDevboxListResponseSchema } from '../v1/devbox/list/schema';
 import {
   RequestSchema as RemoveDevboxPortRequestSchema,
   SuccessResponseSchema as RemoveDevboxPortSuccessResponseSchema,
   ErrorResponseSchema as RemoveDevboxPortErrorResponseSchema
-} from '../v1/DevBox/ports/remove/schema';
+} from '../v1/devbox/ports/remove/schema';
 import {
   RequestSchema as CreateSimpleDevboxRequestSchema,
   SuccessResponseSchema as CreateSimpleDevboxSuccessResponseSchema
-} from '../v1/DevBox/create/schema';
+} from '../v1/devbox/create/schema';
 import {
   RequestSchema as LifecycleDevboxRequestSchema,
   SuccessResponseSchema as LifecycleDevboxSuccessResponseSchema,
   ErrorResponseSchema as LifecycleDevboxErrorResponseSchema
-} from '../v1/DevBox/lifecycle/schema';
+} from '../v1/devbox/lifecycle/schema';
+import {
+  RequestSchema as CreateDevboxRequestSchema,
+  SuccessResponseSchema as CreateDevboxSuccessResponseSchema
+} from '../v1/devbox/schema';
+
+import {
+  UpdateDevboxRequestSchema,
+  UpdateDevboxResponseSchema,
+  ErrorResponseSchema as MergedDevboxErrorResponseSchema
+} from '../v1/devbox/[name]/schema';
+
+import {
+  RequestSchema as StartDevboxRequestSchema,
+  SuccessResponseSchema as StartDevboxSuccessResponseSchema,
+  ErrorResponseSchema as StartDevboxErrorResponseSchema
+} from '../v1/devbox/[name]/start/schema';
+
+import {
+  RequestSchema as PauseDevboxRequestSchema,
+  SuccessResponseSchema as PauseDevboxSuccessResponseSchema,
+  ErrorResponseSchema as PauseDevboxErrorResponseSchema
+} from '../v1/devbox/[name]/pause/schema';
+
+import {
+  RequestSchema as ShutdownDevboxRequestSchema,
+  SuccessResponseSchema as ShutdownDevboxSuccessResponseSchema,
+  ErrorResponseSchema as ShutdownDevboxErrorResponseSchema
+} from '../v1/devbox/[name]/shutdown/schema';
+
+import {
+  RequestSchema as RestartDevboxRequestSchema,
+  SuccessResponseSchema as RestartDevboxSuccessResponseSchema,
+  ErrorResponseSchema as RestartDevboxErrorResponseSchema
+} from '../v1/devbox/[name]/restart/schema';
+
+import {
+  UpdatePortsRequestSchema,
+  UpdatePortsResponseSchema,
+  ErrorResponseSchema as PortsErrorResponseSchema
+} from '../v1/devbox/[name]/ports/schema';
+import {
+  RequestSchema as ReleaseDevboxRequestSchema2,
+  SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema2,
+  ErrorResponseSchema as ReleaseDevboxErrorResponseSchema2
+} from '../v1/devbox/[name]/release/schema';
+import {
+  DeployDevboxPathParamsSchema as DeployDevboxPathParamsSchema2,
+  DeployDevboxRequestSchema as DeployDevboxRequestSchema2,
+  DeployDevboxSuccessResponseSchema as DeployDevboxSuccessResponseSchema2,
+  DeployDevboxErrorResponseSchema as DeployDevboxErrorResponseSchema2 
+} from '../v1/devbox/[name]/release/[tag]/deploy/schema';
+
+import {
+  RequestSchema as DeleteDevboxByNameRequestSchema,
+  SuccessResponseSchema as DeleteDevboxByNameSuccessResponseSchema,
+  ErrorResponseSchema as DeleteDevboxByNameErrorResponseSchema
+} from '../v1/devbox/[name]/delete/schema';
+
 import { NextResponse } from 'next/server';
 import { getToolsList } from 'sealos-mcp-sdk';
 import path from 'path';
@@ -155,7 +213,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/create': {
+      '/api/v1/devbox/create': {
         post: {
           tags: ['Lifecycle'],
           summary: 'Create a new devbox with a simple runtime',
@@ -212,7 +270,656 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/lifecycle': {
+      '/api/v1/devbox': {
+        post: {
+          tags: ['Lifecycle'],
+          summary: 'Create a new devbox with runtime and port configuration',
+          description: 'Create a new devbox with specified runtime environment, resource allocation, and optional port configurations. Supports custom port settings with public domain access.',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: CreateDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox created successfully',
+              content: {
+                'application/json': {
+                  schema: CreateDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Runtime not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '409': {
+              description: 'Devbox already exists',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}': {
+        patch: {
+          tags: ['Lifecycle'],
+          summary: 'Update devbox configuration',
+          description: 'Update devbox resource allocation (CPU and memory) and/or port configurations. Can update resources only, ports only, or both simultaneously. For ports: include portName to update existing ports, exclude portName to create new ports. Existing ports not included will be deleted.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: UpdateDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox updated successfully',
+              content: {
+                'application/json': {
+                  schema: UpdateDevboxResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body or devbox name',
+              content: {
+                'application/json': {
+                  schema: MergedDevboxErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Devbox not found',
+              content: {
+                'application/json': {
+                  schema: MergedDevboxErrorResponseSchema
+                }
+              }
+            },
+            '409': {
+              description: 'Port conflict - port number already in use',
+              content: {
+                'application/json': {
+                  schema: MergedDevboxErrorResponseSchema
+                }
+              }
+            },
+            '422': {
+              description: 'Invalid resource configuration',
+              content: {
+                'application/json': {
+                  schema: MergedDevboxErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: MergedDevboxErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}/delete': {
+      delete: {
+        tags: ['Lifecycle'],
+        summary: 'Delete a devbox by name',
+        description: 'Delete a devbox and its associated resources (service, ingress, certificates, etc.) using the devbox name as a path parameter',
+        parameters: [
+          {
+            name: 'name',
+            in: 'path',
+            required: true,
+            description: 'Devbox name to delete',
+            schema: {
+              type: 'string',
+              pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+              minLength: 1,
+              maxLength: 63
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Devbox deleted successfully',
+            content: {
+              'application/json': {
+                schema: DeleteDevboxByNameSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid devbox name',
+            content: {
+              'application/json': {
+                schema: DeleteDevboxByNameErrorResponseSchema
+              }
+            }
+          },
+          '404': {
+            description: 'Devbox not found',
+            content: {
+              'application/json': {
+                schema: DeleteDevboxByNameErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: DeleteDevboxByNameErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+      '/api/v1/devbox/{name}/start': {
+      post: {
+        tags: ['Lifecycle'],
+        summary: 'Start a devbox',
+        description: 'Start a devbox by name. This will set the devbox state to Running and restore ingress configurations from pause to nginx.',
+        parameters: [
+          {
+            name: 'name',
+            in: 'path',
+            required: true,
+            description: 'Devbox name',
+            schema: {
+              type: 'string',
+              pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+              minLength: 1,
+              maxLength: 63
+            }
+          }
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: StartDevboxRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Devbox started successfully',
+            content: {
+              'application/json': {
+                schema: StartDevboxSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body or devbox name',
+            content: {
+              'application/json': {
+                schema: StartDevboxErrorResponseSchema
+              }
+            }
+          },
+          '404': {
+            description: 'Devbox not found',
+            content: {
+              'application/json': {
+                schema: StartDevboxErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: StartDevboxErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+'/api/v1/devbox/{name}/pause': {
+  post: {
+    tags: ['Lifecycle'],
+    summary: 'Pause a devbox',
+    description: 'Pause a devbox by name. This will set the devbox state to Stopped and change ingress configurations from nginx to pause. The devbox will be paused but ports will still be maintained (with small port fees).',
+    parameters: [
+      {
+        name: 'name',
+        in: 'path',
+        required: true,
+        description: 'Devbox name',
+        schema: {
+          type: 'string',
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+          minLength: 1,
+          maxLength: 63
+        }
+      }
+    ],
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: PauseDevboxRequestSchema
+        }
+      }
+    },
+    responses: {
+      '200': {
+        description: 'Devbox paused successfully',
+        content: {
+          'application/json': {
+            schema: PauseDevboxSuccessResponseSchema
+          }
+        }
+      },
+      '400': {
+        description: 'Invalid request body or devbox name',
+        content: {
+          'application/json': {
+            schema: PauseDevboxErrorResponseSchema
+          }
+        }
+      },
+      '404': {
+        description: 'Devbox not found',
+        content: {
+          'application/json': {
+            schema: PauseDevboxErrorResponseSchema
+          }
+        }
+      },
+      '500': {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: PauseDevboxErrorResponseSchema
+          }
+        }
+      }
+    }
+  }
+},
+'/api/v1/devbox/{name}/shutdown': {
+  post: {
+    tags: ['Lifecycle'],
+    summary: 'Shutdown a devbox',
+    description: 'Shutdown a devbox by name. This will set the devbox state to Shutdown and change ingress configurations from nginx to pause. The devbox will be shut down and ports will be released (no port fees).',
+    parameters: [
+      {
+        name: 'name',
+        in: 'path',
+        required: true,
+        description: 'Devbox name',
+        schema: {
+          type: 'string',
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+          minLength: 1,
+          maxLength: 63
+        }
+      }
+    ],
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: ShutdownDevboxRequestSchema
+        }
+      }
+    },
+    responses: {
+      '200': {
+        description: 'Devbox shutdown successfully',
+        content: {
+          'application/json': {
+            schema: ShutdownDevboxSuccessResponseSchema
+          }
+        }
+      },
+      '400': {
+        description: 'Invalid request body or devbox name',
+        content: {
+          'application/json': {
+            schema: ShutdownDevboxErrorResponseSchema
+          }
+        }
+      },
+      '404': {
+        description: 'Devbox not found',
+        content: {
+          'application/json': {
+            schema: ShutdownDevboxErrorResponseSchema
+          }
+        }
+      },
+      '500': {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ShutdownDevboxErrorResponseSchema
+          }
+        }
+      }
+    }
+  }
+},
+'/api/v1/devbox/{name}/restart': {
+  post: {
+    tags: ['Lifecycle'],
+    summary: 'Restart a devbox',
+    description: 'Restart a devbox by name. This will perform a complete restart cycle: stop the devbox, wait for pods to be deleted, restore ingress configurations, and start the devbox again.',
+    parameters: [
+      {
+        name: 'name',
+        in: 'path',
+        required: true,
+        description: 'Devbox name',
+        schema: {
+          type: 'string',
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+          minLength: 1,
+          maxLength: 63
+        }
+      }
+    ],
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: RestartDevboxRequestSchema
+        }
+      }
+    },
+    responses: {
+      '200': {
+        description: 'Devbox restarted successfully',
+        content: {
+          'application/json': {
+            schema: RestartDevboxSuccessResponseSchema
+          }
+        }
+      },
+      '400': {
+        description: 'Invalid request body or devbox name',
+        content: {
+          'application/json': {
+            schema: RestartDevboxErrorResponseSchema
+          }
+        }
+      },
+      '404': {
+        description: 'Devbox not found',
+        content: {
+          'application/json': {
+            schema: RestartDevboxErrorResponseSchema
+          }
+        }
+      },
+      '408': {
+        description: 'Restart timeout - pods did not delete within expected time',
+        content: {
+          'application/json': {
+            schema: RestartDevboxErrorResponseSchema
+          }
+        }
+      },
+      '500': {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: RestartDevboxErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}/ports': {
+        put: {
+          tags: ['Port'],
+          summary: 'Update devbox port configurations',
+          description: 'Update, create, or delete port configurations for a devbox. Include portName to update existing ports, exclude portName to create new ports. Existing ports not included in the request will be deleted.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: UpdatePortsRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'DevBox ports updated successfully',
+              content: {
+                'application/json': {
+                  schema: UpdatePortsResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body or devbox name',
+              content: {
+                'application/json': {
+                  schema: PortsErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Devbox not found',
+              content: {
+                'application/json': {
+                  schema: PortsErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: PortsErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}/release': {
+        post: {
+          tags: ['Release'],
+          summary: 'Release a specific devbox version',
+          description: 'Create a new release for a specific devbox by name with a tag and optional description. This endpoint creates a DevboxRelease resource and generates a container image. The devbox should be stopped before releasing.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: ReleaseDevboxRequestSchema2
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox release created successfully',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxSuccessResponseSchema2
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body or devbox name format',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema2
+                }
+              }
+            },
+            '404': {
+              description: 'Devbox not found',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema2
+                }
+              }
+            },
+            '409': {
+              description: 'Devbox release with this tag already exists',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema2
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema2
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}/release/{tag}/deploy': {
+        post: {
+          tags: ['Release'],
+          summary: 'Deploy a specific devbox release version',
+          description: 'Deploy a specific devbox release to applaunchpad with fixed resource configuration (2 CPU cores, 2GB memory). The devbox release must exist and be in Success status before deployment.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            },
+            {
+              name: 'tag',
+              in: 'path',
+              required: true,
+              description: 'Devbox release version tag',
+              schema: {
+                type: 'string',
+                minLength: 1
+              }
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: DeployDevboxRequestSchema2
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox release deployed successfully to applaunchpad',
+              content: {
+                'application/json': {
+                  schema: DeployDevboxSuccessResponseSchema2
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body or path parameters',
+              content: {
+                'application/json': {
+                  schema: DeployDevboxErrorResponseSchema2
+                }
+              }
+            },
+            '404': {
+              description: 'Devbox or release tag not found',
+              content: {
+                'application/json': {
+                  schema: DeployDevboxErrorResponseSchema2
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error or deployment failed',
+              content: {
+                'application/json': {
+                  schema: DeployDevboxErrorResponseSchema2
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/lifecycle': {
         post: {
           tags: ['Lifecycle'],
           summary: 'Lifecycle a devbox',
@@ -244,7 +951,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/release': {
+      '/api/v1/devbox/release': {
         post: {
           tags: ['Release'],
           summary: 'Release a devbox version',
@@ -293,7 +1000,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/delete': {
+      '/api/v1/devbox/delete': {
         delete: {
           tags: ['Lifecycle'],
           summary: 'Delete a devbox',
@@ -329,7 +1036,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/ports/create': {
+      '/api/v1/devbox/ports/create': {
         post: {
           tags: ['Port'],
           summary: 'Create a new devbox port',
@@ -370,7 +1077,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/ports/remove': {
+      '/api/v1/devbox/ports/remove': {
         post: {
           tags: ['Port'],
           summary: 'Remove a devbox port',
@@ -418,7 +1125,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/releases': {
+      '/api/v1/devbox/releases': {
         get: {
           tags: ['Release'],
           summary: 'Get devbox release list',
@@ -455,7 +1162,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
-      '/api/v1/DevBox/get': {
+      '/api/v1/devbox/get': {
         get: {
           tags: ['Query'],
           summary: 'Get devbox by name',
