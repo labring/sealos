@@ -111,7 +111,12 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 
 func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
-	item := fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
+	var item string
+	if req.Time != "" {
+		item = fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
+	} else {
+		item = fmt.Sprintf(`app:="%s" `, req.App)
+	}
 	builder.WriteString(item)
 	// if query stderr and number,using stderr first.
 	if req.StderrMode == modeTrue {
