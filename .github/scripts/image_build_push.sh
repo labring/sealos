@@ -14,6 +14,7 @@ sealos build --pull=always --platform=linux/"${ARCH}" -t "$IMAGE_NAME"-"${ARCH}"
   --label org.opencontainers.image.licenses="Sealos Sustainable Use License" \
   --label org.opencontainers.image.source="https://github.com/${AUTHOR}/sealos" \
   --label org.opencontainers.image.title="sealos-image" \
+  --label org.opencontainers.image.time="$(date '%Y%m%d%H%M%S')" \
   --label org.opencontainers.image.url="https://github.com/${AUTHOR}/sealos" \
   --label org.opencontainers.image.version="${version}" \
   --label org.opencontainers.image.revision="${COMMIT_ID}" .
