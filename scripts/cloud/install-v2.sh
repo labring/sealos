@@ -1,6 +1,78 @@
 #!/bin/bash
-
 set -e
+set -o noglob
+
+# Usage:
+#   Provide configuration via environment variables. Two common ways:
+#     1) Inline (one-shot) - useful for quick runs or CI:
+#          curl -fsSL https://example.com/install-v2.sh | SEALOS_V2_CLOUD_DOMAIN=my.example.com SEALOS_V2_MASTERS="192.0.2.10:22" sh -
+#     2) Local execution - export variables, then run the script:
+#          export SEALOS_V2_CLOUD_DOMAIN=my.example.com
+#          export SEALOS_V2_MASTERS="192.0.2.10:22"
+#          ./install-v2.sh
+#
+# Quick examples:
+#   - Single-node test using nip.io (local machine):
+#       SEALOS_V2_CLOUD_DOMAIN=127.0.0.1.nip.io SEALOS_V2_MASTERS="127.0.0.1:22" ./install-v2.sh
+#   - Download and run with a public domain:
+#       curl -fsSL https://example.com/install-v2.sh | SEALOS_V2_CLOUD_DOMAIN=cloud.example.com SEALOS_V2_MASTERS="203.0.113.5:22" sh -
+#   - Use exported variables (safer for secrets and automation):
+#       export SEALOS_V2_CLOUD_DOMAIN=cloud.example.com
+#       export SEALOS_V2_MASTERS="203.0.113.5:22"
+#       ./install-v2.sh
+#
+# Security note:
+#   Never run scripts piped from the internet unless you trust and have reviewed them.
+#   For automated environments, prefer exporting environment variables (or using secret managers)
+#   rather than embedding passwords on the command line.
+#
+# The script reads configuration from environment variables (see the "Environment variables"
+# section below for a full list and descriptions).
+#
+# Example of a minimal inline invocation for this script:
+#   curl -fsSL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install-v2.sh | SEALOS_V2_CLOUD_DOMAIN=192.0.2.10.nip.io SEALOS_V2_KEY_MASTERS="192.0.2.10:22" sh -
+#
+# Environment variables (usage & descriptions):
+#
+# General image & version settings
+#   SEALOS_V2_IMAGE_REPO           - Optional. Image repository for runtime components (default: "labring/sealos").
+#   SEALOS_V2_CLOUD_IMAGE_REPO     - Optional. Image repository for Sealos Cloud image (default: "labring").
+#   SEALOS_V2_CLOUD_VERSION        - Optional. Sealos Cloud image tag (default: "v5.0.1").
+#   SEALOS_V2_CLI_VERSION          - Optional. Sealos CLI version to install (default: "v5.0.1").
+#   SEALOS_V2_PROXY                - Optional. If "true", use proxy for GitHub/images (default: "false").
+#
+# Cluster / resource settings
+#   SEALOS_V2_MAX_POD              - Optional. Maximum pods per node (default: "120").
+#   SEALOS_V2_OPENEBS_STORAGE      - Optional. OpenEBS storage path (default: "/var/openebs").
+#   SEALOS_V2_CONTAINERD_STORAGE   - Optional. Containerd data path (default: "/var/lib/containerd").
+#   SEALOS_V2_POD_CIDR             - Optional. Pod network CIDR (default: "100.64.0.0/10").
+#   SEALOS_V2_SERVICE_CIDR         - Optional. Service network CIDR (default: "10.96.0.0/22").
+#
+# TLS / certificate
+#   SEALOS_V2_CERT_PATH            - Optional. Path to TLS certificate file to use for Cloud (PEM). If not provided, a self-signed cert is used.
+#   SEALOS_V2_KEY_PATH             - Optional. Path to TLS private key file corresponding to SEALOS_V2_CERT_PATH.
+#
+# Nodes / SSH
+#   SEALOS_V2_MASTERS          - Optional. Master nodes list, comma separated. Each item may include :port (example: 192.168.1.1:22,192.168.1.2:22).
+#   SEALOS_V2_NODES            - Optional. Worker node list, comma separated.
+#   SEALOS_V2_SSH_KEY              - Optional. Path to SSH private key used to connect nodes (default: $HOME/.ssh/id_rsa).
+#   SEALOS_V2_SSH_PASSWORD         - Optional. SSH password (if not using key-based auth).
+#
+# Debug / runtime
+#   SEALOS_V2_DEBUG                - Optional. Enable debug logs when set to "true" or "1" (default: "false").
+#   SEALOS_V2_CLOUD_PORT           - Optional. Cloud HTTP(S) port (default: "443").
+#   SEALOS_V2_CLOUD_DOMAIN         - Optional. Cloud domain name to expose Sealos Cloud (recommended to set for TLS).
+#   SEALOS_V2_DRY_RUN              - Optional. If "true", perform a dry run without making changes (default: "false").
+#
+# Notes:
+#   - Any variable left unset will use the script's built-in default values shown above.
+#   - Provide SEALOS_V2_CERT_PATH and SEALOS_V2_KEY_PATH if you want to use a public certificate; otherwise the script will fall back to a self-signed certificate.
+#   - For multi-node installs, ensure SSH connectivity from the machine running this script to all target nodes.
+#   - Use the pattern ENV_VAR=value ./install-v2.sh or export ENV_VAR=value before running.
+#
+# Example:
+#   SEALOS_V2_CLOUD_DOMAIN=my.example.com SEALOS_V2_MASTERS="192.168.1.10:22" ./install-v2.sh
+#
 
 ###
 kubernetes_version="v1.28.15"
@@ -16,30 +88,32 @@ cockroach_version="v2.12.0"
 mongodb_version="mongodb-6.0"
 sealos_cli_proxy_prefix=""
 image_registry="ghcr.io"
+sealos_cloud_config_dir="/root/.sealos/cloud"
+
+export image_repository=${SEALOS_V2_IMAGE_REPO:-"labring/sealos"}
+export sealos_cloud_image_repository=${SEALOS_V2_CLOUD_IMAGE_REPO:-"labring"}
+export sealos_cloud_version=${SEALOS_V2_CLOUD_VERSION:-"v5.0.1"}
+export sealos_cli_version=${SEALOS_V2_CLI_VERSION:-"v5.0.1"}
+export github_use_proxy=${SEALOS_V2_PROXY:-"false"}
+
+export max_pod=${SEALOS_V2_MAX_POD:-"120"}
+export openebs_storage=${SEALOS_V2_OPENEBS_STORAGE:-"/var/openebs"}
+export containerd_storage=${SEALOS_V2_CONTAINERD_STORAGE:-"/var/lib/containerd"}
+export pod_cidr=${SEALOS_V2_POD_CIDR:-"100.64.0.0/10"}
+export service_cidr=${SEALOS_V2_SERVICE_CIDR:-"10.96.0.0/22"}
+export cert_path=${SEALOS_V2_CERT_PATH:-""}
+export key_path=${SEALOS_V2_KEY_PATH:-""}
+
+export master_ips=${SEALOS_V2_MASTERS:-""}
+export node_ips=${SEALOS_V2_NODES:-""}
+export ssh_private_key=${SEALOS_V2_SSH_KEY:-"$HOME/.ssh/id_rsa"}
+export ssh_password=${SEALOS_V2_SSH_PASSWORD:-""}
+export sealos_exec_debug=${SEALOS_V2_DEBUG:-"false"}
+export dry_run=${SEALOS_V2_DRY_RUN:-"false"}
+export sealos_cloud_port=${SEALOS_V2_CLOUD_PORT:-"443"}
+export sealos_cloud_domain=${SEALOS_V2_CLOUD_DOMAIN:-""}
 
 
-export image_repository="labring/sealos"
-export sealos_cloud_image_repository="labring"
-export sealos_cloud_version="v5.0.1"
-export sealos_cloud_config_dir="/root/.sealos/cloud"
-export sealos_cli_version="v5.0.1"
-export github_use_proxy="false"
-
-export max_pod="120"
-export openebs_storage="/var/openebs"
-export containerd_storage="/var/lib/containerd"
-export pod_cidr="100.64.0.0/10"
-export service_cidr="10.96.0.0/22"
-export cert_path=""
-export key_path=""
-
-export master_ips="192.168.64.4:22"
-export node_ips=""
-export ssh_private_key="$HOME/.ssh/id_rsa"
-export ssh_password=""
-export sealos_exec_debug="false"
-export sealos_cloud_port="443"
-export sealos_cloud_domain="192.168.64.4.nip.io"
 
 timestamp() {
   date +"%Y-%m-%d %T"
@@ -99,6 +173,10 @@ wait_cluster_ready() {
 pull_image() {
   image_name=$1
   info "Pulling image: $image_name"
+  if [[ "${dry_run,,}" == "true" ]]; then
+    info "[Dry Run] Image pull skipped: $image_name"
+    return 0
+  fi
   run_and_log "sealos pull -q --policy=always \"${image_name}\" >/dev/null"
 }
 
@@ -116,6 +194,10 @@ run_and_log() {
   local cmd="$1"
   debug "[Step] Running command: $cmd"
   echo "$(date '+%Y-%m-%d %H:%M:%S') $cmd" >> "$sealos_cloud_config_dir/install.log"
+  if [[ "${dry_run,,}" == "true" ]]; then
+    info "[Dry Run] Command skipped: $cmd"
+    return 0
+  fi
   eval "$cmd"
   debug "[Step] Command completed: $cmd"
 }
@@ -256,7 +338,9 @@ execute_commands() {
     [[ $k8s_installed == "y" ]] || run_and_log "$sealos_init_cmd"
     run_and_log "sealos run ${image_registry}/${image_repository}/helm:${helm_version}"
     [[ $k8s_ready == "y" ]] || run_and_log "sealos run ${image_registry}/${image_repository}/cilium:${cilium_version} --env ExtraValues=\"ipam.mode=kubernetes\""
-    wait_cluster_ready
+    if [[ "${dry_run,,}" == "false" ]]; then
+      wait_cluster_ready
+    fi
     run_and_log "sealos run ${image_registry}/${image_repository}/cert-manager:${cert_manager_version}"
     run_and_log "sealos run --env OPENEBS_USE_LVM=false --env OPENEBS_STORAGE_PREFIX=${openebs_storage} ${image_registry}/${image_repository}/openebs:${openebs_version}"
     run_and_log "sealos run ${image_registry}/${image_repository}/metrics-server:${metrics_server_version}"
@@ -272,6 +356,13 @@ execute_commands() {
         run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log "
     fi
     run_and_log "sealos cert --alt-names \"${sealos_cloud_domain}\""
+
+    if [[ "${dry_run,,}" == "true" ]]; then
+      print "[Dry Run] Skipping TLS certificate details display."
+      return 0
+    fi
+
+    print "[Step 5] TLS certificate details:"
     openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | awk -F', ' '
     {
         for(i=1;i<=NF;i++) {
@@ -287,6 +378,10 @@ execute_commands() {
     }'
 }
 finish_info() {
+    if [[ "${dry_run,,}" == "true" ]]; then
+      print "[Dry Run] Skipping final installation summary."
+      return 0
+    fi
     print "Installation complete!"
     print "Kubernetes version: ${kubernetes_version}"
     print "Sealos Cloud version: ${sealos_cloud_version}"
