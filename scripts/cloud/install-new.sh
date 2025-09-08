@@ -14,16 +14,17 @@ metrics_server_version="v0.6.4"
 victoria_metrics_k8s_stack_version="v1.124.0"
 cockroach_version="v2.12.0"
 mongodb_version="mongodb-6.0"
+sealos_cli_proxy_prefix=""
+image_registry="ghcr.io"
 
-export image_registry="ghcr.io"
+
 export image_repository="cuisongliu/sealos"
-export sealos_cloud_version="latest"
-export sealos_cloud_image_registry="ghcr.io"
 export sealos_cloud_image_repository="labring"
+export sealos_cloud_version="latest"
 export sealos_cloud_config_dir="/root/.sealos/cloud"
-
 export sealos_cli_version="v5.0.1"
-export sealos_cli_proxy_prefix=""
+export github_use_proxy="false"
+
 export max_pod="120"
 export openebs_storage="/var/openebs"
 export containerd_storage="/var/lib/containerd"
@@ -39,7 +40,6 @@ export ssh_password=""
 export sealos_exec_debug="false"
 export sealos_cloud_port="443"
 export sealos_cloud_domain="192.168.64.4.nip.io"
-
 
 timestamp() {
   date +"%Y-%m-%d %T"
@@ -120,11 +120,17 @@ run_and_log() {
   debug "[Step] Command completed: $cmd"
 }
 
+proxy_github() {
+  if [[ "${github_use_proxy,,}" == "true" ]]; then
+    info "Using GitHub proxy for downloads."
+    sealos_cli_proxy_prefix="https://ghfast.top"
+    image_registry="ghcr.nju.edu.cn"
+  fi
+}
 
 k8s_installed="n"
 k8s_ready="n"
 
-# Initialization
 install_pull_images() {
     if kubectl get no > /dev/null 2>&1; then
         k8s_installed="y"
@@ -162,11 +168,9 @@ install_pull_images() {
     pull_image "${image_registry}/${image_repository}/cockroach:${cockroach_version}"
     pull_image "${image_registry}/${image_repository}/metrics-server:${metrics_server_version}"
     pull_image "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:${victoria_metrics_k8s_stack_version}"
-    pull_image "${sealos_cloud_image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}"
+    pull_image "${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}"
 }
-# =====================
-# 商业提示
-# =====================
+
 COMMERCIAL_PROMPT_EN="You are installing the open source version of Sealos Cloud. Some features are missing. \nFor full functionality, please purchase the commercial edition: https://sealos.io/contact"
 
 show_commercial_notice() {
@@ -224,7 +228,7 @@ metadata:
   name: secret
 spec:
   path: manifests/tls-secret.yaml
-  match: ${sealos_cloud_image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}
+  match: ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}
   strategy: merge
   data: |
     data:
@@ -256,7 +260,6 @@ execute_commands() {
     run_and_log "sealos run ${image_registry}/${image_repository}/cert-manager:${cert_manager_version}"
     run_and_log "sealos run --env OPENEBS_USE_LVM=false --env OPENEBS_STORAGE_PREFIX=${openebs_storage} ${image_registry}/${image_repository}/openebs:${openebs_version}"
     run_and_log "sealos run ${image_registry}/${image_repository}/metrics-server:${metrics_server_version}"
-    # TODO use sealos run to install cockroachdb-operator
     run_and_log "sealos run ${image_registry}/${image_repository}/cockroach:${cockroach_version}"
     run_and_log "sealos run ${image_registry}/${image_repository}/victoria-metrics-k8s-stack:${victoria_metrics_k8s_stack_version}"
     run_and_log "sealos run --env CLOUD_PORT=${sealos_cloud_port} --env CLOUD_DOMAIN=${sealos_cloud_domain} ${image_registry}/${image_repository}/higress:${higress_version}"
@@ -264,9 +267,9 @@ execute_commands() {
     setMongoVersion
     print "[Step 4] Starting Sealos Cloud installation..."
     if [[ -n "$tls_crt_base64" ]] || [[ -n "$tls_key_base64" ]]; then
-        run_and_log "sealos run ${sealos_cloud_image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --config-file $sealos_cloud_config_dir/tls-secret.yaml --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log"
+        run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --config-file $sealos_cloud_config_dir/tls-secret.yaml --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log"
     else
-        run_and_log "sealos run ${sealos_cloud_image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log "
+        run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log "
     fi
     run_and_log "sealos cert --alt-names \"${sealos_cloud_domain}\""
 }
@@ -281,8 +284,9 @@ finish_info() {
 }
 
 {
-  pre_check
   show_commercial_notice
+  proxy_github
+  pre_check
   install_pull_images
   prepare_configs
   execute_commands
