@@ -217,16 +217,6 @@ print() {
   echo -e "\033[1;32m\033[1m INFO [$flag] >> $* \033[0m"
 }
 
-ver_ge() {
-  # usage: ver_ge "4.19.57" "4.18"
-  awk -v a="$1" -v b="$2" 'BEGIN{
-    split(a,A,"[.-]"); split(b,B,"[.-]");
-    for(i=1;i<=3;i++){ if(A[i]=="") A[i]=0; if(B[i]=="") B[i]=0 }
-    for(i=1;i<=3;i++){ if(A[i]>B[i]){print 0; exit} else if(A[i]<B[i]){print 1; exit} }
-    print 0
-  }'
-}
-
 wait_cluster_ready() {
     while true; do
         if kubectl get nodes | grep "NotReady" &> /dev/null; then
