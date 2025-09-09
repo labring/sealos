@@ -22,7 +22,7 @@ The `deploy/base` directory provides essential infrastructure components for Kub
 | Component | Version | Description |
 |-----------|---------|-------------|
 | [cert-manager](#cert-manager) | v1.14.6 | X.509 certificate management for Kubernetes |
-| [cilium](#cilium) | v1.15.8, v1.17.1 | eBPF-based networking, observability, and security |
+| [cilium](#cilium) | v1.17.1 | eBPF-based networking, observability, and security |
 | [cockroach](#cockroach) | v2.12.0 | Distributed SQL database |
 | [helm](#helm) | v3.16.2 | Package manager for Kubernetes |
 | [higress](#higress) | v2.1.3 | Cloud-native API gateway and service mesh |
@@ -48,8 +48,9 @@ sealos run ghcr.io/labring/sealos/cert-manager:v1.14.6
 ### cilium
 
 **Changes:**
-- Base images: `docker.io/labring/cilium:v1.15.8`, `docker.io/labring/cilium:v1.17.1`
+- Base images: `docker.io/labring/cilium:v1.17.1`
 - Optimized for sealos deployment
+- add env KUBEADM_POD_SUBNET、KUBEADM_SERVICE_RANGE、CILIUM_MASKSIZE for network configuration
 
 **Usage:**
 ```bash
@@ -84,6 +85,7 @@ sealos run ghcr.io/labring/sealos/helm:v3.16.2
 - Base on helm chart from [higress.io](https://higress.io/helm-charts)
 - Added condition for higress console (charts/higress/Chart.yaml line 10: `condition: higress-console.enabled`)
 - Custom configuration files for cloud deployment
+- Replace registry domain higress-registry.cn-hangzhou.cr.aliyuncs.com to higress-registry.ap-southeast-7.cr.aliyuncs.com
 
 **Environment Variables:**
 - `CLOUD_PORT` (default: `443`) - HTTPS port for the gateway

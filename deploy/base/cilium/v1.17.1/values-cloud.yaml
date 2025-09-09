@@ -1,0 +1,38 @@
+enableRuntimeDeviceDetection: true
+# cleanBpfState: true
+extraConfig:
+  bpf-filter-priority: "10"
+# masquerade
+bpf:
+  masquerade: true
+# kubeproxy-free
+k8sServiceHost: apiserver.cluster.local
+k8sServicePort: 6443
+kubeProxyReplacement: "true"
+# native routing
+routingMode: native
+ipv4NativeRoutingCIDR: 10.4.0.0/14
+gke:
+  enabled: true
+# ipam
+ipam:
+  mode: "cluster-pool"
+  operator:
+    clusterPoolIPv4MaskSize: 20
+    clusterPoolIPv4PodCIDRList: ["10.4.0.0/14"]
+# bpf endpoint custom calls
+customCalls:
+  enabled: true
+# hubble
+hubble:
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+prometheus:
+  enabled: true
+operator:
+  prometheus:
+    enabled: true
+nodePort:
+  range: "30000,50000"

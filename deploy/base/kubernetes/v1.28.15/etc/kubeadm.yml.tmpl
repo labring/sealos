@@ -3,7 +3,7 @@ kind: ClusterConfiguration
 apiServer:
   extraArgs:
     feature-gates: ""
-    service-node-port-range: "30000-50000"
+    service-node-port-range: {{ default "30000-50000" .KUBEADM_SERVICE_RANGE }}
 controllerManager:
   extraArgs:
     feature-gates: ""
