@@ -1,4 +1,5 @@
 import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { cn } from '@sealos/shadcn-ui';
 import { Button } from '@sealos/shadcn-ui/button';
 import {
@@ -57,7 +58,13 @@ export function PAYGCostTableView({
       <TableCell>
         <div className="flex gap-1 items-center">
           <AppIcon app={item.appType} className={{ avatar: 'size-5' }} />
-          <div>{item.appName}</div>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-[12ch] truncate">{item.appName}</div>
+            </TooltipTrigger>
+            <TooltipContent>{item.appName}</TooltipContent>
+          </Tooltip>
         </div>
       </TableCell>
       <TableCell>

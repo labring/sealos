@@ -21,6 +21,7 @@ import 'react-day-picker/dist/style.css';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { ChakraProvider } from '@chakra-ui/react';
+import useSessionStore from '@/stores/session';
 
 // Make sure to call `loadStripe` outside a component’s render to avoid
 // recreating the `Stripe` object on every render.

@@ -1,6 +1,5 @@
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
-import { useQueryClient } from '@tanstack/react-query';
 import { Trend as OverviewTrend } from '@/components/cost_overview/trend';
 import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
@@ -29,15 +28,20 @@ import { getWorkspacesConsumptions } from '@/api/billing';
  */
 function Billing() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { getRegion, regionList: regions } = useBillingStore();
+  const {
+    getRegion,
+    getNamespace,
+    regionList: regions,
+    setRegion,
+    setNamespace
+  } = useBillingStore();
   const { startTime, endTime } = useOverviewStore();
 
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(getRegion()?.uid ?? null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
+    getNamespace()?.[0] ?? null
+  );
 
   // Separate pagination state for PAYG table
   const [paygPage, setPaygPage] = useState(1);
@@ -65,13 +69,6 @@ function Billing() {
 
   // Still need regionUids for region consumption queries
   const regionUids = useMemo(() => (regions || []).map((r) => r.uid), [regions]);
-
-  // Create region UID to name mapping
-  const regionUidToName = useMemo(() => {
-    const map = new Map<string, string>();
-    (regions || []).forEach((r) => map.set(r.uid, r.name?.en || r.uid));
-    return map;
-  }, [regions]);
 
   // Fetch namespace data for all regions
   const { data: allNamespaces } = useQuery({
@@ -361,13 +358,12 @@ function Billing() {
 
   /** Reset pagination when filters change */
   useEffect(() => {
-    setPage(1);
     setPaygPage(1);
   }, [selectedRegion, selectedWorkspace, effectiveEndTime, effectiveStartTime]);
 
   const handleRegionSelect = (regionId: string | null) => {
     setSelectedRegion(regionId);
-    setPage(1);
+    setRegion(regions.findIndex((r) => r.uid === regionId));
     setPaygPage(1);
     setSelectedApp(null);
     if (!regionId) {
@@ -377,7 +373,7 @@ function Billing() {
 
   const handleWorkspaceSelect = (workspaceId: string | null) => {
     setSelectedWorkspace(workspaceId);
-    setPage(1);
+    setNamespace(nsListData?.data.findIndex(([id]: [string, string]) => id === workspaceId) ?? 0);
     setPaygPage(1);
     setSelectedApp(null);
   };

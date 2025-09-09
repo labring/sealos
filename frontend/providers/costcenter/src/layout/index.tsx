@@ -3,9 +3,11 @@ import { Box, Flex, Link, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import SideBar from './sidebar';
+import useBillingStore from '@/stores/billing';
 
 export default function Layout({ children }: any) {
   const { setSession } = useSessionStore();
+  const { setNamespace, namespaceList } = useBillingStore();
   const [isLodaing, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
@@ -19,6 +21,9 @@ export default function Layout({ children }: any) {
         const result = await sealosApp.getSession();
         setSession(result);
         setIsLoading(false);
+
+        // Selected region will be automatically populated (current region will always be the first one). We don't need to set manually here.
+        setNamespace(namespaceList.findIndex((item) => item[0] === result.user.nsid) ?? 0);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           setIsLoading(false);
@@ -27,7 +32,7 @@ export default function Layout({ children }: any) {
       }
     };
     initApp();
-  }, [isLodaing, setSession]);
+  }, [isLodaing, setSession, namespaceList, setNamespace]);
 
   return (
     <Flex
