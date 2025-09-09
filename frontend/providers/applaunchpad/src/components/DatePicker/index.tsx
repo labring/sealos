@@ -13,7 +13,17 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
+import {
+  endOfDay,
+  format,
+  isAfter,
+  isBefore,
+  isMatch,
+  isValid,
+  parse,
+  startOfDay,
+  subDays
+} from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
 import { ChangeEventHandler, useMemo, useState } from 'react';
@@ -40,6 +50,9 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
 
   const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
     useDateTimeStore();
+
+  const now = new Date();
+  const sevenDaysAgo = subDays(now, 7);
 
   const initState = {
     from: startDateTime,
@@ -102,17 +115,30 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     [t]
   );
 
+  const isExactMatch = (currentStart: Date, currentEnd: Date, presetRange: DateRange) => {
+    if (!presetRange.from || !presetRange.to) return false;
+
+    const tolerance = 1000; // 1秒
+    const startDiff = Math.abs(currentStart.getTime() - presetRange.from.getTime());
+    const endDiff = Math.abs(currentEnd.getTime() - presetRange.to.getTime());
+
+    return startDiff <= tolerance && endDiff <= tolerance;
+  };
+
   const defaultRecentDate = useMemo(() => {
-    const currentTimeRange = formatTimeRange(startDateTime, endDateTime);
-    return (
-      recentDateList.find((item) => item.compareValue === currentTimeRange) ||
-      recentDateList.find((item) => item.compareValue === '30m') ||
-      recentDateList[0]
+    const exactMatch = recentDateList.find((item) =>
+      isExactMatch(startDateTime, endDateTime, item.value)
     );
+
+    if (exactMatch) {
+      return exactMatch;
+    }
+
+    return null;
   }, [startDateTime, endDateTime, recentDateList]);
 
   const [inputState, setInputState] = useState<0 | 1>(0);
-  const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
+  const [recentDate, setRecentDate] = useState<RecentDate | null>(defaultRecentDate);
 
   const [fromDateString, setFromDateString] = useState<string>(format(initState.from, 'y-MM-dd'));
   const [toDateString, setToDateString] = useState<string>(format(initState.to, 'y-MM-dd'));
@@ -159,7 +185,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         setFromDateError('Invalid date format');
         return;
       }
-      setFromDateError(null);
       newDateTimeString = `${value} ${fromTimeString}`;
     } else {
       setFromTimeString(value);
@@ -167,7 +192,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         setFromTimeError('Invalid time format');
         return;
       }
-      setFromTimeError(null);
       newDateTimeString = `${fromDateString} ${value}`;
     }
 
@@ -178,6 +202,20 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     if (!isValid(date)) {
       return setSelectedRange({ from: undefined, to: selectedRange?.to });
     }
+
+    if (isBefore(date, sevenDaysAgo)) {
+      if (type === 'date') {
+        setFromDateError('start time cannot be before 7 days ago');
+      } else {
+        setFromTimeError('start time cannot be before 7 days ago');
+      }
+      return;
+    }
+
+    setFromDateError(null);
+    setFromTimeError(null);
+
+    setRecentDate(null);
 
     if (selectedRange?.to) {
       if (isAfter(date, selectedRange.to)) {
@@ -199,7 +237,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         setToDateError('Invalid date format');
         return;
       }
-      setToDateError(null);
       newDateTimeString = `${value} ${toTimeString}`;
     } else {
       setToTimeString(value);
@@ -207,7 +244,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         setToTimeError('Invalid time format');
         return;
       }
-      setToTimeError(null);
       newDateTimeString = `${toDateString} ${value}`;
     }
 
@@ -216,6 +252,21 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     if (!isValid(date)) {
       return setSelectedRange({ from: selectedRange?.from, to: undefined });
     }
+
+    if (isAfter(date, now)) {
+      if (type === 'date') {
+        setToDateError('end time cannot be after current time');
+      } else {
+        setToTimeError('end time cannot be after current time');
+      }
+      return;
+    }
+
+    setToDateError(null);
+    setToTimeError(null);
+
+    setRecentDate(null);
+
     if (selectedRange?.from) {
       if (isBefore(date, selectedRange.from)) {
         setSelectedRange({ from: date, to: selectedRange.from });
@@ -230,6 +281,14 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const handleRangeSelect: SelectRangeEventHandler = (range: DateRange | undefined) => {
     if (range) {
       let { from, to } = range;
+
+      if (from && isBefore(from, sevenDaysAgo)) {
+        from = sevenDaysAgo;
+      }
+      if (to && isAfter(to, now)) {
+        to = now;
+      }
+
       if (inputState === 0) {
         // from
         if (from === selectedRange?.from) {
@@ -260,6 +319,8 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         setToDateString(format(from ? from : new Date(), 'y-MM-dd'));
         setToTimeString(format(from ? from : new Date(), 'HH:mm:ss'));
       }
+
+      setRecentDate(null);
     } else {
       // default is cancel
       if (fromDateString && fromTimeString && selectedRange?.from) {
@@ -319,7 +380,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
           </Flex>
         </PopoverTrigger>
         <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
-          <Flex w={'402px'} height={'382px'}>
+          <Flex w={'402px'} height={'420px'}>
             <Flex w={'242px'} flexDir={'column'}>
               <DayPicker
                 mode="range"
@@ -327,6 +388,9 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                 onSelect={handleRangeSelect}
                 locale={currentLang === 'zh' ? zhCN : enUS}
                 weekStartsOn={0}
+                disabled={(date) => {
+                  return isAfter(date, now) || isBefore(date, sevenDaysAgo);
+                }}
               />
               <Divider />
               <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
@@ -381,10 +445,11 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                     fontSize={'12px'}
                     fontWeight={'400'}
                     justifyContent={'flex-start'}
-                    {...(recentDate.compareValue === item.compareValue && {
-                      bg: 'brightBlue.50',
-                      color: 'brightBlue.600'
-                    })}
+                    {...(recentDate &&
+                      recentDate.compareValue === item.compareValue && {
+                        bg: 'brightBlue.50',
+                        color: 'brightBlue.600'
+                      })}
                     _hover={{
                       bg: 'rgba(17, 24, 36, 0.05)'
                     }}
@@ -418,8 +483,16 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                 borderColor={'grayModern.250'}
                 borderRadius={'6px'}
                 onClick={() => {
-                  setRecentDate(defaultRecentDate);
-                  handleRecentDateClick(defaultRecentDate);
+                  if (defaultRecentDate) {
+                    setRecentDate(defaultRecentDate);
+                    handleRecentDateClick(defaultRecentDate);
+                  } else {
+                    const defaultOption =
+                      recentDateList.find((item) => item.compareValue === '30m') ||
+                      recentDateList[0];
+                    setRecentDate(defaultOption);
+                    handleRecentDateClick(defaultOption);
+                  }
                 }}
               >
                 <MyIcon name="refresh" color={'grayModern.500'} />
