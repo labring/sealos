@@ -36,23 +36,18 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 		return nil, fmt.Errorf("HTTP req error: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		// 读取错误响应体
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
-			return nil, fmt.Errorf("HTTP %d error, 无法读取错误详情: %v", resp.StatusCode, readErr)
+			return nil, fmt.Errorf("HTTP %d error, unable to read error details: %v", resp.StatusCode, readErr)
 		}
-
 		resp.Body.Close()
-
-		// 详细的错误日志
-		log.Printf("=== Victoria Logs 查询失败 ===")
-		log.Printf("状态码: %d", resp.StatusCode)
-		log.Printf("服务器: %s", resp.Header.Get("X-Server-Hostname"))
-		log.Printf("请求URL: %s", req.URL.String())
-		log.Printf("错误内容: %s", string(body))
-		log.Printf("=============================")
-
-		return nil, fmt.Errorf("Victoria Logs查询失败 [%d]: %s", resp.StatusCode, string(body))
+		log.Printf("=== Victoria Logs Query Failed ===")
+		log.Printf("Status Code: %d", resp.StatusCode)
+		log.Printf("Server: %s", resp.Header.Get("X-Server-Hostname"))
+		log.Printf("Request URL: %s", req.URL.String())
+		log.Printf("Error Content: %s", string(body))
+		log.Printf("===================================")
+		return nil, fmt.Errorf("Victoria Logs query failed [%d]: %s", resp.StatusCode, string(body))
 	}
 	return resp, nil
 }

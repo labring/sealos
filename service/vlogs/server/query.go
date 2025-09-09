@@ -34,10 +34,8 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	var builder strings.Builder
 	var item string
 	if len(req.Time) != 0 {
-		fmt.Printf("进入11")
 		item = fmt.Sprintf(`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.Time, req.App)
 	} else {
-		fmt.Printf("进入22")
 		item = fmt.Sprintf(`{namespace="%s"}  app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.App)
 	}
 	builder.WriteString(item)
@@ -82,7 +80,6 @@ func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
 
 func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
-
 	if len(req.Pod) == 0 && len(req.Container) == 0 {
 		// Generate query based only on namespace
 		builder.WriteString(fmt.Sprintf(`{namespace="%s"}`, req.Namespace))
@@ -119,13 +116,9 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
 	var item string
-	fmt.Println("时间查询参数")
-	fmt.Println(req.Time)
 	if len(req.Time) != 0 {
-		fmt.Printf("进入1")
 		item = fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
 	} else {
-		fmt.Printf("进入2")
 		item = fmt.Sprintf(`app:="%s" `, req.App)
 	}
 	builder.WriteString(item)
