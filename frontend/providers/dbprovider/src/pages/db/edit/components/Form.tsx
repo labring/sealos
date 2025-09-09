@@ -68,26 +68,13 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
     [DBTypeEnum.mongodb, t('occupy', { comp: 'MongoDB', num: '100%' })],
     [DBTypeEnum.mysql, t('occupy', { comp: 'MySQL', num: '100%' })],
     [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
-    [
-      DBTypeEnum.kafka,
-      `${t('occupy', { comp: 'kafka-broker', num: '50%' })}, ${t('occupy', {
-        comp: 'controller',
-        num: '25%'
-      })}, ${t('occupy', { comp: 'kafka-expoter', num: '25%' })}`
-    ],
+    [DBTypeEnum.kafka, `Controller, broker, exporter, server${t('each', { perc: '25%' })}`],
     [
       DBTypeEnum.milvus,
-      `${t('occupy', { comp: 'Etcd', num: '25%' })}, ${t('occupy', {
+      `${t('occupy', { comp: 'Etcd', num: '30%' })}, ${t('occupy', {
         comp: 'milvus',
-        num: '50%'
-      })}, ${t('occupy', { comp: 'minio', num: '25%' })}`
-    ],
-    [
-      DBTypeEnum.clickhouse,
-      `${t('occupy', { comp: 'ClickHouse', num: '50%' })}, ${t('occupy', {
-        comp: 'ch-keeper',
-        num: '25%'
-      })}, ${t('occupy', { comp: 'zookeeper', num: '25%' })}`
+        num: '40%'
+      })}, ${t('occupy', { comp: 'minio', num: '30%' })}`
     ]
   ]);
 
@@ -169,7 +156,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                         <Td w="190px">{keyName}</Td>
                         <Td>{value.cpuMemory.limits.cpu}</Td>
                         <Td>{value.cpuMemory.limits.memory}</Td>
-                        <Td>{value.storage + ' G'}</Td>
+                        <Td>{value.storage} G</Td>
                         <Td>{value.other?.replicas ?? data.replicas}</Td>
                       </Tr>
                     );
@@ -205,13 +192,8 @@ const Form = ({
     register,
     setValue,
     getValues,
-    watch,
     formState: { errors }
   } = formHook;
-
-  const walLevel = watch('parameterConfig' as any)?.walLevel || 'logical';
-  const sharedPreloadLibraries =
-    watch('parameterConfig' as any)?.sharedPreloadLibraries || 'wal2json';
 
   const dynamicCpuMarks = useMemo(() => {
     const base = CpuSlideMarkList.slice(0, 9);
@@ -224,46 +206,21 @@ const Form = ({
     return base;
   }, [cpuCores]);
 
-  const supportBackup = useMemo(
-    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [getValues('dbType')]
-  );
-
-  const supportParameterConfig = useMemo(
-    () => ['postgresql', 'mysql', 'mongodb', 'redis'].includes(getValues('dbType')),
-    [getValues('dbType')]
-  );
-
-  const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
-    useMemo(() => {
-      const baseNav: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] = [
-        {
-          id: 'baseInfo',
-          label: 'basic',
-          icon: 'formInfo'
-        }
-      ];
-
-      if (supportBackup) {
-        baseNav.push({
-          id: 'backupSettings',
-          label: 'backup_settings',
-          icon: 'backupSettings'
-        });
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
+    () => [
+      {
+        id: 'baseInfo',
+        label: 'basic',
+        icon: 'formInfo'
+      },
+      {
+        id: 'backupSettings',
+        label: 'backup_settings',
+        icon: 'backupSettings'
       }
-
-      if (supportParameterConfig) {
-        baseNav.push({
-          id: 'parameterConfig',
-          label: 'ParameterConfig',
-          icon: 'slider',
-          isConfig: true
-        });
-      }
-
-      return baseNav;
-    }, [supportBackup, supportParameterConfig]);
+    ],
+    []
+  );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
 
@@ -306,6 +263,12 @@ const Form = ({
     backgroundColor: 'grayModern.50'
   };
 
+  const supportBackup = useMemo(
+    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [getValues('dbType')]
+  );
+
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
     let minStorageChange = 1,
@@ -318,13 +281,10 @@ const Form = ({
         specialUse = 2;
         break;
       case DBTypeEnum.kafka:
-        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       case DBTypeEnum.milvus:
-        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
-        break;
-      case DBTypeEnum.clickhouse:
-        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
+        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
         break;
       default:
         break;
@@ -347,13 +307,6 @@ const Form = ({
       setValue('memory', minMemory);
     }
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
-
-    if (!getValues('parameterConfig' as any)) {
-      setValue('parameterConfig' as any, {
-        walLevel: 'logical',
-        sharedPreloadLibraries: 'wal2json'
-      });
-    }
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getValues('dbType'), allocatedStorage]);
 
@@ -388,10 +341,6 @@ const Form = ({
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backupSettingsRef, supportBackup]);
 
-  useEffect(() => {
-    console.log(getValues('cpu'), getValues('memory'));
-  }, [getValues('cpu'), getValues('memory')]);
-
   return (
     <>
       <Grid
@@ -425,7 +374,7 @@ const Form = ({
             border={theme.borders.base}
             p={'4px'}
           >
-            {navList.map((item) => (
+            {navList.slice(0, supportBackup ? 2 : 1).map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
                   borderRadius={'base'}
@@ -538,10 +487,7 @@ const Form = ({
                           onClick={() => {
                             if (isEdit) return;
                             setValue('dbType', item.id);
-                            const versions = DBVersionMap[item.id];
-                            if (versions && versions.length > 0) {
-                              setValue('dbVersion', versions[0].id);
-                            }
+                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
                           }}
                         >
                           <Image
@@ -801,7 +747,6 @@ const Form = ({
               />
             </Box>
           </Box>
-
           {supportBackup && (
             <Box id={'backupSettings'} ref={backupSettingsRef} {...boxStyles}>
               <Box {...headerStyles}>
@@ -1031,158 +976,6 @@ const Form = ({
                 </Box>
               </Box>
             </Box>
-          )}
-
-          {/* parameter congif */}
-          {supportParameterConfig && (
-            <Accordion pb={'100px'} id={'parameterConfig'} allowToggle defaultIndex={[]}>
-              <AccordionItem {...boxStyles}>
-                <AccordionButton
-                  {...headerStyles}
-                  justifyContent={'space-between'}
-                  _hover={{ bg: '' }}
-                >
-                  <Flex alignItems={'center'}>
-                    <MyIcon name={'slider'} mr={5} w={'20px'} color={'grayModern.200'} />
-                    {t('ParameterConfig')}
-                    <Center
-                      bg={'grayModern.200'}
-                      minW={'48px'}
-                      px={'8px'}
-                      height={'28px'}
-                      ml={'14px'}
-                      fontSize={'11px'}
-                      borderRadius={'33px'}
-                      color={'grayModern.700'}
-                    >
-                      {t('Option')}
-                    </Center>
-                  </Flex>
-                  <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
-                </AccordionButton>
-
-                <AccordionPanel px={'42px'} py={'24px'}>
-                  <TableContainer>
-                    <Table variant="unstyled" width={'full'}>
-                      <Thead>
-                        <Tr>
-                          <Th
-                            fontSize={'14px'}
-                            color={'grayModern.900'}
-                            border={'none'}
-                            _first={{
-                              borderLeftRadius: '6px'
-                            }}
-                            _last={{
-                              borderRightRadius: '6px'
-                            }}
-                          >
-                            {t('dbconfig.parameter_name')}
-                          </Th>
-                          <Th
-                            fontSize={'14px'}
-                            color={'grayModern.900'}
-                            border={'none'}
-                            _first={{
-                              borderLeftRadius: '6px'
-                            }}
-                            _last={{
-                              borderRightRadius: '6px'
-                            }}
-                          >
-                            {t('dbconfig.parameter_value')}
-                          </Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        <Tr>
-                          <Td w="190px">
-                            <Text fontSize={'14px'} color={'grayModern.900'}>
-                              wal_level
-                            </Text>
-                          </Td>
-                          <Td>
-                            <Input
-                              value={walLevel}
-                              size="sm"
-                              borderRadius={'md'}
-                              borderColor={'#E8EBF0'}
-                              bg={'#F7F8FA'}
-                              _focusVisible={{
-                                borderColor: 'brightBlue.500',
-                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                                bg: '#FFF',
-                                color: '#111824'
-                              }}
-                              _hover={{
-                                borderColor: 'brightBlue.300'
-                              }}
-                              onChange={(e) => {
-                                setValue('parameterConfig' as any, {
-                                  ...getValues('parameterConfig' as any),
-                                  walLevel: e.target.value
-                                });
-                              }}
-                            />
-                            <MyIcon
-                              name="edit"
-                              w={'16px'}
-                              h={'16px'}
-                              color={'grayModern.500'}
-                              cursor={'pointer'}
-                              _hover={{
-                                color: 'brightBlue.500'
-                              }}
-                            />
-                          </Td>
-                        </Tr>
-                        <Tr>
-                          <Td w="190px">
-                            <Text fontSize={'14px'} color={'grayModern.900'}>
-                              shared_preload_libraries
-                            </Text>
-                          </Td>
-                          <Td>
-                            <Input
-                              value={sharedPreloadLibraries}
-                              size="sm"
-                              borderRadius={'md'}
-                              borderColor={'#E8EBF0'}
-                              bg={'#F7F8FA'}
-                              _focusVisible={{
-                                borderColor: 'brightBlue.500',
-                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                                bg: '#FFF',
-                                color: '#111824'
-                              }}
-                              _hover={{
-                                borderColor: 'brightBlue.300'
-                              }}
-                              onChange={(e) => {
-                                setValue('parameterConfig' as any, {
-                                  ...getValues('parameterConfig' as any),
-                                  sharedPreloadLibraries: e.target.value
-                                });
-                              }}
-                            />
-                            <MyIcon
-                              name="edit"
-                              w={'16px'}
-                              h={'16px'}
-                              color={'grayModern.500'}
-                              cursor={'pointer'}
-                              _hover={{
-                                color: 'brightBlue.500'
-                              }}
-                            />
-                          </Td>
-                        </Tr>
-                      </Tbody>
-                    </Table>
-                  </TableContainer>
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
           )}
         </Box>
       </Grid>

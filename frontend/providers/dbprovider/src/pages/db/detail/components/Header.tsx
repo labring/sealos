@@ -7,7 +7,7 @@ import {
 } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { defaultDBDetail, mapDBType } from '@/constants/db';
+import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType, DBType } from '@/types/db';
 import { Box, Button, Flex, useDisclosure, IconButton, ButtonGroup } from '@chakra-ui/react';
@@ -24,6 +24,7 @@ import {
   PrimaryColorsType,
   LangType,
   yowantLayoutConfig,
+  mapDBType
 } from '@/constants/chat2db';
 import { ConnectionInfo } from './AppBaseInfo';
 import { generateLoginUrl } from '@/services/chat2db/user';
@@ -286,13 +287,7 @@ const Header = ({
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
-      <Flex
-        alignItems={'center'}
-        cursor={'pointer'}
-        onClick={() => {
-          router.replace('/dbs');
-        }}
-      >
+      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
         <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
         <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'24px'}>
           {router.query.name || db.dbName}
@@ -411,87 +406,6 @@ const Header = ({
         h={'32px'}
         fontSize={'12px'}
         variant={'outline'}
-        borderRadius="md"
-        w={'40px'}
-        size="md"
-        leftIcon={<MyIcon name="delete" w="16px" h="16px" />}
-        isLoading={loading}
-        isDisabled={db.status.value === 'Updating'}
-        onClick={onOpenDelModal}
-      />
-
-      {db.status.value !== 'Stopped' && (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'16px'} />}
-          isLoading={loading}
-          isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
-          onClick={() => {
-            if (db.source.hasSource && db.source.sourceType === 'sealaf') {
-              setUpdateAppName(db.dbName);
-              onOpenUpdateModal();
-            } else {
-              router.push(`/db/edit?name=${db.dbName}`);
-            }
-          }}
-        >
-          {t('update')}
-        </Button>
-      )}
-      {db.status.value === 'Stopped' ? (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="continue" w={'16px'} />}
-          isLoading={loading}
-          onClick={handleStartApp}
-        >
-          {t('Continue')}
-        </Button>
-      ) : (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="pause" w={'16px'} />}
-          isLoading={loading}
-          isDisabled={db.status.value === 'Updating'}
-          onClick={onOpenPause(handlePauseApp)}
-        >
-          {t('Pause')}
-        </Button>
-      )}
-
-      {db.status.value !== 'Stopped' && (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'16px'} />}
-          isDisabled={db.status.value === 'Updating'}
-          onClick={openRestartConfirm(handleRestartApp)}
-          isLoading={loading}
-        >
-          {t('Restart')}
-        </Button>
-      )}
-
-      <Button
-        minW={'75px'}
-        h={'32px'}
-        fontSize={'12px'}
-        variant={'outline'}
         leftIcon={<MyIcon name="delete" w={'16px'} />}
         isLoading={loading}
         isDisabled={db.status.value === 'Updating'}
@@ -528,9 +442,7 @@ const Header = ({
           dbName={db.dbName}
           source={db.source}
           onClose={onCloseDelModal}
-          onSuccess={() => {
-            router.push('/dbs');
-          }}
+          onSuccess={() => router.replace('/dbs')}
         />
       )}
 

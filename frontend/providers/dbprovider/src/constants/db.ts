@@ -241,7 +241,7 @@ export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
   [DBTypeEnum.mongodb]: ['mongodb'],
   [DBTypeEnum.mysql]: ['mysql'],
   [DBTypeEnum.redis]: ['redis', 'redis-sentinel'],
-  [DBTypeEnum.kafka]: ['kafka-broker', 'controller', 'kafka-exporter'],
+  [DBTypeEnum.kafka]: ['kafka-server', 'kafka-broker', 'controller', 'kafka-exporter'],
   [DBTypeEnum.qdrant]: ['qdrant'],
   [DBTypeEnum.nebula]: ['nebula-console', 'nebula-graphd', 'nebula-metad', 'nebula-storaged'],
   [DBTypeEnum.weaviate]: ['weaviate'],

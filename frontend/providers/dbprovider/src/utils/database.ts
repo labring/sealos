@@ -91,45 +91,79 @@ export async function fetchDBSecret(
   dbType: DBType,
   namespace: string
 ) {
-  // get secret: try multiple common naming conventions, but DO NOT throw if not found
+  // get secret: try multiple common naming conventions based on database type
   const candidates: string[] = [];
-  if (dbType === DBTypeEnum.mongodb) candidates.push(`${dbName}-mongodb-account-root`);
+
+  // Add specific secret names based on database type
+  if (dbType === DBTypeEnum.clickhouse) candidates.push(`${dbName}-conn-credential`);
+  if (dbType === DBTypeEnum.milvus) candidates.push(`${dbName}-conn-credential`);
+  if (dbType === DBTypeEnum.postgresql) candidates.push(`${dbName}-conn-credential`);
+  if (dbType === DBTypeEnum.kafka) candidates.push(`${dbName}-kafka-combine-account-admin`);
   if (dbType === DBTypeEnum.redis) candidates.push(`${dbName}-redis-account-default`);
-  if (dbType === DBTypeEnum.kafka) candidates.push(`${dbName}-broker-account-admin`);
+  if (dbType === DBTypeEnum.mongodb) candidates.push(`${dbName}-mongodb-account-root`);
+  if (dbType === DBTypeEnum.mysql) candidates.push(`${dbName}-conn-credential`); // apecloud-mysql
+
+  // Fallback to generic conn-credential for other types
   candidates.push(`${dbName}-conn-credential`);
 
   let secret: k8s.V1Secret | undefined;
+  let secretName = '';
+
   for (const name of candidates) {
     try {
-      console.log('[fetchDBSecret] Name:', name);
-      console.log('[fetchDBSecret] Namespace:', namespace);
+      console.log('[fetchDBSecret] Trying secret name:', name);
       const res = await k8sCore.readNamespacedSecret(name, namespace);
-      console.log('[fetchDBSecret] Res: Get');
-      if (res?.body) {
+      if (res?.body?.data) {
         secret = res.body;
-        console.log('[fetchDBSecret] Secret:', secret);
+        secretName = name;
+        console.log('[fetchDBSecret] Found secret:', name);
         break;
       }
     } catch (e: any) {
       // continue trying next candidate on 404; do not interrupt
       const statusCode = e?.response?.statusCode || e?.statusCode;
       if (statusCode && Number(statusCode) === 404) {
+        console.log('[fetchDBSecret] Secret not found:', name);
         continue;
       }
+      console.log('[fetchDBSecret] Error fetching secret:', name, e.message);
       continue;
     }
   }
 
-  // If still not found, return empty placeholders to avoid interruption
   if (!secret || !secret.data) {
-    return {
-      username: '',
-      password: '',
-      host: '',
-      port: '',
-      body: secret
-    };
+    throw Error(
+      `Secret not found for database ${dbName} of type ${dbType}. Tried: ${candidates.join(', ')}`
+    );
   }
+
+  const username = Buffer.from(secret.data[dbTypeMap[dbType].usernameKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
+
+  const password = Buffer.from(secret.data[dbTypeMap[dbType].passwordKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
+
+  const hostKey = Buffer.from(secret.data[dbTypeMap[dbType].hostKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
+
+  const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
+
+  const port = Buffer.from(secret.data[dbTypeMap[dbType].portKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
+
+  console.log('[fetchDBSecret] Successfully retrieved secret:', secretName);
+
+  return {
+    username,
+    password,
+    host,
+    port,
+    body: secret
+  };
 }
 
 type resourcesDistributeMap = Partial<
@@ -208,67 +242,45 @@ export function distributeResources(data: {
         }
       };
     case DBTypeEnum.redis:
-      const redisResource = getPercentResource(1);
-      const sentinelResource = allocateCM(cpu * 0.5, memory * 0.5);
-      const sentinelStorage = Math.round(data.storage * 0.5);
+      // Please ref RedisHAConfig in  /constants/db.ts
+      let rsRes = RedisHAConfig(data.replicas > 1);
       return {
         redis: {
-          cpuMemory: redisResource,
-          storage: data.storage
+          cpuMemory: getPercentResource(1),
+          storage: Math.max(data.storage - 1, 1)
         },
         'redis-sentinel': {
-          cpuMemory: sentinelResource,
-          storage: sentinelStorage,
+          cpuMemory: allocateCM(rsRes.cpu, rsRes.memory),
+          storage: rsRes.storage,
           other: {
-            replicas: data.replicas
+            replicas: rsRes.replicas
           }
         }
       };
     case DBTypeEnum.kafka:
-      const brokerResource = {
-        cpuMemory: getPercentResource(0.5),
-        storage: Math.max(Math.round((data.storage * 2) / 3), 1)
-      };
       const quarterResource = {
         cpuMemory: getPercentResource(0.25),
-        storage: Math.max(Math.round((data.storage * 1) / 3), 1)
+        storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
       };
       return {
-        'kafka-broker': brokerResource,
+        'kafka-server': quarterResource,
+        'kafka-broker': quarterResource,
         controller: quarterResource,
-        'kafka-exporter': {
-          ...quarterResource,
-          storage: 0
-        }
+        'kafka-exporter': quarterResource
       };
     case DBTypeEnum.milvus:
       return {
         milvus: {
-          cpuMemory: getPercentResource(0.5),
-          storage: Math.max(Math.round(data.storage * 0.5), 1)
+          cpuMemory: getPercentResource(0.4),
+          storage: Math.max(Math.round(data.storage / 3), 1)
         },
         etcd: {
-          cpuMemory: getPercentResource(0.25),
-          storage: Math.max(Math.round(data.storage * 0.25), 1)
+          cpuMemory: getPercentResource(0.3),
+          storage: Math.max(Math.round(data.storage / 3), 1)
         },
         minio: {
-          cpuMemory: getPercentResource(0.25),
-          storage: Math.max(Math.round(data.storage * 0.25), 1)
-        }
-      };
-    case DBTypeEnum.clickhouse:
-      return {
-        clickhouse: {
-          cpuMemory: getPercentResource(0.5),
-          storage: Math.max(Math.round(data.storage * 0.5), 1)
-        },
-        'ch-keeper': {
-          cpuMemory: getPercentResource(0.25),
-          storage: Math.max(Math.round(data.storage * 0.25), 1)
-        },
-        zookeeper: {
-          cpuMemory: getPercentResource(0.25),
-          storage: Math.max(Math.round(data.storage * 0.25), 1)
+          cpuMemory: getPercentResource(0.3),
+          storage: Math.max(Math.round(data.storage / 3), 1)
         }
       };
     default:
