@@ -468,8 +468,8 @@ run_cloud(){
               --env passwordSalt=\"${varPasswordSalt}\" \
               --env regionUID=\"${varRegionUID}\" \
               --env databaseMongodbURI=\"${varDatabaseMongodbURI}/sealos-auth?authSource=admin\" \
-              --env databaseLocalCockroachdbURI=\"${varDatabaseGlobalCockroachdbURI}\" \
-              --env databaseGlobalCockroachdbURI=\"${varDatabaseLocalCockroachdbURI}\" \
+              --env databaseLocalCockroachdbURI=\"${varDatabaseLocalCockroachdbURI}\" \
+              --env databaseGlobalCockroachdbURI=\"${varDatabaseGlobalCockroachdbURI}\" \
               --env jwtInternal=\"${varJwtInternal}\" \
               --env jwtRegional=\"${varJwtRegional}\" \
               --env jwtGlobal=\"${varJwtGlobal}\" "
@@ -482,7 +482,7 @@ run_cloud(){
             break
         else
             warn "Waiting for pods to be in Running state for desktop-frontend..."
-            sleep 2
+            sleep 15
         fi
       done
     fi
