@@ -54,13 +54,13 @@
     "@types/js-yaml": "^4.0.6",
     "@types/node": "^20.7.1",
     "@types/uuid": "^9.0.4",
-    "rollup": "2.79.1",
+    "rollup": "2.79.2",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-dts": "^4.2.3",
     "tslib": "^2.6.2"
   },
   "dependencies": {
-    "axios": "^1.5.1",
+    "axios": "^1.8.2",
     "dayjs": "^1.11.10",
     "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
