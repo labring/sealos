@@ -37,6 +37,8 @@ spec:
       containers:
         - name: devbox-frontend
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ default "" .tlsRejectUnauthorized }}
             - name: DOCUMENT_URL_ZH
               value: https://sealos.run/docs/overview/intro
             - name: DOCUMENT_URL_EN

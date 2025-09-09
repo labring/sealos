@@ -68,6 +68,9 @@ spec:
     spec:
       containers:
         - name: applaunchpad-frontend
+          env:
+          - name: NODE_TLS_REJECT_UNAUTHORIZED
+            value: {{ default "" .tlsRejectUnauthorized }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
