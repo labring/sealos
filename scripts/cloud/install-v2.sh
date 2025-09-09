@@ -445,7 +445,7 @@ run_cloud(){
     registry_domain="sealos.hub:5000"
     run_and_log "sealos login -u admin -p ${registry_password} ${registry_domain}"
     for name in "${!cloudImages[@]}"; do
-       pull_image "${registry_domain}/${sealos_cloud_image_repository}/${cloudImages[$name]}:${sealos_cloud_version}"
+       sealos rmi -f  "${registry_domain}/${sealos_cloud_image_repository}/${cloudImages[$name]}:${sealos_cloud_version}" >/dev/null 2>&1
     done
     if [[ "${dry_run,,}" == "false" ]]; then
       varCloudDomain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
