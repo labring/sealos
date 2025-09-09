@@ -21,6 +21,7 @@ interface UpgradePlanDialogProps {
   isUpgradeMode?: boolean;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  defaultSelectedPlan?: string;
 }
 
 export function UpgradePlanDialog({
@@ -30,7 +31,8 @@ export function UpgradePlanDialog({
   isCreateMode = false,
   isUpgradeMode = false,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  defaultSelectedPlan = ''
 }: UpgradePlanDialogProps) {
   const plansData = usePlanStore((state) => state.plansData);
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
@@ -41,17 +43,30 @@ export function UpgradePlanDialog({
   // Set default selected plan
   useEffect(() => {
     if (isCreateMode || isUpgradeMode) {
-      // Set default selected plan to the most popular one (index 1)
-      if (plans && plans.length > 1) {
-        const mainPlans = plans.filter(
-          (plan) => plan.Prices && plan.Prices.length > 0 && !plan.Tags.includes('more')
-        );
-        if (mainPlans.length > 1) {
-          setSelectedPlanId(mainPlans[1].ID); // Most popular plan
+      if (plans && plans.length > 0) {
+        // If defaultSelectedPlan is provided, try to find a plan with that name
+        if (defaultSelectedPlan) {
+          const planByName = plans.find(
+            (plan) => plan.Name.toLowerCase() === defaultSelectedPlan.toLowerCase()
+          );
+          if (planByName) {
+            setSelectedPlanId(planByName.ID);
+            return;
+          }
+        }
+
+        // Fallback: Set default selected plan to the most popular one (index 1)
+        if (plans.length > 1) {
+          const mainPlans = plans.filter(
+            (plan) => plan.Prices && plan.Prices.length > 0 && !plan.Tags.includes('more')
+          );
+          if (mainPlans.length > 1) {
+            setSelectedPlanId(mainPlans[1].ID); // Most popular plan
+          }
         }
       }
     }
-  }, [isCreateMode, isUpgradeMode, plans]);
+  }, [isCreateMode, isUpgradeMode, plans, defaultSelectedPlan]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

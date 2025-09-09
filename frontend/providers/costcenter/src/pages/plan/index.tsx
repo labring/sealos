@@ -62,6 +62,7 @@ export default function Plan() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
+  const [defaultSelectedPlan, setDefaultSelectedPlan] = useState<string>('');
 
   const handleSubscriptionModalOpenChange = useCallback(
     (open: boolean) => {
@@ -73,6 +74,7 @@ export default function Plan() {
       // Clean up URL parameters after opening or closing the modal
       const url = new URL(window.location.href);
       url.searchParams.delete('mode');
+      url.searchParams.delete('plan');
       router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
         shallow: true
       });
@@ -93,6 +95,10 @@ export default function Plan() {
 
     if (router.isReady && router.query.mode === 'create') {
       setIsCreateMode(true);
+      // Handle plan parameter for default selection
+      if (router.query.plan) {
+        setDefaultSelectedPlan(router.query.plan as string);
+      }
       handleSubscriptionModalOpenChange(true);
       return;
     }
@@ -141,6 +147,11 @@ export default function Plan() {
 
       if (createMode) {
         setIsCreateMode(true);
+        // Handle plan parameter for default selection (fallback)
+        const planParam = urlParams.get('plan');
+        if (planParam) {
+          setDefaultSelectedPlan(planParam);
+        }
         handleSubscriptionModalOpenChange(true);
         return;
       }
@@ -437,6 +448,7 @@ export default function Plan() {
                   isUpgradeMode={isUpgradeMode}
                   isOpen={subscriptionModalOpen}
                   onOpenChange={handleSubscriptionModalOpenChange}
+                  defaultSelectedPlan={defaultSelectedPlan}
                 >
                   {trigger}
                 </UpgradePlanDialog>
@@ -476,6 +488,7 @@ export default function Plan() {
                 isUpgradeMode={isUpgradeMode}
                 isOpen={subscriptionModalOpen}
                 onOpenChange={handleSubscriptionModalOpenChange}
+                defaultSelectedPlan={defaultSelectedPlan}
               >
                 {trigger}
               </UpgradePlanDialog>
