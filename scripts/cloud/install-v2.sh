@@ -404,7 +404,7 @@ spec:
     sealos_cilium_cmd="sealos run ${image_registry}/${image_repository}/cilium:${cilium_version}\
         --env KUBEADM_POD_SUBNET=${pod_cidr} \
         --env KUBEADM_SERVICE_RANGE=${SEALOS_V2_SERVICE_NODEPORT_RANGE} \
-        --env CILIUM_MASKSIZE=${cilium_masksize}
+        --env CILIUM_MASKSIZE=${cilium_masksize}"
 
 }
 execute_commands() {
@@ -425,32 +425,94 @@ execute_commands() {
     setMongoVersion
     print "[Step 4] Starting Sealos Cloud installation..."
     if [[ -n "$tls_crt_base64" ]] || [[ -n "$tls_key_base64" ]]; then
-        run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --config-file $sealos_cloud_config_dir/tls-secret.yaml --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log"
+        run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --config-file $sealos_cloud_config_dir/tls-secret.yaml"
     else
-        run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --env loggerfile=$sealos_cloud_config_dir/sealos-cloud-install.log "
+        run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\""
     fi
-    run_and_log "sealos cert --alt-names \"${sealos_cloud_domain}\""
-
-    if [[ "${dry_run,,}" == "true" ]]; then
-      print "[Dry Run] Skipping TLS certificate details display."
-      return 0
-    fi
-
-    print "[Step 5] TLS certificate details:"
-    openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | awk -F', ' '
-    {
-        for(i=1;i<=NF;i++) {
-            if ($i ~ /^DNS:/) {
-                gsub(/^DNS:/, "🌐 DNS: ", $i)
-                print $i
-            }
-            else if ($i ~ /^IP Address:/) {
-                gsub(/^IP Address:/, "📡 IP:   ", $i)
-                print $i
-            }
-        }
-    }'
 }
+declare -A cloudImages=(
+  # controllers
+  ["sealos-cloud-user-controller"]="controllers"
+  ["sealos-cloud-terminal-controller"]="controllers"
+  ["sealos-cloud-app-controller"]="controllers"
+  ["sealos-cloud-resources-controller"]="controllers"
+  ["sealos-cloud-account-controller"]="controllers"
+  ["sealos-cloud-license-controller"]="controllers"
+
+  # frontends
+  ["sealos-cloud-desktop-frontend"]="frontends"
+  ["sealos-cloud-terminal-frontend"]="frontends"
+  ["sealos-cloud-applaunchpad-frontend"]="frontends"
+  ["sealos-cloud-dbprovider-frontend"]="frontends"
+  ["sealos-cloud-costcenter-frontend"]="frontends"
+  ["sealos-cloud-template-frontend"]="frontends"
+  ["sealos-cloud-license-frontend"]="frontends"
+  ["sealos-cloud-cronjob-frontend"]="frontends"
+
+  # services
+  ["sealos-cloud-database-service"]="services"
+  ["sealos-cloud-account-service"]="services"
+  ["sealos-cloud-launchpad-service"]="services"
+  ["sealos-cloud-job-init-controller"]="services"
+  ["sealos-cloud-job-heartbeat-controller"]="services"
+)
+
+run_cloud(){
+  registry_domain="sealos.hub:5000"
+  run_and_log "sealos login -u admin -p ${registry_password} ${registry_domain}"
+  for img in "${!cloudImages[@]}"; do
+    pull_image "${registry_domain}/${sealos_cloud_image_repository}/${img}:${sealos_cloud_version}"
+  done
+  if [[ "${dry_run,,}" == "false" ]]; then
+    varCloudDomain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
+    varCloudPort=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
+    varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')
+    varDatabaseCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseGlobalCockroachdbURI}')
+    varDatabaseLocalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseLocalCockroachdbURI}')
+    varDatabaseMongodbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseMongodbURI}')
+    varPasswordSalt=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.passwordSalt}')
+    varJwtInternal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtInternal}')
+    varJwtRegional=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtRegional}')
+    varJwtGlobal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtGlobal}')
+  fi
+  print "[Step 5] TLS certificate details:"
+  openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | awk -F', ' '
+  {
+      for(i=1;i<=NF;i++) {
+          if ($i ~ /^DNS:/) {
+              gsub(/^DNS:/, "🌐 DNS: ", $i)
+              print $i
+          }
+          else if ($i ~ /^IP Address:/) {
+              gsub(/^IP Address:/, "📡 IP:   ", $i)
+              print $i
+          }
+      }
+  }'
+}
+
+tls_info(){
+  run_and_log "sealos cert --alt-names \"${sealos_cloud_domain}\""
+  if [[ "${dry_run,,}" == "true" ]]; then
+    print "[Dry Run] Skipping TLS certificate details display."
+    return 0
+  fi
+  print "[Step 5] TLS certificate details:"
+  openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | awk -F', ' '
+  {
+      for(i=1;i<=NF;i++) {
+          if ($i ~ /^DNS:/) {
+              gsub(/^DNS:/, "🌐 DNS: ", $i)
+              print $i
+          }
+          else if ($i ~ /^IP Address:/) {
+              gsub(/^IP Address:/, "📡 IP:   ", $i)
+              print $i
+          }
+      }
+  }'
+}
+
 finish_info() {
     if [[ "${dry_run,,}" == "true" ]]; then
       print "[Dry Run] Skipping final installation summary."
@@ -488,6 +550,7 @@ tls_tips() {
   install_pull_images
   prepare_configs
   execute_commands
+  tls_info
   finish_info
   tls_tips
 }
