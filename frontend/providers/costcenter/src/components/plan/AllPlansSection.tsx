@@ -9,8 +9,6 @@ import {
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
 import { getWorkspaceSubscriptionList, getPaymentList } from '@/api/plan';
-import { getWorkspacesConsumptions } from '@/api/billing';
-import { PaymentRecord } from '@/types/plan';
 import useBillingStore from '@/stores/billing';
 import request from '@/service/request';
 import { useMemo } from 'react';
@@ -152,14 +150,6 @@ export function AllPlansSection() {
     return (
       <div className="flex justify-center py-12">
         <div>Loading subscriptions...</div>
-      </div>
-    );
-  }
-
-  if (!subscriptions.length) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="text-gray-500">No subscriptions found</div>
       </div>
     );
   }
