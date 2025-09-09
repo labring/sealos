@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	vlogsServer "github.com/labring/sealos/service/vlogs/server"
 )
@@ -16,15 +17,16 @@ type RestartableServer struct {
 }
 
 func (rs *RestartableServer) Serve(c *vlogsServer.Config) {
-	var vs, err = vlogsServer.NewVLogsServer(c)
+	vs, err := vlogsServer.NewVLogsServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)
 		return
 	}
 
 	hs := &http.Server{
-		Addr:    c.Server.ListenAddress,
-		Handler: vs,
+		Addr:              c.Server.ListenAddress,
+		Handler:           vs,
+		ReadHeaderTimeout: 30 * time.Second,
 	}
 
 	var listener net.Listener

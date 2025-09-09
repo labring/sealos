@@ -23,6 +23,7 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 		Transport: &http.Transport{
 			// nosemgrep
 			TLSClientConfig: &tls.Config{
+				//nolint:gosec
 				InsecureSkipVerify: true,
 			},
 		},
@@ -33,12 +34,16 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP req error: %v", err)
+		return nil, fmt.Errorf("HTTP req error: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
-			return nil, fmt.Errorf("HTTP %d error, unable to read error details: %v", resp.StatusCode, readErr)
+			return nil, fmt.Errorf(
+				"HTTP %d error, unable to read error details: %w",
+				resp.StatusCode,
+				readErr,
+			)
 		}
 		resp.Body.Close()
 		log.Printf("=== Victoria Logs Query Failed ===")
@@ -47,7 +52,7 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 		log.Printf("Request URL: %s", req.URL.String())
 		log.Printf("Error Content: %s", string(body))
 		log.Printf("===================================")
-		return nil, fmt.Errorf("Victoria Logs query failed [%d]: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("victoria Logs query failed [%d]: %s", resp.StatusCode, string(body))
 	}
 	return resp, nil
 }
@@ -55,16 +60,16 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 func generateReq(query *QueryParams) (*http.Request, error) {
 	baseURL, err := url.Parse(query.Path + "/select/logsql/query")
 	if err != nil {
-		return nil, fmt.Errorf("can not parser API URL: %v", err)
+		return nil, fmt.Errorf("can not parser API URL: %w", err)
 	}
 	params := url.Values{}
 	params.Add("query", query.Query)
 	params.Add("start", query.StartTime)
 	params.Add("end", query.EndTime)
 	baseURL.RawQuery = params.Encode()
-	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("create HTTP req error: %v", err)
+		return nil, fmt.Errorf("create HTTP req error: %w", err)
 	}
 	req.SetBasicAuth(query.Username, query.Password)
 	return req, nil

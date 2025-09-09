@@ -2,12 +2,15 @@ package server
 
 import (
 	"fmt"
-	"github.com/labring/sealos/service/pkg/api"
 	"strings"
+
+	"github.com/labring/sealos/service/pkg/api"
 )
 
-const modeTrue = "true"
-const modeFalse = "false"
+const (
+	modeTrue  = "true"
+	modeFalse = "false"
+)
 
 type VLogsQuery struct {
 	query string
@@ -34,7 +37,12 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	var builder strings.Builder
 	var item string
 	if len(req.Time) != 0 {
-		item = fmt.Sprintf(`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.Time, req.App)
+		item = fmt.Sprintf(
+			`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`,
+			req.Namespace,
+			req.Time,
+			req.App,
+		)
 	} else {
 		item = fmt.Sprintf(`{namespace="%s"}  app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.App)
 	}
@@ -80,18 +88,21 @@ func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
 
 func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
-	if len(req.Pod) == 0 && len(req.Container) == 0 {
+	switch {
+	case len(req.Pod) == 0 && len(req.Container) == 0:
 		// Generate query based only on namespace
 		builder.WriteString(fmt.Sprintf(`{namespace="%s"}`, req.Namespace))
-	} else if len(req.Pod) == 0 {
+	case len(req.Pod) == 0:
 		// Generate query based on container
 		for i, container := range req.Container {
-			builder.WriteString(fmt.Sprintf(`{container="%s",namespace="%s"}`, container, req.Namespace))
+			builder.WriteString(
+				fmt.Sprintf(`{container="%s",namespace="%s"}`, container, req.Namespace),
+			)
 			if i != len(req.Container)-1 {
 				builder.WriteString(" OR ")
 			}
 		}
-	} else if len(req.Container) == 0 {
+	case len(req.Container) == 0:
 		// Generate query based on pod
 		for i, pod := range req.Pod {
 			builder.WriteString(fmt.Sprintf(`{pod="%s",namespace="%s"}`, pod, req.Namespace))
@@ -99,11 +110,18 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 				builder.WriteString(" OR ")
 			}
 		}
-	} else {
+	default:
 		// Generate query based on both pod and container
 		for i, container := range req.Container {
 			for j, pod := range req.Pod {
-				builder.WriteString(fmt.Sprintf(`{container="%s",namespace="%s",pod="%s"}`, container, req.Namespace, pod))
+				builder.WriteString(
+					fmt.Sprintf(
+						`{container="%s",namespace="%s",pod="%s"}`,
+						container,
+						req.Namespace,
+						pod,
+					),
+				)
 				if i != len(req.Container)-1 || j != len(req.Pod)-1 {
 					builder.WriteString(" OR ")
 				}
