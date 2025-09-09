@@ -336,30 +336,6 @@ pre_check() {
   if [[ -z "$master_ips" ]]; then
     error "Environment master_ips is not set. Please set it, e.g.: 192.168.1.2:22,192.168.1.3:22"
   fi
-  if [[ $EUID -ne 0 ]]; then
-    error "This script must be run as root. Please re-run as root or with sudo."
-  fi
-  if [[ "$(uname -s)" != "Linux" ]]; then
-    error "This script only supports Linux."
-  fi
-  for cmd in curl iptables; do
-    if ! command -v $cmd &>/dev/null; then
-      error "The $cmd is not installed. Please install $cmd and re-run the script."
-    fi
-  done
-  if ! command -v lvm &>/dev/null; then
-    warn "Warning: lvm is not installed. Some commercial features (such as upgrades) may be unavailable."
-  fi
-  arch=$(uname -m)
-  if [[ "$arch" != "x86_64" && "$arch" != "aarch64" ]]; then
-    error "Host CPU architecture must be AMD64 (x86_64) or AArch64 (aarch64). Current: $arch"
-  fi
-  kernel_full=$(uname -r)
-  if [ "$(ver_ge "$kernel_full" "4.19.57")" -ne 0 ]; then
-    if [[ "$kernel_full" != *"el8"* && "$kernel_full" != *"el9"* ]]; then
-      error "Linux kernel must be >= 4.19.57 or an equivalent supported version (for example RHEL8's 4.18). Current: $kernel_full"
-    fi
-  fi
   mkdir -p "$sealos_cloud_config_dir"
   info "Environment and dependency checks passed."
 }
@@ -570,9 +546,16 @@ EOF
 
     print "[Step 8] Starting Sealos Cloud Frontends..."
 
+    if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
+       tls_optional=""
+    else
+      tls_optional="--env tlsRejectUnauthorized=1"
+    fi
+
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-applaunchpad"]}:${sealos_cloud_version} \
       --env cloudDomain=${varCloudDomain} \
       --env cloudPort=\"${varCloudPort}\" \
+      ${tls_optional} \
       --env certSecretName=\"wildcard-cert\" "
 
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-terminal"]}:${sealos_cloud_version} \
