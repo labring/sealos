@@ -66,6 +66,7 @@ set -o noglob
 #   SEALOS_V2_CLOUD_PORT           - Optional. Cloud HTTP(S) port (default: "443").
 #   SEALOS_V2_CLOUD_DOMAIN         - Optional. Cloud domain name to expose Sealos Cloud (recommended to set for TLS).
 #   SEALOS_V2_DRY_RUN              - Optional. If "true", perform a dry run without making changes (default: "false").
+#   SEALOS_V2_ENABLE_ACME          - Optional. If "true", enable ACME for automatic TLS certs (default: "false").
 #
 # Notes:
 #   - Any variable left unset will use the script's built-in default values shown above.
@@ -118,7 +119,7 @@ export sealos_exec_debug=${SEALOS_V2_DEBUG:-"false"}
 export dry_run=${SEALOS_V2_DRY_RUN:-"false"}
 export sealos_cloud_port=${SEALOS_V2_CLOUD_PORT:-"443"}
 export sealos_cloud_domain=${SEALOS_V2_CLOUD_DOMAIN:-""}
-
+export sealos_enable_acme=${SEALOS_V2_ENABLE_ACME:-"false"}
 
 # Print supported environment variables and usage (triggered by -h or --help)
 print_env_help() {
@@ -157,6 +158,7 @@ Debug / runtime
   SEALOS_V2_DRY_RUN            If "true", perform a dry run (no changes; commands will be printed)
   SEALOS_V2_CLOUD_PORT         Cloud HTTPS port (default: 443)
   SEALOS_V2_CLOUD_DOMAIN       Cloud domain to expose Sealos Cloud (recommended for TLS)
+  SEALOS_V2_ENABLE_ACME        If "true", enable ACME for automatic TLS certs (default: false)
 
 Usage examples
   Inline (one-shot):
@@ -390,6 +392,19 @@ execute_commands() {
     run_and_log "sealos run ${image_registry}/${image_repository}/kubeblocks:${kubeblocks_version}"
     setMongoVersion
     print "[Step 4] Starting Sealos Cloud installation..."
+    if [[ "${sealos_enable_acme,,}" == "true" ]]; then
+        info "ACME is enabled for automatic TLS certificates."
+        acmednsSecret="$(curl -s -X POST https:///auth.acme-dns.io/register)"
+        fulldomain=$(echo $acmednsSecret | sed -n 's/.*"fulldomain":"\([^"]*\)".*/\1/p')
+        if [[ $fulldomain != "" ]]; then
+           info "ACME DNS details obtained. Please create a CNAME record for ${sealos_cloud_domain} pointing to ${fulldomain}."
+           # shellcheck disable=SC2046
+           # shellcheck disable=SC2027
+           run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --env acmednsSecret="$(echo "${acmednsSecret}" | base64 -w0)" --env acmednsHost=auth.acme-dns.io "
+        else
+          error "Failed to obtain ACME DNS details. Please check your network connectivity."
+        fi
+    fi
     if [[ -n "$tls_crt_base64" ]] || [[ -n "$tls_key_base64" ]]; then
         run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env cloudDomain=\"${sealos_cloud_domain}\" --env cloudPort=\"${sealos_cloud_port}\" --env mongodbVersion=\"${mongodb_version}\" --config-file $sealos_cloud_config_dir/tls-secret.yaml"
     else
@@ -627,6 +642,11 @@ finish_info() {
 
 tls_tips() {
     print "TLS certificate information (important - please review):"
+    if [[ "${sealos_enable_acme,,}" == "true" ]]; then
+        print "A CNAME record should point ${sealos_cloud_domain} to the ACME DNS name provided during installation."
+        print "Create a CNAME record for '_acme-challenge.${sealos_cloud_domain}' pointing to the ${fulldomain}."
+        return
+    fi
     if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
         print "A custom TLS certificate and private key were provided."
         print "Ensure the DNS name ${sealos_cloud_domain} resolves to this server's IP so the certificate is valid."
