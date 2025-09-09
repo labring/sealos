@@ -4,12 +4,7 @@ import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
 import { BackupItemType, DBEditType } from '@/types/db';
-import {
-  json2Account,
-  json2ResourceOps,
-  json2CreateCluster,
-  json2ParameterConfig
-} from '@/utils/json2Yaml';
+import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
@@ -95,26 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       storageClassName: process.env.STORAGE_CLASSNAME
     });
 
-    const yamlList = [account, cluster];
-
-    if (['postgresql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      const parameterConfig = dbForm.parameterConfig || {
-        walLevel: 'logical',
-        sharedPreloadLibraries: 'wal2json'
-      };
-
-      const config = json2ParameterConfig(
-        dbForm.dbName,
-        dbForm.dbType,
-        dbForm.dbVersion,
-        parameterConfig.walLevel,
-        parameterConfig.sharedPreloadLibraries
-      );
-
-      yamlList.push(config);
-    }
-
-    await applyYamlList(yamlList, 'create');
+    await applyYamlList([account, cluster], 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',
       'v1alpha1',
