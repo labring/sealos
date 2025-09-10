@@ -469,12 +469,10 @@ run_cloud(){
 
     print "[Step 8] Starting Sealos Cloud Frontends..."
 
-    if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
-       tls_optional=""
-    else
-      tls_optional="--env tlsRejectUnauthorized=1"
+    varCertMode=$(kubectl get configmap cert-config -n sealos-system -o jsonpath='{.data.CERT_MODE}')
+    if [[ "${varCertMode}" == "self-signed" ]]; then
+        tls_optional="--env tlsRejectUnauthorized=0"
     fi
-
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-applaunchpad"]}:${sealos_cloud_version} \
       --env cloudDomain=${varCloudDomain} \
       --env cloudPort=\"${varCloudPort}\" \
