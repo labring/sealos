@@ -288,9 +288,6 @@ pre_check() {
   if [[ -z "$sealos_cloud_domain" ]]; then
     error "Environment sealos_cloud_domain is not set. Please set it, e.g.: sealos.io"
   fi
-  if [[ -z "$master_ips" ]]; then
-    error "Environment master_ips is not set. Please set it, e.g.: 192.168.1.2:22,192.168.1.3:22"
-  fi
   if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
       if ! is_absolute_path "${cert_path}"; then
          error "Environment cert_path must be an absolute path."
