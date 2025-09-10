@@ -14,5 +14,5 @@ nodePort:
 EOF
 
 helm upgrade --install cilium -n kube-system charts/cilium -f values-cloud.yaml ${HELM_OPTS} \
-      --set ipv4NativeRoutingCIDR="${KUBEADM_POD_SUBNET}" --set ipam.operator.clusterPoolIPv4PodCIDRList="${KUBEADM_POD_SUBNET}" \
+      --set ipam.operator.clusterPoolIPv4PodCIDRList="${KUBEADM_POD_SUBNET}" \
       -f np.yaml --set ipam.operator.clusterPoolIPv4MaskSize="${CILIUM_MASKSIZE}"

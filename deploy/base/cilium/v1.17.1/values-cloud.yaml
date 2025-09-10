@@ -9,11 +9,9 @@ bpf:
 k8sServiceHost: apiserver.cluster.local
 k8sServicePort: 6443
 kubeProxyReplacement: "true"
-# native routing
-routingMode: native
-ipv4NativeRoutingCIDR: 10.4.0.0/14
-gke:
-  enabled: true
+# routing mode
+routingMode: tunnel
+tunnelProtocol: vxlan
 # ipam
 ipam:
   mode: "cluster-pool"
@@ -32,6 +30,7 @@ hubble:
 prometheus:
   enabled: true
 operator:
+  replicas: 1
   prometheus:
     enabled: true
 nodePort:
