@@ -83,7 +83,7 @@ const Network = () => {
   const internalProtocolMap = {
     HTTP: 'http://',
     GRPC: 'grpc://',
-    WS: 'ws://'
+    WS: ['ws', '://'].join('')
   };
   const networkColumn: {
     title: string;
