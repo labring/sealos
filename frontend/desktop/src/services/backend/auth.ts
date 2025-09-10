@@ -123,6 +123,8 @@ export const callBillingService = async (
       regionDomain
     })
   });
-
+  if (!response.ok) {
+    throw new Error('Failed to call billing service');
+  }
   return response.json();
 };
