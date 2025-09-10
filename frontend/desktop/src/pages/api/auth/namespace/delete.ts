@@ -37,6 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     if (!queryResult) return jsonRes(res, { code: 404, message: 'the namespace is not found' });
     const creator = queryResult.workspace.id.replace('ns-', '');
+    const workspaceNS = queryResult.workspace.id;
 
     const regionUid = getRegionUid();
     // sync status, user add 1,
@@ -49,11 +50,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId: payload.userId
         },
         {
-          workspace: ns_uid
+          workspace: workspaceNS
         }
       );
     } catch (e) {
       console.log('delete workspace subscription error', e);
+      return jsonRes(res, {
+        code: 500,
+        message: 'delete workspace subscription error calling billing service'
+      });
     }
 
     const res1 = await setUserTeamDelete(creator);
