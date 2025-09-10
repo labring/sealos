@@ -1,11 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import {
-  UserQuotaItem,
-  WorkspaceQuotaRequest,
-  WorkspaceQuotaRequestSchema
-} from '@/types/workspace';
+import { UserQuotaItem, WorkspaceQuotaRequestSchema } from '@/types/workspace';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
@@ -70,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { workspace } = parseResult.data as WorkspaceQuotaRequest;
+    const { workspace } = parseResult.data;
 
     const client = await makeAPIClientByHeader(req, res);
     if (!client) {
