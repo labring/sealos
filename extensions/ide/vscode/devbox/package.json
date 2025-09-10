@@ -229,12 +229,12 @@
     "eslint": "^8.57.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
-    "webpack": "^5.93.0",
+    "webpack": "^5.101.3",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.36",
-    "axios": "^1.7.5",
+    "axios": "^1.8.2",
     "dayjs": "^1.11.13",
     "execa": "^9.5.1",
     "ssh-config": "^5.0.0"
