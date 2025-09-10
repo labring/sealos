@@ -125,7 +125,7 @@ export default function Plan() {
     }
 
     // Check for success state from Stripe callback
-    if (router.isReady && router.query.stripeState === 'success') {
+    if (router.isReady && router.query.stripeState === 'success' && router.query.payId) {
       console.log('Setting showCongratulations to true');
       setShowCongratulations(true);
       return;
@@ -179,7 +179,8 @@ export default function Plan() {
       }
 
       const stripeSuccess = urlParams.get('stripeState') === 'success';
-      if (stripeSuccess) {
+      const payId = urlParams.get('payId');
+      if (stripeSuccess && payId) {
         console.log('Setting showCongratulations to true (fallback)');
         setShowCongratulations(true);
         return;
