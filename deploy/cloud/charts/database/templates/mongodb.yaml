@@ -49,24 +49,18 @@ metadata:
     - cluster.kubeblocks.io/finalizer
   labels:
     clusterdefinition.kubeblocks.io/name: mongodb
-    clusterversion.kubeblocks.io/name: {{ .mongodbVersion }}
+    clusterversion.kubeblocks.io/name: {{ .Values.mongodb.version }}
   name: sealos-mongodb
   namespace: sealos
 spec:
   clusterDefinitionRef: mongodb
-  clusterVersionRef: {{ .mongodbVersion }}
+  clusterVersionRef: {{ .Values.mongodb.version }}
   componentSpecs:
     - componentDefRef: mongodb
       monitor: true
       name: mongodb
-      replicas: 1
-      resources:
-        limits:
-          cpu: "1"
-          memory: 2Gi
-        requests:
-          cpu: 100m
-          memory: 102Mi
+      replicas: {{ .Values.mongodb.replicas }}
+      resources: {{- toYaml .Values.mongodb.resources | nindent 8 }}
       serviceAccountName: sealos-mongodb
       volumeClaimTemplates:
         - name: data
@@ -75,5 +69,5 @@ spec:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 5Gi
+                storage: {{ .Values.mongodb.storage }}
   terminationPolicy: Delete

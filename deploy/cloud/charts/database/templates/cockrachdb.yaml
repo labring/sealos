@@ -11,15 +11,9 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "3Gi"
+            storage: "{{.Values.cockroachdb.storage}}"
         volumeMode: Filesystem
-  resources:
-    requests:
-      cpu: 100m
-      memory: 0.5Gi
-    limits:
-      cpu: 1000m
-      memory: 2Gi
+  resources: {{- toYaml .Values.cockroachdb.resources | nindent 4 }}
   tlsEnabled: true
   cockroachDBVersion: v23.1.11
   nodes: 3

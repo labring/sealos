@@ -25,3 +25,4 @@ deploy/cloud/tars
 /lifecycle/tools/
 
 **.env*
+!scripts/cloud/sealos.env

@@ -1,15 +1,10 @@
 FROM scratch
-COPY tars tars
-COPY etc etc
 COPY scripts scripts
-COPY manifests manifests
+COPY registry registry
+COPY charts charts
+COPY install.sh install.sh
+COPY tools.sh tools.sh
+ENV SEALOS_CLOUD_DOMAIN="127.0.0.1.nip.io"
+ENV SEALOS_CLOUD_PORT="443"
 
-ENV cloudDomain="127.0.0.1.nip.io"
-ENV cloudPort=""
-ENV mongodbUri=""
-ENV mongodbVersion="mongodb-5.0"
-ENV acmednsHost="auth.acme-dns.io"
-ENV acmednsSecret=""
-ENV loggerfile="/root/.sealos/cloud/cloud-install.log"
-
-CMD ["bash scripts/init.sh"]
+CMD ["bash install.sh"]
