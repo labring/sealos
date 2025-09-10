@@ -1,0 +1,57 @@
+{{- if .Values.acmedns.enabled }}
+apiVersion: v1
+stringData:
+  acmedns.json: |
+    {
+      "{{ .Values.global.clusterDomain }}": {{ empty .Values.acmedns.secret | ternary "<acmedns-secret-placeholder>" (.Values.acmedns.secret | b64dec ) }}
+    }
+kind: Secret
+metadata:
+  name: acme-dns
+  namespace: sealos-system
+type: Opaque
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: acme-dns-issuer
+  namespace: sealos-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@sealos.io
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        acmeDNS:
+          host: https://{{ .Values.acmedns.host }}
+          accountSecretRef:
+            name: acme-dns
+            key: acmedns.json
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cert
+  namespace: sealos-system
+spec:
+  secretName: wildcard-cert
+  dnsNames:
+    - "{{ .Values.global.clusterDomain }}"
+    - "*.{{ .Values.global.clusterDomain }}"
+  issuerRef:
+    name: acme-dns-issuer
+    kind: Issuer
+---
+apiVersion: v1
+data:
+  CERT_MODE: "acmedns"
+  ACMEDNS_SECRET: "{{ .Values.acmedns.secret }}"
+  ACMEDNS_HOST: "{{ .Values.acmedns.host }}"
+  ACMEDNS_FULL_DOMAIN: "{{ .Values.acmedns.fullDomain }}"
+kind: ConfigMap
+metadata:
+  name: cert-config
+  namespace: sealos-system
+{{- end }}

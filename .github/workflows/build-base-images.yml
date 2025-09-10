@@ -1,6 +1,12 @@
 name: 🚀 Build public cloud base images
 on:
   workflow_dispatch:
+    inputs:
+      image:
+        description: "Image name, default is all"
+        required: false
+        default: ""
+        type: string
 permissions:
   contents: read
   packages: write
@@ -15,8 +21,10 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
+        env:
+          IMAGE_NAME: ${{ inputs.image }}
         run: |
-          bash ./.github/scripts/matrix.sh >> $GITHUB_OUTPUT
+          bash ./.github/scripts/matrix.sh ${{env.IMAGE_NAME}} >> $GITHUB_OUTPUT
   build-images-arm64:
     runs-on: ubuntu-24.04
     needs: [ resolve-versions ]

@@ -89,7 +89,7 @@ sealos run ghcr.io/labring/sealos/helm:v3.16.2
 
 **Environment Variables:**
 - `CLOUD_PORT` (default: `443`) - HTTPS port for the gateway
-- `CLOUD_DOMAIN` (default: `"cloud.sealos.io"`) - Domain for the service
+- `CLOUD_DOMAIN` (default: `"127.0.0.1.nip.io"`) - Domain for the service
 - `HELM_OPTS` - Additional Helm options
 
 **Usage:**

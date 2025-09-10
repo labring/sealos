@@ -1,0 +1,15 @@
+global:
+  clusterDomain: 127.0.0.1.nip.io
+  clusterPort: 443
+
+acmedns:
+  enabled: false
+  host: auth.acme-dns.io
+  fullDomain: ""
+  secret: ""
+self:
+  enabled: false
+https:
+  enabled: false
+  crtPath: ""
+  keyPath: ""
