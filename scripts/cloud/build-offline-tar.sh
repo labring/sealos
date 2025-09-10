@@ -1,26 +1,24 @@
 #!/bin/bash
-set -x
-
 ARCH=${ARCH:-"amd64"}
 CLOUD_VERSION=${CLOUD_VERSION:-"latest"}
-
+PROXY=${PROXY:-"ghcr.io"}
 # pull and save images
 mkdir -p output/tars
 
 images=(
-  ghcr.io/labring/sealos/kubernetes:v1.28.15
-  ghcr.io/labring/sealos/helm:v3.16.2
-  ghcr.io/labring/sealos/cilium:v1.17.1
-  ghcr.io/labring/sealos/cert-manager:v1.14.6
-  ghcr.io/labring/sealos/openebs:v3.10.0
-  ghcr.io/labring/sealos/victoria-metrics-k8s-stack:v1.124.0
-  ghcr.io/labring/sealos/higress:v2.1.3
-  ghcr.io/labring/sealos/kubeblocks:v0.8.2
-  ghcr.io/labring/sealos/kubeblocks-kafka:v0.8.2
-  ghcr.io/labring/sealos/cockroach:v2.12.0
-  ghcr.io/labring/sealos/metrics-server:v0.6.4
-  ghcr.io/labring/sealos/sealos-certs:v0.1.0
-  ghcr.io/labring/sealos/sealos-finish:v0.1.0
+  ${PROXY}/labring/sealos/kubernetes:v1.28.15
+  ${PROXY}/labring/sealos/helm:v3.16.2
+  ${PROXY}/labring/sealos/cilium:v1.17.1
+  ${PROXY}/labring/sealos/cert-manager:v1.14.6
+  ${PROXY}/labring/sealos/openebs:v3.10.0
+  ${PROXY}/labring/sealos/victoria-metrics-k8s-stack:v1.124.0
+  ${PROXY}/labring/sealos/higress:v2.1.3
+  ${PROXY}/labring/sealos/kubeblocks:v0.8.2
+  ${PROXY}/labring/sealos/kubeblocks-kafka:v0.8.2
+  ${PROXY}/labring/sealos/cockroach:v2.12.0
+  ${PROXY}/labring/sealos/metrics-server:v0.6.4
+  ${PROXY}/labring/sealos/sealos-certs:v0.1.0
+  ${PROXY}/labring/sealos/sealos-finish:v0.1.0
 )
 
 for image in "${images[@]}"; do
@@ -31,9 +29,8 @@ for image in "${images[@]}"; do
   fi
 done
 
-sealos pull --platform "linux/$ARCH" ghcr.io/labring/sealos-cloud:$CLOUD_VERSION
-sealos tag ghcr.io/labring/sealos-cloud:$CLOUD_VERSION docker.io/labring/sealos-cloud:$CLOUD_VERSION
-sealos save -o output/tars/sealos-cloud.tar docker.io/labring/sealos-cloud:$CLOUD_VERSION
+sealos pull --platform "linux/$ARCH" ${PROXY}/labring/sealos-cloud:$CLOUD_VERSION
+sealos save -o output/tars/sealos-cloud.tar ${PROXY}/labring/sealos-cloud:$CLOUD_VERSION
 
 # get and save cli
 mkdir -p output/cli
