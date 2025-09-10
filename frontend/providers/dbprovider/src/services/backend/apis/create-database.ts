@@ -6,20 +6,29 @@ import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
-import { DBEditType, EditType } from '@/types/db';
+import { DBEditType } from '@/types/db';
 import { raw2schema } from './get-database';
-const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
+
+const schema2Raw = (raw: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
   return {
-    dbType: dbForm.type,
-    dbVersion: dbForm.version,
-    dbName: dbForm.name,
-    replicas: dbForm.resource.replicas,
-    cpu: parseFloat(dbForm.resource.cpu),
-    memory: parseFloat(dbForm.resource.memory),
-    storage: parseFloat(dbForm.resource.storage),
+    dbType: raw.type,
+    dbVersion: raw.version,
+    dbName: raw.name,
+    replicas: raw.resource.replicas,
+    cpu: raw.resource.cpu * 1000,
+    memory: raw.resource.memory * 1024,
+    storage: raw.resource.storage,
     labels: {},
-    terminationPolicy: dbForm.terminationPolicy,
-    autoBackup: dbForm.autoBackup
+    terminationPolicy: raw.terminationPolicy,
+    autoBackup: {
+      start: true,
+      type: 'day',
+      week: [],
+      hour: '12',
+      minute: '00',
+      saveTime: 100,
+      saveType: 'd'
+    }
   };
 };
 export async function createDatabase(
@@ -28,9 +37,9 @@ export async function createDatabase(
     body: z.infer<typeof createDatabaseSchemas.body>;
   }
 ) {
-  const rawDbForm = schema2Raw(request.body);
-  const account = json2Account(rawDbForm);
-  const cluster = json2CreateCluster(rawDbForm, undefined, {
+  const rawData = schema2Raw(request.body);
+  const account = json2Account(rawData);
+  const cluster = json2CreateCluster(rawData, undefined, {
     storageClassName: process.env.STORAGE_CLASSNAME
   });
 
@@ -40,26 +49,26 @@ export async function createDatabase(
     'v1alpha1',
     k8s.namespace,
     'clusters',
-    rawDbForm.dbName
+    rawData.dbName
   )) as {
     body: KbPgClusterType;
   };
   const dbUid = body.metadata.uid;
 
-  const updateAccountYaml = json2Account(rawDbForm, dbUid);
+  const updateAccountYaml = json2Account(rawData, dbUid);
 
   await k8s.applyYamlList([updateAccountYaml], 'replace');
 
   try {
-    if (BackupSupportedDBTypeList.includes(rawDbForm.dbType) && rawDbForm?.autoBackup) {
+    if (BackupSupportedDBTypeList.includes(rawData.dbType)) {
       const autoBackup = convertBackupFormToSpec({
-        autoBackup: rawDbForm?.autoBackup,
-        dbType: rawDbForm.dbType
+        autoBackup: rawData.autoBackup,
+        dbType: rawData.dbType
       });
 
       await updateBackupPolicyApi({
-        dbName: rawDbForm.dbName,
-        dbType: rawDbForm.dbType,
+        dbName: rawData.dbName,
+        dbType: rawData.dbType,
         autoBackup,
         k8sCustomObjects: k8s.k8sCustomObjects,
         namespace: k8s.namespace

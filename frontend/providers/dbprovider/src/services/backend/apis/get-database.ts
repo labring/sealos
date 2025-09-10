@@ -4,7 +4,12 @@ import { z } from 'zod';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail } from '@/utils/adapt';
 import { dbDetailSchema } from '@/types/schemas/db';
-import { DBDetailType } from '@/types/db';
+import {
+  CPUResourceEnum,
+  DBDetailType,
+  MemoryResourceEnum,
+  ReplicasResourceEnum
+} from '@/types/db';
 export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> => {
   const dbEditSchemaFromRaw: z.Infer<typeof dbDetailSchema> = {
     terminationPolicy: raw.terminationPolicy,
@@ -12,18 +17,18 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
     type: raw.dbType,
     version: raw.dbVersion,
     resource: {
-      cpu: raw.cpu.toString(),
-      memory: raw.memory.toString(),
-      storage: raw.storage.toString(),
-      replicas: raw.replicas
+      cpu: raw.cpu as CPUResourceEnum,
+      memory: raw.memory as MemoryResourceEnum,
+      storage: raw.storage as number,
+      replicas: raw.replicas as ReplicasResourceEnum
     },
     id: raw.id,
-    status: raw.status.value, // 假设 status 是一个对象，其中的 value 是状态字符串
+    status: raw.status.value,
     createTime: raw.createTime,
     totalResource: {
-      cpu: raw.totalCpu.toString(),
-      memory: raw.totalMemory.toString(),
-      storage: raw.totalStorage.toString()
+      cpu: raw.totalCpu as CPUResourceEnum,
+      memory: raw.totalMemory as MemoryResourceEnum,
+      storage: raw.totalStorage as number
     },
     isDiskSpaceOverflow: raw.isDiskSpaceOverflow,
     source: {
