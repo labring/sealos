@@ -19,6 +19,7 @@ images=(
   ${PROXY}/labring/sealos/metrics-server:v0.6.4
   ${PROXY}/labring/sealos/sealos-certs:v0.1.0
   ${PROXY}/labring/sealos/sealos-finish:v0.1.0
+  ${PROXY}/labring/sealos-cloud:$CLOUD_VERSION
 )
 
 for image in "${images[@]}"; do
@@ -29,10 +30,6 @@ for image in "${images[@]}"; do
   fi
 done
 
-sealos pull --platform "linux/$ARCH" ${PROXY}/labring/sealos-cloud:$CLOUD_VERSION
-sealos save -o output/tars/sealos-cloud.tar ${PROXY}/labring/sealos-cloud:$CLOUD_VERSION
-
-# get and save cli
 mkdir -p output/cli
 
 VERSION="v5.0.1"
@@ -41,8 +38,7 @@ wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VER
    && tar zxvf sealos_${VERSION#v}_linux_${ARCH}.tar.gz sealos && chmod +x sealos && mv sealos output/cli
 
 
-echo '
-#!/bin/bash
+echo '#!/bin/bash
 
 cp cli/sealos /usr/local/bin
 
@@ -52,8 +48,8 @@ done
 
 '  > output/load-images.sh
 
-curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install-v2.sh -o output/scripts/install-v2.sh
-curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/sealos.env -o output/scripts/sealos.env
+curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install-v2.sh -o output/install-v2.sh
+curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/sealos.env -o output/sealos.env
 
 # tar output to a tar.gz
 mv output sealos-cloud
