@@ -110,8 +110,7 @@ async function waitForDevboxReady(
   return false;
 }
 
-
-async function createNewPort(
+async function createSinglePort(
   portConfig: any,
   devboxName: string,
   namespace: string,
@@ -128,7 +127,6 @@ async function createNewPort(
   const portName = `port-${nanoid()}`; 
   
   try {
-
     let existingService: V1Service | null = null;
     try {
       const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
@@ -140,18 +138,15 @@ async function createNewPort(
     }
 
     if (existingService) {
-   
       const existingServicePorts = existingService.spec?.ports || [];
       
-             const portExistsInService = existingServicePorts.some((p: any) => p.port === port);
-       if (portExistsInService) {
-      
-         const existingPortInfo = existingServicePorts.find((p: any) => p.port === port);
-         if (!existingPortInfo) {
-           throw new Error(`Port ${port} found in service but port info is missing`);
-         }
+      const portExistsInService = existingServicePorts.some((p: any) => p.port === port);
+      if (portExistsInService) {
+        const existingPortInfo = existingServicePorts.find((p: any) => p.port === port);
+        if (!existingPortInfo) {
+          throw new Error(`Port ${port} found in service but port info is missing`);
+        }
         
-      
         let networkName = '';
         let exposesPublicDomainResult = false;
         let publicDomain = '';
@@ -161,10 +156,10 @@ async function createNewPort(
           const networkConfig = {
             name: devboxName,
             networks: [
-                             {
-                 networkName: newNetworkName,
-                 portName: existingPortInfo.name || `port-${port}`,
-                 port,
+              {
+                networkName: newNetworkName,
+                portName: existingPortInfo.name || `port-${port}`,
+                port,
                 protocol: protocol as ProtocolType,
                 openPublicDomain: exposesPublicDomain,
                 publicDomain: generatedPublicDomain,
@@ -180,9 +175,9 @@ async function createNewPort(
           publicDomain = generatedPublicDomain;
         }
         
-                 return {
-           portName: existingPortInfo.name || `port-${port}`,
-           number: port,
+        return {
+          portName: existingPortInfo.name || `port-${port}`,
+          number: port,
           protocol,
           networkName,
           exposesPublicDomain: exposesPublicDomainResult,
@@ -193,7 +188,6 @@ async function createNewPort(
         };
       }
       
-    
       const updatedPorts = [
         ...existingServicePorts,
         {
@@ -219,7 +213,6 @@ async function createNewPort(
         { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
       );
     } else {
- 
       const networkConfig = {
         name: devboxName,
         networks: [
@@ -237,7 +230,6 @@ async function createNewPort(
       await applyYamlList([json2Service(networkConfig)], 'create');
     }
     
-   
     if (exposesPublicDomain && INGRESS_SECRET) {
       const networkConfig = {
         name: devboxName,
@@ -282,22 +274,18 @@ async function createPortsAndNetworks(
   namespace: string,
   k8sCore: any,
   k8sNetworkingApp: any,
-  applyYamlList: any,
-  k8sCustomObjects: any
+  applyYamlList: any
 ) {
   if (!ports.length) {
     return [];
   }
 
-  const createdPorts = [];
-
-  console.log('Waiting for DevBox to be ready before creating ports...');
-  await waitForDevboxReady(k8sCustomObjects, k8sCore, namespace, devboxName);
+  console.log('Creating ports in parallel...');
 
 
-  for (const portConfig of ports) {
+  const portPromises = ports.map(async (portConfig) => {
     try {
-      const createdPort = await createNewPort(
+      return await createSinglePort(
         portConfig,
         devboxName,
         namespace,
@@ -305,10 +293,8 @@ async function createPortsAndNetworks(
         k8sNetworkingApp,
         applyYamlList
       );
-      createdPorts.push(createdPort);
     } catch (error: any) {
-   
-      createdPorts.push({
+      return {
         portName: `port-${portConfig.number}-failed`,
         number: portConfig.number,
         protocol: portConfig.protocol || 'HTTP',
@@ -319,11 +305,11 @@ async function createPortsAndNetworks(
         serviceName: devboxName,
         privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`,
         error: error.message
-      });
+      };
     }
-  }
+  });
 
-  return createdPorts;
+  return await Promise.all(portPromises);
 }
 
 export async function POST(req: NextRequest) {
@@ -346,7 +332,6 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     });
 
-   
     const { body: devboxListBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -369,7 +354,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-  
     const organization = await devboxDB.organization.findUnique({
       where: {
         id: 'labring'
@@ -430,7 +414,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-  
     const resourceConfig = convertResourceConfig(devboxForm.resource);
 
     console.log('Creating DevBox with config:', {
@@ -440,7 +423,6 @@ export async function POST(req: NextRequest) {
       portsCount: devboxForm.ports?.length || 0
     });
 
-  
     const { DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
     const devbox = json2DevboxV2(
       {
@@ -455,15 +437,36 @@ export async function POST(req: NextRequest) {
       SQUASH_ENABLE
     );
 
-    await applyYamlList([devbox], 'create');
 
-   
-    const devboxBody = await waitForDevboxStatus(k8sCustomObjects, namespace, devboxForm.name);
+    const [devboxBody, createdPorts] = await Promise.all([
+
+      (async () => {
+        await applyYamlList([devbox], 'create');
+        return await waitForDevboxStatus(k8sCustomObjects, namespace, devboxForm.name);
+      })(),
+      (async () => {
+        if (devboxForm.ports && devboxForm.ports.length > 0) {
+          try {
+            return await createPortsAndNetworks(
+              devboxForm.ports,
+              devboxForm.name,
+              namespace,
+              k8sCore,
+              k8sNetworkingApp,
+              applyYamlList
+            );
+          } catch (error: any) {
+            console.error('Port creation error:', error.message);
+            return [];
+          }
+        }
+        return [];
+      })()
+    ]);
 
     const resp = [devboxBody, [], template] as [KBDevboxTypeV2, [], typeof template];
     const adaptedData = adaptDevboxDetailV2(resp);
 
-  
     const response = await k8sCore.readNamespacedSecret(devboxForm.name, namespace);
     const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string;
 
@@ -476,36 +479,23 @@ export async function POST(req: NextRequest) {
 
     const config = parseTemplateConfig(template.config);
 
-   
-    let createdPorts: any[] = [];
-    if (devboxForm.ports && devboxForm.ports.length > 0) {
-      try {
-        createdPorts = await createPortsAndNetworks(
-          devboxForm.ports,
-          devboxForm.name,
-          namespace,
-          k8sCore,
-          k8sNetworkingApp,
-          applyYamlList,
-          k8sCustomObjects
-        );
-      } catch (error: any) {
-       
-        return jsonRes({
-          code: 201, 
-          message: 'DevBox created successfully, but port creation had issues',
-          data: {
-            name: adaptedData.name,
-            sshPort: adaptedData.sshPort,
-            base64PrivateKey,
-            userName: config.user,
-            workingDir: config.workingDir,
-            domain: process.env.SEALOS_DOMAIN,
-            ports: [],
-            portCreationError: error.message
-          }
-        });
-      }
+    const hasPortErrors = createdPorts.some((port: any) => port.error);
+    if (hasPortErrors) {
+      const errorPorts = createdPorts.filter((port: any) => port.error);
+      return jsonRes({
+        code: 201, 
+        message: 'DevBox created successfully, but some ports had issues',
+        data: {
+          name: adaptedData.name,
+          sshPort: adaptedData.sshPort,
+          base64PrivateKey,
+          userName: config.user,
+          workingDir: config.workingDir,
+          domain: process.env.SEALOS_DOMAIN,
+          ports: createdPorts,
+          portErrors: errorPorts.map((p: any) => ({ port: p.number, error: p.error }))
+        }
+      });
     }
 
     return jsonRes({
