@@ -19,7 +19,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@sealos.io
+    email: {{.Values.acmedns.email}}
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:

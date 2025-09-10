@@ -4,6 +4,7 @@ global:
 
 acmedns:
   enabled: false
+  email: ""
   host: auth.acme-dns.io
   fullDomain: ""
   secret: ""
