@@ -9,6 +9,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export interface LogQueryPayload {
   app?: string;
   time?: string;
+  startTime?: string;
+  endTime?: string;
   namespace?: string;
   limit?: string;
   jsonMode?: string;
@@ -54,6 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const {
       time = '30d',
+      startTime,
+      endTime,
       app = '',
       limit = '10',
       jsonMode = 'true',
@@ -68,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     } = req.body as LogQueryPayload;
 
     const params: LogQueryPayload = {
-      time: time,
+      ...(startTime && endTime ? { startTime, endTime } : { time }),
       namespace: namespace,
       app: app,
       limit: limit,
