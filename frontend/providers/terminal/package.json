@@ -11,7 +11,7 @@
   "dependencies": {
     "@kubernetes/client-node": "0.18.0",
     "@tanstack/react-query": "^4.35.3",
-    "axios": "1.2.1",
+    "axios": "1.8.2",
     "clsx": "^1.2.1",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
@@ -20,7 +20,7 @@
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "nanoid": "^4.0.2",
-    "next": "13.2.4",
+    "next": "14.2.32",
     "next-i18next": "^15.3.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
