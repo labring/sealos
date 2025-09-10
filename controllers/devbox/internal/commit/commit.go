@@ -28,6 +28,7 @@ import (
 )
 
 type Committer interface {
+	CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error)
 	Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) (string, error)
 	Push(ctx context.Context, imageName string) error
 	RemoveImage(ctx context.Context, imageName string, force bool, async bool) error
