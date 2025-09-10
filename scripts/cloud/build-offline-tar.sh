@@ -52,8 +52,8 @@ done
 
 '  > output/load-images.sh
 
-curl -sfL https://raw.githubusercontent.com/labring/sealos/${CLOUD_VERSION}/scripts/cloud/install-v2.sh -o output/scripts/install-v2.sh
-curl -sfL https://raw.githubusercontent.com/labring/sealos/${CLOUD_VERSION}/scripts/cloud/sealos.env -o output/scripts/sealos.env
+curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install-v2.sh -o output/scripts/install-v2.sh
+curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/sealos.env -o output/scripts/sealos.env
 
 # tar output to a tar.gz
 mv output sealos-cloud
