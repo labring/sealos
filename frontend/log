@@ -1,0 +1,113 @@
+…los/frontend/desktop on  prisma [$] via 🐳 orbstack via  v20.4.0 took 5s 
+❯ npx prisma db pull --schema ./prisma/global/schema.prisma 
+Prisma schema loaded from prisma/global/schema.prisma
+Datasource "db": CockroachDB database "global2", schema "public" at "192.168.10.35:32749"
+
+✔ Introspected 58 models and wrote them into prisma/global/schema.prisma in 1.86s
+      
+*** WARNING ***
+
+These fields were enriched with `@map` information taken from the previous Prisma schema:
+  - Model: "UserInfo", field: "userUid"
+  - Model: "UserInfo", field: "signUpRegionUid"
+  - Model: "UserInfo", field: "isInited"
+  - Model: "WorkspaceUsage", field: "userUid"
+  - Model: "WorkspaceUsage", field: "workspaceUid"
+  - Model: "WorkspaceUsage", field: "regionUid"
+  - Model: "WorkspaceUsage", field: "createdAt"
+  - Model: "WorkspaceUsage", field: "updatedAt"
+
+The following models were ignored as they do not have a valid unique identifier or id. This is currently not supported by Prisma Client:
+  - "Configs"
+
+These models were enriched with `@@map` information taken from the previous Prisma schema:
+  - "EnterpriseRealNameInfo"
+  - "GiftCodeCreation"
+  - "RealNameAuthProvider"
+  - "RestrictedUser"
+  - "UserAccountType"
+  - "UserRealNameInfo"
+  - "UserSemChannel"
+  - "UserInfo"
+  - "WorkspaceUsage"
+
+Relations were copied from the previous data model due to not using foreign keys in the database. If any of the relation columns changed in the database, the relations might not be correct anymore:
+  - "AuditLogDetail"
+  - "AuditLog"
+  - "PrecommitTransaction"
+  - "User"
+  - "User"
+  - "PrecommitTransaction"
+  - "User"
+  - "User"
+  - "User"
+  - "TransactionDetail"
+  - "CommitTransactionSet"
+  - "ErrorPreCommitTransaction"
+  - "TransactionDetail"
+  - "WorkspaceUsage"
+  - "UserTask"
+  - "Region"
+  - "PrecommitTransaction"
+  - "OauthProvider"
+  - "MergeUserTransactionInfo"
+  - "MergeUserTransactionInfo"
+  - "DeleteUserTransactionInfo"
+  - "DeleteUserLog"
+  - "UserTask"
+  - "UserInfo"
+  - "WorkspaceUsage"
+  - "User"
+  - "Task"
+  - "User"
+  - "Region"
+  - "User"
+
+These objects have comments defined in the database, which is not yet fully supported. Read more: https://pris.ly/d/database-comments
+  - Type: "model", name: "Transfer"
+
+Run prisma generate to generate Prisma Client.
+
+
+…os/frontend/desktop on  prisma [$!] via 🐳 orbstack via  v20.4.0 took 6s 
+❯ npx prisma db pull --schema ./prisma/region/schema.prisma 
+Prisma schema loaded from prisma/region/schema.prisma
+Datasource "db": CockroachDB database
+Error: Prisma schema validation - (get-config wasm)
+Error code: P1012
+error: Environment variable not found: REGION_DATABASE_URL.
+  -->  schema.prisma:9
+   | 
+ 8 |   provider     = "cockroachdb"
+ 9 |   url          = env("REGION_DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+[Context: getConfig]
+
+Prisma CLI Version : 5.10.2
+
+…os/frontend/desktop on  prisma [$!] via 🐳 orbstack via  v20.4.0 took 5s 
+❯ export REGION_DATABASE_URL="postgresql://sealos:fb9jg8te4x78ocqrr2vgbs99qa
+uh9flfd1u6g300kq7ywjay3ah7cndr60udd6wg@192.168.10.35:32749/local" 
+
+sealos/frontend/desktop on  prisma [$!] via 🐳 orbstack via  v20.4.0 
+❯ npx prisma db pull --schema ./prisma/region/schema.prisma
+Prisma schema loaded from prisma/region/schema.prisma
+Datasource "db": CockroachDB database "local", schema "public" at "192.168.10.35:32749"
+
+✔ Introspected 6 models and wrote them into prisma/region/schema.prisma in 1.27s
+      
+*** WARNING ***
+
+Relations were copied from the previous data model due to not using foreign keys in the database. If any of the relation columns changed in the database, the relations might not be correct anymore:
+  - "UserWorkspace"
+  - "UserCr"
+  - "Workspace"
+  - "UserWorkspace"
+
+Run prisma generate to generate Prisma Client.
+
+
+…os/frontend/desktop on  prisma [$!] via 🐳 orbstack via  v20.4.0 took 6s 
+❯ 
