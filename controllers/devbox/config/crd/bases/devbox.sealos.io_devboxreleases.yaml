@@ -3,13 +3,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: devboxreleases.devbox.sealos.io
 spec:
   group: devbox.sealos.io
   names:
-    kind: DevboxRelease
-    listKind: DevboxReleaseList
+    kind: DevBoxRelease
+    listKind: DevBoxReleaseList
     plural: devboxreleases
     singular: devboxrelease
   scope: Namespaced
@@ -17,6 +17,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.phase
       name: Phase
+      type: string
+    - jsonPath: .spec.version
+      name: Version
       type: string
     - jsonPath: .status.sourceImage
       name: SourceImage
@@ -27,7 +30,7 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: DevboxRelease is the Schema for the devboxreleases API.
+        description: DevBoxRelease is the Schema for the devboxreleases API.
         properties:
           apiVersion:
             description: |-
@@ -47,7 +50,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: DevboxReleaseSpec defines the desired state of Devboxrelease.
+            description: DevBoxReleaseSpec defines the desired state of Devboxrelease.
             properties:
               devboxName:
                 type: string

@@ -23,7 +23,7 @@ resources:
   controller: true
   domain: sealos.io
   group: devbox
-  kind: Devboxreleases
+  kind: DevBoxReleases
   path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
   version: v1alpha2
 - api:
@@ -32,7 +32,7 @@ resources:
   controller: true
   domain: sealos.io
   group: devbox
-  kind: DevboxRelease
+  kind: DevBoxRelease
   path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
   version: v1alpha2
 version: "3"

@@ -20,8 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DevboxReleaseSpec defines the desired state of Devboxrelease.
-type DevboxReleaseSpec struct {
+// DevBoxReleaseSpec defines the desired state of Devboxrelease.
+type DevBoxReleaseSpec struct {
 	// +kubebuilder:validation:Required
 	DevboxName string `json:"devboxName"`
 	// +kubebuilder:validation:Required
@@ -30,51 +30,53 @@ type DevboxReleaseSpec struct {
 	Notes string `json:"notes,omitempty"`
 }
 
-type DevboxReleasePhase string
+type DevBoxReleasePhase string
 
 const (
-	// DevboxReleasePhaseSuccess means the Devbox has been released
-	DevboxReleasePhaseSuccess DevboxReleasePhase = "Success"
-	// DevboxReleasePhasePending means the Devbox has not been released
-	DevboxReleasePhasePending DevboxReleasePhase = "Pending"
-	// DevboxReleasePhaseFailed means the Devbox has not been released
-	DevboxReleasePhaseFailed DevboxReleasePhase = "Failed"
+	// DevBoxReleasePhaseSuccess means the Devbox has been released
+	DevBoxReleasePhaseSuccess DevBoxReleasePhase = "Success"
+	// DevBoxReleasePhasePending means the Devbox has not been released
+	DevBoxReleasePhasePending DevBoxReleasePhase = "Pending"
+	// DevBoxReleasePhaseFailed means the Devbox has not been released
+	DevBoxReleasePhaseFailed DevBoxReleasePhase = "Failed"
 )
 
-type DevboxReleaseStatus struct {
+type DevBoxReleaseStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=Pending
 	// +kubebuilder:validation:Enum=Success;Pending;Failed
-	Phase               DevboxReleasePhase `json:"phase,omitempty"`
+	Phase               DevBoxReleasePhase `json:"phase,omitempty"`
 	OriginalDevboxState DevboxState        `json:"originalDevboxState,omitempty"`
 	SourceImage         string             `json:"sourceImage,omitempty"`
 	TargetImage         string             `json:"targetImage,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="SourceImage",type="string",JSONPath=".status.sourceImage"
 // +kubebuilder:printcolumn:name="TargetImage",type="string",JSONPath=".status.targetImage"
 
-// DevboxRelease is the Schema for the devboxreleases API.
-type DevboxRelease struct {
+// DevBoxRelease is the Schema for the devboxreleases API.
+type DevBoxRelease struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DevboxReleaseSpec   `json:"spec,omitempty"`
-	Status DevboxReleaseStatus `json:"status,omitempty"`
+	Spec   DevBoxReleaseSpec   `json:"spec,omitempty"`
+	Status DevBoxReleaseStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// DevboxReleaseList contains a list of DevboxRelease.
-type DevboxReleaseList struct {
+// DevBoxReleaseList contains a list of DevBoxRelease.
+type DevBoxReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []DevboxRelease `json:"items"`
+	Items           []DevBoxRelease `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&DevboxRelease{}, &DevboxReleaseList{})
+	SchemeBuilder.Register(&DevBoxRelease{}, &DevBoxReleaseList{})
 }
