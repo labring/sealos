@@ -1,14 +1,20 @@
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask } from '@/types/user';
+import type { UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
 import { AuthCnamePrams, AuthDomainChallengeParams } from '@/types/params';
 import { getDesktopSessionFromSessionStorage } from '@/utils/user';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
 
-export const getUserQuota = () =>
+export const getWorkspaceQuota = () =>
   GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
+    quota: WorkspaceQuotaItem[];
+  }>('/api/platform/getQuota', undefined, {
+    // [TODO] This API needs authenticate to account service using user info in DESKTOP SESSION.
+    headers: {
+      'X-Desktop-Token': getDesktopSessionFromSessionStorage()?.token
+    }
+  });
 
 export const getUserIsOutStandingPayment = () =>
   GET<{

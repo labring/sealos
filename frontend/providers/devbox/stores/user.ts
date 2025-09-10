@@ -2,17 +2,18 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-import { getUserQuota, getUserIsOutStandingPayment } from '@/api/platform';
-import { DevboxEditType } from '@/types/devbox';
-import { UserQuotaItemType } from '@/types/user';
-type TQuota = Pick<DevboxEditType, 'memory' | 'cpu' | 'gpu'> & { nodeports: number };
+import { getWorkspaceQuota, getUserIsOutStandingPayment } from '@/api/platform';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+
 type State = {
   balance: number;
-  userQuota: UserQuotaItemType[];
+  userQuota: WorkspaceQuotaItem[];
   isOutStandingPayment: boolean;
   loadUserQuota: () => Promise<null>;
   loadUserDebt: () => Promise<null>;
-  checkQuotaAllow: (request: TQuota, usedData?: TQuota) => string | undefined;
+  checkExceededQuotas: (
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport', number>>
+  ) => WorkspaceQuotaItem[];
 };
 
 export const useUserStore = create<State>()(
@@ -22,7 +23,7 @@ export const useUserStore = create<State>()(
       userQuota: [],
       isOutStandingPayment: false,
       loadUserQuota: async () => {
-        const response = await getUserQuota();
+        const response = await getWorkspaceQuota();
         set((state) => {
           state.userQuota = response.quota;
         });
@@ -36,39 +37,18 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, nodeports, gpu }, usedData): string | undefined => {
-        const quote = get().userQuota;
+      checkExceededQuotas: (request) => {
+        const quota = get().userQuota;
 
-        const request = {
-          cpu: cpu / 1000,
-          memory: memory / 1024,
-          nodeports: nodeports,
-          gpu: gpu?.type ? gpu.amount : 0
-        };
+        const exceededItems = quota.filter((item) => {
+          if (!(item.type in request)) return false;
 
-        if (usedData) {
-          const { cpu = 0, memory = 0, nodeports = 0, gpu } = usedData;
-
-          request.cpu -= cpu / 1000;
-          request.memory -= memory / 1024;
-          request.nodeports -= nodeports;
-          request.gpu -= gpu?.type ? gpu.amount : 0;
-        }
-
-        const overLimitTip: { [key: string]: string } = {
-          cpu: 'cpu_exceeds_quota',
-          memory: 'memory_exceeds_quota',
-          nodeports: 'nodeports_exceeds_quota',
-          gpu: 'gpu_exceeds_quota'
-        };
-
-        const exceedQuota = quote.find((item) => {
-          if (item.used + request[item.type] > item.limit) {
+          if (item.limit - item.used <= request[item.type as keyof typeof request]!) {
             return true;
           }
         });
 
-        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : undefined;
+        return exceededItems;
       }
     }))
   )
