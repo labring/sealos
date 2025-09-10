@@ -66,10 +66,12 @@ model TemplateRepository {
   isDeleted              Boolean?                @default(false)
   regionUid              String
   templateRepositoryTags TemplateRepositoryTag[]
+  usageCount             Int                     @default(0)
 
   @@unique([isDeleted, regionUid, name])
   @@index([isDeleted, isPublic])
   @@index([isDeleted, createdAt])
+  @@index([isDeleted, usageCount])
 }
 
 model Template {
@@ -120,7 +122,7 @@ enum TemplateRepositoryKind {
 }
 
 enum TagType {
+  OFFICIAL_CONTENT
   PROGRAMMING_LANGUAGE
   USE_CASE
-  OFFICIAL_CONTENT
 }

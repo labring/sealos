@@ -25,7 +25,8 @@ export const listTemplateRepository = (
     pageSize: number;
   },
   tags?: string[],
-  search?: string
+  search?: string,
+  excludeOfficial?: boolean
 ) => {
   const searchParams = new URLSearchParams();
   if (tags && tags.length > 0) {
@@ -36,12 +37,14 @@ export const listTemplateRepository = (
   searchParams.append('page', page.page.toString());
   searchParams.append('pageSize', page.pageSize.toString());
   if (search) searchParams.append('search', search);
+  if (excludeOfficial) searchParams.append('excludeOfficial', 'true');
   return GET<{
     templateRepositoryList: {
       uid: string;
       name: string;
       description: string | null;
       iconId: string | null;
+      usageCount: number;
       templates: {
         uid: string;
         name: string;
