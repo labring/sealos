@@ -5,7 +5,7 @@ set -o noglob
 # Usage:
 #   Provide configuration via environment variables. Two common ways:
 #     1) Inline (one-shot) - useful for quick runs or CI:
-#          curl -fsSL https://example.com/install-v2.sh | SEALOS_V2_CLOUD_DOMAIN=my.example.com SEALOS_V2_MASTERS="192.0.2.10:22" sh -
+#          curl -fsSL ... | SEALOS_V2_CLOUD_DOMAIN=my.example.com SEALOS_V2_MASTERS="192.0.2.10:22" bash -
 #     2) Local execution - export variables, then run the script:
 #          export SEALOS_V2_CLOUD_DOMAIN=my.example.com
 #          export SEALOS_V2_MASTERS="192.0.2.10:22"
@@ -15,7 +15,7 @@ set -o noglob
 #   - Single-node test using nip.io (local machine):
 #       SEALOS_V2_CLOUD_DOMAIN=127.0.0.1.nip.io SEALOS_V2_MASTERS="127.0.0.1:22" ./install-v2.sh
 #   - Download and run with a public domain:
-#       curl -fsSL https://example.com/install-v2.sh | SEALOS_V2_CLOUD_DOMAIN=cloud.example.com SEALOS_V2_MASTERS="203.0.113.5:22" sh -
+#       curl -fsSL ... | SEALOS_V2_CLOUD_DOMAIN=cloud.example.com SEALOS_V2_MASTERS="203.0.113.5:22" bash -
 #   - Use exported variables (safer for secrets and automation):
 #       export SEALOS_V2_CLOUD_DOMAIN=cloud.example.com
 #       export SEALOS_V2_MASTERS="203.0.113.5:22"
