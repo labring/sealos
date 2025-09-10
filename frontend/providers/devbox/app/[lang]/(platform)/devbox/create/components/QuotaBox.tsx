@@ -3,38 +3,14 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useUserStore } from '@/stores/user';
 
 import { Progress } from '@sealos/shadcn-ui/progress';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
-
-const sourceMap = {
-  cpu: {
-    unit: 'Core',
-    icon: (className: string) => <Cpu className={className} />
-  },
-  memory: {
-    unit: 'Gi',
-    icon: (className: string) => <MemoryStick className={className} />
-  },
-  nodeports: {
-    unit: '',
-    icon: (className: string) => <HdmiPort className={className} />
-  },
-  gpu: {
-    unit: 'Card',
-    icon: (className: string) => <CircuitBoard className={className} />
-  }
-};
+import { resourcePropertyMap } from '@/constants/resource';
 
 const QuotaBox = ({ className }: { className?: string }) => {
   const t = useTranslations();
@@ -49,13 +25,15 @@ const QuotaBox = ({ className }: { className?: string }) => {
       .filter((item) => item.limit > 0)
       .map((item) => {
         const { limit, used, type } = item;
-        const unit = sourceMap[type]?.unit;
-        const icon = sourceMap[type]?.icon;
-        const tip = `${t('total')}: ${limit} ${unit}
-${t('used')}: ${used.toFixed(2)} ${unit}
-${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`;
+        const unit = resourcePropertyMap[type]?.unit;
+        const Icon = resourcePropertyMap[type]?.icon;
+        const scale = resourcePropertyMap[type]?.scale;
 
-        return { ...item, tip, icon };
+        const tip = `${t('total')}: ${(limit / scale).toFixed(2)} ${unit}
+${t('used')}: ${(used / scale).toFixed(2)} ${unit}
+${t('remaining')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
+
+        return { ...item, tip, Icon };
       });
   }, [userQuota, t]);
 
@@ -76,7 +54,7 @@ ${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`;
             )}
           >
             <div className="flex items-center gap-2 text-zinc-900">
-              {item.icon && item.icon('h-5 w-5 text-neutral-400')}
+              <item.Icon className="h-5 w-5 text-neutral-400" />
               <span className="w-20 capitalize">{t(item.type)}</span>
             </div>
             <Tooltip>
