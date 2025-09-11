@@ -179,7 +179,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             existingStores.reduce((sum, item) => sum + item.value, 0)) *
           resourcePropertyMap.storage.scale
         : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
-          resourcePropertyMap.storage.scale
+          resourcePropertyMap.storage.scale,
+      traffic: 1
     });
   }, [checkExceededQuotas, existingStores, formHook.formState, isEdit]);
 
@@ -524,7 +525,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         items={exceededQuotas}
         onOpenChange={setIsInsufficientQuotaDialogOpen}
         open={isInsufficientQuotaDialogOpen}
-        onConfirm={confirmSubmit}
+        onConfirm={() => {}}
+        showControls={false}
       />
     </>
   );
