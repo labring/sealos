@@ -4,6 +4,7 @@ HELM_OPTS="${HELM_OPTS:-}"
 
 SEALOS_CLOUD_DOMAIN="${SEALOS_CLOUD_DOMAIN:-"sealos.io"}"
 SEALOS_CLOUD_PORT="${SEALOS_CLOUD_PORT:-"443"}"
+SEALOS_CLOUD_DIR="${SEALOS_CLOUD_DIR:-"/root/.sealos/cloud"}"
 kubectl create namespace sealos-system --dry-run=client  -o yaml  | kubectl apply -f -
 kubectl create namespace sealos --dry-run=client  -o yaml  | kubectl apply -f -
 
@@ -20,6 +21,22 @@ setMongoVersion() {
 }
 
 {
+  if [ -f "${SEALOS_CLOUD_DIR}/pki/WechatPrivateKey" ]; then
+    cp ${SEALOS_CLOUD_DIR}/pki/WechatPrivateKey ./charts/config/files/WechatPrivateKey
+  fi
+  if [ -f "${SEALOS_CLOUD_DIR}/pki/ALIPAY_APP_CERT_PUBLIC_KEY" ]; then
+    cp ${SEALOS_CLOUD_DIR}/pki/ALIPAY_APP_CERT_PUBLIC_KEY ./charts/config/files/ALIPAY_APP_CERT_PUBLIC_KEY
+  fi
+  if [ -f "${SEALOS_CLOUD_DIR}/pki/ALIPAY_CERT_PUBLIC_KEY" ]; then
+    cp ${SEALOS_CLOUD_DIR}/pki/ALIPAY_CERT_PUBLIC_KEY ./charts/config/files/ALIPAY_CERT_PUBLIC_KEY
+  fi
+  if [ -f "${SEALOS_CLOUD_DIR}/pki/ALIPAY_PRIVATE_KEY" ]; then
+    cp ${SEALOS_CLOUD_DIR}/pki/ALIPAY_PRIVATE_KEY ./charts/config/files/ALIPAY_PRIVATE_KEY
+  fi
+  if [ -f "${SEALOS_CLOUD_DIR}/pki/ALIPAY_ROOT_CERT" ]; then
+    cp ${SEALOS_CLOUD_DIR}/pki/ALIPAY_ROOT_CERT ./charts/config/files/ALIPAY_ROOT_CERT
+  fi
+
   setMongoVersion
   helm upgrade --install cloud-database -n sealos-system charts/database  ${HELM_OPTS} --set mongodb.version=${mongodbVersion}
   gen_mongodbUri
