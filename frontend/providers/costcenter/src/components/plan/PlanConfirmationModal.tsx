@@ -146,6 +146,12 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
                 <span className="text-sm text-gray-600">{formatTrafficAuto(plan.Traffic)}</span>
               </div>
             )}
+            {planResources.nodeports && (
+              <div className="flex items-center gap-2">
+                <CheckCircle size={16} color="#3B82F6" />
+                <span className="text-sm text-gray-600">{planResources.nodeports} Nodeport</span>
+              </div>
+            )}
           </div>
 
           <div className="border-t border-gray-100 mb-5" />
