@@ -23,7 +23,7 @@ import { useTranslation } from 'next-i18next';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { resourcePropertyMap } from '@/constants/resource';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import css from './InsufficientQuotaDialog.module.css';
+import css from './index.module.css';
 
 interface InsufficientQuotaDialogProps {
   items: WorkspaceQuotaItem[];
