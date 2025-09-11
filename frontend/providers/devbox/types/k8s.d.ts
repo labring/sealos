@@ -142,7 +142,7 @@ export type KBDevboxReleaseType = {
   };
   spec: {
     devboxName: string;
-    newTag: string;
+    version: string;
     notes?: string;
   };
   status: {

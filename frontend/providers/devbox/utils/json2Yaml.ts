@@ -181,7 +181,7 @@ export const json2DevboxRelease = (data: {
     },
     spec: {
       devboxName: data.devboxName,
-      newTag: data.tag,
+      version: data.tag,
       notes: data.releaseDes
     }
   };

@@ -114,7 +114,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     if (
       releaseBody.items.some((item: any) => {
         return (
-          item.spec && item.spec.devboxName === devboxName && item.spec.newTag === releaseForm.tag
+          item.spec && item.spec.devboxName === devboxName && item.spec.version === releaseForm.tag
         );
       })
     ) {

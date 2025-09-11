@@ -43,7 +43,7 @@ export async function DELETE(
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const targetRelease = releaseBody.items.find((item: any) => {
-      return item.spec && item.spec.devboxName === devboxName && item.spec.newTag === tag;
+      return item.spec && item.spec.devboxName === devboxName && item.spec.version === tag;
     });
 
     if (!targetRelease) {
