@@ -521,7 +521,7 @@ run_cloud(){
 }
 
 finish_info(){
-    run_and_log "sealos run ${image_registry}/${image_repository}/sealos-finish:${sealos_finish_version} --env SEALOS_CLOUD_DIR=${sealos_cloud_config_dir}  "
+    run_and_log "sealos run ${image_registry}/${image_repository}/sealos-finish:${sealos_finish_version} "
 }
 
 {
