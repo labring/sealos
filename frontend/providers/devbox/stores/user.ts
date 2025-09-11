@@ -43,7 +43,7 @@ export const useUserStore = create<State>()(
         const exceededItems = quota.filter((item) => {
           if (!(item.type in request)) return false;
 
-          if (item.limit - item.used <= request[item.type as keyof typeof request]!) {
+          if (item.limit - item.used < request[item.type as keyof typeof request]!) {
             return true;
           }
         });
