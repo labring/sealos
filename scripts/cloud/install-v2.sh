@@ -342,7 +342,7 @@ execute_commands() {
     run_and_log "sealos run ${image_registry}/${image_repository}/kubeblocks:${kubeblocks_version}"
     print "[Step 4] Starting Sealos Cloud installation..."
 
-    run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env SEALOS_CLOUD_DOMAIN=\"${sealos_cloud_domain}\" --env SEALOS_CLOUD_PORT=\"${sealos_cloud_port}\" "
+    run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env SEALOS_CLOUD_DOMAIN=\"${sealos_cloud_domain}\" --env SEALOS_CLOUD_PORT=\"${sealos_cloud_port}\" --env SEALOS_CLOUD_DIR=${sealos_cloud_config_dir} "
     if [[ "${sealos_enable_acme,,}" == "true" ]]; then
         run_and_log "sealos run ${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version} --env SEALOS_CLOUD_CERT_MODE=acmedns "
     elif [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
