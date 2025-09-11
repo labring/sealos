@@ -11,7 +11,7 @@ type State = {
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>>
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage' | 'traffic', number>>
   ) => WorkspaceQuotaItem[];
 };
 

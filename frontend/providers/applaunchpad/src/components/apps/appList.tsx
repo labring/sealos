@@ -139,7 +139,8 @@ const AppList = ({
       cpu: 1,
       memory: 1,
       nodeport: 1,
-      storage: 1
+      storage: 1,
+      traffic: 1
     });
 
     console.log('exceededQuotaItems', exceededQuotaItems);

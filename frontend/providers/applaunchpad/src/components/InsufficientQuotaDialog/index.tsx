@@ -30,13 +30,15 @@ interface InsufficientQuotaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  showControls?: boolean;
 }
 
 export function InsufficientQuotaDialog({
   items,
   open,
   onOpenChange,
-  onConfirm
+  onConfirm,
+  showControls = true
 }: InsufficientQuotaDialogProps) {
   const { t } = useTranslation();
 
@@ -130,14 +132,16 @@ export function InsufficientQuotaDialog({
             </Text>
           </VStack>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} mr={3}>
-            {t('insufficient_quota_dialog.cancel')}
-          </Button>
-          <Button variant="outline" onClick={onConfirm}>
-            {t('insufficient_quota_dialog.confirm')}
-          </Button>
-        </ModalFooter>
+        {showControls && (
+          <ModalFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)} mr={3}>
+              {t('insufficient_quota_dialog.cancel')}
+            </Button>
+            <Button variant="outline" onClick={onConfirm}>
+              {t('insufficient_quota_dialog.confirm')}
+            </Button>
+          </ModalFooter>
+        )}
       </ModalContent>
     </Modal>
   );
