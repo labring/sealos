@@ -103,7 +103,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -445,8 +445,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                              ? 'GPU'
-                              : 'RAM',
+                                ? 'GPU'
+                                : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined
