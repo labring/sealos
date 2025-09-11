@@ -58,7 +58,7 @@ export function InsufficientQuotaDialog({
               <p className="p-4">{t('insufficient_quota_dialog.alert-title')}</p>
               <Separator className="border-b border-dashed border-zinc-300 bg-transparent" />
               <div className="flex flex-col gap-2 p-4">
-                {items.map((item) => {
+                {items?.map((item) => {
                   const props = resourcePropertyMap[item.type] ?? null;
                   if (!props) return null;
 
