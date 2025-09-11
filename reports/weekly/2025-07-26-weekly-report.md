@@ -1,6 +1,6 @@
 # Sealos Weekly Community Report
 
-**Report Period:** 2024-12-15 to 2024-12-21
+**Report Period:** 2025-07-20 to 2025-07-26
 
 ## 📊 Weekly Statistics
 
