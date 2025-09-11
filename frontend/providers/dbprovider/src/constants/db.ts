@@ -512,28 +512,3 @@ export const BackupSupportedDBTypeList: DBType[] = [
   'apecloud-mysql',
   'redis'
 ];
-
-const DB_TYPE_MAP: Record<string, string> = {
-  mysql: 'MySQL',
-  clickhouse: 'ClickHouse',
-  mongodb: 'MongoDB',
-  snowflake: 'Snowflake',
-  h2: 'H2',
-  oracle: 'Oracle',
-  postgresql: 'PostgreSQL',
-  dm: 'DM',
-  oceanbase: 'OceanBase',
-  hive: 'HIVE',
-  kingbase: 'Kingbase',
-  redis: 'Redis',
-  opengauss: 'OpenGauss',
-  sqlserver: 'SQLServer',
-  sqlite: 'SQLite',
-  db2: 'DB2',
-  duckdb: 'DuckDB',
-  gaussdb: 'GaussDB'
-};
-
-export function mapDBType(dbType: string): string {
-  return DB_TYPE_MAP[dbType.toLowerCase()] ?? dbType;
-}

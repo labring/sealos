@@ -492,8 +492,12 @@ export const json2CreateCluster = (
         name: data.dbName,
         namespace: getUserNamespace(),
         annotations: {
-          'kubeblocks.io/extra-env':
-            '{"KB_KAFKA_ENABLE_SASL":"false","KB_KAFKA_BROKER_HEAP":"-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64","KB_KAFKA_CONTROLLER_HEAP":"-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64","KB_KAFKA_PUBLIC_ACCESS":"false"}'
+          'kubeblocks.io/extra-env': JSON.stringify({
+            KB_KAFKA_ENABLE_SASL: 'false',
+            KB_KAFKA_BROKER_HEAP: '-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64',
+            KB_KAFKA_CONTROLLER_HEAP: '-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64',
+            KB_KAFKA_PUBLIC_ACCESS: 'false'
+          })
         }
       },
       spec: {
@@ -517,7 +521,10 @@ export const json2CreateCluster = (
                 effect: 'NoSchedule'
               }
             ],
-            resources: brokerRes.cpuMemory,
+            resources: {
+              limits: { ...brokerRes.cpuMemory.limits },
+              requests: { ...brokerRes.cpuMemory.requests }
+            },
             volumeClaimTemplates: [
               {
                 name: 'data',
@@ -542,7 +549,10 @@ export const json2CreateCluster = (
             componentDef: 'kafka-controller',
             tls: false,
             replicas: data.replicas,
-            resources: controllerRes.cpuMemory,
+            resources: {
+              limits: { ...controllerRes.cpuMemory.limits },
+              requests: { ...controllerRes.cpuMemory.requests }
+            },
             volumeClaimTemplates: [
               {
                 name: 'metadata',
@@ -600,8 +610,7 @@ export const json2CreateCluster = (
 
     const labels = {
       'kb.io/database': data.dbVersion,
-      'clusterversion.kubeblocks.io/name': data.dbVersion,
-      ...data.labels
+      'clusterversion.kubeblocks.io/name': data.dbVersion
     };
 
     const milvusObj = {
@@ -618,8 +627,8 @@ export const json2CreateCluster = (
         terminationPolicy,
         affinity: {
           podAntiAffinity: 'Preferred',
-          tenancy: 'SharedNode',
-          topologyKeys: ['kubernetes.io/hostname']
+          topologyKeys: ['kubernetes.io/hostname'],
+          tenancy: 'SharedNode'
         },
         tolerations: [
           {

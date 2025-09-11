@@ -30,9 +30,7 @@ export const dbTypeMap = {
   },
   [DBTypeEnum.kafka]: {
     ...base,
-    connectKey: 'kafka',
-    portKey: 'endpoint',
-    hostKey: 'endpoint'
+    connectKey: 'kafka'
   },
   [DBTypeEnum.qdrant]: {
     ...base,
@@ -91,79 +89,110 @@ export async function fetchDBSecret(
   dbType: DBType,
   namespace: string
 ) {
-  // get secret: try multiple common naming conventions based on database type
-  const candidates: string[] = [];
+  // Get secret name based on database type
+  let secretName: string;
 
-  // Add specific secret names based on database type
-  if (dbType === DBTypeEnum.clickhouse) candidates.push(`${dbName}-conn-credential`);
-  if (dbType === DBTypeEnum.milvus) candidates.push(`${dbName}-conn-credential`);
-  if (dbType === DBTypeEnum.postgresql) candidates.push(`${dbName}-conn-credential`);
-  if (dbType === DBTypeEnum.kafka) candidates.push(`${dbName}-kafka-combine-account-admin`);
-  if (dbType === DBTypeEnum.redis) candidates.push(`${dbName}-redis-account-default`);
-  if (dbType === DBTypeEnum.mongodb) candidates.push(`${dbName}-mongodb-account-root`);
-  if (dbType === DBTypeEnum.mysql) candidates.push(`${dbName}-conn-credential`); // apecloud-mysql
+  switch (dbType) {
+    case DBTypeEnum.mysql: // apecloud-mysql
+      secretName = `${dbName}-conn-credential`;
+      break;
+    case DBTypeEnum.clickhouse:
+      secretName = `${dbName}-conn-credential`;
+      break;
+    case DBTypeEnum.milvus:
+      secretName = `${dbName}-conn-credential`;
+      break;
+    case DBTypeEnum.postgresql:
+      secretName = `${dbName}-conn-credential`;
+      break;
+    case DBTypeEnum.kafka:
+      secretName = `${dbName}-kafka-combine-account-admin`;
+      break;
+    case DBTypeEnum.redis:
+      secretName = `${dbName}-redis-account-default`;
+      break;
+    case DBTypeEnum.mongodb:
+      secretName = `${dbName}-mongodb-account-root`;
+      break;
+    default:
+      secretName = `${dbName}-conn-credential`;
+      break;
+  }
 
-  // Fallback to generic conn-credential for other types
-  candidates.push(`${dbName}-conn-credential`);
+  console.log('[fetchDBSecret] Trying secret name:', secretName);
 
-  let secret: k8s.V1Secret | undefined;
-  let secretName = '';
-
-  for (const name of candidates) {
-    try {
-      console.log('[fetchDBSecret] Trying secret name:', name);
-      const res = await k8sCore.readNamespacedSecret(name, namespace);
-      if (res?.body?.data) {
-        secret = res.body;
-        secretName = name;
-        console.log('[fetchDBSecret] Found secret:', name);
-        break;
-      }
-    } catch (e: any) {
-      // continue trying next candidate on 404; do not interrupt
-      const statusCode = e?.response?.statusCode || e?.statusCode;
-      if (statusCode && Number(statusCode) === 404) {
-        console.log('[fetchDBSecret] Secret not found:', name);
-        continue;
-      }
-      console.log('[fetchDBSecret] Error fetching secret:', name, e.message);
-      continue;
+  try {
+    const res = await k8sCore.readNamespacedSecret(secretName, namespace);
+    if (!res?.body?.data) {
+      throw Error(`Secret ${secretName} has no data`);
     }
+
+    console.log('[fetchDBSecret] Found secret:', secretName);
+    const secret = res.body;
+
+    const username = Buffer.from(secret.data?.[dbTypeMap[dbType].usernameKey] || '', 'base64')
+      .toString('utf-8')
+      .trim();
+
+    const password = Buffer.from(secret.data?.[dbTypeMap[dbType].passwordKey] || '', 'base64')
+      .toString('utf-8')
+      .trim();
+
+    // Get host and port based on database type according to requirements
+    let host: string;
+    let port: string;
+
+    switch (dbType) {
+      case DBTypeEnum.mongodb:
+        host = `${dbName}-mongodb.${namespace}.svc`;
+        port = '27017';
+        break;
+      case DBTypeEnum.redis:
+        host = `${dbName}-redis-redis.${namespace}.svc`;
+        port = '6379';
+        break;
+      case DBTypeEnum.clickhouse:
+        host = `${dbName}-clickhouse.${namespace}.svc`;
+        port = '8123';
+        break;
+      case DBTypeEnum.kafka:
+        host = `${dbName}-broker-advertised-listener-0.${namespace}.svc`;
+        port = '9092';
+        break;
+      default:
+        // For other database types, try to get from secret or use default pattern
+        const hostKey = Buffer.from(secret.data?.[dbTypeMap[dbType].hostKey] || '', 'base64')
+          .toString('utf-8')
+          .trim();
+        host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
+
+        const portKey = Buffer.from(secret.data?.[dbTypeMap[dbType].portKey] || '', 'base64')
+          .toString('utf-8')
+          .trim();
+        port = portKey;
+        break;
+    }
+
+    console.log('[fetchDBSecret] Successfully retrieved secret:', secretName);
+
+    return {
+      username,
+      password,
+      host,
+      port,
+      body: secret
+    };
+  } catch (e: any) {
+    const statusCode = e?.response?.statusCode || e?.statusCode;
+    if (statusCode && Number(statusCode) === 404) {
+      console.log('[fetchDBSecret] Secret not found:', secretName);
+      throw Error(
+        `Secret not found for database ${dbName} of type ${dbType}. Secret name: ${secretName}`
+      );
+    }
+    console.log('[fetchDBSecret] Error fetching secret:', secretName, e.message);
+    throw Error(`Failed to fetch secret for database ${dbName} of type ${dbType}: ${e.message}`);
   }
-
-  if (!secret || !secret.data) {
-    throw Error(
-      `Secret not found for database ${dbName} of type ${dbType}. Tried: ${candidates.join(', ')}`
-    );
-  }
-
-  const username = Buffer.from(secret.data[dbTypeMap[dbType].usernameKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  const password = Buffer.from(secret.data[dbTypeMap[dbType].passwordKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  const hostKey = Buffer.from(secret.data[dbTypeMap[dbType].hostKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
-
-  const port = Buffer.from(secret.data[dbTypeMap[dbType].portKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  console.log('[fetchDBSecret] Successfully retrieved secret:', secretName);
-
-  return {
-    username,
-    password,
-    host,
-    port,
-    body: secret
-  };
 }
 
 type resourcesDistributeMap = Partial<
@@ -258,29 +287,48 @@ export function distributeResources(data: {
         }
       };
     case DBTypeEnum.kafka:
-      const quarterResource = {
-        cpuMemory: getPercentResource(0.25),
-        storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
-      };
       return {
-        'kafka-server': quarterResource,
-        'kafka-broker': quarterResource,
-        controller: quarterResource,
-        'kafka-exporter': quarterResource
+        'kafka-broker': {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage / 2), 1)
+        },
+        controller: {
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage / 2), 1)
+        },
+        'kafka-exporter': {
+          cpuMemory: getPercentResource(0.25),
+          storage: 0
+        }
       };
     case DBTypeEnum.milvus:
       return {
         milvus: {
-          cpuMemory: getPercentResource(0.4),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage * 0.5), 1)
         },
         etcd: {
-          cpuMemory: getPercentResource(0.3),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
         },
         minio: {
-          cpuMemory: getPercentResource(0.3),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
+        }
+      };
+    case DBTypeEnum.clickhouse:
+      return {
+        clickhouse: {
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage * 0.5), 1)
+        },
+        'ch-keeper': {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
+        },
+        zookeeper: {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
         }
       };
     default:

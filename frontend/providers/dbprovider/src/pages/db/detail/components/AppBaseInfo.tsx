@@ -188,7 +188,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           })
         : null,
     {
-      enabled: supportConnectDB
+      enabled: supportConnectDB && !!dbStatefulSet
     }
   );
 
@@ -196,7 +196,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
-      enabled: supportConnectDB,
+      enabled: supportConnectDB && !!dbStatefulSet,
       retry: 3,
       onSuccess(data) {
         setIsChecked(!!data);

@@ -513,20 +513,6 @@ const DBList = ({
             )}
 
             <Button
-              mr={'10px'}
-              size={'sm'}
-              h={'32px'}
-              bg={'grayModern.150'}
-              color={'grayModern.900'}
-              _hover={{ color: 'brightBlue.600' }}
-              leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
-              onClick={() => handleManageData(row.original)}
-              isDisabled={row.original.status.value !== DBStatusEnum.Running}
-            >
-              {t('manage_data')}
-            </Button>
-
-            <Button
               mr={'4px'}
               height={'32px'}
               size={'sm'}
