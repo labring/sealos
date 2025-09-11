@@ -403,5 +403,26 @@
   "proxy_detected_title": "检测到代理",
   "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。",
   "nodeport": "端口",
-  "traffic": "流量"
+  "traffic": "流量",
+  "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
+  "memory_exceeds_quota": "内存资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
+  "please_upgrade_plan": {
+    "0": "请 ",
+    "1": "升级您的计划",
+    "2": " 或调整设置"
+  },
+  "insufficient_quota_dialog": {
+    "alert-title": "现在无法创建 DevBox，您已经用尽了全部资源。",
+    "cancel": "取消",
+    "confirm": "确认",
+    "please_upgrade_plan": {
+      "1": "请 ",
+      "2": "升级您的计划",
+      "3": "或删除使用上述资源的应用。"
+    },
+    "quota_available": "可用: ",
+    "quota_in_use": "使用中: ",
+    "quota_total": "总计: ",
+    "title": "资源不足"
+  }
 }
