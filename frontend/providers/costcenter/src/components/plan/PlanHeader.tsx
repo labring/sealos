@@ -20,7 +20,7 @@ export function getPlanBackgroundClass(planName: string, isPayg: boolean): strin
       return 'bg-plan-hobby';
     case 'hobby plus':
     case 'hobby-plus':
-    case 'Standard':
+    case 'standard':
       return 'bg-plan-hobby-plus';
     case 'team':
       return 'bg-plan-team';
