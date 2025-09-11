@@ -152,7 +152,7 @@ const TemplateCard = ({
               {/* name */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="max-w-30 cursor-pointer truncate font-medium">
+                  <span className="max-w-27 cursor-pointer truncate font-medium">
                     {templateRepositoryName}
                   </span>
                 </TooltipTrigger>
