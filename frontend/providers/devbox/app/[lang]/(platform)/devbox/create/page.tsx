@@ -318,7 +318,8 @@ const DevboxCreatePage = () => {
                   ? formData.memory - (oldDevboxEditData.current?.memory ?? 0)
                   : formData.memory,
                 gpu: 0,
-                nodeport: 0
+                nodeport: 0,
+                traffic: 1
               });
 
               if (exceededQuotaItems.length > 0) {
@@ -358,6 +359,7 @@ const DevboxCreatePage = () => {
           // formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
         }}
         items={exceededQuotas}
+        showFooter={false}
       />
     </>
   );

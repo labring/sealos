@@ -19,12 +19,14 @@ export function InsufficientQuotaDialog({
   items,
   open,
   onOpenChange,
-  onConfirm
+  onConfirm,
+  showFooter = true
 }: {
   items: WorkspaceQuotaItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  showFooter?: boolean;
 }) {
   const t = useTranslations();
 
@@ -106,15 +108,17 @@ export function InsufficientQuotaDialog({
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('insufficient_quota_dialog.cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className={cn(buttonVariants({ variant: 'outline' }))}
-          >
-            {t('insufficient_quota_dialog.confirm')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+        {showFooter && (
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('insufficient_quota_dialog.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onConfirm}
+              className={cn(buttonVariants({ variant: 'outline' }))}
+            >
+              {t('insufficient_quota_dialog.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );
