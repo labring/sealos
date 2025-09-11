@@ -16,6 +16,18 @@ export const getWorkspaceQuota = () =>
     }
   });
 
+export const getUserInfo = () =>
+  GET<{
+    subscription: {
+      type: 'PAYG' | 'SUBSCRIPTION';
+    };
+  }>('/api/platform/getUserInfo', undefined, {
+    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
+    headers: {
+      'X-Desktop-Token': getDesktopSessionFromSessionStorage()?.token
+    }
+  });
+
 export const getUserIsOutStandingPayment = () =>
   GET<{
     isOutStandingPayment: boolean;

@@ -73,21 +73,21 @@ export function InsufficientQuotaDialog({
                       <div className="flex items-center gap-2">
                         <div>
                           {t('insufficient_quota_dialog.quota_total')}
-                          {item.limit / props.scale} {props.unit}
+                          {(item.limit / props.scale).toFixed(2)} {props.unit}
                         </div>
                         <div className="h-3">
                           <Separator orientation="vertical" className="bg-zinc-300" />
                         </div>
                         <div>
                           {t('insufficient_quota_dialog.quota_in_use')}
-                          {item.used / props.scale} {props.unit}
+                          {(item.used / props.scale).toFixed(2)} {props.unit}
                         </div>
                         <div className="h-3">
                           <Separator orientation="vertical" className="bg-zinc-300" />
                         </div>
                         <div className="text-red-600">
                           {t('insufficient_quota_dialog.quota_available')}
-                          {(item.limit - item.used) / props.scale} {props.unit}
+                          {((item.limit - item.used) / props.scale).toFixed(2)} {props.unit}
                         </div>
                       </div>
                     </div>
