@@ -46,7 +46,7 @@ export function InsufficientQuotaDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="min-w-[600px]">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <TriangleAlert size={16} className="text-yellow-600" />
