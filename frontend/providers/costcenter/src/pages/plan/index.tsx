@@ -270,6 +270,15 @@ export default function Plan() {
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
     onSuccess: async (data) => {
+      if (data?.message && String(data?.message) === '10004') {
+        return toast({
+          title: 'Quota Reached',
+          description:
+            'Quota has reached the maximum. To avoid overage effects, please upgrade ahead of time or delete unnecessary resources.',
+          variant: 'success'
+        });
+      }
+
       // Close any open modals first
       hideModal();
       // Refresh subscription data
