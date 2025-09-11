@@ -1,17 +1,13 @@
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
+import type { UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
 export const getInitData = () => GET<EnvResponse>('/api/platform/getInitData');
-
-export const getUserQuota = () =>
-  GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
 
@@ -41,8 +37,11 @@ export const checkUserTask = () =>
     }
   });
 
-export const getPriceBonus = () =>
-  GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
+export const getWorkspaceQuota = () =>
+  GET<{
+    quota: WorkspaceQuotaItem[];
+  }>('/api/platform/getQuota', undefined, {
+    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
     headers: {
       Authorization: getUserSession()?.token
     }

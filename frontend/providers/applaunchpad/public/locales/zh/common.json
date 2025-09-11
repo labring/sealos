@@ -401,5 +401,7 @@
   "within_1_hour": "一小时内",
   "within_5_minute": "五分钟内",
   "proxy_detected_title": "检测到代理",
-  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。"
+  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。",
+  "nodeport": "端口",
+  "traffic": "流量"
 }

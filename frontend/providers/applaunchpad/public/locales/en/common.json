@@ -401,5 +401,7 @@
   "within_1_hour": "Within 1 hour",
   "within_5_minute": "Within 5 minute",
   "proxy_detected_title": "Proxy Detected",
-  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider."
+  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider.",
+  "nodeport": "Port",
+  "traffic": "Traffic"
 }
