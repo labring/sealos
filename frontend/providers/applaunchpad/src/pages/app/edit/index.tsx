@@ -7,7 +7,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
-import type { YamlItemType } from '@/types';
+import type { QueryType, YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import {
@@ -35,6 +35,9 @@ import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { resourcePropertyMap } from '@/constants/resource';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -103,13 +106,15 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice, checkExceededQuotas } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const { name } = router.query as QueryType;
+  const isEdit = useMemo(() => !!name, [name]);
   // For identifying existing stores and quota calculation
   const [existingStores, setExistingStores] = useState<AppEditType['storeList']>([]);
   const [defaultGpuSource, setDefaultGpuSource] = useState<AppEditType['gpu']>({
@@ -117,6 +122,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     amount: 0,
     manufacturers: ''
   });
+  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
@@ -157,6 +163,25 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     },
     [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
   );
+
+  const exceededQuotas = useMemo(() => {
+    return checkExceededQuotas({
+      cpu: isEdit
+        ? realTimeForm.current.cpu - (formHook.formState.defaultValues?.cpu ?? 0)
+        : realTimeForm.current.cpu,
+      memory: isEdit
+        ? realTimeForm.current.memory - (formHook.formState.defaultValues?.memory ?? 0)
+        : realTimeForm.current.memory,
+      gpu: realTimeForm.current.gpu?.amount || 0,
+      nodeport: realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length || 0,
+      storage: isEdit
+        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) -
+            existingStores.reduce((sum, item) => sum + item.value, 0)) *
+          resourcePropertyMap.storage.scale
+        : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
+          resourcePropertyMap.storage.scale
+    });
+  }, [checkExceededQuotas, existingStores, formHook.formState, isEdit]);
 
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {
@@ -355,6 +380,100 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     } catch (error) {}
   }, [router.query, already]);
 
+  const confirmSubmit = () => {
+    setIsInsufficientQuotaDialogOpen(false);
+
+    formHook.handleSubmit(async (data) => {
+      const parseYamls = formData2Yamls(data);
+      setYamlList(parseYamls);
+
+      // gpu inventory check
+      if (data.gpu?.type) {
+        const inventory = countGpuInventory(data.gpu?.type);
+        if (data.gpu?.amount > inventory) {
+          return toast({
+            status: 'warning',
+            title: t('Gpu under inventory Tip', {
+              gputype: data.gpu.type
+            })
+          });
+        }
+      }
+      // quote check
+      // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
+      // if (quoteCheckRes) {
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
+
+      // check network port
+      if (!checkNetworkPorts(data.networks)) {
+        return toast({
+          status: 'warning',
+          title: t('Network port conflict')
+        });
+      }
+
+      // check permission
+      if (appName) {
+        try {
+          const result = await checkPermission({
+            appName: data.appName
+          });
+          if (result === 'insufficient_funds') {
+            return toast({
+              status: 'warning',
+              title: t('user.Insufficient account balance')
+            });
+          }
+        } catch (error: any) {
+          return toast({
+            status: 'warning',
+            title: error?.message || 'Check Error'
+          });
+        }
+      }
+
+      openConfirm(() => {
+        track('deployment_create', {
+          module: 'applaunchpad',
+          method: 'custom',
+          config: {
+            template_type: 'public',
+            template_name: data.imageName,
+            template_version: data.imageName.split(':')?.[1] ?? 'latest'
+          },
+          resources: {
+            cpu_cores: data.cpu,
+            ram_mb: data.memory,
+            replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
+            scaling: data.hpa.use
+              ? {
+                  method:
+                    data.hpa.target === 'cpu' ? 'CPU' : data.hpa.target === 'gpu' ? 'GPU' : 'RAM',
+                  value: data.hpa.value
+                }
+              : undefined
+          }
+        });
+        submitSuccess(parseYamls);
+      })();
+    }, submitError)();
+  };
+
+  const handleSubmit = () => {
+    if (exceededQuotas.length <= 0) {
+      confirmSubmit();
+      return;
+    }
+
+    setIsInsufficientQuotaDialogOpen(true);
+  };
+
   return (
     <>
       <Flex
@@ -370,92 +489,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() => {
-            formHook.handleSubmit(async (data) => {
-              const parseYamls = formData2Yamls(data);
-              setYamlList(parseYamls);
-
-              // gpu inventory check
-              if (data.gpu?.type) {
-                const inventory = countGpuInventory(data.gpu?.type);
-                if (data.gpu?.amount > inventory) {
-                  return toast({
-                    status: 'warning',
-                    title: t('Gpu under inventory Tip', {
-                      gputype: data.gpu.type
-                    })
-                  });
-                }
-              }
-              // quote check
-              // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
-              // if (quoteCheckRes) {
-              //   return toast({
-              //     status: 'warning',
-              //     title: t(quoteCheckRes),
-              //     duration: 5000,
-              //     isClosable: true
-              //   });
-              // }
-
-              // check network port
-              if (!checkNetworkPorts(data.networks)) {
-                return toast({
-                  status: 'warning',
-                  title: t('Network port conflict')
-                });
-              }
-
-              // check permission
-              if (appName) {
-                try {
-                  const result = await checkPermission({
-                    appName: data.appName
-                  });
-                  if (result === 'insufficient_funds') {
-                    return toast({
-                      status: 'warning',
-                      title: t('user.Insufficient account balance')
-                    });
-                  }
-                } catch (error: any) {
-                  return toast({
-                    status: 'warning',
-                    title: error?.message || 'Check Error'
-                  });
-                }
-              }
-
-              openConfirm(() => {
-                track('deployment_create', {
-                  module: 'applaunchpad',
-                  method: 'custom',
-                  config: {
-                    template_type: 'public',
-                    template_name: data.imageName,
-                    template_version: data.imageName.split(':')?.[1] ?? 'latest'
-                  },
-                  resources: {
-                    cpu_cores: data.cpu,
-                    ram_mb: data.memory,
-                    replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
-                    scaling: data.hpa.use
-                      ? {
-                          method:
-                            data.hpa.target === 'cpu'
-                              ? 'CPU'
-                              : data.hpa.target === 'gpu'
-                                ? 'GPU'
-                                : 'RAM',
-                          value: data.hpa.value
-                        }
-                      : undefined
-                  }
-                });
-                submitSuccess(parseYamls);
-              })();
-            }, submitError)();
-          }}
+          applyCb={handleSubmit}
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
@@ -468,6 +502,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               pxVal={pxVal}
               refresh={forceUpdate}
               isAdvancedOpen={isAdvancedOpen}
+              exceededQuotas={exceededQuotas}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
@@ -484,6 +519,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           errorCode={errorCode}
         />
       )}
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        onOpenChange={setIsInsufficientQuotaDialogOpen}
+        open={isInsufficientQuotaDialogOpen}
+        onConfirm={confirmSubmit}
+      />
     </>
   );
 };
