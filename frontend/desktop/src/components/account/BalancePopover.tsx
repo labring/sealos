@@ -75,11 +75,25 @@ export function BalancePopover({
     });
   };
 
+  const calculateRemainingDays = (endDateStr?: string) => {
+    if (!endDateStr) return 0;
+
+    const endDate = new Date(endDateStr);
+    const currentDate = new Date();
+    const timeDiff = endDate.getTime() - currentDate.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    return Math.max(0, daysDiff);
+  };
+
+  const remainingDays = calculateRemainingDays(subscription?.CurrentPeriodEndAt);
+
   const { data } = useQuery({
     queryKey: ['getAmount', { userId: session?.user?.userCrUid }],
     queryFn: getAmount,
     enabled: !!session?.user,
-    staleTime: 60 * 1000
+    staleTime: 60 * 1000,
+    refetchOnMount: true
   });
 
   const balance = useMemo(() => {
@@ -138,9 +152,9 @@ export function BalancePopover({
                         <span>{formatMoney(balance).toFixed(2)}</span>
                       </div>
                     </div>
-                    <Button variant="outline" onClick={openCostCenterTopup}>
+                    {/* <Button variant="outline" onClick={openCostCenterTopup}>
                       Top Up
-                    </Button>
+                    </Button> */}
                   </div>
                 </>
               )}
@@ -156,17 +170,12 @@ export function BalancePopover({
                     </span>
                   </HStack>
                 ) : (
-                  <HStack>
-                    <span className="text-sm text-zinc-600">Renewal Date:</span>
-                    <span className="text-sm text-zinc-600">
-                      {formatDate(subscription?.CurrentPeriodEndAt)}
-                    </span>
-                  </HStack>
+                  <></>
                 ))}
 
               {subscription?.PlanName === 'Free' && (
                 <div className="text-zinc-600 text-sm font-normal mt-2">
-                  Your trial will expire in 14 days.
+                  Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
                 </div>
               )}
             </Box>
@@ -177,7 +186,8 @@ export function BalancePopover({
               </div>
             ) : (
               <div className="text-sm text-zinc-900 font-normal">
-                Your trial will expire in 14 days. Upgradeto keep your services online.
+                Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
+                Upgrade to keep your services online.
               </div>
             )}
 
