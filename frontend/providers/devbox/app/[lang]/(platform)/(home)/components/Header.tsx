@@ -53,7 +53,8 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
 
     const exceededQuotaItems = userStore.checkExceededQuotas({
       cpu: 1,
-      memory: 1
+      memory: 1,
+      traffic: 1
     });
 
     console.log('exceededQuotaItems', exceededQuotaItems);

@@ -12,7 +12,7 @@ type State = {
   loadUserQuota: () => Promise<null>;
   loadUserDebt: () => Promise<null>;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport', number>>
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'traffic', number>>
   ) => WorkspaceQuotaItem[];
 };
 
