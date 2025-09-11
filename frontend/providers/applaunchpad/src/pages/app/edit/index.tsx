@@ -1,5 +1,5 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { checkPermission } from '@/api/platform';
+import { checkPermission, getWorkspaceSubscriptionInfo } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -164,6 +164,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
   );
 
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getWorkspaceSubscriptionInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+
   const exceededQuotas = useMemo(() => {
     return checkExceededQuotas({
       cpu: isEdit
@@ -180,9 +188,15 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           resourcePropertyMap.storage.scale
         : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
           resourcePropertyMap.storage.scale,
-      traffic: 1
+      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
-  }, [checkExceededQuotas, existingStores, formHook.formState, isEdit]);
+  }, [
+    checkExceededQuotas,
+    existingStores,
+    formHook.formState,
+    isEdit,
+    subscriptionInfo?.subscription?.type
+  ]);
 
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {

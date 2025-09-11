@@ -34,6 +34,7 @@ import { listTemplate } from '@/api/template';
 import { z } from 'zod';
 import type { WorkspaceQuotaItem } from '@/types/workspace';
 import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
+import { getUserInfo } from '@/api/platform';
 
 const DevboxCreatePage = () => {
   const router = useRouter();
@@ -295,6 +296,14 @@ const DevboxCreatePage = () => {
     toast.error(deepSearch(formHook.formState.errors));
   }, [formHook.formState.errors, t]);
 
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getUserInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+
   if (isLoading) return <Loading />;
 
   return (
@@ -314,7 +323,7 @@ const DevboxCreatePage = () => {
                   : formData.memory,
                 gpu: 0,
                 nodeport: 0,
-                traffic: 1
+                ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
               });
 
               if (exceededQuotaItems.length > 0) {
