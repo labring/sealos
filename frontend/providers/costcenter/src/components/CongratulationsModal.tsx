@@ -72,9 +72,8 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
           </Text>
 
           <Text fontSize="16px" color="var(--color-zinc-600)" textAlign="start" lineHeight="1.5">
-            You have upgraded to {props.planName || 'Pro Plan'}, these benefits are
-            <br />
-            already unlocked.
+            You have upgraded to {props.planName || 'Pro Plan'}, these benefits are already
+            unlocked.
           </Text>
           <Divider my="8px" borderColor={'#F4F4F5'} />
           <Flex direction="column" gap="12px" mb="32px" w="100%">
