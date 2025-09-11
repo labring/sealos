@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         return (
           item.spec &&
           item.spec.devboxName === releaseForm.devboxName &&
-          item.spec.newTag === releaseForm.tag
+          item.spec.version === releaseForm.tag
         );
       })
     ) {

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
           item.spec &&
           item.spec.devboxName === releaseForm.devboxName &&
           item.metadata.ownerReferences[0].uid === releaseForm.devboxUid &&
-          item.spec.newTag === releaseForm.tag
+          item.spec.version === releaseForm.tag
         );
       })
     ) {

@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
           item.spec &&
           item.spec.devboxName === devboxName &&
           item.metadata.ownerReferences[0].uid === devboxUid &&
-          item.spec.newTag === tag
+          item.spec.version === tag
         );
       })
     ) {
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
           item.spec &&
           item.spec.devboxName === devboxName &&
           item.metadata.ownerReferences[0].uid === devboxUid &&
-          item.spec.newTag === tag
+          item.spec.version === tag
       );
 
       if (currentRelease?.status?.phase === DevboxReleaseStatusEnum.Success) {

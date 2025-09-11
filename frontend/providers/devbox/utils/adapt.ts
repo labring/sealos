@@ -111,7 +111,7 @@ export const adaptDevboxVersionListItem = (
     name: devboxRelease.metadata.name || 'devbox-release-default',
     devboxName: devboxRelease.spec.devboxName || 'devbox',
     createTime: devboxRelease.metadata.creationTimestamp,
-    tag: devboxRelease.spec.newTag || 'v1.0.0',
+    tag: devboxRelease.spec.version || 'v1.0.0',
     status:
       devboxRelease?.status?.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
