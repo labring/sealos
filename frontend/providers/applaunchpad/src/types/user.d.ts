@@ -31,12 +31,6 @@ export type userPriceType = {
   nodeports: number;
 };
 
-export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu' | 'nodeports';
-  used: number;
-  limit: number;
-};
-
 export type AccountCRD = {
   apiVersion: string;
   kind: string;

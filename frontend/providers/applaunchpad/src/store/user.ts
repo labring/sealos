@@ -1,17 +1,19 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { UserQuotaItemType } from '@/types/user';
-import { getUserQuota, getResourcePrice } from '@/api/platform';
+import { getResourcePrice, getWorkspaceQuota } from '@/api/platform';
 import type { userPriceType } from '@/types/user';
 import { AppEditType } from '@/types/app';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 
 type State = {
-  userQuota: UserQuotaItemType[];
+  userQuota: WorkspaceQuotaItem[];
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
-  checkQuotaAllow: (request: AppEditType, usedData?: AppEditType) => string;
+  checkExceededQuotas: (
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport', number>>
+  ) => WorkspaceQuotaItem[];
 };
 
 let retryGetPrice = 3;
@@ -41,53 +43,24 @@ export const useUserStore = create<State>()(
       balance: 5,
       userQuota: [],
       loadUserQuota: async () => {
-        const response = await getUserQuota();
+        const response = await getWorkspaceQuota();
         set((state) => {
           state.userQuota = response.quota;
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, gpu, storeList, replicas, hpa, networks }, usedData) => {
-        const quote = get().userQuota;
+      checkExceededQuotas: (request) => {
+        const quota = get().userQuota;
 
-        const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
-        const nodeportsAmount = networks.filter((item) => item.openNodePort).length;
+        const exceededItems = quota.filter((item) => {
+          if (!(item.type in request)) return false;
 
-        const request = {
-          cpu: (cpu / 1000) * requestReplicas,
-          memory: (memory / 1024) * requestReplicas,
-          gpu: (gpu?.type ? gpu.amount : 0) * requestReplicas,
-          storage: storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas,
-          nodeports: nodeportsAmount
-        };
-
-        if (usedData) {
-          const { cpu, memory, gpu, storeList, replicas, hpa, networks } = usedData;
-          const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
-          const nodeportsAmount = networks.filter((item) => item.openNodePort).length;
-
-          request.cpu -= (cpu / 1000) * requestReplicas;
-          request.memory -= (memory / 1024) * requestReplicas;
-          request.gpu -= (gpu?.type ? gpu.amount : 0) * requestReplicas;
-          request.storage -= storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas;
-          request.nodeports -= nodeportsAmount;
-        }
-
-        const overLimitTip = {
-          cpu: 'app.The applied CPU exceeds the quota',
-          memory: 'app.The applied memory exceeds the quota',
-          gpu: 'app.The applied GPU exceeds the quota',
-          storage: 'app.The applied storage exceeds the quota',
-          nodeports: 'app.The applied nodeports exceeds the quota'
-        };
-
-        const exceedQuota = quote.find((item) => {
-          if (item.used + request[item.type] > item.limit) {
+          if (item.limit - item.used <= request[item.type as keyof typeof request]!) {
             return true;
           }
         });
 
-        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : '';
+        return exceededItems;
       }
     }))
   )
