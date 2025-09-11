@@ -53,9 +53,19 @@ const App = ({ Component, pageProps }: AppProps) => {
     sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
 
     // Add postMessage listener to handle external communication
-    const handlePostMessage = (event: MessageEvent) => {
+    const handlePostMessage = ({
+      data,
+      origin,
+      source
+    }: MessageEvent<{
+      type: string;
+      page?: string;
+      mode?: string;
+      stripeState?: string;
+      payId?: string;
+    }>) => {
       try {
-        const data = event.data;
+        if (!source) return;
         if (data && typeof data === 'object' && data.type === 'InternalAppCall') {
           // Forward parameters to plan page
           const params = new URLSearchParams();
@@ -74,6 +84,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       }
     };
 
+    // eslint-disable-next-line
     window.addEventListener('message', handlePostMessage);
 
     return () => {
