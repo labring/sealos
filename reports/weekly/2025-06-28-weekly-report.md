@@ -25,13 +25,13 @@
 
 ## 🚀 Merged Pull Requests
 
-- [docs: update installation guide](https://github.com/labring/sealos/pull/1027) by @fanux - 2025-06-28
-- [feat(frontend): enhance desktop user experience](https://github.com/labring/sealos/pull/1025) by @cuisongliu - 2025-06-28
-- [fix(controllers): resolve memory leak in user controller](https://github.com/labring/sealos/pull/1026) by @cuisongliu - 2025-06-28
+- [docs: update installation guide](https://github.com/labring/sealos/pull/6027) by @fanux - 2025-06-28
+- [feat(frontend): enhance desktop user experience](https://github.com/labring/sealos/pull/6025) by @cuisongliu - 2025-06-28
+- [fix(controllers): resolve memory leak in user controller](https://github.com/labring/sealos/pull/6026) by @cuisongliu - 2025-06-28
 
 ## 🐛 New Issues
 
-- [Bug: Desktop application crashes on startup](https://github.com/labring/sealos/issues/2025) by @user-contributor - 2025-06-22
+- [Bug: Desktop application crashes on startup](https://github.com/labring/sealos/issues/8025) by @user-contributor - 2025-06-22
 
 ---
 

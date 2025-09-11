@@ -87,6 +87,10 @@ generate_sample_data() {
     local base_prs=$(( (week_num % 4) + 3 ))  # 3-6 PRs per week
     local base_issues=$(( (week_num % 3) + 1 ))  # 1-3 issues per week
     
+    # Generate sample PR data with 2025-appropriate PR numbers
+    local year_offset=$((2025 - 2022))  # Calculate offset for 2025
+    local pr_base=$((3000 + (year_offset * 1000)))  # Start from 6000+ for 2025
+    
     # Generate sample PR data
     cat > /tmp/pr_stats.json << EOF
 [
@@ -94,28 +98,31 @@ generate_sample_data() {
     "user": "cuisongliu",
     "count": $((base_prs - 1)),
     "prs": [
-      {"number": $((1000 + week_num)), "title": "feat(frontend): enhance desktop user experience", "merged_at": "${week_end}T10:30:00Z", "user": "cuisongliu"},
-      {"number": $((1001 + week_num)), "title": "fix(controllers): resolve memory leak in user controller", "merged_at": "${week_end}T14:15:00Z", "user": "cuisongliu"}
+      {"number": $((pr_base + week_num)), "title": "feat(frontend): enhance desktop user experience", "merged_at": "${week_end}T10:30:00Z", "user": "cuisongliu"},
+      {"number": $((pr_base + week_num + 1)), "title": "fix(controllers): resolve memory leak in user controller", "merged_at": "${week_end}T14:15:00Z", "user": "cuisongliu"}
     ]
   },
   {
     "user": "fanux",
     "count": 1,
     "prs": [
-      {"number": $((1002 + week_num)), "title": "docs: update installation guide", "merged_at": "${week_end}T16:45:00Z", "user": "fanux"}
+      {"number": $((pr_base + week_num + 2)), "title": "docs: update installation guide", "merged_at": "${week_end}T16:45:00Z", "user": "fanux"}
     ]
   }
 ]
 EOF
 
-    # Generate sample issue data
+    # Generate sample issue data with 2025-appropriate issue numbers
+    local year_offset=$((2025 - 2022))  # Calculate offset for 2025
+    local issue_base=$((5000 + (year_offset * 1000)))  # Start from 8000+ for 2025
+    
     cat > /tmp/issue_stats.json << EOF
 [
   {
     "user": "user-contributor",
     "count": $base_issues,
     "issues": [
-      {"number": $((2000 + week_num)), "title": "Bug: Desktop application crashes on startup", "created_at": "${week_start}T09:20:00Z", "user": "user-contributor"}
+      {"number": $((issue_base + week_num)), "title": "Bug: Desktop application crashes on startup", "created_at": "${week_start}T09:20:00Z", "user": "user-contributor"}
     ]
   }
 ]
