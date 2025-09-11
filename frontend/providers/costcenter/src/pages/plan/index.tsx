@@ -211,7 +211,7 @@ export default function Plan() {
   });
 
   // Get current workspace subscription info and sync to store
-  const { isLoading } = useQuery({
+  const { isLoading, refetch: refetchSubscriptionInfo } = useQuery({
     queryKey: ['subscription-info', session?.user?.nsid, region?.uid],
     queryFn: () =>
       getSubscriptionInfo({
@@ -220,7 +220,8 @@ export default function Plan() {
       }),
     enabled: !!(session?.user?.nsid && region?.uid),
     onSuccess: (data) => setSubscriptionData(data.data || null),
-    refetchOnMount: true
+    refetchOnMount: true,
+    retry: 3
   });
 
   // Get specific workspace subscription info for congratulations modal
@@ -268,13 +269,19 @@ export default function Plan() {
   // Subscription mutation
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Close any open modals first
       hideModal();
-
       // Refresh subscription data
-      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+      await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      await refetchSubscriptionInfo();
+      setTimeout(async () => {
+        // Refresh subscription data with delay
+        await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+        await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+        await refetchSubscriptionInfo();
+      }, 2000);
 
       if (data.code === 200) {
         if (data.data?.redirectUrl) {
@@ -291,6 +298,7 @@ export default function Plan() {
           });
         }
       }
+      setSubscriptionModalOpen(false);
     },
     onError: (error: any) => {
       // Refresh subscription data on error as well
