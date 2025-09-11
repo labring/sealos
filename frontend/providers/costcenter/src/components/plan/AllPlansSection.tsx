@@ -13,6 +13,7 @@ import useBillingStore from '@/stores/billing';
 import request from '@/service/request';
 import { useMemo } from 'react';
 import { formatMoney } from '@/utils/format';
+import { getPlanBackgroundClass } from './PlanHeader';
 
 export function AllPlansSection() {
   const { regionList: regions } = useBillingStore();
@@ -94,17 +95,6 @@ export function AllPlansSection() {
       .replace(',', ' ');
   };
 
-  const getPlanBadgeColor = (type?: string) => {
-    switch (type) {
-      case 'SUBSCRIPTION':
-        return 'bg-blue-100 text-blue-600';
-      case 'PAYG':
-        return 'bg-plan-payg text-blue-600';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
-
   const subscriptions = useMemo(
     () => subscriptionListData?.data?.subscriptions || [],
     [subscriptionListData]
@@ -129,7 +119,7 @@ export function AllPlansSection() {
               namespaceId,
               workspaceName,
               plan: subscription.PlanName,
-              renewalTime: subscription.CurrentPeriodStartAt,
+              renewalTime: subscription.CurrentPeriodEndAt,
               price: paymentRecord?.Amount ?? null
             };
           } else {
@@ -187,22 +177,20 @@ export function AllPlansSection() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`${getPlanBadgeColor(
-                          workspace.plan === 'PAYG' ? 'PAYG' : 'SUBSCRIPTION'
-                        )} font-medium`}
+                        className={`font-medium ${getPlanBackgroundClass(
+                          workspace.plan,
+                          workspace.plan === 'PAYG'
+                        )} text-blue-600`}
                       >
                         {workspace.plan || 'Unknown'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {workspace.renewalTime ? formatDate(workspace.renewalTime) : '-'}
+                      {workspace.renewalTime ? formatDate(workspace.renewalTime) : '---'}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
-                        <span>{workspace.price ? `$${formatMoney(workspace.price)}` : '-'}</span>
-                        <span className="text-gray-500">
-                          {workspace.plan === 'PAYG' ? 'Pay-as-you-go' : 'Subscription'}
-                        </span>
+                        <span>{workspace.price ? `$${formatMoney(workspace.price)}` : '---'}</span>
                       </div>
                     </TableCell>
                   </TableRow>
