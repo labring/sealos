@@ -180,9 +180,22 @@ const Form = ({
         ? formValues.memory - (formHook.formState.defaultValues?.memory ?? 0)
         : formValues.memory,
       gpu: formValues.gpu?.amount || 0,
-      nodeport: formValues.networks?.filter((item: any) => item.openNodePort)?.length || 0
+      nodeport: formValues.networks?.filter((item) => item.openNodePort)?.length || 0,
+      storage: isEdit
+        ? (storeList.reduce((sum, item) => sum + item.value, 0) -
+            existingStores.reduce((sum, item) => sum + item.value, 0)) *
+          resourcePropertyMap.storage.scale
+        : formValues.storeList.reduce((sum, item) => sum + item.value, 0) *
+          resourcePropertyMap.storage.scale
     });
-  }, [formValues, checkExceededQuotas, isEdit, formHook.formState.defaultValues]);
+  }, [
+    formValues,
+    checkExceededQuotas,
+    isEdit,
+    formHook.formState.defaultValues,
+    existingStores,
+    storeList
+  ]);
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -192,7 +205,10 @@ const Form = ({
       storeList.reduce((sum, item) => sum + item.value, 0) -
       existingStores.reduce((sum, item) => sum + item.value, 0);
 
-    return storageQuota.limit - storageQuota.used - newlyUsedStorage;
+    return (
+      (storageQuota.limit - storageQuota.used) / resourcePropertyMap.storage.scale -
+      newlyUsedStorage
+    );
   }, [userQuota, existingStores, storeList]);
 
   // listen scroll and set activeNav

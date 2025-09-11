@@ -400,8 +400,10 @@
   "within_5_minute": "五分钟内",
   "nodeport": "端口",
   "traffic": "流量",
+  "nodeport_exceeds_quota": "端口资源不足：你设置的 {{requested}} 个端口超出工作空间可用 {{limit}} 个端口限制（已使用 {{used}} 个端口）。",
   "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
   "memory_exceeds_quota": "内存资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
+  "gpu_exceeds_quota": "GPU 资源不足：你设置的 {{requested}} 个 GPU 超出工作空间可用 {{limit}} 个 GPU 限制（已使用 {{used}} 个 GPU）。",
   "please_upgrade_plan": {
     "0": "请 ",
     "1": "升级您的计划",

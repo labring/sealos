@@ -400,8 +400,10 @@
   "within_5_minute": "Within 5 minute",
   "nodeport": "Port",
   "traffic": "Traffic",
+  "nodeport_exceeds_quota": "NodePort Insufficient Resources: Your setting of {{requested}} ports exceeds the available {{limit}} ports ({{used}} ports used).",
   "cpu_exceeds_quota": "CPU Insufficient Resources: Your setting of {{requested}} cores exceeds the available {{limit}} cores ({{used}} cores used).",
   "memory_exceeds_quota": "Memory Insufficient Resources: Your setting of {{requested}} GB exceeds the available {{limit}} GB ({{used}} GB used).",
+  "gpu_exceeds_quota": "GPU Insufficient Resources: Your setting of {{requested}} GPUs exceeds the available {{limit}} GPUs ({{used}} GPUs used).",
   "please_upgrade_plan": {
     "0": "Please ",
     "1": "upgrade your plan",
