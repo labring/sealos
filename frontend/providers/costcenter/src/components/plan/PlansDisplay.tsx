@@ -192,7 +192,7 @@ export function PlansDisplay({
                       />
                       <div className="text-xs text-gray-500">
                         {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +
-                        {formatTrafficAuto(plan.Traffic)}
+                        {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport
                       </div>
                       <Separator
                         orientation="vertical"
