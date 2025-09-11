@@ -1,0 +1,8 @@
+{{- if .Values.global.ingressClass }}
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: {{ .Values.global.ingressClass }}
+spec:
+  controller: higress.io/higress-controller
+{{- end }}

@@ -1,0 +1,99 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorrestores.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorRestore
+    listKind: CStorRestoreList
+    plural: cstorrestores
+    shortNames:
+      - crestore
+    singular: cstorrestore
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: Name of the snapshot which is restored
+          jsonPath: .spec.restoreName
+          name: Backup
+          type: string
+        - description: Volume on which restore is performed
+          jsonPath: .spec.volumeName
+          name: Volume
+          type: string
+        - description: Identifies the state of the restore
+          jsonPath: .status
+          name: Status
+          type: string
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorRestore describes a cstor restore resource created as a
+            custom resource
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorRestoreSpec is the spec for a CStorRestore resource
+              properties:
+                localRestore:
+                  description: Local defines whether restore is from local/remote
+                  type: boolean
+                maxretrycount:
+                  description: MaxRestoreRetryCount is the maximum number of attempt,
+                    will be performed to restore
+                  type: integer
+                restoreName:
+                  description: RestoreName holds restore name
+                  type: string
+                restoreSrc:
+                  description: RestoreSrc can be ip:port in case of restore from remote
+                    or volumeName in case of local restore
+                  type: string
+                retrycount:
+                  description: RetryCount represents the number of restore attempts
+                    performed for the restore
+                  type: integer
+                size:
+                  anyOf:
+                    - type: integer
+                    - type: string
+                  description: Size represents the size of a snapshot to restore
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                storageClass:
+                  description: StorageClass represents name of StorageClass of restore
+                    volume
+                  type: string
+                volumeName:
+                  description: VolumeName is used to restore the data to corresponding
+                    volume
+                  type: string
+              required:
+                - restoreName
+                - restoreSrc
+                - volumeName
+              type: object
+            status:
+              description: CStorRestoreStatus is a string type that represents the status
+                of the restore
+              type: string
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources: {}

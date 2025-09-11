@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-kubectl apply -f crds/
 kubectl create -f charts/kubeblocks/crds/kubeblocks_crds.yaml || kubectl replace -f charts/kubeblocks/crds/kubeblocks_crds.yaml
 sleep 2
 helm upgrade -i kubeblocks charts/kubeblocks --set snapshot-controller.enabled=true --insecure-skip-tls-verify -n kb-system --create-namespace

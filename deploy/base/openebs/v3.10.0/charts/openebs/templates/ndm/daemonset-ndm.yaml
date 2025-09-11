@@ -1,0 +1,188 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if .Values.ndm.enabled }}
+{{- $ndmValues := index .Values "openebs-ndm" }}
+{{- if not $ndmValues.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "openebs.fullname" . }}-ndm
+  labels:
+    app: {{ template "openebs.name" . }}
+    chart: {{ template "openebs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: ndm
+    openebs.io/component-name: ndm
+    openebs.io/version: {{ .Values.release.version }}
+spec:
+  updateStrategy:
+    type: "RollingUpdate"
+  selector:
+    matchLabels:
+      app: {{ template "openebs.name" . }}
+      release: {{ .Release.Name }}
+      component: ndm
+  template:
+    metadata:
+      labels:
+        app: {{ template "openebs.name" . }}
+        release: {{ .Release.Name }}
+        component: ndm
+        openebs.io/component-name: ndm
+        name: openebs-ndm
+        openebs.io/version: {{ .Values.release.version }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "openebs.serviceAccountName" . }}
+      hostNetwork: true
+      # host PID is used to check status of iSCSI Service when the NDM
+      # API service is enabled
+{{- if .Values.featureGates.enabled }}
+{{- if .Values.featureGates.APIService.enabled }}
+      hostPID: true
+{{- end}}
+{{- end}}
+      containers:
+      - name: {{ template "openebs.name" . }}-ndm
+        image: "{{ .Values.image.repository }}{{ .Values.ndm.image }}:{{ .Values.ndm.imageTag }}"
+        args:
+          - -v=4
+{{- if .Values.featureGates.enabled }}
+{{- if .Values.featureGates.GPTBasedUUID.enabled }}
+          - --feature-gates={{ .Values.featureGates.GPTBasedUUID.featureGateFlag }}
+{{- end}}
+{{- if .Values.featureGates.APIService.enabled }}
+          - --feature-gates={{ .Values.featureGates.APIService.featureGateFlag }}
+          - --api-service-address={{ .Values.featureGates.APIService.address }}
+{{- end}}
+{{- if .Values.featureGates.UseOSDisk.enabled }}
+          - --feature-gates={{ .Values.featureGates.UseOSDisk.featureGateFlag }}
+{{- end}}
+{{- if .Values.featureGates.ChangeDetection.enabled }}
+          - --feature-gates={{ .Values.featureGates.ChangeDetection.featureGateFlag }}
+{{- end}}
+{{- if .Values.featureGates.PartitionTableUUID.enabled }}
+          - --feature-gates={{ .Values.featureGates.PartitionTableUUID.featureGateFlag }}
+{{- end}}
+{{- end}}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.ndm.resources }}
+        resources:
+{{ toYaml .Values.ndm.resources | trimSuffix "\n" | indent 10 }}
+{{- end }}
+        securityContext:
+          privileged: true
+        env:
+        # namespace in which NDM is installed will be passed to NDM Daemonset
+        # as environment variable
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        # pass hostname as env variable using downward API to the NDM container
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+{{- if .Values.ndm.sparse }}
+{{- if .Values.ndm.sparse.path }}
+        # specify the directory where the sparse files need to be created.
+        # if not specified, then sparse files will not be created.
+        - name: SPARSE_FILE_DIR
+          value: "{{ .Values.ndm.sparse.path }}"
+{{- end }}
+{{- if .Values.ndm.sparse.size }}
+        # Size(bytes) of the sparse file to be created.
+        - name: SPARSE_FILE_SIZE
+          value: "{{ .Values.ndm.sparse.size }}"
+{{- end }}
+{{- if .Values.ndm.sparse.count }}
+        # Specify the number of sparse files to be created
+        - name: SPARSE_FILE_COUNT
+          value: "{{ .Values.ndm.sparse.count }}"
+{{- end }}
+{{- end }}
+        # Process name used for matching is limited to the 15 characters
+        # present in the pgrep output.
+        # So fullname can be used here with pgrep (cmd is < 15 chars).
+        livenessProbe:
+          exec:
+            command:
+            - pgrep
+            - "ndm"
+          initialDelaySeconds: {{ .Values.ndm.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.ndm.healthCheck.periodSeconds }}
+        volumeMounts:
+        - name: config
+          mountPath: /host/node-disk-manager.config
+          subPath: node-disk-manager.config
+          readOnly: true
+        - name: udev
+          mountPath: /run/udev
+        - name: procmount
+          mountPath: /host/proc
+          readOnly: true
+        - name: devmount
+          mountPath: /dev
+        - name: basepath
+          mountPath: /var/openebs/ndm
+{{- if .Values.ndm.sparse }}
+{{- if .Values.ndm.sparse.path }}
+        - name: sparsepath
+          mountPath: {{ .Values.ndm.sparse.path }}
+{{- end }}
+{{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "openebs.fullname" . }}-ndm-config
+      - name: udev
+        hostPath:
+          path: /run/udev
+          type: Directory
+      # mount /proc (to access mount file of process 1 of host) inside container
+      # to read mount-point of disks and partitions
+      - name: procmount
+        hostPath:
+          path: /proc
+          type: Directory
+      # the /dev directory is mounted so that we have access to the devices that
+      # are connected at runtime of the pod.
+      - name: devmount
+        hostPath:
+          path: /dev
+          type: Directory
+      - name: basepath
+        hostPath:
+          path: "{{ .Values.varDirectoryPath.baseDir }}/ndm"
+          type: DirectoryOrCreate
+{{- if .Values.ndm.sparse }}
+{{- if .Values.ndm.sparse.path }}
+      - name: sparsepath
+        hostPath:
+          path: {{ .Values.ndm.sparse.path }}
+{{- end }}
+{{- end }}
+      # By default the node-disk-manager will be run on all kubernetes nodes
+      # If you would like to limit this to only some nodes, say the nodes
+      # that have storage attached, you could label those node and use
+      # nodeSelector.
+      #
+      # e.g. label the storage nodes with - "openebs.io/nodegroup"="storage-node"
+      # kubectl label node <node-name> "openebs.io/nodegroup"="storage-node"
+      #nodeSelector:
+      #  "openebs.io/nodegroup": "storage-node"
+{{- if .Values.ndm.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.ndm.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.ndm.tolerations }}
+      tolerations:
+{{ toYaml .Values.ndm.tolerations | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

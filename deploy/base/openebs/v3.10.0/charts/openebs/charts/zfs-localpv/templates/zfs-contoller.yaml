@@ -1,0 +1,153 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "zfslocalpv.fullname" . }}-controller
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.zfsController.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "zfslocalpv.zfsController.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "zfslocalpv.zfsController.matchLabels" . | nindent 6 }}
+  serviceName: "{{ .Values.zfsController.serviceName }}"
+  replicas: {{ .Values.zfsController.replicas }}
+  template:
+    metadata:
+      {{- with .Values.zfsController.podAnnotations }}
+      annotations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "zfslocalpv.zfsController.labels" . | nindent 8 }}
+        {{- with .Values.zfsController.podLabels}}
+        {{ toYaml . | nindent 8 }}
+        {{- end}}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - openebs-zfs-controller
+            topologyKey: "kubernetes.io/hostname"
+{{- if .Values.zfsController.priorityClass.create }}
+      priorityClassName: {{ template "zfslocalpv.zfsController.priorityClassName" . }}
+{{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.zfsController.name }}
+{{- if .Values.zfsController.initContainers }}
+      initContainers:
+{{- range $key, $value := .Values.zfsController.initContainers }}
+        - name: {{ $key }}
+{{ toYaml $value | indent 10 }}
+{{- end }}
+{{- end }}
+      containers:
+        - name: {{ .Values.zfsController.resizer.name }}
+          image: "{{ .Values.zfsController.resizer.image.registry }}{{ .Values.zfsController.resizer.image.repository }}:{{ .Values.zfsController.resizer.image.tag }}"
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: {{ .Values.zfsController.resizer.image.pullPolicy }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.zfsController.snapshotter.name }}
+          image: "{{ .Values.zfsController.snapshotter.image.registry }}{{ .Values.zfsController.snapshotter.image.repository }}:{{ .Values.zfsController.snapshotter.image.tag }}"
+          imagePullPolicy: {{ .Values.zfsController.snapshotter.image.pullPolicy }}
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.zfsController.snapshotController.name }}
+          image: "{{ .Values.zfsController.snapshotController.image.registry }}{{ .Values.zfsController.snapshotController.image.repository }}:{{ .Values.zfsController.snapshotController.image.tag }}"
+          args:
+            - "--v=5"
+            - "--leader-election=true"
+          imagePullPolicy: {{ .Values.zfsController.snapshotController.image.pullPolicy }}
+        - name: {{ .Values.zfsController.provisioner.name }}
+          image: "{{ .Values.zfsController.provisioner.image.registry }}{{ .Values.zfsController.provisioner.image.repository }}:{{ .Values.zfsController.provisioner.image.tag }}"
+          imagePullPolicy: {{ .Values.zfsController.provisioner.image.pullPolicy }}
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--v=5"
+            - "--feature-gates=Topology=true"
+            - "--strict-topology"
+            - "--leader-election"
+            - "--enable-capacity={{ .Values.feature.storageCapacity }}"
+            - "--extra-create-metadata=true"
+            - "--default-fstype=ext4"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.zfsPlugin.name }}
+          image: "{{ .Values.zfsPlugin.image.registry }}{{ .Values.zfsPlugin.image.repository }}:{{ .Values.zfsPlugin.image.tag }}"
+          imagePullPolicy: {{ .Values.zfsPlugin.image.pullPolicy }}
+          env:
+            - name: OPENEBS_CONTROLLER_DRIVER
+              value: controller
+            - name: OPENEBS_CSI_ENDPOINT
+              value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: OPENEBS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPENEBS_IO_INSTALLER_TYPE
+              value: "zfs-localpv-helm"
+            - name: OPENEBS_IO_ENABLE_ANALYTICS
+              value: "{{ .Values.analytics.enabled }}"
+          args :
+            - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
+            - "--plugin=$(OPENEBS_CONTROLLER_DRIVER)"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+{{- if .Values.zfsController.additionalVolumes }}
+{{- range $name, $config := .Values.zfsController.additionalVolumes }}
+        - name: {{ $name }}
+{{- tpl (toYaml $config) $ | nindent 10 }}
+{{- end }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+{{- end }}
+{{- if .Values.zfsController.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.zfsController.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.zfsController.securityContext }}
+      securityContext:
+{{ toYaml .Values.zfsController.securityContext | indent 8 }}
+{{- end }}
+{{- if .Values.zfsController.tolerations }}
+      tolerations:
+{{ toYaml .Values.zfsController.tolerations | indent 8 }}
+{{- end }}

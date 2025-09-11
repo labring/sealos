@@ -1,0 +1,86 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorbackups.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorBackup
+    listKind: CStorBackupList
+    plural: cstorbackups
+    shortNames:
+      - cbackup
+    singular: cstorbackup
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: Name of the volume for which this backup is destined
+          jsonPath: .spec.volumeName
+          name: Volume
+          type: string
+        - description: Name of the backup or scheduled backup
+          jsonPath: .spec.backupName
+          name: Backup/Schedule
+          type: string
+        - description: Identifies the phase of the backup
+          jsonPath: .status
+          name: Status
+          type: string
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorBackup describes a cstor backup resource created as a custom
+            resource
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorBackupSpec is the spec for a CStorBackup resource
+              properties:
+                backupDest:
+                  description: BackupDest is the remote address for backup transfer
+                  type: string
+                backupName:
+                  description: BackupName is the name of the backup or scheduled backup
+                  type: string
+                localSnap:
+                  description: LocalSnap is the flag to enable local snapshot only
+                  type: boolean
+                prevSnapName:
+                  description: PrevSnapName is the last completed-backup's snapshot
+                    name
+                  type: string
+                snapName:
+                  description: SnapName is the name of the current backup snapshot
+                  type: string
+                volumeName:
+                  description: VolumeName is the name of the volume for which this backup
+                    is destined
+                  type: string
+              required:
+                - backupName
+                - snapName
+                - volumeName
+              type: object
+            status:
+              description: CStorBackupStatus is a string type that represents the status
+                of the backup
+              type: string
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources: {}

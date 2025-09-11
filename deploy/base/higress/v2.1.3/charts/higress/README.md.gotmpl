@@ -1,0 +1,34 @@
+## Higress for Kubernetes
+
+Higress is a cloud-native api gateway based on Alibaba's internal gateway practices.
+
+Powered by Istio and Envoy, Higress realizes the integration of the triple gateway architecture of traffic gateway, microservice gateway and security gateway, thereby greatly reducing the costs of deployment, operation and maintenance.
+
+## Setup Repo Info
+
+```console
+helm repo add higress.io https://higress.io/helm-charts
+helm repo update
+```
+
+## Install
+
+To install the chart with the release name `higress`:
+
+```console
+helm install higress -n higress-system higress.io/higress --create-namespace --render-subchart-notes
+```
+
+## Uninstall
+
+To uninstall/delete the higress deployment:
+
+```console
+helm delete higress -n higress-system
+```
+
+The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+## Parameters
+
+{{ template "chart.valuesSection" . }}
