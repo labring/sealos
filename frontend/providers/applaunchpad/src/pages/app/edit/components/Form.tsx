@@ -48,6 +48,7 @@ import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
 import { useQuery } from '@tanstack/react-query';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -66,8 +67,8 @@ const Form = ({
   pxVal,
   refresh,
   isAdvancedOpen,
-
-  onDomainVerified
+  onDomainVerified,
+  exceededQuotas
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -77,6 +78,7 @@ const Form = ({
   refresh: boolean;
   isAdvancedOpen: boolean;
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
+  exceededQuotas: WorkspaceQuotaItem[];
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -94,7 +96,6 @@ const Form = ({
     control,
     setValue,
     getValues,
-    watch,
     formState: { errors }
   } = formHook;
 
@@ -172,33 +173,8 @@ const Form = ({
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
 
   // For quota calculation in fields
-  const { userQuota, loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
-
-  const formValues = watch();
-  const exceededQuotas = useMemo(() => {
-    return checkExceededQuotas({
-      cpu: isEdit ? formValues.cpu - (formHook.formState.defaultValues?.cpu ?? 0) : formValues.cpu,
-      memory: isEdit
-        ? formValues.memory - (formHook.formState.defaultValues?.memory ?? 0)
-        : formValues.memory,
-      gpu: formValues.gpu?.amount || 0,
-      nodeport: formValues.networks?.filter((item) => item.openNodePort)?.length || 0,
-      storage: isEdit
-        ? (storeList.reduce((sum, item) => sum + item.value, 0) -
-            existingStores.reduce((sum, item) => sum + item.value, 0)) *
-          resourcePropertyMap.storage.scale
-        : formValues.storeList.reduce((sum, item) => sum + item.value, 0) *
-          resourcePropertyMap.storage.scale
-    });
-  }, [
-    formValues,
-    checkExceededQuotas,
-    isEdit,
-    formHook.formState.defaultValues,
-    existingStores,
-    storeList
-  ]);
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -339,14 +315,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-        : cpuList;
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -841,7 +817,7 @@ const Form = ({
                 <Box mb={4} pl={`${labelWidth}px`}>
                   <Box fontSize={'md'} color={'red.500'} mb={1}>
                     {t('gpu_exceeds_quota', {
-                      requested: formValues.gpu?.amount || 0,
+                      requested: getValues('gpu.amount') || 0,
                       limit: exceededQuotas.find(({ type }) => type === 'gpu')?.limit ?? 0,
                       used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
                     })}
@@ -884,7 +860,7 @@ const Form = ({
                 <Box mb={4} pl={`${labelWidth}px`}>
                   <Box fontSize={'md'} color={'red.500'} mb={1}>
                     {t('cpu_exceeds_quota', {
-                      requested: formValues.cpu / resourcePropertyMap.cpu.scale,
+                      requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
                       limit:
                         (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
                         resourcePropertyMap.cpu.scale,
@@ -926,7 +902,7 @@ const Form = ({
                 <Box mb={4} pl={`${labelWidth}px`}>
                   <Box fontSize={'md'} color={'red.500'} mb={1}>
                     {t('memory_exceeds_quota', {
-                      requested: formValues.memory / resourcePropertyMap.memory.scale,
+                      requested: getValues('memory') / resourcePropertyMap.memory.scale,
                       limit:
                         (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
                         resourcePropertyMap.memory.scale,
@@ -1082,8 +1058,8 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                  ? network.protocol
-                                  : 'HTTP'
+                                ? network.protocol
+                                : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
@@ -1133,14 +1109,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                    ? network?.nodePort
-                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                          network.nodePort
-                                        }`
-                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                          'pending_to_allocated'
-                                        )}`
-                                    : `${network.publicDomain}.${network.domain}`}
+                                  ? network?.nodePort
+                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                        network.nodePort
+                                      }`
+                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                        'pending_to_allocated'
+                                      )}`
+                                  : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1190,11 +1166,11 @@ const Form = ({
                 </Flex>
               ))}
               {exceededQuotas.some(({ type }) => type === 'nodeport') && (
-                <Box px={'42px'} pb={'24px'}>
+                <Box pt={'16px'}>
                   <Box fontSize={'md'} color={'red.500'} mb={1}>
                     {t('nodeport_exceeds_quota', {
                       requested:
-                        formValues.networks?.filter((item) => item.openNodePort)?.length || 0,
+                        getValues('networks').filter((item) => item.openNodePort)?.length || 0,
                       limit: exceededQuotas.find(({ type }) => type === 'nodeport')?.limit ?? 0,
                       used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
                     })}
@@ -1307,8 +1283,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                                ? 'value from | ***'
-                                : '';
+                              ? 'value from | ***'
+                              : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

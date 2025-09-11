@@ -9,7 +9,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
-import { InsufficientQuotaDialog } from '@/components/apps/InsufficientQuotaDialog';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 import { AppListItemType } from '@/types/app';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { getErrText } from '@/utils/tools';
