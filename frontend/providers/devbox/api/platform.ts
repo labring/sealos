@@ -10,7 +10,7 @@ export const getWorkspaceQuota = () =>
   GET<{
     quota: WorkspaceQuotaItem[];
   }>('/api/platform/getQuota', undefined, {
-    // [TODO] This API needs authenticate to account service using user info in DESKTOP SESSION.
+    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
     headers: {
       'X-Desktop-Token': getDesktopSessionFromSessionStorage()?.token
     }
