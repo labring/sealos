@@ -154,6 +154,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: any) {
     console.log('error', error);
+    if (error?.response?.data?.code === 10004) {
+      return jsonRes(res, {
+        message: error?.response?.data?.code
+      });
+    }
 
     return jsonRes(res, {
       code: 500,

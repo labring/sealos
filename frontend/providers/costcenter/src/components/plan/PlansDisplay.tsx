@@ -127,7 +127,16 @@ export function PlansDisplay({
             <Checkbox
               id="more-plans"
               checked={showMorePlans}
-              onCheckedChange={(checked) => setShowMorePlans(checked === true)}
+              onCheckedChange={(checked) => {
+                setShowMorePlans(checked === true);
+                if (checked && isCreateMode && onPlanSelect && additionalPlans.length > 0) {
+                  const firstMorePlan = additionalPlans[0].ID;
+                  setSelectedPlan(firstMorePlan);
+                  onPlanSelect(firstMorePlan);
+                } else if (!checked && isCreateMode && onPlanSelect) {
+                  onPlanSelect('');
+                }
+              }}
             />
             <label htmlFor="more-plans" className="text-sm font-medium">
               More Plans
@@ -142,6 +151,9 @@ export function PlansDisplay({
                 window.open(currentPlan?.Description, '_blank', 'noopener,noreferrer');
               } else {
                 setSelectedPlan(value);
+                if (isCreateMode && onPlanSelect) {
+                  onPlanSelect(value);
+                }
               }
             }}
           >
