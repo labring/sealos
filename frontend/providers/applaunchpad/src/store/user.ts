@@ -3,7 +3,6 @@ import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { getResourcePrice, getWorkspaceQuota } from '@/api/platform';
 import type { userPriceType } from '@/types/user';
-import { AppEditType } from '@/types/app';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 
 type State = {
@@ -12,7 +11,7 @@ type State = {
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport', number>>
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>>
   ) => WorkspaceQuotaItem[];
 };
 
@@ -55,7 +54,7 @@ export const useUserStore = create<State>()(
         const exceededItems = quota.filter((item) => {
           if (!(item.type in request)) return false;
 
-          if (item.limit - item.used <= request[item.type as keyof typeof request]!) {
+          if (item.limit - item.used < request[item.type as keyof typeof request]!) {
             return true;
           }
         });

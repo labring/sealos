@@ -52,8 +52,8 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     destroyDriver();
 
     const exceededQuotaItems = userStore.checkExceededQuotas({
-      cpu: 0,
-      memory: 0
+      cpu: 1,
+      memory: 1
     });
 
     console.log('exceededQuotaItems', exceededQuotaItems);

@@ -41,7 +41,6 @@ import type { ThemeType } from '@sealos/ui';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
-import LangSelect from '../LangSelect';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { PencilLine } from 'lucide-react';
 import { track } from '@sealos/gtm';
@@ -137,10 +136,10 @@ const AppList = ({
   const handleCreateApp = useCallback(() => {
     // Check quota before creating app
     const exceededQuotaItems = checkExceededQuotas({
-      cpu: 0,
-      memory: 0,
-      gpu: 0,
-      nodeport: 0
+      cpu: 1,
+      memory: 1,
+      nodeport: 1,
+      storage: 1
     });
 
     console.log('exceededQuotaItems', exceededQuotaItems);
@@ -542,7 +541,8 @@ const AppList = ({
       router,
       t,
       userSourcePrice?.gpu,
-      handleOpenRemarkModal
+      handleOpenRemarkModal,
+      onOpenUpdateModal
     ]
   );
 
