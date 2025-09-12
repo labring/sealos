@@ -12,12 +12,14 @@ import {
   WeekSelectList
 } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
+import { resourcePropertyMap } from '@/constants/resource';
 import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 import { distributeResources } from '@/utils/database';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -55,6 +57,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 function ResourcesDistributeTable({ data }: { data: Parameters<typeof distributeResources>[0] }) {
   const resources = distributeResources(data);
@@ -174,12 +177,14 @@ const Form = ({
   formHook,
   pxVal,
   allocatedStorage,
-  cpuCores
+  cpuCores,
+  exceededQuotas
 }: {
   formHook: UseFormReturn<DBEditType, any>;
   pxVal: number;
   allocatedStorage: number;
   cpuCores: number;
+  exceededQuotas: WorkspaceQuotaItem[];
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -340,6 +345,20 @@ const Form = ({
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backupSettingsRef, supportBackup]);
+
+  const handleOpenCostcenter = () => {
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-costcenter',
+      pathname: '/',
+      query: {
+        mode: 'upgrade'
+      },
+      messageData: {
+        type: 'InternalAppCall',
+        mode: 'upgrade'
+      }
+    });
+  };
 
   return (
     <>
@@ -566,6 +585,35 @@ const Form = ({
                   (Cores)
                 </Box>
               </Flex>
+              {exceededQuotas.some(({ type }) => type === 'cpu') && (
+                <Box mb={4} pl={'88px'}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('cpu_exceeds_quota', {
+                      requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
+                        resourcePropertyMap.cpu.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'cpu')?.used ?? 0) /
+                        resourcePropertyMap.cpu.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
                 <Label w={100}>{t('memory')}</Label>
                 <MySlider
@@ -583,6 +631,35 @@ const Form = ({
                   step={1}
                 />
               </Flex>
+              {exceededQuotas.some(({ type }) => type === 'memory') && (
+                <Box mb={4} pl={'88px'}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('memory_exceeds_quota', {
+                      requested: getValues('memory') / resourcePropertyMap.memory.scale,
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
+                        resourcePropertyMap.memory.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'memory')?.used ?? 0) /
+                        resourcePropertyMap.memory.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
               <Flex mb={7} alignItems={'center'}>
                 <Label w={100}>{t('Replicas')}</Label>
                 <RangeInput
@@ -735,6 +812,35 @@ const Form = ({
                   )}
                 </Flex>
               </FormControl>
+              {exceededQuotas.some(({ type }) => type === 'storage') && (
+                <Box mb={4} pl={'88px'}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('storage_exceeds_quota', {
+                      requested: getValues('storage'),
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'storage')?.limit ?? 0) /
+                        resourcePropertyMap.storage.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'storage')?.used ?? 0) /
+                        resourcePropertyMap.storage.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
               <ResourcesDistributeTable
                 data={{
                   dbType: getValues('dbType'),

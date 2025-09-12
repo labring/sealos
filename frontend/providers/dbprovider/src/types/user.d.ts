@@ -29,12 +29,6 @@ export type userPriceType = {
   gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
 };
 
-export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage';
-  used: number;
-  limit: number;
-};
-
 export enum TaskType {
   DATABASE = 'DATABASE'
 }

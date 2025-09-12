@@ -1,16 +1,16 @@
-import { getUserQuota } from '@/api/platform';
-import { DBEditType } from '@/types/db';
-import { I18nCommonKey } from '@/types/i18next';
-import { UserQuotaItemType } from '@/types/user';
+import { getWorkspaceQuota } from '@/api/platform';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
   balance: number;
-  userQuota: UserQuotaItemType[];
+  userQuota: WorkspaceQuotaItem[];
   loadUserQuota: () => Promise<null>;
-  checkQuotaAllow: (request: DBEditType, usedData?: DBEditType) => I18nCommonKey | undefined;
+  checkExceededQuotas: (
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage' | 'traffic', number>>
+  ) => WorkspaceQuotaItem[];
 };
 
 export const useUserStore = create<State>()(
@@ -19,45 +19,25 @@ export const useUserStore = create<State>()(
       balance: 5,
       userQuota: [],
       loadUserQuota: async () => {
-        const response = await getUserQuota();
+        const response = await getWorkspaceQuota();
 
         set((state) => {
           state.userQuota = response.quota;
         });
         return null;
       },
-      checkQuotaAllow: (
-        { cpu, memory, storage, replicas },
-        usedData
-      ): I18nCommonKey | undefined => {
-        const quote = get().userQuota;
+      checkExceededQuotas: (request) => {
+        const quota = get().userQuota;
 
-        const request = {
-          cpu: (cpu / 1000) * replicas,
-          memory: (memory / 1024) * replicas,
-          storage: storage * replicas
-        };
+        const exceededItems = quota.filter((item) => {
+          if (!(item.type in request)) return false;
 
-        if (usedData) {
-          const { cpu, memory, storage, replicas } = usedData;
-          request.cpu -= (cpu / 1000) * replicas;
-          request.memory -= (memory / 1024) * replicas;
-          request.storage -= storage * replicas;
-        }
-
-        const overLimitTip: { [key: string]: I18nCommonKey } = {
-          cpu: 'app.cpu_exceeds_quota',
-          memory: 'app.memory_exceeds_quota',
-          storage: 'app.storage_exceeds_quota'
-        };
-
-        const exceedQuota = quote.find((item) => {
-          if (item.used + request[item.type] > item.limit) {
+          if (item.limit - item.used < request[item.type as keyof typeof request]!) {
             return true;
           }
         });
 
-        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : undefined;
+        return exceededItems;
       }
     }))
   )

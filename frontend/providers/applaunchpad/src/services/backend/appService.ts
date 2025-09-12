@@ -2,7 +2,6 @@ import { appDeployKey, pauseKey, minReplicasKey, maxReplicasKey } from '@/consta
 import { formData2Yamls } from '@/pages/app/edit';
 import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
-import { UserQuotaItemType } from '@/types/user';
 import { json2HPA } from '@/utils/deployYaml2Json';
 import { str2Num } from '@/utils/tools';
 import { adaptAppDetail } from '@/utils/adapt';
@@ -41,7 +40,6 @@ export interface K8sContext {
   namespace: string;
   applyYamlList: (yamlList: string[], type: 'create' | 'replace') => Promise<KubernetesObject[]>;
   getDeployApp: (appName: string) => Promise<V1Deployment | V1StatefulSet>;
-  getUserQuota: () => Promise<UserQuotaItemType[]>;
   getUserBalance: () => Promise<number>;
 }
 

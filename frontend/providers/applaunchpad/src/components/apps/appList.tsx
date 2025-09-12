@@ -1,4 +1,5 @@
 import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
+import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 import AppStatusTag from '@/components/AppStatusTag';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
@@ -9,7 +10,9 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 import { AppListItemType } from '@/types/app';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 import { getErrText } from '@/utils/tools';
 import {
   Box,
@@ -35,11 +38,11 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { ThemeType } from '@sealos/ui';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
-import LangSelect from '../LangSelect';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { PencilLine } from 'lucide-react';
 import { track } from '@sealos/gtm';
@@ -55,7 +58,7 @@ const AppList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
-  const { userSourcePrice } = useUserStore();
+  const { userSourcePrice, loadUserQuota, checkExceededQuotas } = useUserStore();
   const { toast } = useToast();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
@@ -63,6 +66,25 @@ const AppList = ({
   const [updateAppName, setUpdateAppName] = useState('');
   const [remarkAppName, setRemarkAppName] = useState('');
   const [remarkValue, setRemarkValue] = useState('');
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getWorkspaceSubscriptionInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: 'pause_message'
@@ -120,6 +142,29 @@ const AppList = ({
       setRemarkValue('');
     }
   }, [apps, remarkAppName, remarkValue, setLoading, toast, t, refetchApps, onCloseRemarkModal]);
+
+  const handleCreateApp = useCallback(() => {
+    // Check quota before creating app
+    const exceededQuotaItems = checkExceededQuotas({
+      cpu: 1,
+      memory: 1,
+      nodeport: 1,
+      storage: 1,
+      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+    });
+
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      track('deployment_start', {
+        module: 'applaunchpad'
+      });
+      router.push('/app/edit');
+    }
+  }, [checkExceededQuotas, router, subscriptionInfo?.subscription?.type]);
 
   const handleRestartApp = useCallback(
     async (appName: string) => {
@@ -506,7 +551,8 @@ const AppList = ({
       router,
       t,
       userSourcePrice?.gpu,
-      handleOpenRemarkModal
+      handleOpenRemarkModal,
+      onOpenUpdateModal
     ]
   );
 
@@ -551,12 +597,7 @@ const AppList = ({
           w={'156px'}
           flex={'0 0 auto'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
-          onClick={() => {
-            track('deployment_start', {
-              module: 'applaunchpad'
-            });
-            router.push('/app/edit');
-          }}
+          onClick={handleCreateApp}
         >
           {t('Create Application')}
         </Button>
@@ -618,6 +659,23 @@ const AppList = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        open={exceededDialogOpen}
+        onOpenChange={(open) => {
+          // Refresh quota on open change
+          loadUserQuota();
+          setExceededDialogOpen(open);
+        }}
+        onConfirm={() => {
+          setExceededDialogOpen(false);
+          track('deployment_start', {
+            module: 'applaunchpad'
+          });
+          router.push('/app/edit');
+        }}
+      />
     </Box>
   );
 };
