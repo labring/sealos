@@ -42,6 +42,7 @@ export const releaseDevbox = (data: {
   tag: string;
   releaseDes: string;
   devboxUid: string;
+  startDevboxAfterRelease: boolean;
 }) => POST('/api/releaseDevbox', data);
 
 export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>

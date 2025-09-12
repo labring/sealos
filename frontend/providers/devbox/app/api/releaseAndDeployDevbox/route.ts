@@ -124,8 +124,14 @@ export async function POST(req: NextRequest) {
         error: 'devbox release already exists'
       });
     }
-
-    const devbox = json2DevboxRelease({ devboxName, tag, releaseDes, devboxUid });
+    const startDevboxAfterRelease = false;
+    const devbox = json2DevboxRelease({
+      devboxName,
+      tag,
+      releaseDes,
+      devboxUid,
+      startDevboxAfterRelease
+    });
     await applyYamlList([devbox], 'create');
 
     // 4. wait for release success

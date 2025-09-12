@@ -144,6 +144,7 @@ export type KBDevboxReleaseType = {
     devboxName: string;
     version: string;
     notes?: string;
+    startDevboxAfterRelease: boolean;
   };
   status: {
     originalImage?: string;
