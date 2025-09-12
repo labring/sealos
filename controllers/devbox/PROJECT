@@ -15,24 +15,17 @@ resources:
   domain: sealos.io
   group: devbox
   kind: Devbox
-  path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
-  version: v1alpha1
+  path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
+  version: v1alpha2
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: sealos.io
   group: devbox
-  kind: Runtime
-  path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: sealos.io
-  group: devbox
-  kind: RuntimeClass
-  path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
-  version: v1alpha1
+  kind: DevBoxReleases
+  path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
+  version: v1alpha2
 - api:
     crdVersion: v1
     namespaced: true
@@ -40,15 +33,6 @@ resources:
   domain: sealos.io
   group: devbox
   kind: DevBoxRelease
-  path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: sealos.io
-  group: devbox
-  kind: OperationRequest
-  path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
-  version: v1alpha1
+  path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
+  version: v1alpha2
 version: "3"

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -24,7 +24,26 @@ import (
 const (
 	// FinalizerName is the finalizer for Devbox
 	FinalizerName = "devbox.sealos.io/finalizer"
-	DevBoxPartOf  = "devbox"
+
+	// Annotate the devbox pod with the devbox init
+	AnnotationInit = "devbox.sealos.io/init"
+	// Annotate the devbox pod with the storage limit
+	AnnotationStorageLimit = "devbox.sealos.io/storage-limit"
+	// Annotate the devbox pod with the devbox part of
+	AnnotationContentID = "devbox.sealos.io/content-id"
+	// Annotate the devbox node with container filesystem threshold
+	AnnotationContainerFSAvailableThreshold = "devbox.sealos.io/container-fs-available-threshold"
+	// Annotate the devbox node with cpu request and limit ratio
+	AnnotationCPURequestRatio = "devbox.sealos.io/cpu-request-ratio"
+	AnnotationCPULimitRatio   = "devbox.sealos.io/cpu-limit-ratio"
+	// Annotate the devbox node with memory request and limit ratio
+	AnnotationMemoryRequestRatio = "devbox.sealos.io/memory-request-ratio"
+	AnnotationMemoryLimitRatio   = "devbox.sealos.io/memory-limit-ratio"
+
+	// Label the devbox pod with the devbox part of
+	LabelDevBoxPartOf = "devbox"
+	// Index for pod node name
+	PodNodeNameIndex = "spec.nodeName"
 )
 
 type DevboxState string
@@ -34,9 +53,11 @@ const (
 	DevboxStateRunning DevboxState = "Running"
 	// DevboxStatePending means the Devbox is pending
 	DevboxStatePending DevboxState = "Pending"
-	// DevboxStateStopped means the Devbox is stopped
+	// DevboxStatePaused means the Devbox is paused, pod will be released but content lv and nodeport service will be retained
+	DevboxStatePaused DevboxState = "Paused"
+	// DevboxStateStopped means the Devbox is stopped, pod and content lv will be released but nodeport service will be retained
 	DevboxStateStopped DevboxState = "Stopped"
-	// DevboxStateShutdown means the devbox is shutdown
+	// DevboxStateShutdown means the devbox is shutdown, pod, content lv and nodeport service will be released
 	DevboxStateShutdown DevboxState = "Shutdown"
 )
 
@@ -59,7 +80,7 @@ type NetworkSpec struct {
 	// +kubebuilder:validation:Enum=NodePort;Tailnet
 	Type NetworkType `json:"type"`
 	// +kubebuilder:validation:Optional
-	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
+	ExtraPorts []corev1.ContainerPort `json:"extraPorts,omitempty"`
 }
 
 type Config struct {
@@ -106,14 +127,11 @@ type Config struct {
 // DevboxSpec defines the desired state of Devbox
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Running;Stopped;Shutdown
+	// +kubebuilder:validation:Enum=Running;Paused;Stopped;Shutdown
+	// +kubebuilder:default=Running
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource corev1.ResourceList `json:"resource"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	Squash bool `json:"squash"`
 
 	// +kubebuilder:validation:Required
 	Image string `json:"image"`
@@ -123,6 +141,10 @@ type DevboxSpec struct {
 
 	// +kubebuilder:validation:Required
 	Config Config `json:"config"`
+
+	// +kubebuilder:validation:Optional
+	// devbox storage limit, `storageLimit` will be used to generate the devbox pod label.
+	StorageLimit string `json:"storageLimit,omitempty"`
 
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
@@ -153,28 +175,11 @@ type NetworkStatus struct {
 type CommitStatus string
 
 const (
-	CommitStatusSuccess CommitStatus = "Success"
-	CommitStatusFailed  CommitStatus = "Failed"
-	CommitStatusUnknown CommitStatus = "Unknown"
-	CommitStatusPending CommitStatus = "Pending"
+	CommitStatusSuccess    CommitStatus = "Success"
+	CommitStatusFailed     CommitStatus = "Failed"
+	CommitStatusPending    CommitStatus = "Pending"
+	CommitStatusCommitting CommitStatus = "Committing"
 )
-
-type CommitHistory struct {
-	// Image is the image of the commit
-	Image string `json:"image"`
-	// Time is the time when the commit is created
-	Time metav1.Time `json:"time"`
-	// Pod is the pod name
-	Pod string `json:"pod"`
-	// status will be set based on expectedStatus after devbox pod delete or stop. if expectedStatus is still pending, it means the pod is not running successfully, so we need to set it to `failed`
-	Status CommitStatus `json:"status"`
-	// predicatedStatus default `pending`, will be set to `success` if pod status is running successfully.
-	PredicatedStatus CommitStatus `json:"predicatedStatus"`
-	// Node is the node name
-	Node string `json:"node"`
-	// ContainerID is the container id
-	ContainerID string `json:"containerID"`
-}
 
 type DevboxPhase string
 
@@ -183,6 +188,10 @@ const (
 	DevboxPhaseRunning DevboxPhase = "Running"
 	// DevboxPhasePending means Devbox is run but not run success
 	DevboxPhasePending DevboxPhase = "Pending"
+	// DevboxPhasePaused means Devbox is paused and paused success
+	DevboxPhasePaused DevboxPhase = "Paused"
+	// DevboxPhasePausing means Devbox is pausing
+	DevboxPhasePausing DevboxPhase = "Pausing"
 	//DevboxPhaseStopped means Devbox is stop and stopped success
 	DevboxPhaseStopped DevboxPhase = "Stopped"
 	//DevboxPhaseStopping means Devbox is stopping
@@ -197,19 +206,62 @@ const (
 	DevboxPhaseUnknown DevboxPhase = "Unknown"
 )
 
+type CommitRecord struct {
+	// BaseImage is the image of the that devbox is running on
+	// +kubebuilder:validation:Optional
+	BaseImage string `json:"baseImage"`
+
+	// CommitImage is the image of the that devbox is committed to
+	// +kubebuilder:validation:Optional
+	CommitImage string `json:"commitImage"`
+
+	// Node is the node name
+	// +kubebuilder:validation:Optional
+	Node string `json:"node"`
+
+	// GenerateTime is the time when the commit is generated
+	// +kubebuilder:validation:Optional
+	GenerateTime metav1.Time `json:"generateTime"`
+
+	// ScheduleTime is the time when the commit is scheduled
+	// +kubebuilder:validation:Optional
+	ScheduleTime metav1.Time `json:"scheduleTime"`
+
+	// UpdateTime is the time when the commit is updated
+	// +kubebuilder:validation:Optional
+	UpdateTime metav1.Time `json:"updateTime"`
+
+	// CommitTime is the time when the commit is created
+	// +kubebuilder:validation:Optional
+	CommitTime metav1.Time `json:"commitTime"`
+
+	// CommitStatus is the status of the commit
+	// +kubebuilder:validation:Enum=Success;Failed;Pending;Committing
+	// +kubebuilder:default=Pending
+	CommitStatus CommitStatus `json:"commitStatus"`
+}
+
+// CommitRecordMap is a map of commit records, key is the commit id
+type CommitRecordMap map[string]*CommitRecord
+
 // DevboxStatus defines the observed state of Devbox
 type DevboxStatus struct {
 	// +kubebuilder:validation:Optional
-	Network NetworkStatus `json:"network"`
+	ContentID string `json:"contentID"`
 	// +kubebuilder:validation:Optional
-	CommitHistory []*CommitHistory `json:"commitHistory"`
+	Node string `json:"node"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=Running
+	State DevboxState `json:"state"`
+	// CommitRecords is the records of the devbox commits
+	CommitRecords CommitRecordMap `json:"commitRecords"`
 	// +kubebuilder:validation:Optional
 	Phase DevboxPhase `json:"phase"`
+	// +kubebuilder:validation:Optional
+	Network NetworkStatus `json:"network"`
 
 	// +kubebuilder:validation:Optional
-	State corev1.ContainerState `json:"state"`
-	// +kubebuilder:validation:Optional
-	LastTerminationState corev1.ContainerState `json:"lastState"`
+	LastContainerStatus corev1.ContainerStatus `json:"lastContainerStatus"`
 }
 
 // +kubebuilder:object:root=true
@@ -218,9 +270,11 @@ type DevboxStatus struct {
 // +kubebuilder:printcolumn:name="NetworkType",type="string",JSONPath=".status.network.type"
 // +kubebuilder:printcolumn:name="NodePort",type="integer",JSONPath=".status.network.nodePort"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Node",type="string",JSONPath=".status.node"
 
 // Devbox is the Schema for the devboxes API
 type Devbox struct {
+	// +kubebuilder:validation:XValidation:rule="self.spec.state == oldSelf.spec.state || (self.status.contentID in self.status.commitRecords && self.status.commitRecords[self.status.contentID].commitStatus != 'Committing')"
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
