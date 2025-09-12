@@ -15,8 +15,6 @@ type UpstreamQuotaResponse = {
 
 export const dynamic = 'force-dynamic';
 
-// [TODO] This is the only API that needs to be authenticated, so we put all the authentication logic here.
-
 export async function GET(req: NextRequest) {
   try {
     const desktopToken = req.headers.get('X-Desktop-Token');

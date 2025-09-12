@@ -1,34 +1,38 @@
-import MyTooltip from '@/components/MyTooltip';
-import { useUserStore } from '@/store/user';
-import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react';
+import React, { useMemo } from 'react';
+import { Box, Flex, useTheme, Progress, css, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
+import { MyTooltip } from '@sealos/ui';
+
+import { useUserStore } from '@/store/user';
+import { resourcePropertyMap } from '@/constants/resource';
 
 const sourceMap = {
   cpu: {
-    color: '#33BABB',
-    unit: 'Core'
+    color: '#33BABB'
   },
   memory: {
-    color: '#36ADEF',
-    unit: 'Gi'
+    color: '#36ADEF'
   },
   storage: {
-    color: '#8172D8',
-    unit: 'GB'
+    color: '#8172D8'
   },
   gpu: {
-    color: '#89CD11',
-    unit: 'Card'
+    color: '#89CD11'
+  },
+  nodeport: {
+    color: '#FFA500'
+  },
+  traffic: {
+    color: '#FF6B6B'
   }
 };
 
-const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
+const QuotaBox = () => {
+  const theme = useTheme();
   const { t } = useTranslation();
   const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
-  const theme = useTheme();
 
   const quotaList = useMemo(() => {
     if (!userQuota) return [];
@@ -37,32 +41,34 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
       .filter((item) => item.limit > 0)
       .map((item) => {
         const { limit, used, type } = item;
-        const unit = sourceMap[type]?.unit;
+        const unit = resourcePropertyMap[type]?.unit;
+        const scale = resourcePropertyMap[type]?.scale;
         const color = sourceMap[type]?.color;
-        const tip = `${t('common.Total')}: ${limit} ${unit}
-${t('common.Used')}: ${used.toFixed(2)} ${unit}
-${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
+
+        const tip = `${t('Total')}: ${(limit / scale).toFixed(2)} ${unit}
+${t('common.Used')}: ${(used / scale).toFixed(2)} ${unit}
+${t('common.Surplus')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
 
         return { ...item, tip, color };
       });
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
-    <Box borderRadius={'md'} border={showBorder && theme.borders.base} bg={'#FFF'}>
+    <Box borderRadius={'md'} border={theme.borders.base} bg={'#FFF'}>
       <Box
         py={3}
-        px={'20px'}
-        borderBottom={showBorder && theme.borders.base}
+        px={4}
+        borderBottom={theme.borders.base}
         color={'grayModern.900'}
         fontWeight={500}
       >
-        {t('app.resource_quota')}
+        <Text>{t('app.resource_quota')}</Text>
       </Box>
-      <Flex flexDirection={'column'} gap={'14px'} py={'16px'} px={'20px'}>
+      <Box py={3} px={4}>
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
-            <Flex alignItems={'center'}>
-              <Box flex={'0 0 60px'} textTransform={'capitalize'}>
+            <Flex alignItems={'center'} _notFirst={{ mt: 3 }}>
+              <Box fontSize={'base'} flex={'0 0 60px'}>
                 {t(item.type)}
               </Box>
               <Progress
@@ -80,7 +86,7 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
             </Flex>
           </MyTooltip>
         ))}
-      </Flex>
+      </Box>
     </Box>
   );
 };

@@ -14,7 +14,7 @@ import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Search, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import {
   Box,
   Button,
@@ -47,7 +47,7 @@ import {
 import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { useDBStore } from '@/store/db';
@@ -67,6 +67,11 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceSubscriptionInfo } from '@/api/platform';
+import { useUserStore } from '@/store/user';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -85,6 +90,7 @@ const DBList = ({
   const theme = useTheme();
   const router = useRouter();
   const { SystemEnv } = useEnvStore();
+  const { loadUserQuota, checkExceededQuotas } = useUserStore();
   const {
     isOpen: isOpenUpdateModal,
     onOpen: onOpenUpdateModal,
@@ -99,10 +105,57 @@ const DBList = ({
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
   });
+
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getWorkspaceSubscriptionInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
+
+  useEffect(() => {
+    console.log('alerts', alerts);
+  }, []);
+
+  const handleCreateApp = useCallback(() => {
+    // Check quota before creating app
+    const exceededQuotaItems = checkExceededQuotas({
+      cpu: 1,
+      memory: 1,
+      nodeport: 1,
+      storage: 1,
+      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+    });
+
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      track('module_view', {
+        module: 'database',
+        view_name: 'create_form'
+      });
+      router.push('/db/edit');
+    }
+  }, [checkExceededQuotas, router, subscriptionInfo?.subscription?.type]);
 
   const handleRestartApp = useCallback(
     async (db: DBListItemType) => {
@@ -775,13 +828,7 @@ const DBList = ({
           h={'full'}
           variant={'solid'}
           leftIcon={<MyIcon name={'plus'} w={'18px'} h={'18px'} />}
-          onClick={() => {
-            track('module_view', {
-              module: 'database',
-              view_name: 'create_form'
-            });
-            router.push('/db/edit');
-          }}
+          onClick={handleCreateApp}
         >
           {t('create_db')}
         </Button>
@@ -862,6 +909,23 @@ const DBList = ({
         onClose={() => {
           setUpdateAppName('');
           onCloseUpdateModal();
+        }}
+      />
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        open={exceededDialogOpen}
+        onOpenChange={(open) => {
+          // Refresh quota on open change
+          loadUserQuota();
+          setExceededDialogOpen(open);
+        }}
+        onConfirm={() => {
+          setExceededDialogOpen(false);
+          track('module_view', {
+            module: 'database',
+            view_name: 'create_form'
+          });
+          router.push('/db/edit');
         }}
       />
     </Box>

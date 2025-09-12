@@ -4,7 +4,6 @@ import { WorkspaceQuotaItem } from '@/types/workspace';
 import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// [TODO] This is the only API that needs to be authenticated, so we put all the authentication logic here.
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
   quota?: {

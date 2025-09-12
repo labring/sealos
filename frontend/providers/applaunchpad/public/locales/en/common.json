@@ -414,7 +414,7 @@
     "2": " or adjust settings."
   },
   "insufficient_quota_dialog": {
-    "alert-title": "We can't create your DevBox right now. You've used all of your available resources.",
+    "alert-title": "We can't create your app right now. You've used all of your available resources.",
     "cancel": "Cancel",
     "confirm": "Confirm",
     "please_upgrade_plan": {
