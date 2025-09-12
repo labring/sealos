@@ -371,6 +371,7 @@ const Form = ({
       try {
         setAddonLoading(true);
         const addonData = await getAddonList();
+        console.log('Addon data:', addonData);
         setAddonList(addonData || []);
       } catch (error) {
         console.error('Failed to fetch addon list:', error);
@@ -472,7 +473,7 @@ const Form = ({
       addonStatusMap.set(addon.name, addon.status);
     });
 
-    return DBTypeList.filter((dbType) => {
+    const filtered = DBTypeList.filter((dbType) => {
       const addonNameMap: Record<string, string> = {
         [DBTypeEnum.postgresql]: 'postgresql',
         [DBTypeEnum.mongodb]: 'mongodb',
@@ -493,8 +494,11 @@ const Form = ({
       }
 
       const addonStatus = addonStatusMap.get(addonName);
-      return addonStatus !== 'Disabled';
+      const shouldInclude = addonStatus !== 'Disabled';
+      return shouldInclude;
     });
+
+    return filtered;
   }, [addonList, addonLoading]);
 
   return (
