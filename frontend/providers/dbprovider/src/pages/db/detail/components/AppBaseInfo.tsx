@@ -49,6 +49,10 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useUserStore } from '@/store/user';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -120,6 +124,11 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const router = useRouter();
   const { detailCompleted, applistCompleted } = useGuideStore();
 
+  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+
   useEffect(() => {
     if (!detailCompleted && applistCompleted) {
       const checkAndStartGuide = () => {
@@ -161,6 +170,22 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       (item) => item === db.dbType
     );
   }, [db.dbType]);
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
+
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo, refetch: refetchWorkspaceSubscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getWorkspaceSubscriptionInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
 
   const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
@@ -297,16 +322,25 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       },
       messageData: { type: 'new terminal', command: defaultCommand }
     });
-  }, [db.dbType, secret, db.dbName]);
+  }, [db.dbType, secret]);
 
-  const refetchAll = () => {
+  const refetchAll = useCallback(() => {
+    loadUserQuota();
+    refetchWorkspaceSubscriptionInfo();
     refetchDBStatefulSet();
     refetchSecret();
     refetchService();
-  };
+  }, [
+    loadUserQuota,
+    refetchWorkspaceSubscriptionInfo,
+    refetchDBStatefulSet,
+    refetchSecret,
+    refetchService
+  ]);
 
-  const openNetWorkService = async () => {
+  const openNetWorkService = useCallback(async () => {
     try {
+      console.log({ dbStatefulSet, db });
       if (!dbStatefulSet || !db) {
         return toast({
           title: 'Missing Parameters',
@@ -328,7 +362,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         status: 'error'
       });
     }
-  };
+  }, [onClose, refetchAll, db, dbStatefulSet, t, toast]);
 
   const closeNetWorkService = async () => {
     try {
@@ -345,6 +379,29 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       });
     }
   };
+
+  const handleOpenExternalNetwork = useCallback(() => {
+    if (subscriptionInfo?.subscription?.type === 'PAYG') {
+      setScenario('externalNetwork');
+      onOpen();
+      return;
+    }
+
+    // Subscription
+    const exceededQuotaItems = checkExceededQuotas({
+      nodeport: 1,
+      traffic: 1
+    });
+
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      openNetWorkService();
+    }
+  }, [checkExceededQuotas, subscriptionInfo?.subscription?.type, onOpen, openNetWorkService]);
 
   const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
     try {
@@ -709,8 +766,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   if (isChecked) {
                     closeNetWorkService();
                   } else {
-                    setScenario('externalNetwork');
-                    onOpen();
+                    handleOpenExternalNetwork();
                   }
                 }}
               />
@@ -776,6 +832,18 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           />
         </Stack>
       )}
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        open={exceededDialogOpen}
+        showControls={false}
+        onOpenChange={(open) => {
+          // Refresh quota on open change
+          loadUserQuota();
+          setExceededDialogOpen(open);
+        }}
+        onConfirm={() => {}}
+      />
     </Flex>
   );
 };
