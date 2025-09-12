@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button, Box } from '@chakra-ui/react';
 import styles from './empty.module.scss';
@@ -7,6 +7,12 @@ import { useTranslation } from 'next-i18next';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { useUserStore } from '@/store/user';
+import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceSubscriptionInfo } from '@/api/platform';
+import { track } from '@sealos/gtm';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
 const Empty = () => {
   const router = useRouter();
@@ -14,6 +20,10 @@ const Empty = () => {
 
   const { listCompleted } = useGuideStore();
   const isClientSide = useClientSideValue(true);
+  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!listCompleted && isClientSide) {
@@ -24,6 +34,45 @@ const Empty = () => {
       );
     }
   }, [listCompleted, router, t, isClientSide]);
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
+
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getWorkspaceSubscriptionInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+
+  const handleCreateApp = useCallback(() => {
+    // Check quota before creating app
+    const exceededQuotaItems = checkExceededQuotas({
+      cpu: 1,
+      memory: 1,
+      nodeport: 1,
+      storage: 1,
+      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+    });
+
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      track('deployment_start', {
+        module: 'applaunchpad'
+      });
+      router.push('/app/edit');
+    }
+  }, [checkExceededQuotas, router, subscriptionInfo?.subscription?.type]);
 
   return (
     <Box
@@ -40,11 +89,28 @@ const Empty = () => {
         className="create-app-btn"
         w={155}
         mt={5}
-        onClick={() => router.push('/app/edit')}
+        onClick={() => handleCreateApp()}
         leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
       >
         {t('Create Application')}
       </Button>
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        open={exceededDialogOpen}
+        onOpenChange={(open) => {
+          // Refresh quota on open change
+          loadUserQuota();
+          setExceededDialogOpen(open);
+        }}
+        onConfirm={() => {
+          setExceededDialogOpen(false);
+          track('deployment_start', {
+            module: 'applaunchpad'
+          });
+          router.push('/app/edit');
+        }}
+      />
     </Box>
   );
 };
