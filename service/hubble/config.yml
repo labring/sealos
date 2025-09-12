@@ -1,0 +1,11 @@
+auth:
+  whiteList:
+http:
+  addr: ":8080"
+hubble:
+  addr: "hubble-relay.kube-system.svc.cluster.local:80"
+redis:
+  addr:
+  username: "default"
+  password:
+  db: 10
