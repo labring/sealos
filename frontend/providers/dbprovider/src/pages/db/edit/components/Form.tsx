@@ -371,7 +371,6 @@ const Form = ({
       try {
         setAddonLoading(true);
         const addonData = await getAddonList();
-        console.log('Addon data:', addonData);
         setAddonList(addonData || []);
       } catch (error) {
         console.error('Failed to fetch addon list:', error);
