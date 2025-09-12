@@ -33,6 +33,10 @@ import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
 import type { DBType, BackupItemType } from '@/types/db';
 import { getBackups, deleteBackup } from '@/api/backup';
 import StopBackupModal from '../detail/components/StopBackupModal';
+import { getWorkspaceSubscriptionInfo } from '@/api/platform';
+import { resourcePropertyMap } from '@/constants/resource';
+import { distributeResources } from '@/utils/database';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -43,6 +47,7 @@ const defaultEdit = {
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
   const { t } = useTranslation();
   const router = useRouter();
+  const { checkExceededQuotas } = useUserStore();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
@@ -52,7 +57,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail, dbDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
-  const { checkQuotaAllow } = useUserStore();
 
   // Stop backup modal state
   const {
@@ -61,6 +65,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     onClose: onStopBackupClose
   } = useDisclosure();
   const [pendingFormData, setPendingFormData] = useState<DBEditType | null>(null);
+
+  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -82,6 +88,104 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const formHook = useForm<DBEditType>({
     defaultValues: defaultEdit
   });
+
+  const realTimeForm = useRef(defaultEdit);
+
+  // watch form change, compute new yaml
+  formHook.watch((data) => {
+    if (!data) return;
+    realTimeForm.current = data as DBEditType;
+    setForceUpdate(!forceUpdate);
+  });
+
+  // Fetch workspace subscription info
+  const { data: subscriptionInfo } = useQuery({
+    queryKey: ['workspaceSubscriptionInfo'],
+    queryFn: () => getWorkspaceSubscriptionInfo(),
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+
+  const exceededQuotas = useMemo(() => {
+    const oldReplicas = formHook.formState.defaultValues?.replicas ?? 0;
+    const newReplicas = realTimeForm.current.replicas;
+
+    // Calculate actual resource usage from components list for more accurate result.
+
+    const oldComponents = distributeResources({
+      // dbType cannot be changed
+      dbType: realTimeForm.current.dbType,
+      cpu: formHook.formState.defaultValues?.cpu ?? 0,
+      memory: formHook.formState.defaultValues?.memory ?? 0,
+      storage: formHook.formState.defaultValues?.storage ?? 0,
+      replicas: formHook.formState.defaultValues?.replicas ?? 0,
+      forDisplay: false
+    });
+
+    const newComponents = distributeResources({
+      // dbType cannot be changed
+      dbType: realTimeForm.current.dbType,
+      cpu: realTimeForm.current.cpu,
+      memory: realTimeForm.current.memory,
+      storage: realTimeForm.current.storage,
+      replicas: realTimeForm.current.replicas,
+      forDisplay: false
+    });
+
+    const oldResources = {
+      cpu: Object.values(oldComponents).reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.cpuMemory.limits.cpu.replace('m', '')) * (cur?.other?.replicas ?? oldReplicas),
+        0
+      ),
+      memory: Object.values(oldComponents).reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.cpuMemory.limits.memory.replace('Mi', '')) *
+            (cur?.other?.replicas ?? oldReplicas),
+        0
+      ),
+      storage: Object.values(oldComponents).reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.storage * resourcePropertyMap.storage.scale) *
+            (cur?.other?.replicas ?? oldReplicas),
+        0
+      )
+    };
+
+    const newResources = {
+      cpu: Object.values(newComponents).reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.cpuMemory.limits.cpu.replace('m', '')) * (cur?.other?.replicas ?? newReplicas),
+        0
+      ),
+      memory: Object.values(newComponents).reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.cpuMemory.limits.memory.replace('Mi', '')) *
+            (cur?.other?.replicas ?? newReplicas),
+        0
+      ),
+      storage: Object.values(newComponents).reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.storage * resourcePropertyMap.storage.scale) *
+            (cur?.other?.replicas ?? newReplicas),
+        0
+      )
+    };
+
+    return checkExceededQuotas({
+      cpu: isEdit ? newResources.cpu - oldResources.cpu : newResources.cpu,
+      memory: isEdit ? newResources.memory - oldResources.memory : newResources.memory,
+      storage: isEdit ? newResources.storage - oldResources.storage : newResources.storage,
+      // [TODO] check nodeport
+      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+    });
+  }, [checkExceededQuotas, formHook.formState, isEdit, subscriptionInfo?.subscription?.type]);
 
   useEffect(() => {
     if (!dbName) {
@@ -320,6 +424,23 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     }
   );
 
+  const confirmSubmit = () => {
+    setIsInsufficientQuotaDialogOpen(false);
+
+    formHook.handleSubmit(
+      (data) => handleBackupCheck(data),
+      (err) => submitError(err)
+    )();
+  };
+
+  const handleSubmit = () => {
+    if (exceededQuotas.length <= 0) {
+      confirmSubmit();
+      return;
+    }
+
+    setIsInsufficientQuotaDialogOpen(true);
+  };
   return (
     <>
       <Flex
@@ -334,12 +455,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() =>
-            formHook.handleSubmit(
-              (data) => handleBackupCheck(data),
-              (err) => submitError(err)
-            )()
-          }
+          applyCb={handleSubmit}
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
@@ -349,6 +465,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
               allocatedStorage={allocatedStorage}
               pxVal={pxVal}
               cpuCores={cpu}
+              exceededQuotas={exceededQuotas}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
@@ -403,6 +520,14 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         }}
         onCancel={onStopBackupClose}
         dbName={pendingFormData?.dbName || ''}
+      />
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        onOpenChange={setIsInsufficientQuotaDialogOpen}
+        open={isInsufficientQuotaDialogOpen}
+        onConfirm={() => {}}
+        showControls={false}
       />
     </>
   );
