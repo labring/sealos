@@ -120,12 +120,12 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		logger.Info("devbox deleted, remove all resources")
-		if err := r.removeAll(ctx, devbox, recLabels); err != nil {
+		if err := r.handleSubResourceDelete(ctx, devbox, recLabels); err != nil {
 			return ctrl.Result{}, err
 		}
 
 		// delete storage:
-		if err := r.handleStorageDeleted(ctx, devbox); err != nil {
+		if err := r.handleStorageDelete(ctx, devbox); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -233,8 +233,8 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
 		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
 
-		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, events.EventReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, events.EventReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, events.ReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, events.ReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
 
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
@@ -614,44 +614,86 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv
 	return nil
 }
 
-func (r *DevboxReconciler) handleStorageDeleted(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+func (r *DevboxReconciler) handleStorageDelete(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
 	logger := log.FromContext(ctx)
 
-	// check status
-	if devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown || devbox.Spec.State == devboxv1alpha2.DevboxStateStopped {
-		logger.Info("devbox's spec state is stopped or shutdown, storage already cleaned up", "devbox", devbox.Name, "devboxSpecState", devbox.Spec.State)
+	// Early return if storage is already cleaned up
+	if r.isStorageAlreadyCleanedUp(devbox) {
+		logger.Info("devbox storage already cleaned up, skipping cleanup",
+			"devbox", devbox.Name,
+			"state", devbox.Spec.State)
 		return nil
 	}
 
-	if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
-		logger.Info("devbox's commit record node is not the same as the node name, skipping storage cleanup", "devbox", devbox.Name, "commitRecordNode", devbox.Status.CommitRecords[devbox.Status.ContentID].Node, "nodeName", r.NodeName)
+	// Validate and get commit record
+	commitRecord, err := r.validateAndGetCommitRecord(devbox)
+	if err != nil {
+		logger.Error(err, "failed to validate commit record", "devbox", devbox.Name)
+		return err
+	}
+	// Check if this node should handle the cleanup
+	if !r.shouldHandleStorageCleanup(devbox, commitRecord) {
+		logger.Info("skipping storage cleanup - not responsible node",
+			"devbox", devbox.Name,
+			"commitRecordNode", commitRecord.Node,
+			"currentNode", r.NodeName)
 		return nil
 	}
 
+	// Request storage cleanup
+	return r.requestStorageCleanup(ctx, devbox, commitRecord)
+}
+
+// isStorageAlreadyCleanedUp checks if storage cleanup is already done
+// shutdown or stopped devbox is already cleaned up
+func (r *DevboxReconciler) isStorageAlreadyCleanedUp(devbox *devboxv1alpha2.Devbox) bool {
+	return devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown ||
+		devbox.Spec.State == devboxv1alpha2.DevboxStateStopped
+}
+
+// validateAndGetCommitRecord validates devbox status and returns the current commit record
+func (r *DevboxReconciler) validateAndGetCommitRecord(devbox *devboxv1alpha2.Devbox) (*devboxv1alpha2.CommitRecord, error) {
 	contentID := devbox.Status.ContentID
 	if contentID == "" {
-		logger.Error(fmt.Errorf("contentID is empty"), "devbox", devbox.Name, "devboxSpecState", devbox.Spec.State)
-		return fmt.Errorf("contentID is empty")
+		return nil, fmt.Errorf("contentID is empty for devbox %s", devbox.Name)
 	}
 
-	if devbox.Status.CommitRecords == nil || devbox.Status.CommitRecords[contentID] == nil {
-		logger.Error(fmt.Errorf("commit record is empty"), "devbox", devbox.Name, "contentID", contentID)
-		return fmt.Errorf("commit record is empty")
+	if devbox.Status.CommitRecords == nil {
+		return nil, fmt.Errorf("commit records is nil for devbox %s", devbox.Name)
 	}
 
-	currentRecord := devbox.Status.CommitRecords[contentID]
-	baseImage := currentRecord.BaseImage
-	if baseImage == "" {
-		logger.Error(fmt.Errorf("baseImage is empty"), "devbox", devbox.Name, "contentID", contentID)
-		return fmt.Errorf("baseImage is empty")
+	commitRecord, exists := devbox.Status.CommitRecords[contentID]
+	if !exists || commitRecord == nil {
+		return nil, fmt.Errorf("commit record not found for contentID %s in devbox %s", contentID, devbox.Name)
 	}
 
-	logger.Info("Starting devbox deletion storage cleanup", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
+	if commitRecord.BaseImage == "" {
+		return nil, fmt.Errorf("baseImage is empty in commit record for devbox %s", devbox.Name)
+	}
 
-	// use StateChangeRecorder to delete storage
-	eventMessage := fmt.Sprintf(events.EventMessageStorageCleanupFormat, devbox.Name, contentID, baseImage)
-	logger.Info("deleting storage", "eventMessage", eventMessage)
-	r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, events.EventReasonStorageCleanupRequested, eventMessage)
+	return commitRecord, nil
+}
+
+// shouldHandleStorageCleanup determines if the current node should handle storage cleanup
+func (r *DevboxReconciler) shouldHandleStorageCleanup(devbox *devboxv1alpha2.Devbox, commitRecord *devboxv1alpha2.CommitRecord) bool {
+	return commitRecord.Node == r.NodeName
+}
+
+// requestStorageCleanup sends a storage cleanup request via event recorder
+func (r *DevboxReconciler) requestStorageCleanup(ctx context.Context, devbox *devboxv1alpha2.Devbox, commitRecord *devboxv1alpha2.CommitRecord) error {
+	logger := log.FromContext(ctx)
+
+	logger.Info("requesting devbox storage cleanup",
+		"devbox", devbox.Name,
+		"contentID", devbox.Status.ContentID,
+		"baseImage", commitRecord.BaseImage)
+
+	r.StateChangeRecorder.AnnotatedEventf(devbox,
+		events.BuildStorageCleanupAnnotations(devbox.Name, devbox.Status.ContentID, commitRecord.BaseImage),
+		corev1.EventTypeNormal,
+		events.ReasonStorageCleanupRequested,
+		"devbox storage cleanup requested")
+
 	return nil
 }
 
@@ -660,7 +702,7 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha2.Devbox) stri
 	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
-func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) handleSubResourceDelete(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	// Delete Pod
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {

@@ -289,7 +289,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	stateChangeHandler := controller.StateChangeHandler{
+	stateChangeHandler := controller.EventHandler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
 		Recorder:            mgr.GetEventRecorderFor("state-change-handler"),

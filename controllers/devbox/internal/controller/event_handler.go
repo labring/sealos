@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +24,7 @@ import (
 
 var commitMap = sync.Map{}
 
-type StateChangeHandler struct {
+type EventHandler struct {
 	Committer           commit.Committer
 	CommitImageRegistry string
 	NodeName            string
@@ -36,7 +36,7 @@ type StateChangeHandler struct {
 }
 
 // todo: handle state change event
-func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) error {
+func (h *EventHandler) Handle(ctx context.Context, event *corev1.Event) error {
 	h.Logger.Info("StateChangeHandler.Handle called",
 		"event", event.Name,
 		"eventSourceHost", event.Source.Host,
@@ -52,11 +52,11 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 
 	switch event.Reason {
 	// handle storage cleanup
-	case events.EventReasonStorageCleanupRequested:
+	case events.ReasonStorageCleanupRequested:
 		return h.handleStorageCleanup(ctx, event)
 
 	// handle state change
-	case events.EventReasonDevboxStateChanged:
+	case events.ReasonDevboxStateChanged:
 		return h.handleDevboxStateChange(ctx, event)
 
 	default:
@@ -65,7 +65,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 }
 
 // handleDevboxStateChange handle new structured state change event
-func (h *StateChangeHandler) handleDevboxStateChange(ctx context.Context, event *corev1.Event) error {
+func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev1.Event) error {
 	h.Logger.Info("Devbox state change event detected", "event", event.Name, "message", event.Message)
 	devbox := &devboxv1alpha2.Devbox{}
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: event.Namespace, Name: event.InvolvedObject.Name}, devbox); err != nil {
@@ -112,7 +112,7 @@ func (h *StateChangeHandler) handleDevboxStateChange(ctx context.Context, event 
 	return nil
 }
 
-func (h *StateChangeHandler) handleStorageCleanup(ctx context.Context, event *corev1.Event) error {
+func (h *EventHandler) handleStorageCleanup(ctx context.Context, event *corev1.Event) error {
 	h.Logger.Info("Storage cleanup event detected", "event", event.Name, "message", event.Message)
 	if err := h.removeStorage(ctx, event); err != nil {
 		h.Logger.Error(err, "failed to clean up storage during delete devbox", "devbox", event.Name)
@@ -134,7 +134,7 @@ func (h *StateChangeHandler) handleStorageCleanup(ctx context.Context, event *co
 	return nil
 }
 
-func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox, targetState devboxv1alpha2.DevboxState) error {
+func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox, targetState devboxv1alpha2.DevboxState) error {
 	defer commitMap.Delete(devbox.Status.ContentID)
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
@@ -225,39 +225,37 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	return nil
 }
 
-func (h *StateChangeHandler) generateImageName(devbox *devboxv1alpha2.Devbox) string {
+func (h *EventHandler) generateImageName(devbox *devboxv1alpha2.Devbox) string {
 	now := time.Now()
 	return fmt.Sprintf("%s/%s/%s:%s-%s", h.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
-func (h *StateChangeHandler) removeStorage(ctx context.Context, event *corev1.Event) error {
+func (h *EventHandler) removeStorage(ctx context.Context, event *corev1.Event) error {
 	h.Logger.Info("Starting devbox deletion Storage cleanup", "devbox", event.Name, "message", event.Message)
-	devboxName, contentID, baseImage, err := h.parseStorageCleanupMessage(event.Message)
+	devboxName, contentID, baseImage := h.parseStorageCleanupAnno(event.Annotations)
+
+	// Use k8s.io/client-go/util/retry for robust retry logic
+	err := retry.OnError(
+		wait.Backoff{
+			Steps:    3,
+			Duration: 2 * time.Second,
+			Factor:   1.0,
+			Jitter:   0.1,
+		},
+		func(err error) bool { return true },
+		func() error {
+			return h.cleanupStorage(ctx, devboxName, contentID, baseImage)
+		},
+	)
 	if err != nil {
-		h.Logger.Error(err, "failed to parse Storage cleanup message", "event", event)
-		return err
+		h.Logger.Error(err, "Failed to cleanup storage after all retries", "devbox", devboxName)
+		return fmt.Errorf("failed to cleanup storage for devbox %s after retries: %w", devboxName, err)
 	}
-
-	const maxRetries = 3
-	const retryDelay = 2 * time.Second
-
-	for i := 0; i < maxRetries; i++ {
-		if err := h.cleanupStorage(ctx, devboxName, contentID, baseImage); err == nil {
-			h.Logger.Info("Successfully completed Storage cleanup", "devbox", devboxName, "attempt", i+1)
-			return nil
-		} else {
-			h.Logger.Error(err, "Storage cleanup failed, retrying...", "devbox", devboxName, "attempt", i+1, "maxRetries", maxRetries)
-
-			if i < maxRetries-1 {
-				time.Sleep(retryDelay)
-			}
-		}
-	}
-
-	return fmt.Errorf("failed to cleanup Storage after %d attempts", maxRetries)
+	h.Logger.Info("Successfully completed storage cleanup", "devbox", devboxName)
+	return nil
 }
 
-func (h *StateChangeHandler) cleanupStorage(ctx context.Context, devboxName, contentID, baseImage string) error {
+func (h *EventHandler) cleanupStorage(ctx context.Context, devboxName, contentID, baseImage string) error {
 	h.Logger.Info("Starting Storage cleanup", "devbox", devboxName, "contentID", contentID, "baseImage", baseImage)
 
 	// create temp container
@@ -287,33 +285,10 @@ func (h *StateChangeHandler) cleanupStorage(ctx context.Context, devboxName, con
 	return nil
 }
 
-// parseStorageCleanupMessage parses the message from the event and returns the devboxName, contentID, and baseImage
-func (h *StateChangeHandler) parseStorageCleanupMessage(message string) (devboxName, contentID, baseImage string, err error) {
-	parts := strings.Split(message, ", ")
-	if len(parts) != 3 {
-		return "", "", "", fmt.Errorf("invalid message format: %s", message)
-	}
-
-	// resolve devboxName
-	devboxNamePart := parts[0]
-	if !strings.Contains(devboxNamePart, "devboxName=") {
-		return "", "", "", fmt.Errorf("missing devboxName in message: %s", message)
-	}
-	devboxName = strings.TrimPrefix(devboxNamePart, "devboxName=")
-
-	// contentID
-	contentIDPart := parts[1]
-	if !strings.Contains(contentIDPart, "contentID=") {
-		return "", "", "", fmt.Errorf("missing contentID in message: %s", message)
-	}
-	contentID = strings.TrimPrefix(contentIDPart, "contentID=")
-
-	// baseImage
-	baseImagePart := parts[2]
-	if !strings.Contains(baseImagePart, "baseImage=") {
-		return "", "", "", fmt.Errorf("missing baseImage in message: %s", message)
-	}
-	baseImage = strings.TrimPrefix(baseImagePart, "baseImage=")
-
-	return devboxName, contentID, baseImage, nil
+// parseStorageCleanupAnno parses the annotations from the event and returns the devboxName, contentID, and baseImage
+func (h *EventHandler) parseStorageCleanupAnno(annotations events.Annotations) (devboxName, contentID, baseImage string) {
+	devboxName = annotations[events.KeyAnnotationDevboxName]
+	contentID = annotations[events.KeyAnnotationContentID]
+	baseImage = annotations[events.KeyAnnotationBaseImage]
+	return devboxName, contentID, baseImage
 }

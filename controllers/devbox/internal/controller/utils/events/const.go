@@ -1,8 +1,22 @@
 package events
 
 const (
-	EventReasonStorageCleanupRequested = "Storage cleanup requested" // Storage cleanup events
-	EventReasonDevboxStateChanged      = "Devbox state changed"      // Devbox state changed events
+	ReasonStorageCleanupRequested = "storage-cleanup-requested"
+	ReasonDevboxStateChanged      = "devbox-state-changed"
 
-	EventMessageStorageCleanupFormat = "devboxName=%s, contentID=%s, baseImage=%s"
+	KeyAnnotationReason     = "reason"
+	KeyAnnotationDevboxName = "devbox-name"
+	KeyAnnotationContentID  = "content-id"
+	KeyAnnotationBaseImage  = "base-image"
 )
+
+type Annotations map[string]string
+
+func BuildStorageCleanupAnnotations(devboxName, contentID, baseImage string) Annotations {
+	return Annotations{
+		KeyAnnotationReason:     ReasonStorageCleanupRequested,
+		KeyAnnotationDevboxName: devboxName,
+		KeyAnnotationContentID:  contentID,
+		KeyAnnotationBaseImage:  baseImage,
+	}
+}
