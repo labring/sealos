@@ -19,7 +19,8 @@ import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { distributeResources } from '@/utils/database';
-import { json2ParameterConfig } from '@/utils/json2Yaml';
+import { getAddonList } from '@/api/platform';
+import type { AddonItem } from '@/pages/api/getAddonList';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Accordion,
@@ -299,6 +300,8 @@ const Form = ({
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [editingParam, setEditingParam] = useState<string | null>(null);
+  const [addonList, setAddonList] = useState<AddonItem[]>([]);
+  const [addonLoading, setAddonLoading] = useState(true);
 
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
@@ -361,6 +364,24 @@ const Form = ({
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
   const parameterConfigRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch addon list on component mount
+  useEffect(() => {
+    const fetchAddonList = async () => {
+      try {
+        setAddonLoading(true);
+        const addonData = await getAddonList();
+        setAddonList(addonData || []);
+      } catch (error) {
+        console.error('Failed to fetch addon list:', error);
+        setAddonList([]);
+      } finally {
+        setAddonLoading(false);
+      }
+    };
+
+    fetchAddonList();
+  }, []);
 
   useEffect(() => {
     const backupRef = backupSettingsRef.current;
@@ -441,41 +462,40 @@ const Form = ({
     return '';
   };
 
-  const watchedValues = {
-    dbName: watch('dbName'),
-    dbType: watch('dbType'),
-    dbVersion: watch('dbVersion'),
-    parameterConfig: watch('parameterConfig' as any),
-    cpu: watch('cpu'),
-    memory: watch('memory')
-  };
-
-  useEffect(() => {
-    if (
-      watchedValues.dbType === DBTypeEnum.mysql ||
-      watchedValues.dbType === DBTypeEnum.postgresql ||
-      watchedValues.dbType === DBTypeEnum.mongodb ||
-      watchedValues.dbType === DBTypeEnum.redis
-    ) {
-      console.log(watchedValues.parameterConfig);
-      console.log(
-        json2ParameterConfig(
-          watchedValues.dbName,
-          watchedValues.dbType,
-          watchedValues.dbVersion,
-          watchedValues.parameterConfig,
-          getScore(watchedValues.dbType)
-        )
-      );
+  const availableDBTypes = useMemo(() => {
+    if (addonLoading) {
+      return DBTypeList;
     }
-  }, [
-    watchedValues.dbName,
-    watchedValues.dbType,
-    watchedValues.dbVersion,
-    watchedValues.parameterConfig,
-    watchedValues.cpu,
-    watchedValues.memory
-  ]);
+
+    const addonStatusMap = new Map<string, string>();
+    addonList.forEach((addon) => {
+      addonStatusMap.set(addon.name, addon.status);
+    });
+
+    return DBTypeList.filter((dbType) => {
+      const addonNameMap: Record<string, string> = {
+        [DBTypeEnum.postgresql]: 'postgresql',
+        [DBTypeEnum.mongodb]: 'mongodb',
+        [DBTypeEnum.mysql]: 'mysql',
+        [DBTypeEnum.redis]: 'redis',
+        [DBTypeEnum.kafka]: 'kafka',
+        [DBTypeEnum.clickhouse]: 'clickhouse',
+        [DBTypeEnum.qdrant]: 'qdrant',
+        [DBTypeEnum.nebula]: 'nebula',
+        [DBTypeEnum.weaviate]: 'weaviate',
+        [DBTypeEnum.milvus]: 'milvus',
+        [DBTypeEnum.pulsar]: 'pulsar'
+      };
+
+      const addonName = addonNameMap[dbType.id];
+      if (!addonName) {
+        return true;
+      }
+
+      const addonStatus = addonStatusMap.get(addonName);
+      return addonStatus !== 'Disabled';
+    });
+  }, [addonList, addonLoading]);
 
   return (
     <>
@@ -593,8 +613,13 @@ const Form = ({
                   {t('Type')}
                 </Label>
                 <Flex flexWrap={'wrap'} gap={'12px'}>
-                  {DBTypeList &&
-                    DBTypeList?.map((item) => {
+                  {addonLoading ? (
+                    <Text color="grayModern.500" fontSize="sm">
+                      'Loading database types...'
+                    </Text>
+                  ) : (
+                    availableDBTypes &&
+                    availableDBTypes?.map((item) => {
                       return (
                         <Center
                           key={item.id}
@@ -646,7 +671,8 @@ const Form = ({
                           </Text>
                         </Center>
                       );
-                    })}
+                    })
+                  )}
                 </Flex>
               </Flex>
               <Flex alignItems={'center'} mb={7}>
