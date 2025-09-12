@@ -153,6 +153,7 @@ const AppDetail = ({
         });
       },
       onError(err) {
+        console.log('err', err);
         router.replace('/dbs');
         toast({
           title: String(err),
@@ -242,7 +243,7 @@ const AppDetail = ({
         </Flex>
         {listType === TabEnum.Overview ? (
           <Flex boxSize={'full'} flex={1} flexDirection={'column'}>
-            <AppBaseInfo db={dbDetail} />
+            <AppBaseInfo db={dbDetail}  />
             <Box
               flex={'1 0 200px'}
               bg={'white'}
