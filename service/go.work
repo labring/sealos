@@ -9,6 +9,7 @@ use (
 	./pay
 	./devbox
 	./vlogs
+	./hubble
 )
 
 replace (
