@@ -10,6 +10,21 @@ data:
       port: "{{ .cloudPort }}"
       regionUID: "{{ .regionUID }}"
       certSecretName: "{{ .certSecretName }}"
+      allowedOrigins:
+      - "https://workorder.{{ .cloudDomain }}"
+      - "https://invite.{{ .cloudDomain }}"
+      - "https://applaunchpad.{{ .cloudDomain }}"
+      - "https://dbprovider.{{ .cloudDomain }}"
+      - "https://costcenter.{{ .cloudDomain }}"
+      - "https://cronjob.{{ .cloudDomain }}"
+      - "https://objectstorage.{{ .cloudDomain }}"
+      - "https://template.{{ .cloudDomain }}"
+      - "https://terminal.{{ .cloudDomain }}"
+      - "https://kubepanel.{{ .cloudDomain }}"
+      - "https://devbox.{{ .cloudDomain }}"
+      - "https://sealaf.{{ .cloudDomain }}"
+      - "https://aiproxy-web.{{ .cloudDomain }}"
+      - "https://ba0516339c3261c4f603.{{ .cloudDomain }}"
     common:
       guideEnabled: false
       apiEnabled: false
