@@ -3,7 +3,8 @@ import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersi
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 import type { AddonItem } from '@/pages/api/getAddonList';
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask } from '@/types/user';
+import type { UserTask } from '@/types/user';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 import { getUserSession } from '@/utils/user';
 import { AxiosProgressEvent } from 'axios';
 
@@ -15,10 +16,27 @@ export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVer
 
 export const getAddonList = () => GET<AddonItem[]>('/api/getAddonList');
 
-export const getUserQuota = () =>
+export const getWorkspaceQuota = () =>
   GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
+    quota: WorkspaceQuotaItem[];
+  }>('/api/platform/getQuota', undefined, {
+    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
+    headers: {
+      Authorization: getUserSession()?.token
+    }
+  });
+
+export const getWorkspaceSubscriptionInfo = () =>
+  POST<{
+    subscription: {
+      type: 'PAYG' | 'SUBSCRIPTION';
+    };
+  }>('/api/platform/info', undefined, {
+    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
+    headers: {
+      Authorization: getUserSession()?.token
+    }
+  });
 
 export const uploadFile = (
   data: FormData,
@@ -42,13 +60,6 @@ export const getUserTasks = () =>
 
 export const checkUserTask = () =>
   GET('/api/guide/checkTask', undefined, {
-    headers: {
-      Authorization: getUserSession()?.token
-    }
-  });
-
-export const getPriceBonus = () =>
-  GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
     headers: {
       Authorization: getUserSession()?.token
     }

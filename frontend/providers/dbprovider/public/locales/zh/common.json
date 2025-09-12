@@ -146,8 +146,8 @@
   "create": "新建",
   "create_db": "新建",
   "creation_time": "创建时间",
-  "chat2db":"chat2db",
-  "chat2db_redirect_failed":"跳转 Chat2DB 失败",
+  "chat2db": "chat2db",
+  "chat2db_redirect_failed": "跳转 Chat2DB 失败",
   "current_connections": "当前连接数",
   "data_import": "数据导入",
   "data_migration_config": "数据迁移配置",
@@ -275,13 +275,13 @@
   "limit_cpu": "最大 CPU",
   "limit_memory": "最大内存",
   "lost_file": "缺少文件",
-  "manage_data":"数据管理",
+  "manage_data": "数据管理",
   "manage_all_resources": "管理所有资源",
   "manual_backup": "手动备份",
   "manual_backup_tip": "建议在业务低峰期备份实例。备份期间，请勿执行DDL操作，避免锁表导致备份失败。若数据量较大，花费的时问可能较长，请耐心等待。点击 [开始备份] 后，将在1分钟后开始备份。",
   "max_replicas": "实例数最大为: ",
   "memory": "内存",
-  "backups":{
+  "backups": {
     "db_backup_running": "数据库备份中",
     "backup_running": "备份中",
     "stop_backup": "是否停止备份？",
@@ -427,5 +427,31 @@
   "within_5_minutes": "五分钟内",
   "yaml_file": "YAML 文件",
   "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
-  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用"
+  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用",
+  "nodeport": "端口",
+  "traffic": "流量",
+  "gpu": "GPU",
+  "nodeport_exceeds_quota": "端口资源不足：你设置的 {{requested}} 个端口超出工作空间可用 {{limit}} 个端口限制（已使用 {{used}} 个端口）。",
+  "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
+  "memory_exceeds_quota": "内存资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
+  "storage_exceeds_quota": "存储资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
+  "please_upgrade_plan": {
+    "0": "请 ",
+    "1": "升级您的计划",
+    "2": " 或调整设置"
+  },
+  "insufficient_quota_dialog": {
+    "alert-title": "现在无法创建数据库，您已经用尽了全部资源。",
+    "cancel": "取消",
+    "confirm": "确认",
+    "please_upgrade_plan": {
+      "1": "请 ",
+      "2": "升级您的计划",
+      "3": "或删除使用上述资源的应用。"
+    },
+    "quota_available": "可用: ",
+    "quota_in_use": "使用中: ",
+    "quota_total": "总计: ",
+    "title": "资源不足"
+  }
 }

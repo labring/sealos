@@ -40,7 +40,6 @@ const EditApp = ({
   const [errorMessage, setErrorMessage] = useState('');
   const { message: toast } = useMessage();
   const { setIsLoading } = useLoading();
-  const { checkQuotaAllow } = useUserStore();
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t('are_you_sure_to_perform_database_migration')
   });
