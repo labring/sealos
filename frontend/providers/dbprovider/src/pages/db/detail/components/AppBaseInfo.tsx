@@ -380,7 +380,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   };
 
-  const handleOpenExternalNetwork = useCallback(() => {
+  const handleOpenExternalNetwork = useCallback(async () => {
     if (subscriptionInfo?.subscription?.type === 'PAYG') {
       setScenario('externalNetwork');
       onOpen();
@@ -388,6 +388,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
 
     // Subscription
+    await loadUserQuota();
     const exceededQuotaItems = checkExceededQuotas({
       nodeport: 1,
       traffic: 1
@@ -401,7 +402,13 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       setExceededQuotas([]);
       openNetWorkService();
     }
-  }, [checkExceededQuotas, subscriptionInfo?.subscription?.type, onOpen, openNetWorkService]);
+  }, [
+    checkExceededQuotas,
+    subscriptionInfo?.subscription?.type,
+    onOpen,
+    openNetWorkService,
+    loadUserQuota
+  ]);
 
   const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
     try {
