@@ -615,7 +615,7 @@ const Form = ({
                 <Flex flexWrap={'wrap'} gap={'12px'}>
                   {addonLoading ? (
                     <Text color="grayModern.500" fontSize="sm">
-                      'Loading database types...'
+                      Loading database types...
                     </Text>
                   ) : (
                     availableDBTypes &&
