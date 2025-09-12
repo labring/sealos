@@ -32,15 +32,23 @@ export default async function handler(
 }
 
 export async function GetAddonList({ req }: { req: NextApiRequest }) {
-  const kc = K8sApi();
-  const k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi);
+  let kc: k8s.KubeConfig;
+  let k8sCustomObjects: k8s.CustomObjectsApi;
 
+  try {
+    const kubeconfig = await authSession(req);
+    kc = K8sApi(kubeconfig);
+  } catch (error) {
+    kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+  }
+
+  k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi);
   const addonList: AddonItem[] = [];
 
-  // Try to get addon information from kubeblocks addon CRD
   try {
     const { body: addonResources } = await k8sCustomObjects.listClusterCustomObject(
-      'addons.kubeblocks.io',
+      'extensions.kubeblocks.io',
       'v1alpha1',
       'addons'
     );
@@ -59,9 +67,9 @@ export async function GetAddonList({ req }: { req: NextApiRequest }) {
           age
         });
       }
+    } else {
     }
   } catch (error) {
-    // If addon CRD not found, try Helm releases
     try {
       const k8s = await getK8s({ kubeconfig: await authSession(req) });
       const { body: configMaps } = await k8s.k8sCore.listNamespacedConfigMap(
@@ -91,10 +99,7 @@ export async function GetAddonList({ req }: { req: NextApiRequest }) {
           });
         }
       }
-    } catch (helmError) {
-      // If both methods fail, return empty list
-      console.log('Failed to get addon information:', helmError);
-    }
+    } catch (helmError) {}
   }
 
   return addonList;
