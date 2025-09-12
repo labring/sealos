@@ -410,7 +410,7 @@
     "2": " 或调整设置"
   },
   "insufficient_quota_dialog": {
-    "alert-title": "现在无法创建 DevBox，您已经用尽了全部资源。",
+    "alert-title": "现在无法创建应用，您已经用尽了全部资源。",
     "cancel": "取消",
     "confirm": "确认",
     "please_upgrade_plan": {
