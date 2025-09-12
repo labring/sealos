@@ -44,7 +44,7 @@ clean:
 .PHONY: build
 build: ## Build service-hub binary.
 	LD_FLAGS="-s -w"; \
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags=jsoniter -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux go build -tags=jsoniter -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
 
 .PHONY: docker-build
 docker-build: build
