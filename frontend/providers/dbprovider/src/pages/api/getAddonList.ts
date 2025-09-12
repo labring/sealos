@@ -17,6 +17,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResp<AddonItem[]>>
 ) {
+  const { k8sCustomObjects } = await getK8s({
+    kubeconfig: await authSession(req)
+  });
   try {
     const addonList = await GetAddonList({ req });
 
@@ -35,13 +38,8 @@ export async function GetAddonList({ req }: { req: NextApiRequest }) {
   let kc: k8s.KubeConfig;
   let k8sCustomObjects: k8s.CustomObjectsApi;
 
-  try {
-    const kubeconfig = await authSession(req);
-    kc = K8sApi(kubeconfig);
-  } catch (error) {
-    kc = new k8s.KubeConfig();
-    kc.loadFromDefault();
-  }
+  kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
 
   k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi);
   const addonList: AddonItem[] = [];
