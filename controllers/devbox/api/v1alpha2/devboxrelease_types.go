@@ -28,6 +28,9 @@ type DevBoxReleaseSpec struct {
 	Version string `json:"version"`
 	// +kubebuilder:validation:Optional
 	Notes string `json:"notes,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	StartDevboxAfterRelease bool `json:"startDevboxAfterRelease,omitempty"`
 }
 
 type DevBoxReleasePhase string
@@ -58,6 +61,7 @@ type DevBoxReleaseStatus struct {
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="SourceImage",type="string",JSONPath=".status.sourceImage"
 // +kubebuilder:printcolumn:name="TargetImage",type="string",JSONPath=".status.targetImage"
+// +kubebuilder:printcolumn:name="StartDevboxAfterRelease",type="boolean",JSONPath=".spec.startDevboxAfterRelease"
 
 // DevBoxRelease is the Schema for the devboxreleases API.
 type DevBoxRelease struct {

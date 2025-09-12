@@ -27,6 +27,9 @@ spec:
     - jsonPath: .status.targetImage
       name: TargetImage
       type: string
+    - jsonPath: .spec.startDevboxAfterRelease
+      name: StartDevboxAfterRelease
+      type: boolean
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -56,6 +59,9 @@ spec:
                 type: string
               notes:
                 type: string
+              startDevboxAfterRelease:
+                default: false
+                type: boolean
               version:
                 type: string
             required:

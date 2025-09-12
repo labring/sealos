@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -106,6 +107,25 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if err = r.Status().Update(ctx, devboxRelease); err != nil {
 			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
 			return ctrl.Result{}, err
+		}
+		if devboxRelease.Spec.StartDevboxAfterRelease {
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				devbox := &devboxv1alpha2.Devbox{}
+				if err := r.Get(ctx, client.ObjectKey{Namespace: devboxRelease.Namespace, Name: devboxRelease.Spec.DevboxName}, devbox); err != nil {
+					return err
+				}
+				logger.Info("Starting devbox after release", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+				devbox.Spec.State = devboxv1alpha2.DevboxStateRunning
+				if err = r.Update(ctx, devbox); err != nil {
+					logger.Error(err, "Failed to update devbox", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+					return err
+				}
+				return nil
+			})
+			if err != nil {
+				logger.Error(err, "Failed to update devbox", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+				return ctrl.Result{}, err
+			}
 		}
 	}
 	logger.Info("Reconciliation complete", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
