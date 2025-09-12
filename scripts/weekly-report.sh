@@ -75,57 +75,17 @@ github_api() {
     return 0
 }
 
-# Function to generate sample data when API is unavailable
-generate_sample_data() {
-    local week_start="$1"
-    local week_end="$2"
+# Function to generate empty data when API is unavailable
+generate_empty_data() {
+    echo "GitHub API unavailable - cannot fetch real data" >&2
     
-    echo "API unavailable, generating sample data for demonstration purposes..." >&2
-    
-    # Calculate week number for varying sample data
-    local week_num=$(date -d "$week_end" +%U)
-    local base_prs=$(( (week_num % 4) + 3 ))  # 3-6 PRs per week
-    local base_issues=$(( (week_num % 3) + 1 ))  # 1-3 issues per week
-    
-    # Generate sample PR data with 2025-appropriate PR numbers
-    local year_offset=$((2025 - 2022))  # Calculate offset for 2025
-    local pr_base=$((3000 + (year_offset * 1000)))  # Start from 6000+ for 2025
-    
-    # Generate sample PR data
+    # Generate empty data structures
     cat > /tmp/pr_stats.json << EOF
-[
-  {
-    "user": "cuisongliu",
-    "count": $((base_prs - 1)),
-    "prs": [
-      {"number": $((pr_base + week_num)), "title": "feat(frontend): enhance desktop user experience", "merged_at": "${week_end}T10:30:00Z", "user": "cuisongliu"},
-      {"number": $((pr_base + week_num + 1)), "title": "fix(controllers): resolve memory leak in user controller", "merged_at": "${week_end}T14:15:00Z", "user": "cuisongliu"}
-    ]
-  },
-  {
-    "user": "fanux",
-    "count": 1,
-    "prs": [
-      {"number": $((pr_base + week_num + 2)), "title": "docs: update installation guide", "merged_at": "${week_end}T16:45:00Z", "user": "fanux"}
-    ]
-  }
-]
+[]
 EOF
 
-    # Generate sample issue data with 2025-appropriate issue numbers
-    local year_offset=$((2025 - 2022))  # Calculate offset for 2025
-    local issue_base=$((5000 + (year_offset * 1000)))  # Start from 8000+ for 2025
-    
     cat > /tmp/issue_stats.json << EOF
-[
-  {
-    "user": "user-contributor",
-    "count": $base_issues,
-    "issues": [
-      {"number": $((issue_base + week_num)), "title": "Bug: Desktop application crashes on startup", "created_at": "${week_start}T09:20:00Z", "user": "user-contributor"}
-    ]
-  }
-]
+[]
 EOF
 }
 
@@ -154,9 +114,9 @@ get_contributor_stats() {
         api_success=false
     fi
     
-    # If API calls failed, generate sample data
+    # If API calls failed, generate empty data
     if [ "$api_success" = false ]; then
-        generate_sample_data "$START_DATE" "$END_DATE"
+        generate_empty_data
         return 0
     fi
     
@@ -171,8 +131,8 @@ get_contributor_stats() {
         prs: [.[] | {number: .number, title: .title, merged_at: .merged_at, user: .user.login}]
     }) |
     sort_by(-.count)' "$pr_raw_data" > /tmp/pr_stats.json || {
-        echo "Error processing PR data, generating sample data" >&2
-        generate_sample_data "$START_DATE" "$END_DATE"
+        echo "Error processing PR data, using empty data" >&2
+        generate_empty_data
         return 0
     }
     
@@ -187,18 +147,18 @@ get_contributor_stats() {
         issues: [.[] | {number: .number, title: .title, created_at: .created_at, user: .user.login}]
     }) |
     sort_by(-.count)' "$issues_raw_data" > /tmp/issue_stats.json || {
-        echo "Error processing issues data, generating sample data" >&2
-        generate_sample_data "$START_DATE" "$END_DATE"
+        echo "Error processing issues data, using empty data" >&2
+        generate_empty_data
         return 0
     }
     
-    # Check if we got any actual data, if not, use sample data
+    # Check if we got any actual data, if not, use empty data
     local total_prs=$(jq '[.[].count] | add // 0' /tmp/pr_stats.json)
     local total_issues=$(jq '[.[].count] | add // 0' /tmp/issue_stats.json)
     
     if [ "$total_prs" -eq 0 ] && [ "$total_issues" -eq 0 ]; then
-        echo "No activity found in API data, generating sample data for demonstration" >&2
-        generate_sample_data "$START_DATE" "$END_DATE"
+        echo "No activity found in the specified date range" >&2
+        # Keep the empty data - this is expected for some weeks
     fi
     
     # Clean up raw data files
