@@ -1,11 +1,13 @@
 import MyIcon from '@/components/Icon';
-import MonitorChart from '@/components/MonitorChart';
 import { LineStyleMap } from '@/constants/monitor';
 import { GET } from '@/services/request';
 import { ChartTemplateProps } from '@/types/monitor';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+
+const MonitorChart = dynamic(() => import('@/components/MonitorChart'), { ssr: false });
 
 const ChartTemplate = ({
   db,
