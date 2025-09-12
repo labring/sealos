@@ -164,6 +164,7 @@ export interface DevboxVersionListItemType {
   tag: string;
   createTime: string;
   description: string;
+  startDevboxAfterRelease: boolean;
   status: DevboxReleaseStatusMapType;
 }
 

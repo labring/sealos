@@ -156,6 +156,7 @@ export const json2DevboxRelease = (data: {
   tag: string;
   releaseDes: string;
   devboxUid: string;
+  startDevboxAfterRelease: boolean;
 }) => {
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha2',
@@ -176,7 +177,8 @@ export const json2DevboxRelease = (data: {
     spec: {
       devboxName: data.devboxName,
       version: data.tag,
-      notes: data.releaseDes
+      notes: data.releaseDes,
+      startDevboxAfterRelease: data.startDevboxAfterRelease
     }
   };
   return yaml.dump(json);
