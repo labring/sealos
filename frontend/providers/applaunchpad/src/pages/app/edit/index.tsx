@@ -184,7 +184,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         ? realTimeForm.current.memory - (formHook.formState.defaultValues?.memory ?? 0)
         : realTimeForm.current.memory,
       gpu: realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0),
-      nodeport: realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length || 0,
+      nodeport: isEdit
+        ? (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) -
+          (formHook.formState.defaultValues?.networks?.filter((item) => item?.openNodePort ?? false)
+            ?.length ?? 0)
+        : (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0),
       storage: isEdit
         ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) -
             existingStores.reduce((sum, item) => sum + item.value, 0)) *
