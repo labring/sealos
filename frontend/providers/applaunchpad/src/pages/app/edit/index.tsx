@@ -180,7 +180,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       memory: isEdit
         ? realTimeForm.current.memory - (formHook.formState.defaultValues?.memory ?? 0)
         : realTimeForm.current.memory,
-      gpu: realTimeForm.current.gpu?.amount || 0,
+      gpu: realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0),
       nodeport: realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length || 0,
       storage: isEdit
         ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) -
