@@ -26,3 +26,6 @@ deploy/cloud/tars
 
 **.env*
 !scripts/cloud/sealos.env
+# Weekly report temporary files
+/tmp/*_stats.json
+/tmp/*_raw.json
