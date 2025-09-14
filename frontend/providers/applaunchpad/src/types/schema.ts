@@ -37,52 +37,126 @@ export const resourceConverters = {
   mbToMemory: (mb: number): number => mb / 1024
 };
 
-export const ResourceSchema = z.object({
-  replicas: z
-    .number()
-    .refine(
-      (val) =>
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(val),
-      {
-        message: 'Replicas must be between 1 and 20'
-      }
-    )
-    .default(1)
-    .openapi({
-      description: 'Number of pod replicas',
-      enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+export const ResourceSchema = z
+  .object({
+    replicas: z
+      .number()
+      .refine(
+        (val) =>
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(val),
+        {
+          message: 'Replicas must be between 1 and 20'
+        }
+      )
+      .optional()
+      .openapi({
+        description: 'Number of pod replicas (for fixed instances). Cannot be used with hpa.',
+        enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+      }),
+    cpu: z
+      .number()
+      .refine((val) => [0.1, 0.2, 0.5, 1, 2, 3, 4, 8].includes(val), {
+        message: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
+      })
+      .default(0.2)
+      .openapi({
+        description: 'CPU allocation in cores',
+        enum: [0.1, 0.2, 0.5, 1, 2, 3, 4, 8]
+      }),
+    memory: z
+      .number()
+      .refine((val) => [0.1, 0.5, 1, 2, 4, 8, 16].includes(val), {
+        message: 'Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16'
+      })
+      .default(0.5)
+      .openapi({
+        description: 'Memory allocation in GB',
+        enum: [0.1, 0.5, 1, 2, 4, 8, 16]
+      }),
+    gpu: z
+      .object({
+        vendor: z.string().default('nvidia'),
+        type: z.string(),
+        amount: z.number().default(1)
+      })
+      .optional()
+      .openapi({
+        description: 'GPU resource configuration'
+      }),
+    hpa: z
+      .object({
+        target: z.enum(['cpu', 'memory', 'gpu']).openapi({
+          description: 'Resource metric to scale on'
+        }),
+        value: z.number().openapi({
+          description: 'Target resource utilization percentage'
+        }),
+        minReplicas: z.number().openapi({
+          description: 'Minimum number of replicas'
+        }),
+        maxReplicas: z.number().openapi({
+          description: 'Maximum number of replicas'
+        })
+      })
+      .optional()
+      .openapi({
+        description:
+          'Horizontal Pod Autoscaler configuration. If present, enables elastic scaling; if absent, uses fixed replicas.'
+      })
+  })
+  .refine(
+    (data) => {
+      // Must have either replicas OR hpa, but not both
+      const hasReplicas = data.replicas !== undefined;
+      const hasHpa = data.hpa !== undefined;
+      return (hasReplicas && !hasHpa) || (!hasReplicas && hasHpa);
+    },
+    {
+      message:
+        'Must specify either replicas (for fixed instances) or hpa (for elastic scaling), but not both.'
+    }
+  );
+
+export const LaunchCommandSchema = z
+  .object({
+    command: z.string().optional().openapi({
+      description: 'Container run command - was: runCMD'
     }),
-  cpu: z
-    .number()
-    .refine((val) => [0.1, 0.2, 0.5, 1, 2, 3, 4, 8].includes(val), {
-      message: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
+    args: z.string().optional().openapi({
+      description: 'Command arguments - was: cmdParam'
     })
-    .default(0.2)
-    .openapi({
-      description: 'CPU allocation in cores',
-      enum: [0.1, 0.2, 0.5, 1, 2, 3, 4, 8]
+  })
+  .openapi({
+    description: 'Container launch command configuration'
+  });
+
+export const ImageSchema = z
+  .object({
+    imageName: z.string().openapi({
+      description: 'Docker image name with tag'
     }),
-  memory: z
-    .number()
-    .refine((val) => [0.1, 0.5, 1, 2, 4, 8, 16].includes(val), {
-      message: 'Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16'
-    })
-    .default(0.5)
-    .openapi({
-      description: 'Memory allocation in GB',
-      enum: [0.1, 0.5, 1, 2, 4, 8, 16]
-    }),
-  gpu: z
-    .object({
-      vendor: z.string().default('nvidia'),
-      type: z.string(),
-      amount: z.number().default(1)
-    })
-    .optional()
-    .openapi({
-      description: 'GPU resource configuration'
-    })
-});
+    imageRegistry: z
+      .object({
+        username: z.string().openapi({
+          description: 'Registry username'
+        }),
+        password: z.string().openapi({
+          description: 'Registry password'
+        }),
+        serverAddress: z.string().openapi({
+          description: 'Registry server address'
+        })
+      })
+      .nullable() // 修改：允许 null 值
+      .optional()
+      .openapi({
+        description:
+          'Image pull secret configuration. Set to null to switch from private to public image.'
+      })
+  })
+  .openapi({
+    description: 'Container image configuration'
+  });
 
 export const StandardEnvSchema = z
   .object({
@@ -188,13 +262,13 @@ export const PortConfigSchema = z.object({
   serviceName: z.string().optional().openapi({
     description: 'Kubernetes service name'
   }),
-  port: z.number().default(80),
-  protocol: z.enum(['TCP', 'UDP', 'SCTP']).default('TCP'),
-  appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional().openapi({
-    description: 'Application layer protocol. If null, enables NodePort'
+  number: z.number().default(80),
+  protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']).default('HTTP').openapi({
+    description:
+      'Network protocol. HTTP/GRPC/WS enable public domain access, TCP/UDP/SCTP enable NodePort'
   }),
   exposesPublicDomain: z.boolean().default(true).openapi({
-    description: 'Enable public domain access'
+    description: 'Enable public domain access (only effective for HTTP/GRPC/WS protocols)'
   }),
   // Auto-generated fields - not passed via API
   networkName: z.string().default(() => `network-${nanoid()}`),
@@ -211,14 +285,13 @@ export const LaunchpadApplicationSchema = z
   .object({
     // Base fields from CreateLaunchpadRequestSchema (without default values)
     name: z.string().openapi({ description: 'Application name' }),
-    image: z.string().openapi({ description: 'Container image' }),
-    command: z.string().optional().openapi({ description: 'Container command' }),
-    args: z.string().optional().openapi({ description: 'Container arguments' }),
+    image: ImageSchema.openapi({ description: 'Container image configuration' }),
+    launchCommand: LaunchCommandSchema.optional().openapi({
+      description: 'Container launch command configuration'
+    }),
     resource: ResourceSchema,
     ports: z.array(PortConfigSchema).optional(),
     env: z.array(StandardEnvSchema).optional(),
-    hpa: HpaSchema.omit({ enabled: true }).optional(),
-    imageRegistry: imageRegistrySchema.omit({ enabled: true }).optional(),
     storage: z.array(StorageSchema).optional(),
     configMap: z.array(StandardConfigMapSchema).optional(),
     kind: z.enum(['deployment', 'statefulset']).optional(),

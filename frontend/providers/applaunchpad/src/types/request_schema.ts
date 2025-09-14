@@ -22,7 +22,12 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
-import { AppDetailType, AppEditType } from '@/types/app';
+import {
+  AppDetailType,
+  AppEditType,
+  TransportProtocolType,
+  ApplicationProtocolType
+} from '@/types/app';
 import {
   HpaSchema,
   StandardEnvSchema,
@@ -31,6 +36,8 @@ import {
   ResourceSchema,
   PortConfigSchema,
   LaunchpadApplicationSchema,
+  LaunchCommandSchema,
+  ImageSchema,
   imageRegistrySchema,
   resourceConverters
 } from './schema';
@@ -51,9 +58,80 @@ export const DeleteAppByNameResponseSchema = z.object({
   message: z.string()
 });
 
+export const SimpleStorageSchema = z
+  .object({
+    path: z.string().openapi({
+      description: 'Mount path in the container'
+    }),
+    size: z.string().default('1Gi').openapi({
+      description: 'Storage size (e.g., "10Gi", "1Ti")'
+    })
+  })
+  .openapi({
+    description: 'Simplified storage configuration (name auto-generated from path)'
+  });
+
+export const PortUpdateSchema = z
+  .object({
+    number: z.number().min(1).max(65535).optional().openapi({
+      description: 'Port number (1-65535) - required for new ports, optional for updates'
+    }),
+    protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']).optional().openapi({
+      description:
+        'Network protocol. HTTP/GRPC/WS enable public domain access, TCP/UDP/SCTP enable NodePort'
+    }),
+    exposesPublicDomain: z.boolean().optional().openapi({
+      description:
+        'Whether to expose this port via public domain (only effective for HTTP/GRPC/WS protocols)'
+    }),
+    portName: z.string().optional().openapi({
+      description: 'Port name (include this to update existing port, omit to create new port)'
+    }),
+    networkName: z.string().optional().openapi({
+      description: 'Network name (read-only, for reference)'
+    }),
+    serviceName: z.string().optional().openapi({
+      description: 'Service name (read-only, for reference)'
+    })
+  })
+  .openapi({
+    description:
+      'Port configuration. Include portName to update existing port. Omit portName to create new port. Ports not included in the array will be deleted.'
+  });
+
+// Fixed ImageSchema for UpdateAppResourcesSchema to accept null
+export const UpdateImageSchema = z
+  .object({
+    imageName: z.string().openapi({
+      description: 'Docker image name with tag'
+    }),
+    imageRegistry: z
+      .union([
+        z.object({
+          username: z.string().openapi({
+            description: 'Registry username'
+          }),
+          password: z.string().openapi({
+            description: 'Registry password'
+          }),
+          serverAddress: z.string().openapi({
+            description: 'Registry server address'
+          })
+        }),
+        z.null()
+      ])
+      .optional()
+      .openapi({
+        description: 'Image pull secret configuration. Set to null to switch to public image.'
+      })
+  })
+  .openapi({
+    description: 'Container image configuration'
+  });
+
 export const UpdateAppResourcesSchema = z
   .object({
-    // Resource configuration (use nested structure like CreateLaunchpadRequestSchema)
+    // Resource configuration (now includes HPA)
     resource: z
       .object({
         cpu: z
@@ -87,45 +165,108 @@ export const UpdateAppResourcesSchema = z
           )
           .optional()
           .openapi({
-            description: 'Number of pod replicas',
+            description:
+              'Number of pod replicas (used for fixed instances). To switch from HPA to fixed replicas, set this field and omit hpa field.',
             enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+          }),
+        gpu: z
+          .object({
+            vendor: z.string().optional().openapi({
+              description: 'GPU vendor (e.g., nvidia)'
+            }),
+            type: z.string().optional().openapi({
+              description: 'GPU type/model (e.g., V100, A100, T4)'
+            }),
+            amount: z.number().optional().openapi({
+              description: 'Number of GPUs to allocate'
+            })
+          })
+          .optional()
+          .openapi({
+            description: 'GPU resource configuration'
+          }),
+        hpa: z
+          .object({
+            target: z.enum(['cpu', 'memory', 'gpu']).openapi({
+              description: 'Resource metric to scale on'
+            }),
+            value: z.number().openapi({
+              description: 'Target resource utilization percentage'
+            }),
+            minReplicas: z.number().openapi({
+              description: 'Minimum number of replicas'
+            }),
+            maxReplicas: z.number().openapi({
+              description: 'Maximum number of replicas'
+            })
+          })
+          .optional()
+          .openapi({
+            description:
+              'Horizontal Pod Autoscaler configuration. To switch from fixed replicas to HPA, set this field and omit replicas field.'
           })
       })
       .optional()
       .openapi({
-        description: 'Resource configuration'
+        description:
+          'Resource configuration including HPA. For mode switching: provide either replicas (fixed) or hpa (elastic), not both.'
       }),
 
-    // Basic app info (use consistent field names)
-    command: z.string().optional().openapi({
-      description: 'Container run command - was: runCMD'
+    // Launch command configuration
+    launchCommand: LaunchCommandSchema.optional().openapi({
+      description: 'Container launch command configuration'
     }),
-    args: z.string().optional().openapi({
-      description: 'Command arguments - was: cmdParam'
-    }),
-    image: z.string().optional().openapi({
-      description: 'Docker image name with tag - was: imageName'
+
+    // Image configuration - Use the fixed UpdateImageSchema
+    image: UpdateImageSchema.optional().openapi({
+      description:
+        'Container image configuration. Set imageRegistry to null to switch to public image.'
     }),
 
     // Environment variables (use StandardEnvSchema for consistency)
     env: z.array(StandardEnvSchema).optional().openapi({
       description: 'Environment variables'
+    }),
+
+    // ConfigMap configuration - COMPLETE REPLACEMENT
+    configMap: z
+      .array(StandardConfigMapSchema.pick({ path: true, value: true }))
+      .optional()
+      .openapi({
+        description:
+          'ConfigMap configurations (COMPLETE REPLACEMENT). Pass all ConfigMap entries to keep. Empty array removes all ConfigMaps. Omit field to keep existing ConfigMaps unchanged.'
+      }),
+
+    // Storage configuration - COMPLETE REPLACEMENT
+    storage: z.array(SimpleStorageSchema).optional().openapi({
+      description:
+        'Storage configurations (COMPLETE REPLACEMENT). Pass all storage entries to keep. Empty array removes all storage. Omit field to keep existing storage unchanged. Name is auto-generated from path.'
+    }),
+
+    // Port configuration - COMPLETE REPLACEMENT
+    ports: z.array(PortUpdateSchema).optional().openapi({
+      description:
+        'Port configurations (COMPLETE REPLACEMENT). Include portName to update existing port, omit portName to create new port. Ports not included will be deleted. Pass empty array [] to remove all ports.'
     })
   })
   .refine(
     (data) =>
       data.resource !== undefined ||
-      data.command !== undefined ||
-      data.args !== undefined ||
+      data.launchCommand !== undefined ||
       data.image !== undefined ||
-      data.env !== undefined,
+      data.env !== undefined ||
+      data.configMap !== undefined ||
+      data.storage !== undefined ||
+      data.ports !== undefined,
     {
-      message: 'At least one of resource, command, args, image or env must be provided'
+      message:
+        'At least one of resource, launchCommand, image, env, configMap, storage, or ports must be provided'
     }
   )
   .openapi({
-    title: 'Update Application Resources',
-    description: 'Schema for updating application configuration (PATCH request)'
+    title: 'Update Application Configuration',
+    description:
+      'Schema for updating application configuration. IMPORTANT: configMap, storage, and ports are COMPLETE REPLACEMENTS when provided - pass all items you want to keep. Use empty array [] to remove all items.'
   });
 
 export const GetAppPodsByAppNameQuerySchema = z.object({
@@ -171,34 +312,31 @@ export const CreateLaunchpadRequestSchema = z
     name: z.string().default('hello-world').openapi({
       description: 'Application name (must be unique) - was: appName'
     }),
-    image: z.string().default('nginx').openapi({
-      description: 'Docker image name with tag - was: imageName'
+    image: ImageSchema.default({
+      imageName: 'nginx'
+    }).openapi({
+      description: 'Container image configuration'
     }),
-    command: z.string().default('').openapi({
-      description: 'Container run command - was: runCMD'
-    }),
-    args: z.string().default('').openapi({
-      description: 'Command arguments - was: cmdParam'
+    launchCommand: LaunchCommandSchema.default({}).openapi({
+      description: 'Container launch command configuration'
     }),
 
-    // Resource configuration
+    // Resource configuration (now includes HPA)
     resource: ResourceSchema,
 
     // Port/Network configuration - pick only API fields from PortConfigSchema
     ports: z
       .array(
         PortConfigSchema.pick({
-          port: true,
+          number: true,
           protocol: true,
-          appProtocol: true,
           exposesPublicDomain: true
         })
       )
       .default([
         {
-          port: 80,
-          protocol: 'TCP',
-          appProtocol: 'HTTP',
+          number: 80,
+          protocol: 'HTTP',
           exposesPublicDomain: true
         }
       ])
@@ -209,16 +347,6 @@ export const CreateLaunchpadRequestSchema = z
     // Environment variables (envs -> env, key -> name)
     env: z.array(StandardEnvSchema).default([]).openapi({
       description: 'Environment variables - was: envs'
-    }),
-
-    // HPA configuration (use -> enabled)
-    hpa: HpaSchema.omit({ enabled: true }).nullish().default(null).openapi({
-      description: 'Horizontal Pod Autoscaler configuration'
-    }),
-
-    // Secret configuration (use -> enabled)
-    imageRegistry: imageRegistrySchema.omit({ enabled: true }).nullish().default(null).openapi({
-      description: 'Image pull secret configuration'
     }),
 
     // Storage configuration (storeList -> storage, value -> size)
@@ -246,30 +374,33 @@ export function transformToLegacySchema(
   const cpuValue = resourceConverters.cpuToMillicores(standardRequest.resource.cpu);
   const memoryValue = resourceConverters.memoryToMB(standardRequest.resource.memory);
 
-  const networks = standardRequest.ports?.map((port) => ({
-    serviceName: `service-${nanoid()}`, // 自动生成
-    networkName: `network-${nanoid()}`, // 自动生成
-    portName: nanoid(), // 自动生成
-    port: port.port,
-    protocol: port.protocol,
-    appProtocol: port.appProtocol || 'HTTP', // Default to HTTP if not specified
-    openPublicDomain: port.exposesPublicDomain,
-    publicDomain: nanoid(), // 自动生成
-    customDomain: '', // 暂不支持自定义域名,
-    domain: '', // 自动设置
-    nodePort: undefined, // 自动生成
-    openNodePort: !port.appProtocol // If appProtocol is null/undefined, enable nodePort
-  })) || [
+  const networks = standardRequest.ports?.map((port) => {
+    const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(port.protocol);
+    return {
+      serviceName: `service-${nanoid()}`, // 自动生成
+      networkName: `network-${nanoid()}`, // 自动生成
+      portName: nanoid(), // 自动生成
+      port: port.number,
+      protocol: (isApplicationProtocol ? 'TCP' : port.protocol) as TransportProtocolType, // HTTP/GRPC/WS use TCP as transport
+      appProtocol: (isApplicationProtocol ? port.protocol : 'HTTP') as ApplicationProtocolType, // Only set appProtocol for HTTP/GRPC/WS
+      openPublicDomain: isApplicationProtocol ? port.exposesPublicDomain : false, // Only HTTP/GRPC/WS support public domain
+      publicDomain: isApplicationProtocol ? nanoid() : '', // 自动生成
+      customDomain: '', // 暂不支持自定义域名
+      domain: '', // 自动设置
+      nodePort: undefined, // 自动生成
+      openNodePort: !isApplicationProtocol // TCP/UDP/SCTP enable nodePort
+    };
+  }) || [
     // Default network configuration when no ports specified
     {
       serviceName: `service-${nanoid()}`,
       networkName: `network-${nanoid()}`,
       portName: nanoid(),
       port: 80,
-      protocol: 'TCP' as const,
-      appProtocol: 'HTTP' as const,
-      openPublicDomain: false,
-      publicDomain: '',
+      protocol: 'TCP' as TransportProtocolType,
+      appProtocol: 'HTTP' as ApplicationProtocolType,
+      openPublicDomain: true,
+      publicDomain: nanoid(),
       customDomain: '',
       domain: '',
       nodePort: undefined,
@@ -284,13 +415,13 @@ export function transformToLegacySchema(
       valueFrom: env.valueFrom
     })) || [];
 
-  const hpa = standardRequest.hpa
+  const hpa = standardRequest.resource.hpa
     ? {
         use: true,
-        target: standardRequest.hpa.target,
-        value: standardRequest.hpa.value,
-        minReplicas: standardRequest.hpa.minReplicas,
-        maxReplicas: standardRequest.hpa.maxReplicas
+        target: standardRequest.resource.hpa.target,
+        value: standardRequest.resource.hpa.value,
+        minReplicas: standardRequest.resource.hpa.minReplicas,
+        maxReplicas: standardRequest.resource.hpa.maxReplicas
       }
     : {
         use: false,
@@ -300,12 +431,12 @@ export function transformToLegacySchema(
         maxReplicas: 5
       };
 
-  const secret = standardRequest.imageRegistry
+  const secret = standardRequest.image.imageRegistry
     ? {
         use: true,
-        username: standardRequest.imageRegistry.username,
-        password: standardRequest.imageRegistry.password,
-        serverAddress: standardRequest.imageRegistry.serverAddress
+        username: standardRequest.image.imageRegistry.username,
+        password: standardRequest.image.imageRegistry.password,
+        serverAddress: standardRequest.image.imageRegistry.serverAddress
       }
     : {
         use: false,
@@ -343,12 +474,15 @@ export function transformToLegacySchema(
       };
     }) || [];
 
+  // FIXED: Auto-determine kind based on storage presence
+  const hasStorage = storeList.length > 0;
+
   return {
     appName: standardRequest.name,
-    imageName: standardRequest.image,
-    runCMD: standardRequest.command || '',
-    cmdParam: standardRequest.args || '',
-    replicas: standardRequest.resource.replicas,
+    imageName: standardRequest.image.imageName,
+    runCMD: standardRequest.launchCommand?.command || '',
+    cmdParam: standardRequest.launchCommand?.args || '',
+    replicas: standardRequest.resource.replicas || 1,
     cpu: cpuValue,
     memory: memoryValue,
     gpu: standardRequest.resource.gpu
@@ -367,7 +501,7 @@ export function transformToLegacySchema(
     labels: {},
     volumes: [],
     volumeMounts: [],
-    kind: 'deployment'
+    kind: hasStorage ? 'statefulset' : 'deployment' // FIXED: Automatically use statefulset if storage is present
   };
 }
 
@@ -378,11 +512,23 @@ export function transformFromLegacySchema(
   return {
     // Base fields from CreateLaunchpadRequestSchema
     name: legacyData.appName,
-    image: legacyData.imageName,
-    command: legacyData.runCMD,
-    args: legacyData.cmdParam,
+    image: {
+      imageName: legacyData.imageName,
+      imageRegistry: legacyData.secret?.use
+        ? {
+            username: legacyData.secret.username,
+            password: legacyData.secret.password,
+            serverAddress: legacyData.secret.serverAddress
+          }
+        : undefined
+    },
+    launchCommand: {
+      command: legacyData.runCMD,
+      args: legacyData.cmdParam
+    },
     resource: {
-      replicas: legacyData.replicas || 1,
+      // If HPA is enabled, don't set replicas; otherwise set replicas
+      replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
       cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
       memory: resourceConverters.mbToMemory(legacyData.memory || 256),
       gpu: legacyData.gpu
@@ -391,43 +537,48 @@ export function transformFromLegacySchema(
             type: legacyData.gpu.type,
             amount: legacyData.gpu.amount
           }
+        : undefined,
+      hpa: legacyData.hpa?.use
+        ? {
+            target: legacyData.hpa.target,
+            value: legacyData.hpa.value,
+            minReplicas: legacyData.hpa.minReplicas,
+            maxReplicas: legacyData.hpa.maxReplicas
+          }
         : undefined
     },
     ports:
-      legacyData.networks?.map((network) => ({
-        serviceName: network.serviceName,
-        port: network.port,
-        protocol: network.protocol,
-        appProtocol: network.openNodePort ? undefined : network.appProtocol, // If nodePort is open, appProtocol should be null
-        exposesPublicDomain: network.openPublicDomain,
-        networkName: network.networkName,
-        portName: network.portName,
-        publicDomain: network.publicDomain,
-        domain: network.domain,
-        customDomain: network.customDomain,
-        nodePort: network.nodePort
-      })) || [],
+      legacyData.networks?.map((network) => {
+        // If nodePort is enabled, it's a transport protocol (TCP/UDP/SCTP)
+        // If nodePort is disabled, it's an application protocol (HTTP/GRPC/WS)
+        const protocol = network.openNodePort
+          ? network.protocol // Use transport protocol for nodePort-enabled ports (TCP/UDP/SCTP)
+          : network.appProtocol || 'HTTP'; // Use application protocol for public domain ports (HTTP/GRPC/WS)
+
+        // For UDP/TCP ports, exposesPublicDomain should be true
+        const exposesPublicDomain = network.openNodePort
+          ? true // UDP/TCP ports always show true
+          : network.openPublicDomain; // HTTP/GRPC/WS use original value
+
+        return {
+          serviceName: network.serviceName,
+          number: network.port,
+          protocol: protocol,
+          exposesPublicDomain: exposesPublicDomain,
+          networkName: network.networkName,
+          portName: network.portName,
+          publicDomain: network.publicDomain,
+          domain: network.domain,
+          customDomain: network.customDomain,
+          nodePort: network.nodePort
+        };
+      }) || [],
     env:
       legacyData.envs?.map((env) => ({
         name: env.key,
         value: env.value,
         valueFrom: env.valueFrom
       })) || [],
-    hpa: legacyData.hpa?.use
-      ? {
-          target: legacyData.hpa.target,
-          value: legacyData.hpa.value,
-          minReplicas: legacyData.hpa.minReplicas,
-          maxReplicas: legacyData.hpa.maxReplicas
-        }
-      : undefined,
-    imageRegistry: legacyData.secret?.use
-      ? {
-          username: legacyData.secret.username,
-          password: legacyData.secret.password,
-          serverAddress: legacyData.secret.serverAddress
-        }
-      : undefined,
     configMap:
       legacyData.configMapList?.map((config) => ({
         path: config.mountPath,
@@ -456,6 +607,7 @@ export function transformFromLegacySchema(
   };
 }
 
+// Legacy schemas for backward compatibility (deprecated)
 export const UpdateConfigMapSchema = z.object({
   configMap: z
     .array(StandardConfigMapSchema.pick({ path: true, value: true }))
@@ -465,14 +617,20 @@ export const UpdateConfigMapSchema = z.object({
     })
 });
 
-// POST - Create new ports (no identifiers needed)
+export const UpdateStorageSchema = z.object({
+  storage: z.array(SimpleStorageSchema).default([]).openapi({
+    description:
+      'Storage configurations to update (incremental). Only includes storage to add or modify, existing storage not listed will be preserved. Name is auto-generated from path.'
+  })
+});
+
+// Legacy port schemas for backward compatibility (deprecated)
 export const CreatePortsSchema = z.object({
   ports: z
     .array(
       z.object({
-        port: z.number().default(80),
-        protocol: z.enum(['TCP', 'UDP', 'SCTP']),
-        appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
+        number: z.number().default(80),
+        protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']),
         exposesPublicDomain: z.boolean()
       })
     )
@@ -482,15 +640,13 @@ export const CreatePortsSchema = z.object({
     })
 });
 
-// PATCH - Update existing ports (requires identifiers to locate)
 export const UpdatePortsSchema = z.object({
   ports: z
     .array(
       z
         .object({
-          port: z.number(),
-          protocol: z.enum(['TCP', 'UDP', 'SCTP']),
-          appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
+          number: z.number(),
+          protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']),
           exposesPublicDomain: z.boolean(),
           // At least one identifier required to locate the port to update
           networkName: z.string().optional(),
@@ -509,29 +665,8 @@ export const UpdatePortsSchema = z.object({
     })
 });
 
-// DELETE - Delete ports by port number
 export const DeletePortsSchema = z.object({
   ports: z.array(z.number()).min(1).openapi({
     description: 'Array of port numbers to delete'
-  })
-});
-
-export const SimpleStorageSchema = z
-  .object({
-    path: z.string().openapi({
-      description: 'Mount path in the container'
-    }),
-    size: z.string().default('1Gi').openapi({
-      description: 'Storage size (e.g., "10Gi", "1Ti")'
-    })
-  })
-  .openapi({
-    description: 'Simplified storage configuration (name auto-generated from path)'
-  });
-
-export const UpdateStorageSchema = z.object({
-  storage: z.array(SimpleStorageSchema).default([]).openapi({
-    description:
-      'Storage configurations to update (incremental). Only includes storage to add or modify, existing storage not listed will be preserved. Name is auto-generated from path.'
   })
 });

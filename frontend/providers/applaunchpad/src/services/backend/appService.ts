@@ -449,15 +449,28 @@ export async function updateAppResources(
       cpu?: number;
       memory?: number;
       replicas?: number;
+      hpa?: {
+        target: 'cpu' | 'memory' | 'gpu';
+        value: number;
+        minReplicas: number;
+        maxReplicas: number;
+      };
     };
     command?: string;
     args?: string;
     image?: string;
+    imageName?: string;
+    imageRegistry?: {
+      username: string;
+      password: string;
+      serverAddress: string;
+    } | null;
     env?: { name: string; value?: string; valueFrom?: any }[];
   },
   k8s: K8sContext
 ) {
-  const { getDeployApp, k8sApp, k8sAutoscaling, apiClient, applyYamlList, namespace } = k8s;
+  const { getDeployApp, k8sApp, k8sAutoscaling, k8sCore, apiClient, applyYamlList, namespace } =
+    k8s;
 
   const app = await getDeployApp(appName);
   if (!app.metadata?.name || !app.spec) {
@@ -500,11 +513,30 @@ export async function updateAppResources(
       requestQueue.push(apiClient.replace(app));
       await Promise.all(requestQueue);
     } else {
-      // Start logic: set replicas and restore HPA if needed
+      // Set fixed replicas: delete any existing HPA and set fixed replicas
       const requestQueue: Promise<any>[] = [];
+
+      // Delete existing HPA (switch from elastic to fixed scaling)
+      try {
+        await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace);
+        requestQueue.push(
+          k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)
+        );
+      } catch (error: any) {
+        if (error?.statusCode !== 404) {
+          throw new Error('Failed to check existing HPA');
+        }
+        // HPA doesn't exist, which is fine
+      }
 
       app.spec.replicas = updateData.resource.replicas;
 
+      // Update annotations for fixed replicas
+      app.metadata.annotations = app.metadata.annotations || {};
+      app.metadata.annotations[minReplicasKey] = `${updateData.resource.replicas}`;
+      app.metadata.annotations[maxReplicasKey] = `${updateData.resource.replicas}`;
+
+      // Handle pause/restart logic if needed
       if (app.metadata?.annotations?.[pauseKey]) {
         const pauseData: {
           target: string;
@@ -513,25 +545,56 @@ export async function updateAppResources(
 
         delete app.metadata.annotations[pauseKey];
 
-        if (pauseData.target) {
-          const hpaYaml = json2HPA({
-            appName,
-            hpa: {
-              use: true,
-              target: pauseData.target,
-              value: pauseData.value,
-              minReplicas: app.metadata.annotations[minReplicasKey] || '1',
-              maxReplicas: app.metadata.annotations[maxReplicasKey] || '2'
-            }
-          } as unknown as AppEditType);
-
-          requestQueue.push(applyYamlList([hpaYaml], 'create'));
-        }
+        // Only restore HPA if we're not explicitly setting fixed replicas
+        // Since we're setting replicas, we want fixed scaling, not HPA
       }
 
       requestQueue.push(apiClient.replace(app));
       await Promise.all(requestQueue);
     }
+  }
+
+  // Handle HPA updates (separate from replicas) - FIXED: Sequential execution
+  if (updateData.resource?.hpa !== undefined) {
+    const hpaConfig = updateData.resource.hpa;
+
+    // Set replicas to minReplicas for HPA
+    app.spec.replicas = hpaConfig.minReplicas;
+
+    // Update annotations
+    app.metadata.annotations = app.metadata.annotations || {};
+    app.metadata.annotations[minReplicasKey] = `${hpaConfig.minReplicas}`;
+    app.metadata.annotations[maxReplicasKey] = `${hpaConfig.maxReplicas}`;
+
+    // Delete existing HPA first if exists and wait for completion
+    try {
+      await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace);
+      await k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace);
+      // Wait a moment to ensure deletion is processed
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error: any) {
+      if (error?.statusCode !== 404) {
+        throw new Error('Failed to check existing HPA');
+      }
+      // HPA doesn't exist, which is fine
+    }
+
+    // Update the deployment/statefulset first
+    await apiClient.replace(app);
+
+    // Create new HPA after deployment is updated
+    const hpaYaml = json2HPA({
+      appName,
+      hpa: {
+        use: true,
+        target: hpaConfig.target,
+        value: hpaConfig.value,
+        minReplicas: hpaConfig.minReplicas,
+        maxReplicas: hpaConfig.maxReplicas
+      }
+    } as unknown as AppEditType);
+
+    await applyYamlList([hpaYaml], 'create');
   }
 
   // Handle CPU/Memory/Command/Args/Image updates with JSONPatch
@@ -541,12 +604,14 @@ export async function updateAppResources(
     updateData.command !== undefined ||
     updateData.args !== undefined ||
     updateData.image !== undefined ||
+    updateData.imageName !== undefined ||
+    updateData.imageRegistry !== undefined ||
     updateData.env !== undefined;
   if (resourceUpdates) {
     const jsonPatch: Array<{
-      op: 'replace';
+      op: 'replace' | 'remove';
       path: string;
-      value: unknown;
+      value?: unknown;
     }> = [];
 
     if (updateData.resource?.cpu !== undefined) {
@@ -584,7 +649,8 @@ export async function updateAppResources(
     if (updateData.command !== undefined) {
       // Convert string to array following the same logic as deployYaml2Json
       const commandArray = (() => {
-        if (!updateData.command) return undefined;
+        if (updateData.command === '') return []; // Empty string should result in empty array
+        if (!updateData.command) return undefined; // null or undefined
         try {
           return JSON.parse(updateData.command);
         } catch (error) {
@@ -592,7 +658,8 @@ export async function updateAppResources(
         }
       })();
 
-      if (commandArray) {
+      if (commandArray !== undefined) {
+        // Allow empty arrays
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/containers/0/command',
@@ -604,7 +671,8 @@ export async function updateAppResources(
     if (updateData.args !== undefined) {
       // Convert string to array following the same logic as deployYaml2Json
       const argsArray = (() => {
-        if (!updateData.args) return undefined;
+        if (updateData.args === '') return []; // Empty string should result in empty array
+        if (!updateData.args) return undefined; // null or undefined
         try {
           return JSON.parse(updateData.args) as string[];
         } catch (error) {
@@ -612,7 +680,8 @@ export async function updateAppResources(
         }
       })();
 
-      if (argsArray) {
+      if (argsArray !== undefined) {
+        // Allow empty arrays
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/containers/0/args',
@@ -621,18 +690,91 @@ export async function updateAppResources(
       }
     }
 
-    if (updateData.image !== undefined) {
+    // Handle image name update (either from image or imageName field)
+    const imageNameToUpdate =
+      updateData.image !== undefined ? updateData.image : updateData.imageName;
+    if (imageNameToUpdate !== undefined) {
+      // Allow empty string for image name
+      const finalImageName = imageNameToUpdate || ''; // Convert null/undefined to empty string if needed
       jsonPatch.push({
         op: 'replace',
         path: '/spec/template/spec/containers/0/image',
-        value: updateData.image
+        value: finalImageName
       });
 
       jsonPatch.push({
         op: 'replace',
         path: '/metadata/annotations/originImageName',
-        value: updateData.image
+        value: finalImageName
       });
+    }
+
+    // Handle image pull secrets
+    if (updateData.imageRegistry !== undefined) {
+      if (updateData.imageRegistry !== null) {
+        // Create or update image pull secret
+        const { k8sCore } = k8s;
+        const auth = Buffer.from(
+          `${updateData.imageRegistry.username}:${updateData.imageRegistry.password}`
+        ).toString('base64');
+        const dockerconfigjson = Buffer.from(
+          JSON.stringify({
+            auths: {
+              [updateData.imageRegistry.serverAddress]: {
+                username: updateData.imageRegistry.username,
+                password: updateData.imageRegistry.password,
+                auth
+              }
+            }
+          })
+        ).toString('base64');
+
+        const secretData = {
+          apiVersion: 'v1',
+          kind: 'Secret',
+          metadata: { name: appName },
+          data: {
+            '.dockerconfigjson': dockerconfigjson
+          },
+          type: 'kubernetes.io/dockerconfigjson'
+        };
+
+        try {
+          await k8sCore.readNamespacedSecret(appName, namespace);
+          await k8sCore.replaceNamespacedSecret(appName, namespace, secretData);
+        } catch (error: any) {
+          if (error.response?.statusCode === 404) {
+            await k8sCore.createNamespacedSecret(namespace, secretData);
+          } else {
+            throw error;
+          }
+        }
+
+        // Add imagePullSecrets to deployment
+        jsonPatch.push({
+          op: 'replace',
+          path: '/spec/template/spec/imagePullSecrets',
+          value: [{ name: appName }]
+        });
+      } else {
+        // Remove image pull secrets (switch to public image)
+        if (app.spec?.template?.spec?.imagePullSecrets) {
+          jsonPatch.push({
+            op: 'remove',
+            path: '/spec/template/spec/imagePullSecrets'
+          });
+        }
+
+        // Delete the secret
+        try {
+          await k8sCore.deleteNamespacedSecret(appName, namespace);
+        } catch (error: any) {
+          if (error.response?.statusCode !== 404) {
+            throw error;
+          }
+          // Secret doesn't exist, which is fine
+        }
+      }
     }
 
     if (updateData.env !== undefined) {
