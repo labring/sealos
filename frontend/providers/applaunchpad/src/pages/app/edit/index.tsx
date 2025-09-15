@@ -1,5 +1,5 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { checkPermission, getWorkspaceSubscriptionInfo } from '@/api/platform';
+import { checkPermission } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -19,7 +19,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
+import { patchYamlList } from '@/utils/tools';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -36,7 +36,6 @@ import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
-import { WorkspaceQuotaItem } from '@/types/workspace';
 import { resourcePropertyMap } from '@/constants/resource';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
@@ -106,7 +105,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice, checkExceededQuotas } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice, checkExceededQuotas, session } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -164,14 +163,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
   );
 
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
-
   const exceededQuotas = useMemo(() => {
     return checkExceededQuotas({
       cpu: isEdit
@@ -192,15 +183,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           resourcePropertyMap.storage.scale
         : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
           resourcePropertyMap.storage.scale,
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
-  }, [
-    checkExceededQuotas,
-    existingStores,
-    formHook.formState,
-    isEdit,
-    subscriptionInfo?.subscription?.type
-  ]);
+  }, [checkExceededQuotas, existingStores, formHook.formState, isEdit, session]);
 
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {
