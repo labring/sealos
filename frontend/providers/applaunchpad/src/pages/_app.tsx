@@ -49,7 +49,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute, initFormSliderList } = useGlobalStore();
-  const { loadUserSourcePrice } = useUserStore();
+  const { loadUserSourcePrice, setSession } = useUserStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -66,16 +66,12 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
 
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
-        const oldSession = localStorage.getItem('session');
-        if (newSession && newSession !== oldSession) {
-          localStorage.setItem('session', newSession);
-          window.location.reload();
-        }
+        setSession(JSON.parse(newSession));
+
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          localStorage.removeItem('session');
           openConfirm(() => {
             window.open(`https://${DESKTOP_DOMAIN}`, '_self');
           })();

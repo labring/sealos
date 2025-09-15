@@ -1,9 +1,8 @@
 import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
-import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 import AppStatusTag from '@/components/AppStatusTag';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
-import { MyTooltip, SealosMenu } from '@sealos/ui';
+import { SealosMenu } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { MyTable } from '@sealos/ui';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -37,8 +36,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
@@ -58,7 +56,7 @@ const AppList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
-  const { userSourcePrice, loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { userSourcePrice, loadUserQuota, checkExceededQuotas, session } = useUserStore();
   const { toast } = useToast();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
@@ -69,14 +67,6 @@ const AppList = ({
   const [quotaLoaded, setQuotaLoaded] = useState(false);
   const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
-
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
 
   // load user quota on component mount
   useEffect(() => {
@@ -150,7 +140,7 @@ const AppList = ({
       memory: 1,
       nodeport: 1,
       storage: 1,
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
     if (exceededQuotaItems.length > 0) {
@@ -164,7 +154,7 @@ const AppList = ({
       });
       router.push('/app/edit');
     }
-  }, [checkExceededQuotas, router, subscriptionInfo?.subscription?.type]);
+  }, [checkExceededQuotas, router, session]);
 
   const handleRestartApp = useCallback(
     async (appName: string) => {

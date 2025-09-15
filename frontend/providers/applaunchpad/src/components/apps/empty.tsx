@@ -9,8 +9,6 @@ import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { useUserStore } from '@/store/user';
-import { useQuery } from '@tanstack/react-query';
-import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 import { track } from '@sealos/gtm';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
@@ -20,7 +18,7 @@ const Empty = () => {
 
   const { listCompleted } = useGuideStore();
   const isClientSide = useClientSideValue(true);
-  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
   const [quotaLoaded, setQuotaLoaded] = useState(false);
   const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
@@ -43,14 +41,6 @@ const Empty = () => {
     setQuotaLoaded(true);
   }, [quotaLoaded, loadUserQuota]);
 
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
-
   const handleCreateApp = useCallback(() => {
     // Check quota before creating app
     const exceededQuotaItems = checkExceededQuotas({
@@ -58,7 +48,7 @@ const Empty = () => {
       memory: 1,
       nodeport: 1,
       storage: 1,
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
     if (exceededQuotaItems.length > 0) {
@@ -72,7 +62,7 @@ const Empty = () => {
       });
       router.push('/app/edit');
     }
-  }, [checkExceededQuotas, router, subscriptionInfo?.subscription?.type]);
+  }, [checkExceededQuotas, router, session]);
 
   return (
     <Box

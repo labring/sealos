@@ -1,4 +1,4 @@
-import { UserInfo } from '@/api/auth';
+import { getPlanInfo, UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
@@ -18,8 +18,11 @@ export const sessionConfig = async ({
   store.setToken(token);
   const infoData = await UserInfo();
   const payload = jwtDecode<AccessTokenPayload>(token);
+  const planInfo = await getPlanInfo(payload.workspaceId);
+
   store.setSession({
     token: appToken,
+    subscription: planInfo.data.subscription,
     user: {
       userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined,
       realName: infoData.data?.info.realName || undefined,

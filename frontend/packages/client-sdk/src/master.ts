@@ -88,6 +88,7 @@ class MasterSDK {
         avatar: session.user.avatar,
         nsid: session.user.nsid
       },
+      subscription: session.subscription,
       token: session.token,
       kubeconfig: session.kubeconfig
     };
