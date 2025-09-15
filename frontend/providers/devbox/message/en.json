@@ -459,5 +459,7 @@
   "yaml_file": "YAML",
   "proxy_detected_title": "Proxy Detected",
   "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider.",
-  "insufficient_permissions": "Your current role is not an administrator. Please contact the workspace administrator to perform the operation."
+  "insufficient_permissions": "Your current role is not an administrator. Please contact the workspace administrator to perform the operation.",
+  "Total": "Total",
+  "Page": "Page"
 }

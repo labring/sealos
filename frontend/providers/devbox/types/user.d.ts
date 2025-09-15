@@ -19,8 +19,6 @@ export type Session = {
   kubeconfig: KubeConfig;
 };
 
-export const sessionKey = 'session';
-
 export type userPriceType = {
   cpu: number;
   memory: number;

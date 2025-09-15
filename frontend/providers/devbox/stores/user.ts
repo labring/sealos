@@ -4,9 +4,11 @@ import { immer } from 'zustand/middleware/immer';
 
 import { getWorkspaceQuota, getUserIsOutStandingPayment } from '@/api/platform';
 import { WorkspaceQuotaItem } from '@/types/workspace';
+import { SessionV1 } from 'sealos-desktop-sdk';
 
 type State = {
-  balance: number;
+  session: SessionV1 | null;
+  setSession: (session: SessionV1) => void;
   userQuota: WorkspaceQuotaItem[];
   isOutStandingPayment: boolean;
   loadUserQuota: () => Promise<null>;
@@ -19,7 +21,10 @@ type State = {
 export const useUserStore = create<State>()(
   devtools(
     immer((set, get) => ({
-      balance: 5,
+      session: null,
+      setSession: (session: SessionV1) => {
+        set({ session });
+      },
       userQuota: [],
       isOutStandingPayment: false,
       loadUserQuota: async () => {

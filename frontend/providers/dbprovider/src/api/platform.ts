@@ -26,18 +26,6 @@ export const getWorkspaceQuota = () =>
     }
   });
 
-export const getWorkspaceSubscriptionInfo = () =>
-  POST<{
-    subscription: {
-      type: 'PAYG' | 'SUBSCRIPTION';
-    };
-  }>('/api/platform/info', undefined, {
-    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
-    headers: {
-      Authorization: getUserSession()?.token
-    }
-  });
-
 export const uploadFile = (
   data: FormData,
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
