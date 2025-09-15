@@ -4,6 +4,8 @@ metadata:
   name: sealos-cockroachdb
   namespace: sealos
 spec:
+  additionalArgs:
+  - --max-offset={{.Values.cockroachdb.maxOffset}}
   dataStore:
     pvc:
       spec:
@@ -17,3 +19,4 @@ spec:
   tlsEnabled: true
   cockroachDBVersion: v23.1.11
   nodes: 3
+  maxUnavailable: 1
