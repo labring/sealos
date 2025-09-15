@@ -77,11 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             'configurations',
             configName
           )
-          .catch((err) => {
-            if (err?.body?.code !== 404) {
-              console.error(`Failed to delete configuration ${configName}:`, err);
-            }
-          })
+          .catch()
       )
     );
 
