@@ -189,6 +189,7 @@ export default function AppList({
                         borderRadius={'4px'}
                         backgroundColor={'#fff'}
                         border={' 1px solid rgba(255, 255, 255, 0.50)'}
+                        aspectRatio={'1 / 1'}
                       >
                         <Image
                           src={item.spec.i18n?.[i18n.language]?.icon ?? item?.spec?.icon}
@@ -199,7 +200,17 @@ export default function AppList({
                         />
                       </Box>
                       <Flex ml="16px" noOfLines={2} flexDirection={'column'}>
-                        <Text fontSize={'18px'} fontWeight={600} color={'#111824'}>
+                        <Text
+                          fontSize={'18px'}
+                          fontWeight={600}
+                          color={'#111824'}
+                          textOverflow={'ellipsis'}
+                          overflow={'hidden'}
+                          whiteSpace={'nowrap'}
+                          style={{
+                            textWrap: 'nowrap'
+                          }}
+                        >
                           {item.spec.i18n?.[i18n.language]?.title ?? item.spec.title}
                         </Text>
                         {envs?.SHOW_AUTHOR === 'true' && (
