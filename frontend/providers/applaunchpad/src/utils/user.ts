@@ -1,7 +1,6 @@
 // use client;
 import { useUserStore } from '@/store/user';
 import yaml from 'js-yaml';
-import { SessionV1 } from 'sealos-desktop-sdk/*';
 
 export const getUserKubeConfig = () => {
   let kubeConfig: string =
@@ -34,6 +33,6 @@ export const getUserNamespace = () => {
   try {
     return json?.contexts[0]?.context?.namespace || `ns-${json.users[0].name}`;
   } catch (err) {
-    return 'nx-';
+    return 'ns-';
   }
 };

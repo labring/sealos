@@ -29,11 +29,9 @@ import yaml from 'js-yaml';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { getDBSecret } from '@/api/db';
-import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
-import type { DBType, BackupItemType } from '@/types/db';
+import type { BackupItemType } from '@/types/db';
 import { getBackups, deleteBackup } from '@/api/backup';
 import StopBackupModal from '../detail/components/StopBackupModal';
-import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 import { resourcePropertyMap } from '@/constants/resource';
 import { distributeResources } from '@/utils/database';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
@@ -47,7 +45,7 @@ const defaultEdit = {
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { checkExceededQuotas } = useUserStore();
+  const { checkExceededQuotas, session } = useUserStore();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
@@ -96,14 +94,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     if (!data) return;
     realTimeForm.current = data as DBEditType;
     setForceUpdate(!forceUpdate);
-  });
-
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
   });
 
   const exceededQuotas = useMemo(() => {
@@ -182,10 +172,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       cpu: isEdit ? newResources.cpu - oldResources.cpu : newResources.cpu,
       memory: isEdit ? newResources.memory - oldResources.memory : newResources.memory,
       storage: isEdit ? newResources.storage - oldResources.storage : newResources.storage,
-      // [TODO] check nodeport
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
-  }, [checkExceededQuotas, formHook.formState, isEdit, subscriptionInfo?.subscription?.type]);
+  }, [checkExceededQuotas, formHook.formState, isEdit, session]);
 
   useEffect(() => {
     if (!dbName) {

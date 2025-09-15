@@ -47,7 +47,7 @@ import {
 import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { useDBStore } from '@/store/db';
@@ -62,14 +62,12 @@ import {
   ModalCloseButton,
   ModalBody,
   FormControl,
-  FormLabel,
   Input,
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { useQuery } from '@tanstack/react-query';
-import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 import { useUserStore } from '@/store/user';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
@@ -90,7 +88,7 @@ const DBList = ({
   const theme = useTheme();
   const router = useRouter();
   const { SystemEnv } = useEnvStore();
-  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
   const {
     isOpen: isOpenUpdateModal,
     onOpen: onOpenUpdateModal,
@@ -113,14 +111,6 @@ const DBList = ({
     content: t('pause_hint')
   });
 
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
-
   // load user quota on component mount
   useEffect(() => {
     if (quotaLoaded) return;
@@ -140,7 +130,7 @@ const DBList = ({
       memory: 1,
       nodeport: 1,
       storage: 1,
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
     if (exceededQuotaItems.length > 0) {
@@ -155,7 +145,7 @@ const DBList = ({
       });
       router.push('/db/edit');
     }
-  }, [checkExceededQuotas, router, subscriptionInfo?.subscription?.type]);
+  }, [checkExceededQuotas, router, session]);
 
   const handleRestartApp = useCallback(
     async (db: DBListItemType) => {

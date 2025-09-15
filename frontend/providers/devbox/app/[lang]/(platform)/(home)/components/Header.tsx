@@ -14,7 +14,6 @@ import { useUserStore } from '@/stores/user';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
 import { useQuery } from '@tanstack/react-query';
-import { getUserInfo } from '@/api/platform';
 
 export default function Header({ onSearch }: { onSearch: (value: string) => void }) {
   const router = useRouter();
@@ -49,14 +48,6 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     }
   };
 
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getUserInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
-
   const handleCreateDevbox = useCallback((): void => {
     setGuide2(true);
     destroyDriver();
@@ -64,7 +55,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     const exceededQuotaItems = userStore.checkExceededQuotas({
       cpu: 1,
       memory: 1,
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
     console.log('exceededQuotaItems', exceededQuotaItems);
@@ -76,7 +67,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
       setExceededQuotas([]);
       handleGotoTemplate();
     }
-  }, [setGuide2, handleGotoTemplate, userStore, subscriptionInfo?.subscription?.type]);
+  }, [setGuide2, handleGotoTemplate, userStore]);
 
   useEffect(() => {
     if (!guide2 && isClientSide) {

@@ -23,7 +23,6 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { WorkspaceQuotaItem } from '@/types/workspace';
-import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
@@ -43,7 +42,7 @@ const EditApp = ({
   const [errorMessage, setErrorMessage] = useState('');
   const { message: toast } = useMessage();
   const { setIsLoading } = useLoading();
-  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
   const [quotaLoaded, setQuotaLoaded] = useState(false);
   const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
@@ -61,14 +60,6 @@ const EditApp = ({
     loadUserQuota();
     setQuotaLoaded(true);
   }, [quotaLoaded, loadUserQuota]);
-
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
 
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
@@ -224,7 +215,7 @@ const EditApp = ({
       // [TODO] Do not let these limit hardcoded here
       cpu: 2000,
       memory: 4096,
-      ...(subscriptionInfo?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
     if (exceededQuotaItems.length > 0) {
@@ -235,14 +226,7 @@ const EditApp = ({
       setExceededQuotas([]);
       formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
     }
-  }, [
-    checkExceededQuotas,
-    subscriptionInfo?.subscription?.type,
-    formHook,
-    openConfirm,
-    submitSuccess,
-    submitError
-  ]);
+  }, [checkExceededQuotas, session, formHook, openConfirm, submitSuccess, submitError]);
 
   return (
     <>

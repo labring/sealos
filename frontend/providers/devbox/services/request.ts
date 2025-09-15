@@ -8,7 +8,8 @@ import axios, {
 import type { ApiResp } from './kubernet';
 import { isApiResp } from './kubernet';
 
-import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user';
+import { getSessionFromSessionStorage } from '@/utils/user';
+import { useUserStore } from '@/stores/user';
 
 const showStatus = (status: number) => {
   let message = '';
@@ -69,7 +70,7 @@ request.interceptors.request.use(
       config.url = '' + config.url;
     }
     let _headers: AxiosHeaders = config.headers;
-    const session = getDesktopSessionFromSessionStorage();
+    const session = useUserStore.getState().session;
     const devboxToken = getSessionFromSessionStorage();
 
     _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');

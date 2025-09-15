@@ -1,11 +1,13 @@
 import { getWorkspaceQuota } from '@/api/platform';
 import { WorkspaceQuotaItem } from '@/types/workspace';
+import { SessionV1 } from 'sealos-desktop-sdk/*';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
-  balance: number;
+  session: SessionV1 | null;
+  setSession: (session: SessionV1) => void;
   userQuota: WorkspaceQuotaItem[];
   loadUserQuota: () => Promise<null>;
   checkExceededQuotas: (
@@ -16,7 +18,10 @@ type State = {
 export const useUserStore = create<State>()(
   devtools(
     immer((set, get) => ({
-      balance: 5,
+      session: null,
+      setSession: (session: SessionV1) => {
+        set({ session });
+      },
       userQuota: [],
       loadUserQuota: async () => {
         const response = await getWorkspaceQuota();

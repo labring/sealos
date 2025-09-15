@@ -461,5 +461,7 @@
   "yaml_file": "YAML 文件",
   "proxy_detected_title": "检测到代理",
   "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。",
-  "insufficient_permissions": "当前用户角色为非管理员，请联系空间管理员执行操作。"
+  "insufficient_permissions": "当前用户角色为非管理员，请联系空间管理员执行操作。",
+  "Total": "总计",
+  "Page": "页"
 }
