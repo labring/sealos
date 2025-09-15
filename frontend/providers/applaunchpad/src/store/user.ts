@@ -4,8 +4,11 @@ import { immer } from 'zustand/middleware/immer';
 import { getResourcePrice, getWorkspaceQuota } from '@/api/platform';
 import type { userPriceType } from '@/types/user';
 import { WorkspaceQuotaItem } from '@/types/workspace';
+import { SessionV1 } from 'sealos-desktop-sdk/*';
 
 type State = {
+  session: SessionV1 | null;
+  setSession: (session: SessionV1) => void;
   userQuota: WorkspaceQuotaItem[];
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
@@ -20,6 +23,11 @@ let retryGetPrice = 3;
 export const useUserStore = create<State>()(
   devtools(
     immer((set, get) => ({
+      session: null,
+      setSession: (session: SessionV1) => {
+        console.log({ setSession: JSON.stringify(session) });
+        set({ session });
+      },
       userSourcePrice: undefined,
       async loadUserSourcePrice() {
         try {
