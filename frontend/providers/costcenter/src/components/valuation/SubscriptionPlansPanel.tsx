@@ -1,7 +1,6 @@
 import { SubscriptionPlan } from '@/types/plan';
 import { StaticPlanCard } from './StaticPlanCard';
-import { useState, useMemo } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
+import { useMemo } from 'react';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 
 interface SubscriptionPlansPanelProps {
@@ -9,15 +8,15 @@ interface SubscriptionPlansPanelProps {
 }
 
 export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProps) {
-  const [selectedMorePlan, setSelectedMorePlan] = useState<string>('');
-
   const { mainPlans, additionalPlans } = useMemo(() => {
     if (!plansData || plansData.length === 0) {
       return { mainPlans: [], additionalPlans: [] };
     }
     const paid = plansData.filter((plan) => plan.Prices && plan.Prices.length > 0);
     const main = paid.filter((plan) => !plan.Tags.includes('more'));
-    const additional = paid.filter((plan) => plan.Tags.includes('more'));
+    const additional = paid.filter(
+      (plan) => plan.Tags.includes('more') && plan.Name !== 'Customized'
+    );
 
     const sortByOrder = (a: SubscriptionPlan, b: SubscriptionPlan) => a.Order - b.Order;
 
@@ -48,56 +47,32 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
       {additionalPlans.length > 0 && (
         <div>
           <div className="text-lg font-medium mb-4 text-black">More Plans</div>
-          <div className="w-full">
-            <Select
-              value={selectedMorePlan}
-              onValueChange={(value) => {
-                const currentPlan = additionalPlans.find((p) => p.ID === value);
-                if (currentPlan?.Name === 'Customized' && currentPlan?.Description) {
-                  window.open(currentPlan?.Description, '_blank', 'noopener,noreferrer');
-                } else {
-                  setSelectedMorePlan(value);
-                }
-              }}
-            >
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Select a plan" />
-              </SelectTrigger>
-              <SelectContent>
-                {additionalPlans.map((plan) => {
-                  let resources: any = {};
-                  try {
-                    resources = JSON.parse(plan.MaxResources);
-                  } catch (e) {
-                    resources = {};
-                  }
+          <div className="flex w-full gap-3 justify-start">
+            {additionalPlans.slice(0, 2).map((plan) => {
+              let resources: any = {};
+              try {
+                resources = JSON.parse(plan.MaxResources);
+              } catch (e) {
+                resources = {};
+              }
+              const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
 
-                  const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
-
-                  if (plan.Name === 'Customized') {
-                    return (
-                      <SelectItem key={plan.ID} value={plan.ID}>
-                        <div className="flex w-full items-center">
-                          <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  }
-
-                  return (
-                    <SelectItem key={plan.ID} value={plan.ID}>
-                      <div className="flex w-full items-center">
-                        <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
-                        <div className="text-xs text-gray-500 ml-3">
-                          {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +{' '}
-                          {formatTrafficAuto(plan.Traffic)} - ${monthlyPrice.toFixed(0)}
-                        </div>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+              return (
+                <div
+                  key={plan.ID}
+                  className="bg-white rounded-lg border border-gray-200 p-4 flex-1"
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
+                    <div className="text-xs text-gray-500">
+                      {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +{' '}
+                      {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport - $
+                      {monthlyPrice.toFixed(0)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
