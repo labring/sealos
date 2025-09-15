@@ -16,6 +16,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { FC, useMemo, useState } from 'react';
 import { LucideIcon } from 'lucide-react';
 import CalculatorPanel from '@/components/valuation/CalculatorPanel';
+import usePlanStore from '@/stores/plan';
 
 type CardItem = {
   title: string;
@@ -33,7 +34,7 @@ const getValuation = (regionUid: string) =>
     regionUid
   });
 
-function Valuation() {
+export default function Valuation() {
   const { t } = useTranslation();
   const [cycleIdx, setCycleIdx] = useState(0);
   const [tabIdx, setTabIdx] = useState(0);
@@ -46,6 +47,9 @@ function Valuation() {
   const { data: plansData } = useQuery(['plans'], () => getPlanList(), {
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
+  const isPaygType = usePlanStore((state) => state.isPaygType)();
+  console.log(isPaygType, 'isPaygType');
+
   const data = useMemo(
     () =>
       _data?.data?.properties
@@ -120,9 +124,12 @@ function Valuation() {
     >
       <TabList mx={'24px'}>
         <Tab>{t('Subscription Plans')}</Tab>
-        <Tab>{t('Price Table')}</Tab>
-        <Tab>{t('price_calculator')}</Tab>
-
+        {!!isPaygType && (
+          <>
+            <Tab>{t('Price Table')}</Tab>
+            <Tab>{t('price_calculator')}</Tab>
+          </>
+        )}
         <Flex ml="auto" gap={'12px'}>
           {(tabIdx === 1 || tabIdx === 2) && <RegionMenu isDisabled={false} />}
           {tabIdx === 1 && <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} />}
@@ -144,8 +151,6 @@ function Valuation() {
     </Tabs>
   );
 }
-
-export default Valuation;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
   const queryClient = new QueryClient();
