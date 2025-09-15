@@ -460,5 +460,7 @@
   "vscode_tooltip": "点击在 VSCode 中开发",
   "yaml_file": "YAML 文件",
   "proxy_detected_title": "检测到代理",
-  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。"
+  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。",
+  "Total": "总计",
+  "Page": "页"
 }

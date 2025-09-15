@@ -458,5 +458,7 @@
   "vscode_tooltip": "Click to develop in VSCode",
   "yaml_file": "YAML",
   "proxy_detected_title": "Proxy Detected",
-  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider."
+  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider.",
+  "Total": "Total",
+  "Page": "Page"
 }

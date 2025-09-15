@@ -52,7 +52,6 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useUserStore } from '@/store/user';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
-import { getWorkspaceSubscriptionInfo } from '@/api/platform';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -124,7 +123,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const router = useRouter();
   const { detailCompleted, applistCompleted } = useGuideStore();
 
-  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
   const [quotaLoaded, setQuotaLoaded] = useState(false);
   const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
@@ -178,14 +177,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     loadUserQuota();
     setQuotaLoaded(true);
   }, [quotaLoaded, loadUserQuota]);
-
-  // Fetch workspace subscription info
-  const { data: subscriptionInfo, refetch: refetchWorkspaceSubscriptionInfo } = useQuery({
-    queryKey: ['workspaceSubscriptionInfo'],
-    queryFn: () => getWorkspaceSubscriptionInfo(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
 
   const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
@@ -326,17 +317,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const refetchAll = useCallback(() => {
     loadUserQuota();
-    refetchWorkspaceSubscriptionInfo();
     refetchDBStatefulSet();
     refetchSecret();
     refetchService();
-  }, [
-    loadUserQuota,
-    refetchWorkspaceSubscriptionInfo,
-    refetchDBStatefulSet,
-    refetchSecret,
-    refetchService
-  ]);
+  }, [loadUserQuota, refetchDBStatefulSet, refetchSecret, refetchService]);
 
   const openNetWorkService = useCallback(async () => {
     try {
@@ -381,7 +365,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   };
 
   const handleOpenExternalNetwork = useCallback(async () => {
-    if (subscriptionInfo?.subscription?.type === 'PAYG') {
+    if (session?.subscription?.type === 'PAYG') {
       setScenario('externalNetwork');
       onOpen();
       return;
@@ -402,13 +386,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       setExceededQuotas([]);
       openNetWorkService();
     }
-  }, [
-    checkExceededQuotas,
-    subscriptionInfo?.subscription?.type,
-    onOpen,
-    openNetWorkService,
-    loadUserQuota
-  ]);
+  }, [checkExceededQuotas, onOpen, openNetWorkService, loadUserQuota, session]);
 
   const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
     try {
