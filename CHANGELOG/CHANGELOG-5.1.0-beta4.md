@@ -6,6 +6,8 @@
 
 ### Bug Fixes
 
+* **release:** update CI runner to Ubuntu 22.04 ([#5985](https://github.com/labring/sealos/issues/5985))
+* **template:** app card title line incorrectly wraps ([#5984](https://github.com/labring/sealos/issues/5984))
 * **kubepanel:** fix Monaco Editor SSR and CDN issues ([#5982](https://github.com/labring/sealos/issues/5982))
 * **checker:** update time synchronization check and add CockroachDB max offset configuration ([#5981](https://github.com/labring/sealos/issues/5981))
 * **config:** use local variable for registry domain normalization ([#5980](https://github.com/labring/sealos/issues/5980))
