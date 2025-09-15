@@ -45,12 +45,6 @@ export type Session = {
   kubeconfig: KubeConfig;
 };
 
-export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu';
-  used: number;
-  limit: number;
-};
-
 export type UserInfoV1 = Readonly<{
   id: string;
   name: string;
@@ -64,4 +58,10 @@ export type SessionV1 = {
   user: UserInfoV1;
   subscription: WorkspaceSubscription;
   kubeconfig: KubeConfig;
+};
+
+export type WorkspaceQuotaItem = {
+  type: 'cpu' | 'memory' | 'storage' | 'gpu' | 'traffic' | 'nodeport';
+  used: number;
+  limit: number;
 };

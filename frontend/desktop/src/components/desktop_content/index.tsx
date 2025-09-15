@@ -1,4 +1,4 @@
-import { getGlobalNotification } from '@/api/platform';
+import { getGlobalNotification, getWorkspaceQuota } from '@/api/platform';
 import AppWindow from '@/components/app_window';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import { ChakraIndicator } from './ChakraIndicator';
+// import Apps from './apps';
 import IframeWindow from './iframe_window';
 import styles from './index.module.css';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
@@ -139,10 +140,15 @@ export default function Desktop() {
     [closeDesktopApp, guideModal]
   );
 
-  const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
-
   useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
+    // Initialize client SDK
+    const cleanup = createMasterAPP({
+      allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
+      getWorkspaceQuotaApi: () => {
+        console.log('getWorkspaceQuotaApi called via SDK');
+        return getWorkspaceQuota().then((res) => res.data?.quota ?? []);
+      }
+    });
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
 

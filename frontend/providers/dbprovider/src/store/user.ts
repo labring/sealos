@@ -1,6 +1,6 @@
-import { getWorkspaceQuota } from '@/api/platform';
 import { WorkspaceQuotaItem } from '@/types/workspace';
-import { SessionV1 } from 'sealos-desktop-sdk/*';
+import { SessionV1 } from 'sealos-desktop-sdk';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -24,7 +24,7 @@ export const useUserStore = create<State>()(
       },
       userQuota: [],
       loadUserQuota: async () => {
-        const response = await getWorkspaceQuota();
+        const response = await sealosApp.getWorkspaceQuota();
 
         set((state) => {
           state.userQuota = response.quota;
