@@ -458,5 +458,7 @@
   "vscode": "VS Code",
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML 文件"
+  "yaml_file": "YAML 文件",
+  "Total": "总计",
+  "Page": "页"
 }

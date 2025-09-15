@@ -456,5 +456,7 @@
   "vm": "vm",
   "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
-  "yaml_file": "YAML"
+  "yaml_file": "YAML",
+  "Total": "Total",
+  "Page": "Page"
 }

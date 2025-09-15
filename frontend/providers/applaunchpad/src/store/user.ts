@@ -25,7 +25,6 @@ export const useUserStore = create<State>()(
     immer((set, get) => ({
       session: null,
       setSession: (session: SessionV1) => {
-        console.log({ setSession: JSON.stringify(session) });
         set({ session });
       },
       userSourcePrice: undefined,
@@ -47,7 +46,6 @@ export const useUserStore = create<State>()(
         }
         return null;
       },
-      balance: 5,
       userQuota: [],
       loadUserQuota: async () => {
         const response = await getWorkspaceQuota();
