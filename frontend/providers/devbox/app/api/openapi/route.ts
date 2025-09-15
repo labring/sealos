@@ -89,7 +89,8 @@ import {
 import {
   RequestSchema as ReleaseDevboxRequestSchema2,
   SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema2,
-  ErrorResponseSchema as ReleaseDevboxErrorResponseSchema2
+  ErrorResponseSchema as ReleaseDevboxErrorResponseSchema2,
+  GetSuccessResponseSchema as ReleaseDevboxGetSuccessResponseSchema2
 } from '../v1/devbox/[name]/release/schema';
 import {
   DeployDevboxPathParamsSchema as DeployDevboxPathParamsSchema2,
@@ -103,6 +104,11 @@ import {
   SuccessResponseSchema as DeleteDevboxByNameSuccessResponseSchema,
   ErrorResponseSchema as DeleteDevboxByNameErrorResponseSchema
 } from '../v1/devbox/[name]/delete/schema';
+
+import {
+  SuccessResponseSchema as DeleteReleaseSuccessResponseSchema,
+  ErrorResponseSchema as DeleteReleaseErrorResponseSchema
+} from '../v1/devbox/[name]/release/[tag]/schema';
 
 import { NextResponse } from 'next/server';
 import { getToolsList } from 'sealos-mcp-sdk';
@@ -778,6 +784,51 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
         }
       },
       '/api/v1/devbox/{name}/release': {
+        get: {
+          tags: ['Release'],
+          summary: 'Get devbox release list by name',
+          description: 'Retrieve all release versions for a specific devbox by name. Returns a list of all releases including their status, creation time, tags, and image addresses.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Successfully retrieved devbox release list',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxGetSuccessResponseSchema2
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid devbox name format',
+              content: {
+                'application/json': {
+                  schema: DeleteReleaseErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: DeleteReleaseErrorResponseSchema
+                }
+              }
+            }
+          }
+        },
         post: {
           tags: ['Release'],
           summary: 'Release a specific devbox version',
@@ -847,6 +898,73 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
           }
         }
       },
+      '/api/v1/devbox/{name}/release/{tag}': {
+      delete: {
+        tags: ['Release'],
+        summary: 'Delete a specific devbox release',
+        description: 'Delete a specific release of a devbox by its name and release name. This will remove the DevboxRelease resource from Kubernetes and associated container image.',
+        parameters: [
+          {
+            name: 'name',
+            in: 'path',
+            required: true,
+            description: 'Devbox name',
+            schema: {
+              type: 'string',
+              pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+              minLength: 1,
+              maxLength: 63
+            }
+          },
+          {
+            name: 'tag',
+            in: 'path',
+            required: true,
+            description: 'Release name to delete',
+            schema: {
+              type: 'string',
+              pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+              minLength: 1,
+              maxLength: 63
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Release deleted successfully',
+            content: {
+              'application/json': {
+                schema: DeleteReleaseSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid devbox name or release name format',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
+              }
+            }
+          },
+          '404': {
+            description: 'Release not found',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
       '/api/v1/devbox/{name}/release/{tag}/deploy': {
         post: {
           tags: ['Release'],

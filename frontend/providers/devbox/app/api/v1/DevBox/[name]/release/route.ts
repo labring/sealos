@@ -5,9 +5,60 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KBDevboxReleaseType } from '@/types/k8s';
 import { json2DevboxRelease } from '@/utils/json2Yaml';
+import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest, { params }: { params: { name: string } }) {
+  try {
+    const devboxName = params.name;
+    const headerList = req.headers;
+
+
+    const devboxNamePattern = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+    if (!devboxNamePattern.test(devboxName) || devboxName.length > 63) {
+      return jsonRes({
+        code: 400,
+        message: 'Invalid devbox name format'
+      });
+    }
+
+    const { k8sCustomObjects, namespace } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    });
+
+    const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxreleases'
+    )) as { body: { items: KBDevboxReleaseType[] } };
+
+    const matchingDevboxVersions = releaseBody.items.filter((item: any) => {
+      return item.spec && item.spec.devboxName === devboxName;
+    });
+
+    const adaptedVersions = matchingDevboxVersions.map(adaptDevboxVersionListItem).sort((a, b) => {
+      return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+    });
+
+    const { REGISTRY_ADDR } = process.env;
+
+    const versionsWithImage = adaptedVersions.map((version) => ({
+      ...version,
+      image: `${REGISTRY_ADDR}/${namespace}/${version.devboxName}:${version.tag}`
+    }));
+
+    return jsonRes({ data: versionsWithImage });
+  } catch (err: any) {
+    return jsonRes({
+      code: 500,
+      message: err?.message || 'Internal server error',
+      error: err
+    });
+  }
+}
 
 export async function POST(req: NextRequest, { params }: { params: { name: string } }) {
   try {
@@ -25,7 +76,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const releaseForm = validationResult.data;
     const devboxName = params.name;
     const headerList = req.headers;
-
 
     const devboxNamePattern = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
     if (!devboxNamePattern.test(devboxName) || devboxName.length > 63) {

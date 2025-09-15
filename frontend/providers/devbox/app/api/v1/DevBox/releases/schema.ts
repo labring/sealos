@@ -41,6 +41,9 @@ export const SuccessResponseSchema = z.object({
           }),
         description: z.string().openapi({
           description: 'Version description'
+        }),
+        image: z.string().openapi({
+          description: 'Release image address'
         })
       })
     )

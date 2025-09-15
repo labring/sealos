@@ -46,7 +46,14 @@ export async function GET(req: NextRequest) {
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
     });
 
-    return jsonRes({ data: adaptedVersions });
+    const { REGISTRY_ADDR } = process.env;
+
+    const versionsWithImage = adaptedVersions.map((version) => ({
+      ...version,
+      image: `${REGISTRY_ADDR}/${namespace}/${version.devboxName}:${version.tag}`
+    }));
+
+    return jsonRes({ data: versionsWithImage });
   } catch (err: any) {
     return jsonRes({
       code: 500,
