@@ -21,6 +21,31 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 100,
+  context: string = ''
+): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`${context} - Attempt ${attempt}/${maxRetries} failed:`, error.message);
+      
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 100; // 添加抖动
+        await sleep(delay);
+      }
+    }
+  }
+  
+  throw new Error(`${context} - All ${maxRetries} attempts failed. Last error: ${lastError?.message}`);
+}
+
 async function waitForDevboxStatus(
   k8sCustomObjects: any,
   namespace: string,
@@ -98,9 +123,11 @@ async function waitForDevboxReady(
             return true;
           }
         } catch (podError) {
+
         }
       }
     } catch (error) {
+
     }
     
     await sleep(interval);
@@ -110,161 +137,143 @@ async function waitForDevboxReady(
   return false;
 }
 
-async function createSinglePort(
-  portConfig: any,
-  devboxName: string,
-  namespace: string,
-  k8sCore: any,
-  k8sNetworkingApp: any,
-  applyYamlList: any
-) {
-  const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
-  
-  const { number: port, protocol = 'HTTP', exposesPublicDomain = true, customDomain } = portConfig;
 
-  const networkName = `${devboxName}-${nanoid()}`;
-  const generatedPublicDomain = `${nanoid()}.${INGRESS_DOMAIN}`;
-  const portName = `port-${nanoid()}`; 
-  
-  try {
-    let existingService: V1Service | null = null;
-    try {
-      const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
-      existingService = serviceResponse.body;
-    } catch (error: any) {
-      if (error.response?.statusCode !== 404) {
-        throw new Error(`Failed to check existing service: ${error.message}`);
-      }
-    }
+class ServiceManager {
+  private k8sCore: any;
+  private namespace: string;
+  private applyYamlList: any;
 
-    if (existingService) {
-      const existingServicePorts = existingService.spec?.ports || [];
-      
-      const portExistsInService = existingServicePorts.some((p: any) => p.port === port);
-      if (portExistsInService) {
-        const existingPortInfo = existingServicePorts.find((p: any) => p.port === port);
-        if (!existingPortInfo) {
-          throw new Error(`Port ${port} found in service but port info is missing`);
-        }
+  constructor(k8sCore: any, namespace: string, applyYamlList: any) {
+    this.k8sCore = k8sCore;
+    this.namespace = namespace;
+    this.applyYamlList = applyYamlList;
+  }
+
+  async ensureServiceWithPorts(devboxName: string, ports: any[]): Promise<void> {
+    return retryWithBackoff(async () => {
+      try {
+
+        const serviceResponse = await this.k8sCore.readNamespacedService(devboxName, this.namespace);
+        const existingService = serviceResponse.body;
         
-        let networkName = '';
-        let exposesPublicDomainResult = false;
-        let publicDomain = '';
+ 
+        const existingPorts = existingService.spec?.ports || [];
+        const existingPortNumbers = new Set(existingPorts.map((p: any) => p.port));
         
-        if (exposesPublicDomain && INGRESS_SECRET) {
-          const newNetworkName = `${devboxName}-${nanoid()}`;
-          const networkConfig = {
-            name: devboxName,
-            networks: [
-              {
-                networkName: newNetworkName,
-                portName: existingPortInfo.name || `port-${port}`,
-                port,
-                protocol: protocol as ProtocolType,
-                openPublicDomain: exposesPublicDomain,
-                publicDomain: generatedPublicDomain,
-                customDomain: customDomain || ''
-              }
-            ]
-          };
-          const ingressYaml = json2Ingress(networkConfig, INGRESS_SECRET);
-          await applyYamlList([ingressYaml], 'create');
+        const newPorts = ports.filter(port => !existingPortNumbers.has(port.number));
+        
+        if (newPorts.length > 0) {
+          const updatedPorts = [
+            ...existingPorts,
+            ...newPorts.map(port => ({
+              port: port.number,
+              targetPort: port.number,
+              name: `port-${nanoid()}`
+            }))
+          ];
           
-          networkName = newNetworkName;
-          exposesPublicDomainResult = true;
-          publicDomain = generatedPublicDomain;
+          // 使用 JSON Merge Patch 原子更新
+          await this.k8sCore.patchNamespacedService(
+            devboxName,
+            this.namespace,
+            {
+              spec: {
+                ports: updatedPorts
+              }
+            },
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { 
+              headers: { 
+                'Content-Type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH
+              } 
+            }
+          );
+          
+          console.log(`Service ${devboxName} updated with new ports:`, newPorts.map(p => p.number));
         }
-        
-        return {
-          portName: existingPortInfo.name || `port-${port}`,
-          number: port,
-          protocol,
-          networkName,
-          exposesPublicDomain: exposesPublicDomainResult,
-          publicDomain,
-          customDomain: customDomain || '',
-          serviceName: devboxName,
-          privateAddress: `http://${devboxName}.${namespace}:${port}`
-        };
+      } catch (error: any) {
+        if (error.response?.statusCode === 404) {
+   
+          await this.createServiceWithAllPorts(devboxName, ports);
+        } else {
+          throw error;
+        }
       }
-      
-      const updatedPorts = [
-        ...existingServicePorts,
-        {
-          port: port,
-          targetPort: port,
-          name: portName
-        }
-      ];
-      
-      await k8sCore.patchNamespacedService(
-        devboxName,
-        namespace,
-        {
-          spec: {
-            ports: updatedPorts
-          }
-        },
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
-      );
-    } else {
-      const networkConfig = {
-        name: devboxName,
-        networks: [
-          {
-            networkName,
-            portName,
-            port,
-            protocol: protocol as ProtocolType,
-            openPublicDomain: exposesPublicDomain,
-            publicDomain: generatedPublicDomain,
-            customDomain: customDomain || ''
-          }
-        ]
-      };
-      await applyYamlList([json2Service(networkConfig)], 'create');
-    }
-    
-    if (exposesPublicDomain && INGRESS_SECRET) {
-      const networkConfig = {
-        name: devboxName,
-        networks: [
-          {
-            networkName,
-            portName,
-            port,
-            protocol: protocol as ProtocolType,
-            openPublicDomain: exposesPublicDomain,
-            publicDomain: generatedPublicDomain,
-            customDomain: customDomain || ''
-          }
-        ]
-      };
-      const ingressYaml = json2Ingress(networkConfig, INGRESS_SECRET);
-      await applyYamlList([ingressYaml], 'create');
-    }
-    
-    const result = {
-      portName,
-      number: port,
-      protocol,
-      networkName,
-      exposesPublicDomain,
-      publicDomain: exposesPublicDomain ? generatedPublicDomain : '',
-      customDomain: customDomain || '',
-      serviceName: devboxName,
-      privateAddress: `http://${devboxName}.${namespace}:${port}`
+    }, 3, 200, `Service management for ${devboxName}`);
+  }
+
+  private async createServiceWithAllPorts(devboxName: string, ports: any[]): Promise<void> {
+    const networkConfig = {
+      name: devboxName,
+      networks: ports.map(port => ({
+        networkName: `${devboxName}-${nanoid()}`,
+        portName: `port-${nanoid()}`,
+        port: port.number,
+        protocol: (port.protocol || 'HTTP') as ProtocolType,
+        openPublicDomain: port.exposesPublicDomain || false,
+        publicDomain: '',
+        customDomain: port.customDomain || ''
+      }))
     };
+
+    await this.applyYamlList([json2Service(networkConfig)], 'create');
+    console.log(`Service ${devboxName} created with ports:`, ports.map(p => p.number));
+  }
+
+  async getServicePortInfo(devboxName: string, portNumber: number): Promise<{ portName: string } | null> {
+    try {
+      const serviceResponse = await this.k8sCore.readNamespacedService(devboxName, this.namespace);
+      const existingService = serviceResponse.body;
+      const existingPorts = existingService.spec?.ports || [];
+      
+      const portInfo = existingPorts.find((p: any) => p.port === portNumber);
+      return portInfo ? { portName: portInfo.name } : null;
+    } catch (error) {
+      return null;
+    }
+  }
+}
+
+class IngressManager {
+  private applyYamlList: any;
+  private ingressSecret: string;
+  private ingressDomain: string;
+
+  constructor(applyYamlList: any, ingressSecret: string, ingressDomain: string) {
+    this.applyYamlList = applyYamlList;
+    this.ingressSecret = ingressSecret;
+    this.ingressDomain = ingressDomain;
+  }
+
+  async createIngress(devboxName: string, portConfig: any): Promise<{ networkName: string; publicDomain: string }> {
+    const networkName = `${devboxName}-${nanoid()}`;
+    const generatedPublicDomain = `${nanoid()}.${this.ingressDomain}`;
     
-    console.log(`Successfully created port:`, result);
-    return result;
-  } catch (error: any) {
-    throw new Error(`Failed to create port ${port}: ${error.message}`);
+    return retryWithBackoff(async () => {
+      const networkConfig = {
+        name: devboxName,
+        networks: [
+          {
+            networkName,
+            portName: `port-${nanoid()}`,
+            port: portConfig.number,
+            protocol: (portConfig.protocol || 'HTTP') as ProtocolType,
+            openPublicDomain: portConfig.exposesPublicDomain || false,
+            publicDomain: generatedPublicDomain,
+            customDomain: portConfig.customDomain || ''
+          }
+        ]
+      };
+      
+      const ingressYaml = json2Ingress(networkConfig, this.ingressSecret);
+      await this.applyYamlList([ingressYaml], 'create');
+      
+      return { networkName, publicDomain: generatedPublicDomain };
+    }, 3, 200, `Ingress creation for ${devboxName}:${portConfig.number}`);
   }
 }
 
@@ -280,36 +289,95 @@ async function createPortsAndNetworks(
     return [];
   }
 
-  console.log('Creating ports in parallel...');
+  console.log(`Creating ${ports.length} ports for DevBox ${devboxName}...`);
 
+  const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
+  const serviceManager = new ServiceManager(k8sCore, namespace, applyYamlList);
+  const ingressManager = INGRESS_SECRET ? new IngressManager(applyYamlList, INGRESS_SECRET, INGRESS_DOMAIN!) : null;
 
-  const portPromises = ports.map(async (portConfig) => {
-    try {
-      return await createSinglePort(
-        portConfig,
-        devboxName,
-        namespace,
-        k8sCore,
-        k8sNetworkingApp,
-        applyYamlList
-      );
-    } catch (error: any) {
-      return {
-        portName: `port-${portConfig.number}-failed`,
-        number: portConfig.number,
-        protocol: portConfig.protocol || 'HTTP',
-        networkName: '',
-        exposesPublicDomain: false,
-        publicDomain: '',
-        customDomain: portConfig.customDomain || '',
-        serviceName: devboxName,
-        privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`,
-        error: error.message
-      };
-    }
-  });
+  try {
+    await serviceManager.ensureServiceWithPorts(devboxName, ports);
+  
+    const portResults = await Promise.allSettled(
+      ports.map(async (portConfig) => {
+        try {
+          const servicePortInfo = await serviceManager.getServicePortInfo(devboxName, portConfig.number);
+          const portName = servicePortInfo?.portName || `port-${nanoid()}`;
+          
+          let networkName = '';
+          let publicDomain = '';
+          
+          if (portConfig.exposesPublicDomain && ingressManager) {
+            const ingressResult = await ingressManager.createIngress(devboxName, portConfig);
+            networkName = ingressResult.networkName;
+            publicDomain = ingressResult.publicDomain;
+          }
+          
+          const result = {
+            portName,
+            number: portConfig.number,
+            protocol: portConfig.protocol || 'HTTP',
+            networkName,
+            exposesPublicDomain: portConfig.exposesPublicDomain || false,
+            publicDomain: (portConfig.exposesPublicDomain && publicDomain) ? publicDomain : '',
+            customDomain: portConfig.customDomain || '',
+            serviceName: devboxName,
+            privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`
+          };
+          
+          console.log(`✅ Port ${portConfig.number} created successfully`);
+          return result;
+          
+        } catch (error: any) {
+          console.error(`❌ Failed to create port ${portConfig.number}:`, error.message);
+          throw error;
+        }
+      })
+    );
 
-  return await Promise.all(portPromises);
+    const finalResults = portResults.map((result, index) => {
+      const portConfig = ports[index];
+      
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        return {
+          portName: `port-${portConfig.number}-failed`,
+          number: portConfig.number,
+          protocol: portConfig.protocol || 'HTTP',
+          networkName: '',
+          exposesPublicDomain: portConfig.exposesPublicDomain || false, // ✅ 保持原始值
+          publicDomain: '',
+          customDomain: portConfig.customDomain || '',
+          serviceName: devboxName,
+          privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`,
+          error: result.reason?.message || 'Unknown error'
+        };
+      }
+    });
+
+    const successCount = finalResults.filter(r => !('error' in r) || !r.error).length;
+    const failureCount = finalResults.length - successCount;
+    
+    console.log(`Port creation completed: ${successCount} successful, ${failureCount} failed`);
+    return finalResults;
+
+  } catch (error: any) {
+    console.error('Critical error in port creation:', error.message);
+    
+    return ports.map(portConfig => ({
+      portName: `port-${portConfig.number}-failed`,
+      number: portConfig.number,
+      protocol: portConfig.protocol || 'HTTP',
+      networkName: '',
+      exposesPublicDomain: portConfig.exposesPublicDomain || false, 
+      publicDomain: '',
+      customDomain: portConfig.customDomain || '',
+      serviceName: devboxName,
+      privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`,
+      error: `Service creation failed: ${error.message}`
+    }));
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -444,21 +512,17 @@ export async function POST(req: NextRequest) {
         await applyYamlList([devbox], 'create');
         return await waitForDevboxStatus(k8sCustomObjects, namespace, devboxForm.name);
       })(),
+
       (async () => {
         if (devboxForm.ports && devboxForm.ports.length > 0) {
-          try {
-            return await createPortsAndNetworks(
-              devboxForm.ports,
-              devboxForm.name,
-              namespace,
-              k8sCore,
-              k8sNetworkingApp,
-              applyYamlList
-            );
-          } catch (error: any) {
-            console.error('Port creation error:', error.message);
-            return [];
-          }
+          return await createPortsAndNetworks(
+            devboxForm.ports,
+            devboxForm.name,
+            namespace,
+            k8sCore,
+            k8sNetworkingApp,
+            applyYamlList
+          );
         }
         return [];
       })()
@@ -478,35 +542,52 @@ export async function POST(req: NextRequest) {
     }
 
     const config = parseTemplateConfig(template.config);
+    const { user: userName, workingDir } = config;
+    const { SEALOS_DOMAIN: domain } = process.env;
 
-    const hasPortErrors = createdPorts.some((port: any) => port.error);
-    if (hasPortErrors) {
-      const errorPorts = createdPorts.filter((port: any) => port.error);
+    const failedPorts = createdPorts.filter((port: any) => 'error' in port && port.error);
+    const successfulPorts = createdPorts.filter((port: any) => !('error' in port) || !port.error);
+
+    if (failedPorts.length > 0) {
+      console.warn(`DevBox created with ${failedPorts.length} port failures:`, 
+        failedPorts.map((p: any) => ({ port: p.number, error: p.error })));
+        
       return jsonRes({
         code: 201, 
-        message: 'DevBox created successfully, but some ports had issues',
+        message: `DevBox created successfully, but ${failedPorts.length} port(s) had issues`,
         data: {
           name: adaptedData.name,
           sshPort: adaptedData.sshPort,
           base64PrivateKey,
-          userName: config.user,
-          workingDir: config.workingDir,
-          domain: process.env.SEALOS_DOMAIN,
+          userName,
+          workingDir,
+          domain,
           ports: createdPorts,
-          portErrors: errorPorts.map((p: any) => ({ port: p.number, error: p.error }))
+          portErrors: failedPorts.map((p: any) => ({ port: p.number, error: p.error })),
+          summary: {
+            totalPorts: createdPorts.length,
+            successfulPorts: successfulPorts.length,
+            failedPorts: failedPorts.length
+          }
         }
       });
     }
 
+    console.log(`✅ DevBox ${devboxForm.name} created successfully with all ports`);
     return jsonRes({
       data: {
         name: adaptedData.name,
         sshPort: adaptedData.sshPort,
         base64PrivateKey,
-        userName: config.user,
-        workingDir: config.workingDir,
-        domain: process.env.SEALOS_DOMAIN,
-        ports: createdPorts
+        userName,
+        workingDir,
+        domain,
+        ports: createdPorts,
+        summary: {
+          totalPorts: createdPorts.length,
+          successfulPorts: successfulPorts.length,
+          failedPorts: 0
+        }
       }
     });
 

@@ -22,13 +22,15 @@ export async function POST(
   { params }: { params: { name: string; tag: string } }
 ) {
   try {
-
     const { name: devboxName, tag } = DeployDevboxPathParamsSchema.parse(params);
     
-
-    await req.json().then(body => DeployDevboxRequestSchema.parse(body)).catch(() => ({}));
-
-    
+    let requestBody = {};
+    try {
+      const rawBody = await req.json();
+      requestBody = DeployDevboxRequestSchema.parse(rawBody);
+    } catch (error) {
+      console.warn('Request body parsing failed, using empty object:', error);
+    }
     const cpu = 2000; 
     const memory = 2048; 
 
@@ -40,7 +42,6 @@ export async function POST(
     const { namespace, k8sCore, k8sNetworkingApp, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
-
 
     if (!process.env.SEALOS_DOMAIN) {
       return jsonRes({
@@ -56,7 +57,6 @@ export async function POST(
       });
     }
 
- 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -142,7 +142,6 @@ export async function POST(
       };
     });
 
-
     const networks: any[] =
       service?.spec?.ports?.map((svcport) => {
         const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port);
@@ -159,7 +158,6 @@ export async function POST(
         };
       }) || [];
 
-    
     const formData = {
       appForm: {
         appName,
@@ -194,7 +192,6 @@ export async function POST(
     };
 
     console.log('Deploying to applaunchpad with data:', JSON.stringify(formData, null, 2));
-
     const fetchResponse = await fetch(
       `https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`,
       {
@@ -226,7 +223,6 @@ export async function POST(
 
     const responseData = await fetchResponse.json();
     console.log('Applaunchpad response:', JSON.stringify(responseData, null, 2));
-
 
     const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
     const publicDomains =

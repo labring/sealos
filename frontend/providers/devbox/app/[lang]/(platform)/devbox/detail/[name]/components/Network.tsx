@@ -23,6 +23,13 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
+
+export const ProtocolList = [
+  { value: 'HTTP', label: 'https://', inline: 'http://' },
+  { value: 'GRPC', label: 'grpcs://', inline: 'grpc://' },
+  { value: 'WS', label: 'wss://', inline: 'ws://' },
+];
+
 const Network = () => {
   const locale = useLocale();
   const t = useTranslations();
@@ -80,11 +87,7 @@ const Network = () => {
     GRPC: 'grpcs://',
     WS: 'wss://'
   };
-  const internalProtocolMap = {
-    HTTP: 'http://',
-    GRPC: 'grpc://',
-    WS: ['ws', '://'].join('')
-  };
+
   const networkColumn: {
     title: string;
     dataIndex?: keyof NetworkType;
@@ -104,7 +107,8 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const prefix = item.openPublicDomain ? internalProtocolMap[item.protocol] : 'http://';
+        const protocolPrefix = ProtocolList.find(p => p.value === item.protocol)?.inline || 'http://';
+        const prefix = item.openPublicDomain ? protocolPrefix : 'http://';
         const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
@@ -116,7 +120,9 @@ const Network = () => {
                 {address.replace('.svc.cluster.local', '')}
               </span>
             </TooltipTrigger>
-            <TooltipContent  side="top" align="center"><p className="text-sm">{t('copy')}</p></TooltipContent>
+            <TooltipContent side="top" align="center">
+              <p className="text-sm">{t('copy')}</p>
+            </TooltipContent>
           </Tooltip>
         );
       },

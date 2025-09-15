@@ -7,10 +7,61 @@ import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
+async function updateIngressClass(
+  k8sNetworkingApp: any,
+  ingressName: string,
+  namespace: string,
+  annotationsIngressClass?: string,
+  specIngressClass?: string
+) {
+  const patchOptions = {
+    headers: {
+      'Content-Type': 'application/merge-patch+json'
+    }
+  };
+
+  if (annotationsIngressClass) {
+    await k8sNetworkingApp.patchNamespacedIngress(
+      ingressName,
+      namespace,
+      { 
+        metadata: { 
+          annotations: { 
+            'kubernetes.io/ingress.class': 'pause' 
+          } 
+        } 
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      patchOptions
+    );
+  } else if (specIngressClass) {
+    await k8sNetworkingApp.patchNamespacedIngress(
+      ingressName,
+      namespace,
+      { 
+        spec: { 
+          ingressClassName: 'pause' 
+        } 
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      patchOptions
+    );
+  }
+}
+
 export async function POST(req: NextRequest, { params }: { params: { name: string } }) {
   try {
     const body = await req.json();
     const validationResult = RequestSchema.safeParse(body);
+    
     if (!validationResult.success) {
       return jsonRes({
         code: 400,
@@ -25,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       kubeconfig: await authSession(headerList)
     });
 
-
+    // 获取相关的 ingresses
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
       undefined,
@@ -34,55 +85,39 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       undefined,
       `${devboxKey}=${devboxName}`
     );
-    const ingresses: any = (ingressesResponse.body as { items: any[] }).items;
+    
+    const ingresses = (ingressesResponse.body as { items: any[] }).items;
+    console.log(`Found ${ingresses.length} ingresses for devbox: ${devboxName}`);
 
+    // ✅ 修正：使用 Promise.all 等待所有 ingress 修改完成
+    const ingressUpdatePromises = ingresses
+      .filter((ingress: any) => {
+        const annotationsIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+        const specIngressClass = ingress.spec?.ingressClassName;
+        
+        return (annotationsIngressClass === 'nginx') || (specIngressClass === 'nginx');
+      })
+      .map((ingress: any) => {
+        const annotationsIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+        const specIngressClass = ingress.spec?.ingressClassName;
+        
+        console.log(`Updating ingress: ${ingress.metadata.name}`);
+        
+        return updateIngressClass(
+          k8sNetworkingApp,
+          ingress.metadata.name,
+          namespace,
+          annotationsIngressClass,
+          specIngressClass
+        );
+      });
 
-    ingresses.forEach(async (ingress: any) => {
-      const annotationsIngressClass =
-        ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
-      const specIngressClass = ingress.spec?.ingressClassName;
+    if (ingressUpdatePromises.length > 0) {
+      await Promise.all(ingressUpdatePromises);
+      console.log(`Successfully updated ${ingressUpdatePromises.length} ingresses`);
+    }
 
-      if (
-        (annotationsIngressClass && annotationsIngressClass === 'nginx') ||
-        (specIngressClass && specIngressClass === 'nginx')
-      ) {
-        if (annotationsIngressClass) {
-          await k8sNetworkingApp.patchNamespacedIngress(
-            ingress.metadata.name,
-            namespace,
-            { metadata: { annotations: { 'kubernetes.io/ingress.class': 'pause' } } },
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            {
-              headers: {
-                'Content-Type': 'application/merge-patch+json'
-              }
-            }
-          );
-        } else if (specIngressClass) {
-          await k8sNetworkingApp.patchNamespacedIngress(
-            ingress.metadata.name,
-            namespace,
-            { spec: { ingressClassName: 'pause' } },
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            {
-              headers: {
-                'Content-Type': 'application/merge-patch+json'
-              }
-            }
-          );
-        }
-      }
-    });
-
-
+    // 现在才安全地更新 devbox 状态
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -100,12 +135,23 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       }
     );
 
-    return jsonRes({ data: 'success pause devbox' });
+    console.log(`Successfully paused devbox: ${devboxName}`);
+
+    return jsonRes({ 
+      data: {
+        message: 'success pause devbox',
+        devboxName,
+        updatedIngresses: ingressUpdatePromises.length
+      }
+    });
+
   } catch (err: any) {
+    console.error('Pause devbox error:', err);
+    
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',
-      error: err
+      error: process.env.NODE_ENV === 'development' ? err : undefined
     });
   }
 }

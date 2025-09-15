@@ -3,28 +3,17 @@ import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { devboxKey } from '@/constants/devbox';
-import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest, { params }: { params: { name: string } }) {
   try {
-    const body = await req.json();
-    const validationResult = RequestSchema.safeParse(body);
-    if (!validationResult.success) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid request body',
-        error: validationResult.error.errors
-      });
-    }
-
     const devboxName = params.name;
     const headerList = req.headers;
+    
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
-
 
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
@@ -37,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const ingresses: any = (ingressesResponse.body as { items: any[] }).items;
 
 
-    ingresses.forEach(async (ingress: any) => {
+    const ingressUpdatePromises = ingresses.map(async (ingress: any) => {
       const annotationsIngressClass =
         ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
       const specIngressClass = ingress.spec?.ingressClassName;
@@ -46,8 +35,14 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
         (annotationsIngressClass && annotationsIngressClass === 'pause') ||
         (specIngressClass && specIngressClass === 'pause')
       ) {
+        const patchOptions = {
+          headers: {
+            'Content-Type': 'application/merge-patch+json'
+          }
+        };
+
         if (annotationsIngressClass) {
-          await k8sNetworkingApp.patchNamespacedIngress(
+          return k8sNetworkingApp.patchNamespacedIngress(
             ingress.metadata.name,
             namespace,
             { metadata: { annotations: { 'kubernetes.io/ingress.class': 'nginx' } } },
@@ -56,14 +51,10 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
             undefined,
             undefined,
             undefined,
-            {
-              headers: {
-                'Content-Type': 'application/merge-patch+json'
-              }
-            }
+            patchOptions
           );
         } else if (specIngressClass) {
-          await k8sNetworkingApp.patchNamespacedIngress(
+          return k8sNetworkingApp.patchNamespacedIngress(
             ingress.metadata.name,
             namespace,
             { spec: { ingressClassName: 'nginx' } },
@@ -72,16 +63,13 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
             undefined,
             undefined,
             undefined,
-            {
-              headers: {
-                'Content-Type': 'application/merge-patch+json'
-              }
-            }
+            patchOptions
           );
         }
       }
     });
 
+    await Promise.all(ingressUpdatePromises.filter(Boolean));
 
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
@@ -100,11 +88,16 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       }
     );
 
-    return jsonRes({ data: 'success start devbox' });
+    return jsonRes({ 
+      data: { 
+        message: 'DevBox started successfully',
+        devboxName 
+      } 
+    });
   } catch (err: any) {
     return jsonRes({
       code: 500,
-      message: err?.message || 'Internal server error',
+      message: err?.message || 'Failed to start DevBox',
       error: err
     });
   }

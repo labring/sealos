@@ -26,16 +26,18 @@ import {
   MenuList,
   MenuItem,
   Icon
-  FlexProps,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Icon
 } from '@chakra-ui/react';
 import { CloseIcon, RefreshIcon, useMessage, WarningIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState, useMemo, useRef } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useState,
+  useMemo,
+  useRef
+} from 'react';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -48,9 +50,7 @@ import {
   faceAuthGenerateQRcodeUriRequest,
   getFaceAuthStatusRequest,
   refreshRealNameQRecodeUriRequest,
-  getBanksListRequest 
-  refreshRealNameQRecodeUriRequest,
-  getBanksListRequest 
+  getBanksListRequest
 } from '@/api/auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
@@ -605,7 +605,6 @@ function EnterpriseVerification(
   const queryClient = useQueryClient();
   const domain = useConfigStore((state) => state.cloudConfig?.domain);
 
- 
   const [selectedBank, setSelectedBank] = useState<string>('');
 
   const [searchKeyword, setSearchKeyword] = useState<string>('');
@@ -618,31 +617,31 @@ function EnterpriseVerification(
     setSearchKeyword('');
   }, []);
 
-  const { data: banksResponse, isLoading: banksLoading, error: banksError } = useQuery(
-    ['banksList'],
-    getBanksListRequest,
-    {
-      refetchOnWindowFocus: false,
-      select: (response) => {
-        const banksData = response?.data || {};
-        return Object.entries(banksData).map(([key, value]) => ({
-          code: key,
-          name: String(value || ''),
-          shortName: String(key || '')
-        }));
-      }
+  const {
+    data: banksResponse,
+    isLoading: banksLoading,
+    error: banksError
+  } = useQuery(['banksList'], getBanksListRequest, {
+    refetchOnWindowFocus: false,
+    select: (response) => {
+      const banksData = response?.data || {};
+      return Object.entries(banksData).map(([key, value]) => ({
+        code: key,
+        name: String(value || ''),
+        shortName: String(key || '')
+      }));
     }
-  );
+  });
 
   const banksList = banksResponse || [];
   const filteredBanksList = useMemo(() => {
     if (!searchKeyword.trim()) {
       return banksList;
     }
-    return banksList.filter(bank => {
+    return banksList.filter((bank) => {
       const bankShortName = bank.shortName.toLowerCase();
       const keyword = searchKeyword.toLowerCase();
-      return  bankShortName.includes(keyword);
+      return bankShortName.includes(keyword);
     });
   }, [banksList, searchKeyword]);
 
@@ -710,17 +709,17 @@ function EnterpriseVerification(
         contactInfo
       });
       setSelectedBank(accountBank || '');
-      setSelectedBank(accountBank || '');
     }
   }, [enterpriseRealNameAuthInfo?.data, resetMain]);
 
-
-  const handleBankSelect = useCallback((bankName: string) => {
-    setSelectedBank(bankName);
-    setMainValue('accountBank', bankName);
-    setSearchKeyword(''); 
-  }, [setMainValue]);
-
+  const handleBankSelect = useCallback(
+    (bankName: string) => {
+      setSelectedBank(bankName);
+      setMainValue('accountBank', bankName);
+      setSearchKeyword('');
+    },
+    [setMainValue]
+  );
 
   const resetSearchState = useCallback(() => {
     clearSearch();
@@ -1110,7 +1109,6 @@ function EnterpriseVerification(
             </FormErrorMessage>
           </FormControl>
 
-      
           <FormControl
             isInvalid={!!mainErrors.accountBank}
             w="full"
@@ -1141,22 +1139,23 @@ function EnterpriseVerification(
                 <Input
                   ref={searchInputRef}
                   isDisabled={!canInput || banksLoading}
-                  placeholder={banksLoading 
-                    ? t('common:loading') 
-                    : banksError 
-                      ? t('common:get_code_failed')
-                      : t('common:please_enter_bank_name')
+                  placeholder={
+                    banksLoading
+                      ? t('common:loading')
+                      : banksError
+                        ? t('common:get_code_failed')
+                        : t('common:please_enter_bank_name')
                   }
                   value={searchKeyword || selectedBank}
                   onChange={(e) => {
                     const value = e.target.value;
                     setSearchKeyword(value);
-                 
+
                     if (selectedBank && value !== selectedBank) {
                       setSelectedBank('');
                       setMainValue('accountBank', '');
                     }
-                    
+
                     if (value) {
                       setIsMenuOpen(true);
                     }
@@ -1167,7 +1166,6 @@ function EnterpriseVerification(
                     }
                   }}
                   onBlur={(e) => {
-                   
                     setTimeout(() => {
                       setIsMenuOpen(false);
                     }, 150);
@@ -1179,7 +1177,7 @@ function EnterpriseVerification(
                       setIsMenuOpen(false);
                     } else if (e.key === 'Enter' && filteredBanksList.length > 0) {
                       e.preventDefault();
-                     
+
                       if (filteredBanksList.length === 1) {
                         handleBankSelect(filteredBanksList[0].shortName);
                         setIsMenuOpen(false);
@@ -1188,25 +1186,25 @@ function EnterpriseVerification(
                   }}
                   h="32px"
                   px="12px"
-                  pr="40px" 
+                  pr="40px"
                   w="full"
                   borderRadius="6px"
-                  borderColor={isMenuOpen ? "brightBlue.600" : "grayModern.200"}
+                  borderColor={isMenuOpen ? 'brightBlue.600' : 'grayModern.200'}
                   bg="grayModern.50"
                   fontSize="14px"
                   fontWeight={400}
                   lineHeight="20px"
                   color="grayModern.900"
-                  backgroundColor={selectedBank ? "rgb(231, 240, 254)" : "grayModern.50"}
+                  backgroundColor={selectedBank ? 'rgb(231, 240, 254)' : 'grayModern.50'}
                   _disabled={{
-                    bg: "grayModern.100",
-                    color: "grayModern.400",
-                    cursor: "not-allowed",
+                    bg: 'grayModern.100',
+                    color: 'grayModern.400',
+                    cursor: 'not-allowed',
                     opacity: 0.6
                   }}
                   autoComplete="off"
                 />
-                
+
                 <Flex
                   position="absolute"
                   right="12px"
@@ -1214,7 +1212,7 @@ function EnterpriseVerification(
                   transform="translateY(-50%)"
                   alignItems="center"
                   gap="4px"
-                  pointerEvents={!canInput || banksLoading ? "none" : "auto"}
+                  pointerEvents={!canInput || banksLoading ? 'none' : 'auto'}
                 >
                   {(searchKeyword || selectedBank) && (
                     <Icon
@@ -1232,7 +1230,7 @@ function EnterpriseVerification(
                           searchInputRef.current.focus();
                         }
                       }}
-                      _hover={{ color: "grayModern.600" }}
+                      _hover={{ color: 'grayModern.600' }}
                     >
                       <path
                         d="M8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1ZM10.7071 5.29289C11.0976 5.68342 11.0976 6.31658 10.7071 6.70711L9.41421 8L10.7071 9.29289C11.0976 9.68342 11.0976 10.3166 10.7071 10.7071C10.3166 11.0976 9.68342 11.0976 9.29289 10.7071L8 9.41421L6.70711 10.7071C6.31658 11.0976 5.68342 11.0976 5.29289 10.7071C4.90237 10.3166 4.90237 9.68342 5.29289 9.29289L6.58579 8L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L8 6.58579L9.29289 5.29289C9.68342 4.90237 10.3166 4.90237 10.7071 5.29289Z"
@@ -1240,12 +1238,12 @@ function EnterpriseVerification(
                       />
                     </Icon>
                   )}
-                  <Icon 
-                    viewBox="0 0 16 16" 
-                    w="14px" 
+                  <Icon
+                    viewBox="0 0 16 16"
+                    w="14px"
                     h="14px"
                     color="grayModern.500"
-                    transform={isMenuOpen ? "rotate(180deg)" : "rotate(0deg)"}
+                    transform={isMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'}
                     transition="transform 0.15s ease"
                     cursor="pointer"
                     onClick={(e) => {
@@ -1260,17 +1258,17 @@ function EnterpriseVerification(
                       }
                     }}
                   >
-                    <path 
-                      d="M4 6L8 10L12 6" 
-                      stroke="currentColor" 
-                      strokeWidth="1.5" 
-                      strokeLinecap="round" 
+                    <path
+                      d="M4 6L8 10L12 6"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
                       strokeLinejoin="round"
                       fill="none"
                     />
                   </Icon>
                 </Flex>
-                
+
                 {isMenuOpen && (
                   <Box
                     position="absolute"
@@ -1301,9 +1299,10 @@ function EnterpriseVerification(
                             px="12px"
                             py="8px"
                             cursor="pointer"
-                            bg={selectedBank === bank.shortName ? "brightBlue.50" : "white"}
+                            bg={selectedBank === bank.shortName ? 'brightBlue.50' : 'white'}
                             _hover={{
-                              bg: selectedBank === bank.shortName ? "brightBlue.100" : "grayModern.50"
+                              bg:
+                                selectedBank === bank.shortName ? 'brightBlue.100' : 'grayModern.50'
                             }}
                             transition="background-color 0.1s ease"
                           >
@@ -1323,16 +1322,16 @@ function EnterpriseVerification(
                                   {bank.shortName.charAt(0)}
                                 </Text>
                               </Box>
-                              
-                              <Text 
-                                fontSize="14px" 
-                                fontWeight={selectedBank === bank.shortName ? 600 : 400} 
+
+                              <Text
+                                fontSize="14px"
+                                fontWeight={selectedBank === bank.shortName ? 600 : 400}
                                 color="grayModern.900"
                                 flex="1"
                               >
                                 {bank.shortName}
                               </Text>
-                              
+
                               {selectedBank === bank.shortName && (
                                 <Icon
                                   viewBox="0 0 16 16"
@@ -1377,11 +1376,7 @@ function EnterpriseVerification(
                   </Box>
                 )}
               </Box>
-              <Input
-                {...registerMain('accountBank')}
-                type="hidden"
-                value={selectedBank}
-              />
+              <Input {...registerMain('accountBank')} type="hidden" value={selectedBank} />
             </Flex>
             <FormErrorMessage
               w="full"
