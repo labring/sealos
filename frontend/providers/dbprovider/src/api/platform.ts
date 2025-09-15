@@ -1,6 +1,7 @@
 import { SystemEnvResponse } from '@/pages/api/getEnv';
 import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersion';
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
+import type { AddonItem } from '@/pages/api/getAddonList';
 import { GET, POST } from '@/services/request';
 import type { UserQuotaItemType, UserTask } from '@/types/user';
 import { getUserSession } from '@/utils/user';
@@ -11,6 +12,8 @@ export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/
 export const getAppEnv = () => GET<SystemEnvResponse>('/api/getEnv');
 
 export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVersion');
+
+export const getAddonList = () => GET<AddonItem[]>('/api/getAddonList');
 
 export const getUserQuota = () =>
   GET<{
