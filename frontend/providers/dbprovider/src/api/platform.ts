@@ -16,16 +16,6 @@ export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVer
 
 export const getAddonList = () => GET<AddonItem[]>('/api/getAddonList');
 
-export const getWorkspaceQuota = () =>
-  GET<{
-    quota: WorkspaceQuotaItem[];
-  }>('/api/platform/getQuota', undefined, {
-    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
-    headers: {
-      Authorization: getUserSession()?.token
-    }
-  });
-
 export const uploadFile = (
   data: FormData,
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void

@@ -1,8 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
-import { memoryFormatToMi, cpuFormatToM } from './tools';
-import type { UserQuotaItemType } from '../types';
 import { IncomingHttpHeaders } from 'http';
 import { errLog, infoLog } from './logger';
 
@@ -161,37 +159,6 @@ async function applyYamlList({
   return CreateYaml(kc, formatYaml);
 }
 
-async function getUserQuota(kc: k8s.KubeConfig, namespace: string): Promise<UserQuotaItemType[]> {
-  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-
-  const {
-    body: { status }
-  } = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
-
-  return [
-    {
-      type: 'cpu',
-      limit: cpuFormatToM(status?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(status?.used?.['limits.cpu'] || '') / 1000
-    },
-    {
-      type: 'memory',
-      limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
-    },
-    {
-      type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
-    },
-    {
-      type: 'gpu',
-      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
-    }
-  ];
-}
-
 async function getUserBalance(kc: k8s.KubeConfig) {
   const user = kc.getCurrentUser();
   if (!user) return 5;
@@ -283,7 +250,6 @@ export async function initK8s({ req }: { req: { headers: IncomingHttpHeaders } }
       applyYamlList({ yamlList, type, namespace, kc }),
     getDeployApp: (appName: string) =>
       getDeployApp({ appName, k8sApp: kc.makeApiClient(k8s.AppsV1Api), namespace }),
-    getUserQuota: () => getUserQuota(kc, namespace),
     getUserBalance: () => getUserBalance(kc)
   });
 }

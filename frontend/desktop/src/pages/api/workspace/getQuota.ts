@@ -1,8 +1,8 @@
-import { authAppToken, verifyJwt } from '@/services/backend/auth';
+import { generateBillingToken, verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { WorkspaceQuotaItem } from '@/types/workspace';
-import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { cpuFormatToM, memoryFormatToMi } from 'sealos-desktop-sdk';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
@@ -14,35 +14,32 @@ type UpstreamQuotaResponse = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const desktopToken = await authAppToken(req.headers);
-    if (!desktopToken) {
-      return jsonRes(res, {
-        code: 401,
-        error: 'Unauthorized'
-      });
+    if (req.method !== 'GET') {
+      return jsonRes(res, { code: 405, message: 'Method not allowed' });
     }
 
-    const { BILLING_URL, BILLING_SECRET } = process.env;
-    if (!BILLING_SECRET || !BILLING_URL) {
-      throw new Error('BILLING_SECRET and BILLING_URL needs to be configured!');
-    }
-
-    const session = await verifyJwt<{
-      userId: string;
-      userUid: string;
-      workspaceId: string;
-    }>(desktopToken, BILLING_SECRET).catch(() => null);
+    const session = await verifyAccessToken(req.headers);
     if (!session) {
       return jsonRes(res, {
         code: 401,
-        error: 'Unauthorized'
+        message: 'Unauthorized'
       });
     }
 
-    const quotaRes = await fetch(`${BILLING_URL}/account/v1alpha1/workspace/get-resource-quota`, {
+    const billingUrl = global.AppConfig.desktop.auth.billingUrl;
+    if (!billingUrl) {
+      return jsonRes(res, { code: 500, message: 'Billing service not configured' });
+    }
+
+    const billingToken = generateBillingToken({
+      userUid: session.userUid,
+      userId: session.userId
+    });
+
+    const quotaRes = await fetch(`${billingUrl}/account/v1alpha1/workspace/get-resource-quota`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${desktopToken}`,
+        Authorization: `Bearer ${billingToken}`,
         'Content-Type': 'application/json',
         'Accept-Encoding': 'gzip,deflate,compress'
       },
@@ -81,8 +78,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         type: 'traffic',
         limit: Number(hard['traffic']) || 0,
         used: Number(used['traffic']) || 0
+      },
+      {
+        type: 'gpu',
+        limit: Number(hard['limits.nvidia.com/gpu'] || hard['requests.nvidia.com/gpu'] || 0),
+        used: Number(used['limits.nvidia.com/gpu'] || used['requests.nvidia.com/gpu'] || 0)
       }
-      // DBProvider has no gpu requirements.
     ];
 
     jsonRes<{

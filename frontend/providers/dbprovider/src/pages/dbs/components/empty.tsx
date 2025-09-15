@@ -10,7 +10,6 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { track } from '@sealos/gtm';
 import { useUserStore } from '@/store/user';
 import { WorkspaceQuotaItem } from '@/types/workspace';
-import { useQuery } from '@tanstack/react-query';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
 const Empty = () => {
