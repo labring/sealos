@@ -128,7 +128,8 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       devboxName,
       tag: releaseForm.tag,
       releaseDes: releaseForm.releaseDes,
-      devboxUid: devbox?.metadata.uid || ''
+      devboxUid: devbox?.metadata.uid || '',
+      startDevboxAfterRelease: false
     });
     await applyYamlList([devboxYaml], 'create');
 
