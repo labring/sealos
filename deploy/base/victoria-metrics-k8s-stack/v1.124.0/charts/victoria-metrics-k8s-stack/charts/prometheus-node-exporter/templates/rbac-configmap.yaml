@@ -1,0 +1,16 @@
+{{- if .Values.kubeRBACProxy.enabled}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "prometheus-node-exporter.fullname" . }}-rbac-config
+  namespace: {{ include "prometheus-node-exporter.namespace" . }}
+data:
+  config-file.yaml: |+
+    authorization:
+      resourceAttributes:
+        namespace: {{ template "prometheus-node-exporter.namespace" . }}
+        apiVersion: v1
+        resource: services
+        subresource: {{ template "prometheus-node-exporter.fullname" . }}
+        name: {{ template "prometheus-node-exporter.fullname" . }}
+{{- end }}

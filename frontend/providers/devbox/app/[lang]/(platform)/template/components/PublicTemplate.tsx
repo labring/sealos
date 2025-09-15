@@ -294,7 +294,6 @@ const PublicTemplate = ({
 
           return { categoryName, templates: filteredTemplates };
         } catch (error) {
-          console.error(`Error fetching templates for category ${categoryName}:`, error);
           return { categoryName, templates: [] };
         }
       });

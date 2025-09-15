@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         userCr: true
       }
     });
+
     const own = queryResults.find((x) => x.userCrUid === payload.userCrUid);
 
     if (!own || own.status !== JoinStatus.IN_WORKSPACE)
@@ -57,7 +58,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         workspaceUid: ns_uid
       });
     } else if (JoinStatus.IN_WORKSPACE === tItem.status) {
-      const ownerResult = queryResults.find((qr) => qr.role === 'OWNER');
+      const ownerResult = await prisma.userWorkspace.findFirst({
+        where: {
+          workspaceUid: ns_uid,
+          role: Role.OWNER,
+          status: JoinStatus.IN_WORKSPACE
+        },
+        include: {
+          workspace: true,
+          userCr: true
+        }
+      });
+      
       if (!ownerResult) {
         throw new Error('no owner in workspace');
       }

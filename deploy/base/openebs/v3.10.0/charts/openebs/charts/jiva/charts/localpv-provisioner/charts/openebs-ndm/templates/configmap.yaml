@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "openebs-ndm.fullname" . }}-config
+data:
+  # node-disk-manager-config contains config of available probes and filters.
+  # Probes and Filters will initialize with default values if config for that
+  # filter or probe are not present in configmap
+
+  # udev-probe is default or primary probe it should be enabled to run ndm
+  # filterconfigs contains configs of filters. To provide a group of include
+  # and exclude values add it as , separated string
+  node-disk-manager.config: |
+    probeconfigs:
+      - key: udev-probe
+        name: udev probe
+        state: {{ .Values.ndm.probes.enableUdevProbe }}
+      - key: seachest-probe
+        name: seachest probe
+        state: {{ .Values.ndm.probes.enableSeachest }}
+      - key: smart-probe
+        name: smart probe
+        state: {{ .Values.ndm.probes.enableSmartProbe }}
+    filterconfigs:
+      - key: os-disk-exclude-filter
+        name: os disk exclude filter
+        state: {{ .Values.ndm.filters.enableOsDiskExcludeFilter }}
+        exclude: "{{ .Values.ndm.filters.osDiskExcludePaths }}"
+      - key: vendor-filter
+        name: vendor filter
+        state: {{ .Values.ndm.filters.enableVendorFilter }}
+        include: ""
+        exclude: "{{ .Values.ndm.filters.excludeVendors }}"
+      - key: path-filter
+        name: path filter
+        state: {{ .Values.ndm.filters.enablePathFilter }}
+        include: "{{ .Values.ndm.filters.includePaths }}"
+        exclude: "{{ .Values.ndm.filters.excludePaths }}"
+    metaconfigs:
+      - key: node-labels
+        name: node labels
+        pattern: "{{ .Values.ndm.metaConfig.nodeLabelPattern }}"
+      - key: device-labels
+        name: device labels
+        type: "{{ .Values.ndm.metaConfig.deviceLabelTypes }}"

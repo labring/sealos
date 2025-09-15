@@ -1,0 +1,31 @@
+{{- if .Values.rbac.kyvernoEnabled }}
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: require-default-proc-mount
+  annotations:
+    policies.kyverno.io/category: Pod Security Standards (Baseline)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      The default /proc masks are set up to reduce attack surface and should be required.
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+    - name: check-proc-mount
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: >-
+          Changing the proc mount from the default is not allowed. The fields
+          spec.containers[*].securityContext.procMount should be defined or set
+          to Default
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(procMount): "Default"
+{{- end }}

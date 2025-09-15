@@ -1,0 +1,123 @@
+{{- if .Values.defaultRules.create }}
+
+{{- /*
+Default rules alias
+*/}}
+{{- $defaultRules := .Values.defaultRules -}}
+
+{{- /*
+Exact rules overrides
+*/}}
+{{- $exactRules := index $defaultRules "rules" | default dict }}
+
+{{- /*
+Create custom template context
+*/}}
+{{- $ctx := dict "helm" . -}}
+
+{{- /*
+Loop through all rules files, that were crafted with hack/sync_rules.py
+*/}}
+{{- range $groupFile, $_ := .Files.Glob  "files/rules/**.yaml" -}}
+
+{{- /*
+Get group name from file
+*/}}
+{{- $groupBase := base $groupFile -}}
+{{- $groupNameRaw := trimSuffix (ext $groupBase) $groupBase -}}
+
+{{- /*
+Create context for templating
+*/}}
+{{- $_ := set $ctx "name" $groupNameRaw -}}
+
+{{- /*
+Create sanitized group name retrieved from file
+*/}}
+{{- $groupName := include "vm-k8s-stack.rulegroup.key" $ctx -}}
+
+{{- /*
+Merge common group with a group data of a current iteration
+*/}}
+
+{{- $group := mergeOverwrite (deepCopy (dig "group" (default dict) $defaultRules)) (dig "groups" $groupName (default dict) $defaultRules) -}}
+
+{{- /*
+Get group data from file
+*/}}
+{{- $groupCtx := mergeOverwrite $ctx $group }}
+{{- $groupData := fromYaml (tpl ($.Files.Get $groupFile) $groupCtx) -}}
+
+{{- /*
+Save rules spec from file
+*/}}
+{{- $rulesSpec := $groupData.rules -}}
+
+{{- /*
+Delete rules from group
+*/}}
+{{- $_ := unset $groupData "rules" -}}
+
+{{- /*
+Save condition for group from file
+*/}}
+{{- $groupCondition := (eq $groupData.condition "true") -}}
+
+{{- /*
+Delete condition from group
+*/}}
+{{- $_ := unset $groupData "condition" -}}
+
+{{- /*
+Merge group spec
+*/}}
+{{- $groupSpec := mergeOverwrite (deepCopy $groupData) (dig "spec" (default dict) $group) -}}
+
+{{- /*
+Filter out ignore rules
+*/}}
+{{- $commonRule := dig "rule" (default dict) $defaultRules }}
+{{- $commonInGroupRule := dig "rules" (default dict) $group }}
+{{- $filteredRulesSpec := default list }}
+{{- range $_, $ruleSpec := $rulesSpec }}
+  {{- $ruleName := $ruleSpec.alert | default $ruleSpec.record | default "" }}
+  {{- $ruleKey := (hasKey $ruleSpec "record" | ternary "recording" "alerting") -}}
+  {{- $ruleCondition := (eq $ruleSpec.condition "true") }}
+  {{- $_ := unset $ruleSpec "condition" }}
+  {{- $exactRule := index $exactRules $ruleName | default dict }}
+  {{- $defaultRule := deepCopy (index $defaultRules $ruleKey) }}
+  {{- $resultRule := mergeOverwrite (deepCopy $commonRule) $defaultRule $commonInGroupRule $exactRule }}
+  {{- if (and (dig "create" true $resultRule) $ruleCondition) }}
+    {{- $ruleSpec := mergeOverwrite (deepCopy $ruleSpec) (dig "spec" (default dict) $resultRule) }}
+    {{- $filteredRulesSpec = append $filteredRulesSpec $ruleSpec }}
+  {{- end }}
+{{- end -}}
+{{- $rulesSpec = $filteredRulesSpec }}
+
+{{- /*
+Check if group is enabled
+*/}}
+{{- if (and $rulesSpec (dig "create" true $group) $groupCondition) }}
+{{- $ruleName := (include "vm-k8s-stack.rulegroup.name" $ctx) }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  namespace: {{ include "vm.namespace" $ }}
+  name: {{ $ruleName }}
+  {{- with (include "vm-k8s-stack.rulegroup.labels" $ctx) }}
+  labels: {{ . | nindent 4 }}
+  {{- end }}
+  {{- with $.Values.defaultRules.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  groups:
+  - {{ toYaml $groupSpec | indent 4 | trim }}
+    rules:
+    {{- range $ruleSpec := $rulesSpec }}
+    - {{ toYaml $ruleSpec | indent 6 | trim }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

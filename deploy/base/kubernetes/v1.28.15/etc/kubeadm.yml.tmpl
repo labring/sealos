@@ -1,0 +1,34 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+apiServer:
+  extraArgs:
+    feature-gates: ""
+    service-node-port-range: {{ default "30000-50000" .KUBEADM_SERVICE_RANGE }}
+controllerManager:
+  extraArgs:
+    feature-gates: ""
+scheduler:
+  extraArgs:
+    feature-gates: ""
+networking:
+  podSubnet: {{ default "100.64.0.0/16" .KUBEADM_POD_SUBNET }}
+  serviceSubnet: {{ default "10.96.0.0/16" .KUBEADM_SERVICE_SUBNET }}
+---
+
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+kubeAPIQPS: 50
+kubeAPIBurst: 100
+eventBurst: 10
+eventRecordQPS: 5
+imageGCLowThresholdPercent: 75
+imageGCHighThresholdPercent: 80
+registryBurst: 100
+registryPullQPS: 50
+serializeImagePulls: false
+maxPods: {{ default "110" .KUBEADM_MAX_PODS }}
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+skipPhases:
+- addon/kube-proxy

@@ -1,0 +1,20 @@
+mongodb:
+  version: "mongodb-6.0"
+  replicas: 1
+  storage: 10Gi
+  resources:
+    limits:
+      cpu: "1"
+      memory: 2Gi
+    requests:
+      cpu: 100m
+      memory: 102Mi
+cockroachdb:
+  storage: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 0.5Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi

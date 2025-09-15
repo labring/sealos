@@ -13,6 +13,7 @@ import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import '@/styles/globals.scss';
 import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
+import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,10 +32,13 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { i18n } = useTranslation();
   const { initAppConfig, layoutConfig } = useConfigStore();
   const { setBlockingPageUnload } = useAppsRunningPromptStore();
+  const joinDiscordPromptStore = useJoinDiscordPromptStore();
 
   useEffect(() => {
     // Reset blocking status when opening desktop
     setBlockingPageUnload(true);
+    // Reset join discord prompt status when opening desktop
+    joinDiscordPromptStore.setClosedInSession(false);
   }, []);
 
   useEffect(() => {

@@ -1,0 +1,48 @@
+{{- $monitor := .Values.serviceMonitor }}
+{{- if $monitor.enabled -}}
+{{- $annotations := mustMerge $monitor.annotations .Values.annotations -}}
+{{- $labels := mustMerge $monitor.extraLabels .Values.extraLabels -}}
+{{- $ctx := dict "helm" . }}
+{{- $fullname := include "vm.plain.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+apiVersion: {{ ternary "operator.victoriametrics.com/v1beta1" "monitoring.coreos.com/v1" $monitor.vm }}
+kind: {{ ternary "VMServiceScrape" "ServiceMonitor" $monitor.vm }}
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ $ns }}
+  {{- $_ := set $ctx "extraLabels" $labels }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- $_ := unset $ctx "extraLabels" }}
+  {{- with $annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels: {{ include "vm.selectorLabels" $ctx | nindent 6 }}
+  endpoints:
+    - port: http
+      {{- with $monitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with $monitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with $monitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with $monitor.tlsConfig }}
+      tlsConfig: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $monitor.relabelings }}
+      {{ ternary "relabelConfigs" "relabelings" $monitor.vm }}: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $monitor.basicAuth }}
+      basicAuth: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $monitor.proxyURL }}
+      {{ ternary "proxyURL" "proxyUrl" $monitor.vm }}: {{ . }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ $ns }}
+{{- end }}

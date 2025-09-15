@@ -109,6 +109,9 @@ func (c *Cluster) GetAllIPS() []string {
 }
 
 func (c *Cluster) GetRootfsImage() *MountImage {
+	if c == nil || len(c.Status.Mounts) == 0 {
+		return nil
+	}
 	for _, img := range c.Status.Mounts {
 		if img.IsRootFs() {
 			return &img

@@ -1,0 +1,18 @@
+{{- if .Values.endpoints }}
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ include "prometheus-node-exporter.fullname" . }}
+  namespace: {{ include "prometheus-node-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
+subsets:
+  - addresses:
+      {{- range .Values.endpoints }}
+      - ip: {{ . }}
+      {{- end }}
+    ports:
+      - name: {{ .Values.service.portName }}
+        port: 9100
+        protocol: TCP
+{{- end }}

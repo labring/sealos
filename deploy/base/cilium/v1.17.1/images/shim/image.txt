@@ -1,0 +1,3 @@
+quay.io/cilium/hubble-relay:v1.17.1
+quay.io/cilium/hubble-ui-backend:v0.13.1
+quay.io/cilium/hubble-ui:v0.13.1

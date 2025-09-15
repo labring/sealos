@@ -2,6 +2,7 @@ import { Center, Text, Stack } from '@chakra-ui/react';
 import MyIcon from '../Icon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
+import { LOG_ENABLED } from '@/store/static';
 
 export const ROUTES = {
   OVERVIEW: '/app/detail',
@@ -38,18 +39,22 @@ export default function Sidebar() {
       ),
       path: ROUTES.MONITOR
     },
-    {
-      label: t('Log'),
-      icon: (
-        <MyIcon
-          name="log"
-          w={'24px'}
-          h={'24px'}
-          color={router.pathname === ROUTES.LOGS ? 'grayModern.900' : 'grayModern.500'}
-        />
-      ),
-      path: ROUTES.LOGS
-    }
+    ...(LOG_ENABLED
+      ? [
+          {
+            label: t('Log'),
+            icon: (
+              <MyIcon
+                name="log"
+                w={'24px'}
+                h={'24px'}
+                color={router.pathname === ROUTES.LOGS ? 'grayModern.900' : 'grayModern.500'}
+              />
+            ),
+            path: ROUTES.LOGS
+          }
+        ]
+      : [])
   ];
 
   return (

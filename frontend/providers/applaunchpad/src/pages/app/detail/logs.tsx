@@ -14,7 +14,7 @@ import useDateTimeStore from '@/store/date';
 import { getAppLogs, getLogPodList } from '@/api/app';
 import { useForm } from 'react-hook-form';
 import { formatTimeRange } from '@/utils/timeRange';
-import { downLoadBold } from '@/utils/tools';
+import { downLoadBold, formatTime } from '@/utils/tools';
 import { useLogStore } from '@/store/logStore';
 import { useRouter } from 'next/router';
 import { useMessage } from '@sealos/ui';
@@ -76,13 +76,15 @@ export default function LogsPage({ appName }: { appName: string }) {
   const jsonFilters = formHook
     .watch('jsonFilters')
     .filter((item) => item.key && item.key.trim() !== '');
+
   const timeRange = formatTimeRange(startDateTime, endDateTime);
 
   const { isLoading, refetch: refetchLogsData } = useQuery(
     [
       'logs-data',
       appName,
-      timeRange,
+      startDateTime,
+      endDateTime,
       formHook.watch('isOnlyStderr'),
       formHook.watch('limit'),
       formHook.watch('isJsonMode'),
@@ -92,7 +94,9 @@ export default function LogsPage({ appName }: { appName: string }) {
     ],
     () =>
       getAppLogs({
-        time: timeRange,
+        // time: timeRange,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         app: appName,
         stderrMode: formHook.watch('isOnlyStderr').toString(),
         limit: formHook.watch('limit').toString(),
@@ -128,7 +132,8 @@ export default function LogsPage({ appName }: { appName: string }) {
     [
       'log-counts-data',
       appName,
-      timeRange,
+      startDateTime,
+      endDateTime,
       formHook.watch('isOnlyStderr'),
       selectedPods,
       selectedContainers,
@@ -141,7 +146,8 @@ export default function LogsPage({ appName }: { appName: string }) {
         numberMode: 'true',
         numberLevel: timeRange.slice(-1),
         jsonMode: formHook.watch('isJsonMode').toString(),
-        time: timeRange,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         stderrMode: formHook.watch('isOnlyStderr').toString(),
         pod:
           selectedPods.length === formHook.watch('pods').length
@@ -165,11 +171,13 @@ export default function LogsPage({ appName }: { appName: string }) {
   );
 
   const { refetch: refetchPodListData, isLoading: isPodListLoading } = useQuery(
-    ['log-pod-list-data', appName, timeRange, appDetailPods?.length],
+    ['log-pod-list-data', appName, startDateTime, endDateTime, appDetailPods?.length],
     () =>
       getLogPodList({
+        // time: timeRange
         app: appName,
-        time: timeRange
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString()
       }),
     {
       staleTime: 3000,
