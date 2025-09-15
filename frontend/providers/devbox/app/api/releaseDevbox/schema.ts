@@ -14,6 +14,9 @@ export const RequestSchema = z.object({
   }),
   devboxUid: z.string().min(1).openapi({
     description: 'Devbox UID'
+  }),
+  startDevboxAfterRelease: z.boolean().default(false).openapi({
+    description: 'Start devbox after release'
   })
 });
 

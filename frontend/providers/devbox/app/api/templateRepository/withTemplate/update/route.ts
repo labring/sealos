@@ -32,13 +32,13 @@ export async function POST(req: NextRequest) {
     // get devbox release cr !todo
     const { body: releaseBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases',
       query.devboxReleaseName
     )) as { body: KBDevboxReleaseType };
     const devboxName = releaseBody.metadata.ownerReferences.find(
-      (item) => item.apiVersion === 'devbox.sealos.io/v1alpha1'
+      (item) => item.apiVersion === 'devbox.sealos.io/v1alpha2'
     )?.name;
     if (!devboxName) {
       return jsonRes({
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName

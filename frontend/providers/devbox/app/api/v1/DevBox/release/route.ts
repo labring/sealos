@@ -31,14 +31,14 @@ export async function POST(req: NextRequest) {
 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const { body: devboxBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes'
     )) as { body: { items: KBDevboxReleaseType[] } };
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         return (
           item.spec &&
           item.spec.devboxName === releaseForm.devboxName &&
-          item.spec.newTag === releaseForm.tag
+          item.spec.version === releaseForm.tag
         );
       })
     ) {
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
 
     const devboxYaml = json2DevboxRelease({
       ...releaseForm,
-      devboxUid: devbox?.metadata.uid || ''
+      devboxUid: devbox?.metadata.uid || '',
+      startDevboxAfterRelease: false
     });
     await applyYamlList([devboxYaml], 'create');
 
