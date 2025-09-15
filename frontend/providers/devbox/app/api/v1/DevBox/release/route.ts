@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
 
     const devboxYaml = json2DevboxRelease({
       ...releaseForm,
-      devboxUid: devbox?.metadata.uid || ''
+      devboxUid: devbox?.metadata.uid || '',
+      startDevboxAfterRelease: false
     });
     await applyYamlList([devboxYaml], 'create');
 
