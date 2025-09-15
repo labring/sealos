@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { Check, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useState, useEffect } from 'react';
 import { memo } from 'react';
 
@@ -161,7 +161,7 @@ const IDEButton = memo(
             <TooltipTrigger asChild>
               <Button
                 variant="secondary"
-                className="w-25 rounded-r-none px-2"
+                className="w-32 rounded-r-none px-2"
                 onClick={() => handleGotoIDE(currentIDE)}
                 disabled={status.value !== 'Running' || loading}
                 {...leftButtonProps}
@@ -195,65 +195,137 @@ const IDEButton = memo(
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="p-1.5" align="end">
-              {menuItems.map((item) =>
-                item.group ? (
-                  <div key={item.value} className="flex gap-1">
-                    {item.options?.map((option, index) => (
-                      <div key={option.value} className="flex items-center">
-                        <DropdownMenuItem
-                          className={cn(
-                            'w-[110px] text-zinc-600',
-                            index === 0 && 'pr-1 pl-2',
-                            index === 1 && 'pr-2 text-zinc-600',
-                            currentIDE === option.value && 'text-zinc-900'
-                          )}
-                          onClick={() => {
-                            updateDevboxIDE(option.value, devboxName);
-                            handleGotoIDE(option.value);
-                          }}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Image
-                              width={18}
-                              height={18}
-                              alt={option.value}
-                              src={`/images/ide/${option.value}.svg`}
-                            />
-                            <span className="whitespace-nowrap">{option.menuLabel}</span>
-                            {currentIDE === option.value && (
-                              <Check className="h-4 w-4 text-blue-600" />
-                            )}
+              <div className="flex">
+                {/* left column */}
+                <div className="w-[210px] space-y-1">
+                  {leftColumnItems.map((item) =>
+                    item.group ? (
+                      <div key={item.value} className="flex gap-1">
+                        {item.options?.map((option, index) => (
+                          <div key={option.value} className="flex items-center">
+                            <DropdownMenuItem
+                              className={cn(
+                                index === 0 ? 'w-[120px]' : 'w-[80px]',
+                                'text-zinc-600',
+                                index === 0 && 'pr-1 pl-2',
+                                index === 1 && 'pr-2 text-zinc-600',
+                                currentIDE === option.value && 'text-zinc-900'
+                              )}
+                              onClick={() => {
+                                updateDevboxIDE(option.value, devboxName);
+                                handleGotoIDE(option.value);
+                              }}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Image
+                                  width={18}
+                                  height={18}
+                                  alt={option.value}
+                                  src={`/images/ide/${option.value}.svg`}
+                                />
+                                <span className="text-xs whitespace-nowrap">
+                                  {option.menuLabel}
+                                </span>
+                                {currentIDE === option.value && (
+                                  <Check className="h-4 w-4 text-blue-600" />
+                                )}
+                              </div>
+                            </DropdownMenuItem>
+                            {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
                           </div>
-                        </DropdownMenuItem>
-                        {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <DropdownMenuItem
-                    key={item.value}
-                    className={cn(
-                      'h-9 justify-between text-zinc-600',
-                      currentIDE === item.value && 'text-zinc-900'
-                    )}
-                    onClick={() => {
-                      updateDevboxIDE(item.value, devboxName);
-                      handleGotoIDE(item.value);
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Image
-                        width={18}
-                        height={18}
-                        alt={item.value}
-                        src={`/images/ide/${item.value}.svg`}
-                      />
-                      <span>{item?.menuLabel}</span>
-                    </div>
-                    {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
-                  </DropdownMenuItem>
-                )
-              )}
+                    ) : (
+                      <DropdownMenuItem
+                        key={item.value}
+                        className={cn(
+                          'h-9 justify-between text-zinc-600',
+                          currentIDE === item.value && 'text-zinc-900'
+                        )}
+                        onClick={() => {
+                          updateDevboxIDE(item.value, devboxName);
+                          handleGotoIDE(item.value);
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Image
+                            width={18}
+                            height={18}
+                            alt={item.value}
+                            src={`/images/ide/${item.value}.svg`}
+                          />
+                          <span>{item?.menuLabel}</span>
+                        </div>
+                        {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
+                      </DropdownMenuItem>
+                    )
+                  )}
+                </div>
+                {/* vertical divider */}
+                <div className="mx-1.5 w-px bg-gray-200"></div>
+                {/* right column */}
+                <div className="h-20 w-[230px] space-y-1">
+                  {rightColumnItems.map((item) =>
+                    item.group ? (
+                      <div key={item.value} className="flex gap-1">
+                        {item.options?.map((option, index) => (
+                          <div key={option.value} className="flex items-center">
+                            <DropdownMenuItem
+                              className={cn(
+                                'w-[110px] text-zinc-600',
+                                index === 0 && 'pr-1 pl-2',
+                                index === 1 && 'pr-2 text-zinc-600',
+                                currentIDE === option.value && 'text-zinc-900'
+                              )}
+                              onClick={() => {
+                                updateDevboxIDE(option.value, devboxName);
+                                handleGotoIDE(option.value);
+                              }}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Image
+                                  width={18}
+                                  height={18}
+                                  alt={option.value}
+                                  src={`/images/ide/${option.value}.svg`}
+                                />
+                                <span className="whitespace-nowrap">{option.menuLabel}</span>
+                                {currentIDE === option.value && (
+                                  <Check className="h-4 w-4 text-blue-600" />
+                                )}
+                              </div>
+                            </DropdownMenuItem>
+                            {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <DropdownMenuItem
+                        key={item.value}
+                        className={cn(
+                          'h-9 justify-between text-zinc-600',
+                          currentIDE === item.value && 'text-zinc-900'
+                        )}
+                        onClick={() => {
+                          updateDevboxIDE(item.value, devboxName);
+                          handleGotoIDE(item.value);
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Image
+                            width={18}
+                            height={18}
+                            alt={item.value}
+                            src={`/images/ide/${item.value}.svg`}
+                          />
+                          <span>{item?.menuLabel}</span>
+                        </div>
+                        {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
+                      </DropdownMenuItem>
+                    )
+                  )}
+                </div>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -294,105 +366,95 @@ IDEButton.displayName = 'IDEButton';
 export const ideObj = {
   vscode: {
     label: 'VSCode',
-    menuLabel: 'VSCode',
-    icon: 'vscode',
-    prefix: 'vscode://',
-    value: 'vscode',
-    sortId: 0,
-    group: ''
+    prefix: 'vscode://'
   },
   vscodeInsiders: {
     label: 'Insiders',
-    menuLabel: 'VSCode Insiders',
-    icon: 'vscodeInsiders',
-    prefix: 'vscode-insiders://',
-    value: 'vscodeInsiders',
-    sortId: 1,
-    group: ''
+    prefix: 'vscode-insiders://'
   },
   cursor: {
     label: 'Cursor',
-    menuLabel: 'Cursor',
-    icon: 'cursor',
-    prefix: 'cursor://',
-    value: 'cursor',
-    sortId: 2,
-    group: ''
+    prefix: 'cursor://'
   },
   windsurf: {
     label: 'Windsurf',
-    menuLabel: 'Windsurf',
-    icon: 'windsurf',
-    prefix: 'windsurf://',
-    value: 'windsurf',
-    sortId: 3,
-    group: ''
+    prefix: 'windsurf://'
+  },
+  kiro: {
+    label: 'Kiro',
+    prefix: 'kiro://'
+  },
+  qoder: {
+    label: 'Qoder',
+    prefix: 'qoder://'
+  },
+  codebuddy: {
+    label: 'CodeBuddy',
+    prefix: 'codebuddy://'
+  },
+  codebuddyCN: {
+    label: 'CodeBuddy CN',
+    prefix: 'codebuddycn://'
+  },
+  lingma: {
+    label: 'Lingma',
+    prefix: 'lingma://'
   },
   trae: {
     label: 'Trae',
-    menuLabel: 'Trae',
-    icon: 'trae',
-    prefix: 'trae://',
-    value: 'trae',
-    sortId: 4,
-    group: 'trae'
+    prefix: 'trae://'
   },
   traeCN: {
     label: 'Trae CN',
-    menuLabel: 'Trae CN',
-    icon: 'trae',
-    prefix: 'trae-cn://',
-    value: 'traeCN',
-    sortId: 4,
-    group: 'trae'
+    prefix: 'trae-cn://'
   },
   toolbox: {
     label: 'Toolbox',
-    icon: 'toolbox',
-    menuLabel: 'Toolbox',
-    prefix: '-',
-    value: 'toolbox',
-    sortId: 5,
-    group: 'jetbrains'
+    prefix: '-'
   },
   gateway: {
     label: 'Gateway',
-    icon: 'gateway',
-    menuLabel: 'Gateway',
-    prefix: '-',
-    value: 'gateway',
-    sortId: 5,
-    group: 'jetbrains'
+    prefix: '-'
   }
 } as const;
 
-const menuItems = Object.values(ideObj)
-  .sort((a, b) => a.sortId - b.sortId)
-  .reduce((acc, item) => {
-    if (item.group === 'trae' && !acc.some((i) => i.group === 'trae')) {
-      acc.push({
-        value: 'trae-group' as IDEType,
-        menuLabel: 'Trae',
-        group: 'trae',
-        options: [
-          { value: 'trae', menuLabel: 'Trae' },
-          { value: 'traeCN', menuLabel: 'Trae CN' }
-        ]
-      });
-    } else if (item.group === 'jetbrains' && !acc.some((i) => i.group === 'jetbrains')) {
-      acc.push({
-        value: 'jetbrains-group' as IDEType,
-        menuLabel: 'JetBrains',
-        group: 'jetbrains',
-        options: [
-          { value: 'toolbox', menuLabel: 'Toolbox' },
-          { value: 'gateway', menuLabel: 'Gateway' }
-        ]
-      });
-    } else if (item.group === '') {
-      acc.push({ value: item.value, menuLabel: item.menuLabel });
-    }
-    return acc;
-  }, [] as MenuItem[]);
+const leftColumnItems: MenuItem[] = [
+  { value: 'kiro', menuLabel: 'Kiro' },
+  { value: 'qoder', menuLabel: 'Qoder' },
+  { value: 'lingma', menuLabel: 'Lingma' },
+  {
+    value: 'trae-group' as IDEType,
+    menuLabel: 'Trae',
+    group: 'trae',
+    options: [
+      { value: 'trae', menuLabel: 'Trae' },
+      { value: 'traeCN', menuLabel: 'CN' }
+    ]
+  },
+  {
+    value: 'codebuddy-group' as IDEType,
+    menuLabel: 'CodeBuddy',
+    group: 'codebuddy',
+    options: [
+      { value: 'codebuddy', menuLabel: 'CodeBuddy' },
+      { value: 'codebuddyCN', menuLabel: 'CN' }
+    ]
+  }
+];
+const rightColumnItems: MenuItem[] = [
+  { value: 'cursor', menuLabel: 'Cursor' },
+  { value: 'vscode', menuLabel: 'VSCode' },
+  { value: 'vscodeInsiders', menuLabel: 'Insiders' },
+  { value: 'windsurf', menuLabel: 'Windsurf' },
+  {
+    value: 'jetbrains-group' as IDEType,
+    menuLabel: 'JetBrains',
+    group: 'jetbrains',
+    options: [
+      { value: 'toolbox', menuLabel: 'Toolbox' },
+      { value: 'gateway', menuLabel: 'Gateway' }
+    ]
+  }
+];
 
 export default IDEButton;

@@ -7,6 +7,11 @@ export type IDEType =
   | 'cursor'
   | 'vscodeInsiders'
   | 'windsurf'
+  | 'kiro'
+  | 'qoder'
+  | 'codebuddy'
+  | 'codebuddyCN'
+  | 'lingma'
   | 'trae'
   | 'traeCN'
   | 'gateway'
@@ -25,6 +30,11 @@ const validIDETypes: IDEType[] = [
   'cursor',
   'vscodeInsiders',
   'windsurf',
+  'kiro',
+  'qoder',
+  'codebuddy',
+  'codebuddyCN',
+  'lingma',
   'trae',
   'traeCN',
   'gateway',
