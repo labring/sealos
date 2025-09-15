@@ -21,6 +21,7 @@ import { I18nCommonKey } from '@/types/i18next';
 import { distributeResources } from '@/utils/database';
 import { getAddonList } from '@/api/platform';
 import type { AddonItem } from '@/pages/api/getAddonList';
+import { useQuery } from '@tanstack/react-query';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Accordion,
@@ -300,8 +301,19 @@ const Form = ({
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [editingParam, setEditingParam] = useState<string | null>(null);
-  const [addonList, setAddonList] = useState<AddonItem[]>([]);
-  const [addonLoading, setAddonLoading] = useState(true);
+  // Fetch addon list using useQuery
+  const { data: addonList = [], isLoading: addonLoading } = useQuery(
+    ['addonList'],
+    () => getAddonList(),
+    {
+      staleTime: 3 * 60 * 1000,
+      cacheTime: 5 * 60 * 1000,
+      retry: 3,
+      onError: (error) => {
+        console.error('Failed to fetch addon list:', error);
+      }
+    }
+  );
 
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
@@ -364,24 +376,6 @@ const Form = ({
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
   const parameterConfigRef = useRef<HTMLDivElement | null>(null);
-
-  // Fetch addon list on component mount
-  useEffect(() => {
-    const fetchAddonList = async () => {
-      try {
-        setAddonLoading(true);
-        const addonData = await getAddonList();
-        setAddonList(addonData || []);
-      } catch (error) {
-        console.error('Failed to fetch addon list:', error);
-        setAddonList([]);
-      } finally {
-        setAddonLoading(false);
-      }
-    };
-
-    fetchAddonList();
-  }, []);
 
   useEffect(() => {
     const backupRef = backupSettingsRef.current;
@@ -473,25 +467,7 @@ const Form = ({
     });
 
     const filtered = DBTypeList.filter((dbType) => {
-      const addonNameMap: Record<string, string> = {
-        [DBTypeEnum.postgresql]: 'postgresql',
-        [DBTypeEnum.mongodb]: 'mongodb',
-        [DBTypeEnum.mysql]: 'mysql',
-        [DBTypeEnum.redis]: 'redis',
-        [DBTypeEnum.kafka]: 'kafka',
-        [DBTypeEnum.clickhouse]: 'clickhouse',
-        [DBTypeEnum.qdrant]: 'qdrant',
-        [DBTypeEnum.nebula]: 'nebula',
-        [DBTypeEnum.weaviate]: 'weaviate',
-        [DBTypeEnum.milvus]: 'milvus',
-        [DBTypeEnum.pulsar]: 'pulsar'
-      };
-
-      const addonName = addonNameMap[dbType.id];
-      if (!addonName) {
-        return true;
-      }
-
+      const addonName = dbType.id;
       const addonStatus = addonStatusMap.get(addonName);
       const shouldInclude = addonStatus !== 'Disabled';
       return shouldInclude;

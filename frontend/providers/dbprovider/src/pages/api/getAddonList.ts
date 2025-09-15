@@ -65,39 +65,9 @@ export async function GetAddonList({ req }: { req: NextApiRequest }) {
           age
         });
       }
-    } else {
     }
   } catch (error) {
-    try {
-      const k8s = await getK8s({ kubeconfig: await authSession(req) });
-      const { body: configMaps } = await k8s.k8sCore.listNamespacedConfigMap(
-        'kube-system',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'owner=helm'
-      );
-
-      if (configMaps.items) {
-        for (const cm of configMaps.items) {
-          const labels = cm.metadata?.labels || {};
-          const annotations = cm.metadata?.annotations || {};
-
-          const name = labels['app.kubernetes.io/name'] || cm.metadata?.name || 'unknown';
-          const status = annotations['status'] || 'Unknown';
-          const creationTime = cm.metadata?.creationTimestamp;
-          const age = creationTime ? calculateAge(creationTime.toString()) : 'unknown';
-
-          addonList.push({
-            name,
-            type: 'Helm',
-            status: status === 'deployed' ? 'Enabled' : 'Disabled',
-            age
-          });
-        }
-      }
-    } catch (helmError) {}
+    console.error(error);
   }
 
   return addonList;
