@@ -12,11 +12,21 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
   const originalPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.OriginalPrice || 0;
 
-  let resources: any = {};
+  let resources: { cpu: string; memory: string; storage: string; nodeports: string } = {
+    cpu: '',
+    memory: '',
+    storage: '',
+    nodeports: ''
+  };
   try {
     resources = JSON.parse(plan.MaxResources);
   } catch (e) {
-    resources = {};
+    resources = {
+      cpu: '',
+      memory: '',
+      storage: '',
+      nodeports: ''
+    };
   }
 
   return (
@@ -70,27 +80,17 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           {resources.storage && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">
-                {resources.storage === '500Gi'
-                  ? '1GB Disk'
-                  : resources.storage === '100Gi'
-                    ? '5GB Disk'
-                    : resources.storage === '200Gi'
-                      ? '50GB Disk'
-                      : resources.storage === '250Gi'
-                        ? '250GB Disk'
-                        : resources.storage}
-              </span>
+              <span className="text-sm text-gray-700">{resources.storage} Disk</span>
             </li>
           )}
           <li className="flex items-center gap-3">
             <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
             <span className="text-sm text-gray-700">{formatTrafficAuto(plan.Traffic)}</span>
           </li>
-          {plan.Name.includes('medium') && (
+          {resources.nodeports && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">More Customized Services</span>
+              <span className="text-sm text-gray-700">{resources.nodeports} Nodeport</span>
             </li>
           )}
         </ul>
