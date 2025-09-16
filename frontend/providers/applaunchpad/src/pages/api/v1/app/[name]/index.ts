@@ -88,7 +88,6 @@ async function updateConfigMap(
     throw new Error(`App ${appName} not found`);
   }
 
-  // If configMapData is empty, delete the ConfigMap and remove volume mounts
   if (!configMapData || configMapData.length === 0) {
     try {
       await k8sCore.deleteNamespacedConfigMap(appName, namespace);
@@ -98,7 +97,6 @@ async function updateConfigMap(
       }
     }
 
-    // Remove volume mounts and volumes
     const strategicMergePatch = {
       spec: {
         template: {
@@ -158,7 +156,6 @@ async function updateConfigMap(
     });
   });
 
-  // Create or replace ConfigMap
   try {
     await k8sCore.readNamespacedConfigMap(appName, namespace);
     await k8sCore.replaceNamespacedConfigMap(appName, namespace, {
@@ -225,7 +222,6 @@ async function updateConfigMap(
   }
 }
 
-// 修复后的 updateServiceAndIngress 函数
 async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: any, k8s: any) {
   const yamlList: string[] = [];
 
@@ -243,11 +239,9 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     }))
   );
 
-  // 先删除所有旧的 Service 和 Ingress，然后创建新的
   try {
     const { k8sCore, k8sNetworkingApp, namespace } = k8s;
 
-    // 删除所有旧的 Service
     await k8sCore.deleteCollectionNamespacedService(
       namespace,
       undefined,
@@ -258,7 +252,6 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
       `${appDeployKey}=${appEditData.appName}`
     );
 
-    // 删除所有旧的 Ingress
     await k8sNetworkingApp.deleteCollectionNamespacedIngress(
       namespace,
       undefined,
@@ -269,16 +262,13 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
       `${appDeployKey}=${appEditData.appName}`
     );
 
-    // 等待删除完成
     await new Promise((resolve) => setTimeout(resolve, 2000));
   } catch (error: any) {
-    // 忽略 404 错误（资源不存在）
     if (error.response?.statusCode !== 404) {
       console.warn('Failed to delete old services/ingresses:', error.message);
     }
   }
 
-  // 创建新的 Service 和 Ingress
   const hasServicePorts = appEditData.networks && appEditData.networks.length > 0;
 
   if (hasServicePorts) {
@@ -288,7 +278,6 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
       yamlList.push(serviceYaml);
     }
 
-    // Check if there are any ports that need ingress
     const hasIngressPorts = appEditData.networks.some(
       (network) => network.openPublicDomain && !network.openNodePort
     );
@@ -308,7 +297,6 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
 
   if (yamlList.length > 0) {
     try {
-      // 使用 create 而不是 replace，因为我们已经删除了旧的资源
       await applyYamlList(yamlList, 'create');
       console.log('Successfully applied YAML');
     } catch (error: any) {
@@ -334,15 +322,12 @@ async function updateStorage(
 
   const { k8sCore, k8sApp, k8sAutoscaling, k8sNetworkingApp, namespace, applyYamlList } = k8s;
 
-  // Check if we need to convert from Deployment to StatefulSet
   const needsConversion =
     currentAppData.kind === 'deployment' && storageData && storageData.length > 0;
 
   if (needsConversion) {
-    // Convert from Deployment to StatefulSet
     console.log(`Converting ${appName} from Deployment to StatefulSet to support storage`);
 
-    // Prepare the updated app data with storage
     const updatedAppData: AppEditType = { ...currentAppData };
     updatedAppData.kind = 'statefulset';
     updatedAppData.storeList = [];
@@ -368,12 +353,9 @@ async function updateStorage(
       });
     }
 
-    // Generate StatefulSet YAML
     const newStatefulSetYaml = json2DeployCr(updatedAppData, 'statefulset');
 
-    // Delete all existing resources first
     try {
-      // Delete the old Deployment
       await k8sApp.deleteNamespacedDeployment(appName, namespace);
     } catch (error: any) {
       if (error.response?.statusCode !== 404) {
@@ -381,7 +363,6 @@ async function updateStorage(
       }
     }
 
-    // Delete all old Services
     try {
       await k8sCore.deleteCollectionNamespacedService(
         namespace,
@@ -398,7 +379,6 @@ async function updateStorage(
       }
     }
 
-    // Delete all old Ingresses
     try {
       await k8sNetworkingApp.deleteCollectionNamespacedIngress(
         namespace,
@@ -415,13 +395,10 @@ async function updateStorage(
       }
     }
 
-    // Wait for deletion to complete
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    // Create new StatefulSet with storage
     const yamlList = [newStatefulSetYaml];
 
-    // Add service and ingress if needed
     const hasServicePorts = updatedAppData.networks && updatedAppData.networks.length > 0;
 
     if (hasServicePorts) {
@@ -430,7 +407,6 @@ async function updateStorage(
         yamlList.push(serviceYaml);
       }
 
-      // Check if there are any ports that need ingress
       const hasIngressPorts = updatedAppData.networks.some(
         (network) => network.openPublicDomain && !network.openNodePort
       );
@@ -448,17 +424,14 @@ async function updateStorage(
     return;
   }
 
-  // Handle StatefulSet to Deployment conversion (when removing all storage)
   if (currentAppData.kind === 'statefulset' && (!storageData || storageData.length === 0)) {
     console.log(`Removing storage from ${appName}, keeping as StatefulSet`);
 
-    // Keep as StatefulSet but remove storage
     const updatedAppData: AppEditType = { ...currentAppData };
     updatedAppData.storeList = [];
 
     const newStatefulSetYaml = json2DeployCr(updatedAppData, 'statefulset');
 
-    // Delete the old StatefulSet
     await k8sApp.deleteNamespacedStatefulSet(
       appName,
       namespace,
@@ -469,13 +442,10 @@ async function updateStorage(
       undefined
     );
 
-    // Wait for deletion
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Create new StatefulSet without storage
     await applyYamlList([newStatefulSetYaml], 'create');
 
-    // Delete all PVCs
     try {
       await k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
         namespace,
@@ -486,16 +456,12 @@ async function updateStorage(
         undefined,
         `app=${appName}`
       );
-    } catch (error: any) {
-      // Ignore errors when deleting PVCs
-    }
+    } catch (error: any) {}
 
     return;
   }
 
-  // Regular StatefulSet storage update (no type conversion needed)
   if (currentAppData.kind === 'statefulset') {
-    // Validate storage data
     const paths = storageData.map((s) => s.path);
     if (new Set(paths).size !== paths.length) {
       throw new Error('Duplicate storage paths are not allowed');
@@ -513,7 +479,6 @@ async function updateStorage(
       }
     }
 
-    // Create completely new storage list (replacement, not merge)
     const updatedAppData: AppEditType = { ...currentAppData };
     updatedAppData.storeList = [];
 
@@ -550,7 +515,6 @@ async function updateStorage(
       undefined
     );
 
-    // Wait for deletion
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     await applyYamlList([newStatefulSetYaml], 'create');
@@ -560,7 +524,6 @@ async function updateStorage(
     try {
       await updateExistingPVCs(k8sCore, namespace, appName, storageData);
     } catch (pvcError: any) {
-      // Log but don't fail if PVC update fails
       console.error('PVC update error:', pvcError);
     }
   }
@@ -767,24 +730,18 @@ async function manageAppPorts(
   const existingNetworks = [...(latestAppData.networks || [])];
   let resultNetworks: any[] = [];
 
-  // If requestPorts is provided, it's a complete replacement
   if (requestPorts !== undefined) {
-    // Build a new ports list based on requestPorts
     const newNetworks: any[] = [];
 
     for (const portConfig of requestPorts) {
-      // Check if this is an update (has portName) or a new port
       const existingNetwork = portConfig.portName
         ? existingNetworks.find((n) => n.portName === portConfig.portName)
         : null;
 
       if (existingNetwork) {
-        // Update existing port
         let updatedNetwork = { ...existingNetwork };
 
-        // Update port number if provided
         if (portConfig.number !== undefined) {
-          // Check for conflicts
           const conflictingNetwork = existingNetworks.find(
             (n) => n.port === portConfig.number && n.portName !== existingNetwork.portName
           );
@@ -805,7 +762,6 @@ async function manageAppPorts(
           updatedNetwork.port = portConfig.number;
         }
 
-        // Update protocol if provided
         if (portConfig.protocol !== undefined) {
           const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(portConfig.protocol);
           updatedNetwork.protocol = isApplicationProtocol ? 'TCP' : portConfig.protocol;
@@ -824,7 +780,6 @@ async function manageAppPorts(
           }
         }
 
-        // Update exposesPublicDomain if provided
         if (portConfig.exposesPublicDomain !== undefined) {
           const finalAppProtocol = updatedNetwork.appProtocol;
           const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(finalAppProtocol || '');
@@ -864,7 +819,6 @@ async function manageAppPorts(
 
         newNetworks.push(updatedNetwork);
       } else if (!portConfig.portName) {
-        // Create new port (no portName means it's a new port)
         if (!portConfig.number) {
           throw new PortValidationError('Port number is required for creating new ports', {
             portConfig,
@@ -872,7 +826,6 @@ async function manageAppPorts(
           });
         }
 
-        // Check for conflicts with existing ports
         const conflictingNetwork = existingNetworks.find((n) => n.port === portConfig.number);
         if (conflictingNetwork) {
           throw new PortConflictError(`Cannot create port ${portConfig.number}: already exists`, {
@@ -885,7 +838,6 @@ async function manageAppPorts(
           });
         }
 
-        // Check for conflicts with other new ports
         const conflictingNewPort = newNetworks.find((n) => n.port === portConfig.number);
         if (conflictingNewPort) {
           throw new PortConflictError(`Cannot create duplicate port ${portConfig.number}`, {
@@ -915,15 +867,12 @@ async function manageAppPorts(
 
         newNetworks.push(newNetwork);
       }
-      // If portConfig has portName but the port doesn't exist in existingNetworks, it will be ignored (not added to newNetworks)
     }
 
     resultNetworks = newNetworks;
   } else {
     resultNetworks = [...existingNetworks];
   }
-
-  // Allow empty networks - remove the validation that required at least one port
 
   const targetContainerPorts = resultNetworks.map((network) => ({
     containerPort: network.port,
@@ -1030,17 +979,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           await updateAppResources(name, resourceUpdateData, k8s);
         }
 
-        // ConfigMap is complete replacement - empty array removes all
         if (updateData.configMap !== undefined) {
           await updateConfigMap(name, updateData.configMap, k8s);
         }
 
-        // Storage is complete replacement - empty array removes all
         if (updateData.storage !== undefined) {
           await updateStorage(name, updateData.storage, k8s);
         }
 
-        // Ports is complete replacement when provided
         if (updateData.ports !== undefined) {
           try {
             currentAppData = await manageAppPorts(name, updateData.ports, currentAppData!, k8s);

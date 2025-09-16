@@ -22,18 +22,13 @@ import { customAlphabet } from 'nanoid';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-// Conversion utilities for resource values
 export const resourceConverters = {
-  // Convert CPU cores to millicores (e.g., 0.1 -> 100, 1 -> 1000)
   cpuToMillicores: (cores: number): number => cores * 1000,
 
-  // Convert GB to MB (e.g., 0.5 -> 512, 1 -> 1024)
   memoryToMB: (gb: number): number => gb * 1024,
 
-  // Convert millicores to cores for display (e.g., 100 -> 0.1, 1000 -> 1)
   millicoresToCpu: (millicores: number): number => millicores / 1000,
 
-  // Convert MB to GB for display (e.g., 512 -> 0.5, 1024 -> 1)
   mbToMemory: (mb: number): number => mb / 1024
 };
 
@@ -106,7 +101,6 @@ export const ResourceSchema = z
   })
   .refine(
     (data) => {
-      // Must have either replicas OR hpa, but not both
       const hasReplicas = data.replicas !== undefined;
       const hasHpa = data.hpa !== undefined;
       return (hasReplicas && !hasHpa) || (!hasReplicas && hasHpa);
@@ -147,7 +141,7 @@ export const ImageSchema = z
           description: 'Registry server address'
         })
       })
-      .nullable() // 修改：允许 null 值
+      .nullable()
       .optional()
       .openapi({
         description:
@@ -270,7 +264,6 @@ export const PortConfigSchema = z.object({
   exposesPublicDomain: z.boolean().default(true).openapi({
     description: 'Enable public domain access (only effective for HTTP/GRPC/WS protocols)'
   }),
-  // Auto-generated fields - not passed via API
   networkName: z.string().default(() => `network-${nanoid()}`),
   portName: z.string().default(() => nanoid()),
   publicDomain: z.string().default(() => nanoid()),
@@ -283,7 +276,6 @@ export const PortConfigSchema = z.object({
 
 export const LaunchpadApplicationSchema = z
   .object({
-    // Base fields from CreateLaunchpadRequestSchema (without default values)
     name: z.string().openapi({ description: 'Application name' }),
     image: ImageSchema.openapi({ description: 'Container image configuration' }),
     launchCommand: LaunchCommandSchema.optional().openapi({
@@ -296,7 +288,6 @@ export const LaunchpadApplicationSchema = z
     configMap: z.array(StandardConfigMapSchema).optional(),
     kind: z.enum(['deployment', 'statefulset']).optional(),
 
-    // Additional metadata fields for GET responses
     id: z.string().openapi({ description: 'Application ID' }),
     createTime: z.string().openapi({ description: 'Creation time' }),
     status: z.object({

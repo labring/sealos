@@ -90,7 +90,7 @@ export async function getAppByName(appName: string, k8s: K8sContext) {
       .then((res: any) => ({
         body: res.body.items.map((item: any) => ({
           ...item,
-          apiVersion: res.body.apiVersion, // item does not contain apiversion and kind
+          apiVersion: res.body.apiVersion,
           kind: 'Ingress'
         }))
       })),
@@ -477,10 +477,8 @@ export async function updateAppResources(
     throw new Error('app data error');
   }
 
-  // Handle replicas update with special pause/start logic
   if (updateData.resource?.replicas !== undefined) {
     if (updateData.resource.replicas === 0) {
-      // Pause logic: save HPA config and delete HPA
       const restartAnnotations: Record<string, string> = {
         target: '',
         value: ''
@@ -513,10 +511,8 @@ export async function updateAppResources(
       requestQueue.push(apiClient.replace(app));
       await Promise.all(requestQueue);
     } else {
-      // Set fixed replicas: delete any existing HPA and set fixed replicas
       const requestQueue: Promise<any>[] = [];
 
-      // Delete existing HPA (switch from elastic to fixed scaling)
       try {
         await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace);
         requestQueue.push(
@@ -526,17 +522,14 @@ export async function updateAppResources(
         if (error?.statusCode !== 404) {
           throw new Error('Failed to check existing HPA');
         }
-        // HPA doesn't exist, which is fine
       }
 
       app.spec.replicas = updateData.resource.replicas;
 
-      // Update annotations for fixed replicas
       app.metadata.annotations = app.metadata.annotations || {};
       app.metadata.annotations[minReplicasKey] = `${updateData.resource.replicas}`;
       app.metadata.annotations[maxReplicasKey] = `${updateData.resource.replicas}`;
 
-      // Handle pause/restart logic if needed
       if (app.metadata?.annotations?.[pauseKey]) {
         const pauseData: {
           target: string;
@@ -544,9 +537,6 @@ export async function updateAppResources(
         } = JSON.parse(app.metadata.annotations[pauseKey]);
 
         delete app.metadata.annotations[pauseKey];
-
-        // Only restore HPA if we're not explicitly setting fixed replicas
-        // Since we're setting replicas, we want fixed scaling, not HPA
       }
 
       requestQueue.push(apiClient.replace(app));
@@ -554,35 +544,27 @@ export async function updateAppResources(
     }
   }
 
-  // Handle HPA updates (separate from replicas) - FIXED: Sequential execution
   if (updateData.resource?.hpa !== undefined) {
     const hpaConfig = updateData.resource.hpa;
 
-    // Set replicas to minReplicas for HPA
     app.spec.replicas = hpaConfig.minReplicas;
 
-    // Update annotations
     app.metadata.annotations = app.metadata.annotations || {};
     app.metadata.annotations[minReplicasKey] = `${hpaConfig.minReplicas}`;
     app.metadata.annotations[maxReplicasKey] = `${hpaConfig.maxReplicas}`;
 
-    // Delete existing HPA first if exists and wait for completion
     try {
       await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace);
       await k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace);
-      // Wait a moment to ensure deletion is processed
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error: any) {
       if (error?.statusCode !== 404) {
         throw new Error('Failed to check existing HPA');
       }
-      // HPA doesn't exist, which is fine
     }
 
-    // Update the deployment/statefulset first
     await apiClient.replace(app);
 
-    // Create new HPA after deployment is updated
     const hpaYaml = json2HPA({
       appName,
       hpa: {
@@ -597,7 +579,6 @@ export async function updateAppResources(
     await applyYamlList([hpaYaml], 'create');
   }
 
-  // Handle CPU/Memory/Command/Args/Image updates with JSONPatch
   const resourceUpdates =
     updateData.resource?.cpu !== undefined ||
     updateData.resource?.memory !== undefined ||
@@ -647,10 +628,9 @@ export async function updateAppResources(
     }
 
     if (updateData.command !== undefined) {
-      // Convert string to array following the same logic as deployYaml2Json
       const commandArray = (() => {
-        if (updateData.command === '') return []; // Empty string should result in empty array
-        if (!updateData.command) return undefined; // null or undefined
+        if (updateData.command === '') return [];
+        if (!updateData.command) return undefined;
         try {
           return JSON.parse(updateData.command);
         } catch (error) {
@@ -659,7 +639,6 @@ export async function updateAppResources(
       })();
 
       if (commandArray !== undefined) {
-        // Allow empty arrays
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/containers/0/command',
@@ -669,10 +648,9 @@ export async function updateAppResources(
     }
 
     if (updateData.args !== undefined) {
-      // Convert string to array following the same logic as deployYaml2Json
       const argsArray = (() => {
-        if (updateData.args === '') return []; // Empty string should result in empty array
-        if (!updateData.args) return undefined; // null or undefined
+        if (updateData.args === '') return [];
+        if (!updateData.args) return undefined;
         try {
           return JSON.parse(updateData.args) as string[];
         } catch (error) {
@@ -681,7 +659,6 @@ export async function updateAppResources(
       })();
 
       if (argsArray !== undefined) {
-        // Allow empty arrays
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/containers/0/args',
@@ -695,7 +672,7 @@ export async function updateAppResources(
       updateData.image !== undefined ? updateData.image : updateData.imageName;
     if (imageNameToUpdate !== undefined) {
       // Allow empty string for image name
-      const finalImageName = imageNameToUpdate || ''; // Convert null/undefined to empty string if needed
+      const finalImageName = imageNameToUpdate || '';
       jsonPatch.push({
         op: 'replace',
         path: '/spec/template/spec/containers/0/image',

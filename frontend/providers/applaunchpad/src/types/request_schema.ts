@@ -99,7 +99,6 @@ export const PortUpdateSchema = z
       'Port configuration. Include portName to update existing port. Omit portName to create new port. Ports not included in the array will be deleted.'
   });
 
-// Fixed ImageSchema for UpdateAppResourcesSchema to accept null
 export const UpdateImageSchema = z
   .object({
     imageName: z.string().openapi({
@@ -131,7 +130,6 @@ export const UpdateImageSchema = z
 
 export const UpdateAppResourcesSchema = z
   .object({
-    // Resource configuration (now includes HPA)
     resource: z
       .object({
         cpu: z
@@ -212,23 +210,19 @@ export const UpdateAppResourcesSchema = z
           'Resource configuration including HPA. For mode switching: provide either replicas (fixed) or hpa (elastic), not both.'
       }),
 
-    // Launch command configuration
     launchCommand: LaunchCommandSchema.optional().openapi({
       description: 'Container launch command configuration'
     }),
 
-    // Image configuration - Use the fixed UpdateImageSchema
     image: UpdateImageSchema.optional().openapi({
       description:
         'Container image configuration. Set imageRegistry to null to switch to public image.'
     }),
 
-    // Environment variables (use StandardEnvSchema for consistency)
     env: z.array(StandardEnvSchema).optional().openapi({
       description: 'Environment variables'
     }),
 
-    // ConfigMap configuration - COMPLETE REPLACEMENT
     configMap: z
       .array(StandardConfigMapSchema.pick({ path: true, value: true }))
       .optional()
@@ -237,13 +231,11 @@ export const UpdateAppResourcesSchema = z
           'ConfigMap configurations (COMPLETE REPLACEMENT). Pass all ConfigMap entries to keep. Empty array removes all ConfigMaps. Omit field to keep existing ConfigMaps unchanged.'
       }),
 
-    // Storage configuration - COMPLETE REPLACEMENT
     storage: z.array(SimpleStorageSchema).optional().openapi({
       description:
         'Storage configurations (COMPLETE REPLACEMENT). Pass all storage entries to keep. Empty array removes all storage. Omit field to keep existing storage unchanged. Name is auto-generated from path.'
     }),
 
-    // Port configuration - COMPLETE REPLACEMENT
     ports: z.array(PortUpdateSchema).optional().openapi({
       description:
         'Port configurations (COMPLETE REPLACEMENT). Include portName to update existing port, omit portName to create new port. Ports not included will be deleted. Pass empty array [] to remove all ports.'
@@ -321,10 +313,8 @@ export const CreateLaunchpadRequestSchema = z
       description: 'Container launch command configuration'
     }),
 
-    // Resource configuration (now includes HPA)
     resource: ResourceSchema,
 
-    // Port/Network configuration - pick only API fields from PortConfigSchema
     ports: z
       .array(
         PortConfigSchema.pick({
@@ -344,17 +334,14 @@ export const CreateLaunchpadRequestSchema = z
         description: 'Port/Network configurations for the application'
       }),
 
-    // Environment variables (envs -> env, key -> name)
     env: z.array(StandardEnvSchema).default([]).openapi({
       description: 'Environment variables - was: envs'
     }),
 
-    // Storage configuration (storeList -> storage, value -> size)
     storage: z.array(StorageSchema).default([]).openapi({
       description: 'Storage configurations - was: storeList'
     }),
 
-    // ConfigMap configuration (configMapList -> configMap)
     configMap: z
       .array(StandardConfigMapSchema.pick({ path: true, value: true }))
       .default([])
@@ -377,21 +364,20 @@ export function transformToLegacySchema(
   const networks = standardRequest.ports?.map((port) => {
     const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(port.protocol);
     return {
-      serviceName: `service-${nanoid()}`, // 自动生成
-      networkName: `network-${nanoid()}`, // 自动生成
-      portName: nanoid(), // 自动生成
+      serviceName: `service-${nanoid()}`,
+      networkName: `network-${nanoid()}`,
+      portName: nanoid(),
       port: port.number,
-      protocol: (isApplicationProtocol ? 'TCP' : port.protocol) as TransportProtocolType, // HTTP/GRPC/WS use TCP as transport
-      appProtocol: (isApplicationProtocol ? port.protocol : 'HTTP') as ApplicationProtocolType, // Only set appProtocol for HTTP/GRPC/WS
-      openPublicDomain: isApplicationProtocol ? port.exposesPublicDomain : false, // Only HTTP/GRPC/WS support public domain
-      publicDomain: isApplicationProtocol ? nanoid() : '', // 自动生成
-      customDomain: '', // 暂不支持自定义域名
-      domain: '', // 自动设置
-      nodePort: undefined, // 自动生成
-      openNodePort: !isApplicationProtocol // TCP/UDP/SCTP enable nodePort
+      protocol: (isApplicationProtocol ? 'TCP' : port.protocol) as TransportProtocolType,
+      appProtocol: (isApplicationProtocol ? port.protocol : 'HTTP') as ApplicationProtocolType,
+      openPublicDomain: isApplicationProtocol ? port.exposesPublicDomain : false,
+      publicDomain: isApplicationProtocol ? nanoid() : '',
+      customDomain: '',
+      domain: '',
+      nodePort: undefined,
+      openNodePort: !isApplicationProtocol
     };
   }) || [
-    // Default network configuration when no ports specified
     {
       serviceName: `service-${nanoid()}`,
       networkName: `network-${nanoid()}`,
@@ -474,7 +460,6 @@ export function transformToLegacySchema(
       };
     }) || [];
 
-  // FIXED: Auto-determine kind based on storage presence
   const hasStorage = storeList.length > 0;
 
   return {
@@ -501,16 +486,13 @@ export function transformToLegacySchema(
     labels: {},
     volumes: [],
     volumeMounts: [],
-    kind: hasStorage ? 'statefulset' : 'deployment' // FIXED: Automatically use statefulset if storage is present
+    kind: hasStorage ? 'statefulset' : 'deployment'
   };
 }
-
-// Transform AppDetailType to LaunchpadApplicationSchema (CreateRequest + 5 additional fields)
 export function transformFromLegacySchema(
   legacyData: AppDetailType
 ): z.infer<typeof LaunchpadApplicationSchema> {
   return {
-    // Base fields from CreateLaunchpadRequestSchema
     name: legacyData.appName,
     image: {
       imageName: legacyData.imageName,
@@ -527,7 +509,6 @@ export function transformFromLegacySchema(
       args: legacyData.cmdParam
     },
     resource: {
-      // If HPA is enabled, don't set replicas; otherwise set replicas
       replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
       cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
       memory: resourceConverters.mbToMemory(legacyData.memory || 256),
@@ -549,16 +530,9 @@ export function transformFromLegacySchema(
     },
     ports:
       legacyData.networks?.map((network) => {
-        // If nodePort is enabled, it's a transport protocol (TCP/UDP/SCTP)
-        // If nodePort is disabled, it's an application protocol (HTTP/GRPC/WS)
-        const protocol = network.openNodePort
-          ? network.protocol // Use transport protocol for nodePort-enabled ports (TCP/UDP/SCTP)
-          : network.appProtocol || 'HTTP'; // Use application protocol for public domain ports (HTTP/GRPC/WS)
+        const protocol = network.openNodePort ? network.protocol : network.appProtocol || 'HTTP';
 
-        // For UDP/TCP ports, exposesPublicDomain should be true
-        const exposesPublicDomain = network.openNodePort
-          ? true // UDP/TCP ports always show true
-          : network.openPublicDomain; // HTTP/GRPC/WS use original value
+        const exposesPublicDomain = network.openNodePort ? true : network.openPublicDomain;
 
         return {
           serviceName: network.serviceName,
@@ -594,7 +568,6 @@ export function transformFromLegacySchema(
       })) || [],
     kind: legacyData.kind || 'deployment',
 
-    // Additional 5 fields for GET responses
     id: legacyData.id,
     createTime: legacyData.createTime,
     status: {
@@ -607,7 +580,6 @@ export function transformFromLegacySchema(
   };
 }
 
-// Legacy schemas for backward compatibility (deprecated)
 export const UpdateConfigMapSchema = z.object({
   configMap: z
     .array(StandardConfigMapSchema.pick({ path: true, value: true }))
@@ -624,7 +596,6 @@ export const UpdateStorageSchema = z.object({
   })
 });
 
-// Legacy port schemas for backward compatibility (deprecated)
 export const CreatePortsSchema = z.object({
   ports: z
     .array(
@@ -648,7 +619,6 @@ export const UpdatePortsSchema = z.object({
           number: z.number(),
           protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']),
           exposesPublicDomain: z.boolean(),
-          // At least one identifier required to locate the port to update
           networkName: z.string().optional(),
           portName: z.string().optional(),
           serviceName: z.string().optional()
