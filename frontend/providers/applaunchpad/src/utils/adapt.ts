@@ -460,16 +460,6 @@ export const adaptAppDetail = async (
               ? domain
               : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
-
-        console.log('adaptAppDetail - network result:', {
-          portName: result.portName,
-          port: result.port,
-          hasIngress: !!ingress,
-          openPublicDomain: result.openPublicDomain,
-          networkName: result.networkName,
-          publicDomain: result.publicDomain
-        });
-
         return result;
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec

@@ -686,10 +686,8 @@ export async function updateAppResources(
       });
     }
 
-    // Handle image pull secrets
     if (updateData.imageRegistry !== undefined) {
       if (updateData.imageRegistry !== null) {
-        // Create or update image pull secret
         const { k8sCore } = k8s;
         const auth = Buffer.from(
           `${updateData.imageRegistry.username}:${updateData.imageRegistry.password}`
@@ -727,14 +725,12 @@ export async function updateAppResources(
           }
         }
 
-        // Add imagePullSecrets to deployment
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/imagePullSecrets',
           value: [{ name: appName }]
         });
       } else {
-        // Remove image pull secrets (switch to public image)
         if (app.spec?.template?.spec?.imagePullSecrets) {
           jsonPatch.push({
             op: 'remove',
@@ -742,14 +738,12 @@ export async function updateAppResources(
           });
         }
 
-        // Delete the secret
         try {
           await k8sCore.deleteNamespacedSecret(appName, namespace);
         } catch (error: any) {
           if (error.response?.statusCode !== 404) {
             throw error;
           }
-          // Secret doesn't exist, which is fine
         }
       }
     }

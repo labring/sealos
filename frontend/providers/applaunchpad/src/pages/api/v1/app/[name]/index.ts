@@ -225,20 +225,6 @@ async function updateConfigMap(
 async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: any, k8s: any) {
   const yamlList: string[] = [];
 
-  console.log(
-    'updateServiceAndIngress - networks:',
-    appEditData.networks?.map((n) => ({
-      portName: n.portName,
-      networkName: n.networkName,
-      openPublicDomain: n.openPublicDomain,
-      openNodePort: n.openNodePort,
-      publicDomain: n.publicDomain,
-      domain: n.domain,
-      appProtocol: n.appProtocol,
-      protocol: n.protocol
-    }))
-  );
-
   try {
     const { k8sCore, k8sNetworkingApp, namespace } = k8s;
 
@@ -265,7 +251,6 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     await new Promise((resolve) => setTimeout(resolve, 2000));
   } catch (error: any) {
     if (error.response?.statusCode !== 404) {
-      console.warn('Failed to delete old services/ingresses:', error.message);
     }
   }
 
@@ -273,7 +258,6 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
 
   if (hasServicePorts) {
     const serviceYaml = json2Service(appEditData);
-    console.log('Service YAML:', serviceYaml);
     if (serviceYaml.trim()) {
       yamlList.push(serviceYaml);
     }
@@ -282,11 +266,8 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
       (network) => network.openPublicDomain && !network.openNodePort
     );
 
-    console.log('Has ingress ports:', hasIngressPorts);
-
     if (hasIngressPorts) {
       const ingressYaml = json2Ingress(appEditData);
-      console.log('Ingress YAML:', ingressYaml);
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -326,8 +307,6 @@ async function updateStorage(
     currentAppData.kind === 'deployment' && storageData && storageData.length > 0;
 
   if (needsConversion) {
-    console.log(`Converting ${appName} from Deployment to StatefulSet to support storage`);
-
     const updatedAppData: AppEditType = { ...currentAppData };
     updatedAppData.kind = 'statefulset';
     updatedAppData.storeList = [];
@@ -425,8 +404,6 @@ async function updateStorage(
   }
 
   if (currentAppData.kind === 'statefulset' && (!storageData || storageData.length === 0)) {
-    console.log(`Removing storage from ${appName}, keeping as StatefulSet`);
-
     const updatedAppData: AppEditType = { ...currentAppData };
     updatedAppData.storeList = [];
 
@@ -1041,8 +1018,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
         const response = await getAppByName(name, k8s);
         const filteredData = await processAppResponse(response);
-
-        console.log('Final response data:', JSON.stringify(filteredData, null, 2));
 
         jsonRes(res, {
           data: filteredData
