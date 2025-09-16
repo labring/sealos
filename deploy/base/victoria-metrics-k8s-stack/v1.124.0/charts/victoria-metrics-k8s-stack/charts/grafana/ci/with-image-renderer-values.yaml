@@ -1,0 +1,107 @@
+podLabels:
+  customLableA: Aaaaa
+imageRenderer:
+  enabled: true
+  env:
+    RENDERING_ARGS: --disable-gpu,--window-size=1280x758
+    RENDERING_MODE: clustered
+  podLabels:
+    customLableB: Bbbbb
+  networkPolicy:
+    limitIngress: true
+    limitEgress: true
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1000Mi
+    requests:
+      cpu: 500m
+      memory: 50Mi
+  extraVolumes:
+    - name: empty-renderer-volume
+      emtpyDir: {}
+  extraVolumeMounts:
+    - mountPath: /tmp/renderer
+      name: empty-renderer-volume
+  extraConfigmapMounts:
+    - name: renderer-config
+      mountPath: /usr/src/app/config.json
+      subPath: renderer-config.json
+      configMap: image-renderer-config
+  extraSecretMounts:
+    - name: renderer-certificate
+      mountPath: /usr/src/app/certs/
+      secretName: image-renderer-certificate
+      readOnly: true
+
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: image-renderer-config
+    data:
+      renderer-config.json: |
+        {
+          "service": {
+            "host": null,
+            "port": 8081,
+            "protocol": "http",
+            "certFile": "",
+            "certKey": "",
+
+            "metrics": {
+              "enabled": true,
+              "collectDefaultMetrics": true,
+              "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
+            },
+
+            "logging": {
+              "level": "info",
+              "console": {
+                "json": true,
+                "colorize": false
+              }
+            },
+
+            "security": {
+              "authToken": "-"
+            }
+          },
+          "rendering": {
+            "chromeBin": null,
+            "args": ["--no-sandbox", "--disable-gpu"],
+            "ignoresHttpsErrors": false,
+
+            "timezone": null,
+            "acceptLanguage": null,
+            "width": 1000,
+            "height": 500,
+            "deviceScaleFactor": 1,
+            "maxWidth": 3080,
+            "maxHeight": 3000,
+            "maxDeviceScaleFactor": 4,
+            "pageZoomLevel": 1,
+            "headed": false,
+
+            "mode": "default",
+            "emulateNetworkConditions": false,
+            "clustering": {
+              "monitor": false,
+              "mode": "browser",
+              "maxConcurrency": 5,
+              "timeout": 30
+            },
+
+            "verboseLogging": false,
+            "dumpio": false,
+            "timingMetrics": false
+          }
+        }
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: image-renderer-certificate
+    type: Opaque
+    data:
+      # Decodes to 'PLACEHOLDER CERTIFICATE'
+      not-a-real-certificate: UExBQ0VIT0xERVIgQ0VSVElGSUNBVEU=

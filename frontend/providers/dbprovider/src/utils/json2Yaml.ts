@@ -8,7 +8,8 @@ import {
   MigrationRemark,
   RedisHAConfig,
   crLabelKey,
-  defaultDBEditValue
+  defaultDBEditValue,
+  sealafDeployKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
 import type {
@@ -50,10 +51,16 @@ export const json2CreateCluster = (
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data);
 
+  // Remove sealaf-app label for restored databases to allow normal deletion
+  const filteredLabels = { ...data.labels };
+  if (backupInfo?.name && filteredLabels[sealafDeployKey]) {
+    delete filteredLabels[sealafDeployKey];
+  }
+
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
-      ...data.labels,
+      ...filteredLabels,
       'clusterdefinition.kubeblocks.io/name': data.dbType,
       'clusterversion.kubeblocks.io/name': data.dbVersion,
       [crLabelKey]: data.dbName
@@ -94,56 +101,127 @@ export const json2CreateCluster = (
         break;
     }
 
-    return [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
+    // Branch structure for different database types and versions
+    if (dbType === 'apecloud-mysql' && data.dbVersion === 'mysql-5.7.42') {
+      // MySQL 5.7.42 specific configuration
+      return [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          metadata: {
+            labels: {
+              'clusterdefinition.kubeblocks.io/name': 'mysql',
+              'clusterversion.kubeblocks.io/name': 'mysql-5.7.42'
+            },
+            name: `${data.dbName}`,
+            namespace: getUserNamespace()
           },
-          clusterDefinitionRef: dbType,
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
-            return {
-              componentDefRef: key,
-              monitor: true,
-              name: key,
-              replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
-              resources: resourceData.cpuMemory,
-              serviceAccountName: data.dbName,
-              switchPolicy: {
-                type: 'Noop'
-              },
-              ...(resourceData.storage > 0
-                ? {
-                    volumeClaimTemplates: [
-                      {
-                        name: 'data',
-                        spec: {
-                          accessModes: ['ReadWriteOnce'],
-                          resources: {
-                            requests: {
-                              storage: `${resourceData.storage}Gi`
+          spec: {
+            affinity: {
+              podAntiAffinity: 'Preferred',
+              tenancy: 'SharedNode'
+            },
+            clusterDefinitionRef: 'mysql',
+            clusterVersionRef: data.dbVersion,
+            componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
+              return {
+                componentDefRef: key,
+                enabledLogs: ['error', 'slow'],
+                monitor: false,
+                name: key,
+                noCreatePDB: false,
+                replicas: resourceData.other?.replicas ?? data.replicas,
+                resources: resourceData.cpuMemory,
+                rsmTransformPolicy: 'ToSts',
+                serviceAccountName: data.dbName,
+                switchPolicy: {
+                  type: 'Noop'
+                },
+                ...(resourceData.storage > 0
+                  ? {
+                      volumeClaimTemplates: [
+                        {
+                          name: 'data',
+                          spec: {
+                            accessModes: ['ReadWriteOnce'],
+                            resources: {
+                              requests: {
+                                storage: `${resourceData.storage}Gi`
+                              }
                             }
-                          },
-                          ...storageClassName
+                          }
                         }
-                      }
-                    ]
-                  }
-                : {})
-            };
-          }),
-          terminationPolicy,
-          tolerations: []
+                      ]
+                    }
+                  : {})
+              };
+            }),
+            monitor: {},
+            resources: {
+              cpu: '0',
+              memory: '0'
+            },
+            storage: {
+              size: '0'
+            },
+            terminationPolicy
+          }
         }
-      }
-    ];
+      ];
+    } else {
+      // Default configuration for all other database types and versions
+      return [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          metadata,
+          spec: {
+            affinity: {
+              nodeLabels: {},
+              podAntiAffinity: 'Preferred',
+              tenancy: 'SharedNode',
+              topologyKeys: ['kubernetes.io/hostname']
+            },
+            clusterDefinitionRef: dbType,
+            clusterVersionRef: data.dbVersion,
+            componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
+              return {
+                componentDefRef: key,
+                monitor: true,
+                name: key,
+                noCreatePDB: false,
+                replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
+                resources: resourceData.cpuMemory,
+                serviceAccountName: data.dbName,
+                switchPolicy: {
+                  type: 'Noop'
+                },
+                ...(resourceData.storage > 0
+                  ? {
+                      volumeClaimTemplates: [
+                        {
+                          name: 'data',
+                          spec: {
+                            accessModes: ['ReadWriteOnce'],
+                            resources: {
+                              requests: {
+                                storage: `${resourceData.storage}Gi`
+                              }
+                            },
+                            ...storageClassName
+                          }
+                        }
+                      ]
+                    }
+                  : {})
+              };
+            }),
+            terminationPolicy,
+            tolerations: []
+          }
+        }
+      ];
+    }
   }
 
   return createDBObject(data.dbType)
@@ -296,7 +374,7 @@ export const json2VolumeExpansion = ({ dbName, storage, dbType }: DBEditType) =>
       type: 'VolumeExpansion',
       volumeExpansion: [
         {
-          componentName: DBComponentNameMap[dbType],
+          componentName: DBComponentNameMap[dbType] || [dbType],
           volumeClaimTemplates: [
             {
               name: 'data',
@@ -376,7 +454,7 @@ export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBTyp
       type: 'Restart',
       restart: [
         {
-          componentName: DBComponentNameMap[dbType]
+          componentName: DBComponentNameMap[dbType] || [dbType]
         }
       ]
     }
@@ -837,3 +915,456 @@ export function json2SwitchMsNode(data: SwitchMsData) {
 
   return yaml.dump(template);
 }
+
+export const json2ParameterConfig = (
+  dbName: string,
+  dbType: string,
+  dbVersion: string,
+  parameterConfig?: {
+    maxConnections?: string;
+    timeZone?: string;
+    lowerCaseTableNames?: string;
+    isMaxConnectionsCustomized?: boolean;
+  },
+  dynamicMaxConnections?: number
+) => {
+  console.log('dbType', dbType);
+  console.log('dbVersion', dbVersion);
+  function buildPostgresYaml() {
+    // Parse PostgreSQL version to get major version (e.g., "postgresql-12.14.0" -> "12", "16.4.0" -> "16")
+    const majorVersion = dbVersion.replace(/^postgresql-/, '').split('.')[0];
+
+    const pgParams: Record<string, string> = {};
+
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      pgParams['max_connections'] = `${maxConnections}`;
+    }
+
+    if (parameterConfig?.timeZone) {
+      pgParams['timezone'] = `${parameterConfig.timeZone}`;
+    }
+
+    if (majorVersion === '14') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configFileParams: {
+                'postgresql.conf': {
+                  parameters: pgParams
+                }
+              },
+              configSpec: {
+                templateRef: 'postgresql-configuration',
+                volumeName: 'postgresql-config',
+                namespace: 'kb-system',
+                name: 'postgresql-configuration'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql14-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'agamotto-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql-agamotto-configuration',
+                volumeName: 'agamotto-configuration'
+              },
+              name: 'agamotto-configuration'
+            }
+          ]
+        }
+      };
+      return yaml.dump(template);
+    } else if (majorVersion === '12') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configFileParams: {
+                'postgresql.conf': {
+                  parameters: pgParams
+                }
+              },
+              configSpec: {
+                templateRef: 'postgresql-configuration',
+                volumeName: 'postgresql-config',
+                namespace: 'kb-system',
+                name: 'postgresql-configuration'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql12-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'agamotto-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql-agamotto-configuration',
+                volumeName: 'agamotto-configuration'
+              },
+              name: 'agamotto-configuration'
+            }
+          ]
+        }
+      };
+      return yaml.dump(template);
+    }
+    throw new Error(`Unsupported PostgreSQL version: ${dbVersion}`);
+  }
+
+  function buildMysqlYaml() {
+    const mysqlParams: Record<string, string> = {};
+
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      mysqlParams['max_connections'] = String(maxConnections);
+    }
+
+    if (parameterConfig?.timeZone) {
+      mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
+    }
+    const lowerCaseTableNames =
+      parameterConfig?.lowerCaseTableNames !== undefined
+        ? parameterConfig.lowerCaseTableNames
+        : '0';
+
+    mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
+
+    // Check if this is MySQL 5.7.42 version
+    if (dbVersion === 'mysql-5.7.42') {
+      if (parameterConfig?.timeZone === 'UTC') {
+        mysqlParams['default-time-zone'] = '+00:00';
+      } else if (parameterConfig?.timeZone === 'Asia/Shanghai') {
+        mysqlParams['default-time-zone'] = '+08:00';
+      }
+
+      const replicationItem: any = {
+        ...(Object.keys(mysqlParams).length > 0 && {
+          configFileParams: {
+            'my.cnf': {
+              parameters: mysqlParams
+            }
+          }
+        }),
+        configSpec: {
+          constraintRef: 'oracle-mysql8.0-config-constraints',
+          name: 'mysql-replication-config',
+          namespace: 'kb-system',
+          templateRef: 'oracle-mysql5.7-config-template',
+          volumeName: 'mysql-config'
+        },
+        name: 'mysql-replication-config'
+      };
+
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': dbName,
+            'app.kubernetes.io/managed-by': 'kubeblocks'
+          },
+          name: `${dbName}-mysql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: dbName,
+          componentName: 'mysql',
+          configItemDetails: [
+            replicationItem,
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'agamotto-configuration',
+                namespace: 'kb-system',
+                templateRef: 'mysql-agamotto-configuration',
+                volumeName: 'agamotto-configuration'
+              },
+              name: 'agamotto-configuration'
+            }
+          ]
+        }
+      };
+
+      return yaml.dump(template);
+    }
+
+    // Default MySQL 8.0 configuration for other versions
+    const consensusItem: any = {
+      ...(Object.keys(mysqlParams).length > 0 && {
+        configFileParams: {
+          'my.cnf': {
+            parameters: mysqlParams
+          }
+        }
+      }),
+      configSpec: {
+        constraintRef: 'mysql8.0-config-constraints',
+        name: 'mysql-consensusset-config',
+        namespace: 'kb-system',
+        templateRef: 'mysql8.0-config-template',
+        volumeName: 'mysql-config'
+      },
+      name: 'mysql-consensusset-config'
+    };
+
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks'
+        },
+        name: `${dbName}-mysql`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'mysql',
+        configItemDetails: [
+          consensusItem,
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'agamotto-configuration',
+              namespace: 'kb-system',
+              templateRef: 'apecloud-mysql8-agamotto-configuration',
+              volumeName: 'agamotto-configuration'
+            },
+            name: 'agamotto-configuration'
+          },
+          {
+            configSpec: {
+              constraintRef: 'mysql-scale-vttablet-config-constraints',
+              name: 'vttablet-config',
+              namespace: 'kb-system',
+              templateRef: 'vttablet-config-template',
+              volumeName: 'mysql-scale-config'
+            },
+            name: 'vttablet-config'
+          }
+        ]
+      }
+    };
+
+    return yaml.dump(template);
+  }
+  function buildMongodbYaml() {
+    const mongoParams: Record<string, string> = {};
+
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      mongoParams['net.maxIncomingConnections'] = maxConnections;
+    }
+
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks'
+        },
+        name: `${dbName}-mongodb`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'mongodb',
+        configItemDetails: [
+          {
+            ...(Object.keys(mongoParams).length > 0 && {
+              configFileParams: {
+                'mongodb.conf': {
+                  parameters: mongoParams
+                }
+              }
+            }),
+            configSpec: {
+              constraintRef: 'mongodb-config-constraints',
+              defaultMode: 256,
+              keys: ['mongodb.conf'],
+              name: 'mongodb-config',
+              namespace: 'kb-system',
+              templateRef: 'mongodb5.0-config-template',
+              volumeName: 'mongodb-config'
+            },
+            name: 'mongodb-config'
+          },
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'mongodb-metrics-config-new',
+              namespace: 'kb-system',
+              templateRef: 'mongodb-metrics-config-new',
+              volumeName: 'mongodb-metrics-config'
+            },
+            name: 'mongodb-metrics-config'
+          },
+          {
+            configSpec: {
+              asEnvFrom: ['mongodb'],
+              constraintRef: 'mongodb-env-constraints',
+              keys: ['env'],
+              name: 'mongodb-env',
+              namespace: 'kb-system',
+              templateRef: 'mongodb-env-tpl',
+              volumeName: 'mongodb-env'
+            },
+            name: 'mongodb-environment'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  function buildRedisYaml() {
+    const redisParams: Record<string, string> = {};
+
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      redisParams['maxclients'] = String(maxConnections);
+    }
+
+    const replicationItem: any = {
+      ...(Object.keys(redisParams).length > 0 && {
+        configFileParams: {
+          'redis.conf': {
+            parameters: redisParams
+          }
+        }
+      }),
+      configSpec: {
+        constraintRef: 'redis7-config-constraints',
+        name: 'redis-replication-config',
+        namespace: 'kb-system',
+        templateRef: 'redis7-config-template',
+        volumeName: 'redis-config'
+      },
+      name: 'redis-replication-config'
+    };
+
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks'
+        },
+        name: `${dbName}-redis`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'redis',
+        configItemDetails: [
+          replicationItem,
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'redis-metrics-config',
+              namespace: 'kb-system',
+              templateRef: 'redis-metrics-config',
+              volumeName: 'redis-metrics-config'
+            },
+            name: 'redis-metrics-config'
+          }
+        ]
+      }
+    };
+
+    return yaml.dump(template);
+  }
+  // Support for multiple database types
+  if (dbType === 'postgresql' || dbType === undefined) {
+    return buildPostgresYaml();
+  } else if (dbType === 'apecloud-mysql') {
+    return buildMysqlYaml();
+  } else if (dbType === 'mongodb') {
+    return buildMongodbYaml();
+  } else if (dbType === 'redis') {
+    return buildRedisYaml();
+  }
+  throw new Error(`json2ParameterConfig: unsupported dbType ${dbType}`);
+};

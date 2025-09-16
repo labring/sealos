@@ -55,9 +55,18 @@ ARG path
 COPY ${path} ${path}
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --frozen-lockfile --filter=$name install && pnpm --filter=$name run build
+
 RUN if [ "$name" = "desktop" ]; then \
+    mkdir -p desktop/.next/standalone/desktop/prisma/global && \
+    mkdir -p desktop/.next/standalone/desktop/prisma/region && \
     cp -r ./desktop/prisma/global/migrations desktop/.next/standalone/desktop/prisma/global/migrations; \
     cp -r ./desktop/prisma/region/migrations desktop/.next/standalone/desktop/prisma/region/migrations; \
+fi
+RUN if [ "$name" = "devbox" ]; then \
+    if [ -d "./providers/devbox/prisma/migrations" ]; then \
+        mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma && \
+        cp -r ./providers/devbox/prisma/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/; \
+    fi; \
 fi
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -82,6 +91,9 @@ RUN if [ "$name" = "template" ]; then \
     apk add --no-cache git openssh-client; \
 fi
 RUN if [ "$name" = "desktop" ]; then \
+    npm install -g prisma@5.10.2; \
+fi
+RUN if [ "$name" = "devbox" ]; then \
     npm install -g prisma@5.10.2; \
 fi
 USER nextjs

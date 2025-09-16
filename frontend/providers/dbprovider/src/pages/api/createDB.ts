@@ -3,13 +3,19 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
-import { BackupItemType, DBEditType } from '@/types/db';
-import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
+import { BackupItemType, DBEditType, DBType } from '@/types/db';
+import {
+  json2Account,
+  json2ResourceOps,
+  json2CreateCluster,
+  json2ParameterConfig
+} from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
-import { BackupSupportedDBTypeList } from '@/constants/db';
+import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
+import { getScore } from '@/utils/tools';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -90,7 +96,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       storageClassName: process.env.STORAGE_CLASSNAME
     });
 
-    await applyYamlList([account, cluster], 'create');
+    const yamlList = [account, cluster];
+
+    if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+      const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+
+      const config = json2ParameterConfig(
+        dbForm.dbName,
+        dbForm.dbType,
+        dbForm.dbVersion,
+        dbForm.parameterConfig,
+        dynamicMaxConnections
+      );
+      yamlList.push(config);
+    }
+
+    console.log('[createDB] config', yamlList[2]);
+
+    await applyYamlList(yamlList, 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',
       'v1alpha1',

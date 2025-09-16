@@ -1,0 +1,144 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: k8s.rules.pod_owner
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    max by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_replace(
+        label_replace(
+          kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
+          "replicaset", "$1", "owner_name", "(.*)"
+        ) * on (replicaset,namespace,{{ $groupLabels }}) group_left(owner_name) topk by (replicaset,namespace,{{ $groupLabels }}) (
+          1, max by (replicaset,namespace,owner_name,{{ $groupLabels }}) (
+            kube_replicaset_owner{job="kube-state-metrics", owner_kind=""}
+          )
+        ),
+        "workload", "$1", "replicaset", "(.*)"
+      )
+    )
+  labels:
+    workload_type: replicaset
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    max by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_replace(
+        label_replace(
+          kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
+          "replicaset", "$1", "owner_name", "(.*)"
+        ) * on (replicaset,namespace,{{ $groupLabels }}) group_left(owner_name) topk by (replicaset,namespace,{{ $groupLabels }}) (
+          1, max by (replicaset,namespace,owner_name,{{ $groupLabels }}) (
+            kube_replicaset_owner{job="kube-state-metrics", owner_kind="Deployment"}
+          )
+        ),
+        "workload", "$1", "owner_name", "(.*)"
+      )
+    )
+  labels:
+    workload_type: deployment
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    max by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_replace(
+        kube_pod_owner{job="kube-state-metrics", owner_kind="DaemonSet"},
+        "workload", "$1", "owner_name", "(.*)"
+      )
+    )
+  labels:
+    workload_type: daemonset
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    max by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_replace(
+        kube_pod_owner{job="kube-state-metrics", owner_kind="StatefulSet"},
+      "workload", "$1", "owner_name", "(.*)")
+    )
+  labels:
+    workload_type: statefulset
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    group by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_join(
+        group by (namespace,job_name,pod,owner_name,{{ $groupLabels }}) (
+          label_join(
+            kube_pod_owner{job="kube-state-metrics", owner_kind="Job"}
+          , "job_name", "", "owner_name")
+        )
+        * on (namespace,job_name,{{ $groupLabels }}) group_left()
+        group by (namespace,job_name,{{ $groupLabels }}) (
+          kube_job_owner{job="kube-state-metrics", owner_kind=~"Pod|"}
+        )
+      , "workload", "", "owner_name")
+    )
+  labels:
+    workload_type: job
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    max by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_replace(
+        kube_pod_owner{job="kube-state-metrics", owner_kind="", owner_name=""},
+      "workload", "$1", "pod", "(.+)")
+    )
+  labels:
+    workload_type: barepod
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    max by (namespace,workload,pod,{{ $groupLabels }}) (
+      label_replace(
+        kube_pod_owner{job="kube-state-metrics", owner_kind="Node"},
+      "workload", "$1", "pod", "(.+)")
+    )
+  labels:
+    workload_type: staticpod
+  record: namespace_workload_pod:kube_pod_owner:relabel
+- condition: '{{ true }}'
+  expr: |-
+    group by (namespace,workload,workload_type,pod,{{ $groupLabels }}) (
+      label_join(
+        label_join(
+          group by (namespace,job_name,pod,{{ $groupLabels }}) (
+            label_join(
+              kube_pod_owner{job="kube-state-metrics", owner_kind="Job"}
+            , "job_name", "", "owner_name")
+          )
+          * on (namespace,job_name,{{ $groupLabels }}) group_left(owner_kind, owner_name)
+          group by (namespace,job_name,owner_kind,owner_name,{{ $groupLabels }}) (
+            kube_job_owner{job="kube-state-metrics", owner_kind!="Pod", owner_kind!=""}
+          )
+        , "workload", "", "owner_name")
+      , "workload_type", "", "owner_kind")
+
+      OR
+
+      label_replace(
+        label_replace(
+          label_replace(
+            kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"}
+            , "replicaset", "$1", "owner_name", "(.+)"
+          )
+          * on (namespace,replicaset,{{ $groupLabels }}) group_left(owner_kind, owner_name)
+          group by (namespace,replicaset,owner_kind,owner_name,{{ $groupLabels }}) (
+            kube_replicaset_owner{job="kube-state-metrics", owner_kind!="Deployment", owner_kind!=""}
+          )
+        , "workload", "$1", "owner_name", "(.+)")
+        OR
+        label_replace(
+          group by (namespace,pod,owner_name,owner_kind,{{ $groupLabels }}) (
+            kube_pod_owner{job="kube-state-metrics", owner_kind!="ReplicaSet", owner_kind!="DaemonSet", owner_kind!="StatefulSet", owner_kind!="Job", owner_kind!="Node", owner_kind!=""}
+          )
+          , "workload", "$1", "owner_name", "(.+)"
+        )
+      , "workload_type", "$1", "owner_kind", "(.+)")
+    )
+  record: namespace_workload_pod:kube_pod_owner:relabel

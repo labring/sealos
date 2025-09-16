@@ -23,6 +23,11 @@ data:
       guideEnabled: false
       apiEnabled: false
     launchpad:
+      infrastructure:
+        provider: alibaba
+        requiresDomainReg: false
+        domainRegQueryLink: https://beian.miit.gov.cn/#/Integrated/index
+        domainBindingDocumentationLink: null
       eventAnalyze:
         enabled: false
         fastGPTKey: ""
@@ -31,6 +36,8 @@ data:
           url: {{ .monitorUrl }}
         billing:
           url: {{ .billingUrl }}
+        log:
+          url: {{ .logUrl }}
       appResourceFormSliderConfig:
         default:
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
@@ -61,6 +68,9 @@ spec:
     spec:
       containers:
         - name: applaunchpad-frontend
+          env:
+          - name: NODE_TLS_REJECT_UNAUTHORIZED
+            value: "{{ default "1" .tlsRejectUnauthorized }}"
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

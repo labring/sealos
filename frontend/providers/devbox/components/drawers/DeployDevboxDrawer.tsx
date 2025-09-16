@@ -91,7 +91,8 @@ export default function DeployDevboxDrawer({
         formData: tempFormDataStr
       }
     });
-  }, [deployData]);
+    onSuccess();
+  }, [deployData, onSuccess]);
 
   const handleUpdate = useCallback(
     (item: AppListItemType) => {

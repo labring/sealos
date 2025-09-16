@@ -43,12 +43,17 @@ echo -e "\nAll notable changes to this project will be documented in this file.\
 
 for file in $(ls CHANGELOG |grep -v '^CHANGELOG.md$' | sort -V -r); do
     version=$(echo $file | sed -E 's/CHANGELOG-(.*)\.md/\1/')
+    if [ "$version" = "latest" ]; then
+        continue
+    fi
     echo -e "- [CHANGELOG-${version}.md](./CHANGELOG-${version}.md)" >> CHANGELOG/CHANGELOG.md
 done
 
 ## check version is release version
 if [[ ${TAG} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "!!!!! is release version, will update docs"
-    sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/install.sh
+    sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/install-v2.sh
     sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/build-offline-tar.sh
 fi
+
+cp CHANGELOG/CHANGELOG-"${TAG#v}".md CHANGELOG/CHANGELOG-latest.md

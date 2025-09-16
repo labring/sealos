@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+- [CHANGELOG-5.1.0-beta4.md](./CHANGELOG-5.1.0-beta4.md)
+- [CHANGELOG-5.1.0-beta3.md](./CHANGELOG-5.1.0-beta3.md)
+- [CHANGELOG-5.1.0-beta2.md](./CHANGELOG-5.1.0-beta2.md)
+- [CHANGELOG-5.1.0-beta1.md](./CHANGELOG-5.1.0-beta1.md)
 - [CHANGELOG-5.0.1-beta2.md](./CHANGELOG-5.0.1-beta2.md)
 - [CHANGELOG-5.0.1-beta1.md](./CHANGELOG-5.0.1-beta1.md)
 - [CHANGELOG-5.0.1.md](./CHANGELOG-5.0.1.md)

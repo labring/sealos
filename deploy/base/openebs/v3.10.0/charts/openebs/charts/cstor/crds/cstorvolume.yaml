@@ -1,0 +1,264 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorvolumes.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorVolume
+    listKind: CStorVolumeList
+    plural: cstorvolumes
+    shortNames:
+      - cv
+    singular: cstorvolume
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: Current volume capacity
+          jsonPath: .status.capacity
+          name: Capacity
+          type: string
+        - description: Identifies the current health of the volume
+          jsonPath: .status.phase
+          name: Status
+          type: string
+        - description: Age of CStorVolume
+          jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorVolume describes a cstor volume resource created as custom
+            resource
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorVolumeSpec is the spec for a CStorVolume resource
+              properties:
+                capacity:
+                  anyOf:
+                    - type: integer
+                    - type: string
+                  description: Capacity represents the desired size of the underlying
+                    volume.
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                consistencyFactor:
+                  description: ConsistencyFactor is minimum number of volume replicas
+                    i.e. `RF/2 + 1` has to be connected to the target for write operations.
+                    Basically more then 50% of replica has to be connected to target.
+                  type: integer
+                desiredReplicationFactor:
+                  description: DesiredReplicationFactor represents maximum number of
+                    replicas that are allowed to connect to the target. Required for
+                    scale operations
+                  type: integer
+                iqn:
+                  description: Target iSCSI Qualified Name.combination of nodeBase
+                  type: string
+                replicaDetails:
+                  description: ReplicaDetails refers to the trusty replica information
+                  properties:
+                    knownReplicas:
+                      additionalProperties:
+                        type: string
+                      description: KnownReplicas represents the replicas that target
+                        can trust to read data
+                      type: object
+                  type: object
+                replicationFactor:
+                  description: ReplicationFactor represents number of volume replica
+                    created during volume provisioning connect to the target
+                  type: integer
+                targetIP:
+                  description: TargetIP IP of the iSCSI target service
+                  type: string
+                targetPort:
+                  description: iSCSI Target Port typically TCP ports 3260
+                  type: string
+                targetPortal:
+                  description: iSCSI Target Portal. The Portal is combination of IP:port
+                    (typically TCP ports 3260)
+                  type: string
+              type: object
+            status:
+              description: CStorVolumeStatus is for handling status of cvr.
+              properties:
+                capacity:
+                  anyOf:
+                    - type: integer
+                    - type: string
+                  description: Represents the actual capacity of the underlying volume.
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                conditions:
+                  description: Current Condition of cstorvolume. If underlying persistent
+                    volume is being resized then the Condition will be set to 'ResizePending'.
+                  items:
+                    description: CStorVolumeCondition contains details about state of
+                      cstorvolume
+                    properties:
+                      lastProbeTime:
+                        description: Last time we probed the condition.
+                        format: date-time
+                        type: string
+                      lastTransitionTime:
+                        description: Last time the condition transitioned from one status
+                          to another.
+                        format: date-time
+                        type: string
+                      message:
+                        description: Human-readable message indicating details about
+                          last transition.
+                        type: string
+                      reason:
+                        description: Unique, this should be a short, machine understandable
+                          string that gives the reason for condition's last transition.
+                          If it reports "ResizePending" that means the underlying cstorvolume
+                          is being resized.
+                        type: string
+                      status:
+                        description: ConditionStatus states in which state condition
+                          is present
+                        type: string
+                      type:
+                        description: CStorVolumeConditionType is a valid value of CStorVolumeCondition.Type
+                        type: string
+                    required:
+                      - status
+                      - type
+                    type: object
+                  type: array
+                lastTransitionTime:
+                  description: LastTransitionTime refers to the time when the phase
+                    changes
+                  format: date-time
+                  nullable: true
+                  type: string
+                lastUpdateTime:
+                  description: LastUpdateTime refers to the time when last status updated
+                    due to any operations
+                  format: date-time
+                  nullable: true
+                  type: string
+                message:
+                  description: A human-readable message indicating details about why
+                    the volume is in this state.
+                  type: string
+                phase:
+                  description: CStorVolumePhase is to hold result of action.
+                  type: string
+                replicaDetails:
+                  description: ReplicaDetails refers to the trusty replica information
+                  properties:
+                    knownReplicas:
+                      additionalProperties:
+                        type: string
+                      description: KnownReplicas represents the replicas that target
+                        can trust to read data
+                      type: object
+                  type: object
+                replicaStatuses:
+                  items:
+                    description: ReplicaStatus stores the status of replicas
+                    properties:
+                      checkpointedIOSeq:
+                        description: Represents IO number of replica persisted on the
+                          disk
+                        type: string
+                      inflightRead:
+                        description: Ongoing reads I/O from target to replica
+                        type: string
+                      inflightSync:
+                        description: Ongoing sync I/O from target to replica
+                        type: string
+                      inflightWrite:
+                        description: ongoing writes I/O from target to replica
+                        type: string
+                      mode:
+                        description: Mode represents replica status i.e. Healthy, Degraded
+                        type: string
+                      quorum:
+                        description: 'Quorum indicates wheather data wrtitten to the
+                        replica is lost or exists. "0" means: data has been lost(
+                        might be ephimeral case) and will recostruct data from other
+                        Healthy replicas in a write-only mode 1 means: written data
+                        is exists on replica'
+                        type: string
+                      replicaId:
+                        description: ID is replica unique identifier
+                        type: string
+                      upTime:
+                        description: time since the replica connected to target
+                        type: integer
+                    required:
+                      - checkpointedIOSeq
+                      - inflightRead
+                      - inflightSync
+                      - inflightWrite
+                      - mode
+                      - quorum
+                      - replicaId
+                      - upTime
+                    type: object
+                  type: array
+              type: object
+            versionDetails:
+              description: VersionDetails provides the details for upgrade
+              properties:
+                autoUpgrade:
+                  description: If AutoUpgrade is set to true then the resource is upgraded
+                    automatically without any manual steps
+                  type: boolean
+                desired:
+                  description: Desired is the version that we want to upgrade or the
+                    control plane version
+                  type: string
+                status:
+                  description: Status gives the status of reconciliation triggered when
+                    the desired and current version are not same
+                  properties:
+                    current:
+                      description: Current is the version of resource
+                      type: string
+                    dependentsUpgraded:
+                      description: DependentsUpgraded gives the details whether all
+                        children of a resource are upgraded to desired version or not
+                      type: boolean
+                    lastUpdateTime:
+                      description: LastUpdateTime is the time the status was last  updated
+                      format: date-time
+                      nullable: true
+                      type: string
+                    message:
+                      description: Message is a human readable message if some error
+                        occurs
+                      type: string
+                    reason:
+                      description: Reason is the actual reason for the error state
+                      type: string
+                    state:
+                      description: State is the state of reconciliation
+                      type: string
+                  type: object
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources: {}

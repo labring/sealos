@@ -1,0 +1,18 @@
+{{- if and .Values.ndmExporter.enabled .Values.ndmExporter.nodeExporter.metricsPort }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "openebs-ndm.node-exporter.fullname" . }}-service
+  labels:
+    {{- include "openebs-ndm.node-exporter.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: {{ .Values.ndmExporter.nodeExporter.metricsPort }}
+      targetPort: {{ .Values.ndmExporter.nodeExporter.metricsPort }}
+  selector:
+    {{- with .Values.ndmExporter.nodeExporter.podLabels }}
+    {{ toYaml . }}
+    {{- end }}
+  {{- end }}

@@ -12,7 +12,7 @@ import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
@@ -30,13 +30,14 @@ import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { getDBSecret } from '@/api/db';
 import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
-import type { DBType } from '@/types/db';
-
+import type { DBType, BackupItemType } from '@/types/db';
+import { getBackups, deleteBackup } from '@/api/backup';
+import StopBackupModal from '../detail/components/StopBackupModal';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
   ...defaultDBEditValue,
-  dbVersion: DBVersionMap.postgresql[0]?.id
+  dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0'
 };
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
@@ -52,6 +53,14 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { loadDBDetail, dbDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
   const { checkQuotaAllow } = useUserStore();
+
+  // Stop backup modal state
+  const {
+    isOpen: isStopBackupOpen,
+    onOpen: onStopBackupOpen,
+    onClose: onStopBackupClose
+  } = useDisclosure();
+  const [pendingFormData, setPendingFormData] = useState<DBEditType | null>(null);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -229,6 +238,32 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     setIsLoading(false);
   };
 
+  const handleBackupCheck = async (formData: DBEditType) => {
+    try {
+      if (isEdit) {
+        const result = await getBackups();
+        const allBackups = result || [];
+        const backups = allBackups.filter(
+          (backup: BackupItemType) => backup.dbName === formData.dbName
+        );
+        const inProgressBackups = backups.filter(
+          (backup: BackupItemType) => backup.status.value === 'Running'
+        );
+
+        if (inProgressBackups.length > 0) {
+          setPendingFormData(formData);
+          onStopBackupOpen();
+          return;
+        }
+      }
+
+      await submitSuccess(formData);
+    } catch (error) {
+      console.error(error);
+      toast({ title: t('backups.stop_backup_error'), status: 'error' });
+    }
+  };
+
   const submitError = (err: FieldErrors<DBEditType>) => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -301,7 +336,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit(
-              (data) => openConfirm(() => submitSuccess(data))(),
+              (data) => handleBackupCheck(data),
               (err) => submitError(err)
             )()
           }
@@ -330,6 +365,45 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           onClose={() => setErrorMessage('')}
         />
       )}
+      <StopBackupModal
+        isOpen={isStopBackupOpen}
+        onClose={onStopBackupClose}
+        onConfirm={async () => {
+          if (pendingFormData) {
+            onStopBackupClose();
+            setIsLoading(true);
+            try {
+              const result = await getBackups();
+              const allBackups = result || [];
+              const backups = allBackups.filter(
+                (backup: BackupItemType) => backup.dbName === pendingFormData.dbName
+              );
+              const inProgressBackups = backups.filter(
+                (backup: BackupItemType) => backup.status.value === 'Running'
+              );
+
+              if (inProgressBackups.length > 0) {
+                await Promise.all(
+                  inProgressBackups.map(async (backup: BackupItemType) => {
+                    await deleteBackup(backup.name);
+                  })
+                );
+                toast({ title: t('backups.stop_backup_success'), status: 'success' });
+              }
+
+              // Proceed with submission after stopping backups
+              await submitSuccess(pendingFormData);
+            } catch (error) {
+              console.error(error);
+              toast({ title: t('backups.stop_backup_error'), status: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        }}
+        onCancel={onStopBackupClose}
+        dbName={pendingFormData?.dbName || ''}
+      />
     </>
   );
 };

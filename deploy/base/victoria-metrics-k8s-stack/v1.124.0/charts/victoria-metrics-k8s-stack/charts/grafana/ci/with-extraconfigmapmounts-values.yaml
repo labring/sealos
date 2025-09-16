@@ -1,0 +1,7 @@
+extraConfigmapMounts:
+  - name: '{{ include "grafana.fullname" . }}'
+    configMap: '{{ include "grafana.fullname" . }}'
+    mountPath: /var/lib/grafana/dashboards/test-dashboard.json
+    # This is not a realistic test, but for this we only care about extraConfigmapMounts not being empty and pointing to an existing ConfigMap
+    subPath: grafana.ini
+    readOnly: true

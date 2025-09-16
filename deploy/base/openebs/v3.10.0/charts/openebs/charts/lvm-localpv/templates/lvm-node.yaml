@@ -1,0 +1,158 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ template "lvmlocalpv.fullname" . }}-node
+  {{- with .Values.lvmNode.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "lvmlocalpv.lvmNode.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "lvmlocalpv.lvmNode.matchLabels" . | nindent 6 }}
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      {{- with .Values.lvmNode.podAnnotations }}
+      annotations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "lvmlocalpv.lvmNode.labels" . | nindent 8 }}
+        {{- with .Values.lvmNode.podLabels}}
+        {{ toYaml . | nindent 8 }}
+        {{- end}}
+    spec:
+{{- if .Values.lvmNode.priorityClass.create }}
+      priorityClassName: {{ template "lvmlocalpv.lvmNode.priorityClassName" . }}
+{{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.lvmNode.name }}
+      hostNetwork: true
+      containers:
+        - name: {{ .Values.lvmNode.driverRegistrar.name }}
+          image: "{{ .Values.lvmNode.driverRegistrar.image.registry }}{{ .Values.lvmNode.driverRegistrar.image.repository }}:{{ .Values.lvmNode.driverRegistrar.image.tag }}"
+          imagePullPolicy: {{ .Values.lvmNode.driverRegistrar.image.pullPolicy }}
+          args:
+            - "--v={{ .Values.lvmNode.logLevel }}"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/lvm-localpv /registration/lvm-localpv-reg.sock"]
+          env:
+            - name: ADDRESS
+              value: /plugin/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: {{ .Values.lvmNode.kubeletDir }}plugins/lvm-localpv/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NODE_DRIVER
+              value: openebs-lvm
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: registration-dir
+              mountPath: /registration
+          resources:
+            {{- toYaml .Values.lvmNode.resources | nindent 12 }}
+        - name: {{ .Values.lvmPlugin.name }}
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+          image: "{{ .Values.lvmPlugin.image.registry }}{{ .Values.lvmPlugin.image.repository }}:{{ .Values.lvmPlugin.image.tag }}"
+          imagePullPolicy: {{ .Values.lvmPlugin.image.pullPolicy }}
+          args:
+            - "--nodeid=$(OPENEBS_NODE_ID)"
+            - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
+            - "--plugin=$(OPENEBS_NODE_DRIVER)"
+            - "--kube-api-qps={{ .Values.lvmNode.kubeClientRateLimiter.qps }}"
+            - "--kube-api-burst={{ .Values.lvmNode.kubeClientRateLimiter.burst }}"
+            {{- if .Values.lvmPlugin.ioLimits.enabled }}
+            - "--setiolimits"
+            - "--container-runtime=$(CONTAINER_RUNTIME)"
+            - "--riops-per-gb=$(RIOPS_PER_GB)"
+            - "--wiops-per-gb=$(WIOPS_PER_GB)"
+            {{- end }}
+            {{- if .Values.lvmPlugin.metricsPort }}
+            - "--listen-address=$(METRICS_LISTEN_ADDRESS)"
+            {{- end }}
+          env:
+            - name: OPENEBS_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OPENEBS_CSI_ENDPOINT
+              value: unix:///plugin/csi.sock
+            - name: OPENEBS_NODE_DRIVER
+              value: agent
+            - name: LVM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if .Values.lvmPlugin.ioLimits.enabled }}
+            - name: CONTAINER_RUNTIME
+              value: {{ .Values.lvmPlugin.ioLimits.containerRuntime }}
+            - name: RIOPS_PER_GB
+              value: {{ .Values.lvmPlugin.ioLimits.readIopsPerGB }}
+            - name: WIOPS_PER_GB
+              value: {{ .Values.lvmPlugin.ioLimits.writeIopsPerGB }}
+            {{- end }}
+            {{- if .Values.lvmPlugin.metricsPort }}
+            - name: METRICS_LISTEN_ADDRESS
+              value: :{{ .Values.lvmPlugin.metricsPort }}
+            {{- end }}
+            {{- if .Values.lvmPlugin.allowedTopologies }}
+            - name: ALLOWED_TOPOLOGIES
+              value: {{ .Values.lvmPlugin.allowedTopologies }}
+            {{- end }}
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: device-dir
+              mountPath: /dev
+            - name: pods-mount-dir
+              mountPath: {{ .Values.lvmNode.kubeletDir }}
+              # needed so that any mounts setup inside this container are
+              # propagated back to the host machine.
+              mountPropagation: "Bidirectional"
+          resources:
+            {{- toYaml .Values.lvmNode.resources | nindent 12 }}
+      volumes:
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: {{ .Values.lvmNode.kubeletDir }}plugins_registry/
+            type: DirectoryOrCreate
+        - name: plugin-dir
+          hostPath:
+            path: {{ .Values.lvmNode.kubeletDir }}plugins/lvm-localpv/
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: {{ .Values.lvmNode.kubeletDir }}
+            type: Directory
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+{{- if .Values.lvmNode.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.lvmNode.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.lvmNode.securityContext }}
+      securityContext:
+{{ toYaml .Values.lvmNode.securityContext | indent 8 }}
+{{- end }}
+{{- if .Values.lvmNode.tolerations }}
+      tolerations:
+{{ toYaml .Values.lvmNode.tolerations | indent 8 }}
+{{- end }}

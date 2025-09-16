@@ -34,6 +34,7 @@
   "Pod": "Pod",
   "Pod Name": "Pod Name",
   "Port": "Port",
+  "ParameterConfig": "Parameter Configure",
   "Replicas": "Replicas",
   "Resources": "Resources",
   "Restart": "Restart",
@@ -102,7 +103,10 @@
   "block_write_time": "Block Write Duration",
   "cancel": "Cancel",
   "cannot_change_name": "Database name cannot be changed",
+  "case_sensitive": "Case Sensitive",
+  "case_insensitive": "Case Insensitive",
   "change_log": "History",
+  "click_for_details": "Click for details",
   "clipboard_read_failed": "Reading clipboard failed!",
   "clipboard_unsupported": "Browser does not support Clipper API",
   "collection": "Collection",
@@ -278,6 +282,16 @@
   "manual_backup_tip": "Tip: Backup during off-peak hours. Avoid DDL operations to prevent locking. Be patient if data size is large. Backup starts 1 min after confirmation.",
   "max_replicas": "Max Replicas: ",
   "memory": "Memory",
+  "backups":{
+    "db_backup_running": "Database backup in progress",
+    "backup_running": "Running",
+    "stop_backup": "Stop Backup?",
+    "stop_backup_tip": "Database backup in progress, stopping backup cannot be recovered, confirm to stop backup?",
+    "stop_backup_confirm": "Stop Backup",
+    "stop_update_cancel": "Cancel Update",
+    "stop_backup_success": "Backup stopped",
+    "stop_backup_error": "Error stopping backup"
+  },
   "migrate": {
     "Incremental migration prompt information": "Enable \\\"Continuous Migration\\\" for incremental DB sync (disabled by default).",
     "mongo": {
@@ -357,6 +371,7 @@
   "running_time": "Uptime",
   "sealaf": "sealaf",
   "search": "Search",
+  "search_name_and_remark_placeholder": "Search by name or remark",
   "search_or_create": "Search or create",
   "select_a_maximum_of_10_files": "Select up to 10 files",
   "service_deletion_failed": "Failed to delete the service",

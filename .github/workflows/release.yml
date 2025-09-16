@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  goreleaser:
-    runs-on: ubuntu-24.04
+  releaser:
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
       packages: write
@@ -41,7 +41,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          args: release --clean --release-footer-tmpl=scripts/release/footer.md.tmpl --release-header-tmpl=scripts/release/head.md.tmpl
+          args: release --clean --release-notes=../CHANGELOG/CHANGELOG-latest.md
           workdir: ./lifecycle
         env:
           USERNAME: ${{ github.repository_owner }}
@@ -49,13 +49,25 @@ jobs:
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
   cloud-release:
-    uses: ./.github/workflows/cloud-release.yml
+    runs-on: ubuntu-24.04
     needs:
-      - goreleaser
+      - releaser
     permissions:
       contents: read
       packages: write
-    secrets: inherit
-    with:
-      tag: ${{ github.ref_name }}
-      build_offline_tar_only: false
+      actions: write
+    steps:
+      - name: Trigger Cloud Release Workflow(only when tagged)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'cloud-release.yml',
+              ref: "refs/tags/${{ github.ref_name }}",
+              inputs: {
+                  tag: "${{ github.ref_name }}",
+                  build_offline_tar_only: false
+              }
+            })

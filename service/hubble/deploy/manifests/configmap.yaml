@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: service-hubble
+  name: service-hubble-config
+data:
+  config.yml: |
+    auth:
+      whiteList: ""
+    http:
+      port: ":8080"
+    hubble:
+      addr: "hubble-relay.kube-system.svc.cluster.local:443"
+    redis:
+      addr: "<redis-placeholder>"
+      username: "default"
+      password: "<redis-password-placeholder>"
+      db: 0

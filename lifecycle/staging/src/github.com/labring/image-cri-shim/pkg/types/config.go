@@ -106,10 +106,10 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 				continue
 			}
 			name, passwd := splitNameAndPasswd(registry.Auth)
-			domain = registry2.GetRegistryDomain(registry.Address)
-			domain = registry2.NormalizeRegistry(domain)
+			localDomain := registry2.GetRegistryDomain(registry.Address)
+			localDomain = registry2.NormalizeRegistry(localDomain)
 
-			criAuth[domain] = types2.AuthConfig{
+			criAuth[localDomain] = types2.AuthConfig{
 				Username:      name,
 				Password:      passwd,
 				ServerAddress: registry.Address,

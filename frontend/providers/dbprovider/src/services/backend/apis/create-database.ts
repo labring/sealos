@@ -1,11 +1,11 @@
 import { createDatabaseSchemas } from '@/types/apis';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
-import { BackupSupportedDBTypeList } from '@/constants/db';
+import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
-import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
+import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
 import { DBEditType, EditType } from '@/types/db';
 import { raw2schema } from './get-database';
 const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
@@ -19,7 +19,8 @@ const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditT
     storage: parseFloat(dbForm.resource.storage),
     labels: {},
     terminationPolicy: dbForm.terminationPolicy,
-    autoBackup: dbForm.autoBackup
+    autoBackup: dbForm.autoBackup,
+    parameterConfig: dbForm.parameterConfig
   };
 };
 export async function createDatabase(
@@ -34,7 +35,20 @@ export async function createDatabase(
     storageClassName: process.env.STORAGE_CLASSNAME
   });
 
-  await k8s.applyYamlList([account, cluster], 'create');
+  const yamlList = [account, cluster];
+
+  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
+    const config = json2ParameterConfig(
+      rawDbForm.dbName,
+      rawDbForm.dbType,
+      rawDbForm.dbVersion,
+      rawDbForm.parameterConfig
+    );
+
+    yamlList.push(config);
+  }
+
+  await k8s.applyYamlList(yamlList, 'create');
   const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
     'apps.kubeblocks.io',
     'v1alpha1',

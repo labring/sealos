@@ -34,6 +34,7 @@
   "Pod": "实例",
   "Pod Name": "实例名",
   "Port": "端口",
+  "ParameterConfig": "参数配置",
   "Replicas": "实例数",
   "Resources": "资源",
   "Restart": "重启",
@@ -101,7 +102,10 @@
   "block_write_time": "写数据块时间",
   "cancel": "取消",
   "cannot_change_name": "不允许修改数据库名称",
+  "case_sensitive": "大小写敏感",
+  "case_insensitive": "大小写不敏感",
   "change_log": "变更历史",
+  "click_for_details": "点击查看详情",
   "clipboard_read_failed": "读取剪切板失败！",
   "clipboard_unsupported": "浏览器不支持 Clipboard API",
   "collection": "集合",
@@ -277,6 +281,16 @@
   "manual_backup_tip": "建议在业务低峰期备份实例。备份期间，请勿执行DDL操作，避免锁表导致备份失败。若数据量较大，花费的时问可能较长，请耐心等待。点击 [开始备份] 后，将在1分钟后开始备份。",
   "max_replicas": "实例数最大为: ",
   "memory": "内存",
+  "backups":{
+    "db_backup_running": "数据库备份中",
+    "backup_running": "备份中",
+    "stop_backup": "是否停止备份？",
+    "stop_backup_tip": "数据库备份中，停止备份后不可恢复，确认停止备份？",
+    "stop_backup_confirm": "停止备份",
+    "stop_update_cancel": "取消变更",
+    "stop_backup_success": "备份已停止",
+    "stop_backup_error": "处理备份时出错"
+  },
   "migrate": {
     "Incremental migration prompt information": "如果需要数据库增量同步，可以开启\"持续迁移\"，默认是关闭。",
     "mongo": {
@@ -356,6 +370,7 @@
   "running_time": "运行时长",
   "sealaf": "云开发",
   "search": "搜索",
+  "search_name_and_remark_placeholder": "搜索名称或备注",
   "search_or_create": "搜索或创建",
   "select_a_maximum_of_10_files": "最多选择 10 个文件",
   "service_deletion_failed": "Service 删除失败",

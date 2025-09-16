@@ -2,6 +2,7 @@ import { pauseDBByName, restartDB, startDBByName, getDBSecret } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
+import type { DatabaseAlertItem } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeList } from '@/constants/db';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
@@ -13,11 +14,23 @@ import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Box, Button, Center, Flex, Image, Text, useDisclosure, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  InputLeftElement,
+  InputGroup,
+  Text,
+  useDisclosure,
+  useTheme
+} from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import {
   ColumnDef,
+  FilterFn,
   getCoreRowModel,
   getFilteredRowModel,
   useReactTable
@@ -52,15 +65,18 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
+import { Search } from 'lucide-react';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
 const DBList = ({
   dbList = [],
-  refetchApps
+  refetchApps,
+  alerts = {}
 }: {
   dbList: DBListItemType[];
   refetchApps: () => void;
+  alerts?: Record<string, DatabaseAlertItem>;
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
@@ -81,10 +97,15 @@ const DBList = ({
   const [remarkValue, setRemarkValue] = useState('');
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
   });
+
+  useEffect(() => {
+    console.log('alerts', alerts);
+  }, []);
 
   const handleRestartApp = useCallback(
     async (db: DBListItemType) => {
@@ -179,128 +200,144 @@ const DBList = ({
 
   const handleManageData = useCallback(
     async (db: DBListItemType) => {
-      const orgId = '34';
-      const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
-      const userStr = localStorage.getItem('session');
-      const userObj = userStr ? JSON.parse(userStr) : null;
-      const userId = userObj?.user.id;
-      const userNS = userObj?.user.nsid;
-      const userKey = `${userId}/${userNS}`;
-
       try {
-        const conn = await getDBSecret({
-          dbName: db.name,
-          dbType: db.dbType,
-          mock: false
-        });
+        const orgId = '34';
+        const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
+        const userStr = localStorage.getItem('session');
+        const userObj = userStr ? JSON.parse(userStr) : null;
+        const userId = userObj?.user.id;
+        const userNS = userObj?.user.nsid;
+        const userKey = `${userId}/${userNS}`;
 
-        if (!conn) {
-          return toast({
-            title: 'Connection info not ready',
-            status: 'error'
+        try {
+          const conn = await getDBSecret({
+            dbName: db.name,
+            dbType: db.dbType,
+            mock: false
           });
-        }
 
-        const { host, port, connection, username, password } = conn;
+          if (!conn) {
+            return toast({
+              title: 'Connection info not ready',
+              status: 'error'
+            });
+          }
 
-        let connectionUrl = connection;
-        switch (db.dbType) {
-          case 'mongodb':
-            connectionUrl = `mongodb://${host}:${port}`;
-            break;
-          case 'apecloud-mysql':
-            connectionUrl = `jdbc:mysql://${host}:${port}`;
-            break;
-          case 'postgresql':
-            connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
-            break;
-          case 'redis':
-            connectionUrl = `jdbc:redis://${host}:${port}`;
-            break;
-          default:
-            // keep original connection
-            break;
-        }
+          const { host, port, connection, username, password } = conn;
 
-        const payload = {
-          alias: db.name,
-          environmentId: 2 as 1 | 2,
-          storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
-          host: host,
-          port: String(port),
-          user: username,
-          password: password,
-          url: connectionUrl,
-          type: mapDBType(db.dbType)
-        };
+          let connectionUrl = connection;
+          switch (db.dbType) {
+            case 'mongodb':
+              connectionUrl = `mongodb://${host}:${port}`;
+              break;
+            case 'apecloud-mysql':
+              connectionUrl = `jdbc:mysql://${host}:${port}`;
+              break;
+            case 'postgresql':
+              connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
+              break;
+            case 'redis':
+              connectionUrl = `jdbc:redis://${host}:${port}`;
+              break;
+            default:
+              // keep original connection
+              break;
+          }
 
-        let currentDataSourceId = getDataSourceId(db.name);
-        if (!currentDataSourceId) {
-          try {
-            const res = await syncDatasourceFirst(payload, userKey);
-            currentDataSourceId = res.data;
-            if (currentDataSourceId) {
-              setDataSourceId(db.name, currentDataSourceId);
-            }
-          } catch (err: any) {
-            if (err.data) {
-              currentDataSourceId = err.data;
+          const payload = {
+            alias: db.name,
+            environmentId: 2 as 1 | 2,
+            storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
+            host: host,
+            port: String(port),
+            user: username,
+            password: password,
+            url: connectionUrl,
+            type: mapDBType(db.dbType)
+          };
+
+          let currentDataSourceId = getDataSourceId(db.name);
+          if (!currentDataSourceId) {
+            try {
+              const res = await syncDatasourceFirst(payload, userKey);
+              currentDataSourceId = res?.data;
               if (currentDataSourceId) {
                 setDataSourceId(db.name, currentDataSourceId);
               }
-            } else {
-              throw err;
+            } catch (err: any) {
+              if (err?.data) {
+                currentDataSourceId = err.data;
+                if (currentDataSourceId) {
+                  setDataSourceId(db.name, currentDataSourceId);
+                }
+              } else {
+                throw err;
+              }
             }
+          } else {
+            try {
+              const syncPayload = {
+                ...payload,
+                id: currentDataSourceId
+              };
+              await syncDatasource(syncPayload, userKey);
+            } catch (err) {}
           }
-        } else {
-          try {
-            const syncPayload = {
-              ...payload,
-              id: currentDataSourceId
-            };
-            await syncDatasource(syncPayload, userKey);
-          } catch (err) {}
+
+          if (!currentDataSourceId) {
+            throw new Error('Failed to get or create datasource ID');
+          }
+
+          const currentLang = getLangStore() || i18n?.language || 'zh';
+          const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
+
+          const baseUrl = await generateLoginUrl({
+            userId,
+            userNS,
+            orgId,
+            secretKey,
+            ui: {
+              theme: ThemeAppearance.Light,
+              primaryColor: PrimaryColorsType.bw,
+              language: chat2dbLanguage,
+              hideAvatar: yowantLayoutConfig.hideAvatar
+            }
+          });
+
+          const chat2dbUrl = new URL(baseUrl);
+          chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
+
+          sealosApp.runEvents('openDesktopApp', {
+            appKey: 'system-chat2db',
+            pathname: '',
+            query: {
+              url: chat2dbUrl.toString()
+            }
+          });
+        } catch (err) {
+          console.error('chat2db redirect failed:', err);
+          toast({
+            title: t('chat2db_redirect_failed'),
+            status: 'error'
+          });
         }
-
-        if (!currentDataSourceId) {
-          throw new Error('Failed to get or create datasource ID');
-        }
-
-        const currentLang = getLangStore() || i18n?.language || 'zh';
-        const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
-
-        const baseUrl = await generateLoginUrl({
-          userId,
-          userNS,
-          orgId,
-          secretKey,
-          ui: {
-            theme: ThemeAppearance.Light,
-            primaryColor: PrimaryColorsType.bw,
-            language: chat2dbLanguage,
-            hideAvatar: yowantLayoutConfig.hideAvatar
-          }
-        });
-
-        const chat2dbUrl = new URL(baseUrl);
-        chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-chat2db',
-          pathname: '',
-          query: {
-            url: chat2dbUrl.toString()
-          }
-        });
-      } catch (err) {
+      } catch (error) {
+        console.error('handleManageData error:', error);
         toast({
-          title: t('chat2db_redirect_failed'),
+          title: 'Failed to manage data',
           status: 'error'
         });
       }
     },
-    [router, t, toast, getDataSourceId, setDataSourceId]
+    [router, t, toast, getDataSourceId, setDataSourceId, SystemEnv]
   );
+
+  const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
+    const searchTerm = filterValue.toLowerCase();
+    const name = row.original.name.toLowerCase();
+    const remark = (row.original.remark || '').toLowerCase();
+    return name.includes(searchTerm) || remark.includes(searchTerm);
+  };
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
@@ -409,6 +446,7 @@ const DBList = ({
       },
       {
         accessorKey: 'dbType',
+        enableGlobalFilter: false,
         header: () => t('Type'),
         cell: ({ row }) => (
           <Flex alignItems={'center'} gap={'6px'}>
@@ -426,7 +464,12 @@ const DBList = ({
         accessorKey: 'status',
         header: () => t('status'),
         cell: ({ row }) => (
-          <DBStatusTag conditions={row.original.conditions} status={row.original.status} />
+          <DBStatusTag
+            conditions={row.original.conditions}
+            status={row.original.status}
+            alertReason={alerts[row.original.name]?.reason}
+            alertDetails={alerts[row.original.name]?.details}
+          />
         )
       },
       {
@@ -631,7 +674,14 @@ const DBList = ({
     },
     // enableColumnPinning: true,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel()
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter: searchQuery
+    },
+    filterFns: {
+      global: globalFilterFn
+    },
+    globalFilterFn: globalFilterFn
   });
 
   const isClientSide = useClientSideValue(true);
@@ -671,9 +721,26 @@ const DBList = ({
           py={'2px'}
           minW={'34px'}
         >
-          {dbList.length}
+          {table.getFilteredRowModel().rows.length}
         </Center>
         <Box flex={1}></Box>
+        <InputGroup w={'200px'} h={'36px'} mr={'12px'}>
+          <InputLeftElement pointerEvents="none" h="full" alignItems="center">
+            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </InputLeftElement>
+          <Input
+            placeholder={t('search_name_and_remark_placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            border={'1px solid'}
+            borderColor={'grayModern.200'}
+            h={'36px'}
+            _focus={{
+              borderColor: 'brightBlue.500',
+              boxShadow: '0 0 0 1px var(--chakra-colors-brightBlue-500)'
+            }}
+          />
+        </InputGroup>
         <Button
           className="create-app-btn"
           minW={'95px'}

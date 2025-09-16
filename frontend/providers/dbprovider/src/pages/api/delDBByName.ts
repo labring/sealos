@@ -59,6 +59,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       k8sCore.deleteNamespacedServiceAccount(name, namespace)
     ]).catch((err) => console.log(err, 'delete role err'));
 
+    // delete configurations
+    const configurationNames = [
+      `${name}-postgresql`,
+      `${name}-mysql`,
+      `${name}-mongodb`,
+      `${name}-redis`
+    ];
+
+    await Promise.all(
+      configurationNames.map((configName) =>
+        k8sCustomObjects
+          .deleteNamespacedCustomObject(
+            'apps.kubeblocks.io',
+            'v1alpha1',
+            namespace,
+            'configurations',
+            configName
+          )
+          .catch()
+      )
+    );
+
     // delete cluster
     const result = await k8sCustomObjects.deleteNamespacedCustomObject(
       'apps.kubeblocks.io',

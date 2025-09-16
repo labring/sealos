@@ -1,4 +1,3 @@
-import { JsonFilterItem } from '@/pages/app/detail/logs';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -11,6 +10,8 @@ export interface PodListQueryPayload {
   time?: string;
   namespace?: string;
   podQuery?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -43,13 +44,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    const { time = '30d', app = '', podQuery = 'true' } = req.body as PodListQueryPayload;
+    const {
+      time = '30d',
+      app = '',
+      podQuery = 'true',
+      startTime,
+      endTime
+    } = req.body as PodListQueryPayload;
 
     const params: PodListQueryPayload = {
-      time: time,
       namespace: namespace,
       app: app,
-      podQuery: podQuery
+      podQuery: podQuery,
+      ...(startTime && endTime ? { startTime, endTime } : { time })
     };
 
     console.log(params, 'params');

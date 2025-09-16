@@ -1,0 +1,48 @@
+{{- if and .Values.imageRenderer.enabled .Values.imageRenderer.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "grafana.fullname" . }}-image-renderer
+  {{- if .Values.imageRenderer.serviceMonitor.namespace }}
+  namespace: {{ tpl .Values.imageRenderer.serviceMonitor.namespace . }}
+  {{- else }}
+  namespace: {{ include "grafana.namespace" . }}
+  {{- end }}
+  labels:
+    {{- include "grafana.imageRenderer.labels" . | nindent 4 }}
+    {{- with .Values.imageRenderer.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: {{ .Values.imageRenderer.service.portName }}
+    {{- with .Values.imageRenderer.serviceMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.imageRenderer.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    honorLabels: true
+    path: {{ .Values.imageRenderer.serviceMonitor.path }}
+    scheme: {{ .Values.imageRenderer.serviceMonitor.scheme }}
+    {{- with .Values.imageRenderer.serviceMonitor.tlsConfig }}
+    tlsConfig:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.imageRenderer.serviceMonitor.relabelings }}
+    relabelings:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  jobLabel: "{{ .Release.Name }}-image-renderer"
+  selector:
+    matchLabels:
+      {{- include "grafana.imageRenderer.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "grafana.namespace" . }}
+  {{- with .Values.imageRenderer.serviceMonitor.targetLabels }}
+  targetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

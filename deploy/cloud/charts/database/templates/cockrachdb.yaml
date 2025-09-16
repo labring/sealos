@@ -1,0 +1,22 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: sealos-cockroachdb
+  namespace: sealos
+spec:
+  additionalArgs:
+  - --max-offset={{.Values.cockroachdb.maxOffset}}
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "{{.Values.cockroachdb.storage}}"
+        volumeMode: Filesystem
+  resources: {{- toYaml .Values.cockroachdb.resources | nindent 4 }}
+  tlsEnabled: true
+  cockroachDBVersion: v23.1.11
+  nodes: 3
+  maxUnavailable: 1

@@ -1,0 +1,241 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: blockdevices.openebs.io
+spec:
+  group: openebs.io
+  names:
+    kind: BlockDevice
+    listKind: BlockDeviceList
+    plural: blockdevices
+    shortNames:
+    - bd
+    singular: blockdevice
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.nodeAttributes.nodeName
+      name: NodeName
+      type: string
+    - jsonPath: .spec.path
+      name: Path
+      priority: 1
+      type: string
+    - jsonPath: .spec.filesystem.fsType
+      name: FSType
+      priority: 1
+      type: string
+    - jsonPath: .spec.capacity.storage
+      name: Size
+      type: string
+    - jsonPath: .status.claimState
+      name: ClaimState
+      type: string
+    - jsonPath: .status.state
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: BlockDevice is the Schema for the blockdevices API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeviceSpec defines the properties and runtime status of a BlockDevice
+            properties:
+              aggregateDevice:
+                description: AggregateDevice was intended to store the hierarchical information in cases of LVM. However this is currently not implemented and may need to be re-looked into for better design. To be deprecated
+                type: string
+              capacity:
+                description: Capacity
+                properties:
+                  logicalSectorSize:
+                    description: LogicalSectorSize is blockdevice logical-sector size in bytes
+                    format: int32
+                    type: integer
+                  physicalSectorSize:
+                    description: PhysicalSectorSize is blockdevice physical-Sector size in bytes
+                    format: int32
+                    type: integer
+                  storage:
+                    description: Storage is the blockdevice capacity in bytes
+                    format: int64
+                    type: integer
+                required:
+                - storage
+                type: object
+              claimRef:
+                description: ClaimRef is the reference to the BDC which has claimed this BD
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+                    type: string
+                  kind:
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                  resourceVersion:
+                    description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                    type: string
+                  uid:
+                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                    type: string
+                type: object
+              details:
+                description: Details contain static attributes of BD like model,serial, and so forth
+                properties:
+                  compliance:
+                    description: Compliance is standards/specifications version implemented by device firmware  such as SPC-1, SPC-2, etc
+                    type: string
+                  deviceType:
+                    description: DeviceType represents the type of device like sparse, disk, partition, lvm, crypt
+                    enum:
+                    - disk
+                    - partition
+                    - sparse
+                    - loop
+                    - lvm
+                    - crypt
+                    - dm
+                    - mpath
+                    type: string
+                  driveType:
+                    description: DriveType is the type of backing drive, HDD/SSD
+                    enum:
+                    - HDD
+                    - SSD
+                    - Unknown
+                    - ""
+                    type: string
+                  firmwareRevision:
+                    description: FirmwareRevision is the disk firmware revision
+                    type: string
+                  hardwareSectorSize:
+                    description: HardwareSectorSize is the hardware sector size in bytes
+                    format: int32
+                    type: integer
+                  logicalBlockSize:
+                    description: LogicalBlockSize is the logical block size in bytes reported by /sys/class/block/sda/queue/logical_block_size
+                    format: int32
+                    type: integer
+                  model:
+                    description: Model is model of disk
+                    type: string
+                  physicalBlockSize:
+                    description: PhysicalBlockSize is the physical block size in bytes reported by /sys/class/block/sda/queue/physical_block_size
+                    format: int32
+                    type: integer
+                  serial:
+                    description: Serial is serial number of disk
+                    type: string
+                  vendor:
+                    description: Vendor is vendor of disk
+                    type: string
+                type: object
+              devlinks:
+                description: DevLinks contains soft links of a block device like /dev/by-id/... /dev/by-uuid/...
+                items:
+                  description: DeviceDevLink holds the mapping between type and links like by-id type or by-path type link
+                  properties:
+                    kind:
+                      description: Kind is the type of link like by-id or by-path.
+                      enum:
+                      - by-id
+                      - by-path
+                      type: string
+                    links:
+                      description: Links are the soft links
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              filesystem:
+                description: FileSystem contains mountpoint and filesystem type
+                properties:
+                  fsType:
+                    description: Type represents the FileSystem type of the block device
+                    type: string
+                  mountPoint:
+                    description: MountPoint represents the mountpoint of the block device.
+                    type: string
+                type: object
+              nodeAttributes:
+                description: NodeAttributes has the details of the node on which BD is attached
+                properties:
+                  nodeName:
+                    description: NodeName is the name of the Kubernetes node resource on which the device is attached
+                    type: string
+                type: object
+              parentDevice:
+                description: "ParentDevice was intended to store the UUID of the parent Block Device as is the case for partitioned block devices. \n For example: /dev/sda is the parent for /dev/sda1 To be deprecated"
+                type: string
+              partitioned:
+                description: Partitioned represents if BlockDevice has partitions or not (Yes/No) Currently always default to No. To be deprecated
+                enum:
+                - "Yes"
+                - "No"
+                type: string
+              path:
+                description: Path contain devpath (e.g. /dev/sdb)
+                type: string
+            required:
+            - capacity
+            - devlinks
+            - nodeAttributes
+            - path
+            type: object
+          status:
+            description: DeviceStatus defines the observed state of BlockDevice
+            properties:
+              claimState:
+                description: ClaimState represents the claim state of the block device
+                enum:
+                - Claimed
+                - Unclaimed
+                - Released
+                type: string
+              state:
+                description: State is the current state of the blockdevice (Active/Inactive/Unknown)
+                enum:
+                - Active
+                - Inactive
+                - Unknown
+                type: string
+            required:
+            - claimState
+            - state
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

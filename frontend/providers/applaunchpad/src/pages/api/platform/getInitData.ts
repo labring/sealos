@@ -119,6 +119,7 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
     SEALOS_USER_DOMAINS: AppConfig.cloud.userDomains || [],
     DESKTOP_DOMAIN: AppConfig.cloud.desktopDomain,
     PVC_STORAGE_MAX: AppConfig.launchpad.pvcStorageMax || 20,
-    GPU_ENABLED: AppConfig.common.gpuEnabled
+    GPU_ENABLED: AppConfig.common.gpuEnabled,
+    LOG_ENABLED: !!AppConfig?.launchpad?.components?.log?.url
   };
 };

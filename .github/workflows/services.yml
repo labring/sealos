@@ -1,20 +1,6 @@
 name: Build Services image
 
 on:
-  create:
-    tags:
-  workflow_call:
-    inputs:
-      push_image:
-        description: "Push image"
-        required: false
-        type: boolean
-        default: false
-      push_image_tag:
-        description: "Push image tag"
-        default: "latest"
-        required: false
-        type: string
   workflow_dispatch:
     inputs:
       push_image:
@@ -102,6 +88,7 @@ jobs:
             exceptionmonitor,
             devbox,
             vlogs,
+            hubble,
           ]
     steps:
       - name: Checkout
@@ -125,6 +112,12 @@ jobs:
           GOARCH=amd64 make build
           mv bin/manager bin/service-${MODULE}-amd64
           chmod +x bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64 | grep -q 'x86-64'
+          if [ $? -ne 0 ]; then
+              echo "amd64 platform build failed"
+              exit 1
+          fi
 
       - name: Build ${{ matrix.module }} arm64
         working-directory: service/${{ matrix.module }}
@@ -134,6 +127,12 @@ jobs:
           GOARCH=arm64 make build
           mv bin/manager bin/service-${MODULE}-arm64
           chmod +x bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64 | grep -q 'aarch64'
+          if [ $? -ne 0 ]; then
+              echo "arm64 platform build failed"
+              exit 1
+          fi
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
@@ -239,6 +238,7 @@ jobs:
             exceptionmonitor,
             devbox,
             vlogs,
+            hubble,
           ]
     steps:
       - name: Checkout

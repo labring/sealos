@@ -1,0 +1,121 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: cstorvolumeattachments.cstor.openebs.io
+spec:
+  group: cstor.openebs.io
+  names:
+    kind: CStorVolumeAttachment
+    listKind: CStorVolumeAttachmentList
+    plural: cstorvolumeattachments
+    shortNames:
+      - cva
+    singular: cstorvolumeattachment
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: CStorVolumeAttachment represents a CSI based volume
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CStorVolumeAttachmentSpec is the spec for a CStorVolume resource
+              properties:
+                iscsi:
+                  description: ISCSIInfo specific to ISCSI protocol, this is filled
+                    only if the volume type is iSCSI
+                  properties:
+                    iqn:
+                      description: Iqn of this volume
+                      type: string
+                    iscsiInterface:
+                      description: IscsiInterface of this volume
+                      type: string
+                    lun:
+                      description: 'Lun specify the lun number 0, 1.. on iSCSI Volume.
+                      (default: 0)'
+                      type: string
+                    targetPortal:
+                      description: TargetPortal holds the target portal of this volume
+                      type: string
+                  type: object
+                volume:
+                  description: Volume specific info
+                  properties:
+                    accessModes:
+                      description: AccessMode of a volume will hold the access mode
+                        of the volume
+                      items:
+                        type: string
+                      type: array
+                    accessType:
+                      description: AccessType of a volume will indicate if the volume
+                        will be used as a block device or mounted on a path
+                      type: string
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    devicePath:
+                      description: Device Path specifies the device path which is returned
+                        when the iSCSI login is successful
+                      type: string
+                    fsType:
+                      description: FSType of a volume will specify the format type -
+                        ext4(default), xfs of PV
+                      type: string
+                    mountOptions:
+                      description: MountOptions specifies the options with which mount
+                        needs to be attempted
+                      items:
+                        type: string
+                      type: array
+                    name:
+                      description: Name of the CSI volume
+                      type: string
+                    ownerNodeID:
+                      description: OwnerNodeID is the Node ID which is also the owner
+                        of this Volume
+                      type: string
+                    readOnly:
+                      description: ReadOnly specifies if the volume needs to be mounted
+                        in ReadOnly mode
+                      type: boolean
+                    stagingTargetPath:
+                      description: StagingPath of the volume will hold the path on which
+                        the volume is mounted on that node
+                      type: string
+                    targetPath:
+                      description: TargetPath of the volume will hold the path on which
+                        the volume is bind mounted on that node
+                      type: string
+                  required:
+                    - name
+                    - ownerNodeID
+                  type: object
+              required:
+                - iscsi
+                - volume
+              type: object
+            status:
+              description: CStorVolumeAttachmentStatus status represents the current
+                mount status of the volume
+              type: string
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
