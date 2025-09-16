@@ -5,7 +5,6 @@ import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
 import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { Session } from 'inspector';
 import { appWithTranslation, i18n, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
@@ -26,10 +25,10 @@ function App({ Component, pageProps }: AppProps) {
   );
   const initMinioClient = useOssStore((s) => s.initClient);
   const client = useOssStore((s) => s.client);
-  // const setSession = useSessionStore((s) => s.setSession);
   const { session: oldSession, setSession } = useSessionStore();
   const { clearClient, setSecret, secret } = useOssStore((s) => s);
   const router = useRouter();
+
   useEffect(() => {
     createSealosApp();
   }, []);
@@ -89,6 +88,7 @@ function App({ Component, pageProps }: AppProps) {
     };
     initClient();
   }, [secret, oldSession]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>

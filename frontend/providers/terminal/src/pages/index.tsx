@@ -56,7 +56,7 @@ export default function Index(props: ServiceEnv) {
     const quotaRequest = {
       cpu: envData.data.data.CPU_REQUIREMENT,
       memory: envData.data.data.MEMORY_REQUIREMENT,
-      traffic: session.subscription.PlanName === 'PAYG' ? 0 : 1
+      traffic: session.subscription.type === 'PAYG' ? 0 : 1
     };
 
     const exceededItems = workspaceQuota.filter((item) => {
