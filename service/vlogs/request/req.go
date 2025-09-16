@@ -49,14 +49,11 @@ func QueryLogsByParams(query *QueryParams) (io.ReadCloser, error) {
 }
 
 func generateReq(query *QueryParams) (*http.Request, error) {
-	baseURL, err := url.JoinPath(query.Path, "select/logsql/query")
-	if err != nil {
-		return nil, err
-	}
-	parsedURL, err := url.Parse(baseURL)
+	parsedURL, err := url.Parse(query.Path)
 	if err != nil {
 		return nil, fmt.Errorf("can not parser API URL: %w", err)
 	}
+	parsedURL.JoinPath("select/logsql/query")
 	params := url.Values{}
 	params.Add("query", query.Query)
 	params.Add("start", query.StartTime)
