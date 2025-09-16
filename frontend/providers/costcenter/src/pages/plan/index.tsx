@@ -1,4 +1,4 @@
-import { Info, Sparkles } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
@@ -26,7 +26,7 @@ import { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import jsyaml from 'js-yaml';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
-import { Button, Skeleton } from '@sealos/shadcn-ui';
+import { Skeleton } from '@sealos/shadcn-ui';
 import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
 
 export default function Plan() {
@@ -58,7 +58,6 @@ export default function Plan() {
   // Check if we're in create mode - use state to persist across re-renders
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
-  const [isTopupMode, setIsTopupMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
@@ -82,18 +81,20 @@ export default function Plan() {
     [router]
   );
 
-  // important: useEffect to handle the router query
+  // useEffect to handle the router query
   useEffect(() => {
+    if (!router.isReady) return;
+
     console.log('router.query', router.query);
 
-    // Method 1: Check router.query when ready
-    if (router.isReady && router.query.page) {
-      // Navigate to the specified page
+    // Navigate to the specified page
+    if (router.query.page) {
       router.push(`/${router.query.page}`);
       return;
     }
 
-    if (router.isReady && router.query.mode === 'create') {
+    // Handle subscription modal modes
+    if (router.query.mode === 'create') {
       setIsCreateMode(true);
       // Handle plan parameter for default selection
       if (router.query.plan) {
@@ -103,14 +104,13 @@ export default function Plan() {
       return;
     }
 
-    if (router.isReady && router.query.mode === 'upgrade') {
+    if (router.query.mode === 'upgrade') {
       setIsUpgradeMode(true);
       handleSubscriptionModalOpenChange(true);
       return;
     }
 
-    if (router.isReady && router.query.mode === 'topup') {
-      setIsTopupMode(true);
+    if (router.query.mode === 'topup') {
       // Add delay to ensure ref is ready
       setTimeout(() => {
         console.log('Trying to open recharge modal', rechargeRef.current);
@@ -119,72 +119,16 @@ export default function Plan() {
       return;
     }
 
-    // Handle workspaceId parameter
-    if (router.isReady && router.query.workspaceId) {
+    // Handle workspaceId parameter (set by desktop after workspace switch)
+    if (router.query.workspaceId) {
       setWorkspaceId(router.query.workspaceId as string);
     }
 
-    // Check for success state from Stripe callback
-    if (router.isReady && router.query.stripeState === 'success' && router.query.payId) {
+    // Check for success state from Stripe callback (set by desktop)
+    if (router.query.stripeState === 'success' && router.query.payId) {
       console.log('Setting showCongratulations to true');
       setShowCongratulations(true);
       return;
-    }
-
-    // Method 2: Parse URL directly as fallback
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const pageParam = urlParams.get('page');
-
-      if (pageParam) {
-        router.push(`/${pageParam}`);
-        return;
-      }
-
-      const createMode = urlParams.get('mode') === 'create';
-      const upgradeMode = urlParams.get('mode') === 'upgrade';
-      const topupMode = urlParams.get('mode') === 'topup';
-
-      if (createMode) {
-        setIsCreateMode(true);
-        // Handle plan parameter for default selection (fallback)
-        const planParam = urlParams.get('plan');
-        if (planParam) {
-          setDefaultSelectedPlan(planParam);
-        }
-        handleSubscriptionModalOpenChange(true);
-        return;
-      }
-
-      if (upgradeMode) {
-        setIsUpgradeMode(true);
-        handleSubscriptionModalOpenChange(true);
-        return;
-      }
-
-      if (topupMode) {
-        setIsTopupMode(true);
-        // Add delay to ensure ref is ready
-        setTimeout(() => {
-          console.log('Trying to open recharge modal (fallback)', rechargeRef.current);
-          rechargeRef.current?.onOpen();
-        }, 1000);
-        return;
-      }
-
-      // Handle workspaceId parameter as fallback
-      const workspaceIdParam = urlParams.get('workspaceId');
-      if (workspaceIdParam) {
-        setWorkspaceId(workspaceIdParam);
-      }
-
-      const stripeSuccess = urlParams.get('stripeState') === 'success';
-      const payId = urlParams.get('payId');
-      if (stripeSuccess && payId) {
-        console.log('Setting showCongratulations to true (fallback)');
-        setShowCongratulations(true);
-        return;
-      }
     }
   }, [router, handleSubscriptionModalOpenChange]);
 
@@ -221,7 +165,7 @@ export default function Plan() {
     enabled: !!(session?.user?.nsid && region?.uid),
     onSuccess: (data) => setSubscriptionData(data.data || null),
     refetchOnMount: true,
-    retry: 3
+    retry: 5
   });
 
   // Get specific workspace subscription info for congratulations modal
@@ -237,7 +181,7 @@ export default function Plan() {
   });
 
   // Get last transaction and sync to store
-  useQuery({
+  const { data: userLastTransactionData } = useQuery({
     queryKey: ['last-transaction', session?.user?.nsid, region?.uid],
     queryFn: () =>
       getLastTransaction({
@@ -290,7 +234,7 @@ export default function Plan() {
         await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
         await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
         await refetchSubscriptionInfo();
-      }, 2000);
+      }, 5000);
 
       if (data.code === 200) {
         if (data.data?.redirectUrl) {

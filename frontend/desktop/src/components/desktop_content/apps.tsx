@@ -577,9 +577,7 @@ export default function Apps() {
   }, [dynamicApps, moreApps]);
 
   const desktopPages = useMemo(() => {
-    // One page desktop
     const firstPageApps = itemsPerPageInGrid > 0 ? normalApps.slice(0, itemsPerPageInGrid - 1) : [];
-    console.log([firstPageApps], 'desktop pages');
     return [firstPageApps];
   }, [normalApps, itemsPerPageInGrid]);
 
@@ -593,7 +591,7 @@ export default function Apps() {
     const pages = Array.from({ length: totalPagesInFolder }).map((_, index) =>
       getPageInFolder(index)
     );
-    console.log(pages, 'folder pages');
+
     return pages;
   }, [folderApps, itemsPerPageInFolder, totalPagesInFolder]);
 

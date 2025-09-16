@@ -10,6 +10,7 @@ interface CongratulationsModalProps {
     cpu: string;
     memory: string;
     storage: string;
+    nodeports: string;
   };
   traffic?: number;
   onClose: () => void;
@@ -37,7 +38,8 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
     cpu: props.maxResources?.cpu ? formatCpu(props.maxResources.cpu) : '2 vCPU',
     memory: props.maxResources?.memory ? formatMemory(props.maxResources.memory) : '2GB RAM',
     storage: props.maxResources?.storage ? formatStorage(props.maxResources.storage) : '5GB Disk',
-    traffic: props.traffic ? formatTrafficAuto(props.traffic) : '1GB Traffic'
+    traffic: props.traffic ? formatTrafficAuto(props.traffic) : '1GB Traffic',
+    nodeports: props.maxResources?.nodeports ? props.maxResources.nodeports : '1 Nodeport'
   };
 
   return (
