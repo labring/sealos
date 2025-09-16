@@ -53,7 +53,7 @@ func generateReq(query *QueryParams) (*http.Request, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can not parser API URL: %w", err)
 	}
-	parsedURL.JoinPath("select/logsql/query")
+	parsedURL = parsedURL.JoinPath("select/logsql/query")
 	params := url.Values{}
 	params.Add("query", query.Query)
 	params.Add("start", query.StartTime)
