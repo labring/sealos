@@ -34,10 +34,9 @@ async function retryWithBackoff<T>(
       return await operation();
     } catch (error: any) {
       lastError = error;
-      console.warn(`${context} - Attempt ${attempt}/${maxRetries} failed:`, error.message);
       
       if (attempt < maxRetries) {
-        const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 100; // 添加抖动
+        const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 100; 
         await sleep(delay);
       }
     }
@@ -192,8 +191,6 @@ class ServiceManager {
               } 
             }
           );
-          
-          console.log(`Service ${devboxName} updated with new ports:`, newPorts.map(p => p.number));
         }
       } catch (error: any) {
         if (error.response?.statusCode === 404) {
@@ -221,7 +218,6 @@ class ServiceManager {
     };
 
     await this.applyYamlList([json2Service(networkConfig)], 'create');
-    console.log(`Service ${devboxName} created with ports:`, ports.map(p => p.number));
   }
 
   async getServicePortInfo(devboxName: string, portNumber: number): Promise<{ portName: string } | null> {
@@ -289,7 +285,6 @@ async function createPortsAndNetworks(
     return [];
   }
 
-  console.log(`Creating ${ports.length} ports for DevBox ${devboxName}...`);
 
   const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
   const serviceManager = new ServiceManager(k8sCore, namespace, applyYamlList);
@@ -325,11 +320,9 @@ async function createPortsAndNetworks(
             privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`
           };
           
-          console.log(`✅ Port ${portConfig.number} created successfully`);
           return result;
           
         } catch (error: any) {
-          console.error(`❌ Failed to create port ${portConfig.number}:`, error.message);
           throw error;
         }
       })
@@ -359,11 +352,9 @@ async function createPortsAndNetworks(
     const successCount = finalResults.filter(r => !('error' in r) || !r.error).length;
     const failureCount = finalResults.length - successCount;
     
-    console.log(`Port creation completed: ${successCount} successful, ${failureCount} failed`);
     return finalResults;
 
   } catch (error: any) {
-    console.error('Critical error in port creation:', error.message);
     
     return ports.map(portConfig => ({
       portName: `port-${portConfig.number}-failed`,
@@ -483,14 +474,6 @@ export async function POST(req: NextRequest) {
     }
 
     const resourceConfig = convertResourceConfig(devboxForm.resource);
-
-    console.log('Creating DevBox with config:', {
-      name: devboxForm.name,
-      runtime: devboxForm.runtime,
-      resource: resourceConfig,
-      portsCount: devboxForm.ports?.length || 0
-    });
-
     const { DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
     const devbox = json2DevboxV2(
       {
@@ -549,9 +532,6 @@ export async function POST(req: NextRequest) {
     const successfulPorts = createdPorts.filter((port: any) => !('error' in port) || !port.error);
 
     if (failedPorts.length > 0) {
-      console.warn(`DevBox created with ${failedPorts.length} port failures:`, 
-        failedPorts.map((p: any) => ({ port: p.number, error: p.error })));
-        
       return jsonRes({
         code: 201, 
         message: `DevBox created successfully, but ${failedPorts.length} port(s) had issues`,
@@ -573,7 +553,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`✅ DevBox ${devboxForm.name} created successfully with all ports`);
     return jsonRes({
       data: {
         name: adaptedData.name,
@@ -592,7 +571,6 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err: any) {
-    console.error('DevBox creation error:', err);
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',

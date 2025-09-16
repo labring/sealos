@@ -26,8 +26,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/toolt
 
 export const ProtocolList = [
   { value: 'HTTP', label: 'https://', inline: 'http://' },
-  { value: 'GRPC', label: 'grpcs://', inline: 'grpc://' },
-  { value: 'WS', label: 'wss://', inline: 'ws://' },
 ];
 
 const Network = () => {
