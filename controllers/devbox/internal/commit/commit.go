@@ -17,6 +17,7 @@ import (
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/image"
+	"github.com/containerd/nerdctl/v2/pkg/cmd/login"
 	"github.com/containerd/nerdctl/v2/pkg/containerutil"
 	ncdefaults "github.com/containerd/nerdctl/v2/pkg/defaults"
 
@@ -56,6 +57,17 @@ type CommitterImpl struct {
 func NewCommitter(registryAddr, registryUsername, registryPassword string) (Committer, error) {
 	var conn *grpc.ClientConn
 	var err error
+
+	// login to registry
+	err = login.Login(context.Background(), types.LoginCommandOptions{
+		GOptions:      *NewGlobalOptionConfig(),
+		ServerAddress: registryAddr,
+		Username:      registryUsername,
+		Password:      registryPassword,
+	}, io.Discard)
+	if err != nil {
+		return nil, err
+	}
 
 	// retry to connect
 	for i := 0; i <= DefaultMaxRetries; i++ {
