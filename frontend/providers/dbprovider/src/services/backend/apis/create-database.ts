@@ -38,14 +38,17 @@ export async function createDatabase(
   const yamlList = [account, cluster];
 
   if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    const config = json2ParameterConfig(
-      rawDbForm.dbName,
-      rawDbForm.dbType,
-      rawDbForm.dbVersion,
-      rawDbForm.parameterConfig
-    );
+    // MySQL 5.7.42 version should not apply parameter config
+    if (!(rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
+      const config = json2ParameterConfig(
+        rawDbForm.dbName,
+        rawDbForm.dbType,
+        rawDbForm.dbVersion,
+        rawDbForm.parameterConfig
+      );
 
-    yamlList.push(config);
+      yamlList.push(config);
+    }
   }
 
   await k8s.applyYamlList(yamlList, 'create');
