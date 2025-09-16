@@ -5,7 +5,6 @@ import { nanoid } from '@/utils/tools';
 import { devboxIdKey, devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
 import { 
   DeployDevboxPathParamsSchema,
-  DeployDevboxRequestSchema,
 } from './schema';
 import { jsonRes } from '@/services/backend/response';
 import { getK8s } from '@/services/backend/kubernetes';
@@ -23,14 +22,6 @@ export async function POST(
 ) {
   try {
     const { name: devboxName, tag } = DeployDevboxPathParamsSchema.parse(params);
-    
-    let requestBody = {};
-    try {
-      const rawBody = await req.json();
-      requestBody = DeployDevboxRequestSchema.parse(rawBody);
-    } catch (error) {
-      console.warn('Request body parsing failed, using empty object:', error);
-    }
     const cpu = 2000; 
     const memory = 2048; 
 
@@ -190,8 +181,6 @@ export async function POST(
         gpu: {}
       }
     };
-
-    console.log('Deploying to applaunchpad with data:', JSON.stringify(formData, null, 2));
     const fetchResponse = await fetch(
       `https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`,
       {
@@ -222,7 +211,6 @@ export async function POST(
     }
 
     const responseData = await fetchResponse.json();
-    console.log('Applaunchpad response:', JSON.stringify(responseData, null, 2));
 
     const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
     const publicDomains =

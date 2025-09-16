@@ -76,7 +76,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       kubeconfig: await authSession(headerList)
     });
 
-    // 获取相关的 ingresses
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
       undefined,
@@ -89,7 +88,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const ingresses = (ingressesResponse.body as { items: any[] }).items;
     console.log(`Found ${ingresses.length} ingresses for devbox: ${devboxName}`);
 
-    // ✅ 修正：使用 Promise.all 等待所有 ingress 修改完成
     const ingressUpdatePromises = ingresses
       .filter((ingress: any) => {
         const annotationsIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
@@ -117,7 +115,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       console.log(`Successfully updated ${ingressUpdatePromises.length} ingresses`);
     }
 
-    // 现在才安全地更新 devbox 状态
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
