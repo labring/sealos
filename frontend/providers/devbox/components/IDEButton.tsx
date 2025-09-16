@@ -197,15 +197,20 @@ const IDEButton = memo(
             <DropdownMenuContent className="p-1.5" align="end">
               <div className="flex">
                 {/* left column */}
-                <div className="w-[210px] space-y-1">
-                  {leftColumnItems.map((item) =>
+                <div
+                  className={cn(
+                    'space-y-1',
+                    env.currencySymbol === 'usd' ? 'w-[160px]' : 'w-[230px]'
+                  )}
+                >
+                  {getLeftColumnItems(env.currencySymbol).map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
                         {item.options?.map((option, index) => (
                           <div key={option.value} className="flex items-center">
                             <DropdownMenuItem
                               className={cn(
-                                index === 0 ? 'w-[120px]' : 'w-[80px]',
+                                index === 0 ? 'w-[140px]' : 'w-[80px]',
                                 'text-zinc-600',
                                 index === 0 && 'pr-1 pl-2',
                                 index === 1 && 'pr-2 text-zinc-600',
@@ -223,7 +228,7 @@ const IDEButton = memo(
                                   alt={option.value}
                                   src={`/images/ide/${option.value}.svg`}
                                 />
-                                <span className="text-xs whitespace-nowrap">
+                                <span className="text-sm whitespace-nowrap">
                                   {option.menuLabel}
                                 </span>
                                 {currentIDE === option.value && (
@@ -418,29 +423,50 @@ export const ideObj = {
   }
 } as const;
 
-const leftColumnItems: MenuItem[] = [
-  { value: 'kiro', menuLabel: 'Kiro' },
-  { value: 'qoder', menuLabel: 'Qoder' },
-  { value: 'lingma', menuLabel: 'Lingma' },
-  {
-    value: 'trae-group' as IDEType,
-    menuLabel: 'Trae',
-    group: 'trae',
-    options: [
-      { value: 'trae', menuLabel: 'Trae' },
-      { value: 'traeCN', menuLabel: 'CN' }
-    ]
-  },
-  {
-    value: 'codebuddy-group' as IDEType,
-    menuLabel: 'CodeBuddy',
-    group: 'codebuddy',
-    options: [
-      { value: 'codebuddy', menuLabel: 'CodeBuddy' },
-      { value: 'codebuddyCN', menuLabel: 'CN' }
-    ]
+const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
+  const baseItems: MenuItem[] = [
+    { value: 'kiro', menuLabel: 'Kiro' },
+    { value: 'qoder', menuLabel: 'Qoder' },
+    { value: 'lingma', menuLabel: 'Lingma' },
+    {
+      value: 'trae-group' as IDEType,
+      menuLabel: 'Trae',
+      group: 'trae',
+      options: [
+        { value: 'trae', menuLabel: 'Trae' },
+        { value: 'traeCN', menuLabel: 'CN' }
+      ]
+    },
+    {
+      value: 'codebuddy-group' as IDEType,
+      menuLabel: 'CodeBuddy',
+      group: 'codebuddy',
+      options: [
+        { value: 'codebuddy', menuLabel: 'CodeBuddy' },
+        { value: 'codebuddyCN', menuLabel: 'CN' }
+      ]
+    }
+  ];
+
+  if (currencySymbol === 'usd') {
+    return baseItems.map((item) => {
+      if (item.options) {
+        const filteredOptions = item.options.filter((option) => !option.value.includes('CN'));
+        // If only one option remains after filtering, flatten the group to a single item
+        if (filteredOptions.length === 1) {
+          return {
+            value: filteredOptions[0].value,
+            menuLabel: filteredOptions[0].menuLabel
+          };
+        }
+        return { ...item, options: filteredOptions };
+      }
+      return item;
+    });
   }
-];
+
+  return baseItems;
+};
 const rightColumnItems: MenuItem[] = [
   { value: 'cursor', menuLabel: 'Cursor' },
   { value: 'vscode', menuLabel: 'VSCode' },
