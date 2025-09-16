@@ -17,7 +17,7 @@ type QueryParams struct {
 	EndTime   string
 }
 
-func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
+func QueryLogsByParams(query *QueryParams) (io.ReadCloser, error) {
 	httpClient := http.DefaultClient
 	req, err := generateReq(query)
 	if err != nil {
@@ -27,12 +27,6 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("HTTP req error: %w", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("=== Victoria Logs Query Failed ===")
-		}
-	}(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
@@ -51,7 +45,7 @@ func QueryLogsByParams(query *QueryParams) (*http.Response, error) {
 		log.Printf("===================================")
 		return nil, fmt.Errorf("victoria Logs query failed [%d]: %s", resp.StatusCode, string(body))
 	}
-	return resp, nil
+	return resp.Body, nil
 }
 
 func generateReq(query *QueryParams) (*http.Request, error) {

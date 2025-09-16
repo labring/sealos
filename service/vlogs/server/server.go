@@ -101,7 +101,7 @@ func (vl *VLogsServer) authenticate(namespace, kubeConfig string) error {
 	return nil
 }
 
-func (vl *VLogsServer) executeQuery(req *http.Request) (*http.Response, error) {
+func (vl *VLogsServer) executeQuery(req *http.Request) (io.ReadCloser, error) {
 	vlogsReq, kubeConfig, err := vl.verifyParams(req)
 	if err != nil {
 		return nil, fmt.Errorf("bad request (%w)", err)
@@ -134,8 +134,8 @@ func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Reque
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	_, err = io.Copy(rw, resp.Body)
+	defer resp.Close()
+	_, err = io.Copy(rw, resp)
 	if err != nil {
 		return err
 	}
@@ -147,8 +147,8 @@ func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) e
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	defer resp.Close()
+	body, err := io.ReadAll(resp)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
