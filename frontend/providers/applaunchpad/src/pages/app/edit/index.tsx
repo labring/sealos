@@ -167,24 +167,52 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   );
 
   const exceededQuotas = useMemo(() => {
+    const oldReplicas =
+      (formHook.formState.defaultValues?.hpa?.use
+        ? formHook.formState.defaultValues?.hpa?.maxReplicas
+        : Number.isSafeInteger(formHook.formState.defaultValues?.replicas)
+        ? (formHook.formState.defaultValues?.replicas as number)
+        : 1) ?? 1;
+
+    const newReplicas = realTimeForm.current.hpa.use
+      ? realTimeForm.current.hpa.maxReplicas
+      : Number.isSafeInteger(realTimeForm.current.replicas)
+      ? (realTimeForm.current.replicas as number)
+      : 1;
+
+    const oldGpuCount =
+      formHook.formState.defaultValues?.gpu?.type === ''
+        ? 0
+        : formHook.formState.defaultValues?.gpu?.amount ?? 0;
+    const newGpuCount =
+      realTimeForm.current.gpu?.type === '' ? 0 : realTimeForm.current.gpu?.amount ?? 0;
+
     return checkExceededQuotas({
       cpu: isEdit
-        ? realTimeForm.current.cpu - (formHook.formState.defaultValues?.cpu ?? 0)
-        : realTimeForm.current.cpu,
+        ? realTimeForm.current.cpu * newReplicas -
+          (formHook.formState.defaultValues?.cpu ?? 0) * oldReplicas
+        : realTimeForm.current.cpu * newReplicas,
       memory: isEdit
-        ? realTimeForm.current.memory - (formHook.formState.defaultValues?.memory ?? 0)
-        : realTimeForm.current.memory,
-      gpu: realTimeForm.current.gpu?.type === '' ? 0 : realTimeForm.current.gpu?.amount ?? 0,
+        ? realTimeForm.current.memory * newReplicas -
+          (formHook.formState.defaultValues?.memory ?? 0) * oldReplicas
+        : realTimeForm.current.memory * newReplicas,
+      gpu: isEdit
+        ? newGpuCount * newReplicas - oldGpuCount * oldReplicas
+        : newGpuCount * newReplicas,
       nodeport: isEdit
-        ? (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) -
+        ? (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
+            newReplicas -
           (formHook.formState.defaultValues?.networks?.filter((item) => item?.openNodePort ?? false)
-            ?.length ?? 0)
-        : realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0,
+            ?.length ?? 0) *
+            oldReplicas
+        : (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
+          newReplicas,
       storage: isEdit
-        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) -
-            existingStores.reduce((sum, item) => sum + item.value, 0)) *
+        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) * newReplicas -
+            existingStores.reduce((sum, item) => sum + item.value, 0) * oldReplicas) *
           resourcePropertyMap.storage.scale
         : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
+          newReplicas *
           resourcePropertyMap.storage.scale,
       ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
@@ -431,16 +459,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           });
         }
       }
-      // quote check
-      // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
-      // if (quoteCheckRes) {
-      //   return toast({
-      //     status: 'warning',
-      //     title: t(quoteCheckRes),
-      //     duration: 5000,
-      //     isClosable: true
-      //   });
-      // }
 
       // check network port
       if (!checkNetworkPorts(data.networks)) {
