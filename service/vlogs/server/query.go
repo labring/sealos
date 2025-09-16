@@ -152,9 +152,25 @@ func (v *VLogsQuery) generateDropQuery() {
 	v.query += "| Drop _stream_id,_stream,app,job,namespace,node"
 }
 
+// allowedNumberLevels defines the set of valid NumberLevel values.
+var allowedNumberLevels = map[string]struct{}{
+	"m": {},
+	"h": {},
+	"d": {},
+	"s": {},
+}
+
+func isValidNumberLevel(level string) bool {
+	_, ok := allowedNumberLevels[level]
+	return ok
+}
+
 func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 	if req.NumberMode == modeTrue {
-		item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", req.NumberLevel)
-		v.query += item
+		if isValidNumberLevel(req.NumberLevel) {
+			item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", req.NumberLevel)
+			v.query += item
+		}
+		// else: invalid NumberLevel, do not add to query
 	}
 }
