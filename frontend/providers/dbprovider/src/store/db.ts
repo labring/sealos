@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
 import {
   getMyDBList,
@@ -130,6 +130,7 @@ export const useDBStore = create<State>()(
       })),
       {
         name: 'db-store',
+        storage: createJSONStorage(() => sessionStorage),
         partialize: (state) => ({ dataSourceIds: state.dataSourceIds })
       }
     )
