@@ -28,6 +28,7 @@ func QueryLogsByParams(query *QueryParams) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("HTTP req error: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			return nil, fmt.Errorf(
@@ -36,7 +37,6 @@ func QueryLogsByParams(query *QueryParams) (io.ReadCloser, error) {
 				readErr,
 			)
 		}
-		resp.Body.Close()
 		log.Printf("=== Victoria Logs Query Failed ===")
 		log.Printf("Status Code: %d", resp.StatusCode)
 		log.Printf("Server: %s", resp.Header.Get("X-Server-Hostname"))
