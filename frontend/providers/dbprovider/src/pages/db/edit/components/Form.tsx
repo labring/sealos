@@ -264,10 +264,16 @@ const Form = ({
     [getValues('dbType')]
   );
 
-  const supportParameterConfig = useMemo(
-    () => ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(getValues('dbType')),
-    [getValues('dbType')]
-  );
+  const supportParameterConfig = useMemo(() => {
+    const dbType = getValues('dbType');
+    const dbVersion = getValues('dbVersion');
+
+    if (dbType === 'apecloud-mysql' && dbVersion === 'mysql-5.7.42') {
+      return false;
+    }
+
+    return ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType);
+  }, [getValues('dbType'), getValues('dbVersion')]);
 
   const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
     useMemo(() => {
