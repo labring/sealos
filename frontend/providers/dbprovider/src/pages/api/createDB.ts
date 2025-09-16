@@ -99,16 +99,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const yamlList = [account, cluster];
 
     if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+      // MySQL 5.7.42 version should not apply parameter config
+      if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+        const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
 
-      const config = json2ParameterConfig(
-        dbForm.dbName,
-        dbForm.dbType,
-        dbForm.dbVersion,
-        dbForm.parameterConfig,
-        dynamicMaxConnections
-      );
-      yamlList.push(config);
+        const config = json2ParameterConfig(
+          dbForm.dbName,
+          dbForm.dbType,
+          dbForm.dbVersion,
+          dbForm.parameterConfig,
+          dynamicMaxConnections
+        );
+        yamlList.push(config);
+      }
     }
 
     console.log('[createDB] config', yamlList[2]);
