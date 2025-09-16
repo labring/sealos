@@ -56,17 +56,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await Promise.all([
       k8sAuth.deleteNamespacedRole(name, namespace).catch((err) => {
         if (err?.response?.statusCode !== 404) {
-          console.log(`Error deleting role ${name}:`, err);
+          console.log('Error deleting role:', name, err);
         }
       }),
       k8sAuth.deleteNamespacedRoleBinding(name, namespace).catch((err) => {
         if (err?.response?.statusCode !== 404) {
-          console.log(`Error deleting role binding ${name}:`, err);
+          console.log('Error deleting role binding:', name, err);
         }
       }),
       k8sCore.deleteNamespacedServiceAccount(name, namespace).catch((err) => {
         if (err?.response?.statusCode !== 404) {
-          console.log(`Error deleting service account ${name}:`, err);
+          console.log('Error deleting service account:', name, err);
         }
       })
     ]);
@@ -92,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           .catch((err) => {
             // Ignore 404 errors for configurations that don't exist
             if (err?.response?.statusCode !== 404) {
-              console.log(`Error deleting configuration ${configName}:`, err);
+              console.log('Error deleting configuration:', configName, err);
             }
           })
       )
