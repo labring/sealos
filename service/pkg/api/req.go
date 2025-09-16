@@ -91,6 +91,8 @@ type VlogsRequest struct {
 	Keyword     string      `json:"keyword,omitempty"`
 	JSONQuery   []JSONQuery `json:"jsonQuery,omitempty"`
 	PodQuery    string      `json:"podQuery,omitempty"`
+	StartTime   string      `json:"startTime,omitempty"`
+	EndTime     string      `json:"endTime,omitempty"`
 }
 
 type VlogsResponse struct {
