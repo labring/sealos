@@ -1,18 +1,19 @@
+import { getResourcePrice } from '@/api/platform';
+import { userPriceType } from '@/types/user';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { UserQuotaItemType } from '@/types/user';
-import { getUserQuota, getResourcePrice } from '@/api/platform';
-import type { userPriceType } from '@/types/user';
-import { CheckQuotaType } from '@/types/app';
 
 type State = {
-  balance: number;
-  userQuota: UserQuotaItemType[];
-  loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
-  checkQuotaAllow: (request: CheckQuotaType, usedData?: CheckQuotaType) => string;
+  userQuota: WorkspaceQuotaItem[];
+  loadUserQuota: () => Promise<null>;
+  checkExceededQuotas: (
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage' | 'traffic', number>>
+  ) => WorkspaceQuotaItem[];
 };
 
 let retryGetPrice = 3;
@@ -39,52 +40,27 @@ export const useUserStore = create<State>()(
         }
         return null;
       },
-      balance: 5,
       userQuota: [],
       loadUserQuota: async () => {
-        const response = await getUserQuota();
+        const response = await sealosApp.getWorkspaceQuota();
+
         set((state) => {
           state.userQuota = response.quota;
-          state.balance = response.balance;
         });
         return null;
       },
-      checkQuotaAllow: (
-        { cpu, memory, storage, gpu }: CheckQuotaType,
-        usedData?: CheckQuotaType
-      ) => {
-        const quote = get().userQuota;
+      checkExceededQuotas: (request) => {
+        const quota = get().userQuota;
 
-        const request = {
-          cpu: cpu / 1000,
-          memory: memory / 1024,
-          gpu: gpu?.type ? gpu.amount : 0,
-          storage: storage / 1024
-        };
+        const exceededItems = quota.filter((item) => {
+          if (!(item.type in request)) return false;
 
-        if (usedData) {
-          const { cpu, memory, gpu, storage } = usedData;
-
-          request.cpu -= cpu / 1000;
-          request.memory -= memory / 1024;
-          request.gpu -= gpu?.type ? gpu.amount : 0;
-          request.storage -= storage;
-        }
-
-        const overLimitTip = {
-          cpu: 'app.The applied CPU exceeds the quota',
-          memory: 'app.The applied memory exceeds the quota',
-          gpu: 'app.The applied GPU exceeds the quota',
-          storage: 'app.The applied storage exceeds the quota'
-        };
-
-        const exceedQuota = quote.find((item) => {
-          if (item.used + request[item.type] > item.limit) {
+          if (item.limit - item.used < request[item.type as keyof typeof request]!) {
             return true;
           }
         });
 
-        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : '';
+        return exceededItems;
       }
     }))
   )
