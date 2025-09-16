@@ -23,6 +23,11 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
+
+export const ProtocolList = [
+  { value: 'HTTP', label: 'https://', inline: 'http://' },
+];
+
 const Network = () => {
   const locale = useLocale();
   const t = useTranslations();
@@ -100,19 +105,22 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const prefix = item.openPublicDomain ? protocolMap[item.protocol] : 'https://';
+        const protocolPrefix = ProtocolList.find(p => p.value === item.protocol)?.inline || 'http://';
+        const prefix = item.openPublicDomain ? protocolPrefix : 'http://';
         const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div
-                className="flex cursor-pointer break-all hover:underline"
+              <span
+                className="inline-block cursor-pointer break-all hover:underline"
                 onClick={() => copyData(address)}
               >
                 {address.replace('.svc.cluster.local', '')}
-              </div>
+              </span>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{t('copy')}</TooltipContent>
+            <TooltipContent side="top" align="center">
+              <p className="text-sm">{t('copy')}</p>
+            </TooltipContent>
           </Tooltip>
         );
       },
