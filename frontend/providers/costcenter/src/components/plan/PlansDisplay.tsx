@@ -4,8 +4,6 @@ import { Checkbox } from '@sealos/shadcn-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import { UpgradePlanCard } from './UpgradePlanCard';
-import useSessionStore from '@/stores/session';
-import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 
@@ -123,25 +121,27 @@ export function PlansDisplay({
             isCreateMode && stillChargeByVolume ? 'opacity-30 pointer-events-none' : ''
           }`}
         >
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <Checkbox
-              id="more-plans"
-              checked={showMorePlans}
-              onCheckedChange={(checked) => {
-                setShowMorePlans(checked === true);
-                if (checked && isCreateMode && onPlanSelect && additionalPlans.length > 0) {
-                  const firstMorePlan = additionalPlans[0].ID;
-                  setSelectedPlan(firstMorePlan);
-                  onPlanSelect(firstMorePlan);
-                } else if (!checked && isCreateMode && onPlanSelect) {
-                  onPlanSelect('');
-                }
-              }}
-            />
-            <label htmlFor="more-plans" className="text-sm font-medium">
-              More Plans
-            </label>
-          </div>
+          {isCreateMode === true && (
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <Checkbox
+                id="more-plans"
+                checked={showMorePlans}
+                onCheckedChange={(checked) => {
+                  setShowMorePlans(checked === true);
+                  if (checked && isCreateMode && onPlanSelect && additionalPlans.length > 0) {
+                    const firstMorePlan = additionalPlans[0].ID;
+                    setSelectedPlan(firstMorePlan);
+                    onPlanSelect(firstMorePlan);
+                  } else if (!checked && isCreateMode && onPlanSelect) {
+                    onPlanSelect('');
+                  }
+                }}
+              />
+              <label htmlFor="more-plans" className="text-sm font-medium">
+                More Plans
+              </label>
+            </div>
+          )}
 
           <Select
             value={selectedPlan}
@@ -231,7 +231,7 @@ export function PlansDisplay({
             </SelectContent>
           </Select>
 
-          {showMorePlans && isCreateMode === false && (
+          {isCreateMode === false && (
             <Button
               disabled={
                 !selectedPlan ||
