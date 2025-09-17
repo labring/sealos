@@ -612,7 +612,7 @@ func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
 		data.Recommendation = fmt.Sprintf(config.Recommendation, trafficData.RegionDomain, trafficData.Workspace)
 		data.PlanDetails = &PlanDetails{
 			Title:    trafficData.PlanName,
-			Dates:    fmt.Sprintf(config.DatesFormat, time.Now().Format("2006-01-02")),
+			Dates:    fmt.Sprintf(config.DatesFormat, trafficData.ExpirationDate),
 			Location: fmt.Sprintf("%s/%s", trafficData.RegionDomain, trafficData.Workspace),
 			Features: trafficData.Features,
 		}
