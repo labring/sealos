@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"text/template"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,17 +60,31 @@ const (
 	EventTypeSubscriptionOperationDone EventType = "subscription_operation_done"
 	EventTypeSubscriptionPaymentDone   EventType = "subscription_payment_done"
 
+	EventTypeUniversalWorkspaceSubscriptionEvent EventType = "universal_workspace_subscription_event"
+
 	EventTypeWorkspaceSubscriptionCreatedSuccess         EventType = "workspace_subscription_created_success"
 	EventTypeWorkspaceSubscriptionCreatedFailed          EventType = "workspace_subscription_created_failed"
 	EventTypeWorkspaceSubscriptionUpgradedSuccess        EventType = "workspace_subscription_upgraded_success"
 	EventTypeWorkspaceSubscriptionUpgradedFailed         EventType = "workspace_subscription_upgraded_failed"
+	EventTypeWorkspaceSubscriptionDowngradedSuccess      EventType = "workspace_subscription_downgraded_success"
+	EventTypeWorkspaceSubscriptionDowngradedFailed       EventType = "workspace_subscription_downgraded_failed"
 	EventTypeWorkspaceSubscriptionRenewedSuccess         EventType = "workspace_subscription_renewed_success"
 	EventTypeWorkspaceSubscriptionRenewedBalanceFallback EventType = "workspace_subscription_renewed_balance_fallback"
 	EventTypeWorkspaceSubscriptionRenewedFailed          EventType = "workspace_subscription_renewed_failed"
+	EventTypeWorkspaceSubscriptionExpired                EventType = "workspace_subscription_expired"
+	EventTypeWorkspaceSubscriptionExpiredDeleteResources EventType = "workspace_subscription_expired_delete_resources"
 
 	// 流量相关事件
 	EventTypeTrafficStatusChange EventType = "traffic_status_change"
 	EventTypeTrafficUsageAlert   EventType = "traffic_usage_alert"
+
+	// 债务预警事件
+	// 债务到期
+	EventTypeWorkspaceSubscriptionDebt EventType = "workspace_subscription_debt"
+	// 债务删除预警
+	EventTypeWorkspaceSubscriptionDebtPreDeletion EventType = "workspace_subscription_debt_pre_deletion"
+	// 债务最终删除预警
+	EventTypeWorkspaceSubscriptionDebtFinalDeletion EventType = "workspace_subscription_debt_final_deletion"
 
 	// 自定义事件
 	EventTypeCustom EventType = "custom"
@@ -91,38 +107,81 @@ type EventData interface {
 	ToMap() map[string]interface{}
 }
 
-func (t *TrafficEventData) ToMap() map[string]interface{} {
+func (t *WorkspaceSubscriptionTrafficEventData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
+		"type":            t.Type,
 		"status":          t.Status,
 		"used_percentage": t.UsagePercent,
 		"total_bytes":     t.TotalBytes,
 		"used_bytes":      t.UsedBytes,
 		"workspace_name":  t.Workspace,
+		"region_domain":   t.RegionDomain,
+		"plan_name":       t.PlanName,
 	}
+}
+
+func (t *WorkspaceSubscriptionTrafficEventData) GetType() EventType {
+	return t.Type
 }
 
 func (t *DebtEventData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
+		"type":           t.Type,
 		"last_status":    t.LastStatus,
 		"current_status": t.CurrentStatus,
 		"debt_days":      t.DebtDays,
 	}
 }
 
+func (t *DebtEventData) GetType() EventType {
+	return t.Type
+}
+
+func (t *WorkspaceSubscriptionDebtEventData) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"type":            t.Type,
+		"last_status":     t.LastStatus,
+		"current_status":  t.CurrentStatus,
+		"debt_days":       t.DebtDays,
+		"region_domain":   t.RegionDomain,
+		"workspace_name":  t.WorkspaceName,
+		"expiration_date": t.ExpirationDate,
+		"plan_name":       t.PlanName,
+	}
+}
+
+func (t *WorkspaceSubscriptionEventData) GetType() EventType {
+	return t.Type
+}
+
+func (t *CustomEventData) GetType() EventType {
+	return t.Type
+}
+
 func (t *WorkspaceSubscriptionEventData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"operator":      t.Operator,
-		"status":        t.Status,
-		"pay_status":    t.PayStatus,
-		"old_plan_name": t.OldPlanName,
-		"new_plan_name": t.NewPlanName,
-		"amount":        t.Amount,
-		"error_reason":  t.ErrorReason,
+		"type":            t.Type,
+		"region_domain":   t.RegionDomain,
+		"expiration_date": t.ExpirationDate,
+		"workspace_name":  t.WorkspaceName,
+		"domain":          t.Domain,
+		"operator":        t.Operator,
+		"status":          t.Status,
+		"pay_status":      t.PayStatus,
+		"pay_method":      t.PayMethod,
+		"days_remaining":  t.DaysRemaining,
+		"old_plan_name":   t.OldPlanName,
+		"new_plan_name":   t.NewPlanName,
+		"amount":          t.Amount,
+		"error_reason":    t.ErrorReason,
+		"next_pay_date":   t.NextPayDate,
+		"features":        t.Features,
 	}
 }
 
 func (t *CustomEventData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
+		"type":       t.Type,
 		"title":      t.Title,
 		"content":    t.Content,
 		"extra_data": t.ExtraData,
@@ -171,7 +230,7 @@ type UserContactProvider interface {
 
 // NotificationContentGenerator 通知内容生成器接口
 type NotificationContentGenerator interface {
-	GenerateContent(eventType EventType, method NotificationMethod, eventData map[string]interface{}, recipient types.NotificationRecipient) (title, content, templateID string, err error)
+	GenerateContent(event *NotificationEvent, method NotificationMethod) (title, content, templateID string, err error)
 }
 
 // ProviderConfig 通知提供者配置
@@ -239,6 +298,26 @@ func (c *ProviderConfig) GetSMSTemplateCode(eventType EventType) string {
 	return c.SMSDefaultTemplate
 }
 
+func (c *ProviderConfig) GenerateEmailContent(event *NotificationEvent) (string, error) {
+	emailData, err := generateEmailContent(event)
+	if err != nil {
+		return "", err
+	}
+	if emailData.PlanDetails != nil {
+		fmt.Printf("emailData: %+v\n", emailData.PlanDetails.Features)
+	}
+	// 构建HTML内容
+	tmpl, err := template.New("email").Parse(c.GetEmailTemplate(EventTypeUniversalWorkspaceSubscriptionEvent))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse email template: %v", err)
+	}
+	var renderedContent strings.Builder
+	if err := tmpl.Execute(&renderedContent, emailData); err != nil {
+		return "", fmt.Errorf("failed to render email template: %v", err)
+	}
+	return renderedContent.String(), nil
+}
+
 // GetEmailTemplate 根据事件类型获取对应的邮件模板
 func (c *ProviderConfig) GetEmailTemplate(eventType EventType) string {
 	if c.EmailTemplates != nil {
@@ -246,32 +325,53 @@ func (c *ProviderConfig) GetEmailTemplate(eventType EventType) string {
 			return template
 		}
 	}
-	return c.EmailDefaultTemplate
+	return WorkspaceSubscriptionEventEmailRenderTmpl
 }
 
 // DebtEventData 债务事件数据
 type DebtEventData struct {
+	Type          EventType            `json:"-"`
 	LastStatus    types.DebtStatusType `json:"last_status"`
 	CurrentStatus types.DebtStatusType `json:"current_status"`
 	DebtDays      int                  `json:"debt_days,omitempty"`
 }
 
-// WorkspaceSubscriptionEventData 订阅事件数据
-type WorkspaceSubscriptionEventData struct {
-	WorkspaceName string                      `json:"workspace_name"`
-	Domain        string                      `json:"domain,omitempty"`
-	Operator      types.SubscriptionOperator  `json:"operator,omitempty"`
-	Status        types.SubscriptionStatus    `json:"status,omitempty"`
-	PayStatus     types.SubscriptionPayStatus `json:"pay_status,omitempty"`
-	PayMethod     types.PaymentMethod         `json:"pay_method,omitempty"`
-	OldPlanName   string                      `json:"old_plan_name,omitempty"`
-	NewPlanName   string                      `json:"new_plan_name,omitempty"`
-	Amount        float64                     `json:"amount,omitempty"`
-	ErrorReason   string                      `json:"error_reason,omitempty"`
+type WorkspaceSubscriptionDebtEventData struct {
+	Type           EventType                `json:"-"`
+	RegionDomain   string                   `json:"region_domain"`
+	WorkspaceName  string                   `json:"workspace_name"`
+	PlanName       string                   `json:"plan_name"`
+	ExpirationDate string                   `json:"expiration_date"`
+	LastStatus     types.SubscriptionStatus `json:"last_status"`
+	CurrentStatus  types.SubscriptionStatus `json:"current_status"`
+	DebtDays       int                      `json:"debt_days,omitempty"`
 }
 
-// TrafficEventData 流量事件数据
-type TrafficEventData struct {
+// WorkspaceSubscriptionEventData 订阅事件数据
+type WorkspaceSubscriptionEventData struct {
+	Type           EventType                   `json:"type"`
+	RegionDomain   string                      `json:"region_domain"`
+	ExpirationDate string                      `json:"expiration_date"`
+	WorkspaceName  string                      `json:"workspace_name"`
+	Domain         string                      `json:"domain,omitempty"`
+	Operator       types.SubscriptionOperator  `json:"operator,omitempty"`
+	Status         types.SubscriptionStatus    `json:"status,omitempty"`
+	PayStatus      types.SubscriptionPayStatus `json:"pay_status,omitempty"`
+	PayMethod      types.PaymentMethod         `json:"pay_method,omitempty"`
+	Features       []string                    `json:"features,omitempty"`
+	DaysRemaining  int                         `json:"days_remaining,omitempty"`
+	OldPlanName    string                      `json:"old_plan_name,omitempty"`
+	NewPlanName    string                      `json:"new_plan_name,omitempty"`
+	Amount         float64                     `json:"amount,omitempty"`
+	NextPayDate    string                      `json:"next_pay_date,omitempty"`
+	ErrorReason    string                      `json:"error_reason,omitempty"`
+}
+
+// WorkspaceSubscriptionTrafficEventData 流量事件数据
+type WorkspaceSubscriptionTrafficEventData struct {
+	RegionDomain string                       `json:"region_domain"`
+	PlanName     string                       `json:"plan_name,omitempty"`
+	Type         EventType                    `json:"-"`
 	Status       types.WorkspaceTrafficStatus `json:"status,omitempty"`
 	UsagePercent int                          `json:"used_percentage,omitempty"`
 	TotalBytes   int64                        `json:"total_bytes,omitempty"`
@@ -281,6 +381,7 @@ type TrafficEventData struct {
 
 // CustomEventData 自定义事件数据
 type CustomEventData struct {
+	Type      EventType              `json:"-"`
 	Title     string                 `json:"title"`
 	Content   string                 `json:"content"`
 	ExtraData map[string]interface{} `json:"extra_data,omitempty"`

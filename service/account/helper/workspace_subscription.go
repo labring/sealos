@@ -28,11 +28,11 @@ func AddTrafficPackage(globalDB *gorm.DB, client client.Client, sub *types.Works
 			return fmt.Errorf("failed to update workspace traffic status: %v", err)
 		}
 		// Send resume request (outside transaction)
-		err = resumeWorkspaceTraffic(client, sub.Workspace)
-		if err != nil {
-			return fmt.Errorf("failed to resume workspace traffic: %v", err)
-			// Note: We don't rollback here as the traffic package was successfully added
-		}
+	}
+	err = resumeWorkspaceTraffic(client, sub.Workspace)
+	if err != nil {
+		return fmt.Errorf("failed to resume workspace traffic: %v", err)
+		// Note: We don't rollback here as the traffic package was successfully added
 	}
 	return nil
 }

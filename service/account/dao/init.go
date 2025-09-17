@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
+
 	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -69,6 +71,7 @@ var (
 	BillingTask           *helper.TaskQueue
 	FlushQuotaProcesser   *FlushQuotaTask
 	K8sManager            ctrl.Manager
+	Logger                *logger.Logger
 
 	// TODO: need init
 	UserContactProvider     usernotify.UserContactProvider
@@ -141,6 +144,7 @@ func Init(ctx context.Context) error {
 		}
 	}
 	Cfg.LocalRegionDomain = DBClient.GetLocalRegion().Domain
+	Logger = logger.NewFeishuLogger(nil, os.Getenv("FEISHU_WEBHOOK"), logger.INFO, Cfg.LocalRegionDomain+"-account-service")
 	fmt.Println("region-info: ", Cfg)
 	jwtSecret := os.Getenv(helper.EnvJwtSecret)
 	if jwtSecret == "" {

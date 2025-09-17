@@ -1,6 +1,9 @@
 package types
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -87,4 +90,45 @@ func (WorkspaceSubscriptionTransaction) TableName() string {
 
 func (WorkspaceSubscriptionPlan) TableName() string {
 	return "WorkspaceSubscriptionPlan"
+}
+
+// Resource represents the JSON structure
+type WorkspaceFeatureResource struct {
+	CPU       string `json:"cpu"`
+	Memory    string `json:"memory"`
+	Storage   string `json:"storage"`
+	NodePorts string `json:"nodeports,omitempty"`
+	Traffic   int64  `json:"traffic,omitempty"`
+}
+
+func ParseMaxResource(res string, traffic int64) ([]string, error) {
+	var resource WorkspaceFeatureResource
+	err := json.Unmarshal([]byte(res), &resource)
+	if err != nil {
+		return nil, err
+	}
+	if traffic > 0 {
+		resource.Traffic = traffic
+	}
+	return parseResource(resource)
+}
+
+func parseResource(res WorkspaceFeatureResource) ([]string, error) {
+	result := []string{
+		fmt.Sprintf("%s vCPU", res.CPU),
+		fmt.Sprintf("%sGB RAM", strings.TrimSuffix(res.Memory, "Gi")),
+		fmt.Sprintf("%sGB Disk", strings.TrimSuffix(res.Storage, "Gi")),
+		fmt.Sprintf("%s / NodePorts", res.NodePorts),
+	}
+
+	// Handle nodeports (traffic) if present
+	if res.Traffic != 0 {
+		if res.Traffic > 1024 {
+			trafficGB := float64(res.Traffic) / 1024.0
+			result = append(result, fmt.Sprintf("%.2fGB Traffic", trafficGB))
+		} else {
+			result = append(result, fmt.Sprintf("%dMB Traffic", res.Traffic))
+		}
+	}
+	return result, nil
 }

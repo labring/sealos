@@ -46,7 +46,7 @@ func (c *Cockroach) GetWorkspaceSubscriptionTraffic(workspace, regionDomain stri
 		Total int64 `gorm:"column:total"`
 		Used  int64 `gorm:"column:used"`
 	}{}
-	err = c.DB.Model(&types.WorkspaceTraffic{}).Where("workspace = ? AND region_domain = ? AND status = ? AND expired_at > ?", workspace, regionDomain, types.WorkspaceTrafficStatusActive, time.Now()).
+	err = c.DB.Model(&types.WorkspaceTraffic{}).Where("workspace = ? AND region_domain = ? AND expired_at > ?", workspace, regionDomain, time.Now()).
 		Select("SUM(total_bytes) as total, SUM(used_bytes) as used").Scan(result).Error
 	if err != nil {
 		return 0, 0, err

@@ -101,6 +101,7 @@ type Interface interface {
 	RefundAmount(ref types.PaymentRefund, postDo func(types.PaymentRefund) error) error
 	CreateCorporate(corporate types.Corporate) error
 
+	GetUserWorkspaceRole(userUID uuid.UUID, workspace string) (types.Role, error)
 	// WorkspaceSubscription methods
 	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
 	GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error)
@@ -112,6 +113,7 @@ type Interface interface {
 	GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain string) (*types.WorkspaceSubscriptionTransaction, error)
 	GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, workspace string) (int64, error)
 	CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transaction ...*types.WorkspaceSubscriptionTransaction) error
+	GetUserStripeCustomerID(userUID uuid.UUID) (string, error)
 }
 
 type Account struct {
@@ -198,7 +200,7 @@ func (g *Cockroach) GetWorkspaceUserUid(workspace string) (uuid.UUID, error) {
 		Select(`"UserCr"."userUid"`).
 		Joins(`INNER JOIN "UserWorkspace" ON "UserCr".uid = "UserWorkspace"."userCrUid"`).
 		Joins(`INNER JOIN "Workspace" ON "UserWorkspace"."workspaceUid" = "Workspace".uid`).
-		Where(`"Workspace".id = ?`, workspace).
+		Where(`"Workspace".id = ? AND "UserWorkspace".role = ?`, workspace, "OWNER").
 		Scan(&userUid).Error
 
 	if err != nil {
@@ -207,6 +209,28 @@ func (g *Cockroach) GetWorkspaceUserUid(workspace string) (uuid.UUID, error) {
 		}
 	}
 	return userUid.UID, err
+}
+
+func (g *Cockroach) GetUserWorkspaceRole(userUID uuid.UUID, workspace string) (types.Role, error) {
+	db := g.ck.GetLocalDB()
+	var role struct {
+		Role types.Role `gorm:"column:role"`
+	}
+	err := db.Model(&types.RegionUserCr{}).
+		Select(`"UserWorkspace".role`).
+		Joins(`INNER JOIN "UserWorkspace" ON "UserCr".uid = "UserWorkspace"."userCrUid"`).
+		Joins(`INNER JOIN "Workspace" ON "UserWorkspace"."workspaceUid" = "Workspace".uid`).
+		Where(`"UserCr"."userUid" = ? AND "Workspace".id = ?`, userUID, workspace).
+		Scan(&role).Error
+
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", fmt.Errorf("failed to query user role: %v", err)
+		}
+		logrus.Warnf("no role found for user %s in workspace %s", userUID.String(), workspace)
+		return "", nil
+	}
+	return role.Role, nil
 }
 
 func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error) {
@@ -473,12 +497,15 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 		}
 		m.Properties = properties
 	}
-	for _, types := range m.Properties.Types {
+	for _, propertyType := range m.Properties.Types {
 		property := common.PropertyQuery{
-			Name:      types.Name,
-			UnitPrice: types.UnitPrice,
-			Unit:      types.UnitString,
-			Alias:     types.Alias,
+			Name:      propertyType.Name,
+			UnitPrice: propertyType.UnitPrice,
+			Unit:      propertyType.UnitString,
+			Alias:     propertyType.Alias,
+		}
+		if propertyType.ViewPrice > 0 {
+			property.UnitPrice = propertyType.ViewPrice
 		}
 		propertiesQuery = append(propertiesQuery, property)
 	}
@@ -726,6 +753,7 @@ func (m *MongoDB) GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.Workspa
 	// 构建查询条件，组合成本和资源使用数据
 	matchConditions := bson.D{
 		{Key: "owner", Value: req.Owner},
+		{Key: "status", Value: resources.Settled},
 		{Key: "time", Value: bson.M{
 			"$gte": req.StartTime,
 			"$lte": req.EndTime,
@@ -762,10 +790,6 @@ func (m *MongoDB) GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.Workspa
 			{{Key: "$unwind", Value: "$app_costs"}},
 		}
 
-		if req.AppName != "" && req.AppType != "" && strings.ToUpper(req.AppType) != resources.AppStore {
-			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
-		}
-
 		pipeline = append(pipeline,
 			bson.D{{Key: "$project", Value: bson.D{
 				{Key: "app_name", Value: "$app_costs.name"},
@@ -782,6 +806,9 @@ func (m *MongoDB) GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.Workspa
 				{Key: "app_name", Value: 1},
 			}}},
 		)
+		if req.AppName != "" && req.AppType != "" && strings.ToUpper(req.AppType) != resources.AppStore {
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+		}
 	} else {
 		// 处理AppStore类型的应用，需要累加app_costs中的used和used_amount
 		pipeline = mongo.Pipeline{
@@ -959,7 +986,7 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	timeMatch := bson.E{Key: "time", Value: bson.D{{Key: "$gte", Value: req.StartTime}, {Key: "$lte", Value: req.EndTime}}}
 
 	matchConditions := bson.D{timeMatch}
-	matchConditions = append(matchConditions, bson.E{Key: "owner", Value: req.Owner})
+	matchConditions = append(matchConditions, bson.E{Key: "owner", Value: req.Owner}, bson.E{Key: "status", Value: resources.Settled})
 	if req.AppName != "" && req.AppType != "" {
 		if strings.ToUpper(req.AppType) != resources.AppStore {
 			matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
@@ -2136,22 +2163,22 @@ func (m *Account) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 		return nil, err
 	}
 	defer cur.Close(context.Background())
-
-	if !cur.Next(context.Background()) {
-		return [][]string{}, nil
-	}
-
 	var result struct {
 		Namespaces []string `bson:"namespaces"`
 	}
-	if err := cur.Decode(&result); err != nil {
-		return nil, err
+	if cur.Next(context.Background()) {
+		if err := cur.Decode(&result); err != nil {
+			return nil, err
+		}
 	}
 	subNSList, err := m.ListWorkspaceSubscriptionWorkspace(req.UserUID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list workspace subscription: %v", err)
 	}
 	result.Namespaces = append(result.Namespaces, subNSList...)
+	if len(result.Namespaces) == 0 {
+		return [][]string{}, nil
+	}
 	return m.GetWorkspaceName(result.Namespaces)
 }
 

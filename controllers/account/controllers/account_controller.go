@@ -26,6 +26,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
+
+	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
+
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -122,6 +126,7 @@ type AccountReconciler struct {
 	InitUserAccountFunc            func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
 	Scheme                         *runtime.Scheme
 	Logger                         logr.Logger
+	VLogger                        *logger.Logger
 	accountSystemNamespace         string
 	DBClient                       database.Account
 	CVMDBClient                    database.CVM
@@ -137,6 +142,9 @@ type AccountReconciler struct {
 	desktopJwtManager              *utils.JWTManager
 	workspaceSubPlans              []types.WorkspaceSubscriptionPlan
 	workspaceSubPlansResourceLimit map[string]v1.ResourceList
+
+	UserContactProvider     usernotify.UserContactProvider
+	UserNotificationService usernotify.EventNotificationService
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -456,6 +464,18 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		r.workspaceSubPlans = plans
 		r.workspaceSubPlansResourceLimit = res
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
+	}
+	r.VLogger = logger.NewFeishuLogger(nil, os.Getenv("FEISHU_WEBHOOK"), logger.INFO, r.localDomain+"-account-controller")
+	notifyConfigStr := os.Getenv("NOTIFY_CONFIG")
+	if notifyConfigStr != "" {
+		notifyConfig, err := usernotify.ParseConfigsWithJSON(notifyConfigStr)
+		if err != nil {
+			return fmt.Errorf("parse notify config error: %v", err)
+		}
+		r.UserContactProvider = usernotify.NewMemoryContactProvider()
+		r.UserNotificationService = usernotify.NewEventNotificationService(notifyConfig, r.UserContactProvider)
+	} else {
+		r.Logger.Info("NOTIFY_CONFIG is empty")
 	}
 	//r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	return ctrl.NewControllerManagedBy(mgr).

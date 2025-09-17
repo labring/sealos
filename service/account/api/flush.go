@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -44,25 +45,30 @@ func AdminFlushDebtResourceStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
 		return
 	}
-	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: req.UserUID})
-	if err != nil && err != gorm.ErrRecordNotFound {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
-		return
-	}
-	if owner == "" {
-		c.JSON(http.StatusOK, gin.H{"success": true})
-		return
-	}
-	namespaces, err := getOwnNsListWithCltWithOutWorkspaceSubscription(dao.K8sManager.GetClient(), owner)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
-		return
-	}
-	if err = flushUserDebtResourceStatus(req, dao.K8sManager.GetClient(), namespaces); err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush user resource status: %v", err)})
+	if err = adminFlushDebtResourceStatus(req); err != nil {
+		dao.Logger.Errorf("failed to flush debt resource status: %v", err)
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush debt resource status: %v", err)})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) error {
+	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: req.UserUID})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to get user cr name: %v", err)
+	}
+	if owner == "" {
+		return nil
+	}
+	namespaces, err := getOwnNsListWithCltWithOutWorkspaceSubscription(dao.K8sManager.GetClient(), owner)
+	if err != nil {
+		return fmt.Errorf("get own namespace list failed: %v", err)
+	}
+	if err = flushUserDebtResourceStatus(req, dao.K8sManager.GetClient(), namespaces); err != nil {
+		return fmt.Errorf("failed to flush user resource status: %v", err)
+	}
+	return nil
 }
 
 func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, clt client.Client, namespaces []string) error {
@@ -145,7 +151,10 @@ func updateNamespaceStatus(ctx context.Context, clt client.Client, annoKey, stat
 		if err := clt.Get(ctx, types2.NamespacedName{Name: namespaces[i]}, ns); err != nil {
 			return err
 		}
-		if ns.Annotations[annoKey] == status {
+		if ns.Annotations == nil {
+			ns.Annotations = make(map[string]string)
+		}
+		if ns.Annotations[annoKey] == status || ns.Annotations[annoKey] == status+"Completed" {
 			continue
 		}
 

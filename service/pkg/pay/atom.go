@@ -39,6 +39,7 @@ type PaymentRequest struct {
 	UserAgent     string
 	ClientIP      string
 	DeviceTokenID string
+	CustomerID    *string
 }
 
 // StripeResponse Stripe 支付响应

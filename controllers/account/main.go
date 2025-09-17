@@ -325,14 +325,14 @@ func main() {
 		setupLog.Info("skip user traffic controller")
 	}
 	workspaceTrafficProcessor := controllers.NewWorkspaceTrafficController(accountReconciler, trafficDBClient)
-	workspaceSubscriptionProcessor, err := controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
-	if err != nil {
-		setupLog.Error(err, "unable to create workspace subscription processor")
-		os.Exit(1)
-	}
+	//workspaceSubscriptionProcessor, err := controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
+	//if err != nil {
+	//	setupLog.Error(err, "unable to create workspace subscription processor")
+	//	os.Exit(1)
+	//}
 	workspaceSubDebtProcessor := controllers.NewWorkspaceSubscriptionDebtProcessor(accountReconciler)
 	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
-	workspaceSubscriptionProcessor.Start(ctx)
+	//workspaceSubscriptionProcessor.Start(ctx)
 	workspaceSubDebtProcessor.Start(ctx)
 
 	defer func() {

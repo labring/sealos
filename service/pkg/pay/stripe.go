@@ -5,7 +5,12 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
+
+	"gorm.io/gorm"
+
+	"github.com/google/uuid"
 
 	refund2 "github.com/stripe/stripe-go/v82/refund"
 
@@ -56,27 +61,10 @@ func getBaseURL() string {
 }
 
 func buildURLs(s *StripeService, transaction *types.WorkspaceSubscriptionTransaction) (string, string, error) {
-	// 基础 URL
-	baseURL, err := url.Parse(s.Domain)
-	if err != nil {
-		return "", "", err
-	}
-
-	query := url.Values{}
-	query.Set("openapp", "system-costcenter")
-	query.Set("workspaceId", transaction.Workspace)
-	query.Set("payId", transaction.PayID)
-	query.Set("transactionId", transaction.ID.String())
-
-	// successURL
-	successQuery := query
-	successQuery.Set("stripeState", "success")
-	successURL := baseURL.ResolveReference(&url.URL{RawQuery: successQuery.Encode()}).String()
-
-	// cancelURL
-	cancelQuery := query
-	cancelQuery.Set("stripeState", "cancel")
-	cancelURL := baseURL.ResolveReference(&url.URL{RawQuery: cancelQuery.Encode()}).String()
+	//https://192.168.10.35.nip.io/?openapp=system-costcenter?payId%3D4W86BOp70ltT%26stripeState%3Dsuccess%26transactionId%3D3d09bc07-976c-44bc-8b52-05619693056e%26workspaceId%3Dns-47f3dbxj
+	baseURL := s.Domain + "/?payId=" + transaction.PayID + "&workspaceId=" + transaction.Workspace + "&transactionId=" + transaction.ID.String() + "&stripeState="
+	successURL := baseURL + "success"
+	cancelURL := baseURL + "cancel"
 
 	return successURL, cancelURL, nil
 }
@@ -90,9 +78,17 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		return nil, fmt.Errorf("failed to build return URLs: %v", err)
 	}
 	// Create checkout session following official example pattern
-	anchorTime := time.Now().AddDate(0, 0, 29).Unix()
+	anchorTime := time.Now().AddDate(0, 0, 30).Unix()
 
+	extra := &stripe.ExtraValues{
+		Values: url.Values{},
+	}
+	//extra.Add("subscription_data[backdate_start_date]", fmt.Sprintf("%d", time.Now().AddDate(0, 0, -1).Unix()))
 	checkoutParams := &stripe.CheckoutSessionParams{
+		Params: stripe.Params{
+			Extra: extra,
+		},
+		Customer: paymentReq.CustomerID,
 		Metadata: map[string]string{
 			"region_domain": transaction.RegionDomain,
 			"payment_id":    transaction.PayID,
@@ -106,26 +102,15 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 				"payment_id":            transaction.PayID,
 				"subscription_operator": string(transaction.Operator),
 				"user_uid":              paymentReq.UserUID.String(),
+				"transaction_id":        transaction.ID.String(),
 			},
 			BillingCycleAnchor: stripe.Int64(anchorTime),
+			ProrationBehavior:  stripe.String("create_prorations"),
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
-				Price: stripe.String(priceID),
-				//PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-				//	Currency:   stripe.String(string(stripe.CurrencyUSD)),
-				//	UnitAmount: stripe.Int64(paymentReq.Amount / 10000),
-				//	ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-				//		Name: stripe.String(fmt.Sprintf("workspace subscription - %s", transaction.NewPlanName)),
-				//	},
-				//	// TODO 如果是年包需要修改： the billing cycle is monthly
-				//	Recurring: &stripe.CheckoutSessionLineItemPriceDataRecurringParams{
-				//		Interval: stripe.String("day"), // Default to monthly
-				//		// If the period is yearly, set interval to year
-				//		IntervalCount: stripe.Int64(30), // Default to 1 month
-				//	},
-				//},
+				Price:    stripe.String(priceID),
 				Quantity: stripe.Int64(1),
 			},
 		},
@@ -135,7 +120,8 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
 			Enabled: stripe.Bool(false),
 		},
-		ExpiresAt: stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
+		ExpiresAt:           stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
+		AllowPromotionCodes: stripe.Bool(true),
 	}
 
 	// Create session using official SDK
@@ -150,6 +136,34 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 	}, nil
 }
 
+// SetCustomerMetadata sets metadata for a Stripe customer
+func (s *StripeService) SetCustomerMetadata(customerID string, metadata map[string]string) error {
+	params := &stripe.CustomerParams{}
+	for k, v := range metadata {
+		params.AddMetadata(k, v)
+	}
+	_, err := customer.Update(customerID, params)
+	if err != nil {
+		return fmt.Errorf("customer.Update: %v", err)
+	}
+	return nil
+}
+
+// CancelWorkspaceSubscriptionSession cancels a Stripe Checkout Session，如果仍然未支付
+func (s *StripeService) CancelWorkspaceSubscriptionSession(sessionID string) error {
+	sess, err := checkoutsession.Get(sessionID, nil)
+	if err != nil {
+		return fmt.Errorf("checkoutsession.Get: %v", err)
+	}
+	if sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusUnpaid {
+		_, err := checkoutsession.Expire(sessionID, nil)
+		if err != nil {
+			return fmt.Errorf("checkoutsession.Cancel: %v", err)
+		}
+	}
+	return nil
+}
+
 // RefundSubscription only refund the latest payment
 func (s *StripeService) RefundSubscription(subscriptionID string) error {
 	sub, err := subscription.Get(subscriptionID, &stripe.SubscriptionParams{
@@ -158,15 +172,19 @@ func (s *StripeService) RefundSubscription(subscriptionID string) error {
 	if err != nil {
 		return fmt.Errorf("subscription.Get: %v", err)
 	}
-	if sub.LatestInvoice.Payments == nil || len(sub.LatestInvoice.Payments.Data) == 0 || sub.LatestInvoice.Payments.Data[0].Payment == nil {
+	if sub.LatestInvoice.Payments == nil || len(sub.LatestInvoice.Payments.Data) == 0 {
 		return fmt.Errorf("no payment found for invoice")
 	}
-	refundParams := stripe.RefundParams{}
-	if sub.LatestInvoice.Payments.Data[0].Payment.PaymentIntent != nil {
-		refundParams.PaymentIntent = stripe.String(sub.LatestInvoice.Payments.Data[0].Payment.PaymentIntent.ID)
+	item := sub.LatestInvoice.Payments.Data[len(sub.LatestInvoice.Payments.Data)-1]
+	if item.Payment == nil {
+		return fmt.Errorf("no payment info found for invoice")
 	}
-	if sub.LatestInvoice.Payments.Data[0].Payment.Charge != nil {
-		refundParams.Charge = stripe.String(sub.LatestInvoice.Payments.Data[0].Payment.Charge.ID)
+	refundParams := stripe.RefundParams{}
+	if item.Payment.PaymentIntent != nil {
+		refundParams.PaymentIntent = stripe.String(item.Payment.PaymentIntent.ID)
+	}
+	if item.Payment.Charge != nil {
+		refundParams.Charge = stripe.String(item.Payment.Charge.ID)
 	}
 
 	_, err = refund2.New(&refundParams)
@@ -177,7 +195,7 @@ func (s *StripeService) RefundSubscription(subscriptionID string) error {
 }
 
 // UpdatePlan updates the subscription plan for a given subscription ID
-func (s *StripeService) UpdatePlan(subscriptionID, newPriceID string) (*stripe.Subscription, error) {
+func (s *StripeService) UpdatePlan(subscriptionID, newPriceID, newPlanName string, payReqID string) (*stripe.Subscription, error) {
 	// Retrieve the current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
@@ -188,15 +206,66 @@ func (s *StripeService) UpdatePlan(subscriptionID, newPriceID string) (*stripe.S
 		return nil, fmt.Errorf("subscription has no items to update")
 	}
 
+	//var wkSub types.WorkspaceSubscription
 	// Update the subscription to the new price
 	params := &stripe.SubscriptionParams{
 		Items: []*stripe.SubscriptionItemsParams{
 			{
-				ID:    stripe.String(sub.Items.Data[0].ID),
+				ID:    stripe.String(sub.Items.Data[len(sub.Items.Data)-1].ID),
 				Price: stripe.String(newPriceID),
 			},
 		},
-		//ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		Metadata: map[string]string{
+			"updated_at":            time.Now().Format(time.RFC3339),
+			"old_plan_name":         sub.Metadata["plan_name"],
+			"new_plan_name":         newPlanName,
+			"plan_name":             newPlanName,
+			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
+			"last_payment_id":       payReqID,
+		},
+		ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		//PaymentBehavior:   stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
+	}
+
+	updatedSub, err := subscription.Update(subscriptionID, params)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Update: %v", err)
+	}
+
+	return updatedSub, nil
+}
+
+// DowngradePlan updates the subscription plan for a given subscription ID
+func (s *StripeService) DowngradePlan(subscriptionID, newPriceID, newPlanName string, transactionID uuid.UUID) (*stripe.Subscription, error) {
+	// Retrieve the current subscription
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("subscription.Get: %v", err)
+	}
+
+	if len(sub.Items.Data) == 0 {
+		return nil, fmt.Errorf("subscription has no items to update")
+	}
+
+	//var wkSub types.WorkspaceSubscription
+	// Update the subscription to the new price
+	params := &stripe.SubscriptionParams{
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				ID:    stripe.String(sub.Items.Data[len(sub.Items.Data)-1].ID),
+				Price: stripe.String(newPriceID),
+			},
+		},
+		Metadata: map[string]string{
+			"updated_at":            time.Now().Format(time.RFC3339),
+			"old_plan_name":         sub.Metadata["plan_name"],
+			"new_plan_name":         newPlanName,
+			"plan_name":             newPlanName,
+			"subscription_operator": string(types.SubscriptionTransactionTypeDowngraded),
+			"transaction_id":        transactionID.String(),
+		},
+		ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		//PaymentBehavior:   stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
 	}
 
 	updatedSub, err := subscription.Update(subscriptionID, params)
@@ -223,21 +292,24 @@ func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string
 		SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
 			Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
 				{
-					ID:    &sub.Items.Data[0].ID,
+					ID:    &sub.Items.Data[len(sub.Items.Data)-1].ID,
 					Price: stripe.String(newPriceID),
 				},
 			},
-			ProrationDate:     stripe.Int64(time.Now().UTC().Unix()),
-			ProrationBehavior: stripe.String("create_prorations"), // 生成按比例费用
-			//BillingCycleAnchorNow: stripe.Bool(true),
+			ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
+			ProrationBehavior:     stripe.String("create_prorations"),
+			BillingCycleAnchorNow: stripe.Bool(true),
 		},
 	})
 	if err != nil {
 		return 0, fmt.Errorf("failed to get Stripe invoice preview: %v", err)
 	}
+	// Find the first positive line item amount
+	firstAmount := int64(0)
 	for _, line := range inv.Lines.Data {
+		firstAmount += line.Amount
 		if line.Amount > 0 {
-			return line.Amount, nil
+			return firstAmount, nil
 		}
 	}
 
@@ -383,15 +455,22 @@ func (s *StripeService) CreatePortalSession(customerID string) (*stripe.BillingP
 
 // GetCustomerByUID finds customer by user UID in metadata
 func (s *StripeService) GetCustomerByUID(userUID string) (*stripe.Customer, error) {
-	params := &stripe.CustomerListParams{}
-	params.Filters.AddFilter("metadata[user_uid]", "", userUID)
-
-	iter := customer.List(params)
-	if iter.Next() {
-		return iter.Customer(), nil
+	params := &stripe.CustomerSearchParams{
+		SearchParams: stripe.SearchParams{
+			Query:  fmt.Sprintf("metadata['user_uid']:'%s'", userUID),
+			Limit:  stripe.Int64(1),
+			Single: true,
+		},
+	}
+	result := customer.Search(params)
+	if result.Err() != nil {
+		return nil, fmt.Errorf("customer.Search: %v", result.Err())
+	}
+	if result.Next() {
+		return result.Customer(), nil
 	}
 
-	return nil, fmt.Errorf("customer not found for user_uid: %s", userUID)
+	return nil, gorm.ErrRecordNotFound
 }
 
 // GetSubscription retrieves a Stripe subscription
@@ -403,13 +482,34 @@ func (s *StripeService) GetSubscription(subscriptionID string) (*stripe.Subscrip
 	return sub, nil
 }
 
+// GetSubscriptionCurrentPeriodEnd time retrieves the current period end time of a subscription
+func (s *StripeService) GetSubscriptionCurrentPeriodEnd(subscriptionID string) (time.Time, error) {
+	sub, err := s.GetSubscription(subscriptionID)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if len(sub.Items.Data) == 0 {
+		return time.Time{}, fmt.Errorf("subscription has no items")
+	}
+	item := sub.Items.Data[len(sub.Items.Data)-1]
+	return time.Unix(item.CurrentPeriodEnd, 0), nil
+}
+
 // CancelSubscription cancels a Stripe subscription
 func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subscription, error) {
+	//sub, err := subscription.Get(subscriptionID, nil)
+	//if err != nil {
+	//	return nil, fmt.Errorf("subscription.Get: %v", err)
+	//}
+
+	// 先查找是否存在
+
 	sub, err := subscription.Cancel(subscriptionID, &stripe.SubscriptionCancelParams{
 		InvoiceNow: stripe.Bool(true),
 	})
-	if err != nil {
-		return nil, fmt.Errorf("subscription.Cancel: %v", err)
+	if err != nil && !strings.Contains(err.Error(), "No such subscription") {
+		sub, _ = subscription.Get(subscriptionID, nil)
+		return sub, fmt.Errorf("subscription.Cancel: %v", err)
 	}
 	return sub, nil
 }

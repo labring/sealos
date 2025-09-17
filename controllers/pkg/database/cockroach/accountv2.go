@@ -1737,10 +1737,13 @@ func (c *Cockroach) InitTables() error {
 	enumTypes := []string{
 		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION', 'DELETED')`,
 		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed', 'deleted')`,
-		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed', 'expired')`,
+		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed', 'expired', 'canceled')`,
 		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
 		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed')`,
 	}
+	// subscription_pay_status 如果不存在canceled 状态，则添加
+	enumTypes = append(enumTypes, `ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'canceled'`)
+	enumTypes = append(enumTypes, `ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'unpaid'`)
 	for _, query := range enumTypes {
 		err := c.DB.Exec(query).Error
 		if err != nil {
@@ -1752,8 +1755,8 @@ func (c *Cockroach) InitTables() error {
 		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{}, types.Corporate{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
 		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
-		types.UserTimeRangeTraffic{},
-		types.WorkspaceSubscription{}, types.WorkspaceSubscriptionTransaction{}, types.WorkspaceSubscriptionPlan{}, types.WorkspaceTraffic{}, types.ProductPrice{})
+		types.UserTimeRangeTraffic{}, types.WorkspaceTraffic{},
+		types.WorkspaceSubscription{}, types.WorkspaceSubscriptionTransaction{}, types.WorkspaceSubscriptionPlan{}, types.ProductPrice{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
@@ -1984,7 +1987,7 @@ func CreateTableIfNotExist(db *gorm.DB, tables ...interface{}) error {
 		table := tables[i]
 		if !db.Migrator().HasTable(table) {
 			if err := db.AutoMigrate(table); err != nil {
-				return fmt.Errorf("failed to auto migrate table: %v", err)
+				return fmt.Errorf("failed to auto migrate table %T: %v", table, err)
 			}
 		}
 	}
