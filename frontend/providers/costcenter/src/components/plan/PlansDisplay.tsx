@@ -72,30 +72,38 @@ export function PlansDisplay({
   useEffect(() => {
     if (!hasInitialized && additionalPlans.length > 0) {
       if (currentPlanInMore) {
-        setShowMorePlans(true);
         setSelectedPlan(currentPlanObj?.ID || '');
       } else {
-        if (additionalPlans.length > 0) {
-          setSelectedPlan(additionalPlans[0].ID);
-        }
+        setSelectedPlan(additionalPlans[0].ID);
       }
+
+      if (isCreateMode) {
+        // Create mode: 根据 currentPlanInMore 设置 showMorePlans 状态
+        if (currentPlanInMore) {
+          setShowMorePlans(true);
+        }
+      } else {
+        // Upgrade mode: 直接显示 More Plans
+        setShowMorePlans(true);
+      }
+
       setHasInitialized(true);
     }
-  }, [additionalPlans, currentPlanInMore, currentPlanObj, hasInitialized]);
+  }, [additionalPlans, currentPlanInMore, currentPlanObj, hasInitialized, isCreateMode]);
 
-  // When user selects "charge by volume", uncheck More Plans
+  // When user selects "charge by volume", uncheck More Plans (only in create mode)
   useEffect(() => {
-    if (stillChargeByVolume) {
+    if (stillChargeByVolume && isCreateMode) {
       setShowMorePlans(false);
     }
-  }, [stillChargeByVolume]);
+  }, [stillChargeByVolume, isCreateMode]);
 
   return (
     <div className="pt-6 w-full">
       {/* Main Plans Grid */}
       <div
         className={`flex w-full gap-3 justify-between ${
-          showMorePlans || (isCreateMode && stillChargeByVolume)
+          (isCreateMode && showMorePlans) || (isCreateMode && stillChargeByVolume)
             ? 'opacity-30 pointer-events-none'
             : ''
         }`}
@@ -121,7 +129,7 @@ export function PlansDisplay({
             isCreateMode && stillChargeByVolume ? 'opacity-30 pointer-events-none' : ''
           }`}
         >
-          {isCreateMode === true && (
+          {isCreateMode && (
             <div className="flex items-center space-x-2 flex-shrink-0">
               <Checkbox
                 id="more-plans"
@@ -231,14 +239,13 @@ export function PlansDisplay({
             </SelectContent>
           </Select>
 
-          {isCreateMode === false && (
+          {!isCreateMode && (
             <Button
               disabled={
                 !selectedPlan ||
                 isSubscribing ||
-                (!isCreateMode &&
-                  (additionalPlans.find((p) => p.ID === selectedPlan)?.Name === currentPlan ||
-                    additionalPlans.find((p) => p.ID === selectedPlan)?.Name === nextPlanName))
+                additionalPlans.find((p) => p.ID === selectedPlan)?.Name === currentPlan ||
+                additionalPlans.find((p) => p.ID === selectedPlan)?.Name === nextPlanName
               }
               onClick={() => {
                 const plan = additionalPlans.find((p) => p.ID === selectedPlan);
@@ -261,11 +268,6 @@ export function PlansDisplay({
               }}
             >
               {(() => {
-                if (isCreateMode) {
-                  if (isSubscribing) return 'Creating...';
-                  return 'Create Workspace';
-                }
-
                 if (isSubscribing) return 'Processing...';
 
                 const selectedPlanName = additionalPlans.find((p) => p.ID === selectedPlan)?.Name;
