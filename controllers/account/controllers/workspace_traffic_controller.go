@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -154,27 +155,72 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 	}
 
 	// Calculate usage percentage
-	var newStatus types.WorkspaceTrafficStatus
 	usagePercentage := float64(usedTraffic) / float64(totalTraffic) * 100
 
+	// Determine new status
+	var newStatus types.WorkspaceTrafficStatus
 	if remainingToConsume > 0 {
-		// No available traffic left
+		// Traffic is used up (even if percentage <100% due to overage)
 		newStatus = types.WorkspaceTrafficStatusUsedUp
 	} else if usagePercentage >= 80 {
-		// 80% or more traffic used
+		// 80% or more traffic used, but still available
 		newStatus = types.WorkspaceTrafficStatusExhausted
 	} else {
 		newStatus = types.WorkspaceTrafficStatusActive
 	}
 
 	// Update subscription status if changed
-	if subscription.TrafficStatus != newStatus {
+	oldStatus := subscription.TrafficStatus
+	if oldStatus != newStatus {
 		err = c.updateWorkspaceTrafficStatus(subscription.ID, newStatus)
 		if err != nil {
 			return fmt.Errorf("failed to update workspace traffic status: %v", err)
 		}
 
-		// Suspend workspace if fully used up
+		// Send notification for Exhausted or UsedUp
+		userUID := subscription.UserUID
+		nr, err := c.AccountV2.GetNotificationRecipient(subscription.UserUID)
+		if err != nil {
+			c.VLogger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
+		} else {
+			c.UserContactProvider.SetUserContact(userUID, nr)
+			defer c.UserContactProvider.RemoveUserContact(userUID)
+
+			var usagePercent int
+			var totalBytes, usedBytes int64
+			if newStatus == types.WorkspaceTrafficStatusUsedUp {
+				usagePercent = 100
+				totalBytes = 0
+				usedBytes = 0
+			} else if newStatus == types.WorkspaceTrafficStatusExhausted {
+				usagePercent = int(math.Round(usagePercentage))
+				totalBytes = totalTraffic
+				usedBytes = usedTraffic
+			}
+			plan, err := c.AccountV2.GetWorkspaceSubscriptionPlan(subscription.PlanName)
+			if err != nil {
+				return fmt.Errorf("failed to get workspace subscription plan: %w", err)
+			}
+			features, err := types.ParseMaxResource(plan.MaxResources, plan.Traffic)
+			if err != nil {
+				return fmt.Errorf("failed to parse plan features: %w", err)
+			}
+			eventData := &usernotify.WorkspaceSubscriptionTrafficEventData{
+				Type:         usernotify.EventTypeTrafficUsageAlert,
+				PlanName:     subscription.PlanName,
+				RegionDomain: subscription.RegionDomain,
+				UsagePercent: usagePercent,
+				TotalBytes:   totalBytes,
+				UsedBytes:    usedBytes,
+				Workspace:    subscription.Workspace,
+				Features:     features,
+			}
+			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
+				c.VLogger.Errorf("failed to send traffic usage alert notification for user %s: %v", userUID, err)
+			}
+		}
+
+		// Suspend workspace only if fully used up
 		if newStatus == types.WorkspaceTrafficStatusUsedUp {
 			err = c.suspendWorkspaceTraffic(subscription.Workspace)
 			if err != nil {
@@ -212,7 +258,8 @@ func (c *WorkspaceTrafficController) batchUpdateTrafficPackages(packages []types
 // handleNoAvailableTraffic handles the case when workspace has no available traffic
 func (c *WorkspaceTrafficController) handleNoAvailableTraffic(subscription *types.WorkspaceSubscription) error {
 	c.Logger.Info("Handling no available traffic", "workspace", subscription.Workspace)
-	if subscription.TrafficStatus != types.WorkspaceTrafficStatusUsedUp {
+	oldStatus := subscription.TrafficStatus
+	if oldStatus != types.WorkspaceTrafficStatusUsedUp {
 		err := c.updateWorkspaceTrafficStatus(subscription.ID, types.WorkspaceTrafficStatusUsedUp)
 		if err != nil {
 			return fmt.Errorf("failed to update workspace traffic status: %v", err)
@@ -226,26 +273,31 @@ func (c *WorkspaceTrafficController) handleNoAvailableTraffic(subscription *type
 		userUID := subscription.UserUID
 		nr, err := c.AccountV2.GetNotificationRecipient(subscription.UserUID)
 		if err != nil {
-			// logrus.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
 			c.VLogger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
-		}
-		c.UserContactProvider.SetUserContact(userUID, nr)
-		defer c.UserContactProvider.RemoveUserContact(userUID)
+		} else {
+			c.UserContactProvider.SetUserContact(userUID, nr)
+			defer c.UserContactProvider.RemoveUserContact(userUID)
+			plan, err := c.AccountV2.GetWorkspaceSubscriptionPlan(subscription.PlanName)
+			if err != nil {
+				return fmt.Errorf("failed to get workspace subscription plan: %w", err)
+			}
+			features, err := types.ParseMaxResource(plan.MaxResources, plan.Traffic)
+			if err != nil {
+				return fmt.Errorf("failed to parse plan features: %w", err)
+			}
+			eventData := &usernotify.WorkspaceSubscriptionTrafficEventData{
+				Type:         usernotify.EventTypeTrafficUsageAlert,
+				PlanName:     subscription.PlanName,
+				RegionDomain: subscription.RegionDomain,
+				UsagePercent: 100,
+				Workspace:    subscription.Workspace,
+				Features:     features,
+			}
 
-		eventData := &usernotify.WorkspaceSubscriptionTrafficEventData{
-			Type:         usernotify.EventTypeTrafficUsageAlert,
-			PlanName:     subscription.PlanName,
-			RegionDomain: subscription.RegionDomain,
-			UsagePercent: 100,
-			TotalBytes:   0,
-			UsedBytes:    0,
-			Workspace:    subscription.Workspace,
+			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
+				c.VLogger.Errorf("failed to send subscription success notification for user %s: %v", userUID, err)
+			}
 		}
-		if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-			c.VLogger.Errorf("failed to send subscription success notification for user %s: %v", userUID, err)
-			// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
-		}
-
 	}
 
 	return nil
