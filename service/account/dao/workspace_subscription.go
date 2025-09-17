@@ -39,8 +39,8 @@ func (g *Cockroach) GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, wor
 func (g *Cockroach) ListWorkspaceSubscriptionWorkspace(userUID uuid.UUID) ([]string, error) {
 	db := g.ck.GetGlobalDB()
 	var workspaces []string
-	err := db.Model(&types.WorkspaceSubscriptionTransaction{}).Debug().
-		Where("user_uid = ? AND region_domain = ? AND pay_status = ?", userUID, g.GetLocalRegion().Domain, types.SubscriptionPayStatusPaid).
+	err := db.Model(&types.WorkspaceSubscription{}).
+		Where("user_uid = ? AND region_domain = ?", userUID, g.GetLocalRegion().Domain).
 		Distinct("workspace").
 		Pluck("workspace", &workspaces).Error
 	if err != nil {
@@ -97,4 +97,43 @@ func (g *Cockroach) CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transact
 		}
 	}
 	return nil
+}
+
+/*
+	type WorkspaceSubscription struct {
+	    ID                   uuid.UUID              `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
+	    PlanName             string                 `gorm:"type:varchar(50);column:plan_name"`
+	    Workspace            string                 `gorm:"type:varchar(50);column:workspace;uniqueIndex:idx_workspace_region_domain"`
+	    RegionDomain         string                 `gorm:"type:varchar(50);column:region_domain;uniqueIndex:idx_workspace_region_domain"`
+	    UserUID              uuid.UUID              `gorm:"type:uuid;index:idx_workspace_subscription_user_uid;column:user_uid"`
+	    Status               SubscriptionStatus     `gorm:"type:subscription_status;column:status"`
+	    PayStatus            SubscriptionPayStatus  `gorm:"type:subscription_pay_status;column:pay_status"`
+	    PayMethod            PaymentMethod          `gorm:"type:string;column:pay_method"`
+	    Stripe               *StripePay             `gorm:"column:stripe;type:json"`
+	    TrafficStatus        WorkspaceTrafficStatus `gorm:"type:workspace_traffic_status;default:'active';column:traffic_status"`
+	    CurrentPeriodStartAt time.Time              `gorm:"column:current_period_start_at"`
+	    CurrentPeriodEndAt   time.Time              `gorm:"column:current_period_end_at"`
+	    CancelAtPeriodEnd    bool                   `gorm:"column:cancel_at_period_end;default:false"`
+	    CancelAt             time.Time              `gorm:"column:cancel_at"`
+	    CreateAt             time.Time              `gorm:"column:create_at"`
+	    UpdateAt             time.Time              `gorm:"column:update_at;autoCreateTime"`
+	    ExpireAt             *time.Time             `gorm:"column:expire_at"`
+	    Traffic              []WorkspaceTraffic     `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"`
+	}
+*/
+func (g *Cockroach) GetUserStripeCustomerID(userUID uuid.UUID) (string, error) {
+	var customerID string
+	err := g.ck.GetGlobalDB().Debug().Model(&types.Payment{}).
+		Where(`"userUid" = ? AND stripe IS NOT NULL`, userUID).
+		Select("COALESCE(stripe->>'customerId', '')").
+		Order("created_at DESC").
+		Limit(1).
+		Scan(&customerID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get user stripe customer ID: %w", err)
+	}
+	return customerID, nil
 }

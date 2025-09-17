@@ -45,6 +45,11 @@ const (
 	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
 	// 续订余额失败状态
 	SubscriptionTransactionTypeRenewFailed SubscriptionOperator = "renew_failed"
+
+	// 到期未续费
+	SubscriptionTransactionTypeDebt SubscriptionOperator = "debt"
+
+	SubscriptionTransactionTypeOther SubscriptionOperator = "other"
 	// SubscriptionTransactionTypePayStatusChanged SubscriptionOperator = "pay_status_changed"
 )
 

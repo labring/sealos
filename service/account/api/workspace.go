@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"k8s.io/apimachinery/pkg/api/resource"
+	"github.com/labring/sealos/controllers/pkg/types"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,6 +15,53 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/account/helper"
 )
+
+func authenticateWorkspaceRequest(c *gin.Context, req *helper.WorkspaceInfoReq) error {
+	if err := authenticateRequest(c, req); err != nil {
+		return fmt.Errorf("authenticate error : %v", err)
+	}
+	role, err := dao.DBClient.GetUserWorkspaceRole(req.UserUID, req.Workspace)
+	if err != nil {
+		return fmt.Errorf("failed to get user role: %v", err)
+	}
+	if role == "" {
+		return fmt.Errorf("there is no permission find this workspace")
+	}
+	return nil
+}
+
+func authenticateWorkspaceSubscriptionRequest(c *gin.Context, req *helper.WorkspaceSubscriptionInfoReq, isOwner bool) error {
+	if err := authenticateRequest(c, req); err != nil {
+		return fmt.Errorf("authenticate error : %v", err)
+	}
+	role, err := dao.DBClient.GetUserWorkspaceRole(req.UserUID, req.Workspace)
+	if err != nil {
+		return fmt.Errorf("failed to get user role: %v", err)
+	}
+	if role == "" || (isOwner && role != types.RoleOwner) {
+		return fmt.Errorf("there is no permission find this workspace")
+	}
+	return nil
+}
+
+func authenticateWorkspaceSubscriptionOperatorRequest(c *gin.Context, req *helper.WorkspaceSubscriptionOperatorReq) error {
+	if err := authenticateRequest(c, req); err != nil {
+		return fmt.Errorf("authenticate error : %v", err)
+	}
+	userUID, err := dao.DBClient.GetWorkspaceUserUid(req.Workspace)
+	if err != nil {
+		return fmt.Errorf("failed to get user cr name: %v", err)
+	}
+	if req.UserUID != userUID {
+		return fmt.Errorf("there is no permission to access this workspace")
+	}
+	return nil
+}
+
+type CustomResourceQuotaStatus struct {
+	Hard map[v1.ResourceName]interface{} `json:"hard"` // 使用 interface{} 支持 Quantity 和 int64
+	Used map[v1.ResourceName]interface{} `json:"used"`
+}
 
 // GetWorkspaceResourceQuota
 // @Summary Get workspace resource quota
@@ -30,18 +76,10 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 	req, err := helper.ParseWorkspaceInfoReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
+		return
 	}
-	if err := authenticateRequest(c, req); err != nil {
+	if err := authenticateWorkspaceRequest(c, req); err != nil {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
-		return
-	}
-	userUID, err := dao.DBClient.GetWorkspaceUserUid(req.Workspace)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
-		return
-	}
-	if req.UserUID != userUID {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("there is no permission to access this workspace")})
 		return
 	}
 	var resQuota v1.ResourceQuota
@@ -55,23 +93,29 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get workspace subscription traffic: %v", err)})
 		return
 	}
-
-	totalQ, err := resource.ParseQuantity(strconv.FormatInt(total, 10))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse total traffic quantity: %v", err)})
-		return
-	}
-	usedQ, err := resource.ParseQuantity(strconv.FormatInt(used, 10))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse used traffic quantity: %v", err)})
-		return
+	// 创建自定义配额状态
+	customQuota := CustomResourceQuotaStatus{
+		Hard: make(map[v1.ResourceName]interface{}),
+		Used: make(map[v1.ResourceName]interface{}),
 	}
 
-	resQuota.Status.Hard["traffic"] = totalQ
-	resQuota.Status.Used["traffic"] = usedQ
+	// 复制现有配额数据（除了 traffic）
+	for key, value := range resQuota.Status.Hard {
+		if key != "traffic" {
+			customQuota.Hard[key] = value
+		}
+	}
+	for key, value := range resQuota.Status.Used {
+		if key != "traffic" {
+			customQuota.Used[key] = value
+		}
+	}
+
+	customQuota.Hard["traffic"] = total
+	customQuota.Used["traffic"] = used
 	c.JSON(http.StatusOK, struct {
-		Quota v1.ResourceQuotaStatus `json:"quota"`
+		Quota CustomResourceQuotaStatus `json:"quota"`
 	}{
-		Quota: resQuota.Status,
+		Quota: customQuota,
 	})
 }

@@ -138,7 +138,7 @@ func (s *eventNotificationServiceImpl) HandleWorkspaceSubscriptionEvent(ctx cont
 	//}
 	eventDataMap := eventData.ToMap()
 	payStatus := eventDataMap["pay_status"]
-	payMethod := eventDataMap["pay_method"]
+	//payMethod := eventDataMap["pay_method"]
 	// 根据操作类型设置优先级
 	var priority NotificationPriority
 	if payStatus == types.SubscriptionPayStatusFailed || operator == types.SubscriptionTransactionTypeCanceled {
@@ -146,31 +146,35 @@ func (s *eventNotificationServiceImpl) HandleWorkspaceSubscriptionEvent(ctx cont
 	} else {
 		priority = NotificationPriorityNormal
 	}
-
 	var eventType EventType
-	switch operator {
-	case types.SubscriptionTransactionTypeCreated:
-		if payStatus == types.SubscriptionPayStatusPaid {
-			eventType = EventTypeWorkspaceSubscriptionCreatedSuccess
-		} else {
-			eventType = EventTypeWorkspaceSubscriptionCreatedFailed
+	if eventDataMap["type"] != nil {
+		if et, ok := eventDataMap["type"].(EventType); ok {
+			eventType = et
 		}
-	case types.SubscriptionTransactionTypeUpgraded:
-		if payStatus == types.SubscriptionPayStatusPaid {
-			eventType = EventTypeWorkspaceSubscriptionUpgradedSuccess
-		} else {
-			eventType = EventTypeWorkspaceSubscriptionUpgradedFailed
-		}
-	case types.SubscriptionTransactionTypeDowngraded:
-	case types.SubscriptionTransactionTypeRenewed:
-		if payStatus == types.SubscriptionPayStatusPaid {
-			if payMethod == string(types.PaymentMethodBalance) {
+	}
+	if eventType == "" {
+		switch operator {
+		case types.SubscriptionTransactionTypeCreated:
+			if payStatus == types.SubscriptionPayStatusPaid {
+				eventType = EventTypeWorkspaceSubscriptionCreatedSuccess
+			} else {
+				eventType = EventTypeWorkspaceSubscriptionCreatedFailed
+			}
+		case types.SubscriptionTransactionTypeUpgraded:
+			if payStatus == types.SubscriptionPayStatusPaid {
+				eventType = EventTypeWorkspaceSubscriptionUpgradedSuccess
+			} else {
+				eventType = EventTypeWorkspaceSubscriptionUpgradedFailed
+			}
+		case types.SubscriptionTransactionTypeDowngraded:
+		case types.SubscriptionTransactionTypeRenewed:
+			if payStatus == types.SubscriptionPayStatusPaid {
+				eventType = EventTypeWorkspaceSubscriptionRenewedSuccess
+			} else if payStatus == types.SubscriptionPayStatusFailedAndUseBalance {
 				eventType = EventTypeWorkspaceSubscriptionRenewedBalanceFallback
 			} else {
-				eventType = EventTypeWorkspaceSubscriptionRenewedSuccess
+				eventType = EventTypeWorkspaceSubscriptionRenewedFailed
 			}
-		} else {
-			eventType = EventTypeWorkspaceSubscriptionRenewedFailed
 		}
 	}
 

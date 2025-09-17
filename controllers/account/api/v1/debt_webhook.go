@@ -18,9 +18,12 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
+
+	"gorm.io/gorm"
 
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
 
@@ -171,17 +174,28 @@ func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c cl
 		logger.Error(err, "get user error", "user", user)
 		return admission.ValidationResponse(true, err.Error())
 	}
-	account, err := d.AccountV2.GetAccountWithCredits(userUID)
-	if err != nil {
-		logger.Error(err, "get account error", "user", user)
-		return admission.ValidationResponse(true, err.Error())
-	}
-	// Store in cache
-	d.TTLUserMap.Put(cacheKey, account)
-	logger.V(1).Info("cached account for user", "user", user)
+	if ns.Annotations[pkgtype.WorkspaceSubscriptionStatusAnnoKey] != "" {
+		workspaceSub, err := d.AccountV2.GetWorkspaceSubscription(nsName, d.AccountV2.GetLocalRegion().Domain)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Error(err, "get workspace subscription error", "workspace", nsName)
+			return admission.ValidationResponse(true, err.Error())
+		}
+		if workspaceSub != nil && workspaceSub.Status != pkgtype.SubscriptionStatusNormal {
+			return admission.ValidationResponse(false, fmt.Sprintf("the subscription status of workspace %s is expired, please contact the administrator", ns.Name))
+		}
+	} else {
+		account, err := d.AccountV2.GetAccountWithCredits(userUID)
+		if err != nil {
+			logger.Error(err, "get account error", "user", user)
+			return admission.ValidationResponse(true, err.Error())
+		}
+		// Store in cache
+		d.TTLUserMap.Put(cacheKey, account)
+		logger.V(1).Info("cached account for user", "user", user)
 
-	if account.Balance+account.UsableCredits <= account.DeductionBalance {
-		return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
+		if account.Balance+account.UsableCredits <= account.DeductionBalance {
+			return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
+		}
 	}
 	return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s", user, ns.Name))
 }

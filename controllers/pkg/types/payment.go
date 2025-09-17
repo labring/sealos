@@ -37,6 +37,7 @@ type PaymentRaw struct {
 type StripePay struct {
 	SubscriptionID string `json:"subscriptionId"`
 	CustomerID     string `json:"customerId"`
+	SessionID      string `json:"sessionId"`
 }
 
 func (s *StripePay) Value() (driver.Value, error) {

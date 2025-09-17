@@ -431,6 +431,9 @@ func SetSuccessResp(c *gin.Context) {
 }
 
 func SetErrorResp(c *gin.Context, code int, h map[string]any) {
+	if c.Writer.Written() {
+		return
+	}
 	h["success"] = false
 	c.JSON(code, h)
 }

@@ -397,6 +397,30 @@ func GetDefaultResourceQuota(ns, name string) *corev1.ResourceQuota {
 	}
 }
 
+func GetLimit0Quota(ns, name string) *corev1.ResourceQuota {
+	return &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.ResourceQuotaSpec{
+			Hard: Limit0Quota,
+		},
+	}
+}
+
+var Limit0Quota = corev1.ResourceList{}
+
+func init() {
+	zeroQuantity := func() (q resource.Quantity) {
+		q.Set(0)
+		return
+	}
+	for k := range DefaultResourceQuotaHard() {
+		Limit0Quota[k] = zeroQuantity()
+	}
+}
+
 func GetDefaultLimitRange(ns, name string) *corev1.LimitRange {
 	return &corev1.LimitRange{
 		ObjectMeta: metav1.ObjectMeta{
@@ -435,7 +459,7 @@ const (
 	DefaultQuotaLimitsGPU           = "8"
 	DefaultQuotaLimitsNodePorts     = "10"
 	DefaultQuotaLimitsPods          = "20"
-	DefaultQuotaObjectStorageSize   = "100Gi"
+	DefaultQuotaObjectStorageSize   = "20Gi"
 	DefaultQuotaObjectStorageBucket = "5"
 )
 

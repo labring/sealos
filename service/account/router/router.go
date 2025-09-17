@@ -166,6 +166,9 @@ func RegisterPayRouter() {
 	// process expired workspace subscriptions
 	go startExpiredWorkspaceSubscriptionProcessing(ctx)
 
+	workspaceSub := api.NewWorkspaceSubscriptionProcessor()
+	workspaceSub.Start(ctx)
+
 	// Wait for interrupt signal.
 	<-rootCtx.Done()
 

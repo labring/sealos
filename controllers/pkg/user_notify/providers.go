@@ -19,8 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/labring/sealos/controllers/pkg/types"
 
@@ -231,7 +234,8 @@ func (p *EmailProvider) Send(ctx context.Context, message *NotificationMessage) 
 	var emailContent string
 	if message.TemplateID != "" {
 		// 使用HTML模板并替换变量
-		emailContent = p.renderEmailTemplate(message.TemplateID, message.Content, message.EventData, message.Recipient)
+		// emailContent = p.renderEmailTemplate(message.TemplateID, message.Content, message.EventData, message.Recipient)
+		emailContent = message.TemplateID
 	} else {
 		// 退回到使用简单内容，包装为基本HTML
 		emailContent = p.wrapSimpleContent(message.Content)
@@ -251,7 +255,7 @@ func (p *EmailProvider) Send(ctx context.Context, message *NotificationMessage) 
 	if err := d.DialAndSend(m); err != nil {
 		result.Success = false
 		result.Error = fmt.Sprintf("failed to send email: %v", err)
-		return result, err
+		return result, fmt.Errorf("failed to send email: %v", err)
 	}
 
 	// 构建响应数据
@@ -313,6 +317,355 @@ func (p *EmailProvider) renderEmailTemplate(templateContent, content string, eve
 	}
 
 	return renderedTemplate
+}
+
+type EmailData struct {
+	UserName       string
+	Title          string
+	AlertMessage   string
+	Content        string
+	WarnContent    string
+	BorderColor    string
+	PlanDetails    *PlanDetails // Optional
+	Recommendation string       // Optional
+}
+
+// PlanDetails represents the plan card details
+type PlanDetails struct {
+	Title    string
+	Dates    string
+	Location string
+	Features []string
+}
+
+const WorkspaceSubscriptionEventEmailRenderTmpl = `<!DOCTYPE html>
+<html lang="en" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px;">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sealos - {{.Title}}</title>
+    </head>
+    <body style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px;">
+        <table class="container" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 100%; max-width: 600px; margin: 0 auto; color: #333; background-color: #fff; border: 1px solid {{.BorderColor}};">
+            <tr>
+                <td>
+                    <table class="header" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; text-align: left; padding: 48px; padding-bottom: 20px; border-bottom: 1px dashed #e5e5e5; width: 100%;">
+                        <tr>
+                            <td>
+                                <table class="logo-table" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 100%; margin-bottom: 8px;">
+                                    <tr>
+                                        <td class="logo-cell" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; text-align: left; vertical-align: middle;">
+                                            <div class="logo-icon" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 40px; height: 40px; display: inline-block; vertical-align: middle; margin-right: 12px;">
+                                                <img src="https://objectstorageapi.usw.sealos.io/3n31wssp-sealos-assets/sealos-logo@128.png" width="40" height="40" alt="Sealos Logo" style="box-sizing: border-box; font-family: system-ui, sans-serif; font-weight: normal; letter-spacing: 0.25px;">
+                                            </div>
+                                            <span class="logo-text" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 32px; font-weight: 600; margin: 0; color: #333; display: inline-block; vertical-align: middle;">Sealos</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <p class="tagline" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 14px; color: #888; margin: 0;">
+                                    Application-Centric Intelligent Cloud Operating System
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="main-content" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; padding: 48px; padding-top: 0;">
+                        <tr>
+                            <td>
+                                <h2 class="greeting" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 24px; font-weight: 600; margin: 48px 0 12px 0; color: #333;">Hi {{.UserName}},</h2>
+
+                                <p class="alert-message" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; margin-bottom: 16px; color: #333;">
+                                    {{.AlertMessage}}
+                                </p>
+								{{if .WarnContent}}
+								<p class="alert-message" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px; font-size: 16px; margin-bottom: 32px; color: #dc2626; background-color: #fef2f2; border-radius: 8px; line-height: 1.44; padding: 16px;">
+									{{.WarnContent}}
+								</p>
+								{{else}}{{if .Content}}
+                                <p class="details" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; margin-bottom: 32px; color: #333;">
+                                    {{.Content}}
+                                </p>
+								{{end}}
+								{{end}}
+
+                                {{if .PlanDetails}}
+                                <table class="plan-card" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; background: #fff; border: 1px solid #e5e5e5; padding: 24px; margin-bottom: 32px; width: 100%; border-radius: 16px;">
+                                    <tr>
+                                        <td>
+                                            <table class="plan-header-table" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 100%; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;">
+                                                <tr>
+                                                    <td class="plan-title-cell" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; text-align: left; vertical-align: top;">
+                                                        <h3 class="plan-title" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 24px; font-weight: 600; margin: 0; margin-bottom: 8px; color: #333;">{{.PlanDetails.Title}}</h3>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="plan-info-cell" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; text-align: right; vertical-align: top;">
+                                                        <div class="plan-dates" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 14px; color: #888; margin-bottom: 4px; text-align: start;">
+                                                            {{.PlanDetails.Dates}}
+                                                        </div>
+                                                    </td>
+                                                    <td class="plan-info-cell" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; text-align: right; vertical-align: top;">
+                                                        <div class="plan-location" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 14px; color: #888;">{{.PlanDetails.Location}}</div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                            <div class="plan-features" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; margin-bottom: 24px;">
+                                                {{range .PlanDetails.Features}}
+                                                <table class="feature-table" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 100%; margin-bottom: 12px;">
+                                                    <tr>
+                                                        <td class="checkmark-cell" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 32px; vertical-align: middle;">
+                                                            <div class="checkmark" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; width: 16px; height: 16px; background: white; color: #2563EB; text-align: center; vertical-align: bottom; padding-top: 2px; padding-bottom: 1px; padding-left: 1px; padding-right: 2px; border: 2px solid #2563EB; border-radius: 9999px; font-size: 12px; font-weight: 600;">✓</div>
+                                                        </td>
+                                                        <td class="feature-text-cell" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; vertical-align: middle;">
+                                                            <span class="feature-text" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; color: #333;">{{.}}</span>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                {{end}}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                                {{end}}
+
+                                {{if .Recommendation}}
+								<a class="upgrade-button" href="{{.Recommendation}}" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;background: #000;border-radius: 8px;color: white;border: none;padding: 16px;font-size: 16px;font-weight: 600;cursor: pointer;display: block;text-align: center;">
+									Upgrade Plan
+								</a>
+                                {{end}}
+
+                                <p class="footer-support" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; margin-bottom: 16px; color: #333;">
+                                    Should you have any questions, feel free to contact our support team.
+                                </p>
+                                <p class="footer-signature" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; margin-bottom: 16px; color: #333;">
+                                    Best regards,<br>
+                                    The Sealos Team
+                                </p>
+                                <p class="footer-contact" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; margin-bottom: 32px; color: #333;">
+                                    <a href="mailto:contact@sealos.io" style="color: #2563EB; text-decoration: none;">contact@sealos.io</a>
+                                </p>`
+
+// EventConfig defines the configuration for each event type
+type EventConfig struct {
+	TitleTemplate     string
+	AlertTemplate     string
+	WarnAlertTemplate string
+	Content           string
+	BorderColor       string
+	Features          []string
+	Recommendation    string
+	DatesFormat       string
+}
+
+// eventConfigs maps event types to their configurations
+var eventConfigs = map[EventType]EventConfig{
+	EventTypeTrafficUsageAlert: {
+		TitleTemplate:  "%s Region %s Workspace Resource %s",
+		AlertTemplate:  "This is a heads-up that your %s resource usage in the %s region for the %s workspace has exceeded %s.",
+		Content:        "To avoid any potential service disruption, please review your current usage and consider upgrading your plan.",
+		BorderColor:    "#ffa500",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+		DatesFormat:    "Until %s",
+	},
+	EventTypeWorkspaceSubscriptionCreatedSuccess: {
+		TitleTemplate: "%s Region %s Space Subscription Created Successfully",
+		AlertTemplate: `Welcome to Sealos! 
+You have successfully subscribed to the %s plan for the %s space in the %s region.`,
+		Content:     "Your plan is active and will automatically renew on %s.",
+		BorderColor: "#e5e5e5",
+		Features:    []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		DatesFormat: "Until %s",
+	},
+	EventTypeWorkspaceSubscriptionCreatedFailed: {
+		TitleTemplate:  "%s Region %s workspace Subscription Creation Failed",
+		AlertTemplate:  `We were unable to process your subscription to the %s plan for the %s workspace in the %s region.`,
+		Content:        "Please contact support for assistance.",
+		BorderColor:    "#ff0000",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+		DatesFormat:    "Until %s",
+	},
+	EventTypeWorkspaceSubscriptionRenewedSuccess: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Renewed",
+		AlertTemplate:  `Your subscription to the %s plan for the %s workspace in the %s region has been successfully renewed.`,
+		Content:        "Thank you for your continued trust in Sealos.",
+		BorderColor:    "#e5e5e5",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		DatesFormat:    "Until %s",
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+	},
+	EventTypeWorkspaceSubscriptionRenewedFailed: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Renewal Failed",
+		AlertTemplate:  `We were unable to renew your %s plan for the %s workspace in the %s region. Your service will be suspended on your plan's expiration date.`,
+		Content:        "To prevent service interruption and data loss, please update your payment information as soon as possible. Your resources will be permanently deleted 7 days after the expiration date of %s.",
+		BorderColor:    "#ff0000",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+		DatesFormat:    "Until %s",
+	},
+	// EventTypeWorkspaceSubscriptionRenewedBalanceFallback 订阅支付失败，自动使用余额支付，需要通知用户订阅支付失败，但使用cloud balance成功
+	EventTypeWorkspaceSubscriptionRenewedBalanceFallback: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Renewed with Cloud Balance",
+		AlertTemplate:  `Your subscription to the %s plan for the %s workspace in the %s region was successfully renewed using your cloud balance.Dear User, Your subscription auto-renewal has failed. However, we have successfully deducted the payment from your account balance, and your subscription has been renewed. Please check your payment method to ensure smooth auto-renewals in the future. If you have any questions, please contact our customer support.`,
+		Content:        "Thank you for your continued trust in Sealos. Please ensure your payment information is up to date to avoid future interruptions.",
+		BorderColor:    "#e5e5e5",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		DatesFormat:    "Until %s",
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+	},
+	EventTypeWorkspaceSubscriptionExpired: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Expired",
+		AlertTemplate:  "Your %s plan for the %s workspace in the %s region has expired, and your service is now suspended.",
+		Content:        "Your resources will be permanently deleted in %d days. To restore your service and prevent data loss, please renew your subscription now.",
+		BorderColor:    "#ff0000",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+		DatesFormat:    "Until %s",
+	},
+	EventTypeWorkspaceSubscriptionExpiredDeleteResources: {
+		TitleTemplate:  "%s Region %s Workspace Resources Deleted",
+		AlertTemplate:  "As your subscription for the %s space in the %s region was not renewed within the 7-day grace period, your associated resources have now been permanently deleted.",
+		Content:        "We're sorry to see you go. If you wish to use Sealos services again in the future, you can start a new subscription at any time.",
+		BorderColor:    "#ff0000",
+		Features:       []string{"4 vCPU", "4GB RAM", "1GB Disk"},
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+		DatesFormat:    "Expired on %s",
+	},
+	EventTypeWorkspaceSubscriptionUpgradedSuccess: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Upgraded",
+		AlertTemplate:  "You have successfully upgraded to the %s plan! Your new plan is effective immediately for the %s workspace in the %s region.",
+		Content:        "Enjoy the new features! Your plan will automatically renew on %s.",
+		BorderColor:    "#e5e5e5",
+		Features:       []string{"8 vCPU", "16GB RAM", "10GB Disk"},
+		DatesFormat:    "Until %s",
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+	},
+	EventTypeWorkspaceSubscriptionUpgradedFailed: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Upgrade Failed",
+		AlertTemplate:  "We were unable to process your upgrade to the %s plan for the %s workspace in the %s region. Your subscription will remain on your current plan.",
+		Content:        "Please contact support for assistance.",
+		BorderColor:    "#ff0000",
+		Features:       []string{"8 vCPU", "16GB RAM", "10GB Disk"},
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+		DatesFormat:    "Current Until %s",
+	},
+	EventTypeWorkspaceSubscriptionDowngradedSuccess: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Downgraded",
+		AlertTemplate:  "You have successfully scheduled a downgrade to the %s plan for the %s workspace in the %s region.",
+		Content:        "This change will take effect at the start of your next billing cycle on %s.",
+		BorderColor:    "#e5e5e5",
+		Features:       []string{"2 vCPU", "2GB RAM", "500MB Disk"},
+		DatesFormat:    "Effective from %s",
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+	},
+	EventTypeWorkspaceSubscriptionDowngradedFailed: {
+		TitleTemplate:  "%s Region %s Workspace Subscription Downgrade Failed",
+		AlertTemplate:  "We were unable to process your downgrade to the %s plan for the %s workspace in the %s region. Your subscription will remain on your current plan.",
+		Content:        "Please contact support for assistance.",
+		BorderColor:    "#ff0000",
+		Features:       []string{"2 vCPU", "2GB RAM", "500MB Disk"},
+		DatesFormat:    "Current Until %s",
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+	},
+	EventTypeWorkspaceSubscriptionDebt: {
+		TitleTemplate:     "Workspace Subscription Expiration Warning in %s Region %s Workspace",
+		AlertTemplate:     "Your %s Plan for the %s workspace in the %s region has expired. Your service will be suspended on your plan's expiration date.",
+		BorderColor:       "#ff0000",
+		WarnAlertTemplate: "To prevent service interruption and data loss, please update your payment information as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.",
+		//Content:           `To prevent service interruption and data loss, please update your plan as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.`,
+		Content:        "Your subscription will delete in %d days. Please renew your subscription to continue enjoying our services.",
+		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
+	},
+}
+
+// generateEmailContent generates email content based on the event type
+func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
+	config, ok := eventConfigs[event.EventType]
+	if !ok {
+		return nil, fmt.Errorf("unsupported event type: %s", event.EventType)
+	}
+
+	var data EmailData
+	data.BorderColor = config.BorderColor
+	data.Content = config.Content
+
+	switch event.EventType {
+	case EventTypeTrafficUsageAlert:
+		var trafficData WorkspaceSubscriptionTrafficEventData
+		dataBytes, _ := json.Marshal(event.EventData)
+		if err := json.Unmarshal(dataBytes, &trafficData); err != nil {
+			return nil, fmt.Errorf("failed to parse traffic event data: %v", err)
+		}
+		// Determine title suffix based on UsagePercent
+		titleSuffix := "Usage Alert"
+		if trafficData.UsagePercent >= 100 {
+			titleSuffix = "Exhausted"
+			data.Content = "Please upgrade your plan immediately to ensure continued operation."
+			data.BorderColor = "#ff0000"
+		}
+		data.Title = fmt.Sprintf(config.TitleTemplate, trafficData.RegionDomain, trafficData.Workspace, titleSuffix)
+		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
+			"Traffic", trafficData.RegionDomain, trafficData.Workspace, strconv.Itoa(trafficData.UsagePercent)+"%s")
+		data.Recommendation = fmt.Sprintf(config.Recommendation, trafficData.RegionDomain, trafficData.Workspace)
+		data.PlanDetails = &PlanDetails{
+			Title:    trafficData.PlanName,
+			Dates:    fmt.Sprintf(config.DatesFormat, time.Now().Format("2006-01-02")),
+			Location: fmt.Sprintf("%s/%s", trafficData.RegionDomain, trafficData.Workspace),
+			Features: config.Features,
+		}
+		if trafficData.UsagePercent >= 100 {
+			data.Content = "Please upgrade your plan immediately to ensure continued operation."
+			data.BorderColor = "#ff0000"
+		}
+	case EventTypeWorkspaceSubscriptionDebt:
+		var subData WorkspaceSubscriptionDebtEventData
+		dataBytes, _ := json.Marshal(event.EventData)
+		if err := json.Unmarshal(dataBytes, &subData); err != nil {
+			return nil, fmt.Errorf("failed to parse subscription debt event data: %v", err)
+		}
+		data.Title = fmt.Sprintf(config.TitleTemplate, subData.RegionDomain, subData.WorkspaceName)
+		data.AlertMessage = fmt.Sprintf(config.AlertTemplate, subData.PlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.Content = fmt.Sprintf(config.Content, subData.PlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.WarnContent = config.WarnAlertTemplate
+		data.Recommendation = fmt.Sprintf(config.Recommendation, subData.RegionDomain, subData.WorkspaceName)
+		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
+			subData.PlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.WarnContent = config.WarnAlertTemplate
+	default:
+		var subData WorkspaceSubscriptionEventData
+		dataBytes, _ := json.Marshal(event.EventData)
+		if err := json.Unmarshal(dataBytes, &subData); err != nil {
+			return nil, fmt.Errorf("failed to parse subscription event data: %v", err)
+		}
+		data.Title = fmt.Sprintf(config.TitleTemplate, subData.RegionDomain, subData.WorkspaceName)
+
+		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
+			subData.NewPlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.PlanDetails = &PlanDetails{
+			Title:    subData.NewPlanName,
+			Dates:    fmt.Sprintf(config.DatesFormat, subData.ExpirationDate),
+			Location: fmt.Sprintf("%s/%s", subData.RegionDomain, subData.WorkspaceName),
+			Features: subData.Features,
+		}
+		if config.Recommendation != "" {
+			data.Recommendation = fmt.Sprintf(config.Recommendation, subData.RegionDomain, subData.WorkspaceName)
+		}
+		if event.EventType == EventTypeWorkspaceSubscriptionExpired {
+			data.Content = fmt.Sprintf(config.Content, subData.DaysRemaining)
+		}
+		switch event.EventType {
+		case EventTypeWorkspaceSubscriptionUpgradedSuccess, EventTypeWorkspaceSubscriptionCreatedSuccess:
+			data.Content = fmt.Sprintf(config.Content, subData.NextPayDate)
+		case EventTypeWorkspaceSubscriptionRenewedFailed:
+			data.Content = fmt.Sprintf(config.Content, subData.NewPlanName)
+		}
+	}
+	data.UserName = event.Recipient.UserName
+
+	fmt.Printf("Generated Email Data: %+v\n", data)
+	return &data, nil
 }
 
 // wrapSimpleContent 将简单文本内容包装为基本HTML
@@ -519,34 +872,23 @@ func (m *ProviderManager) SendEvent(ctx context.Context, event *NotificationEven
 	var errors []string
 
 	// 如果事件中没有接收者信息，尝试获取
-	recipient := event.Recipient
-	if recipient.UserName == "" || (recipient.Email == "" && recipient.PhoneNumber == "") {
-		if m.contactProvider != nil {
-			contact, err := m.contactProvider.GetUserContact(ctx, event.UserUID)
-			if err != nil {
-				log.Printf("Failed to get user contact info for user %s: %v", event.UserUID, err)
-			} else if contact != nil {
-				// 补充接收者信息
-				if recipient.UserName == "" {
-					recipient.UserName = contact.UserName
-				}
-				if recipient.Email == "" {
-					recipient.Email = contact.Email
-				}
-				if recipient.PhoneNumber == "" {
-					recipient.PhoneNumber = contact.PhoneNumber
-				}
-				if recipient.UserID == "" {
-					recipient.UserID = contact.UserID
-				}
-			}
+	if m.contactProvider != nil {
+		contact, err := m.contactProvider.GetUserContact(ctx, event.UserUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user contact: %v", err)
+		} else if contact != nil {
+			// 补充接收者信息
+			event.Recipient = *contact
 		}
 	}
+	logrus.Infof("recipient info: %+v", event.Recipient)
 
 	// 为每种通知方式生成消息并发送
 	for _, method := range event.Methods {
 		provider, exists := m.GetProvider(method)
 		if !exists {
+			// TODO 临时去掉
+			// return nil, fmt.Errorf("failed to get provider for method: %s", method)
 			continue
 		}
 
@@ -556,17 +898,18 @@ func (m *ProviderManager) SendEvent(ctx context.Context, event *NotificationEven
 		}
 		switch provider.GetName() {
 		case "email":
-			if recipient.Email == "" && !event.NotIgnoreIfNoContact {
+			if event.Recipient.Email == "" && !event.NotIgnoreIfNoContact {
+				// return nil, fmt.Errorf("email required for email notification")
 				continue
 			}
 		case "sms", "vms":
-			if recipient.PhoneNumber == "" && !event.NotIgnoreIfNoContact {
+			if event.Recipient.PhoneNumber == "" && !event.NotIgnoreIfNoContact {
 				continue
 			}
 		}
 
 		// 生成通知内容
-		title, content, templateID, err := m.contentGen.GenerateContent(event.EventType, method, event.EventData, recipient)
+		title, content, templateID, err := m.contentGen.GenerateContent(event, method)
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("failed to generate content for %s: %v", method, err))
 			continue
@@ -580,7 +923,7 @@ func (m *ProviderManager) SendEvent(ctx context.Context, event *NotificationEven
 			Priority:   event.Priority,
 			Title:      title,
 			Content:    content,
-			Recipient:  recipient,
+			Recipient:  event.Recipient,
 			EventData:  event.EventData,
 			TemplateID: templateID,
 			Timestamp:  event.Timestamp,

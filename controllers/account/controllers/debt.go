@@ -866,7 +866,13 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 func getUniqueUsers(db *gorm.DB, table interface{}, timeField string, startTime, endTime time.Time) ([]uuid.UUID, error) {
 	var users []uuid.UUID
 	switch table.(type) {
-	case *types.AccountTransaction, *types.Payment, *types.Account:
+	case *types.Account:
+		if err := db.Model(table).Where(fmt.Sprintf("%s BETWEEN ? AND ?", timeField), startTime, endTime).
+			Where("deduction_balance > ?", 0).
+			Distinct(`"userUid"`).Pluck(`"userUid"`, &users).Error; err != nil {
+			return nil, fmt.Errorf("failed to query unique users: %v", err)
+		}
+	case *types.AccountTransaction, *types.Payment:
 		if err := db.Model(table).Where(fmt.Sprintf("%s BETWEEN ? AND ?", timeField), startTime, endTime).
 			Distinct(`"userUid"`).Pluck(`"userUid"`, &users).Error; err != nil {
 			return nil, fmt.Errorf("failed to query unique users: %v", err)
