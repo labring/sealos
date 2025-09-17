@@ -433,6 +433,7 @@ const WorkspaceSubscriptionEventEmailRenderTmpl = `<!DOCTYPE html>
 								<a class="upgrade-button" href="{{.Recommendation}}" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;background: #000;border-radius: 8px;color: white;border: none;padding: 16px;font-size: 16px;font-weight: 600;cursor: pointer;display: block;text-align: center;">
 									Upgrade Plan
 								</a>
+								<br/>
                                 {{end}}
 
                                 <p class="footer-support" style="font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.25px; font-size: 16px; margin-bottom: 16px; color: #333;">
@@ -607,13 +608,13 @@ func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
 		}
 		data.Title = fmt.Sprintf(config.TitleTemplate, trafficData.RegionDomain, trafficData.Workspace, titleSuffix)
 		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
-			"Traffic", trafficData.RegionDomain, trafficData.Workspace, strconv.Itoa(trafficData.UsagePercent)+"%s")
+			"Traffic", trafficData.RegionDomain, trafficData.Workspace, strconv.Itoa(trafficData.UsagePercent)+"%")
 		data.Recommendation = fmt.Sprintf(config.Recommendation, trafficData.RegionDomain, trafficData.Workspace)
 		data.PlanDetails = &PlanDetails{
 			Title:    trafficData.PlanName,
 			Dates:    fmt.Sprintf(config.DatesFormat, time.Now().Format("2006-01-02")),
 			Location: fmt.Sprintf("%s/%s", trafficData.RegionDomain, trafficData.Workspace),
-			Features: config.Features,
+			Features: trafficData.Features,
 		}
 		if trafficData.UsagePercent >= 100 {
 			data.Content = "Please upgrade your plan immediately to ensure continued operation."

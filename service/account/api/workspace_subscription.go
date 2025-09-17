@@ -1585,16 +1585,18 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 			dao.Logger.Infof("plan features for user %s: %v", userUID, features)
 
 			eventData := &usernotify.WorkspaceSubscriptionEventData{
-				WorkspaceName:  workspace,
-				Operator:       wsTransaction.Operator,
-				Domain:         regionDomain,
-				RegionDomain:   regionDomain,
-				ExpirationDate: fmt.Sprintf("%s-%s", workspaceSubscription.CurrentPeriodStartAt.Format("2006-01-02"), workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02")),
-				PayStatus:      types.SubscriptionPayStatusPaid,
-				OldPlanName:    wsTransaction.OldPlanName,
-				NewPlanName:    wsTransaction.NewPlanName,
-				Features:       features,
-				Amount:         math.Ceil(float64(invoice.AmountPaid)/float64(100)) * 1_000_000,
+				WorkspaceName: workspace,
+				Operator:      wsTransaction.Operator,
+				Domain:        regionDomain,
+				RegionDomain:  regionDomain,
+				ExpirationDate: fmt.Sprintf("%s - %s",
+					workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
+					workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2")),
+				PayStatus:   types.SubscriptionPayStatusPaid,
+				OldPlanName: wsTransaction.OldPlanName,
+				NewPlanName: wsTransaction.NewPlanName,
+				Features:    features,
+				Amount:      math.Ceil(float64(invoice.AmountPaid)/float64(100)) * 1_000_000,
 			}
 			eventData.NextPayDate = workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02")
 			if _, err = dao.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeUpgraded, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
@@ -1723,10 +1725,14 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 				Amount:      math.Ceil(float64(invoice.AmountPaid)/float64(100)) * 1_000_000,
 			}
 			if workspaceSubscription != nil {
-				eventData.ExpirationDate = fmt.Sprintf("%s-%s", workspaceSubscription.CurrentPeriodStartAt.Format("2006-01-02"), workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02"))
+				eventData.ExpirationDate = fmt.Sprintf("%s - %s",
+					workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
+					workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2"))
 				eventData.NextPayDate = workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02")
 			} else {
-				eventData.ExpirationDate = fmt.Sprintf("%s-%s", time.Now().UTC().Format("2006-01-02"), time.Now().UTC().AddDate(0, 0, 30).Format("2006-01-02"))
+				eventData.ExpirationDate = fmt.Sprintf("%s - %s",
+					time.Now().UTC().Format("2006.1.2"),
+					time.Now().UTC().AddDate(0, 1, 0).Format("2006.1.2"))
 				eventData.NextPayDate = time.Now().UTC().AddDate(0, 0, 30).Format("2006-01-02")
 			}
 			// TODO 需要考虑消息发送失败的情况，本身已经重试过了，失败的话先入数据库作为记录
@@ -1810,10 +1816,13 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 		WorkspaceName: workspace,
 		Domain:        regionDomain,
 		//Operator:       types.SubscriptionOperator(operator),
-		PayStatus:      types.SubscriptionPayStatusFailed,
-		ExpirationDate: fmt.Sprintf("%s-%s", workspaceSubscription.CurrentPeriodStartAt.Format("2006-01-02"), workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02")),
-		Amount:         math.Ceil(float64(invoice.AmountDue) / float64(100)),
-		ErrorReason:    invoice.LastFinalizationError.Error(),
+		PayStatus: types.SubscriptionPayStatusFailed,
+		//ExpirationDate: fmt.Sprintf("%s-%s", workspaceSubscription.CurrentPeriodStartAt.Format("2006-01-02"), workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02")),
+		ExpirationDate: fmt.Sprintf("%s - %s",
+			workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
+			workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2")),
+		Amount:      math.Ceil(float64(invoice.AmountDue) / float64(100)),
+		ErrorReason: invoice.LastFinalizationError.Error(),
 	}
 	switch {
 	case isInitialSubscription:

@@ -40,9 +40,10 @@ func (g *DefaultContentGenerator) GenerateContent(event *NotificationEvent, meth
 	case EventTypeSubscriptionStatusChange, EventTypeSubscriptionOperationDone, EventTypeSubscriptionPaymentDone, EventTypeWorkspaceSubscriptionCreatedSuccess,
 		EventTypeWorkspaceSubscriptionCreatedFailed, EventTypeWorkspaceSubscriptionUpgradedSuccess, EventTypeWorkspaceSubscriptionUpgradedFailed,
 		EventTypeWorkspaceSubscriptionRenewedSuccess, EventTypeWorkspaceSubscriptionRenewedBalanceFallback, EventTypeWorkspaceSubscriptionRenewedFailed,
-		EventTypeWorkspaceSubscriptionDebt, EventTypeWorkspaceSubscriptionDebtPreDeletion:
+		EventTypeWorkspaceSubscriptionDebt, EventTypeWorkspaceSubscriptionDebtPreDeletion,
+		EventTypeTrafficUsageAlert:
 		return g.generateWorkspaceSubscriptionContent(method, event)
-	case EventTypeTrafficStatusChange, EventTypeTrafficUsageAlert:
+	case EventTypeTrafficStatusChange /*EventTypeTrafficUsageAlert*/ :
 		return g.generateTrafficContent(method, event.EventData, event.Recipient)
 	case EventTypeCustom:
 		return g.generateCustomContent(method, event.EventData, event.Recipient)
@@ -159,6 +160,10 @@ func (g *DefaultContentGenerator) generateWorkspaceSubscriptionContent(method No
 		title = "Workspace Subscription Debt Notice"
 		contentTmpl = "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}订阅已进入欠费状态，请及时充值以避免服务中断。"
 		contentTmpl = "Dear {{.UserName}}, your workspace subscription for {{.Workspace}} is in debt status. Please recharge promptly to avoid service interruption."
+	case EventTypeTrafficUsageAlert:
+		title = "Workspace Traffic Usage Alert"
+		contentTmpl = "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量使用已达到{{.UsagePercent}}%，请注意控制使用。"
+		contentTmpl = "Dear {{.UserName}}, your workspace {{.Workspace}} has used {{.UsagePercent}}% of its traffic. Please monitor your usage."
 	}
 	content = g.formatContent(method, contentTmpl, map[string]interface{}{
 		"UserName":    event.Recipient.UserName,

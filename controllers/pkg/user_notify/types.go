@@ -117,6 +117,7 @@ func (t *WorkspaceSubscriptionTrafficEventData) ToMap() map[string]interface{} {
 		"workspace_name":  t.Workspace,
 		"region_domain":   t.RegionDomain,
 		"plan_name":       t.PlanName,
+		"features":        t.Features,
 	}
 }
 
@@ -377,6 +378,7 @@ type WorkspaceSubscriptionTrafficEventData struct {
 	TotalBytes   int64                        `json:"total_bytes,omitempty"`
 	UsedBytes    int64                        `json:"used_bytes,omitempty"`
 	Workspace    string                       `json:"workspace_name,omitempty"`
+	Features     []string                     `json:"features,omitempty"`
 }
 
 // CustomEventData 自定义事件数据
