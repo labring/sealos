@@ -95,6 +95,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } = await createWorkspaceResponse.json();
         console.log('workspaceData', workspaceData);
 
+        if (workspaceData.code !== 200) {
+          return jsonRes(res, {
+            code: 409,
+            message:
+              'The new space has the same name as the existing space, please modify it and try again.'
+          });
+        }
+
         finalWorkspace = workspaceData.data?.namespace?.id;
 
         if (!finalWorkspace) {
