@@ -32,12 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'DELETE') {
     try {
-      // Generate service name based on database name
       const serviceName = `${databaseName}-export`;
 
       console.log(`Attempting to delete service: ${serviceName} in namespace: ${k8s.namespace}`);
 
-      // Try to check if service exists
       let serviceExists = false;
       try {
         const { body: service } = await k8s.k8sCore.readNamespacedService(
@@ -49,7 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } catch (checkErr: any) {
         console.log('Error checking service:', checkErr?.body || checkErr?.message || checkErr);
 
-        // Check multiple possible error structure patterns
         const isNotFound =
           checkErr?.response?.statusCode === 404 ||
           checkErr?.statusCode === 404 ||

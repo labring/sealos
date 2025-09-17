@@ -259,9 +259,9 @@ export const document = createDocument({
                   type: 'postgresql',
                   version: '14.8.0',
                   resource: {
-                    cpu: 2, // Will be converted to 2000m in K8s
-                    memory: 2, // Will be converted to 2Gi in K8s
-                    storage: 5, // Will be converted to 5Gi in K8s
+                    cpu: 2,
+                    memory: 2,
+                    storage: 5,
                     replicas: 3
                   },
                   autoBackup: {
@@ -402,9 +402,9 @@ export const document = createDocument({
                 required: ['resource'],
                 example: {
                   resource: {
-                    cpu: 2, // Will be converted to 2000m
-                    memory: 4, // Will be converted to 4Gi
-                    storage: 5, // Will be converted to 5Gi
+                    cpu: 2,
+                    memory: 4,
+                    storage: 5,
                     replicas: 5
                   }
                 }
@@ -881,7 +881,7 @@ export const document = createDocument({
         }
       }
     },
-    '/database/{databaseName}/applyYamlList': {
+    '/database/{databaseName}/enablePublic': {
       post: {
         summary: 'Enable Public Access',
         description: 'Enable public access for a database by creating a NodePort service.',
@@ -921,7 +921,7 @@ export const document = createDocument({
         }
       }
     },
-    '/database/{databaseName}/delServiceByName': {
+    '/database/{databaseName}/disablePublic': {
       delete: {
         summary: 'Disable Public Access',
         description: 'Disable public access for a database by deleting the NodePort service.',
