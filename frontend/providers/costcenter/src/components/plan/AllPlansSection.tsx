@@ -14,10 +14,11 @@ import request from '@/service/request';
 import { useMemo } from 'react';
 import { formatMoney } from '@/utils/format';
 import { getPlanBackgroundClass } from './PlanHeader';
+import usePlanStore from '@/stores/plan';
 
 export function AllPlansSection() {
   const { regionList: regions } = useBillingStore();
-
+  const { plansData } = usePlanStore();
   // Set default time range: 31 days ago to now
   const effectiveStartTime = useMemo(() => {
     return new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
@@ -100,27 +101,35 @@ export function AllPlansSection() {
     [subscriptionListData]
   );
 
-  const allSubscriptions = useMemo(
-    () =>
-      Object.entries(nsListData ?? {}).map(([regionUid, namespaces]) => ({
-        regionUid,
-        regionName: (() => {
-          const region = regions.find((r) => r.uid === regionUid);
-          return region?.name?.en || region?.name?.zh || region?.domain || regionUid;
-        })(),
-        workspaces: namespaces.map(([namespaceId, workspaceName]) => {
-          const subscription = subscriptions.find((sub) => sub.Workspace === namespaceId);
-          if (subscription) {
-            const paymentRecord = (allPaymentsData ?? []).find(
-              (p) => p.Type === 'SUBSCRIPTION' && p.Workspace === namespaceId
-            );
+  const allSubscriptions = useMemo(() => {
+    // Pre-process data into Maps for O(1) lookups
+    const regionsMap = new Map(regions.map((r) => [r.uid, r]));
+    const subscriptionsMap = new Map(subscriptions.map((sub) => [sub.Workspace, sub]));
+    const planPricesMap = new Map(
+      (plansData?.plans ?? []).map((p) => [
+        p.Name,
+        p.Prices?.find((price) => price.BillingCycle === '1m')?.Price || 0
+      ])
+    );
 
+    return Object.entries(nsListData ?? {}).map(([regionUid, namespaces]) => {
+      const region = regionsMap.get(regionUid);
+      const regionName = region?.name?.en || region?.name?.zh || region?.domain || regionUid;
+
+      return {
+        regionUid,
+        regionName,
+        workspaces: namespaces.map(([namespaceId, workspaceName]) => {
+          const subscription = subscriptionsMap.get(namespaceId);
+
+          if (subscription) {
+            const monthlyPrice = planPricesMap.get(subscription.PlanName) ?? 0;
             return {
               namespaceId,
               workspaceName,
               plan: subscription.PlanName,
               renewalTime: subscription.CurrentPeriodEndAt,
-              price: paymentRecord?.Amount ?? null
+              price: monthlyPrice
             };
           } else {
             return {
@@ -132,9 +141,9 @@ export function AllPlansSection() {
             };
           }
         })
-      })),
-    [allPaymentsData, nsListData, regions, subscriptions]
-  );
+      };
+    });
+  }, [allPaymentsData, nsListData, regions, subscriptions, plansData]);
 
   if (subscriptionListLoading || nsListLoading || allPaymentsLoading) {
     return (
