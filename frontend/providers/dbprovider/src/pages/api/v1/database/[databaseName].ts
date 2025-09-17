@@ -9,24 +9,17 @@ import { getDatabase } from '@/services/backend/apis/get-database';
 import { deleteDatabase } from '@/services/backend/apis/delete-database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    console.log('Authentication failed - no kubeconfig');
     return jsonRes(res, {
       code: ResponseCode.UNAUTHORIZED,
       message: ResponseMessages[ResponseCode.UNAUTHORIZED]
     });
   }
 
-  const k8s = await getK8s({ kubeconfig }).catch((error) => {
-    console.error('Failed to get K8s client:', error);
-    return null;
-  });
+  const k8s = await getK8s({ kubeconfig }).catch(() => null);
 
   if (!k8s) {
-    console.log('Failed to initialize K8s client');
     return jsonRes(res, {
       code: ResponseCode.UNAUTHORIZED,
       message: ResponseMessages[ResponseCode.UNAUTHORIZED]
@@ -35,7 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const pathParamsParseResult = getDatabaseSchemas.pathParams.safeParse(req.query);
   if (!pathParamsParseResult.success) {
-    console.error('Path params validation failed:', pathParamsParseResult.error.issues);
     return jsonRes(res, {
       code: ResponseCode.BAD_REQUEST,
       message: ResponseMessages[ResponseCode.BAD_REQUEST],
@@ -45,14 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'PATCH') {
     try {
-      console.log('Received update database request:', {
-        databaseName: pathParamsParseResult.data.databaseName,
-        body: req.body
-      });
-
       const bodyParseResult = updateDatabaseSchemas.body.safeParse(req.body);
       if (!bodyParseResult.success) {
-        console.error('Request body validation failed:', bodyParseResult.error.issues);
         return jsonRes(res, {
           code: 400,
           message:
@@ -95,37 +81,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      console.log('Request body validation passed, updating database...');
-      console.log('Validated data:', {
-        databaseName: pathParamsParseResult.data.databaseName,
-        resource: bodyParseResult.data.resource
-      });
-
       // 调用更新数据库函数
       const result = await updateDatabase(k8s, {
         params: pathParamsParseResult.data,
         body: bodyParseResult.data
       });
 
-      console.log('Database update completed successfully');
       return jsonRes(res, result);
     } catch (err: any) {
-      console.error('Error updating database:', {
-        message: err.message,
-        stack: err.stack,
-        databaseName: pathParamsParseResult.data.databaseName,
-        body: req.body
-      });
-
       const errorResponse = handleK8sError(err);
-      console.log('Returning error response:', errorResponse);
-
       return jsonRes(res, errorResponse);
     }
   } else if (req.method === 'GET') {
     try {
-      console.log('Getting database:', pathParamsParseResult.data.databaseName);
-
       const result = await getDatabase(k8s, {
         params: pathParamsParseResult.data
       });
@@ -135,14 +103,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: result
       });
     } catch (err: any) {
-      console.error('Error getting database:', err);
       const errorResponse = handleK8sError(err);
       return jsonRes(res, errorResponse);
     }
   } else if (req.method === 'DELETE') {
     try {
-      console.log('Deleting database:', pathParamsParseResult.data.databaseName);
-
       await deleteDatabase(k8s, {
         params: pathParamsParseResult.data
       });
@@ -153,12 +118,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: `Successfully deleted database: ${pathParamsParseResult.data.databaseName}`
       });
     } catch (err: any) {
-      console.error('Error deleting database:', err);
       const errorResponse = handleK8sError(err);
       return jsonRes(res, errorResponse);
     }
   } else {
-    console.log(`Method ${req.method} not allowed`);
     return jsonRes(res, {
       code: 405,
       message: 'Method not allowed'

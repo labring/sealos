@@ -37,6 +37,20 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
       sourceType: raw.source.sourceType
     },
     autoBackup: raw.autoBackup
+      ? {
+          ...raw.autoBackup,
+          week: raw.autoBackup.week as (
+            | 'monday'
+            | 'tuesday'
+            | 'wednesday'
+            | 'thursday'
+            | 'friday'
+            | 'saturday'
+            | 'sunday'
+          )[],
+          saveType: raw.autoBackup.saveType as 'days' | 'weeks' | 'months' | 'hours'
+        }
+      : undefined
   };
 
   return dbEditSchemaFromRaw;

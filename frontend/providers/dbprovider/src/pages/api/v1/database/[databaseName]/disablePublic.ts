@@ -34,8 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const serviceName = `${databaseName}-export`;
 
-      console.log(`Attempting to delete service: ${serviceName} in namespace: ${k8s.namespace}`);
-
       let serviceExists = false;
       try {
         const { body: service } = await k8s.k8sCore.readNamespacedService(
@@ -43,10 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           k8s.namespace
         );
         serviceExists = !!service;
-        console.log('Service found:', service?.metadata?.name);
       } catch (checkErr: any) {
-        console.log('Error checking service:', checkErr?.body || checkErr?.message || checkErr);
-
         const isNotFound =
           checkErr?.response?.statusCode === 404 ||
           checkErr?.statusCode === 404 ||
@@ -67,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       try {
         const deleteResult = await k8s.k8sCore.deleteNamespacedService(serviceName, k8s.namespace);
-        console.log('Service deleted successfully:', deleteResult?.body || deleteResult);
 
         return jsonRes(res, {
           code: 200,
@@ -80,11 +74,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         });
       } catch (deleteErr: any) {
-        console.error(
-          'Error deleting service:',
-          deleteErr?.body || deleteErr?.message || deleteErr
-        );
-
         const isNotFound =
           deleteErr?.response?.statusCode === 404 ||
           deleteErr?.statusCode === 404 ||
@@ -109,8 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw deleteErr;
       }
     } catch (err: any) {
-      console.error('Unexpected error disabling public access:', err?.body || err?.message || err);
-
       return jsonRes(res, handleK8sError(err));
     }
   }

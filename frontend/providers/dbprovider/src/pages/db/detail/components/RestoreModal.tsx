@@ -1,13 +1,7 @@
 import { createDB } from '@/api/db';
 import Tip from '@/components/Tip';
 import { DBTypeEnum } from '@/constants/db';
-import {
-  BackupItemType,
-  CPUResourceEnum,
-  MemoryResourceEnum,
-  DBDetailType,
-  ReplicasResourceEnum
-} from '@/types/db';
+import { BackupItemType, DBDetailType } from '@/types/db';
 import { getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -64,16 +58,7 @@ const RestoreModal = ({
       };
 
       return createDB({
-        type: dbData.dbType,
-        version: dbData.dbVersion,
-        name: dbData.dbName,
-        resource: {
-          cpu: dbData.cpu as CPUResourceEnum,
-          memory: dbData.memory as MemoryResourceEnum,
-          storage: dbData.storage as number,
-          replicas: dbData.replicas as ReplicasResourceEnum
-        },
-        terminationPolicy: dbData.terminationPolicy,
+        dbForm: dbData,
         isEdit: false,
         backupInfo: backupInfo
       });
