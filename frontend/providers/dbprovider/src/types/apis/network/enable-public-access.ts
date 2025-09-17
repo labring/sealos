@@ -1,11 +1,17 @@
 import * as z from 'zod';
 
-export const body = z.object({
-  yamlList: z.array(z.string()).min(1, 'YAML list is required'),
-  type: z.enum(['create', 'replace', 'update']).optional().default('create')
-});
+export const body = z.object({}).optional();
 
 export const response = z.object({
   code: z.number(),
-  message: z.string()
+  message: z.string(),
+  data: z
+    .object({
+      dbName: z.string(),
+      serviceName: z.string(),
+      operation: z.literal('enable-public-access'),
+      nodePort: z.number().optional(),
+      createdAt: z.string()
+    })
+    .optional()
 });

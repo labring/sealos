@@ -8,12 +8,7 @@ import { useGlobalStore } from '@/store/global';
 import { DBVersionMap } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
-import type {
-  CPUResourceEnum,
-  DBEditType,
-  MemoryResourceEnum,
-  ReplicasResourceEnum
-} from '@/types/db';
+import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
@@ -180,20 +175,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }));
     } catch (err) {}
     try {
-      await createDB({
-        type: formData.dbType,
-        version: formData.dbVersion,
-        name: formData.dbName,
-        resource: {
-          cpu: formData.cpu as CPUResourceEnum,
-          memory: formData.memory as MemoryResourceEnum,
-          storage: formData.storage as number,
-          replicas: formData.replicas as ReplicasResourceEnum
-        },
-        terminationPolicy: formData.terminationPolicy,
-        autoBackup: formData.autoBackup,
-        isEdit
-      });
+      await createDB({ dbForm: formData, isEdit });
 
       track({
         event: 'deployment_create',
