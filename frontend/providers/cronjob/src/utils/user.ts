@@ -1,3 +1,4 @@
+import { useUserStore } from '@/store/user';
 import yaml from 'js-yaml';
 
 type KC = {
@@ -22,12 +23,11 @@ export const getUserKubeConfig = () => {
     process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
-    const store = localStorage.getItem('session');
-    if (!kubeConfig && store) {
-      kubeConfig = JSON.parse(store)?.kubeconfig;
+    if (typeof window !== 'undefined') {
+      return useUserStore.getState().session?.kubeconfig ?? '';
     }
   } catch (err) {
-    err;
+    console.log(err);
   }
   return kubeConfig;
 };

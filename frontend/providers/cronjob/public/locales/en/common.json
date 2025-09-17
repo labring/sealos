@@ -203,5 +203,22 @@
   "job_implement_error": "An error occurred while executing the job",
   "Executing": "Executing",
   "The image cannot be empty": "The image cannot be empty",
-  "example": "Example: "
+  "example": "Example: ",
+  "cpu": "CPU",
+  "memory": "Memory",
+  "traffic": "Traffic",
+  "insufficient_quota_dialog": {
+    "alert-title": "We can't create your database right now. You've used all of your available resources.",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "please_upgrade_plan": {
+      "1": "Please ",
+      "2": "upgrade your plan",
+      "3": " or delete unused apps occupying resources."
+    },
+    "quota_available": "Available: ",
+    "quota_in_use": "In use: ",
+    "quota_total": "Total: ",
+    "title": "Insufficient Resources"
+  }
 }
