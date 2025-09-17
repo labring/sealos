@@ -1472,11 +1472,8 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 			return fmt.Errorf("failed to get customer by user UID %s: %w", userUIDStr, err)
 		}
 	}
-	dao.Logger.Infof("customer for user %s: %v, subscription.Customer: %v", userUIDStr, custormer, subscription.Customer)
 	if custormer == nil || custormer.Metadata == nil || custormer.Metadata["user_uid"] == "" {
 		if subscription.Customer != nil && subscription.Customer.ID != "" {
-			// TODO set metadata
-			dao.Logger.Infof("set customer metadata for user UID %s", userUIDStr)
 			if err = services.StripeServiceInstance.SetCustomerMetadata(subscription.Customer.ID, map[string]string{
 				"user_uid": userUIDStr,
 			}); err != nil {
@@ -1501,7 +1498,6 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 		// logrus.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
 		dao.Logger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
 	}
-	dao.Logger.Infof("nr for user %s: %v", userUID, nr)
 	dao.UserContactProvider.SetUserContact(userUID, nr)
 	defer dao.UserContactProvider.RemoveUserContact(userUID)
 
@@ -1581,8 +1577,6 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 			if err != nil {
 				return fmt.Errorf("failed to parse plan features: %w", err)
 			}
-			// TODO delete after testing
-			dao.Logger.Infof("plan features for user %s: %v", userUID, features)
 
 			eventData := &usernotify.WorkspaceSubscriptionEventData{
 				WorkspaceName: workspace,
@@ -1811,7 +1805,6 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 	isUpdateSubscription := invoice.BillingReason == "subscription_update"
 	failureReason := fmt.Sprintf("Stripe payment failed for invoice %s: %s", invoice.ID, invoice.LastFinalizationError.Error())
 
-	// TODO: Send notification - initial payment failed
 	notifyEventData := &usernotify.WorkspaceSubscriptionEventData{
 		WorkspaceName: workspace,
 		Domain:        regionDomain,

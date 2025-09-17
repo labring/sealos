@@ -118,6 +118,7 @@ func (t *WorkspaceSubscriptionTrafficEventData) ToMap() map[string]interface{} {
 		"region_domain":   t.RegionDomain,
 		"plan_name":       t.PlanName,
 		"features":        t.Features,
+		"expiration_date": t.ExpirationDate,
 	}
 }
 
@@ -370,15 +371,16 @@ type WorkspaceSubscriptionEventData struct {
 
 // WorkspaceSubscriptionTrafficEventData 流量事件数据
 type WorkspaceSubscriptionTrafficEventData struct {
-	RegionDomain string                       `json:"region_domain"`
-	PlanName     string                       `json:"plan_name,omitempty"`
-	Type         EventType                    `json:"-"`
-	Status       types.WorkspaceTrafficStatus `json:"status,omitempty"`
-	UsagePercent int                          `json:"used_percentage,omitempty"`
-	TotalBytes   int64                        `json:"total_bytes,omitempty"`
-	UsedBytes    int64                        `json:"used_bytes,omitempty"`
-	Workspace    string                       `json:"workspace_name,omitempty"`
-	Features     []string                     `json:"features,omitempty"`
+	RegionDomain   string                       `json:"region_domain"`
+	PlanName       string                       `json:"plan_name,omitempty"`
+	Type           EventType                    `json:"-"`
+	Status         types.WorkspaceTrafficStatus `json:"status,omitempty"`
+	ExpirationDate string                       `json:"expiration_date"`
+	UsagePercent   int                          `json:"used_percentage,omitempty"`
+	TotalBytes     int64                        `json:"total_bytes,omitempty"`
+	UsedBytes      int64                        `json:"used_bytes,omitempty"`
+	Workspace      string                       `json:"workspace_name,omitempty"`
+	Features       []string                     `json:"features,omitempty"`
 }
 
 // CustomEventData 自定义事件数据

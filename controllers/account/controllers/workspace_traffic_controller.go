@@ -213,7 +213,10 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 				TotalBytes:   totalBytes,
 				UsedBytes:    usedBytes,
 				Workspace:    subscription.Workspace,
-				Features:     features,
+				ExpirationDate: fmt.Sprintf("%s - %s",
+					subscription.CurrentPeriodStartAt.Format("2006.1.2"),
+					subscription.CurrentPeriodEndAt.Format("2006.1.2")),
+				Features: features,
 			}
 			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
 				c.VLogger.Errorf("failed to send traffic usage alert notification for user %s: %v", userUID, err)
@@ -292,6 +295,9 @@ func (c *WorkspaceTrafficController) handleNoAvailableTraffic(subscription *type
 				UsagePercent: 100,
 				Workspace:    subscription.Workspace,
 				Features:     features,
+				ExpirationDate: fmt.Sprintf("%s - %s",
+					subscription.CurrentPeriodStartAt.Format("2006.1.2"),
+					subscription.CurrentPeriodEndAt.Format("2006.1.2")),
 			}
 
 			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
