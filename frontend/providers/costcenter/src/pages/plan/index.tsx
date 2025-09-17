@@ -240,15 +240,23 @@ export default function Plan() {
         if (data.data?.redirectUrl) {
           window.parent.location.href = data.data.redirectUrl;
         } else if (data.data?.success === true) {
-          // Determine if it's an upgrade or downgrade based on the last transaction
-          const isDowngrade = lastTransactionData?.transaction?.Operator === 'downgraded';
-          toast({
-            title: 'Payment Success',
-            description: `Your subscription has been ${
-              isDowngrade ? 'downgraded' : 'upgraded'
-            } successfully`,
-            variant: 'success'
-          });
+          if (isCreateMode) {
+            toast({
+              title: 'Workspace creation successful',
+              description: 'Your workspace has been created successfully',
+              variant: 'success'
+            });
+          } else {
+            // Determine if it's an upgrade or downgrade based on the last transaction
+            const isDowngrade = lastTransactionData?.transaction?.Operator === 'downgraded';
+            toast({
+              title: 'Payment Success',
+              description: `Your subscription has been ${
+                isDowngrade ? 'downgraded' : 'upgraded'
+              } successfully`,
+              variant: 'success'
+            });
+          }
         }
       }
       setSubscriptionModalOpen(false);
@@ -257,12 +265,20 @@ export default function Plan() {
       // Refresh subscription data on error as well
       queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
       queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-
-      toast({
-        title: 'Payment Failed',
-        description: error.message || 'Failed to process subscription payment',
-        variant: 'destructive'
-      });
+      if (error.code === 409) {
+        toast({
+          title: 'Workspace creation failed',
+          description:
+            'The new space has the same name as the existing space, please modify it and try again.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Payment Failed',
+          description: error.message || 'Failed to process subscription payment',
+          variant: 'destructive'
+        });
+      }
     }
   });
 

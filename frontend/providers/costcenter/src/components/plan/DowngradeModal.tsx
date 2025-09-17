@@ -226,7 +226,7 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
                     <p className="text-sm text-zinc-900">
                       before the next billing date
                       {subscription?.CurrentPeriodEndAt && (
-                        <span className="font-bold">
+                        <span className="font-bold px-1">
                           {formatTime(subscription?.CurrentPeriodEndAt, 'yyyy-MM-dd')}
                         </span>
                       )}
