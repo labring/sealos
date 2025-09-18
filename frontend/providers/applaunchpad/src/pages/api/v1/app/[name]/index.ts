@@ -89,6 +89,7 @@ async function updateConfigMap(
   }
 
   if (!configMapData || configMapData.length === 0) {
+    // Delete the ConfigMap if it exists
     try {
       await k8sCore.deleteNamespacedConfigMap(appName, namespace);
     } catch (error: any) {
@@ -97,50 +98,52 @@ async function updateConfigMap(
       }
     }
 
-    const strategicMergePatch = {
-      spec: {
-        template: {
-          spec: {
-            volumes: [],
-            containers: [
-              {
-                name: app.spec.template.spec.containers[0].name,
-                volumeMounts: []
-              }
-            ]
-          }
-        }
+    // Use JSON Patch to properly remove volumes and volumeMounts
+    const jsonPatch = [
+      {
+        op: 'replace',
+        path: '/spec/template/spec/volumes',
+        value: app.spec.template.spec.volumes?.filter((v: any) => v.name !== `${appName}-cm`) || []
+      },
+      {
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/volumeMounts',
+        value:
+          app.spec.template.spec.containers[0].volumeMounts?.filter(
+            (vm: any) => vm.name !== `${appName}-cm`
+          ) || []
       }
-    };
+    ];
 
     if (app.kind === 'Deployment') {
       await k8sApp.patchNamespacedDeployment(
         appName,
         namespace,
-        strategicMergePatch,
+        jsonPatch,
         undefined,
         undefined,
         undefined,
         undefined,
         undefined,
-        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
       );
     } else if (app.kind === 'StatefulSet') {
       await k8sApp.patchNamespacedStatefulSet(
         appName,
         namespace,
-        strategicMergePatch,
+        jsonPatch,
         undefined,
         undefined,
         undefined,
         undefined,
         undefined,
-        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
       );
     }
     return;
   }
 
+  // Rest of the function remains the same for creating/updating ConfigMap
   const configMapDataRecord: Record<string, string> = {};
   const volumeMounts: Array<{ name: string; mountPath: string; subPath: string }> = [];
   const volumeName = `${appName}-cm`;
@@ -156,6 +159,7 @@ async function updateConfigMap(
     });
   });
 
+  // Create or update the ConfigMap
   try {
     await k8sCore.readNamespacedConfigMap(appName, namespace);
     await k8sCore.replaceNamespacedConfigMap(appName, namespace, {
@@ -177,47 +181,57 @@ async function updateConfigMap(
     }
   }
 
-  const volumes = [{ name: volumeName, configMap: { name: appName } }];
+  // Get current volumes and volumeMounts to preserve others
+  const currentVolumes = app.spec.template.spec.volumes || [];
+  const currentVolumeMounts = app.spec.template.spec.containers[0].volumeMounts || [];
 
-  const strategicMergePatch = {
-    spec: {
-      template: {
-        spec: {
-          volumes: volumes,
-          containers: [
-            {
-              name: app.spec.template.spec.containers[0].name,
-              volumeMounts: volumeMounts
-            }
-          ]
-        }
-      }
+  // Filter out any existing configmap volume with the same name
+  const filteredVolumes = currentVolumes.filter((v: any) => v.name !== volumeName);
+  const filteredVolumeMounts = currentVolumeMounts.filter((vm: any) => vm.name !== volumeName);
+
+  // Add the new configmap volume
+  const volumes = [...filteredVolumes, { name: volumeName, configMap: { name: appName } }];
+
+  // Add the new volume mounts
+  const allVolumeMounts = [...filteredVolumeMounts, ...volumeMounts];
+
+  // Use JSON Patch for precise updates
+  const jsonPatch = [
+    {
+      op: 'replace',
+      path: '/spec/template/spec/volumes',
+      value: volumes
+    },
+    {
+      op: 'replace',
+      path: '/spec/template/spec/containers/0/volumeMounts',
+      value: allVolumeMounts
     }
-  };
+  ];
 
   if (app.kind === 'Deployment') {
     await k8sApp.patchNamespacedDeployment(
       appName,
       namespace,
-      strategicMergePatch,
+      jsonPatch,
       undefined,
       undefined,
       undefined,
       undefined,
       undefined,
-      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
     );
   } else if (app.kind === 'StatefulSet') {
     await k8sApp.patchNamespacedStatefulSet(
       appName,
       namespace,
-      strategicMergePatch,
+      jsonPatch,
       undefined,
       undefined,
       undefined,
       undefined,
       undefined,
-      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
     );
   }
 }
@@ -250,8 +264,7 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
   } catch (error: any) {
-    if (error.response?.statusCode !== 404) {
-    }
+    // Ignore errors when deleting services and ingresses
   }
 
   const hasServicePorts = appEditData.networks && appEditData.networks.length > 0;
@@ -274,12 +287,9 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     }
   }
 
-  console.log('YAML list length:', yamlList.length);
-
   if (yamlList.length > 0) {
     try {
       await applyYamlList(yamlList, 'create');
-      console.log('Successfully applied YAML');
     } catch (error: any) {
       console.error('Failed to apply YAML:', error.message || error);
       throw new Error(
@@ -433,7 +443,9 @@ async function updateStorage(
         undefined,
         `app=${appName}`
       );
-    } catch (error: any) {}
+    } catch (error: any) {
+      // Ignore PVC deletion errors
+    }
 
     return;
   }
@@ -512,118 +524,110 @@ async function updateExistingPVCs(
   appName: string,
   newStorageConfig: Array<{ path: string; size: string }>
 ) {
-  try {
-    const {
-      body: { items: allPvc }
-    } = await k8sCore.listNamespacedPersistentVolumeClaim(
-      namespace,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      `app=${appName}`
-    );
+  const {
+    body: { items: allPvc }
+  } = await k8sCore.listNamespacedPersistentVolumeClaim(
+    namespace,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `app=${appName}`
+  );
 
-    if (!allPvc || allPvc.length === 0) {
-      return;
-    }
-
-    const boundPVCs = allPvc.filter(
-      (pvc: V1PersistentVolumeClaim) => pvc.status?.phase === 'Bound'
-    );
-
-    if (boundPVCs.length === 0) {
-      return;
-    }
-
-    const pathSet = new Set(newStorageConfig.map((storage) => storage.path));
-    if (pathSet.size !== newStorageConfig.length) {
-      throw new Error('Duplicate storage paths are not allowed');
-    }
-
-    const nameSet = new Set(
-      newStorageConfig.map((storage) => mountPathToConfigMapKey(storage.path))
-    );
-    if (nameSet.size !== newStorageConfig.length) {
-      throw new Error('Duplicate storage names (generated from paths) are not allowed');
-    }
-
-    const updatePromises = boundPVCs.map(async (pvc: V1PersistentVolumeClaim) => {
-      const pvcName = pvc.metadata?.name;
-      const pvcPath = pvc.metadata?.annotations?.path;
-      const newStorageItem = newStorageConfig.find((storage) => storage.path === pvcPath);
-      if (!pvcName || !pvcPath || !newStorageItem) {
-        return;
-      }
-      if (pvc.status?.phase === 'Pending') {
-        return;
-      }
-
-      let newSizeValue = 1;
-      if (newStorageItem.size) {
-        const match = newStorageItem.size.match(/^(\d+)/);
-        if (match) {
-          newSizeValue = parseInt(match[1]);
-        } else {
-          throw new Error(`Invalid storage size format: ${newStorageItem.size}`);
-        }
-      }
-
-      const currentSizeValue = parseInt(pvc.metadata?.annotations?.value || '1');
-      if (newSizeValue < currentSizeValue) {
-        throw new Error(
-          `Cannot shrink PVC ${pvcName} from ${currentSizeValue}Gi to ${newSizeValue}Gi. PVC can only be expanded.`
-        );
-      }
-
-      if (
-        pvc.metadata?.annotations?.value &&
-        pvc.spec?.resources?.requests?.storage &&
-        pvc.metadata?.annotations?.value !== newSizeValue.toString()
-      ) {
-        const jsonPatch = [
-          {
-            op: 'replace',
-            path: '/spec/resources/requests/storage',
-            value: `${newSizeValue}Gi`
-          },
-          {
-            op: 'replace',
-            path: '/metadata/annotations/value',
-            value: newSizeValue.toString()
-          }
-        ];
-
-        try {
-          if (pvc.status?.phase !== 'Bound') {
-            return;
-          }
-
-          await k8sCore.patchNamespacedPersistentVolumeClaim(
-            pvcName,
-            namespace,
-            jsonPatch,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            {
-              headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH }
-            }
-          );
-        } catch (patchError: any) {
-          const errorMessage =
-            patchError.body?.message || patchError.message || 'HTTP request failed';
-          throw new Error(`Failed to expand PVC ${pvcName}: ${errorMessage}`);
-        }
-      }
-    });
-
-    await Promise.all(updatePromises);
-  } catch (error: any) {
-    throw error;
+  if (!allPvc || allPvc.length === 0) {
+    return;
   }
+
+  const boundPVCs = allPvc.filter((pvc: V1PersistentVolumeClaim) => pvc.status?.phase === 'Bound');
+
+  if (boundPVCs.length === 0) {
+    return;
+  }
+
+  const pathSet = new Set(newStorageConfig.map((storage) => storage.path));
+  if (pathSet.size !== newStorageConfig.length) {
+    throw new Error('Duplicate storage paths are not allowed');
+  }
+
+  const nameSet = new Set(newStorageConfig.map((storage) => mountPathToConfigMapKey(storage.path)));
+  if (nameSet.size !== newStorageConfig.length) {
+    throw new Error('Duplicate storage names (generated from paths) are not allowed');
+  }
+
+  const updatePromises = boundPVCs.map(async (pvc: V1PersistentVolumeClaim) => {
+    const pvcName = pvc.metadata?.name;
+    const pvcPath = pvc.metadata?.annotations?.path;
+    const newStorageItem = newStorageConfig.find((storage) => storage.path === pvcPath);
+    if (!pvcName || !pvcPath || !newStorageItem) {
+      return;
+    }
+    if (pvc.status?.phase === 'Pending') {
+      return;
+    }
+
+    let newSizeValue = 1;
+    if (newStorageItem.size) {
+      const match = newStorageItem.size.match(/^(\d+)/);
+      if (match) {
+        newSizeValue = parseInt(match[1]);
+      } else {
+        throw new Error(`Invalid storage size format: ${newStorageItem.size}`);
+      }
+    }
+
+    const currentSizeValue = parseInt(pvc.metadata?.annotations?.value || '1');
+    if (newSizeValue < currentSizeValue) {
+      throw new Error(
+        `Cannot shrink PVC ${pvcName} from ${currentSizeValue}Gi to ${newSizeValue}Gi. PVC can only be expanded.`
+      );
+    }
+
+    if (
+      pvc.metadata?.annotations?.value &&
+      pvc.spec?.resources?.requests?.storage &&
+      pvc.metadata?.annotations?.value !== newSizeValue.toString()
+    ) {
+      const jsonPatch = [
+        {
+          op: 'replace',
+          path: '/spec/resources/requests/storage',
+          value: `${newSizeValue}Gi`
+        },
+        {
+          op: 'replace',
+          path: '/metadata/annotations/value',
+          value: newSizeValue.toString()
+        }
+      ];
+
+      try {
+        if (pvc.status?.phase !== 'Bound') {
+          return;
+        }
+
+        await k8sCore.patchNamespacedPersistentVolumeClaim(
+          pvcName,
+          namespace,
+          jsonPatch,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          {
+            headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH }
+          }
+        );
+      } catch (patchError: any) {
+        const errorMessage =
+          patchError.body?.message || patchError.message || 'HTTP request failed';
+        throw new Error(`Failed to expand PVC ${pvcName}: ${errorMessage}`);
+      }
+    }
+  });
+
+  await Promise.all(updatePromises);
 }
 
 async function updateAppPorts(
