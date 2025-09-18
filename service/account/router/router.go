@@ -32,7 +32,10 @@ import (
 )
 
 func RegisterPayRouter() {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/health", "/health/"}, // 包含可能的路径变体
+	}))
 	ctx := context.Background()
 	if err := dao.Init(ctx); err != nil {
 		log.Fatalf("Error initializing database: %v", err)
