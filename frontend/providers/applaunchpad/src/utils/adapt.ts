@@ -440,7 +440,7 @@ export const adaptAppDetail = async (
           !domain.endsWith(SEALOS_DOMAIN) &&
           !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
 
-        return {
+        const result = {
           serviceName: service?.metadata?.name || '',
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',
@@ -457,9 +457,10 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-            ? domain
-            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+              ? domain
+              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
+        return result;
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
       ? {
