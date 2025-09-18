@@ -121,6 +121,7 @@ export function EmailSigninForm() {
       router.push('/emailCheck');
     } else {
       clearStartTime();
+      handleCaptchaError();
       turnstileRef.current?.reset();
     }
   };

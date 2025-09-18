@@ -134,6 +134,7 @@ export function PhoneSigninForm() {
       router.push('/phoneCheck');
     } else {
       clearStartTime();
+      handleCaptchaError();
       aliCaptchaRef.current?.init();
     }
   };
