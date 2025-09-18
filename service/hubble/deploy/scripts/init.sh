@@ -2,30 +2,7 @@
 set -e
 
 # Configuration
-REDIS_NAMESPACE="hubble-service"
 APP_NAMESPACE="hubble-service"
-REDIS_SECRET_NAME="hubble-conn-credential"
-
-# Create namespace
-kubectl create ns $APP_NAMESPACE || true
-
-# Function to wait for secret
-wait_for_secret() {
-  local secret_name=$1
-  local namespace=$2
-  local retries=0
-  echo "Waiting for secret ${secret_name} in namespace ${namespace}..."
-  while ! kubectl get secret -n ${namespace} ${secret_name} >/dev/null 2>&1; do
-    sleep 3
-    retries=$((retries + 1))
-    if [ $retries -ge 30 ]; then
-      echo "Timeout waiting for secret ${secret_name}"
-      exit 1
-    fi
-    echo "Retry ${retries}/30..."
-  done
-  echo "✓ Secret ${secret_name} found"
-}
 
 # Function to get secret value
 get_secret_value() {
@@ -39,8 +16,20 @@ get_secret_value() {
 
 # Function to build redis connection components
 build_redis_config() {
-  local secret_name=$1
-  local namespace=$2
+  if [[ -z "${REDIS_SECRET_NAME}" ]]; then
+    echo "Error: REDIS_SECRET_NAME environment variable is required"
+    echo "Usage: export REDIS_SECRET_NAME=your-secret-name"
+    exit 1
+  fi
+
+  if [[ -z "${REDIS_NAMESPACE}" ]]; then
+    echo "Error: REDIS_NAMESPACE environment variable is required"
+    echo "Usage: export REDIS_NAMESPACE=your-namespace"
+    exit 1
+  fi
+
+  local secret_name="${REDIS_SECRET_NAME}"
+  local namespace="${REDIS_NAMESPACE}"
 
   echo "Getting Redis connection details from secret ${secret_name}..."
 
@@ -97,14 +86,8 @@ update_whitelist() {
 echo "Creating namespaces..."
 kubectl create ns ${APP_NAMESPACE} || true
 
-echo "Deploying Redis..."
-kubectl apply -f manifests/redis.yaml -n ${REDIS_NAMESPACE}
-
-echo "Waiting for Redis credentials..."
-wait_for_secret ${REDIS_SECRET_NAME} ${REDIS_NAMESPACE}
-
 echo "Updating Redis config..."
-build_redis_config ${REDIS_SECRET_NAME} ${REDIS_NAMESPACE}
+build_redis_config
 
 echo "Updating API server whitelist..."
 update_whitelist
