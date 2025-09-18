@@ -98,7 +98,6 @@ async function updateConfigMap(
       }
     }
 
-    // Use JSON Patch to properly remove volumes and volumeMounts
     const jsonPatch = [
       {
         op: 'replace',
@@ -143,7 +142,6 @@ async function updateConfigMap(
     return;
   }
 
-  // Rest of the function remains the same for creating/updating ConfigMap
   const configMapDataRecord: Record<string, string> = {};
   const volumeMounts: Array<{ name: string; mountPath: string; subPath: string }> = [];
   const volumeName = `${appName}-cm`;
@@ -159,7 +157,6 @@ async function updateConfigMap(
     });
   });
 
-  // Create or update the ConfigMap
   try {
     await k8sCore.readNamespacedConfigMap(appName, namespace);
     await k8sCore.replaceNamespacedConfigMap(appName, namespace, {
@@ -181,21 +178,16 @@ async function updateConfigMap(
     }
   }
 
-  // Get current volumes and volumeMounts to preserve others
   const currentVolumes = app.spec.template.spec.volumes || [];
   const currentVolumeMounts = app.spec.template.spec.containers[0].volumeMounts || [];
 
-  // Filter out any existing configmap volume with the same name
   const filteredVolumes = currentVolumes.filter((v: any) => v.name !== volumeName);
   const filteredVolumeMounts = currentVolumeMounts.filter((vm: any) => vm.name !== volumeName);
 
-  // Add the new configmap volume
   const volumes = [...filteredVolumes, { name: volumeName, configMap: { name: appName } }];
 
-  // Add the new volume mounts
   const allVolumeMounts = [...filteredVolumeMounts, ...volumeMounts];
 
-  // Use JSON Patch for precise updates
   const jsonPatch = [
     {
       op: 'replace',
@@ -263,9 +255,7 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     );
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
-  } catch (error: any) {
-    // Ignore errors when deleting services and ingresses
-  }
+  } catch (error: any) {}
 
   const hasServicePorts = appEditData.networks && appEditData.networks.length > 0;
 
