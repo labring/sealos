@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
         files = result.files;
         directories = result.directories;
-        break; // 成功后退出循环
+        break;
       } catch (error) {
         lastError = error;
         console.error('/api/logs/getFiles error', error);
