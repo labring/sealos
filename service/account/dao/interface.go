@@ -789,6 +789,10 @@ func (m *MongoDB) GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.Workspa
 			{{Key: "$match", Value: matchConditions}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 		}
+		if req.AppName != "" {
+			//matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+		}
 
 		pipeline = append(pipeline,
 			bson.D{{Key: "$project", Value: bson.D{
@@ -806,9 +810,9 @@ func (m *MongoDB) GetWorkspaceAPPCosts(req *helper.AppCostsReq) (*helper.Workspa
 				{Key: "app_name", Value: 1},
 			}}},
 		)
-		if req.AppName != "" && req.AppType != "" && strings.ToUpper(req.AppType) != resources.AppStore {
-			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
-		}
+		//if req.AppName != "" && req.AppType != "" && strings.ToUpper(req.AppType) != resources.AppStore {
+		//	pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+		//}
 	} else {
 		// 处理AppStore类型的应用，需要累加app_costs中的used和used_amount
 		pipeline = mongo.Pipeline{
