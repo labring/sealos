@@ -371,7 +371,7 @@ const GuideModal = () => {
                 </Button>
               </Flex>
 
-              <Box overflowY="auto" pt={'20px'} pr={2} px={'40px'}>
+              <Box overflowY="auto" pt={'20px'} pb={'40px'} pr={2} px={'40px'}>
                 {guideLinks[selectedGuide].steps.map((step, index) => (
                   <StepCard
                     key={index}
