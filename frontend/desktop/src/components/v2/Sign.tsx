@@ -1,44 +1,27 @@
-import {
-  Box,
-  Button,
-  Divider,
-  Input,
-  Stack,
-  Flex,
-  useColorModeValue,
-  Text,
-  InputGroup,
-  InputLeftElement
-} from '@chakra-ui/react';
+import { Box, Button, Divider, Stack, Flex, useColorModeValue, Text } from '@chakra-ui/react';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowRight, Phone } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 
-import { useCustomToast } from '@/hooks/useCustomToast';
 import { GoogleIcon, GithubIcon } from '../icons';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
 import Link from 'next/link';
 import { WechatIcon } from '@sealos/ui';
-import { z } from 'zod';
 import { gtmLoginStart } from '@/utils/gtm';
 import UsernamePasswordSignin from './UsernamePasswordSignin';
 import { EmailSigninForm } from './EmailSigninForm';
-import { useSignupStore } from '@/stores/signup';
 import { PhoneSigninForm } from './PhoneSigninForm';
 
 export default function SigninComponent() {
   const { t, i18n } = useTranslation();
-  const { toast } = useCustomToast();
   const conf = useConfigStore();
   const router = useRouter();
   const needPhone = conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
   const needEmail = conf.authConfig?.idp.email.enabled;
   const passwordSigninEnabled = conf.authConfig?.idp.password?.enabled;
-  const { setSignupData, signupData } = useSignupStore();
   const authConfig = conf.authConfig;
   const { generateState, setProvider } = useSessionStore();
 

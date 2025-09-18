@@ -117,7 +117,6 @@ export function EmailCheckForm() {
               onChange={setPinValue}
               isDisabled={verifyMutation.isLoading}
               onComplete={(value) => {
-                console.log('Verification code:', value);
                 verifyMutation.mutate({ code: value, id: formValues?.providerId || '' });
               }}
             >
