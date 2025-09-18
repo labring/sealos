@@ -81,7 +81,7 @@ export const smsReq = async (phoneNumbers: string) => {
 export const captchaReq = async ({ captchaVerifyParam }: { captchaVerifyParam?: string }) => {
   // for dev
   const captchaConfig = global.AppConfig.desktop.auth.captcha;
-  if (!captchaConfig?.enabled) throw Error('config error');
+  if (!captchaConfig?.ali?.enabled) throw Error('config error');
   const aliConfig = global.AppConfig.desktop.auth.captcha?.ali;
   if (!aliConfig) throw Error('config error');
   const { sceneId, accessKeyID: accessKeyId, accessKeySecret = '', endpoint } = aliConfig;

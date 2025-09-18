@@ -1,68 +1,57 @@
+import { getRegionToken } from '@/api/auth';
+import request from '@/services/request';
+import useSessionStore from '@/stores/session';
+import { useSigninFormStore } from '@/stores/signinForm';
+import { ApiResp } from '@/types';
+import { gtmLoginSuccess } from '@/utils/gtm';
+import { sessionConfig } from '@/utils/sessionConfig';
 import {
-  Box,
-  Button,
   Flex,
+  Stack,
   FormControl,
   FormLabel,
-  Stack,
-  Text,
-  useToast,
-  useColorModeValue,
   PinInput,
   PinInputField,
-  Center
+  Center,
+  Button,
+  useColorModeValue,
+  Text,
+  Box
 } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
-import { ArrowLeft, MailCheck, OctagonAlertIcon } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'next-i18next';
-
-import { useSignupStore } from '@/stores/signup';
-import { getRegionToken } from '@/api/auth';
-import useSessionStore from '@/stores/session';
 import { useMutation } from '@tanstack/react-query';
-import { ApiResp } from '@/types';
-import request from '@/services/request';
-import { sessionConfig } from '@/utils/sessionConfig';
-import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
-import { useConfigStore } from '@/stores/config';
-import { gtmLoginSuccess } from '@/utils/gtm';
+import { MailCheck, OctagonAlertIcon, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export default function EmailCheckComponent() {
-  const router = useRouter();
+export function EmailCheckForm() {
   const { t } = useTranslation();
-  const { commonConfig, authConfig } = useConfigStore();
-  const toast = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const { signupData, clearSignupData, startTime, updateStartTime, setStartTime } =
-    useSignupStore();
+  const router = useRouter();
   const { setToken } = useSessionStore();
+
   const [pinValue, setPinValue] = useState('');
-  useEffect(() => {
-    if (!signupData) {
-      router.push('/signin');
-    }
-  }, [signupData, router]);
+  const { formValues, startTime } = useSigninFormStore();
 
-  const getRemainTime = () => 60000 - new Date().getTime() + startTime;
-
-  const [canResend, setCanResend] = useState(getRemainTime() < 0);
-
-  const [remainTime, setRemainTime] = useState(getRemainTime());
-  const turnstileRef = useRef<TurnstileInstance>(null);
+  // Countdown
+  const getRemainingTime = useCallback(
+    () => Math.max(0, 60000 - (new Date().getTime() - startTime)),
+    [startTime]
+  );
+  const [remainingTime, setRemainingTime] = useState(getRemainingTime());
   useEffect(() => {
     const interval = setInterval(() => {
-      const newRemainTime = getRemainTime();
+      const newRemainingTime = getRemainingTime();
 
-      if (newRemainTime <= 0) {
-        setCanResend(true);
+      if (newRemainingTime <= 0) {
         clearInterval(interval);
       }
-      setRemainTime(newRemainTime);
+
+      setRemainingTime(newRemainingTime);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [startTime, getRemainingTime]);
+
   const verifyMutation = useMutation({
     mutationFn: (data: { id: string; code: string }) =>
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/email/verify', {
@@ -96,85 +85,11 @@ export default function EmailCheckComponent() {
     }
   });
 
-  const sendCodeMutation = useMutation(
-    ({ id, cfToken }: { id: string; cfToken: string | undefined }) =>
-      request.post<any, ApiResp<any>>('/api/auth/email/sms', {
-        id,
-        cfToken
-      })
-  );
-
-  const sendCode = async (cfToken?: string) => {
-    setIsLoading(true);
-    const oldTime = startTime;
-
-    try {
-      if (!signupData || signupData.providerType !== 'EMAIL') {
-        throw new Error('No signup data found');
-      }
-
-      const result = await sendCodeMutation.mutateAsync({
-        id: signupData.providerId,
-        cfToken
-      });
-      if (result.code !== 200) {
-        throw Error(result.message);
-      } else {
-        updateStartTime();
-        setCanResend(false);
-      }
-    } catch (error) {
-      // rollout
-      setStartTime(oldTime);
-      setCanResend(true);
-      console.error('Failed to send verification phone:', error);
-      toast({
-        title: t('common:get_code_failed'),
-        description: (error as Error)?.message || t('v2:unknown_error'),
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-        position: 'top'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onSubmit = async (force = false) => {
-    if ((!canResend || isLoading) && !force) return;
-
-    // Clear error state
-    verifyMutation.reset();
-    // Clear input field
-    setPinValue('');
-
-    if (authConfig?.turnstile.enabled) {
-      turnstileRef.current?.reset();
-    } else {
-      sendCode();
-    }
-  };
-
-  const onTurnstileSuccess = (cfToken: string) => {
-    if (startTime + 60_000 <= new Date().getTime()) {
-      sendCode(cfToken);
-    }
-  };
-
-  // Trigger code send when page loaded.
-  // If turnstile is enabled, it will be triggered by onSuccess callback and we do not need to manually trigger it.
-  useEffect(() => {
-    if (startTime + 60_000 <= new Date().getTime() && !authConfig?.turnstile.enabled) {
-      onSubmit(true);
-    }
-  }, []);
-
   const handleBack = () => {
     router.back();
   };
-  const bg = useColorModeValue('white', 'gray.700');
 
+  const bg = useColorModeValue('white', 'gray.700');
   return (
     <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
       <Stack spacing={8} mx="auto" maxW="lg" px={4} h={'60%'}>
@@ -186,22 +101,9 @@ export default function EmailCheckComponent() {
             {t('v2:check_your_email')}
           </Text>
 
-          {!!authConfig?.turnstile.enabled && (
-            <Turnstile
-              options={{
-                size: 'normal',
-                refreshExpired: 'never',
-                refreshTimeout: 'never'
-              }}
-              ref={turnstileRef}
-              siteKey={authConfig?.turnstile.cloudflare.siteKey}
-              onSuccess={onTurnstileSuccess}
-            />
-          )}
-
-          {remainTime > 0 && (
+          {remainingTime > 0 && (
             <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
-              {t('v2:verification_message', { email: signupData?.providerId || '' })}
+              {t('v2:verification_message', { email: formValues?.providerId || '' })}
             </Text>
           )}
 
@@ -216,7 +118,7 @@ export default function EmailCheckComponent() {
               isDisabled={verifyMutation.isLoading}
               onComplete={(value) => {
                 console.log('Verification code:', value);
-                verifyMutation.mutate({ code: value, id: signupData?.providerId || '' });
+                verifyMutation.mutate({ code: value, id: formValues?.providerId || '' });
               }}
             >
               {Array.from({ length: 6 }, (_, index) => (
@@ -231,18 +133,6 @@ export default function EmailCheckComponent() {
               ))}
             </PinInput>
           </FormControl>
-
-          {isLoading && (
-            <Text
-              style={{
-                fontWeight: 400,
-                fontSize: '14px',
-                lineHeight: '20px'
-              }}
-            >
-              {t('v2:sending_code')}
-            </Text>
-          )}
 
           {verifyMutation.isLoading ? (
             <Text
@@ -274,7 +164,20 @@ export default function EmailCheckComponent() {
                     {t('common:invalid_verification_code')}
                   </Text>
                 )}
-                {canResend ? (
+
+                {remainingTime > 0 ? (
+                  <Text
+                    fontWeight="400"
+                    fontSize="14px"
+                    lineHeight="20px"
+                    color="#18181B"
+                    flex="none"
+                    alignSelf="stretch"
+                    flexGrow={0}
+                  >
+                    {t('v2:can_request_new_link', { countdown: Math.floor(remainingTime / 1000) })}
+                  </Text>
+                ) : (
                   <Text
                     as="a"
                     fontWeight="400"
@@ -285,25 +188,11 @@ export default function EmailCheckComponent() {
                     alignSelf="stretch"
                     flexGrow={0}
                     cursor="pointer"
-                    onClick={() => onSubmit()}
+                    onClick={handleBack}
                     _hover={{ textDecoration: 'underline' }}
                   >
                     {t('v2:request_new_link')}
                   </Text>
-                ) : remainTime > 0 ? (
-                  <Text
-                    fontWeight="400"
-                    fontSize="14px"
-                    lineHeight="20px"
-                    color="#18181B"
-                    flex="none"
-                    alignSelf="stretch"
-                    flexGrow={0}
-                  >
-                    {t('v2:can_request_new_link', { countdown: Math.floor(remainTime / 1000) })}
-                  </Text>
-                ) : (
-                  <></>
                 )}
               </Box>
             </Flex>
