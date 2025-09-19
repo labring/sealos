@@ -62,15 +62,8 @@ env:
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-cloud
-
   build-cluster-image:
     if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
-    needs:
-      - save-sealos
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -102,16 +95,9 @@ jobs:
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "aliyun_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud" >> $GITHUB_OUTPUT
           fi
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-cloud
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
 
       # todo: mutate image tag in images/shim and scripts or change scripts to use changeable tags
 

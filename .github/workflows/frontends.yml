@@ -33,14 +33,8 @@ on:
       - "!**/*.yaml"
 
 jobs:
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-frontend
-
   image-build:
     uses: ./.github/workflows/frontend.yml
-    needs: save-sealos
     permissions:
       contents: read
       packages: write

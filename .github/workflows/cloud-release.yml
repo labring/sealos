@@ -25,11 +25,6 @@ permissions:
   packages: write
 
 jobs:
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-cloud-release
-
   release-controllers:
     if: ${{ inputs.build_offline_tar_only == false }}
     runs-on: ubuntu-24.04
@@ -89,7 +84,6 @@ jobs:
   release-cloud:
     if: ${{ inputs.build_offline_tar_only == false }}
     needs:
-      - save-sealos
       - release-controllers
       - release-frontends
       - release-service
@@ -110,16 +104,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-cloud-release
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
       - name: Build
         run: |
           export CLOUD_VERSION="$RELEASE_TAG"

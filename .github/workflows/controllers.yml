@@ -206,16 +206,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-controllers
-
   build-cluster-image:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
     needs:
       - image-build
-      - save-sealos
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -275,16 +269,9 @@ jobs:
             echo "aliyun_latest_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-controller:latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-controllers
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
       - name: Mutate image tag in deploy files
         working-directory: controllers/${{ matrix.module.path }}/deploy
         env:

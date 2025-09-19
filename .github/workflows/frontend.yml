@@ -281,17 +281,9 @@ jobs:
             echo "aliyun_latest_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend:latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-frontend
-          path: /tmp/
-
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
 
       - name: Sealos login to ghcr.io
         env:

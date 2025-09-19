@@ -58,15 +58,8 @@ env:
   DEFAULT_OWNER: "labring"
 
 jobs:
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-objectstorage
-
   build-cluster-image:
     if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
-    needs:
-      - save-sealos
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -95,16 +88,9 @@ jobs:
         run: |
           bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
           echo "repo=ghcr.io/$REPO_OWNER/sealos-cloud-objectstorage" >> $GITHUB_OUTPUT
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-objectstorage
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
 
       # todo: mutate image tag in images/shim and scripts or change scripts to use changeable tags
 
