@@ -55,7 +55,6 @@ export const autoBackupFormSchema = z
     }
   );
 
-// 数据库类型Schema
 export const dbTypeSchema = z.enum([
   'postgresql',
   'mongodb',
@@ -72,7 +71,6 @@ export const dbTypeSchema = z.enum([
 
 export const kubeBlockClusterTerminationPolicySchema = z.enum(['Delete', 'WipeOut']);
 
-// 资源配置Schema
 export const baseResourceSchema = z.object({
   cpu: z
     .number()
@@ -86,17 +84,12 @@ export const baseResourceSchema = z.object({
       message: 'Memory must be one of: 1, 2, 4, 6, 8, 12, 16, 32 GB (minimum 1 GB)'
     })
     .default(1),
-  storage: z
-    .number()
-    .refine((val) => [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21].includes(val), {
-      message: 'Storage must be one of: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 GB'
-    })
-    .default(3)
+  storage: z.number().min(1).max(300).default(3)
 });
 
 export const allResourceSchema = baseResourceSchema.and(
   z.object({
-    replicas: z.number().min(3).max(300).default(3)
+    replicas: z.number().min(1).max(20).default(3)
   })
 );
 
@@ -116,7 +109,6 @@ export const dbEditSchema = z.object({
     .optional()
 });
 
-// 其他Schema保持不变
 export const dbSourceSchema = z.object({
   hasSource: z.boolean(),
   sourceName: z.string(),
@@ -177,13 +169,8 @@ export const updateResourceSchema = z.object({
       message: 'Memory must be one of: 1, 2, 4, 6, 8, 12, 16, 32 GB (minimum 1 GB)'
     })
     .optional(),
-  storage: z
-    .number()
-    .refine((val) => [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21].includes(val), {
-      message: 'Storage must be one of: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 GB'
-    })
-    .optional(),
-  replicas: z.number().min(3).max(300).optional()
+  storage: z.number().min(1).max(300).optional(),
+  replicas: z.number().min(1).max(20).optional()
 });
 
 export const versionListSchema = z.record(dbTypeSchema, z.array(z.string()));
