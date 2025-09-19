@@ -14,6 +14,7 @@ on:
       - ".github/workflows/webhooks.yml"
       - "!**/*.md"
       - "!**/*.yaml"
+
   pull_request:
     branches: [ "*" ]
     paths:
