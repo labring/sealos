@@ -51,8 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { resource } = bodyParseResult.data;
       const validCpuValues = [1, 2, 3, 4, 5, 6, 7, 8];
       const validMemoryValues = [1, 2, 4, 6, 8, 12, 16, 32];
-      const validStorageValues = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21];
-
       if (resource.cpu !== undefined && !validCpuValues.includes(resource.cpu)) {
         return jsonRes(res, {
           code: 400,
@@ -67,21 +65,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      if (resource.storage !== undefined && !validStorageValues.includes(resource.storage)) {
+      if (resource.storage !== undefined && (resource.storage < 1 || resource.storage > 300)) {
         return jsonRes(res, {
           code: 400,
-          message: `Invalid storage value. Must be one of: ${validStorageValues.join(', ')} GB`
+          message: 'Invalid storage value. Must be between 1 and 300 GB'
         });
       }
 
-      if (resource.replicas !== undefined && (resource.replicas < 3 || resource.replicas > 300)) {
+      if (resource.replicas !== undefined && (resource.replicas < 1 || resource.replicas > 20)) {
         return jsonRes(res, {
           code: 400,
-          message: 'Invalid replicas value. Must be between 3 and 300'
+          message: 'Invalid replicas value. Must be between 1 and 20'
         });
       }
-
-      // 调用更新数据库函数
       const result = await updateDatabase(k8s, {
         params: pathParamsParseResult.data,
         body: bodyParseResult.data
