@@ -688,86 +688,7 @@ export const document = createDocument({
         }
       }
     },
-    '/database/{databaseName}/backup/{backupName}/delete': {
-      delete: {
-        summary: 'Delete Database Backup',
-        description: 'Delete a specific backup by name.',
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database'
-          },
-          {
-            name: 'backupName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the backup to delete'
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Backup deleted successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: {
-                      type: 'number',
-                      example: 200
-                    },
-                    message: {
-                      type: 'string',
-                      example: 'Backup deleted successfully'
-                    },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        backupName: {
-                          type: 'string',
-                          description: 'Name of the deleted backup',
-                          example: 'my-postgres-db-backup-abcdefgh'
-                        },
-                        dbName: {
-                          type: 'string',
-                          description: 'Database name',
-                          example: 'my-postgres-db'
-                        },
-                        deletedAt: {
-                          type: 'string',
-                          format: 'date-time',
-                          description: 'Deletion timestamp',
-                          example: '2024-01-15T10:30:00.000Z'
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Bad Request - Missing required parameters'
-          },
-          '404': {
-            description: 'Backup not found'
-          },
-          '500': {
-            description: 'Internal Server Error'
-          }
-        }
-      }
-    },
-    '/database/{databaseName}/backup/{backupName}/restore': {
+    '/database/{databaseName}/backup/{backupName}': {
       post: {
         summary: 'Restore Database from Backup',
         description:
@@ -874,6 +795,83 @@ export const document = createDocument({
           },
           '404': {
             description: 'Backup or database not found'
+          },
+          '500': {
+            description: 'Internal Server Error'
+          }
+        }
+      },
+      delete: {
+        summary: 'Delete Database Backup',
+        description: 'Delete a specific backup by name.',
+        security: [{ KubeconfigAuth: [] }],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string'
+            },
+            description: 'Name of the database'
+          },
+          {
+            name: 'backupName',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string'
+            },
+            description: 'Name of the backup to delete'
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Backup deleted successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    code: {
+                      type: 'number',
+                      example: 200
+                    },
+                    message: {
+                      type: 'string',
+                      example: 'Backup deleted successfully'
+                    },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        backupName: {
+                          type: 'string',
+                          description: 'Name of the deleted backup',
+                          example: 'my-postgres-db-backup-abcdefgh'
+                        },
+                        dbName: {
+                          type: 'string',
+                          description: 'Database name',
+                          example: 'my-postgres-db'
+                        },
+                        deletedAt: {
+                          type: 'string',
+                          format: 'date-time',
+                          description: 'Deletion timestamp',
+                          example: '2024-01-15T10:30:00.000Z'
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '400': {
+            description: 'Bad Request - Missing required parameters'
+          },
+          '404': {
+            description: 'Backup not found'
           },
           '500': {
             description: 'Internal Server Error'
