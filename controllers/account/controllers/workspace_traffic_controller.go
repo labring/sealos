@@ -59,7 +59,6 @@ func (c *WorkspaceTrafficController) BatchGetWorkspaceSubscriptions() (map[strin
 func (c *WorkspaceTrafficController) processWorkspaceTraffic(resultMap map[string]int64) error {
 	workspaceMap, err := c.BatchGetWorkspaceSubscriptions()
 	if err != nil {
-		c.Logger.Error(err, "failed to batch get workspace subscriptions")
 		return fmt.Errorf("failed to batch get workspace subscriptions: %v", err)
 	}
 
@@ -78,11 +77,12 @@ func (c *WorkspaceTrafficController) processWorkspaceTraffic(resultMap map[strin
 		}
 
 		// Process traffic consumption for this workspace
-		err := c.consumeWorkspaceTraffic(matchedSubscription, consumedBytes)
+		err = c.consumeWorkspaceTraffic(matchedSubscription, consumedBytes)
 		if err != nil {
-			c.Logger.Error(err, "failed to consume workspace traffic",
-				"workspace", matchedSubscription.Workspace,
-				"region", matchedSubscription.RegionDomain)
+			/*c.Logger.Error(err, "failed to consume workspace traffic",
+			"workspace", matchedSubscription.Workspace,
+			"region", matchedSubscription.RegionDomain)*/
+			c.VLogger.Errorf("failed to consume workspace traffic for namespace %s, err: %v", namespace, err)
 		}
 	}
 
@@ -330,7 +330,6 @@ func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
 	for range time.NewTicker(time.Minute).C {
 		c.Logger.Info("time to process workspace traffic", "startTime", startTime)
 		endTime := time.Now()
-
 		result, err := c.TrafficDB.GetNamespaceTraffic(context.Background(), startTime, endTime)
 		if err != nil {
 			c.Logger.Error(err, "failed to get namespace traffic")
@@ -338,7 +337,7 @@ func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
 		} else if len(result) > 0 {
 			err = c.processWorkspaceTraffic(result)
 			if err != nil {
-				c.Logger.Error(err, "failed to process workspace traffic")
+				c.VLogger.Errorf("failed to process workspace traffic: %v", err)
 			} else {
 				c.Logger.Info("successfully processed workspace traffic", "count", len(result), "start", startTime, "end", endTime)
 			}
