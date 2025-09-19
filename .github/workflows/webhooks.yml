@@ -83,9 +83,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-
       - name: Build ${{ matrix.module }} amd64
         working-directory: webhooks/${{ matrix.module }}
         env:
@@ -104,11 +101,32 @@ jobs:
           mv bin/manager "bin/webhook-${MODULE}-arm64"
           chmod +x "bin/webhook-${MODULE}-arm64"
 
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Check if tag
+        id: check_tag
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" == refs/tags/* ]]; then
+            echo "isTag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "isTag=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Prepare
         id: prepare
+        env:
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
+          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ matrix.module }}
         run: |
-          TAG=latest
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
+          echo "docker_repo=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_OUTPUT
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "aliyun_docker_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_OUTPUT
+          fi
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -121,45 +139,42 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        uses: docker/login-action@v3
+        if: ${{ ((github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)) && env.ALIYUN_REGISTRY }}
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ steps.prepare.outputs.docker_repo }}
+            ${{ steps.prepare.outputs.aliyun_docker_repo }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: build (and publish) ${{ matrix.module }} main image
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
-        env:
-          MODULE: ${{ matrix.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-webhook
-          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
-        working-directory: webhooks/${{ matrix.module }}
-        run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/sealos" \
-          --label "org.opencontainers.image.description=sealos-${MODULE}-webhook container image" \
-          --label "org.opencontainers.image.licenses=MIT" \
-          --push \
-          -t "${DOCKER_REPO}:${TAG_NAME}" \
-          -f Dockerfile \
-          .
-
-      - name: build ${{ matrix.module }} image
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          MODULE: ${{ matrix.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-webhook
-          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
-        working-directory: webhooks/${{ matrix.module }}
-        run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/sealos" \
-          --label "org.opencontainers.image.description=sealos-${MODULE}-webhook container image" \
-          --label "org.opencontainers.image.licenses=MIT" \
-          -t "${DOCKER_REPO}:${TAG_NAME}" \
-          -f Dockerfile \
-          .
+        uses: docker/build-push-action@v6
+        with:
+          context: ./webhooks/${{ matrix.module }}
+          file: ./webhooks/${{ matrix.module }}/Dockerfile
+          # Push if it's a push event or if push_image is true
+          push: ${{ (github.event_name == 'push')||(github.event_name == 'create') || (inputs.push_image == true) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
