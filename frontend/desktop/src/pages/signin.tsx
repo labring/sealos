@@ -1,23 +1,20 @@
 // import SigninComponent from '@/components/signin';
 import { useConfigStore } from '@/stores/config';
 import { compareFirstLanguages } from '@/utils/tools';
-import { Box, Stack, VStack } from '@chakra-ui/react';
+import { Box } from '@chakra-ui/react';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { useEffect } from 'react';
-import { useTranslation } from 'next-i18next';
 import Script from 'next/script';
 import useScriptStore from '@/stores/script';
 import SignLayout from '@/components/v2/SignLayout';
-import LangSelectSimple from '@/components/LangSelect/simple';
 import SigninComponent from '@/components/v2/Sign';
 import { useSemParams } from '@/hooks/useSemParams';
 import { setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 
 export default function SigninPage() {
   const { layoutConfig, authConfig } = useConfigStore();
-  const { t } = useTranslation();
   const { setCaptchaIsLoad } = useScriptStore();
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');
@@ -47,7 +44,7 @@ export default function SigninPage() {
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
         <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
-      {authConfig?.captcha.enabled && (
+      {authConfig?.captcha.ali.enabled && (
         <Script
           src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"
           onLoad={() => {

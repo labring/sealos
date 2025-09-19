@@ -14,7 +14,6 @@ import { SemData } from '@/types/sem';
 import { captchaReq } from '../sms';
 import { isDisposableEmail } from 'disposable-email-domains-js';
 import { createMiddleware } from '@/utils/factory';
-import { HttpStatusCode } from 'axios';
 import { AdClickData } from '@/types/adClick';
 
 export const filterPhoneParams = async (
@@ -122,8 +121,8 @@ export const filterCodeUid = async (
 export const filterCf = async (req: NextApiRequest, res: NextApiResponse, next: () => void) => {
   const { cfToken } = req.body as { cfToken?: string };
   const verifyEndpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-  const turnstileConfig = global.AppConfig.desktop.auth.turnstile;
-  const secret = turnstileConfig?.cloudflare?.secretKey;
+  const turnstileConfig = global.AppConfig.desktop.auth.captcha?.turnstile;
+  const secret = turnstileConfig?.secretKey;
   if (!!turnstileConfig?.enabled && secret) {
     if (!cfToken)
       return jsonRes(res, {
@@ -153,7 +152,7 @@ export const filterCaptcha = async (
   next: () => void
 ) => {
   if (
-    !global.AppConfig.desktop.auth.captcha?.enabled ||
+    !global.AppConfig.desktop.auth.captcha?.ali?.enabled ||
     (process.env.NODE_ENV === 'development' && !process.env.DEV_CAPTCHA_ENABLED)
   ) {
     await Promise.resolve(next());
