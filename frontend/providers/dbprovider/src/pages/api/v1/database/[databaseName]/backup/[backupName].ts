@@ -77,6 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
+  // Handle POST request - Restore backup
   if (req.method === 'POST') {
     try {
       const bodyParseResult = restoreBodySchema.safeParse(req.body);
@@ -134,10 +135,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             clusterInfo.metadata?.labels?.['clusterversion.kubeblocks.io/name'] ||
             'postgresql-14.8.2';
 
-          // Extract resource info from original cluster
           const componentSpec = clusterInfo.spec?.componentSpecs?.[0];
           if (componentSpec) {
-            // Parse Kubernetes resource formats to numbers that the system expects
             const cpuLimit = componentSpec.resources?.limits?.cpu;
             const memoryLimit = componentSpec.resources?.limits?.memory;
             const storageRequest =
@@ -196,6 +195,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (err: any) {
       console.error('Error restoring backup:', err);
+
+      if (err?.response?.statusCode === 404) {
+        return jsonRes(res, {
+          code: 404,
+          message: 'Backup not found'
+        });
+      }
+
+      return jsonRes(res, handleK8sError(err));
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    try {
+      const group = 'dataprotection.kubeblocks.io';
+      const version = 'v1alpha1';
+      const plural = 'backups';
+
+      const result = await k8s.k8sCustomObjects.deleteNamespacedCustomObject(
+        group,
+        version,
+        k8s.namespace,
+        plural,
+        backupName
+      );
+
+      return jsonRes(res, {
+        code: 200,
+        message: 'Backup deleted successfully',
+        data: {
+          backupName: backupName,
+          dbName: databaseName,
+          deletedAt: new Date().toISOString()
+        }
+      });
+    } catch (err: any) {
+      console.error('Error deleting backup:', err);
 
       if (err?.response?.statusCode === 404) {
         return jsonRes(res, {
