@@ -178,3 +178,127 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+  build-cluster-image:
+    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
+    needs:
+      - image-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        module: [ admission ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Check if tag
+        id: check_tag
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" == refs/tags/* ]]; then
+            echo "isTag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "isTag=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Prepare
+        id: prepare
+        env:
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
+          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ matrix.module }}
+        run: |
+          tag_name=$(bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG")
+          echo "old_docker_repo=ghcr.io/labring/sealos-${MODULE_NAME}-webhook" >> $GITHUB_OUTPUT
+          echo "new_docker_repo=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_OUTPUT
+          echo "cluster_repo=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_OUTPUT
+          echo "cluster_image=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook:$tag_name" >> $GITHUB_OUTPUT
+          echo "latest_cluster_image=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook:latest" >> $GITHUB_OUTPUT
+
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "aliyun_cluster_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_OUTPUT
+            echo "aliyun_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-webhook:$tag_name" >> $GITHUB_OUTPUT
+            echo "aliyun_latest_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-webhook:latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install sealos
+        run: |
+          sudo bash ./.github/scripts/install.sh
+      - name: Mutate image tag in deploy files
+        working-directory: webhooks/${{ matrix.module }}/deploy
+        env:
+          OLD_DOCKER_REPO: ${{ steps.prepare.outputs.old_docker_repo }}
+          NEW_DOCKER_REPO: ${{ steps.prepare.outputs.new_docker_repo }}
+          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
+        run: |
+          OLD_DOCKER_IMAGE_NAME="${OLD_DOCKER_REPO}:latest"
+          NEW_DOCKER_IMAGE_NAME="${NEW_DOCKER_REPO}:${TAG_NAME}"
+          sudo sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
+
+      - name: Build ${{ matrix.module }}-webhook cluster image
+        working-directory: webhooks/${{ matrix.module }}/deploy
+        env:
+          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
+          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
+          ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
+          ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
+        run: |
+          # Build for GHCR
+          sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          # delete old registry cache
+          sudo rm -rf registry
+          sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+
+          # Build for Aliyun if enabled
+          if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
+            sudo rm -rf registry
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+            sudo rm -rf registry
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+          fi
+
+      - name: Manifest Cluster Images
+        # if push to master, then patch images to ghcr.io
+        env:
+          OWNER: ${{ github.repository_owner }}
+          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
+          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
+          ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
+          ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
+        run: |
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
+          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
+
+          if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE"
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_LATEST_CLUSTER_IMAGE"
+          fi
