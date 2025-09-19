@@ -85,6 +85,10 @@ func (g *Cockroach) GetLastWorkspaceSubscriptionTransaction(workspace, regionDom
 	return g.ck.GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain)
 }
 
+func (g *Cockroach) GetAllUnprocessedWorkspaceSubscriptionTransaction(userUid uuid.UUID) ([]types.WorkspaceSubscriptionTransaction, error) {
+	return g.ck.GetAllUnprocessedWorkspaceSubscriptionTransaction(userUid)
+}
+
 func AddWorkspaceSubscriptionTrafficPackage(globalDB *gorm.DB, subscriptionID uuid.UUID, totalMiB int64, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
 	return cockroach.AddWorkspaceSubscriptionTrafficPackage(globalDB, subscriptionID, totalMiB, expireAt, from, fromID)
 }

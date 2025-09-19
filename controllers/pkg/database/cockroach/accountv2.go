@@ -1737,13 +1737,14 @@ func (c *Cockroach) InitTables() error {
 	enumTypes := []string{
 		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION', 'DELETED')`,
 		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed', 'deleted')`,
-		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed', 'expired', 'canceled')`,
+		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'unpaid', 'paid', 'no_need', 'failed', 'expired', 'canceled')`,
 		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
-		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed')`,
+		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed', 'canceled')`,
 	}
 	// subscription_pay_status 如果不存在canceled 状态，则添加
 	enumTypes = append(enumTypes, `ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'canceled'`)
 	enumTypes = append(enumTypes, `ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'unpaid'`)
+	enumTypes = append(enumTypes, `ALTER TYPE subscription_transaction_status ADD VALUE IF NOT EXISTS 'canceled'`)
 	for _, query := range enumTypes {
 		err := c.DB.Exec(query).Error
 		if err != nil {

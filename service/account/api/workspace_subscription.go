@@ -148,6 +148,119 @@ func DeleteWorkspaceSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+func DeleteAccount(c *gin.Context) {
+	req := &helper.AuthBase{}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+
+	// 获取用户的所有工作空间订阅
+	subList, err := dao.DBClient.ListWorkspaceSubscription(req.UserUID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get workspace subscription list: %v", err)})
+		return
+	}
+
+	if len(subList) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "No active workspace subscriptions found",
+			"success": true,
+		})
+		return
+	}
+
+	// 检查是否已经存在待处理的删除事务
+	lastTransactions, err := dao.DBClient.GetAllUnprocessedWorkspaceSubscriptionTransaction(req.UserUID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get unprocessed transactions: %v", err)})
+		return
+	}
+	if len(lastTransactions) > 0 {
+		// 修改所有的待处理事务为取消状态
+		var unprocessedIDs []uuid.UUID
+		for j := range lastTransactions {
+			unprocessedIDs = append(unprocessedIDs, lastTransactions[j].ID)
+		}
+		db := dao.DBClient.GetGlobalDB()
+		if err := db.Model(&types.WorkspaceSubscriptionTransaction{}).
+			Where("id IN ?", unprocessedIDs).
+			Updates(map[string]interface{}{
+				"status":      types.SubscriptionTransactionStatusCanceled,
+				"status_desc": "Canceled due to account deletion request",
+			}).Error; err != nil {
+			// fmt.Errorf("failed to cancel unprocessed transactions for user %s/%s: %w", req.UserID, req.UserUID, err)
+			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to cancel unprocessed transactions: %v", err)})
+			return
+		}
+	}
+
+	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		//var createdTransactions []types.WorkspaceSubscriptionTransaction
+		var createdTransactionsLen int
+
+		for i := range subList {
+			if subList[i].Status == types.SubscriptionStatusDeleted {
+				continue
+			}
+
+			//if lastTransaction != nil &&
+			//   lastTransaction.Operator == types.SubscriptionTransactionTypeDeleted &&
+			//   (lastTransaction.Status == types.SubscriptionTransactionStatusPending ||
+			//    lastTransaction.Status == types.SubscriptionTransactionStatusProcessing) {
+			//	continue
+			//}
+
+			now := time.Now().UTC()
+			deleteTransaction := types.WorkspaceSubscriptionTransaction{
+				ID:            uuid.New(),
+				From:          types.TransactionFromUser,
+				Workspace:     subList[i].Workspace,
+				RegionDomain:  subList[i].RegionDomain,
+				UserUID:       req.UserUID,
+				OldPlanName:   subList[i].PlanName,
+				OldPlanStatus: subList[i].Status,
+				NewPlanName:   subList[i].PlanName, // 删除时新旧计划名称相同
+				Operator:      types.SubscriptionTransactionTypeDeleted,
+				StartAt:       now,
+				CreatedAt:     now,
+				UpdatedAt:     now,
+				Status:        types.SubscriptionTransactionStatusPending,
+				PayStatus:     types.SubscriptionPayStatusNoNeed, // 删除操作无需付费
+				StatusDesc:    "Account cancellation requested by user",
+				Amount:        0, // 删除操作无费用
+			}
+
+			if err := dao.DBClient.CreateWorkspaceSubscriptionTransaction(tx, &deleteTransaction); err != nil {
+				return fmt.Errorf("failed to create deletion transaction for workspace %s/%s: %w",
+					subList[i].Workspace, subList[i].RegionDomain, err)
+			}
+
+			createdTransactionsLen++
+			logrus.Infof("Created deletion transaction for workspace subscription: workspace=%s, region=%s, transaction_id=%s",
+				subList[i].Workspace, subList[i].RegionDomain, deleteTransaction.ID)
+		}
+
+		if createdTransactionsLen > 0 {
+			logrus.Infof("Account cancellation initiated for user %s: created %d deletion transactions",
+				req.UserUID, createdTransactionsLen)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		dao.Logger.Errorf("failed to cancel account for user %s: %v", req.UserUID, err)
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to cancel account: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Account cancellation has been initiated. All workspace subscriptions will be processed for deletion.",
+	})
+}
+
 // GetWorkspaceSubscriptionList
 // @Summary Get workspace subscription list
 // @Description Get workspace subscription list

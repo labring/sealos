@@ -139,6 +139,7 @@ func (wsp *WorkspaceSubscriptionProcessor) processTransaction(ctx context.Contex
 			types.SubscriptionTransactionTypeUpgraded:   wsp.handleUpgrade,
 			types.SubscriptionTransactionTypeDowngraded: wsp.handleDowngrade,
 			types.SubscriptionTransactionTypeRenewed:    wsp.handleRenewal,
+			types.SubscriptionTransactionTypeDeleted:    wsp.handleDeletion,
 		}[latestTx.Operator]
 
 		if !exists {
@@ -364,6 +365,77 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(ctx context.Context, db
 		return fmt.Errorf("failed to update workspace subscription: %w", err)
 	}
 	return dbTx.Save(tx).Error
+}
+
+// handleDeletion 处理删除（取消订阅）
+func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
+	var sub types.WorkspaceSubscription
+	if err := dbTx.Model(&types.WorkspaceSubscription{}).
+		Where("workspace = ? AND region_domain = ?", tx.Workspace, tx.RegionDomain).
+		First(&sub).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 订阅已经不存在，直接标记事务为完成
+			tx.Status = types.SubscriptionTransactionStatusCompleted
+			tx.UpdatedAt = time.Now().UTC()
+			return dbTx.Save(tx).Error
+		}
+		return fmt.Errorf("failed to fetch workspace subscription: %w", err)
+	}
+
+	// 检查订阅是否已经处于删除状态
+	if sub.Status == types.SubscriptionStatusDeleted {
+		tx.Status = types.SubscriptionTransactionStatusCompleted
+		tx.UpdatedAt = time.Now().UTC()
+		return dbTx.Save(tx).Error
+	}
+
+	now := time.Now().UTC()
+
+	// 更新订阅状态为删除状态
+	sub.Status = types.SubscriptionStatusDeleted
+	sub.CancelAt = now
+	sub.UpdateAt = now
+
+	// 如果是付费订阅，需要取消Stripe订阅
+	if sub.PayStatus == types.SubscriptionPayStatusPaid && sub.PayMethod == types.PaymentMethodStripe &&
+		sub.Stripe != nil && sub.Stripe.SubscriptionID != "" {
+		// 取消Stripe订阅
+		if _, err := services.StripeServiceInstance.CancelSubscription(sub.Stripe.SubscriptionID); err != nil {
+			//logrus.Errorf("Failed to cancel Stripe subscription %s: %v", sub.Stripe.SubscriptionID, err)
+			dao.Logger.Errorf("Failed to cancel Stripe subscription %s: %v", sub.Stripe.SubscriptionID, err)
+			// 记录错误但不阻止删除过程
+			tx.StatusDesc = fmt.Sprintf("Stripe cancellation failed: %v", err)
+			//return fmt.Errorf("failed to cancel Stripe subscription %s: %w", sub.Stripe.SubscriptionID, err)
+		}
+		sub.PayStatus = types.SubscriptionPayStatusCanceled
+	} else {
+		// 非付费订阅或其他支付方式，直接设置为取消状态
+		sub.PayStatus = types.SubscriptionPayStatusCanceled
+	}
+
+	// 保存订阅更新
+	if err := dbTx.Save(&sub).Error; err != nil {
+		return fmt.Errorf("failed to update workspace subscription: %w", err)
+	}
+
+	// 更新事务状态
+	tx.Status = types.SubscriptionTransactionStatusCompleted
+	tx.UpdatedAt = now
+	if err := dbTx.Save(tx).Error; err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	// 设置namespace的final删除标签，标记资源需要最终删除
+	if err := updateDebtNamespaceStatus(ctx, dao.K8sManager.GetClient(), FinalDeletionDebtNamespaceAnnoStatus, []string{sub.Workspace}); err != nil {
+		// logrus.Errorf("Failed to set final deletion annotation for workspace %s: %v", sub.Workspace, err)
+		dao.Logger.Errorf("Failed to set final deletion annotation for workspace %s: %v", sub.Workspace, err)
+		return fmt.Errorf("failed to set final deletion annotation for workspace %s: %v", sub.Workspace, err)
+	}
+
+	logrus.Infof("Successfully processed workspace subscription deletion: workspace=%s, region=%s",
+		sub.Workspace, sub.RegionDomain)
+
+	return nil
 }
 
 // checkWorkspaceDowngradeConditions 检查工作空间降级条件

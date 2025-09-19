@@ -54,6 +54,7 @@ func RegisterPayRouter() {
 		POST(helper.GetAPPCosts, api.GetAPPCosts).
 		POST(helper.GetAppTypeCosts, api.GetAppTypeCosts).
 		POST(helper.GetAccount, api.GetAccount).
+		POST(helper.DeleteAccount, api.DeleteAccount).
 		POST(helper.GetPayment, api.GetPayment).
 		POST(helper.GetRechargeAmount, api.GetRechargeAmount).
 		POST(helper.GetConsumptionAmount, api.GetConsumptionAmount).
