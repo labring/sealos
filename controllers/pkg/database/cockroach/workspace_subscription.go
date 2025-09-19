@@ -64,6 +64,17 @@ func (c *Cockroach) ListWorkspaceSubscription(userUID uuid.UUID) ([]types.Worksp
 	return subscriptions, nil
 }
 
+func (c *Cockroach) GetAllUnprocessedWorkspaceSubscriptionTransaction(userUid uuid.UUID) ([]types.WorkspaceSubscriptionTransaction, error) {
+	var transactions []types.WorkspaceSubscriptionTransaction
+	err := c.DB.Where("user_uid = ? AND status IN (?, ?)", userUid, types.SubscriptionTransactionStatusPending, types.SubscriptionTransactionStatusProcessing).Find(&transactions).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []types.WorkspaceSubscriptionTransaction{}, nil
+		}
+	}
+	return transactions, nil
+}
+
 func (c *Cockroach) GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain string) (*types.WorkspaceSubscriptionTransaction, error) {
 	transaction := &types.WorkspaceSubscriptionTransaction{}
 	err := c.DB.Where("workspace = ? AND region_domain = ?", workspace, regionDomain).Order("created_at desc").First(transaction).Error

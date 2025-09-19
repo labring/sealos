@@ -209,6 +209,11 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		// Case 3: both the debt and network states exist
 		{
 			condition: func() bool {
+				if debtExists && networkExists {
+					if debtStatus == types.FinalDeletionDebtNamespaceAnnoStatus {
+						return true
+					}
+				}
 				return debtExists && networkExists && !debtCompletedStates[debtStatus] && !networkCompletedStates[networkStatus]
 			},
 			newDebt: func() string {

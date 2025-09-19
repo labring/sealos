@@ -168,6 +168,7 @@ const (
 	SubscriptionTransactionStatusPending    SubscriptionTransactionStatus = "pending"
 	SubscriptionTransactionStatusProcessing SubscriptionTransactionStatus = "processing"
 	SubscriptionTransactionStatusFailed     SubscriptionTransactionStatus = "failed"
+	SubscriptionTransactionStatusCanceled   SubscriptionTransactionStatus = "canceled"
 )
 
 func (s *SubscriptionTransactionStatus) Scan(value interface{}) error {
