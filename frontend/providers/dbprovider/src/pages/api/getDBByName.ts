@@ -106,8 +106,6 @@ export async function getDBConfiguration(req: NextApiRequest, dbName: string, db
 
     return body;
   } catch (err: any) {
-    // Configuration might not exist for some databases
-    console.log(`Configuration not found for ${dbName} (${dbType}):`, err.message);
     return null;
   }
 }
