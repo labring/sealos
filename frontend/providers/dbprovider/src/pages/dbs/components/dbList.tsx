@@ -103,10 +103,6 @@ const DBList = ({
     content: t('pause_hint')
   });
 
-  useEffect(() => {
-    console.log('alerts', alerts);
-  }, []);
-
   const handleRestartApp = useCallback(
     async (db: DBListItemType) => {
       try {
@@ -203,7 +199,7 @@ const DBList = ({
       try {
         const orgId = '34';
         const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
-        const userStr = localStorage.getItem('session');
+        const userStr = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
         const userObj = userStr ? JSON.parse(userStr) : null;
         const userId = userObj?.user.id;
         const userNS = userObj?.user.nsid;
@@ -726,7 +722,7 @@ const DBList = ({
         <Box flex={1}></Box>
         <InputGroup w={'200px'} h={'36px'} mr={'12px'}>
           <InputLeftElement pointerEvents="none" h="full" alignItems="center">
-            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            {isClientSide && <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />}
           </InputLeftElement>
           <Input
             placeholder={t('search_name_and_remark_placeholder')}

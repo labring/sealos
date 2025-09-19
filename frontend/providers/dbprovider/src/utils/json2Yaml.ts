@@ -928,8 +928,6 @@ export const json2ParameterConfig = (
   },
   dynamicMaxConnections?: number
 ) => {
-  console.log('dbType', dbType);
-  console.log('dbVersion', dbVersion);
   function buildPostgresYaml() {
     // Parse PostgreSQL version to get major version (e.g., "postgresql-12.14.0" -> "12", "16.4.0" -> "16")
     const majorVersion = dbVersion.replace(/^postgresql-/, '').split('.')[0];

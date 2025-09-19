@@ -110,6 +110,7 @@ export interface DBEditType {
     maxConnections?: string;
     timeZone?: string;
     lowerCaseTableNames?: string;
+    isMaxConnectionsCustomized?: boolean;
   };
 }
 
