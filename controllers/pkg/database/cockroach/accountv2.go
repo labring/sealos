@@ -1777,6 +1777,14 @@ func (c *Cockroach) InitTables() error {
 			return fmt.Errorf("failed to add column updated_at: %v", err)
 		}
 	}
+	if !c.DB.Migrator().HasColumn(&types.Corporate{}, `type`) {
+		fmt.Println("add table `Corporate` column type")
+		tableName := types.Corporate{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "type" TEXT;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column type: %v", err)
+		}
+	}
 	if !c.DB.Migrator().HasColumn(&types.AccountTransaction{}, "credit_id_list") {
 		sqls := []string{
 			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "region" uuid;`,
