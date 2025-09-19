@@ -211,13 +211,13 @@ const Form = ({
   }, [cpuCores]);
 
   const timeZone =
-    watch('parameterConfig' as any)?.timeZone ||
+    watch('parameterConfig')?.timeZone ||
     (getValues('dbType') === DBTypeEnum.mysql || getValues('dbType') === DBTypeEnum.postgresql
       ? 'UTC'
       : '');
-  const lowerCaseTableNames = watch('parameterConfig' as any)?.lowerCaseTableNames || '0';
-  const maxConnections = watch('parameterConfig' as any)?.maxConnections;
-  const isMaxConnectionsCustomized = watch('parameterConfig' as any)?.isMaxConnectionsCustomized;
+  const lowerCaseTableNames = watch('parameterConfig')?.lowerCaseTableNames || '0';
+  const maxConnections = watch('parameterConfig')?.maxConnections;
+  const isMaxConnectionsCustomized = watch('parameterConfig')?.isMaxConnectionsCustomized;
 
   const Label = ({
     children,
@@ -273,7 +273,7 @@ const Form = ({
     }
 
     return ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType);
-  }, [getValues('dbType'), getValues('dbVersion')]);
+  }, [getValues]);
 
   const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
     useMemo(() => {
@@ -359,8 +359,8 @@ const Form = ({
       setValue('memory', minMemory);
     }
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    if (!getValues('parameterConfig' as any)) {
+
+    if (!getValues('parameterConfig')) {
       const dbType = getValues('dbType');
       const defaultConfig: any = {};
 
@@ -375,10 +375,9 @@ const Form = ({
       }
 
       // maxConnections will be calculated dynamically, no need to set default
-
-      setValue('parameterConfig' as any, defaultConfig);
+      setValue('parameterConfig', defaultConfig);
     }
-  }, [getValues('dbType'), allocatedStorage]);
+  }, [getValues, allocatedStorage, isEdit, minCPU, minMemory, setValue, minStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
   const parameterConfigRef = useRef<HTMLDivElement | null>(null);
@@ -985,8 +984,8 @@ const Form = ({
                                   }}
                                   onBlur={() => setEditingParam(null)}
                                   onChange={(e) => {
-                                    setValue('parameterConfig' as any, {
-                                      ...getValues('parameterConfig' as any),
+                                    setValue('parameterConfig', {
+                                      ...getValues('parameterConfig'),
                                       maxConnections: e.target.value,
                                       isMaxConnectionsCustomized: true
                                     });
@@ -1025,8 +1024,8 @@ const Form = ({
                                     color: 'brightBlue.500'
                                   }}
                                   onClick={() => {
-                                    setValue('parameterConfig' as any, {
-                                      ...getValues('parameterConfig' as any),
+                                    setValue('parameterConfig', {
+                                      ...getValues('parameterConfig'),
                                       maxConnections: undefined,
                                       isMaxConnectionsCustomized: false
                                     });
@@ -1059,8 +1058,8 @@ const Form = ({
                                       { value: 'Asia/Shanghai', label: 'Asia/Shanghai' }
                                     ]}
                                     onchange={(val: any) => {
-                                      setValue('parameterConfig' as any, {
-                                        ...getValues('parameterConfig' as any),
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
                                         timeZone: val
                                       });
                                       setEditingParam(null);
@@ -1090,7 +1089,7 @@ const Form = ({
                         )}
 
                         {/* lower_case_table_names parameter for MySQL only */}
-                        {getValues('dbType') === DBTypeEnum.mysql && (
+                        {getValues('dbType') === DBTypeEnum.mysql && !isEdit && (
                           <Tr>
                             <Td w="350px">
                               <Text fontSize={'14px'} color={'grayModern.900'}>
@@ -1108,8 +1107,8 @@ const Form = ({
                                       { value: '1', label: '1 (' + t('case_insensitive') + ')' }
                                     ]}
                                     onchange={(val: string) => {
-                                      setValue('parameterConfig' as any, {
-                                        ...getValues('parameterConfig' as any),
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
                                         lowerCaseTableNames: val
                                       });
                                       setEditingParam(null);

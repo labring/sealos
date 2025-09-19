@@ -7,7 +7,7 @@ export const getUserKubeConfig = () => {
     process.env.NODE_ENV !== 'production' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
-    const store = localStorage.getItem('session');
+    const store = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
     if (!kubeConfig && store) {
       kubeConfig = JSON.parse(store)?.kubeconfig;
     }
@@ -29,7 +29,7 @@ export const getUserNamespace = () => {
 
 export const getUserSession = () => {
   try {
-    const store = localStorage.getItem('session');
+    const store = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
     if (store) {
       return JSON.parse(store) as SessionV1;
     }

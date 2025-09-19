@@ -297,7 +297,13 @@ export const defaultDBEditValue: DBEditType = {
     saveTime: 100,
     saveType: 'd'
   },
-  terminationPolicy: 'Delete'
+  terminationPolicy: 'Delete',
+  parameterConfig: {
+    maxConnections: '',
+    timeZone: '',
+    lowerCaseTableNames: '',
+    isMaxConnectionsCustomized: false
+  }
 };
 
 export const RedisHAConfig = (ha = true) => {

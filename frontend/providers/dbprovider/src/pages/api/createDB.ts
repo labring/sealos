@@ -3,7 +3,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
-import { BackupItemType, DBEditType, DBType } from '@/types/db';
+import { BackupItemType, DBEditType } from '@/types/db';
 import {
   json2Account,
   json2ResourceOps,
@@ -12,7 +12,7 @@ import {
 } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
-import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
+import { BackupSupportedDBTypeList } from '@/constants/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 import { getScore } from '@/utils/tools';
@@ -24,6 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       isEdit: boolean;
       backupInfo?: BackupItemType;
     };
+    console.log('api createDB dbForm', dbForm);
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
@@ -56,6 +57,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       if (dbForm.storage > storage) {
         const volumeExpansionYaml = json2ResourceOps(dbForm, 'VolumeExpansion');
         opsRequests.push(volumeExpansionYaml);
+      }
+
+      // Handle parameter configuration updates
+      if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+        if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+          try {
+            const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            const configYaml = json2ParameterConfig(
+              dbForm.dbName,
+              dbForm.dbType,
+              dbForm.dbVersion,
+              dbForm.parameterConfig,
+              dynamicMaxConnections
+            );
+            console.log('api createDB configYaml', configYaml);
+            await applyYamlList([configYaml], 'replace');
+          } catch (err) {
+            console.log('Failed to update parameter configuration:', err);
+          }
+        }
       }
 
       if (opsRequests.length > 0) {
@@ -110,11 +131,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           dbForm.parameterConfig,
           dynamicMaxConnections
         );
-        yamlList.push(config);
+        yamlList.unshift(config);
       }
     }
-
-    console.log('[createDB] config', yamlList[2]);
 
     await applyYamlList(yamlList, 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
