@@ -252,6 +252,7 @@ type Corporate struct {
 	GiftAmount          int64     `json:"giftAmount" gorm:"type:float;not null"`
 	PayDate             time.Time `json:"payDate" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	CreationDate        time.Time `json:"creationDate" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	Type                string    `json:"type" gorm:"type:varchar(255);not null"`
 }
 
 func (Corporate) TableName() string {
