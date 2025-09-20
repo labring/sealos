@@ -1,7 +1,7 @@
 generator regionClient {
-  provider = "prisma-client-js"
-  output   = "./generated/client"
-	binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -24,14 +24,14 @@ model UserCr {
   crName        String          @unique
   userUid       String          @unique @db.Uuid
   createdAt     DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime        @db.Timestamptz(3) @updatedAt
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
   userWorkspace UserWorkspace[]
 }
 
 model UserWorkspace {
   uid          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt    DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime   @db.Timestamptz(3) @updatedAt
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
   workspaceUid String     @db.Uuid
   userCrUid    String     @db.Uuid
   handlerUid   String?    @db.Uuid
@@ -46,6 +46,57 @@ model UserWorkspace {
   @@index([userCrUid])
 }
 
+model ProductPrice {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id     String    @db.Uuid
+  billing_cycle  String    @db.String(20)
+  price          BigInt?
+  stripe_price   String?   @db.String(100)
+  created_at     DateTime? @db.Timestamptz(6)
+  updated_at     DateTime? @db.Timestamptz(6)
+  original_price BigInt?
+
+  @@unique([product_id, billing_cycle], map: "idx_product_cycle")
+}
+
+model WorkspaceSubscription {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plan_name               String?                   @db.String(50)
+  workspace               String?                   @db.String(50)
+  region_domain           String?                   @db.String(50)
+  user_uid                String?                   @db.Uuid
+  status                  subscription_status?
+  pay_status              subscription_pay_status?
+  pay_method              String?
+  stripe                  Json?
+  traffic_status          workspace_traffic_status? @default(active)
+  current_period_start_at DateTime?                 @db.Timestamptz(6)
+  current_period_end_at   DateTime?                 @db.Timestamptz(6)
+  cancel_at_period_end    Boolean?                  @default(false)
+  cancel_at               DateTime?                 @db.Timestamptz(6)
+  create_at               DateTime?                 @db.Timestamptz(6)
+  update_at               DateTime?                 @db.Timestamptz(6)
+  expire_at               DateTime?                 @db.Timestamptz(6)
+
+  @@unique([workspace, region_domain], map: "idx_workspace_region_domain")
+  @@index([user_uid], map: "idx_workspace_subscription_user_uid")
+}
+
+model WorkspaceSubscriptionPlan {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String    @unique
+  description         String?
+  upgrade_plan_list   String[]
+  downgrade_plan_list String[]
+  max_seats           BigInt
+  max_resources       String?
+  traffic             BigInt?
+  created_at          DateTime? @db.Timestamptz(6)
+  updated_at          DateTime? @db.Timestamptz(6)
+  tags                String[]
+  order               BigInt?
+}
+
 enum JoinStatus {
   INVITED
   IN_WORKSPACE
@@ -56,4 +107,41 @@ enum Role {
   MANAGER
   DEVELOPER
   OWNER
+}
+
+enum subscription_operator {
+  created
+  upgraded
+  downgraded
+  canceled
+  renewed
+}
+
+enum subscription_pay_status {
+  pending
+  paid
+  no_need
+  failed
+}
+
+enum subscription_status {
+  NORMAL
+  PAUSED
+  DEBT
+  DEBT_PRE_DELETION
+  DEBT_FINAL_DELETION
+}
+
+enum subscription_transaction_status {
+  completed
+  pending
+  processing
+  failed
+}
+
+enum workspace_traffic_status {
+  active
+  exhausted
+  used_up
+  expired
 }
