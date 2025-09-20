@@ -5,47 +5,85 @@ import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ResponseCode, ResponseMessages } from '@/types/response';
 import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { DBTypeEnum, defaultDBEditValue } from '@/constants/db';
-import { customAlphabet } from 'nanoid';
+import type { DBEditType } from '@/types/db';
 import z from 'zod';
 
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
-
 const restoreBodySchema = z.object({
-  newDbName: z.string().min(1, 'New database name is required')
+  newDbName: z.string().min(1, 'New database name is required'),
+  replicas: z.number().min(1).optional()
 });
 
-function parseKubernetesResource(value: string | undefined, defaultValue: number): number {
+function parseKubernetesResource(
+  value: string | undefined,
+  resourceType: 'cpu' | 'memory' | 'storage',
+  defaultValue: number
+): number {
   if (!value) return defaultValue;
 
-  if (value.endsWith('m')) {
-    const numValue = parseInt(value.slice(0, -1));
-    return isNaN(numValue) ? defaultValue : numValue / 1000;
-  }
-
-  if (value.endsWith('Mi')) {
-    const numValue = parseInt(value.slice(0, -2));
+  if (resourceType === 'cpu') {
+    if (value.endsWith('m')) {
+      const numValue = parseInt(value.slice(0, -1));
+      return isNaN(numValue) ? defaultValue : numValue;
+    }
+    const numValue = parseFloat(value);
     return isNaN(numValue) ? defaultValue : numValue;
   }
-  if (value.endsWith('Gi')) {
-    const numValue = parseInt(value.slice(0, -2));
-    return isNaN(numValue) ? defaultValue : numValue * 1024;
-  }
-  if (value.endsWith('Ki')) {
-    const numValue = parseInt(value.slice(0, -2));
-    return isNaN(numValue) ? defaultValue : Math.round(numValue / 1024);
-  }
 
-  if (value.includes('Gi')) {
-    const numValue = parseInt(value.replace('Gi', ''));
+  if (resourceType === 'memory') {
+    if (value.endsWith('Mi')) {
+      const numValue = parseInt(value.slice(0, -2));
+      return isNaN(numValue) ? defaultValue : numValue;
+    }
+    if (value.endsWith('Gi')) {
+      const numValue = parseFloat(value.slice(0, -2));
+      return isNaN(numValue) ? defaultValue : numValue * 1024;
+    }
+    if (value.endsWith('Ki')) {
+      const numValue = parseInt(value.slice(0, -2));
+      return isNaN(numValue) ? defaultValue : Math.round(numValue / 1024);
+    }
+    if (value.endsWith('M')) {
+      const numValue = parseInt(value.slice(0, -1));
+      return isNaN(numValue) ? defaultValue : numValue;
+    }
+    if (value.endsWith('G')) {
+      const numValue = parseFloat(value.slice(0, -1));
+      return isNaN(numValue) ? defaultValue : numValue * 1024;
+    }
+    const numValue = parseFloat(value);
     return isNaN(numValue) ? defaultValue : numValue;
   }
-  if (value.includes('Mi')) {
-    const numValue = parseInt(value.replace('Mi', ''));
-    return isNaN(numValue) ? defaultValue : Math.round(numValue / 1024);
+
+  if (resourceType === 'storage') {
+    if (value.endsWith('Gi')) {
+      const numValue = parseFloat(value.slice(0, -2));
+      return isNaN(numValue) ? defaultValue : numValue;
+    }
+    if (value.endsWith('Mi')) {
+      const numValue = parseInt(value.slice(0, -2));
+      return isNaN(numValue) ? defaultValue : numValue / 1024;
+    }
+    if (value.endsWith('Ti')) {
+      const numValue = parseFloat(value.slice(0, -2));
+      return isNaN(numValue) ? defaultValue : numValue * 1024;
+    }
+    if (value.endsWith('G')) {
+      const numValue = parseFloat(value.slice(0, -1));
+      return isNaN(numValue) ? defaultValue : numValue;
+    }
+    if (value.endsWith('M')) {
+      const numValue = parseInt(value.slice(0, -1));
+      return isNaN(numValue) ? defaultValue : numValue / 1024;
+    }
+    if (value.endsWith('T')) {
+      const numValue = parseFloat(value.slice(0, -1));
+      return isNaN(numValue) ? defaultValue : numValue * 1024;
+    }
+    const numValue = parseFloat(value);
+    return isNaN(numValue) ? defaultValue : numValue;
   }
 
-  const numValue = parseFloat(value);
-  return isNaN(numValue) ? defaultValue : numValue;
+  return defaultValue;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -77,7 +115,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  // Handle POST request - Restore backup
   if (req.method === 'POST') {
     try {
       const bodyParseResult = restoreBodySchema.safeParse(req.body);
@@ -89,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const { newDbName } = bodyParseResult.data;
+      const { newDbName, replicas } = bodyParseResult.data;
 
       const group = 'dataprotection.kubeblocks.io';
       const version = 'v1alpha1';
@@ -110,13 +147,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      let dbType =
+        backupInfo.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'] ||
+        DBTypeEnum.postgresql;
+      let dbVersion =
+        backupInfo.metadata?.labels?.['clusterversion.kubeblocks.io/name'] || 'postgresql-14.8.2';
+      let originalResource = { ...defaultDBEditValue };
       const clusterGroup = 'apps.kubeblocks.io';
       const clusterVersion = 'v1alpha1';
       const clusterPlural = 'clusters';
-
-      let dbType: DBTypeEnum = DBTypeEnum.postgresql;
-      let dbVersion = 'postgresql-14.8.2';
-      let originalResource = defaultDBEditValue;
 
       try {
         const { body: clusterInfo } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
@@ -128,12 +167,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )) as any;
 
         if (clusterInfo) {
-          dbType =
-            clusterInfo.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'] ||
-            DBTypeEnum.postgresql;
-          dbVersion =
-            clusterInfo.metadata?.labels?.['clusterversion.kubeblocks.io/name'] ||
-            'postgresql-14.8.2';
+          if (!backupInfo.metadata?.labels?.['clusterdefinition.kubeblocks.io/name']) {
+            dbType =
+              clusterInfo.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'] || dbType;
+          }
+          if (!backupInfo.metadata?.labels?.['clusterversion.kubeblocks.io/name']) {
+            dbVersion =
+              clusterInfo.metadata?.labels?.['clusterversion.kubeblocks.io/name'] || dbVersion;
+          }
 
           const componentSpec = clusterInfo.spec?.componentSpecs?.[0];
           if (componentSpec) {
@@ -144,42 +185,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             originalResource = {
               ...defaultDBEditValue,
-              cpu: parseKubernetesResource(cpuLimit, defaultDBEditValue.cpu),
-              memory: parseKubernetesResource(memoryLimit, defaultDBEditValue.memory),
-              storage: parseKubernetesResource(storageRequest, defaultDBEditValue.storage),
-              replicas: componentSpec.replicas || defaultDBEditValue.replicas
+              cpu: parseKubernetesResource(cpuLimit, 'cpu', defaultDBEditValue.cpu),
+              memory: parseKubernetesResource(memoryLimit, 'memory', defaultDBEditValue.memory),
+              storage: parseKubernetesResource(
+                storageRequest,
+                'storage',
+                defaultDBEditValue.storage
+              ),
+              replicas: replicas || componentSpec.replicas || defaultDBEditValue.replicas,
+              autoBackup: clusterInfo.spec?.backup
+                ? {
+                    start: clusterInfo.spec.backup.enabled || false,
+                    type: 'day',
+                    week: [],
+                    hour: clusterInfo.spec.backup.cronExpression
+                      ? clusterInfo.spec.backup.cronExpression.split(' ')[1] || '18'
+                      : '18',
+                    minute: clusterInfo.spec.backup.cronExpression
+                      ? clusterInfo.spec.backup.cronExpression.split(' ')[0] || '00'
+                      : '00',
+                    saveTime: parseInt(
+                      clusterInfo.spec.backup.retentionPeriod?.replace('days', '') || '7'
+                    ),
+                    saveType: 'd'
+                  }
+                : defaultDBEditValue.autoBackup
             };
           }
         }
       } catch (err) {
-        console.log('Could not fetch original cluster info, using defaults');
+        if (replicas) {
+          originalResource.replicas = replicas;
+        }
       }
 
       const backupData = {
         name: backupName,
         namespace: k8s.namespace,
-        connectionPassword: ''
+        connectionPassword:
+          backupInfo.metadata?.annotations?.['dataprotection.kubeblocks.io/connection-password'] ||
+          ''
       };
 
-      const clusterYaml = json2CreateCluster(
-        {
-          ...originalResource,
-          dbName: newDbName,
-          dbType: dbType as any,
-          dbVersion,
-          terminationPolicy: 'WipeOut'
-        },
-        backupData
-      );
-
-      const accountYaml = json2Account({
+      const dbEditData: DBEditType = {
         ...originalResource,
         dbName: newDbName,
-        dbType: dbType as any,
-        dbVersion
-      });
+        dbType: dbType as DBTypeEnum,
+        dbVersion,
+        terminationPolicy: 'WipeOut',
+        labels: {}
+      };
 
-      await k8s.applyYamlList([accountYaml, clusterYaml], 'create');
+      const clusterYaml = json2CreateCluster(dbEditData, backupData, {
+        storageClassName: 'openebs-backup'
+      });
+      const accountYaml = json2Account(dbEditData);
+
+      const applyResult = await k8s.applyYamlList([accountYaml, clusterYaml], 'create');
 
       return jsonRes(res, {
         code: 200,
@@ -190,12 +252,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           backupName: backupName,
           dbType,
           dbVersion,
+          resource: {
+            cpu: dbEditData.cpu,
+            memory: dbEditData.memory,
+            storage: dbEditData.storage,
+            replicas: dbEditData.replicas
+          },
           restoredAt: new Date().toISOString()
         }
       });
     } catch (err: any) {
-      console.error('Error restoring backup:', err);
-
       if (err?.response?.statusCode === 404) {
         return jsonRes(res, {
           code: 404,
@@ -203,17 +269,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      if (err?.response?.statusCode === 409) {
+        return jsonRes(res, {
+          code: 409,
+          message: 'Database with this name already exists'
+        });
+      }
+
       return jsonRes(res, handleK8sError(err));
     }
   }
 
+  // Handle DELETE request
   if (req.method === 'DELETE') {
     try {
       const group = 'dataprotection.kubeblocks.io';
       const version = 'v1alpha1';
       const plural = 'backups';
 
-      const result = await k8s.k8sCustomObjects.deleteNamespacedCustomObject(
+      await k8s.k8sCustomObjects.deleteNamespacedCustomObject(
         group,
         version,
         k8s.namespace,
@@ -231,8 +305,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     } catch (err: any) {
-      console.error('Error deleting backup:', err);
-
       if (err?.response?.statusCode === 404) {
         return jsonRes(res, {
           code: 404,
