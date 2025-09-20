@@ -93,6 +93,7 @@ jobs:
           - { name: resources, path: resources }
           - { name: node, path: node }
           - { name: devbox, path: devbox }
+          - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
