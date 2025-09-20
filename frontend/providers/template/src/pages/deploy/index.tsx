@@ -28,6 +28,10 @@ import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { useUserStore } from '@/store/user';
+import useSessionStore from '@/store/session';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -62,20 +66,25 @@ export default function EditApp({
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
-  // const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
-  // useEffect(() => {
-  //   loadUserQuota();
-  // }, []);
+  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { getSession } = useSessionStore();
+
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
     [templateSource]
   );
-
-  const usage = useMemo(() => {
-    const usage = getResourceUsage(yamlList?.map((item) => item.value) || []);
-    return usage;
-  }, [yamlList]);
 
   const { data: platformEnvs } = useQuery(
     ['getPlatformEnvs'],
@@ -172,15 +181,64 @@ export default function EditApp({
   }, [formHook, formOnchangeDebounce]);
 
   const { createCompleted } = useGuideStore();
-  const submitSuccess = async () => {
+
+  const handleOutside = useCallback(() => {
+    setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
+
+    const params = new URLSearchParams();
+    ['k', 's', 'bd_vid'].forEach((param) => {
+      const value = router.query[param];
+      if (typeof value === 'string') {
+        params.append(param, value);
+      }
+    });
+
+    const queryString = params.toString();
+
+    const baseUrl = `https://${platformEnvs?.DESKTOP_DOMAIN}/`;
+    const encodedTemplateQuery = encodeURIComponent(
+      `?templateName=${templateName}&sealos_inside=true`
+    );
+    const templateQuery = `openapp=system-template${encodedTemplateQuery}`;
+    const href = `${baseUrl}${
+      queryString ? `?${queryString}&${templateQuery}` : `?${templateQuery}`
+    }`;
+
+    window.open(href, '_self');
+  }, [router, templateName, platformEnvs, setCached, formHook]);
+
+  const handleInside = useCallback(async () => {
+    const yamls = yamlList.map((item) => item.value);
+    await postDeployApp(yamls, 'create');
+
+    toast({
+      title: t(applySuccess),
+      status: 'success'
+    });
+
+    deleteCached();
+    setAppType(ApplicationType.MyApp);
+    router.push({
+      pathname: '/instance',
+      query: { instanceName: detailName }
+    });
+  }, [applySuccess, yamlList, deleteCached, setAppType, router, detailName, t, toast]);
+
+  const submitError = useCallback(async () => {
+    await formHook.trigger();
+    toast({
+      title: deepSearch(formHook.formState.errors),
+      status: 'error',
+      position: 'top',
+      duration: 3000,
+      isClosable: true
+    });
+  }, [formHook, toast]);
+
+  const submitSuccess = useCallback(async () => {
     if (!createCompleted) {
       return router.push('/instance?instanceName=fastgpt-mock');
     }
-    // const quoteCheckRes = checkQuotaAllow({
-    //   cpu: usage.cpu.max,
-    //   memory: usage.memory.max,
-    //   storage: usage.storage.max
-    // });
 
     setIsLoading(true);
 
@@ -205,60 +263,32 @@ export default function EditApp({
       }
     }
     setIsLoading(false);
-  };
+  }, [insideCloud, createCompleted, setIsLoading, t, router, handleOutside, handleInside]);
 
-  const handleOutside = () => {
-    setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
+  const usage = useMemo(() => {
+    const usage = getResourceUsage(yamlList?.map((item) => item.value) || []);
+    return usage;
+  }, [yamlList]);
 
-    const params = new URLSearchParams();
-    ['k', 's', 'bd_vid'].forEach((param) => {
-      const value = router.query[param];
-      if (typeof value === 'string') {
-        params.append(param, value);
-      }
+  const handleCreateApp = useCallback(() => {
+    // Check quota before creating app
+    const exceededQuotaItems = checkExceededQuotas({
+      cpu: usage.cpu.max,
+      memory: usage.memory.max,
+      nodeport: usage.nodeport,
+      storage: usage.storage.max,
+      ...(getSession().subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
-    const queryString = params.toString();
-
-    const baseUrl = `https://${platformEnvs?.DESKTOP_DOMAIN}/`;
-    const encodedTemplateQuery = encodeURIComponent(
-      `?templateName=${templateName}&sealos_inside=true`
-    );
-    const templateQuery = `openapp=system-template${encodedTemplateQuery}`;
-    const href = `${baseUrl}${
-      queryString ? `?${queryString}&${templateQuery}` : `?${templateQuery}`
-    }`;
-
-    window.open(href, '_self');
-  };
-
-  const handleInside = async () => {
-    const yamls = yamlList.map((item) => item.value);
-    await postDeployApp(yamls, 'create');
-
-    toast({
-      title: t(applySuccess),
-      status: 'success'
-    });
-
-    deleteCached();
-    setAppType(ApplicationType.MyApp);
-    router.push({
-      pathname: '/instance',
-      query: { instanceName: detailName }
-    });
-  };
-
-  const submitError = async () => {
-    await formHook.trigger();
-    toast({
-      title: deepSearch(formHook.formState.errors),
-      status: 'error',
-      position: 'top',
-      duration: 3000,
-      isClosable: true
-    });
-  };
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+    }
+  }, [checkExceededQuotas, usage, getSession, openConfirm, submitSuccess, submitError, formHook]);
 
   const parseTemplate = (res: TemplateSourceType) => {
     try {
@@ -407,10 +437,9 @@ export default function EditApp({
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
-            applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+            applyCb={handleCreateApp}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
-            {/* <QuotaBox /> */}
             <Form
               formHook={formHook}
               pxVal={pxVal}
@@ -429,6 +458,13 @@ export default function EditApp({
       <ConfirmChild />
       <ConfirmChild2 />
       <Loading />
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        showControls={false}
+        open={exceededDialogOpen}
+        onOpenChange={setExceededDialogOpen}
+        onConfirm={() => {}}
+      />
       {!!errorMessage && (
         <ErrorModal
           title={applyError}

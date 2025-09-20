@@ -1,13 +1,19 @@
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask } from '@/types/user';
+import type { UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
-import { getDesktopSessionFromSessionStorage } from '@/utils/user';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { useUserStore } from '@/stores/user';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
 
-export const getUserQuota = () =>
+export const getWorkspaceQuota = () =>
   GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
+    quota: WorkspaceQuotaItem[];
+  }>('/api/platform/getQuota', undefined, {
+    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
+    headers: {
+      'X-Desktop-Token': useUserStore.getState()?.session?.token
+    }
+  });
 
 export const getUserIsOutStandingPayment = () =>
   GET<{
@@ -23,12 +29,12 @@ export const postAuthCname = (data: { publicDomain: string; customDomain: string
 
 export const getUserTasks = () =>
   POST<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', {
-    desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
+    desktopToAppToken: useUserStore.getState()?.session?.token
   });
 
 export const checkUserTask = () =>
   POST('/api/guide/checkTask', {
-    desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
+    desktopToAppToken: useUserStore.getState()?.session?.token
   });
 
 export const checkReady = (devboxName: string) =>

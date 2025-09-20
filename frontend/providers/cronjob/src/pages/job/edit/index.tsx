@@ -6,6 +6,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { useJobStore } from '@/store/job';
+import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import { CronJobEditType } from '@/types/job';
 import { serviceSideProps } from '@/utils/i18n';
@@ -20,6 +21,8 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import useEnvStore from '@/store/env';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -43,8 +46,12 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const { loadJobDetail } = useJobStore();
+  const { checkExceededQuotas, session, loadUserQuota, userQuota } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
   const isEdit = useMemo(() => !!jobName, [jobName]);
+  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<any[]>([]);
+  const { SystemEnv } = useEnvStore();
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t(applyMessage)
@@ -73,6 +80,42 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
     setForceUpdate(!forceUpdate);
   });
 
+  // Load user quota on mount
+  useEffect(() => {
+    loadUserQuota();
+  }, [loadUserQuota]);
+
+  // Calculate exceeded quotas function
+  const calculateExceededQuotas = useCallback(() => {
+    const exceeded = checkExceededQuotas({
+      cpu: SystemEnv.podCpuRequest,
+      memory: SystemEnv.podMemoryRequest,
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+    });
+
+    return exceeded;
+  }, [checkExceededQuotas, SystemEnv, session]);
+
+  // Initialize exceeded quotas with default values
+  useEffect(() => {
+    if (userQuota.length > 0 && SystemEnv.podCpuRequest && SystemEnv.podMemoryRequest) {
+      const defaultExceededQuotas = calculateExceededQuotas();
+      setExceededQuotas(defaultExceededQuotas);
+    }
+  }, [userQuota, SystemEnv, calculateExceededQuotas]);
+
+  // Refresh user quota on dialog open
+  const handleInsufficientQuotaDialogOpenChange = useCallback(
+    async (open: boolean) => {
+      if (open) {
+        await loadUserQuota();
+      }
+
+      setIsInsufficientQuotaDialogOpen(open);
+    },
+    [setIsInsufficientQuotaDialogOpen, loadUserQuota]
+  );
+
   const submitSuccess = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -90,6 +133,24 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
     }
     setIsLoading(false);
   }, [applySuccess, isEdit, setIsLoading, t, toast, yamlList]);
+
+  const confirmSubmit = () => {
+    setIsInsufficientQuotaDialogOpen(false);
+    formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+  };
+
+  const handleSubmit = () => {
+    // Calculate exceeded quotas based on current form data
+    const currentExceededQuotas = calculateExceededQuotas();
+    setExceededQuotas(currentExceededQuotas);
+
+    if (currentExceededQuotas.length <= 0) {
+      confirmSubmit();
+      return;
+    }
+
+    setIsInsufficientQuotaDialogOpen(true);
+  };
 
   const submitError = useCallback(() => {
     // deep search message
@@ -163,7 +224,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+          applyCb={handleSubmit}
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
@@ -179,6 +240,14 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
       {!!errorMessage && (
         <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
       )}
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        onOpenChange={handleInsufficientQuotaDialogOpenChange}
+        open={isInsufficientQuotaDialogOpen}
+        onConfirm={() => {}}
+        showControls={false}
+      />
     </>
   );
 };
