@@ -299,9 +299,9 @@ export const defaultDBEditValue: DBEditType = {
   },
   terminationPolicy: 'Delete',
   parameterConfig: {
-    maxConnections: '',
-    timeZone: '',
-    lowerCaseTableNames: '',
+    maxConnections: undefined,
+    timeZone: 'UTC',
+    lowerCaseTableNames: '0',
     isMaxConnectionsCustomized: false
   }
 };

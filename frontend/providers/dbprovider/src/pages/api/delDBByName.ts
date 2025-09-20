@@ -8,6 +8,8 @@ import { delBackupByName } from './backup/delBackup';
 import { getMigrateList } from './migrate/list';
 import { delMigrateByName } from './migrate/delete';
 import { DeleteJobByName, GetJobByName } from './migrate/delJobByName';
+import { getCluster } from './getDBByName';
+import { adaptDBDetail } from '@/utils/adapt';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -71,32 +73,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     ]);
 
-    // delete configurations
-    const configurationNames = [
-      `${name}-postgresql`,
-      `${name}-mysql`,
-      `${name}-mongodb`,
-      `${name}-redis`
-    ];
+    const body = await getCluster(req, name);
+    const dbDetail = adaptDBDetail(body);
+    const configName = `${name}-${
+      dbDetail.dbType === 'apecloud-mysql' ? 'mysql' : dbDetail.dbType
+    }`;
 
-    await Promise.all(
-      configurationNames.map((configName) =>
-        k8sCustomObjects
-          .deleteNamespacedCustomObject(
-            'apps.kubeblocks.io',
-            'v1alpha1',
-            namespace,
-            'configurations',
-            configName
-          )
-          .catch((err) => {
-            // Ignore 404 errors for configurations that don't exist
-            if (err?.response?.statusCode !== 404) {
-              console.log('Error deleting configuration:', configName, err);
-            }
-          })
+    await k8sCustomObjects
+      .deleteNamespacedCustomObject(
+        'apps.kubeblocks.io',
+        'v1alpha1',
+        namespace,
+        'configurations',
+        configName
       )
-    );
+      .catch((err) => {
+        // Ignore 404 errors for configurations that don't exist
+        if (err?.response?.statusCode !== 404) {
+          console.log('Error deleting configuration:', configName, err);
+        }
+      });
 
     // delete cluster
     const result = await k8sCustomObjects.deleteNamespacedCustomObject(

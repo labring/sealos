@@ -1094,10 +1094,9 @@ export const json2ParameterConfig = (
     if (parameterConfig?.timeZone) {
       mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
     }
-    const lowerCaseTableNames =
-      parameterConfig?.lowerCaseTableNames !== undefined
-        ? parameterConfig.lowerCaseTableNames
-        : '0';
+    const lowerCaseTableNames = parameterConfig?.lowerCaseTableNames
+      ? parameterConfig.lowerCaseTableNames
+      : '0';
 
     mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
 
