@@ -210,12 +210,8 @@ const Form = ({
     return base;
   }, [cpuCores]);
 
-  const timeZone =
-    watch('parameterConfig')?.timeZone ||
-    (getValues('dbType') === DBTypeEnum.mysql || getValues('dbType') === DBTypeEnum.postgresql
-      ? 'UTC'
-      : '');
-  const lowerCaseTableNames = watch('parameterConfig')?.lowerCaseTableNames || '0';
+  const timeZone = watch('parameterConfig')?.timeZone;
+  const lowerCaseTableNames = watch('parameterConfig')?.lowerCaseTableNames;
   const maxConnections = watch('parameterConfig')?.maxConnections;
   const isMaxConnectionsCustomized = watch('parameterConfig')?.isMaxConnectionsCustomized;
 
@@ -359,24 +355,6 @@ const Form = ({
       setValue('memory', minMemory);
     }
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
-
-    if (!getValues('parameterConfig')) {
-      const dbType = getValues('dbType');
-      const defaultConfig: any = {};
-
-      // Add timezone for mysql and postgresql
-      if (dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.postgresql) {
-        defaultConfig.timeZone = 'UTC';
-      }
-
-      // Add lower_case_table_names for mysql only
-      if (dbType === DBTypeEnum.mysql) {
-        defaultConfig.lowerCaseTableNames = '0';
-      }
-
-      // maxConnections will be calculated dynamically, no need to set default
-      setValue('parameterConfig', defaultConfig);
-    }
   }, [getValues, allocatedStorage, isEdit, minCPU, minMemory, setValue, minStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
