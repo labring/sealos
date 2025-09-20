@@ -285,20 +285,6 @@ jobs:
         run: |
           sudo bash ./.github/scripts/install.sh
 
-      - name: Sealos login to ghcr.io
-        env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
-
-      - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        env:
-          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
-          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
-        run: |
-          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
         working-directory: frontend/${{ inputs.module }}/deploy
@@ -331,6 +317,21 @@ jobs:
             sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
             sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
           fi
+
+      - name: Sealos login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
         env:
