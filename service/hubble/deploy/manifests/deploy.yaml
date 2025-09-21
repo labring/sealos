@@ -22,6 +22,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: service-hubble-sa
+    namespace: hubble-service
 roleRef:
   kind: ClusterRole
   name: service-hubble-role
