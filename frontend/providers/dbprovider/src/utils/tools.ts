@@ -253,6 +253,37 @@ export const storageFormatToNum = (storage = '0') => {
 };
 
 /**
+ * Parse storage value to Gi units
+ * @param value Storage value string
+ * @param defaultValue Default value if parsing fails
+ * @returns Storage value in Gi units
+ */
+export const storageFormatToGi = (value: string | undefined, defaultValue: number = 0): number => {
+  if (!value) return defaultValue;
+
+  const valueStr = value.toString();
+  let numValue: number;
+
+  if (valueStr.endsWith('Gi')) {
+    numValue = parseFloat(valueStr.slice(0, -2));
+  } else if (valueStr.endsWith('Mi')) {
+    numValue = parseInt(valueStr.slice(0, -2)) / 1024;
+  } else if (valueStr.endsWith('Ti')) {
+    numValue = parseFloat(valueStr.slice(0, -2)) * 1024;
+  } else if (valueStr.endsWith('G')) {
+    numValue = parseFloat(valueStr.slice(0, -1));
+  } else if (valueStr.endsWith('M')) {
+    numValue = parseInt(valueStr.slice(0, -1)) / 1024;
+  } else if (valueStr.endsWith('T')) {
+    numValue = parseFloat(valueStr.slice(0, -1)) * 1024;
+  } else {
+    numValue = parseFloat(valueStr);
+  }
+
+  return isNaN(numValue) ? defaultValue : numValue;
+};
+
+/**
  * print memory to Mi of Gi
  */
 export const printMemory = (val: number) => {
