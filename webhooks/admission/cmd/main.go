@@ -141,6 +141,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = builder.WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&v1.PodMutator{}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create pod webhook")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
