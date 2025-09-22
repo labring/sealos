@@ -300,7 +300,14 @@ jobs:
         run: |
           OLD_DOCKER_IMAGE_NAME="${OLD_DOCKER_REPO}:latest"
           NEW_DOCKER_IMAGE_NAME="${NEW_DOCKER_REPO}:${TAG_NAME}"
-          sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+          if [[ -d manifests ]]; then
+             echo "Found manifests"
+             sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+          fi
+          if [[ -f charts/${{ matrix.module }}/values.yaml ]]; then
+             echo "Found charts charts/${{ matrix.module }}/values.yaml"
+             sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" charts/${{ matrix.module }}/values.yaml
+          fi
 
       - name: Build ${{ matrix.module }}-service cluster image
         working-directory: service/${{ matrix.module }}/deploy
