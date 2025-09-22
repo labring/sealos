@@ -1,6 +1,6 @@
 {
   "name": "sealos-desktop-sdk",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "sealos desktop sdk",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
