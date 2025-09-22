@@ -77,6 +77,7 @@ const TemplateCard = ({
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const { data: templateVersions } = useQuery({
     queryKey: ['template-versions', templateRepositoryUid],
@@ -123,11 +124,13 @@ const TemplateCard = ({
     <>
       <Card
         className={cn(
-          'group relative flex w-full max-w-[375px] flex-col items-start border bg-white hover:border-zinc-900',
+          'relative flex w-full max-w-[375px] flex-col items-start border bg-white hover:border-zinc-900',
           isDisabled &&
             'pointer-events-none cursor-not-allowed select-none before:absolute before:inset-0 before:z-10 before:bg-white/10 [&_*]:cursor-not-allowed [&_*]:opacity-80',
           forceHover && !guide3 && 'border-zinc-900'
         )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* top */}
         <div className="flex w-full flex-col items-start gap-2 px-4 pt-4 pb-3">
@@ -176,7 +179,10 @@ const TemplateCard = ({
             {/* action */}
             <div className="flex items-center gap-1">
               <Button
-                className="invisible opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100"
+                className={cn(
+                  'transition-all duration-200',
+                  isHovered ? 'visible opacity-100' : 'invisible opacity-0'
+                )}
                 size="sm"
                 onClick={handleSelectTemplate}
                 disabled={isDisabled || !selectedVersion}
