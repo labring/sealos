@@ -6,6 +6,7 @@ import { ResponseCode, ResponseMessages } from '@/types/response';
 import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { DBTypeEnum, defaultDBEditValue } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
+import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
 import z from 'zod';
 
 const restoreBodySchema = z.object({
@@ -20,67 +21,21 @@ function parseKubernetesResource(
 ): number {
   if (!value) return defaultValue;
 
-  if (resourceType === 'cpu') {
-    if (value.endsWith('m')) {
-      const numValue = parseInt(value.slice(0, -1));
-      return isNaN(numValue) ? defaultValue : numValue;
+  try {
+    if (resourceType === 'cpu') {
+      if (value.endsWith('m')) {
+        return cpuFormatToM(value);
+      } else {
+        const numValue = parseFloat(value);
+        return isNaN(numValue) ? defaultValue : numValue;
+      }
+    } else if (resourceType === 'memory') {
+      return memoryFormatToMi(value);
+    } else if (resourceType === 'storage') {
+      return storageFormatToGi(value, defaultValue);
     }
-    const numValue = parseFloat(value);
-    return isNaN(numValue) ? defaultValue : numValue;
-  }
-
-  if (resourceType === 'memory') {
-    if (value.endsWith('Mi')) {
-      const numValue = parseInt(value.slice(0, -2));
-      return isNaN(numValue) ? defaultValue : numValue;
-    }
-    if (value.endsWith('Gi')) {
-      const numValue = parseFloat(value.slice(0, -2));
-      return isNaN(numValue) ? defaultValue : numValue * 1024;
-    }
-    if (value.endsWith('Ki')) {
-      const numValue = parseInt(value.slice(0, -2));
-      return isNaN(numValue) ? defaultValue : Math.round(numValue / 1024);
-    }
-    if (value.endsWith('M')) {
-      const numValue = parseInt(value.slice(0, -1));
-      return isNaN(numValue) ? defaultValue : numValue;
-    }
-    if (value.endsWith('G')) {
-      const numValue = parseFloat(value.slice(0, -1));
-      return isNaN(numValue) ? defaultValue : numValue * 1024;
-    }
-    const numValue = parseFloat(value);
-    return isNaN(numValue) ? defaultValue : numValue;
-  }
-
-  if (resourceType === 'storage') {
-    if (value.endsWith('Gi')) {
-      const numValue = parseFloat(value.slice(0, -2));
-      return isNaN(numValue) ? defaultValue : numValue;
-    }
-    if (value.endsWith('Mi')) {
-      const numValue = parseInt(value.slice(0, -2));
-      return isNaN(numValue) ? defaultValue : numValue / 1024;
-    }
-    if (value.endsWith('Ti')) {
-      const numValue = parseFloat(value.slice(0, -2));
-      return isNaN(numValue) ? defaultValue : numValue * 1024;
-    }
-    if (value.endsWith('G')) {
-      const numValue = parseFloat(value.slice(0, -1));
-      return isNaN(numValue) ? defaultValue : numValue;
-    }
-    if (value.endsWith('M')) {
-      const numValue = parseInt(value.slice(0, -1));
-      return isNaN(numValue) ? defaultValue : numValue / 1024;
-    }
-    if (value.endsWith('T')) {
-      const numValue = parseFloat(value.slice(0, -1));
-      return isNaN(numValue) ? defaultValue : numValue * 1024;
-    }
-    const numValue = parseFloat(value);
-    return isNaN(numValue) ? defaultValue : numValue;
+  } catch (error) {
+    console.error('Error parsing resource:', error);
   }
 
   return defaultValue;
