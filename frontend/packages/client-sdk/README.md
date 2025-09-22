@@ -2,10 +2,6 @@
 
 > 🚀 Secure and efficient communication solution designed for iframe micro-frontend architecture
 
-[![npm version](https://img.shields.io/npm/v/@zjy365/sealos-desktop-sdk.svg)](https://www.npmjs.com/package/@zjy365/sealos-desktop-sdk)
-[![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
-[![License](https://img.shields.io/npm/l/@zjy365/sealos-desktop-sdk.svg)](https://github.com/labring/sealos/blob/main/LICENSE.md)
-
 ## 🌟 Features
 
 - ✅ **Type Safe**: Complete TypeScript support, reducing runtime errors
