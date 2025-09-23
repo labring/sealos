@@ -23,8 +23,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// Default oversell ratio values
+	defaultOversellRatio = 10 // 10x oversell for normal pods
+	defaultDatabaseRatio = 5  // 5x oversell for database pods
+)
+
 func TestPodMutator_Default(t *testing.T) {
-	mutator := NewPodMutator()
+	mutator := &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
 
 	tests := []struct {
 		name        string
@@ -286,7 +295,10 @@ func TestPodMutator_Default(t *testing.T) {
 }
 
 func TestPodMutator_getOversellRatio(t *testing.T) {
-	mutator := NewPodMutator()
+	mutator := &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
 
 	tests := []struct {
 		name     string
@@ -353,7 +365,10 @@ func TestPodMutator_getOversellRatio(t *testing.T) {
 }
 
 func TestPodMutator_DatabasePodFirstContainerOnly(t *testing.T) {
-	mutator := NewPodMutator()
+	mutator := &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
 
 	tests := []struct {
 		name                  string
@@ -467,8 +482,11 @@ func TestPodMutator_DatabasePodFirstContainerOnly(t *testing.T) {
 	}
 }
 
-func TestNewPodMutator(t *testing.T) {
-	mutator := NewPodMutator()
+func TestPodMutator_DefaultValues(t *testing.T) {
+	mutator := &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
 
 	if mutator.DefaultOversellRatio != 10 {
 		t.Errorf("Expected DefaultOversellRatio to be 10, got %d", mutator.DefaultOversellRatio)
@@ -573,7 +591,10 @@ func TestPodMutator_CustomRatios(t *testing.T) {
 }
 
 func TestPodMutator_ZeroLimits(t *testing.T) {
-	mutator := NewPodMutator()
+	mutator := &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
 
 	tests := []struct {
 		name        string
