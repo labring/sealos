@@ -57,6 +57,9 @@ spec:
           envFrom:
           - configMapRef:
               name: account-manager-env
+          - secretRef:
+              name: payment-secret
+              optional: true
           resources:
             requests:
               cpu: 50m
