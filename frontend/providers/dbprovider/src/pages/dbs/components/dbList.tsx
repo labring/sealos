@@ -14,6 +14,7 @@ import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
+import { Search } from 'lucide-react';
 import {
   Box,
   Button,
@@ -65,7 +66,6 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
-import { Search } from 'lucide-react';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -722,7 +722,7 @@ const DBList = ({
         <Box flex={1}></Box>
         <InputGroup w={'200px'} h={'36px'} mr={'12px'}>
           <InputLeftElement pointerEvents="none" h="full" alignItems="center">
-            {isClientSide && <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+            {isClientSide && <Search size={16} color="#5F6369" />}
           </InputLeftElement>
           <Input
             placeholder={t('search_name_and_remark_placeholder')}
