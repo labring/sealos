@@ -82,14 +82,6 @@ const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros
                 })}
               </span>
             </div>
-            <div className="flex w-full items-start gap-1.5 pl-5">
-              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
-              <span className="text-xs/4 text-zinc-500">
-                {t.rich('normal_shutdown_mode_desc_2', {
-                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
-                })}
-              </span>
-            </div>
           </div>
 
           {/* cold mode */}
