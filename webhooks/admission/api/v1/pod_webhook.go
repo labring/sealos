@@ -22,13 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
-	// Default oversell ratio values
-	defaultOversellRatio = 10 // 10x oversell for normal pods
-	defaultDatabaseRatio = 5  // 5x oversell for database pods
-
 	// Labels to identify KubeBlocks database pods
 	KubeBlocksManagedByLabel = "app.kubernetes.io/managed-by"
 	KubeBlocksManagedByValue = "kubeblocks"
@@ -41,14 +38,6 @@ type PodMutator struct {
 	DefaultOversellRatio int
 	// DatabaseOversellRatio is the oversell ratio for database pods
 	DatabaseOversellRatio int
-}
-
-// NewPodMutator creates a new PodMutator with default oversell ratios
-func NewPodMutator() *PodMutator {
-	return &PodMutator{
-		DefaultOversellRatio:  defaultOversellRatio,
-		DatabaseOversellRatio: defaultDatabaseRatio,
-	}
 }
 
 // NewPodMutatorWithRatios creates a new PodMutator with custom oversell ratios
@@ -187,5 +176,108 @@ func (r *PodMutator) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
 		WithDefaulter(r).
+		Complete()
+}
+
+//+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mpod.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:object:generate=false
+
+// PodValidator validates pods to prevent invalid resource configurations
+type PodValidator struct{}
+
+//+kubebuilder:webhook:path=/validate--v1-pod,mutating=false,failurePolicy=fail,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=vpod.sealos.io,admissionReviewVersions=v1
+
+// ValidateCreate implements webhook.Validator interface
+func (v *PodValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return fmt.Errorf("expected a Pod but got a %T", obj)
+	}
+
+	return v.validatePod(ctx, pod)
+}
+
+// ValidateUpdate implements webhook.Validator interface
+func (v *PodValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	pod, ok := newObj.(*corev1.Pod)
+	if !ok {
+		return fmt.Errorf("expected a Pod but got a %T", newObj)
+	}
+
+	return v.validatePod(ctx, pod)
+}
+
+// ValidateDelete implements webhook.Validator interface
+func (v *PodValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	// No validation needed for delete operations
+	return nil
+}
+
+// validatePod performs validation checks on the pod
+func (v *PodValidator) validatePod(ctx context.Context, pod *corev1.Pod) error {
+	request, _ := admission.RequestFromContext(ctx)
+
+	ctrl.Log.WithName("pod-validator").Info("Validating pod",
+		"name", pod.Name,
+		"namespace", pod.Namespace,
+		"user", request.UserInfo.Username)
+
+	// Validate all containers
+	for i, container := range pod.Spec.Containers {
+		if err := v.validateContainerResources(&container, fmt.Sprintf("container[%d]", i)); err != nil {
+			return err
+		}
+	}
+
+	// Validate init containers
+	for i, container := range pod.Spec.InitContainers {
+		if err := v.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateContainerResources validates that CPU and memory limits are not set to "0"
+func (v *PodValidator) validateContainerResources(
+	container *corev1.Container,
+	containerName string,
+) error {
+	if container.Resources.Limits == nil {
+		return nil // No limits to validate
+	}
+
+	// Check CPU limit
+	if cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]; exists {
+		if cpuLimit.IsZero() {
+			return fmt.Errorf(
+				"CPU limit cannot be set to '0' for %s '%s'",
+				containerName,
+				container.Name,
+			)
+		}
+	}
+
+	// Check Memory limit
+	if memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists {
+		if memLimit.IsZero() {
+			return fmt.Errorf(
+				"memory limit cannot be set to '0' for %s '%s'",
+				containerName,
+				container.Name,
+			)
+		}
+	}
+
+	return nil
+}
+
+// SetupWithManager sets up the validator webhook with the Manager
+func (v *PodValidator) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithValidator(v).
 		Complete()
 }
