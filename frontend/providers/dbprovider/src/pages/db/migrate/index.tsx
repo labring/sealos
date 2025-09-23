@@ -24,6 +24,7 @@ import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import useEnvStore from '@/store/env';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -52,6 +53,7 @@ const EditApp = ({
   });
   const { loadDBDetail } = useDBStore();
   const { screenWidth } = useGlobalStore();
+  const { SystemEnv } = useEnvStore();
 
   // load user quota on component mount
   useEffect(() => {
@@ -212,9 +214,8 @@ const EditApp = ({
   const handleCreateApp = useCallback(() => {
     // Check quota before creating app
     const exceededQuotaItems = checkExceededQuotas({
-      // [TODO] Do not let these limit hardcoded here
-      cpu: 2000,
-      memory: 4096,
+      cpu: SystemEnv.MIGRATION_JOB_CPU_REQUIREMENT,
+      memory: SystemEnv.MIGRATION_JOB_MEMORY_REQUIREMENT,
       ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
@@ -226,7 +227,7 @@ const EditApp = ({
       setExceededQuotas([]);
       formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
     }
-  }, [checkExceededQuotas, session, formHook, openConfirm, submitSuccess, submitError]);
+  }, [checkExceededQuotas, session, formHook, openConfirm, submitSuccess, submitError, SystemEnv]);
 
   return (
     <>
