@@ -25,17 +25,39 @@ import (
 )
 
 const (
-	// Default oversell ratios
-	DefaultOversellRatio  = 10 // 10x oversell for normal pods
-	DatabaseOversellRatio = 5  // 5x oversell for database pods
+	// Default oversell ratio values
+	defaultOversellRatio = 10 // 10x oversell for normal pods
+	defaultDatabaseRatio = 5  // 5x oversell for database pods
 
-	// Labels to identify pod types
-	DatabasePodLabel = "app.sealos.io/type"
-	DatabasePodValue = "database"
+	// Labels to identify KubeBlocks database pods
+	KubeBlocksManagedByLabel = "app.kubernetes.io/managed-by"
+	KubeBlocksManagedByValue = "kubeblocks"
+	KubeBlocksComponentLabel = "apps.kubeblocks.io/component-name"
 )
 
 // PodMutator mutates pods to adjust resource requests based on oversell ratios
-type PodMutator struct{}
+type PodMutator struct {
+	// DefaultOversellRatio is the oversell ratio for normal pods
+	DefaultOversellRatio int
+	// DatabaseOversellRatio is the oversell ratio for database pods
+	DatabaseOversellRatio int
+}
+
+// NewPodMutator creates a new PodMutator with default oversell ratios
+func NewPodMutator() *PodMutator {
+	return &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
+}
+
+// NewPodMutatorWithRatios creates a new PodMutator with custom oversell ratios
+func NewPodMutatorWithRatios(defaultRatio, databaseRatio int) *PodMutator {
+	return &PodMutator{
+		DefaultOversellRatio:  defaultRatio,
+		DatabaseOversellRatio: databaseRatio,
+	}
+}
 
 // Default implements webhook.Defaulter interface
 func (r *PodMutator) Default(ctx context.Context, obj runtime.Object) error {
@@ -46,22 +68,30 @@ func (r *PodMutator) Default(ctx context.Context, obj runtime.Object) error {
 
 	// Only apply oversell to namespaces starting with "ns-"
 	if !isUserNamespace(pod.Namespace) {
-		ctrl.Log.WithName("pod-mutator").Info("Skipping oversell mutation - namespace doesn't match pattern",
-			"namespace", pod.Namespace)
+		ctrl.Log.WithName("pod-mutator").
+			Info("Skipping oversell mutation - namespace doesn't match pattern",
+				"namespace", pod.Namespace)
 		return nil
 	}
 
-	ctrl.Log.WithName("pod-mutator").Info("Mutating pod", "name", pod.Name, "namespace", pod.Namespace)
+	ctrl.Log.WithName("pod-mutator").
+		Info("Mutating pod", "name", pod.Name, "namespace", pod.Namespace)
 
 	// Determine oversell ratio based on pod labels
 	oversellRatio := r.getOversellRatio(pod)
+	isDatabasePod := r.isDatabasePod(pod)
 
-	// Mutate each container's resource requests
-	for i := range pod.Spec.Containers {
-		r.mutateContainerResources(&pod.Spec.Containers[i], oversellRatio)
+	// For database pods, only process the first container
+	if isDatabasePod && len(pod.Spec.Containers) > 0 {
+		r.mutateContainerResources(&pod.Spec.Containers[0], oversellRatio)
+	} else {
+		// For non-database pods, mutate all containers
+		for i := range pod.Spec.Containers {
+			r.mutateContainerResources(&pod.Spec.Containers[i], oversellRatio)
+		}
 	}
 
-	// Mutate init containers if any
+	// Mutate init containers if any (for all pod types)
 	for i := range pod.Spec.InitContainers {
 		r.mutateContainerResources(&pod.Spec.InitContainers[i], oversellRatio)
 	}
@@ -69,14 +99,24 @@ func (r *PodMutator) Default(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
+// isDatabasePod checks if the pod is a KubeBlocks database pod
+func (r *PodMutator) isDatabasePod(pod *corev1.Pod) bool {
+	if pod.Labels == nil {
+		return false
+	}
+
+	managedBy, hasManagedBy := pod.Labels[KubeBlocksManagedByLabel]
+	_, hasComponent := pod.Labels[KubeBlocksComponentLabel]
+
+	return hasManagedBy && managedBy == KubeBlocksManagedByValue && hasComponent
+}
+
 // getOversellRatio determines the oversell ratio based on pod labels
 func (r *PodMutator) getOversellRatio(pod *corev1.Pod) int {
-	if pod.Labels != nil {
-		if podType, exists := pod.Labels[DatabasePodLabel]; exists && podType == DatabasePodValue {
-			return DatabaseOversellRatio
-		}
+	if r.isDatabasePod(pod) {
+		return r.DatabaseOversellRatio
 	}
-	return DefaultOversellRatio
+	return r.DefaultOversellRatio
 }
 
 // mutateContainerResources adjusts container resource requests based on oversell ratio
@@ -90,15 +130,15 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 	}
 
 	// Adjust CPU requests
-	if cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]; exists {
+	if cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]; exists &&
+		!cpuLimit.IsZero() {
 		maxCPURequest := r.calculateMaxRequest(cpuLimit, oversellRatio)
 		currentCPURequest := container.Resources.Requests[corev1.ResourceCPU]
 
-		// Always set the request to the maximum allowed (oversell ratio)
-		// This ensures all pods conform to the oversell ratio
-		container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
+		// Only adjust if current request exceeds the maximum allowed or is not set
+		if currentCPURequest.IsZero() || currentCPURequest.Cmp(maxCPURequest) > 0 {
+			container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
 
-		if !currentCPURequest.Equal(maxCPURequest) {
 			ctrl.Log.WithName("pod-mutator").Info("Adjusted CPU request",
 				"container", container.Name,
 				"originalRequest", currentCPURequest.String(),
@@ -109,15 +149,15 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 	}
 
 	// Adjust Memory requests
-	if memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists {
+	if memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists &&
+		!memLimit.IsZero() {
 		maxMemRequest := r.calculateMaxRequest(memLimit, oversellRatio)
 		currentMemRequest := container.Resources.Requests[corev1.ResourceMemory]
 
-		// Always set the request to the maximum allowed (oversell ratio)
-		// This ensures all pods conform to the oversell ratio
-		container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
+		// Only adjust if current request exceeds the maximum allowed or is not set
+		if currentMemRequest.IsZero() || currentMemRequest.Cmp(maxMemRequest) > 0 {
+			container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
 
-		if !currentMemRequest.Equal(maxMemRequest) {
 			ctrl.Log.WithName("pod-mutator").Info("Adjusted Memory request",
 				"container", container.Name,
 				"originalRequest", currentMemRequest.String(),
@@ -129,7 +169,10 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 }
 
 // calculateMaxRequest calculates the maximum allowed request based on limit and oversell ratio
-func (r *PodMutator) calculateMaxRequest(limit resource.Quantity, oversellRatio int) resource.Quantity {
+func (r *PodMutator) calculateMaxRequest(
+	limit resource.Quantity,
+	oversellRatio int,
+) resource.Quantity {
 	// Convert limit to millicores/bytes for calculation
 	limitValue := limit.MilliValue()
 	maxRequestValue := limitValue / int64(oversellRatio)
