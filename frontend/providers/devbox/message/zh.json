@@ -278,7 +278,6 @@
   "none_template_version": "当前没有可用的模板版本，因此无法继续使用该模板。请在项目详情页中添加新的模板版本以恢复使用。",
   "normal_shutdown_mode": "普通停机模式",
   "normal_shutdown_mode_desc": "停止实例后保留公网访问链接，并会收取少量<black>访问端口独占费</black>。所有计算资源 (CPU和内存) 暂停计费。",
-  "normal_shutdown_mode_desc_2": "可以<black>通过 IDE 直接执行</black>开机，重启操作。",
   "not_allow_standalone_use": "不允许独立使用",
   "notice": "注意事项",
   "official": "官方模板",

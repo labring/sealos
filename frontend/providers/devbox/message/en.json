@@ -276,7 +276,6 @@
   "none_template_version": "No versions of this Runtime are currently available, rendering it unusable. To restore functionality, please add a new version in the project details page.",
   "normal_shutdown_mode": "Normal Shutdown Mode",
   "normal_shutdown_mode_desc": "After stopping the instance, the public access link will be retained, and a small <black>port access fee</black> will be charged. Billing will be paused for all computing resources (CPU and memory).",
-  "normal_shutdown_mode_desc_2": "You can <black>directly perform boot and restart operations through the IDE</black>.",
   "not_allow_standalone_use": "Not allowed to use standalone",
   "notice": "Notice",
   "official": "Official",
