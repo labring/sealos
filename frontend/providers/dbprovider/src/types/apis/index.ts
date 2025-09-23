@@ -920,7 +920,7 @@ export const document = createDocument({
       }
     },
     '/database/{databaseName}/disablePublic': {
-      delete: {
+      post: {
         summary: 'Disable Public Access',
         description: 'Disable public access for a database by deleting the NodePort service.',
         security: [{ KubeconfigAuth: [] }],
