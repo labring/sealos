@@ -2,19 +2,8 @@ import { GET, POST } from '@/services/request';
 import type { UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
 import { AuthCnamePrams, AuthDomainChallengeParams } from '@/types/params';
-import { WorkspaceQuotaItem } from '@/types/workspace';
 import { useUserStore } from '@/stores/user';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
-
-export const getWorkspaceQuota = () =>
-  GET<{
-    quota: WorkspaceQuotaItem[];
-  }>('/api/platform/getQuota', undefined, {
-    // ? This API needs authenticate to account service using user info in DESKTOP SESSION.
-    headers: {
-      'X-Desktop-Token': useUserStore.getState()?.session?.token
-    }
-  });
 
 export const getUserIsOutStandingPayment = () =>
   GET<{
