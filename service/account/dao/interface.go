@@ -100,11 +100,13 @@ type Interface interface {
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	RefundAmount(ref types.PaymentRefund, postDo func(types.PaymentRefund) error) error
 	CreateCorporate(corporate types.Corporate) error
+	GetPaymentStatus(payID string) (types.PaymentStatus, error)
 
 	GetUserWorkspaceRole(userUID uuid.UUID, workspace string) (types.Role, error)
 	// WorkspaceSubscription methods
 	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
 	GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error)
+	GetAIQuota(workspace, regionDomain string) (total, used int64, err error)
 	ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error)
 	ListWorkspaceSubscriptionWorkspace(userUID uuid.UUID) ([]string, error)
 	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
@@ -115,6 +117,8 @@ type Interface interface {
 	GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, workspace string) (int64, error)
 	CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transaction ...*types.WorkspaceSubscriptionTransaction) error
 	GetUserStripeCustomerID(userUID uuid.UUID) (string, error)
+	GetWorkspaceRemainingAIQuota(workspace string) (RemainingQuota int64, err error)
+	ChargeWorkspaceAIQuota(usage int64, workspace string) error
 }
 
 type Account struct {
@@ -162,6 +166,73 @@ func (g *Cockroach) GetNotificationRecipient(userUID uuid.UUID) (*types.Notifica
 
 func (g *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, error) {
 	return g.ck.GetAccountWithWorkspace(workspace)
+}
+
+func (g *Cockroach) GetWorkspaceRemainingAIQuota(workspace string) (RemainingQuota int64, err error) {
+	// WorkspaceAIQuotaPackage
+	var pkgs []types.WorkspaceAIQuotaPackage
+	err = g.ck.GetGlobalDB().Model(&types.WorkspaceAIQuotaPackage{}).Where("workspace = ? AND expired_at > ? AND status = ?", workspace, time.Now(), types.PackageStatusActive).Find(&pkgs).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to get workspace ai quota package: %v", err)
+	}
+	for _, pkg := range pkgs {
+		RemainingQuota += pkg.Total - pkg.Usage
+	}
+	return RemainingQuota, nil
+}
+
+func (g *Cockroach) ChargeWorkspaceAIQuota(usage int64, workspace string) error {
+	err := g.ck.GetGlobalDB().Transaction(func(db *gorm.DB) error {
+		var pkgs []types.WorkspaceAIQuotaPackage
+		err := db.Model(&types.WorkspaceAIQuotaPackage{}).Where("workspace = ? AND expired_at > ? AND status = ?", workspace, time.Now(), types.PackageStatusActive).Order("expired_at asc").Find(&pkgs).Error
+		if err != nil {
+			return fmt.Errorf("failed to get workspace ai quota package: %v", err)
+		}
+		if len(pkgs) == 0 {
+			return fmt.Errorf("no active ai quota package found for workspace: %s", workspace)
+		}
+		for _, pkg := range pkgs {
+			available := pkg.Total - pkg.Usage
+			if available <= 0 {
+				continue
+			}
+			toDeduct := usage
+			if available < usage {
+				toDeduct = available
+			}
+			err = db.Model(&types.WorkspaceAIQuotaPackage{}).Where("id = ?", pkg.ID).UpdateColumn("usage", gorm.Expr("usage + ?", toDeduct)).Error
+			if err != nil {
+				return fmt.Errorf("failed to update usage for package %s: %v", pkg.ID, err)
+			}
+			usage -= toDeduct
+			if usage <= 0 {
+				break
+			}
+		}
+		if usage > 0 {
+			logrus.Errorf("insufficient AI quota in workspace: %s", workspace)
+		}
+		return nil
+	})
+	return err
+}
+
+func (g *Cockroach) GetPaymentStatus(payID string) (types.PaymentStatus, error) {
+	payment, err := g.ck.GetPaymentWithID(payID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			paymentOrder, err := g.ck.GetPaymentOrderWithID(payID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return "", fmt.Errorf("no payment found with id: %s", payID)
+				}
+				return "", fmt.Errorf("failed to get payment order with id: %v", err)
+			}
+			return types.PaymentStatus(paymentOrder.Status), nil
+		}
+		return "", fmt.Errorf("failed to get payment with id: %v", err)
+	}
+	return payment.Status, nil
 }
 
 func (g *Cockroach) GetWorkspaceName(namespaces []string) ([][]string, error) {

@@ -347,6 +347,9 @@ func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
 }
 
 func (r *AccountReconciler) addTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+	if plan.Traffic <= 0 {
+		return nil
+	}
 	totalBytes := plan.Traffic * 1024 * 1024 // Convert MiB to Bytes
 	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(globalDB, sub.ID, plan.Traffic, expireAt, from, fromID)
 	if err != nil {

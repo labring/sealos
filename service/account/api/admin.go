@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
+	corev1 "k8s.io/api/core/v1"
+	types2 "k8s.io/apimachinery/pkg/types"
+
 	"github.com/labring/sealos/controllers/pkg/pay"
 
 	"strings"
@@ -39,6 +42,29 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "empty workspace"})
 		return
 	}
+	ns := &corev1.Namespace{}
+	err = dao.K8sManager.GetClient().Get(context.Background(), types2.NamespacedName{Name: workspace}, ns)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get workspace %s: %v", workspace, err)})
+		return
+	}
+	if _, exist = ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; exist {
+		remainQuota, err := dao.DBClient.GetWorkspaceRemainingAIQuota(workspace)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace remaining quota: %v", err)})
+			return
+		}
+		userUID, err := dao.DBClient.GetWorkspaceUserUid(workspace)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace userUID: %v", err)})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"userUID": userUID,
+			"balance": remainQuota,
+		})
+		return
+	}
 	account, err := dao.DBClient.GetAccountWithWorkspace(workspace)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get account : %v", err)})
@@ -50,6 +76,7 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 	})
 }
 
+// TODO 这个接口后续变更为专属ai扣费接口
 // AdminChargeBilling ChargeBilling
 // @Summary Charge billing
 // @Description Charge billing
@@ -72,7 +99,17 @@ func AdminChargeBilling(c *gin.Context) {
 		return
 	}
 	helper.CallCounter.WithLabelValues("ChargeBilling", billingReq.UserUID.String()).Inc()
-	err = dao.DBClient.ChargeBilling(billingReq)
+	// TODO if Namespace is workspacesubscription, should charge to workspace ai quota
+	isSubscription, err := GetWorkspaceIsSubscription(billingReq.Namespace)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace subscription status: %v", err)})
+		return
+	}
+	if isSubscription {
+		err = dao.DBClient.ChargeWorkspaceAIQuota(billingReq.Amount, billingReq.Namespace)
+	} else {
+		err = dao.DBClient.ChargeBilling(billingReq)
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to charge billing : %v", err)})
 		return
@@ -80,6 +117,27 @@ func AdminChargeBilling(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "successfully charged billing",
 	})
+}
+
+var SubscriptionCache = make(map[string]bool)
+
+// TODO 使用缓存存储起来已订阅本地空间ns, 并且读写锁
+func GetWorkspaceIsSubscription(workspace string) (bool, error) {
+	if SubscriptionCache[workspace] {
+		return true, nil
+	}
+	ns := &corev1.Namespace{}
+	err := dao.K8sManager.GetClient().Get(context.Background(), types2.NamespacedName{Name: workspace}, ns)
+	if err != nil {
+		return false, fmt.Errorf("failed to get workspace %s: %v", workspace, err)
+	}
+	if _, exist := ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; exist {
+		SubscriptionCache[workspace] = true
+		return true, nil
+	}
+	// 未订阅ns不需要cache，随时会转为订阅状态
+	// SubscriptionCache[workspace] = false
+	return false, nil
 }
 
 // AdminGetUserRealNameInfo

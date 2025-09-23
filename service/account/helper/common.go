@@ -5,6 +5,7 @@ const (
 	GetAccount                    = "/account"
 	DeleteAccount                 = "/delete"
 	GetPayment                    = "/payment"
+	GetPaymentStatus              = "/payment/status"
 	GetHistoryNamespaces          = "/namespaces"
 	GetProperties                 = "/properties"
 	GetRechargeAmount             = "/costs/recharge"

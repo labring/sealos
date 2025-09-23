@@ -833,3 +833,20 @@ func ParseWorkspaceInfoReq(c *gin.Context) (*WorkspaceInfoReq, error) {
 	}
 	return req, nil
 }
+
+type PaymentStatusReq struct {
+	AuthBase `json:",inline" bson:",inline"`
+
+	PayID string `json:"payID" bson:"payID" binding:"required" example:"pay-123"`
+}
+
+func ParsePaymentStatusReq(c *gin.Context) (*PaymentStatusReq, error) {
+	req := &PaymentStatusReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if req.PayID == "" {
+		return nil, fmt.Errorf("payID cannot be empty")
+	}
+	return req, nil
+}

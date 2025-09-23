@@ -28,11 +28,12 @@ type WorkspaceSubscription struct {
 	CurrentPeriodEndAt   time.Time `gorm:"column:current_period_end_at"`              // 当前周期结束时间
 	CancelAtPeriodEnd    bool      `gorm:"column:cancel_at_period_end;default:false"` // 是否在当前周期结束时取消订阅
 
-	CancelAt time.Time          `gorm:"column:cancel_at"`                                 // 取消订阅时间
-	CreateAt time.Time          `gorm:"column:create_at"`                                 // 创建时间
-	UpdateAt time.Time          `gorm:"column:update_at;autoCreateTime"`                  // 更新时间
-	ExpireAt *time.Time         `gorm:"column:expire_at"`                                 // 过期时间
-	Traffic  []WorkspaceTraffic `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"` // 关联的流量数据
+	CancelAt time.Time                 `gorm:"column:cancel_at"`                                 // 取消订阅时间
+	CreateAt time.Time                 `gorm:"column:create_at"`                                 // 创建时间
+	UpdateAt time.Time                 `gorm:"column:update_at;autoCreateTime"`                  // 更新时间
+	ExpireAt *time.Time                `gorm:"column:expire_at"`                                 // 过期时间
+	Traffic  []WorkspaceTraffic        `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"` // 关联的流量数据
+	AIQuota  []WorkspaceAIQuotaPackage `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"` // 关联的AI配额数据
 }
 
 // TODO CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);
@@ -66,6 +67,7 @@ type WorkspaceSubscriptionPlan struct {
 	MaxSeats          int            `gorm:"not null;column:max_seats"`                                // 最大席位数
 	MaxResources      string         `gorm:"column:max_resources"`                                     // 最大资源数: map[string]string: {"cpu": "4", "memory": "8Gi", "storage": "100Gi"}
 	Traffic           int64          `gorm:"type:bigint;column:traffic"`                               // 包含流量包大小, 单位: MB
+	AIQuota           int64          `gorm:"type:bigint;column:ai_quota"`                              // 包含AI配额大小
 	CreatedAt         time.Time      `gorm:"column:created_at;autoCreateTime"`                         // 创建时间
 	UpdatedAt         time.Time      `gorm:"column:updated_at;autoUpdateTime"`                         // 更新时间
 	Order             int            `gorm:"column:order"`                                             // 排序号

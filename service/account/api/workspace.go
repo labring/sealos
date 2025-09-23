@@ -93,6 +93,11 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get workspace subscription traffic: %v", err)})
 		return
 	}
+	aiQuotaTotal, aiQuotaUsed, err := dao.DBClient.GetAIQuota(req.Workspace, dao.DBClient.GetLocalRegion().Domain)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get AI quota: %v", err)})
+		return
+	}
 	// 创建自定义配额状态
 	customQuota := CustomResourceQuotaStatus{
 		Hard: make(map[v1.ResourceName]interface{}),
@@ -101,18 +106,15 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 
 	// 复制现有配额数据（除了 traffic）
 	for key, value := range resQuota.Status.Hard {
-		if key != "traffic" {
-			customQuota.Hard[key] = value
-		}
+		customQuota.Hard[key] = value
 	}
 	for key, value := range resQuota.Status.Used {
-		if key != "traffic" {
-			customQuota.Used[key] = value
-		}
+		customQuota.Used[key] = value
 	}
-
 	customQuota.Hard["traffic"] = total
 	customQuota.Used["traffic"] = used
+	customQuota.Hard["ai_quota"] = aiQuotaTotal
+	customQuota.Used["ai_quota"] = aiQuotaUsed
 	c.JSON(http.StatusOK, struct {
 		Quota CustomResourceQuotaStatus `json:"quota"`
 	}{
