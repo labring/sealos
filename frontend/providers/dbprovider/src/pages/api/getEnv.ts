@@ -16,6 +16,12 @@ export type SystemEnvResponse = {
   GATEWAY_DOMAIN_NAME: string;
   MANAGED_DB_ENABLED: string;
   CHAT2DB_AES_KEY: string;
+  MIGRATION_JOB_CPU_REQUIREMENT: number;
+  MIGRATION_JOB_MEMORY_REQUIREMENT: number;
+  DUMPIMPORT_JOB_CPU_REQUIREMENT: number;
+  DUMPIMPORT_JOB_MEMORY_REQUIREMENT: number;
+  BACKUP_JOB_CPU_REQUIREMENT: number;
+  BACKUP_JOB_MEMORY_REQUIREMENT: number;
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -41,7 +47,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       CLIENT_DOMAIN_NAME: process.env.CLIENT_DOMAIN_NAME || '',
       GATEWAY_DOMAIN_NAME: process.env.GATEWAY_DOMAIN_NAME || '',
       MANAGED_DB_ENABLED: process.env.MANAGED_DB_ENABLED || '',
-      CHAT2DB_AES_KEY: process.env.CHAT2DB_AES_KEY || ''
+      CHAT2DB_AES_KEY: process.env.CHAT2DB_AES_KEY || '',
+      MIGRATION_JOB_CPU_REQUIREMENT: Number(process.env.MIGRATION_JOB_CPU_REQUIREMENT ?? 0),
+      MIGRATION_JOB_MEMORY_REQUIREMENT: Number(process.env.MIGRATION_JOB_MEMORY_REQUIREMENT ?? 0),
+      DUMPIMPORT_JOB_CPU_REQUIREMENT: Number(process.env.DUMPIMPORT_JOB_CPU_REQUIREMENT ?? 0),
+      DUMPIMPORT_JOB_MEMORY_REQUIREMENT: Number(process.env.DUMPIMPORT_JOB_MEMORY_REQUIREMENT ?? 0),
+      BACKUP_JOB_CPU_REQUIREMENT: Number(process.env.BACKUP_JOB_CPU_REQUIREMENT ?? 0),
+      BACKUP_JOB_MEMORY_REQUIREMENT: Number(process.env.BACKUP_JOB_MEMORY_REQUIREMENT ?? 0)
     }
   });
 }

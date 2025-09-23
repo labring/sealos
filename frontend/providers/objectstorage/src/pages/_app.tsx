@@ -1,5 +1,6 @@
 import { initUser } from '@/api/bucket';
 import { QueryKey } from '@/consts';
+import useEnvStore from '@/store/env';
 import { useOssStore } from '@/store/ossStore';
 import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
@@ -26,11 +27,13 @@ function App({ Component, pageProps }: AppProps) {
   const initMinioClient = useOssStore((s) => s.initClient);
   const client = useOssStore((s) => s.client);
   const { session: oldSession, setSession } = useSessionStore();
+  const { initSystemEnv } = useEnvStore();
   const { clearClient, setSecret, secret } = useOssStore((s) => s);
   const router = useRouter();
 
   useEffect(() => {
     createSealosApp();
+    initSystemEnv();
   }, []);
 
   useEffect(() => {
