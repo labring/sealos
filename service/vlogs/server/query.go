@@ -132,7 +132,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	if len(req.Time) != 0 {
 		item = fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
 	} else {
-		item = fmt.Sprintf(`app:="%s" `, req.App)
+		item = fmt.Sprintf(` app:="%s" `, req.App)
 	}
 	builder.WriteString(item)
 	// if query stderr and number,using stderr first.
