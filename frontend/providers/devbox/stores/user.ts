@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-import { getWorkspaceQuota, getUserIsOutStandingPayment } from '@/api/platform';
+import { getUserIsOutStandingPayment } from '@/api/platform';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import { SessionV1 } from 'sealos-desktop-sdk';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 type State = {
   session: SessionV1 | null;
@@ -28,7 +29,7 @@ export const useUserStore = create<State>()(
       userQuota: [],
       isOutStandingPayment: false,
       loadUserQuota: async () => {
-        const response = await getWorkspaceQuota();
+        const response = await sealosApp.getWorkspaceQuota();
         set((state) => {
           state.userQuota = response.quota;
         });
