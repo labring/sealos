@@ -23,7 +23,7 @@ const (
 
 // init Committer
 func TestNewCommitter(t *testing.T) {
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 	assert.NotNil(t, committer)
 }
@@ -33,7 +33,7 @@ func TestCommitFlow(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. create committer
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// 2. prepare test data
@@ -49,7 +49,7 @@ func TestCommitFlow(t *testing.T) {
 // test create container
 func TestCreateContainer(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// create container
@@ -68,7 +68,7 @@ func TestCreateContainer(t *testing.T) {
 // test delete container
 func TestDeleteContainer(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// create a container
@@ -108,7 +108,7 @@ func TestDeleteContainer(t *testing.T) {
 // test remove container
 func TestRemoveContainer(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 	// create a container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
@@ -147,7 +147,7 @@ func TestRemoveContainer(t *testing.T) {
 // test error cases
 func TestErrorCases(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// test use not exist image to create container
@@ -166,7 +166,7 @@ func TestErrorCases(t *testing.T) {
 // test concurrent operations
 func TestConcurrentOperations(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// concurrent to create container
@@ -215,7 +215,7 @@ func TestConcurrentOperations(t *testing.T) {
 // test runtime selection
 func TestRuntimeSelection(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// create container with specific runtime
@@ -249,7 +249,7 @@ func TestRuntimeSelection(t *testing.T) {
 // test connection management
 func TestConnectionManagement(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 	defer committer.(*CommitterImpl).Close()
 
@@ -301,7 +301,7 @@ func TestPushToDockerHub(t *testing.T) {
 	registryUser := "cunzili"
 	registryPassword := "123456789"
 
-	committer, err := NewCommitter(registryAddr, registryUser, registryPassword)
+	committer, err := NewCommitter(registryAddr, registryUser, registryPassword, true)
 	if err != nil {
 		t.Errorf("Skip Docker Hub push test: failed to create committer: %v", err)
 	}
@@ -362,7 +362,7 @@ func TestPushWithoutAuth(t *testing.T) {
 	registryUser := ""
 	registryPassword := ""
 
-	committer, err := NewCommitter(registryAddr, registryUser, registryPassword)
+	committer, err := NewCommitter(registryAddr, registryUser, registryPassword, true)
 	if err != nil {
 		t.Skipf("Skip no-auth push test: failed to create committer: %v", err)
 	}
@@ -393,7 +393,7 @@ func TestPushWithoutAuth(t *testing.T) {
 // test remove image
 func TestRemoveImage(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// create a test devbox name and content id
@@ -422,7 +422,7 @@ func TestRemoveImage(t *testing.T) {
 func TestAtomicLabels(t *testing.T) {
 	ctx := context.Background()
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
 	// 1. create a test container
@@ -505,7 +505,7 @@ func TestAtomicLabels(t *testing.T) {
 // test get image
 func TestGetImage(t *testing.T) {
 	ctx := context.Background()
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	images, err := committer.(*CommitterImpl).containerdClient.ListImages(ctx)
@@ -521,7 +521,7 @@ func TestGCFlow(t *testing.T) {
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// create committer
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 	defer committer.(*CommitterImpl).Close()
 
@@ -609,7 +609,7 @@ func TestPeriodicGC(t *testing.T) {
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// create committer
-	committer, err := NewCommitter("", "", "")
+	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 	err = committer.InitializeGC(ctx)
 	assert.NoError(t, err)

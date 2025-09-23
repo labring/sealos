@@ -47,6 +47,8 @@ type CommitterImpl struct {
 	registryAddr         string
 	registryUsername     string
 	registryPassword     string
+	// Merge base image layers control
+	mergeBaseImageTopLayer bool
 	// GC
 	gcContainerMap map[string]struct{}
 	gcImageMap     map[string]struct{}
@@ -54,7 +56,7 @@ type CommitterImpl struct {
 }
 
 // NewCommitter new a CommitterImpl with registry configuration
-func NewCommitter(registryAddr, registryUsername, registryPassword string) (Committer, error) {
+func NewCommitter(registryAddr, registryUsername, registryPassword string, merge bool) (Committer, error) {
 	var conn *grpc.ClientConn
 	var err error
 
@@ -101,16 +103,17 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string) (Comm
 	runtimeServiceClient := runtimeapi.NewRuntimeServiceClient(conn)
 
 	return &CommitterImpl{
-		runtimeServiceClient: runtimeServiceClient,
-		containerdClient:     containerdClient,
-		conn:                 conn,
-		globalOptions:        NewGlobalOptionConfig(),
-		registryAddr:         registryAddr,
-		registryUsername:     registryUsername,
-		registryPassword:     registryPassword,
-		gcContainerMap:       make(map[string]struct{}),
-		gcImageMap:           make(map[string]struct{}),
-		gcInterval:           DefaultGcInterval,
+		runtimeServiceClient:   runtimeServiceClient,
+		containerdClient:       containerdClient,
+		conn:                   conn,
+		globalOptions:          NewGlobalOptionConfig(),
+		registryAddr:           registryAddr,
+		registryUsername:       registryUsername,
+		registryPassword:       registryPassword,
+		gcContainerMap:         make(map[string]struct{}),
+		gcImageMap:             make(map[string]struct{}),
+		gcInterval:             DefaultGcInterval,
+		mergeBaseImageTopLayer: merge,
 	}, nil
 }
 
@@ -130,10 +133,14 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	// create container with labels
 	originalAnnotations := map[string]string{
 		v1alpha2.AnnotationContentID:    contentID,
-		v1alpha2.AnnotationInit:         AnnotationImageFromValue,
 		v1alpha2.AnnotationStorageLimit: AnnotationUseLimitValue,
 		AnnotationKeyNamespace:          DefaultNamespace,
 		AnnotationKeyImageName:          baseImage,
+	}
+
+	// Add merge base image layers annotation if enabled
+	if c.mergeBaseImageTopLayer {
+		originalAnnotations[v1alpha2.AnnotationInit] = AnnotationImageFromValue
 	}
 
 	// convert labels to "containerd.io/snapshot/devbox-" format
@@ -299,8 +306,9 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 		Stdout:   io.Discard,
 		GOptions: *global,
 		Pause:    PauseContainerDuringCommit,
+		// Remove base image top layer:
 		DevboxOptions: types.DevboxOptions{
-			RemoveBaseImageTopLayer: DevboxOptionsRemoveBaseImageTopLayer,
+			RemoveBaseImageTopLayer: c.mergeBaseImageTopLayer,
 		},
 	}
 

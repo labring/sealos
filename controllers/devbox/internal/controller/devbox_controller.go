@@ -64,7 +64,8 @@ type DevboxReconciler struct {
 
 	PodMatchers []matcher.PodMatcher
 
-	DebugMode bool
+	DebugMode              bool
+	MergeBaseImageTopLayer bool
 
 	client.Client
 	Scheme              *runtime.Scheme
@@ -322,12 +323,15 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 				return fmt.Errorf("current record is nil")
 			}
 			// create a new pod with default image, with new content id
-			pod := r.generateDevboxPod(devbox,
+			podOptions := []helper.DevboxPodOptions{
 				helper.WithPodImage(currentRecord.BaseImage),
 				helper.WithPodContentID(devbox.Status.ContentID),
 				helper.WithPodNodeName(currentRecord.Node),
-				helper.WithPodInit(commit.AnnotationImageFromValue),
-			)
+			}
+			if r.MergeBaseImageTopLayer {
+				podOptions = append(podOptions, helper.WithPodInit(commit.AnnotationImageFromValue))
+			}
+			pod := r.generateDevboxPod(devbox, podOptions...)
 			if err := r.Create(ctx, pod); err != nil {
 				return err
 			}
