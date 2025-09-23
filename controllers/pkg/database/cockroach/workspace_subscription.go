@@ -54,6 +54,19 @@ func (c *Cockroach) GetWorkspaceSubscriptionTraffic(workspace, regionDomain stri
 	return result.Total, result.Used, nil
 }
 
+func (c *Cockroach) GetAIQuota(workspace, regionDomain string) (total, used int64, err error) {
+	result := &struct {
+		Total int64 `gorm:"column:total"`
+		Used  int64 `gorm:"column:used"`
+	}{}
+	err = c.DB.Model(&types.WorkspaceAIQuotaPackage{}).Where("workspace = ? AND region_domain = ? AND status = ? AND expired_at > ?", workspace, regionDomain, types.PackageStatusActive, time.Now()).
+		Select("SUM(total) as total, SUM(usage) as used").Scan(result).Error
+	if err != nil {
+		return 0, 0, err
+	}
+	return result.Total, result.Used, nil
+}
+
 // ListWorkspaceSubscription lists all subscriptions for a given user UID.
 func (c *Cockroach) ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error) {
 	var subscriptions []types.WorkspaceSubscription
@@ -128,6 +141,38 @@ func AddWorkspaceSubscriptionTrafficPackage(globalDB *gorm.DB, subscriptionID uu
 	err = globalDB.Where("workspace_subscription_id = ?", subscriptionID).FirstOrCreate(&trafficPackage).Error
 	if err != nil {
 		return fmt.Errorf("failed to create traffic package: %v", err)
+	}
+	return nil
+}
+
+func AddWorkspaceSubscriptionAIQuotaPackage(globalDB *gorm.DB, subscriptionID uuid.UUID, aiQuota int64, expireAt time.Time, from types.PackageFrom, fromID string) error {
+	if aiQuota <= 0 {
+		return nil
+	}
+	// Get workspace subscription
+	var subscription types.WorkspaceSubscription
+	err := globalDB.Where(&types.WorkspaceSubscription{ID: subscriptionID}).Find(&subscription).Error
+	if err != nil {
+		return fmt.Errorf("failed to get workspace subscription: %v", err)
+	}
+	// Create new AI quota package
+	aiQuotaPackage := types.WorkspaceAIQuotaPackage{
+		ID:                      uuid.New(),
+		WorkspaceSubscriptionID: subscriptionID,
+		Workspace:               subscription.Workspace,
+		RegionDomain:            subscription.RegionDomain,
+		From:                    from,
+		FromID:                  fromID,
+		Total:                   aiQuota,
+		Usage:                   0,
+		Status:                  types.PackageStatusActive,
+		ExpiredAt:               expireAt,
+		CreatedAt:               time.Now(),
+		UpdatedAt:               time.Now(),
+	}
+	err = globalDB.Where("workspace_subscription_id = ?", subscriptionID).FirstOrCreate(&aiQuotaPackage).Error
+	if err != nil {
+		return fmt.Errorf("failed to create AI quota package: %v", err)
 	}
 	return nil
 }

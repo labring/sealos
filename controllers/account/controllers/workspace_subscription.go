@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/google/uuid"
@@ -353,6 +355,10 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Conte
 		if err = r.NewTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 			return fmt.Errorf("failed to add traffic package: %w", err)
 		}
+		err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String())
+		if err != nil {
+			return fmt.Errorf("failed to create AI quota package: %v", err)
+		}
 	}
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
@@ -395,6 +401,9 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, db
 	}
 	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
+	}
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+		return fmt.Errorf("failed to create AI quota package: %v", err)
 	}
 
 	if err := dbTx.Save(&sub).Error; err != nil {
@@ -487,6 +496,9 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(ctx context.Context, db
 	}
 	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
+	}
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+		return fmt.Errorf("failed to create AI quota package: %v", err)
 	}
 	sub.Status = types.SubscriptionStatusNormal
 	sub.UpdateAt = now

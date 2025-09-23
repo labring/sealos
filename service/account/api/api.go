@@ -301,6 +301,28 @@ func GetPayment(c *gin.Context) {
 	})
 }
 
+func GetPaymentStatus(c *gin.Context) {
+	req, err := helper.ParsePaymentStatusReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user payment status request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	paymentStatus, err := dao.DBClient.GetPaymentStatus(req.PayID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get payment status : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"status": paymentStatus,
+		},
+	})
+}
+
 // GetRechargeAmount
 // @Summary Get user recharge amount
 // @Description Get user recharge amount within a specified time range

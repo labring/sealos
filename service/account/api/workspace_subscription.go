@@ -539,11 +539,9 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		return
 	}
 	if err := authenticateWorkspaceSubscriptionOperatorRequest(c, req); err != nil {
-		SetErrorResp(c, http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		SetErrorResp(c, http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err), "code": http.StatusUnauthorized})
 		return
 	}
-
-	// TODO Validate payment method，当前支付状态正常状态的 不允许创建新的支付，除非升级；当前状态异常的
 
 	// Get current subscription (if exists)
 	currentSubscription, err := dao.DBClient.GetWorkspaceSubscription(req.Workspace, req.RegionDomain)
@@ -743,9 +741,10 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(c *gin.Context
 								logrus.Infof("Returning existing Stripe session for same request: %s", paymentOrder.CodeURL)
 								c.JSON(http.StatusOK, gin.H{
 									"redirectUrl": paymentOrder.CodeURL,
+									"payID":       paymentOrder.ID,
 									"success":     true,
 								})
-								return fmt.Errorf("returned existing session")
+								return nil
 							}
 						}
 					}
@@ -869,7 +868,7 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(c *gin.Context
 			}
 			if !ok {
 				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": "quota exceeded for the requested plan, please change the resource usage to within the expected workspace subscription quota", "code": 10004})
-				return fmt.Errorf("quota exceeded for the requested plan")
+				return fmt.Errorf("workspace %s quota exceeded for the requested plan: %s", transaction.Workspace, transaction.NewPlanName)
 			}
 			// Payment required - route to appropriate payment method
 			switch req.PayMethod {
@@ -1154,6 +1153,7 @@ func createStripeSessionAndPaymentOrder(tx *gorm.DB, c *gin.Context, req *helper
 	// Return success response with redirect URL
 	c.JSON(http.StatusOK, gin.H{
 		"redirectUrl": stripeResp.URL,
+		"payID":       transaction.PayID,
 		"success":     true,
 	})
 	return nil
@@ -1515,6 +1515,7 @@ func finalizeWorkspaceSubscriptionSuccess(tx *gorm.DB, workspaceSubscription *ty
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 	traffic := plan.Traffic
+	aiQuota := plan.AIQuota
 	if (wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded || wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed) && oldPlanName != "" && oldPlanName != types.FreeSubscriptionPlanName {
 		oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(oldPlanName)
 		if err != nil {
@@ -1524,16 +1525,32 @@ func finalizeWorkspaceSubscriptionSuccess(tx *gorm.DB, workspaceSubscription *ty
 		if traffic < 0 {
 			traffic = 0
 		}
-	}
-	if traffic > 0 && wsTransaction.Period != "" && wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded {
-		period, err := types.ParsePeriod(wsTransaction.Period)
-		if err != nil {
-			return fmt.Errorf("invalid subscription period: %w", err)
+		aiQuota -= oldPlan.AIQuota
+		if aiQuota < 0 {
+			aiQuota = 0
 		}
-		err = helper.AddTrafficPackage(tx, dao.K8sManager.GetClient(), workspaceSubscription, plan, time.Now().Add(period), types.WorkspaceTrafficFromWorkspaceSubscription, wsTransaction.ID.String())
-		//err = dao.AddWorkspaceSubscriptionTrafficPackage(tx, workspaceSubscription.ID, traffic, workspaceSubscription.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, wsTransaction.ID.String())
-		if err != nil {
-			return fmt.Errorf("failed to add traffic package: %w", err)
+	}
+	if wsTransaction.Period != "" && wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded {
+		if traffic > 0 {
+			period, err := types.ParsePeriod(wsTransaction.Period)
+			if err != nil {
+				return fmt.Errorf("invalid subscription period: %w", err)
+			}
+			err = helper.AddTrafficPackage(tx, dao.K8sManager.GetClient(), workspaceSubscription, plan, time.Now().Add(period), types.WorkspaceTrafficFromWorkspaceSubscription, wsTransaction.ID.String())
+			//err = dao.AddWorkspaceSubscriptionTrafficPackage(tx, workspaceSubscription.ID, traffic, workspaceSubscription.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, wsTransaction.ID.String())
+			if err != nil {
+				return fmt.Errorf("failed to add traffic package: %w", err)
+			}
+		}
+		if aiQuota > 0 {
+			period, err := types.ParsePeriod(wsTransaction.Period)
+			if err != nil {
+				return fmt.Errorf("invalid subscription period: %w", err)
+			}
+			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(tx, workspaceSubscription.ID, plan.AIQuota, time.Now().Add(period), types.PKGFromWorkspaceSubscription, wsTransaction.ID.String())
+			if err != nil {
+				return fmt.Errorf("failed to add AI quota package: %w", err)
+			}
 		}
 	}
 
@@ -2357,7 +2374,7 @@ func handleWorkspaceSubscriptionSessionExpired(event *stripe.Event) error {
 		var subscriptionTx types.WorkspaceSubscriptionTransaction
 		if err := tx.Where("pay_id = ?", paymentID).First(&subscriptionTx).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("workspace subscription transaction not found for payment ID: %s", paymentID)
+				return nil
 			}
 			return fmt.Errorf("failed to query workspace subscription transaction: %w", err)
 		}

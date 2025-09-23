@@ -1127,6 +1127,14 @@ func (c *Cockroach) GetPaymentWithID(paymentID string) (*types.Payment, error) {
 	return &payment, nil
 }
 
+func (c *Cockroach) GetPaymentOrderWithID(paymentID string) (*types.PaymentOrder, error) {
+	var order types.PaymentOrder
+	if err := c.DB.Where(types.PaymentOrder{ID: paymentID}).First(&order).Error; err != nil {
+		return nil, fmt.Errorf("failed to get payment order: %w", err)
+	}
+	return &order, nil
+}
+
 func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq, invoiced *bool) ([]types.Payment, types.LimitResp, error) {
 	var payment []types.Payment
 	var total int64
@@ -1756,7 +1764,7 @@ func (c *Cockroach) InitTables() error {
 		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{}, types.Corporate{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
 		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
-		types.UserTimeRangeTraffic{}, types.WorkspaceTraffic{},
+		types.UserTimeRangeTraffic{}, types.WorkspaceTraffic{}, types.WorkspaceAIQuotaPackage{},
 		types.WorkspaceSubscription{}, types.WorkspaceSubscriptionTransaction{}, types.WorkspaceSubscriptionPlan{}, types.ProductPrice{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
@@ -1810,6 +1818,22 @@ func (c *Cockroach) InitTables() error {
 		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "stripe" JSON;`, gorm.Expr(tableName)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column stripe to Payment: %v", err)
+		}
+	}
+	if !c.DB.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
+		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
+		tableName := types.WorkspaceSubscriptionPlan{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "ai_quota" bigint NOT NULL DEFAULT 0;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %v", err)
+		}
+	}
+	if !c.Localdb.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
+		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
+		tableName := types.WorkspaceSubscriptionPlan{}.TableName()
+		err := c.Localdb.Exec(`ALTER TABLE "?" ADD COLUMN "ai_quota" bigint NOT NULL DEFAULT 0;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %v", err)
 		}
 	}
 
