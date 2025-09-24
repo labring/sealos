@@ -639,11 +639,19 @@ func TestNewPodMutatorWithThresholds(t *testing.T) {
 			)
 
 			if mutator.DefaultOversellRatio != tt.defaultRatio {
-				t.Errorf("Expected DefaultOversellRatio %d, got %d", tt.defaultRatio, mutator.DefaultOversellRatio)
+				t.Errorf(
+					"Expected DefaultOversellRatio %d, got %d",
+					tt.defaultRatio,
+					mutator.DefaultOversellRatio,
+				)
 			}
 
 			if mutator.DatabaseOversellRatio != tt.databaseRatio {
-				t.Errorf("Expected DatabaseOversellRatio %d, got %d", tt.databaseRatio, mutator.DatabaseOversellRatio)
+				t.Errorf(
+					"Expected DatabaseOversellRatio %d, got %d",
+					tt.databaseRatio,
+					mutator.DatabaseOversellRatio,
+				)
 			}
 
 			if tt.expectedCPUThreshold == nil {
@@ -663,7 +671,10 @@ func TestNewPodMutatorWithThresholds(t *testing.T) {
 
 			if tt.expectedMemoryThreshold == nil {
 				if mutator.SkipMemoryThreshold != nil {
-					t.Errorf("Expected memory threshold to be nil, got %v", mutator.SkipMemoryThreshold)
+					t.Errorf(
+						"Expected memory threshold to be nil, got %v",
+						mutator.SkipMemoryThreshold,
+					)
 				}
 			} else {
 				if mutator.SkipMemoryThreshold == nil {
@@ -684,20 +695,20 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 	skipMemoryThreshold := resource.MustParse("128Mi")
 
 	mutator := &PodMutator{
-		DefaultOversellRatio:    10,
-		DatabaseOversellRatio:   5,
-		SkipCPUThreshold:        &skipCPUThreshold,
-		SkipMemoryThreshold:     &skipMemoryThreshold,
+		DefaultOversellRatio:  10,
+		DatabaseOversellRatio: 5,
+		SkipCPUThreshold:      &skipCPUThreshold,
+		SkipMemoryThreshold:   &skipMemoryThreshold,
 	}
 
 	tests := []struct {
-		name                string
-		pod                 *corev1.Pod
-		expectedCPU         string
-		expectedMem         string
-		shouldSkipCPU       bool
-		shouldSkipMemory    bool
-		description         string
+		name             string
+		pod              *corev1.Pod
+		expectedCPU      string
+		expectedMem      string
+		shouldSkipCPU    bool
+		shouldSkipMemory bool
+		description      string
 	}{
 		{
 			name: "CPU limit below threshold - should skip CPU mutation",
@@ -712,8 +723,12 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 							Name: "test-container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("50m"), // Below 100m threshold
-									corev1.ResourceMemory: resource.MustParse("1Gi"),  // Above 128Mi threshold
+									corev1.ResourceCPU: resource.MustParse(
+										"50m",
+									), // Below 100m threshold
+									corev1.ResourceMemory: resource.MustParse(
+										"1Gi",
+									), // Above 128Mi threshold
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("25m"),
@@ -724,8 +739,8 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU:      "25m",            // Should not be mutated
-			expectedMem:      "107374182400m",  // Should be mutated: 1Gi / 10
+			expectedCPU:      "25m",           // Should not be mutated
+			expectedMem:      "107374182400m", // Should be mutated: 1Gi / 10
 			shouldSkipCPU:    true,
 			shouldSkipMemory: false,
 			description:      "CPU below threshold should not be mutated, memory should be",
@@ -743,8 +758,12 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 							Name: "test-container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("500m"), // Above 100m threshold
-									corev1.ResourceMemory: resource.MustParse("64Mi"), // Below 128Mi threshold
+									corev1.ResourceCPU: resource.MustParse(
+										"500m",
+									), // Above 100m threshold
+									corev1.ResourceMemory: resource.MustParse(
+										"64Mi",
+									), // Below 128Mi threshold
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("250m"),
@@ -774,8 +793,12 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 							Name: "test-container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("80m"),  // Below 100m threshold
-									corev1.ResourceMemory: resource.MustParse("100Mi"), // Below 128Mi threshold
+									corev1.ResourceCPU: resource.MustParse(
+										"80m",
+									), // Below 100m threshold
+									corev1.ResourceMemory: resource.MustParse(
+										"100Mi",
+									), // Below 128Mi threshold
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("40m"),
@@ -805,8 +828,12 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 							Name: "test-container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("1000m"), // Above 100m threshold
-									corev1.ResourceMemory: resource.MustParse("1Gi"),   // Above 128Mi threshold
+									corev1.ResourceCPU: resource.MustParse(
+										"1000m",
+									), // Above 100m threshold
+									corev1.ResourceMemory: resource.MustParse(
+										"1Gi",
+									), // Above 128Mi threshold
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -817,8 +844,8 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU:      "100m",           // Should be mutated: 1000m / 10 = 100m
-			expectedMem:      "107374182400m",  // Should be mutated: 1Gi / 10
+			expectedCPU:      "100m",          // Should be mutated: 1000m / 10 = 100m
+			expectedMem:      "107374182400m", // Should be mutated: 1Gi / 10
 			shouldSkipCPU:    false,
 			shouldSkipMemory: false,
 			description:      "Both resources above thresholds should be mutated",
@@ -840,8 +867,12 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 							Name: "db-container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("80m"),  // Below 100m threshold
-									corev1.ResourceMemory: resource.MustParse("100Mi"), // Below 128Mi threshold
+									corev1.ResourceCPU: resource.MustParse(
+										"80m",
+									), // Below 100m threshold
+									corev1.ResourceMemory: resource.MustParse(
+										"100Mi",
+									), // Below 128Mi threshold
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("40m"),
