@@ -70,8 +70,8 @@ func TestPodMutator_Default(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU: "100m",          // 1000m / 10 = 100m
-			expectedMem: "107374182400m", // 1Gi / 10 = 107374182400m
+			expectedCPU: "100m",  // 1000m / 10 = 100m
+			expectedMem: "102Mi", // 1Gi / 10 = 102Mi
 		},
 		{
 			name: "database pod with high CPU request - auto adjusted",
@@ -90,7 +90,7 @@ func TestPodMutator_Default(t *testing.T) {
 							Name: "db-container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceCPU:    resource.MustParse("1"),
 									corev1.ResourceMemory: resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
@@ -106,8 +106,8 @@ func TestPodMutator_Default(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU: "200m",          // 1000m / 5 = 200m
-			expectedMem: "429496729600m", // 2Gi / 5 = 429496729600m
+			expectedCPU: "200m",  // 1000m / 5 = 200m
+			expectedMem: "409Mi", // 2Gi / 5 = 409Mi
 		},
 		{
 			name: "pod with no requests - should set max allowed",
@@ -130,8 +130,8 @@ func TestPodMutator_Default(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU: "200m",          // 2000m / 10 = 200m
-			expectedMem: "429496729600m", // 4Gi / 10 = 429496729600m
+			expectedCPU: "200m",  // 2000m / 10 = 200m
+			expectedMem: "409Mi", // 4Gi / 10 = 409Mi
 		},
 		{
 			name: "pod in non-ns namespace - should not be modified",
@@ -254,7 +254,7 @@ func TestPodMutator_Default(t *testing.T) {
 										"100m",
 									), // Exactly equal to limit/oversell ratio (1000m/10=100m)
 									corev1.ResourceMemory: resource.MustParse(
-										"107374182400m",
+										"102Mi",
 									), // Exactly equal to limit/oversell ratio (1Gi/10)
 								},
 							},
@@ -262,8 +262,8 @@ func TestPodMutator_Default(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU: "100m",          // Should remain unchanged as it equals the oversell limit
-			expectedMem: "107374182400m", // Should remain unchanged as it equals the oversell limit
+			expectedCPU: "100m",  // Should remain unchanged as it equals the oversell limit
+			expectedMem: "102Mi", // Should remain unchanged as it equals the oversell limit
 		},
 	}
 
@@ -421,10 +421,10 @@ func TestPodMutator_DatabasePodFirstContainerOnly(t *testing.T) {
 					},
 				},
 			},
-			expectedFirstCPU:      "200m",          // 1000m / 5 = 200m
-			expectedFirstMem:      "214748364800m", // 1Gi / 5
-			expectedSecondCPU:     "100m",          // Should remain unchanged
-			expectedSecondMem:     "100Mi",         // Should remain unchanged
+			expectedFirstCPU:      "200m",  // 1000m / 5 = 200m
+			expectedFirstMem:      "204Mi", // 1Gi / 5 = 204Mi
+			expectedSecondCPU:     "100m",  // Should remain unchanged
+			expectedSecondMem:     "100Mi", // Should remain unchanged
 			firstContainerMutated: true,
 		},
 	}
@@ -739,8 +739,8 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU:      "25m",           // Should not be mutated
-			expectedMem:      "107374182400m", // Should be mutated: 1Gi / 10
+			expectedCPU:      "25m",   // Should not be mutated
+			expectedMem:      "102Mi", // Should be mutated: 1Gi / 10 = 102Mi
 			shouldSkipCPU:    true,
 			shouldSkipMemory: false,
 			description:      "CPU below threshold should not be mutated, memory should be",
@@ -844,8 +844,8 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU:      "100m",          // Should be mutated: 1000m / 10 = 100m
-			expectedMem:      "107374182400m", // Should be mutated: 1Gi / 10
+			expectedCPU:      "100m",  // Should be mutated: 1000m / 10 = 100m
+			expectedMem:      "102Mi", // Should be mutated: 1Gi / 10 = 102Mi
 			shouldSkipCPU:    false,
 			shouldSkipMemory: false,
 			description:      "Both resources above thresholds should be mutated",
@@ -990,8 +990,8 @@ func TestPodMutator_ZeroLimits(t *testing.T) {
 					},
 				},
 			},
-			expectedCPU: "0",             // Should remain 0 when CPU limit is zero
-			expectedMem: "107374182400m", // Memory should be mutated: 1Gi / 10
+			expectedCPU: "0",     // Should remain 0 when CPU limit is zero
+			expectedMem: "102Mi", // Memory should be mutated: 1Gi / 10 = 102Mi
 			description: "should mutate memory but not CPU when CPU limit is zero",
 		},
 		{
