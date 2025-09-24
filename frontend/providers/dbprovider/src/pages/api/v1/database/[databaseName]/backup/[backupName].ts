@@ -9,8 +9,16 @@ import type { DBEditType } from '@/types/db';
 import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
 import z from 'zod';
 
+function generateRandomDbName(): string {
+  const letters = 'abcdefghijklmnopqrstuvwxyz';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  return result;
+}
+
 const restoreBodySchema = z.object({
-  newDbName: z.string().min(1, 'New database name is required'),
   replicas: z.number().min(1).optional()
 });
 
@@ -81,7 +89,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const { newDbName, replicas } = bodyParseResult.data;
+      const { replicas } = bodyParseResult.data;
+      const newDbName = generateRandomDbName();
 
       const group = 'dataprotection.kubeblocks.io';
       const version = 'v1alpha1';
