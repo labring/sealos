@@ -151,7 +151,6 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 
 	// Adjust CPU requests
 	if cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]; exists && !cpuLimit.IsZero() {
-
 		// Skip CPU mutation if limit is below threshold
 		if r.SkipCPUThreshold != nil && cpuLimit.Cmp(*r.SkipCPUThreshold) < 0 {
 			ctrl.Log.WithName("pod-mutator").
@@ -179,7 +178,6 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 
 	// Adjust Memory requests
 	if memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists && !memLimit.IsZero() {
-
 		// Skip memory mutation if limit is below threshold
 		if r.SkipMemoryThreshold != nil && memLimit.Cmp(*r.SkipMemoryThreshold) < 0 {
 			ctrl.Log.WithName("pod-mutator").
