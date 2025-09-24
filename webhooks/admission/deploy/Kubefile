@@ -20,4 +20,7 @@ ENV icpKey=""
 ENV namespaceWebhookEnabled="true"
 ENV namespaceWebhookFailurePolicy="Fail"
 
+ENV podWebhookEnabled="true"
+ENV podWebhookFailurePolicy="Fail"
+
 CMD ["kubectl apply -f manifests/deploy.yaml"]
