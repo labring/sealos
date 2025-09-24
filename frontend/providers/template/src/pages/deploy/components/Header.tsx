@@ -34,6 +34,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { X } from 'lucide-react';
 import { startDriver, quitGuideDriverObj } from '@/hooks/driver';
 import { track } from '@sealos/gtm';
+import useSessionStore from '@/store/session';
 
 const Header = ({
   appName,
@@ -55,6 +56,7 @@ const Header = ({
   const { t, i18n } = useTranslation();
   const { copyData } = useCopyData();
   const { envs } = useSystemConfigStore();
+  const { session } = useSessionStore();
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList?.map((i) => i.value).join('---\n');
@@ -81,14 +83,20 @@ const Header = ({
     cursor: 'pointer'
   };
 
+  const link = useMemo(
+    () =>
+      `https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}${
+        session?.user?.id ? `&uid=${session?.user?.id}` : ''
+      }`,
+    [appName, cloudDomain, session]
+  );
+
   const copyTemplateLink = useCallback(() => {
-    const str = `https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}`;
-    copyData(str);
-  }, [appName, cloudDomain, copyData]);
+    copyData(link);
+  }, [copyData, link]);
 
-  const MdPart = `[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName})`;
-
-  const HtmlPart = `<a href="https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
+  const MdPart = `[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](${link})`;
+  const HtmlPart = `<a href="${link}"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
 
   const { createCompleted } = useGuideStore();
   const isClientSide = useClientSideValue();
