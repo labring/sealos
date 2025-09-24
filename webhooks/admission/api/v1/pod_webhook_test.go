@@ -919,6 +919,257 @@ func TestPodMutator_ThresholdSkipping(t *testing.T) {
 	}
 }
 
+func TestPodMutator_DatabasePodInitContainerSkipping(t *testing.T) {
+	mutator := &PodMutator{
+		DefaultOversellRatio:  defaultOversellRatio,
+		DatabaseOversellRatio: defaultDatabaseRatio,
+	}
+
+	tests := []struct {
+		name                     string
+		pod                      *corev1.Pod
+		expectedMainCPU          string
+		expectedMainMem          string
+		expectedInitCPU          string
+		expectedInitMem          string
+		shouldSkipInitContainers bool
+		description              string
+	}{
+		{
+			name: "database pod with init containers - init containers should be skipped",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "db-pod-with-init",
+					Namespace: "ns-database",
+					Labels: map[string]string{
+						KubeBlocksManagedByLabel: KubeBlocksManagedByValue,
+						KubeBlocksComponentLabel: "mysql",
+					},
+				},
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "init-db-setup",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("200m"),
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("128Mi"),
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "mysql-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedMainCPU:          "200m",  // 1000m / 5 = 200m (database ratio)
+			expectedMainMem:          "204Mi", // 1Gi / 5 = 204Mi
+			expectedInitCPU:          "100m",  // Should remain unchanged
+			expectedInitMem:          "128Mi", // Should remain unchanged
+			shouldSkipInitContainers: true,
+			description:              "database pod init containers should not be mutated",
+		},
+		{
+			name: "regular pod with init containers - init containers should be mutated",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "regular-pod-with-init",
+					Namespace: "ns-test",
+				},
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "init-setup",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("500Mi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("250m"),
+									corev1.ResourceMemory: resource.MustParse("250Mi"),
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "main-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedMainCPU:          "100m",  // 1000m / 10 = 100m (default ratio)
+			expectedMainMem:          "102Mi", // 1Gi / 10 = 102Mi
+			expectedInitCPU:          "50m",   // 500m / 10 = 50m
+			expectedInitMem:          "50Mi",  // 500Mi / 10 = 50Mi
+			shouldSkipInitContainers: false,
+			description:              "regular pod init containers should be mutated",
+		},
+		{
+			name: "database pod with multiple init containers - all should be skipped",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "db-pod-multiple-init",
+					Namespace: "ns-database",
+					Labels: map[string]string{
+						KubeBlocksManagedByLabel: KubeBlocksManagedByValue,
+						KubeBlocksComponentLabel: "postgresql",
+					},
+				},
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "init-schema",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("300m"),
+									corev1.ResourceMemory: resource.MustParse("300Mi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("150m"),
+									corev1.ResourceMemory: resource.MustParse("150Mi"),
+								},
+							},
+						},
+						{
+							Name: "init-data",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("400m"),
+									corev1.ResourceMemory: resource.MustParse("400Mi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("200m"),
+									corev1.ResourceMemory: resource.MustParse("200Mi"),
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "postgresql-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2000m"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedMainCPU:          "400m",  // 2000m / 5 = 400m (database ratio)
+			expectedMainMem:          "409Mi", // 2Gi / 5 = 409Mi
+			expectedInitCPU:          "150m",  // Should remain unchanged for first init container
+			expectedInitMem:          "150Mi", // Should remain unchanged for first init container
+			shouldSkipInitContainers: true,
+			description:              "database pod with multiple init containers should skip all",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := mutator.Default(context.Background(), tt.pod)
+			if err != nil {
+				t.Errorf("PodMutator.Default() error = %v", err)
+				return
+			}
+
+			// Check main container
+			mainContainer := &tt.pod.Spec.Containers[0]
+			actualMainCPU := mainContainer.Resources.Requests[corev1.ResourceCPU]
+			actualMainMem := mainContainer.Resources.Requests[corev1.ResourceMemory]
+
+			expectedMainCPU := resource.MustParse(tt.expectedMainCPU)
+			expectedMainMem := resource.MustParse(tt.expectedMainMem)
+
+			if !actualMainCPU.Equal(expectedMainCPU) {
+				t.Errorf("%s: Main container CPU request mismatch. Expected %s, got %s",
+					tt.description, expectedMainCPU.String(), actualMainCPU.String())
+			}
+
+			if !actualMainMem.Equal(expectedMainMem) {
+				t.Errorf("%s: Main container memory request mismatch. Expected %s, got %s",
+					tt.description, expectedMainMem.String(), actualMainMem.String())
+			}
+
+			// Check init container
+			if len(tt.pod.Spec.InitContainers) > 0 {
+				initContainer := &tt.pod.Spec.InitContainers[0]
+				actualInitCPU := initContainer.Resources.Requests[corev1.ResourceCPU]
+				actualInitMem := initContainer.Resources.Requests[corev1.ResourceMemory]
+
+				expectedInitCPU := resource.MustParse(tt.expectedInitCPU)
+				expectedInitMem := resource.MustParse(tt.expectedInitMem)
+
+				if tt.shouldSkipInitContainers {
+					// For database pods, init containers should not be mutated
+					if !actualInitCPU.Equal(expectedInitCPU) {
+						t.Errorf(
+							"%s: Init container CPU should not be mutated. Expected %s, got %s",
+							tt.description,
+							expectedInitCPU.String(),
+							actualInitCPU.String(),
+						)
+					}
+
+					if !actualInitMem.Equal(expectedInitMem) {
+						t.Errorf(
+							"%s: Init container memory should not be mutated. Expected %s, got %s",
+							tt.description,
+							expectedInitMem.String(),
+							actualInitMem.String(),
+						)
+					}
+				} else {
+					// For regular pods, init containers should be mutated
+					if !actualInitCPU.Equal(expectedInitCPU) {
+						t.Errorf("%s: Init container CPU should be mutated. Expected %s, got %s",
+							tt.description, expectedInitCPU.String(), actualInitCPU.String())
+					}
+
+					if !actualInitMem.Equal(expectedInitMem) {
+						t.Errorf("%s: Init container memory should be mutated. Expected %s, got %s",
+							tt.description, expectedInitMem.String(), actualInitMem.String())
+					}
+				}
+			}
+		})
+	}
+}
+
 func stringPtr(s string) *string {
 	return &s
 }
