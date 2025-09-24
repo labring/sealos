@@ -455,11 +455,18 @@ export async function getServerSideProps(content: any) {
   );
 
   try {
-    const { data: templateSource } = await (
-      await fetch(
-        `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
-      )
-    ).json();
+    const response = await fetch(
+      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
+    );
+    if (!response.ok) {
+      throw new Error(`API request failed with status`);
+    }
+    const result = await response.json();
+    const templateSource = result?.data;
+
+    if (!templateSource || typeof templateSource !== 'object') {
+      throw new Error('Invalid template source data');
+    }
 
     const templateDetail = templateSource?.templateYaml;
     const metaData = {
