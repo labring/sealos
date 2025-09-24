@@ -468,7 +468,7 @@ func TestPodValidator_DatabasePodValidation(t *testing.T) {
 			errorMsg:    "memory limit cannot be set to '0' for container[0] 'redis-container'",
 		},
 		{
-			name: "database pod with init containers - init containers should be validated",
+			name: "database pod with init containers - init containers should be skipped",
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "database-pod-with-init",
@@ -486,7 +486,7 @@ func TestPodValidator_DatabasePodValidation(t *testing.T) {
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU: resource.MustParse(
 										"0",
-									), // Invalid init container
+									), // This should be ignored for database pods
 									corev1.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							},
@@ -505,8 +505,7 @@ func TestPodValidator_DatabasePodValidation(t *testing.T) {
 					},
 				},
 			},
-			expectError: true,
-			errorMsg:    "CPU limit cannot be set to '0' for initContainer[0] 'init-db-setup'",
+			expectError: false, // Should not error because init containers are skipped for database pods
 		},
 		{
 			name: "pod with KubeBlocks managed-by label but no component label - treated as regular pod",

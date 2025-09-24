@@ -111,9 +111,11 @@ func (r *PodMutator) Default(ctx context.Context, obj runtime.Object) error {
 		}
 	}
 
-	// Mutate init containers if any (for all pod types)
-	for i := range pod.Spec.InitContainers {
-		r.mutateContainerResources(&pod.Spec.InitContainers[i], oversellRatio)
+	// Mutate init containers if any (skip for database pods)
+	if !isDatabasePod {
+		for i := range pod.Spec.InitContainers {
+			r.mutateContainerResources(&pod.Spec.InitContainers[i], oversellRatio)
+		}
 	}
 
 	return nil
@@ -349,10 +351,12 @@ func (v *PodValidator) validatePod(ctx context.Context, pod *corev1.Pod) error {
 		}
 	}
 
-	// Validate init containers (for all pod types)
-	for i, container := range pod.Spec.InitContainers {
-		if err := v.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
-			return err
+	// Validate init containers (skip for database pods)
+	if !isDatabasePod {
+		for i, container := range pod.Spec.InitContainers {
+			if err := v.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
+				return err
+			}
 		}
 	}
 
