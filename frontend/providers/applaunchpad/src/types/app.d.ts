@@ -212,3 +212,22 @@ export type AppPatchPropsType = (
   | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
   | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
 )[];
+
+export type ResourceType =
+  | 'cpu'
+  | 'infra-cpu'
+  | 'storage'
+  | 'memory'
+  | 'disk'
+  | 'mongodb'
+  | 'minio'
+  | 'infra-memory'
+  | 'infra-disk'
+  | 'services.nodeports';
+
+export type GpuNodeType = {
+  'gpu.count': number;
+  'gpu.memory': number;
+  'gpu.product': string;
+  'gpu.alias': string;
+};
