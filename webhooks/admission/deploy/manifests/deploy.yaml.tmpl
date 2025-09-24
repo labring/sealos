@@ -293,6 +293,10 @@ spec:
         - --leader-elect
         - --ingress-mutating-annotations={{ .ingressMutatingAnnotations }}
         - --domains={{ .domains }}
+        - --default-oversell-ratio={{ .defaultOversellRatio }}
+        - --database-oversell-ratio={{ .databaseOversellRatio }}
+        - --skip-cpu-threshold={{ .skipCPUThreshold }}
+        - --skip-memory-threshold={{ .skipMemoryThreshold }}
         command:
         - /manager
         env:

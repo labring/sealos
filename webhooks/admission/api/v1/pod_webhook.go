@@ -38,6 +38,10 @@ type PodMutator struct {
 	DefaultOversellRatio int
 	// DatabaseOversellRatio is the oversell ratio for database pods
 	DatabaseOversellRatio int
+	// SkipCPUThreshold is the CPU limit threshold below which to skip request validation
+	SkipCPUThreshold *resource.Quantity
+	// SkipMemoryThreshold is the memory limit threshold below which to skip request validation
+	SkipMemoryThreshold *resource.Quantity
 }
 
 // NewPodMutatorWithRatios creates a new PodMutator with custom oversell ratios
@@ -45,6 +49,30 @@ func NewPodMutatorWithRatios(defaultRatio, databaseRatio int) *PodMutator {
 	return &PodMutator{
 		DefaultOversellRatio:  defaultRatio,
 		DatabaseOversellRatio: databaseRatio,
+	}
+}
+
+// NewPodMutatorWithThresholds creates a new PodMutator with custom oversell ratios and skip thresholds
+func NewPodMutatorWithThresholds(defaultRatio, databaseRatio int, skipCPUThreshold, skipMemoryThreshold string) *PodMutator {
+	var cpuThreshold, memoryThreshold *resource.Quantity
+
+	if skipCPUThreshold != "" {
+		if threshold, err := resource.ParseQuantity(skipCPUThreshold); err == nil {
+			cpuThreshold = &threshold
+		}
+	}
+
+	if skipMemoryThreshold != "" {
+		if threshold, err := resource.ParseQuantity(skipMemoryThreshold); err == nil {
+			memoryThreshold = &threshold
+		}
+	}
+
+	return &PodMutator{
+		DefaultOversellRatio:    defaultRatio,
+		DatabaseOversellRatio:   databaseRatio,
+		SkipCPUThreshold:        cpuThreshold,
+		SkipMemoryThreshold:     memoryThreshold,
 	}
 }
 
@@ -121,38 +149,56 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 	// Adjust CPU requests
 	if cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]; exists &&
 		!cpuLimit.IsZero() {
-		maxCPURequest := r.calculateMaxRequest(cpuLimit, oversellRatio)
-		currentCPURequest := container.Resources.Requests[corev1.ResourceCPU]
 
-		// Only adjust if current request exceeds the maximum allowed or is not set
-		if currentCPURequest.IsZero() || currentCPURequest.Cmp(maxCPURequest) > 0 {
-			container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
-
-			ctrl.Log.WithName("pod-mutator").Info("Adjusted CPU request",
+		// Skip CPU mutation if limit is below threshold
+		if r.SkipCPUThreshold != nil && cpuLimit.Cmp(*r.SkipCPUThreshold) < 0 {
+			ctrl.Log.WithName("pod-mutator").Info("Skipping CPU request mutation - limit below threshold",
 				"container", container.Name,
-				"originalRequest", currentCPURequest.String(),
 				"limit", cpuLimit.String(),
-				"newRequest", maxCPURequest.String(),
-				"oversellRatio", oversellRatio)
+				"threshold", r.SkipCPUThreshold.String())
+		} else {
+			maxCPURequest := r.calculateMaxRequest(cpuLimit, oversellRatio)
+			currentCPURequest := container.Resources.Requests[corev1.ResourceCPU]
+
+			// Only adjust if current request exceeds the maximum allowed or is not set
+			if currentCPURequest.IsZero() || currentCPURequest.Cmp(maxCPURequest) > 0 {
+				container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
+
+				ctrl.Log.WithName("pod-mutator").Info("Adjusted CPU request",
+					"container", container.Name,
+					"originalRequest", currentCPURequest.String(),
+					"limit", cpuLimit.String(),
+					"newRequest", maxCPURequest.String(),
+					"oversellRatio", oversellRatio)
+			}
 		}
 	}
 
 	// Adjust Memory requests
 	if memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists &&
 		!memLimit.IsZero() {
-		maxMemRequest := r.calculateMaxRequest(memLimit, oversellRatio)
-		currentMemRequest := container.Resources.Requests[corev1.ResourceMemory]
 
-		// Only adjust if current request exceeds the maximum allowed or is not set
-		if currentMemRequest.IsZero() || currentMemRequest.Cmp(maxMemRequest) > 0 {
-			container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
-
-			ctrl.Log.WithName("pod-mutator").Info("Adjusted Memory request",
+		// Skip memory mutation if limit is below threshold
+		if r.SkipMemoryThreshold != nil && memLimit.Cmp(*r.SkipMemoryThreshold) < 0 {
+			ctrl.Log.WithName("pod-mutator").Info("Skipping memory request mutation - limit below threshold",
 				"container", container.Name,
-				"originalRequest", currentMemRequest.String(),
 				"limit", memLimit.String(),
-				"newRequest", maxMemRequest.String(),
-				"oversellRatio", oversellRatio)
+				"threshold", r.SkipMemoryThreshold.String())
+		} else {
+			maxMemRequest := r.calculateMaxRequest(memLimit, oversellRatio)
+			currentMemRequest := container.Resources.Requests[corev1.ResourceMemory]
+
+			// Only adjust if current request exceeds the maximum allowed or is not set
+			if currentMemRequest.IsZero() || currentMemRequest.Cmp(maxMemRequest) > 0 {
+				container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
+
+				ctrl.Log.WithName("pod-mutator").Info("Adjusted Memory request",
+					"container", container.Name,
+					"originalRequest", currentMemRequest.String(),
+					"limit", memLimit.String(),
+					"newRequest", maxMemRequest.String(),
+					"oversellRatio", oversellRatio)
+			}
 		}
 	}
 }

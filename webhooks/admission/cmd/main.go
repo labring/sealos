@@ -53,6 +53,8 @@ func main() {
 	var domains v1.DomainList
 	var defaultOversellRatio int
 	var databaseOversellRatio int
+	var skipCPUThreshold string
+	var skipMemoryThreshold string
 	flag.StringVar(
 		&metricsAddr,
 		"metrics-bind-address",
@@ -86,6 +88,18 @@ func main() {
 		"database-oversell-ratio",
 		5,
 		"Oversell ratio for database pods",
+	)
+	flag.StringVar(
+		&skipCPUThreshold,
+		"skip-cpu-threshold",
+		"100m",
+		"Skip CPU request validation and mutation when limit is below this threshold",
+	)
+	flag.StringVar(
+		&skipMemoryThreshold,
+		"skip-memory-threshold",
+		"128Mi",
+		"Skip memory request validation and mutation when limit is below this threshold",
 	)
 	opts := zap.Options{
 		Development: true,
@@ -170,9 +184,11 @@ func main() {
 	err = builder.WebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
 		WithDefaulter(
-			v1.NewPodMutatorWithRatios(
+			v1.NewPodMutatorWithThresholds(
 				defaultOversellRatio,
 				databaseOversellRatio,
+				skipCPUThreshold,
+				skipMemoryThreshold,
 			),
 		).
 		WithValidator(&v1.PodValidator{}).
