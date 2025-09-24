@@ -149,73 +149,136 @@ func (r *PodMutator) mutateContainerResources(container *corev1.Container, overs
 		return // No limits means no mutation needed
 	}
 
-	// Adjust CPU requests
-	if cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]; exists && !cpuLimit.IsZero() {
-		// Skip CPU mutation if limit is below threshold
-		if r.SkipCPUThreshold != nil && cpuLimit.Cmp(*r.SkipCPUThreshold) < 0 {
-			ctrl.Log.WithName("pod-mutator").
-				Info("Skipping CPU request mutation - limit below threshold",
-					"container", container.Name,
-					"limit", cpuLimit.String(),
-					"threshold", r.SkipCPUThreshold.String())
-		} else {
-			maxCPURequest := r.calculateMaxRequest(cpuLimit, oversellRatio)
-			currentCPURequest := container.Resources.Requests[corev1.ResourceCPU]
+	// Adjust CPU and memory requests
+	r.mutateCPURequest(container, oversellRatio)
+	r.mutateMemoryRequest(container, oversellRatio)
+}
 
-			// Only adjust if current request exceeds the maximum allowed or is not set
-			if currentCPURequest.IsZero() || currentCPURequest.Cmp(maxCPURequest) > 0 {
-				container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
-
-				ctrl.Log.WithName("pod-mutator").Info("Adjusted CPU request",
-					"container", container.Name,
-					"originalRequest", currentCPURequest.String(),
-					"limit", cpuLimit.String(),
-					"newRequest", maxCPURequest.String(),
-					"oversellRatio", oversellRatio)
-			}
-		}
+// mutateCPURequest adjusts container CPU resource requests based on oversell ratio
+func (r *PodMutator) mutateCPURequest(container *corev1.Container, oversellRatio int) {
+	cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]
+	if !exists || cpuLimit.IsZero() {
+		return
 	}
 
-	// Adjust Memory requests
-	if memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists && !memLimit.IsZero() {
-		// Skip memory mutation if limit is below threshold
-		if r.SkipMemoryThreshold != nil && memLimit.Cmp(*r.SkipMemoryThreshold) < 0 {
-			ctrl.Log.WithName("pod-mutator").
-				Info("Skipping memory request mutation - limit below threshold",
-					"container", container.Name,
-					"limit", memLimit.String(),
-					"threshold", r.SkipMemoryThreshold.String())
-		} else {
-			maxMemRequest := r.calculateMaxRequest(memLimit, oversellRatio)
-			currentMemRequest := container.Resources.Requests[corev1.ResourceMemory]
+	// Skip CPU mutation if limit is below threshold
+	if r.SkipCPUThreshold != nil && cpuLimit.Cmp(*r.SkipCPUThreshold) < 0 {
+		ctrl.Log.WithName("pod-mutator").
+			Info("Skipping CPU request mutation - limit below threshold",
+				"container", container.Name,
+				"limit", cpuLimit.String(),
+				"threshold", r.SkipCPUThreshold.String())
+		return
+	}
 
-			// Only adjust if current request exceeds the maximum allowed or is not set
-			if currentMemRequest.IsZero() || currentMemRequest.Cmp(maxMemRequest) > 0 {
-				container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
+	maxCPURequest := r.calculateMaxCPURequest(cpuLimit, oversellRatio)
+	currentCPURequest := container.Resources.Requests[corev1.ResourceCPU]
 
-				ctrl.Log.WithName("pod-mutator").Info("Adjusted Memory request",
-					"container", container.Name,
-					"originalRequest", currentMemRequest.String(),
-					"limit", memLimit.String(),
-					"newRequest", maxMemRequest.String(),
-					"oversellRatio", oversellRatio)
-			}
-		}
+	// Only adjust if current request exceeds the maximum allowed or is not set
+	if currentCPURequest.IsZero() || currentCPURequest.Cmp(maxCPURequest) > 0 {
+		container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
+
+		ctrl.Log.WithName("pod-mutator").Info("Adjusted CPU request",
+			"container", container.Name,
+			"originalRequest", currentCPURequest.String(),
+			"limit", cpuLimit.String(),
+			"newRequest", maxCPURequest.String(),
+			"oversellRatio", oversellRatio)
 	}
 }
 
-// calculateMaxRequest calculates the maximum allowed request based on limit and oversell ratio
-func (r *PodMutator) calculateMaxRequest(
+// mutateMemoryRequest adjusts container memory resource requests based on oversell ratio
+func (r *PodMutator) mutateMemoryRequest(container *corev1.Container, oversellRatio int) {
+	memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]
+	if !exists || memLimit.IsZero() {
+		return
+	}
+
+	// Skip memory mutation if limit is below threshold
+	if r.SkipMemoryThreshold != nil && memLimit.Cmp(*r.SkipMemoryThreshold) < 0 {
+		ctrl.Log.WithName("pod-mutator").
+			Info("Skipping memory request mutation - limit below threshold",
+				"container", container.Name,
+				"limit", memLimit.String(),
+				"threshold", r.SkipMemoryThreshold.String())
+		return
+	}
+
+	maxMemRequest := r.calculateMaxMemoryRequest(memLimit, oversellRatio)
+	currentMemRequest := container.Resources.Requests[corev1.ResourceMemory]
+
+	// Only adjust if current request exceeds the maximum allowed or is not set
+	if currentMemRequest.IsZero() || currentMemRequest.Cmp(maxMemRequest) > 0 {
+		container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
+
+		ctrl.Log.WithName("pod-mutator").Info("Adjusted Memory request",
+			"container", container.Name,
+			"originalRequest", currentMemRequest.String(),
+			"limit", memLimit.String(),
+			"newRequest", maxMemRequest.String(),
+			"oversellRatio", oversellRatio)
+	}
+}
+
+// calculateMaxCPURequest calculates the maximum allowed CPU request based on limit and oversell ratio
+func (r *PodMutator) calculateMaxCPURequest(
 	limit resource.Quantity,
 	oversellRatio int,
 ) resource.Quantity {
-	// Convert limit to millicores/bytes for calculation
+	// Convert limit to millicores for calculation
 	limitValue := limit.MilliValue()
 	maxRequestValue := limitValue / int64(oversellRatio)
 
-	// Create new quantity with calculated value
-	maxRequest := resource.NewMilliQuantity(maxRequestValue, limit.Format)
+	// Create new quantity with calculated value in millicores (appropriate for CPU)
+	maxRequest := resource.NewMilliQuantity(maxRequestValue, resource.DecimalSI)
 	return *maxRequest
+}
+
+// calculateMaxMemoryRequest calculates the maximum allowed memory request based on limit and oversell ratio
+func (r *PodMutator) calculateMaxMemoryRequest(
+	limit resource.Quantity,
+	oversellRatio int,
+) resource.Quantity {
+	// Convert limit to bytes for calculation
+	limitValue := limit.Value()
+	maxRequestValue := limitValue / int64(oversellRatio)
+
+	// Convert to human-readable format
+	if maxRequestValue >= 1024*1024*1024 { // >= 1Gi
+		giValue := maxRequestValue / (1024 * 1024 * 1024)
+		remainder := maxRequestValue % (1024 * 1024 * 1024)
+		if remainder == 0 {
+			return resource.MustParse(fmt.Sprintf("%dGi", giValue))
+		}
+		// If there's remainder, fall through to Mi calculation
+	}
+
+	if maxRequestValue >= 1024*1024 { // >= 1Mi
+		miValue := maxRequestValue / (1024 * 1024)
+		remainder := maxRequestValue % (1024 * 1024)
+		if remainder == 0 {
+			return resource.MustParse(fmt.Sprintf("%dMi", miValue))
+		}
+		// If there's remainder but > 1Mi, use fractional Mi
+		if miValue > 0 {
+			return resource.MustParse(fmt.Sprintf("%dMi", miValue))
+		}
+	}
+
+	if maxRequestValue >= 1024 { // >= 1Ki
+		kiValue := maxRequestValue / 1024
+		remainder := maxRequestValue % 1024
+		if remainder == 0 {
+			return resource.MustParse(fmt.Sprintf("%dKi", kiValue))
+		}
+		// If there's remainder but > 1Ki, use fractional Ki
+		if kiValue > 0 {
+			return resource.MustParse(fmt.Sprintf("%dKi", kiValue))
+		}
+	}
+
+	// Less than 1Ki, use bytes
+	return resource.MustParse(fmt.Sprintf("%d", maxRequestValue))
 }
 
 // SetupWithManager sets up the webhook with the Manager
