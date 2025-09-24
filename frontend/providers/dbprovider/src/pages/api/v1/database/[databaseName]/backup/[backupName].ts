@@ -7,16 +7,8 @@ import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { DBTypeEnum, defaultDBEditValue } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
 import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
+import { nanoid } from 'nanoid';
 import z from 'zod';
-
-function generateRandomDbName(): string {
-  const letters = 'abcdefghijklmnopqrstuvwxyz';
-  let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += letters.charAt(Math.floor(Math.random() * letters.length));
-  }
-  return result;
-}
 
 const restoreBodySchema = z.object({
   replicas: z.number().min(1).optional()
@@ -90,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const { replicas } = bodyParseResult.data;
-      const newDbName = generateRandomDbName();
+      const newDbName = nanoid(8).toLowerCase();
 
       const group = 'dataprotection.kubeblocks.io';
       const version = 'v1alpha1';
