@@ -99,7 +99,7 @@ func (r *PodMutator) Default(ctx context.Context, obj runtime.Object) error {
 
 	// Determine oversell ratio based on pod labels
 	oversellRatio := r.getOversellRatio(pod)
-	isDatabasePod := r.isDatabasePod(pod)
+	isDatabasePod := isDatabasePod(pod)
 
 	// For database pods, only process the first container
 	if isDatabasePod && len(pod.Spec.Containers) > 0 {
@@ -120,7 +120,7 @@ func (r *PodMutator) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 // isDatabasePod checks if the pod is a KubeBlocks database pod
-func (r *PodMutator) isDatabasePod(pod *corev1.Pod) bool {
+func isDatabasePod(pod *corev1.Pod) bool {
 	if pod.Labels == nil {
 		return false
 	}
@@ -133,7 +133,7 @@ func (r *PodMutator) isDatabasePod(pod *corev1.Pod) bool {
 
 // getOversellRatio determines the oversell ratio based on pod labels
 func (r *PodMutator) getOversellRatio(pod *corev1.Pod) int {
-	if r.isDatabasePod(pod) {
+	if isDatabasePod(pod) {
 		return r.DatabaseOversellRatio
 	}
 	return r.DefaultOversellRatio
@@ -333,14 +333,23 @@ func (v *PodValidator) validatePod(ctx context.Context, pod *corev1.Pod) error {
 		"namespace", pod.Namespace,
 		"user", request.UserInfo.Username)
 
-	// Validate all containers
-	for i, container := range pod.Spec.Containers {
-		if err := v.validateContainerResources(&container, fmt.Sprintf("container[%d]", i)); err != nil {
+	isDatabasePod := isDatabasePod(pod)
+
+	// For database pods, only validate the first container
+	if isDatabasePod && len(pod.Spec.Containers) > 0 {
+		if err := v.validateContainerResources(&pod.Spec.Containers[0], "container[0]"); err != nil {
 			return err
+		}
+	} else {
+		// For non-database pods, validate all containers
+		for i, container := range pod.Spec.Containers {
+			if err := v.validateContainerResources(&container, fmt.Sprintf("container[%d]", i)); err != nil {
+				return err
+			}
 		}
 	}
 
-	// Validate init containers
+	// Validate init containers (for all pod types)
 	for i, container := range pod.Spec.InitContainers {
 		if err := v.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
 			return err
