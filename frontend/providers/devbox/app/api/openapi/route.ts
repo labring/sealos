@@ -114,6 +114,11 @@ import { NextResponse } from 'next/server';
 import { getToolsList } from 'sealos-mcp-sdk';
 import path from 'path';
 
+import {
+  SuccessResponseSchema as GetDevboxConfigSuccessResponseSchema,
+  ErrorResponseSchema as GetDevboxConfigErrorResponseSchema
+} from '../v1/devbox/templates/schema';
+
 const ErrorResponseSchema = z.object({
   code: z.number(),
   message: z.string(),
@@ -1310,6 +1315,31 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
               content: {
                 'application/json': {
                   schema: GetDevboxByNameErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/templates': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get devbox configuration and runtime information',
+          description: 'Retrieve available runtimes and template configurations for creating devboxes. Returns a list of accessible template repositories and their associated template configurations.',
+          responses: {
+            '200': {
+              description: 'Successfully retrieved devbox configuration',
+              content: {
+                'application/json': {
+                  schema: GetDevboxConfigSuccessResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: GetDevboxConfigErrorResponseSchema
                 }
               }
             }
