@@ -590,6 +590,308 @@ func TestPodMutator_CustomRatios(t *testing.T) {
 	}
 }
 
+func TestNewPodMutatorWithThresholds(t *testing.T) {
+	tests := []struct {
+		name                    string
+		defaultRatio            int
+		databaseRatio           int
+		skipCPUThreshold        string
+		skipMemoryThreshold     string
+		expectedCPUThreshold    *string
+		expectedMemoryThreshold *string
+	}{
+		{
+			name:                    "valid thresholds",
+			defaultRatio:            10,
+			databaseRatio:           5,
+			skipCPUThreshold:        "100m",
+			skipMemoryThreshold:     "128Mi",
+			expectedCPUThreshold:    stringPtr("100m"),
+			expectedMemoryThreshold: stringPtr("128Mi"),
+		},
+		{
+			name:                    "empty thresholds",
+			defaultRatio:            15,
+			databaseRatio:           3,
+			skipCPUThreshold:        "",
+			skipMemoryThreshold:     "",
+			expectedCPUThreshold:    nil,
+			expectedMemoryThreshold: nil,
+		},
+		{
+			name:                    "invalid CPU threshold",
+			defaultRatio:            10,
+			databaseRatio:           5,
+			skipCPUThreshold:        "invalid",
+			skipMemoryThreshold:     "256Mi",
+			expectedCPUThreshold:    nil,
+			expectedMemoryThreshold: stringPtr("256Mi"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mutator := NewPodMutatorWithThresholds(
+				tt.defaultRatio,
+				tt.databaseRatio,
+				tt.skipCPUThreshold,
+				tt.skipMemoryThreshold,
+			)
+
+			if mutator.DefaultOversellRatio != tt.defaultRatio {
+				t.Errorf("Expected DefaultOversellRatio %d, got %d", tt.defaultRatio, mutator.DefaultOversellRatio)
+			}
+
+			if mutator.DatabaseOversellRatio != tt.databaseRatio {
+				t.Errorf("Expected DatabaseOversellRatio %d, got %d", tt.databaseRatio, mutator.DatabaseOversellRatio)
+			}
+
+			if tt.expectedCPUThreshold == nil {
+				if mutator.SkipCPUThreshold != nil {
+					t.Errorf("Expected CPU threshold to be nil, got %v", mutator.SkipCPUThreshold)
+				}
+			} else {
+				if mutator.SkipCPUThreshold == nil {
+					t.Errorf("Expected CPU threshold to be set, got nil")
+				} else {
+					expected := resource.MustParse(*tt.expectedCPUThreshold)
+					if !mutator.SkipCPUThreshold.Equal(expected) {
+						t.Errorf("Expected CPU threshold %s, got %s", expected.String(), mutator.SkipCPUThreshold.String())
+					}
+				}
+			}
+
+			if tt.expectedMemoryThreshold == nil {
+				if mutator.SkipMemoryThreshold != nil {
+					t.Errorf("Expected memory threshold to be nil, got %v", mutator.SkipMemoryThreshold)
+				}
+			} else {
+				if mutator.SkipMemoryThreshold == nil {
+					t.Errorf("Expected memory threshold to be set, got nil")
+				} else {
+					expected := resource.MustParse(*tt.expectedMemoryThreshold)
+					if !mutator.SkipMemoryThreshold.Equal(expected) {
+						t.Errorf("Expected memory threshold %s, got %s", expected.String(), mutator.SkipMemoryThreshold.String())
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestPodMutator_ThresholdSkipping(t *testing.T) {
+	skipCPUThreshold := resource.MustParse("100m")
+	skipMemoryThreshold := resource.MustParse("128Mi")
+
+	mutator := &PodMutator{
+		DefaultOversellRatio:    10,
+		DatabaseOversellRatio:   5,
+		SkipCPUThreshold:        &skipCPUThreshold,
+		SkipMemoryThreshold:     &skipMemoryThreshold,
+	}
+
+	tests := []struct {
+		name                string
+		pod                 *corev1.Pod
+		expectedCPU         string
+		expectedMem         string
+		shouldSkipCPU       bool
+		shouldSkipMemory    bool
+		description         string
+	}{
+		{
+			name: "CPU limit below threshold - should skip CPU mutation",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "low-cpu-pod",
+					Namespace: "ns-test",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("50m"), // Below 100m threshold
+									corev1.ResourceMemory: resource.MustParse("1Gi"),  // Above 128Mi threshold
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("25m"),
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCPU:      "25m",            // Should not be mutated
+			expectedMem:      "107374182400m",  // Should be mutated: 1Gi / 10
+			shouldSkipCPU:    true,
+			shouldSkipMemory: false,
+			description:      "CPU below threshold should not be mutated, memory should be",
+		},
+		{
+			name: "Memory limit below threshold - should skip memory mutation",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "low-mem-pod",
+					Namespace: "ns-test",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"), // Above 100m threshold
+									corev1.ResourceMemory: resource.MustParse("64Mi"), // Below 128Mi threshold
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("250m"),
+									corev1.ResourceMemory: resource.MustParse("32Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCPU:      "50m",  // Should be mutated: 500m / 10 = 50m
+			expectedMem:      "32Mi", // Should not be mutated
+			shouldSkipCPU:    false,
+			shouldSkipMemory: true,
+			description:      "Memory below threshold should not be mutated, CPU should be",
+		},
+		{
+			name: "Both limits below thresholds - should skip both mutations",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "both-low-pod",
+					Namespace: "ns-test",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("80m"),  // Below 100m threshold
+									corev1.ResourceMemory: resource.MustParse("100Mi"), // Below 128Mi threshold
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("40m"),
+									corev1.ResourceMemory: resource.MustParse("50Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCPU:      "40m",  // Should not be mutated
+			expectedMem:      "50Mi", // Should not be mutated
+			shouldSkipCPU:    true,
+			shouldSkipMemory: true,
+			description:      "Both resources below thresholds should not be mutated",
+		},
+		{
+			name: "Both limits above thresholds - should mutate both",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "both-high-pod",
+					Namespace: "ns-test",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"), // Above 100m threshold
+									corev1.ResourceMemory: resource.MustParse("1Gi"),   // Above 128Mi threshold
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCPU:      "100m",           // Should be mutated: 1000m / 10 = 100m
+			expectedMem:      "107374182400m",  // Should be mutated: 1Gi / 10
+			shouldSkipCPU:    false,
+			shouldSkipMemory: false,
+			description:      "Both resources above thresholds should be mutated",
+		},
+		{
+			name: "Database pod with limits below threshold",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "db-low-limits-pod",
+					Namespace: "ns-database",
+					Labels: map[string]string{
+						KubeBlocksManagedByLabel: KubeBlocksManagedByValue,
+						KubeBlocksComponentLabel: "mysql",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "db-container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("80m"),  // Below 100m threshold
+									corev1.ResourceMemory: resource.MustParse("100Mi"), // Below 128Mi threshold
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("40m"),
+									corev1.ResourceMemory: resource.MustParse("50Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedCPU:      "40m",  // Should not be mutated (database ratio irrelevant when skipped)
+			expectedMem:      "50Mi", // Should not be mutated
+			shouldSkipCPU:    true,
+			shouldSkipMemory: true,
+			description:      "Database pod with resources below thresholds should not be mutated",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := mutator.Default(context.Background(), tt.pod)
+			if err != nil {
+				t.Errorf("PodMutator.Default() error = %v", err)
+				return
+			}
+
+			container := &tt.pod.Spec.Containers[0]
+			actualCPU := container.Resources.Requests[corev1.ResourceCPU]
+			actualMem := container.Resources.Requests[corev1.ResourceMemory]
+
+			expectedCPU := resource.MustParse(tt.expectedCPU)
+			expectedMem := resource.MustParse(tt.expectedMem)
+
+			if !actualCPU.Equal(expectedCPU) {
+				t.Errorf("%s: CPU request mismatch. Expected %s, got %s",
+					tt.description, expectedCPU.String(), actualCPU.String())
+			}
+
+			if !actualMem.Equal(expectedMem) {
+				t.Errorf("%s: Memory request mismatch. Expected %s, got %s",
+					tt.description, expectedMem.String(), actualMem.String())
+			}
+		})
+	}
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
 func TestPodMutator_ZeroLimits(t *testing.T) {
 	mutator := &PodMutator{
 		DefaultOversellRatio:  defaultOversellRatio,
