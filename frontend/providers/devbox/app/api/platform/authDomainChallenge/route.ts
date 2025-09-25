@@ -1,0 +1,203 @@
+import type { NextRequest } from 'next/server';
+import { customAlphabet } from 'nanoid';
+import crypto from 'crypto';
+import { jsonRes } from '@/services/backend/response';
+
+export const dynamic = 'force-dynamic';
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
+
+export interface AuthDomainChallengeParams {
+  customDomain: string;
+}
+
+function isTimestampValid(timestamp: number, maxAge: number = 600): boolean {
+  const now = Math.floor(Date.now() / 1000);
+  const age = now - timestamp;
+  return Math.abs(age) <= maxAge;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { customDomain } = (await request.json()) as AuthDomainChallengeParams;
+
+    if (!customDomain) {
+      return jsonRes({
+        code: 400,
+        error: 'Missing required parameter: customDomain'
+      });
+    }
+    const token = nanoid();
+
+    const challengeUrl = `http://${customDomain}/api/.well-known/devbox-domain-challenge/${token}`;
+
+    console.log('Attempting domain challenge:', challengeUrl);
+
+    try {
+      // Make HTTP request to user's domain
+      const response = await fetch(challengeUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Sealos-Devbox-Domain-Verifier/1.0'
+        },
+        // Set timeout to 10 seconds
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (!response.ok) {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'CHALLENGE_REQUEST_FAILED',
+            message: `Challenge request failed with status: ${response.status}`,
+            status: response.status,
+            url: challengeUrl
+          }
+        });
+      }
+
+      const challengeResponse = await response.json();
+      const challengeData = challengeResponse.data || challengeResponse; // Handle both formats
+
+      // Validate required fields
+      if (
+        !challengeData.signature ||
+        !challengeData.host ||
+        !challengeData.token ||
+        !challengeData.timestamp ||
+        !challengeData.service
+      ) {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'INVALID_CHALLENGE_RESPONSE',
+            message:
+              'Challenge response missing required fields (signature, host, token, timestamp, service)',
+            response: challengeResponse
+          }
+        });
+      }
+
+      // Validate timestamp to prevent replay attacks
+      if (!isTimestampValid(challengeData.timestamp)) {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'TIMESTAMP_EXPIRED',
+            message: 'Challenge response timestamp is expired or invalid',
+            timestamp: challengeData.timestamp,
+            now: Math.floor(Date.now() / 1000)
+          }
+        });
+      }
+
+      // Validate service field
+      if (challengeData.service !== 'devbox') {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'INVALID_SERVICE',
+            message: 'Challenge response service field mismatch',
+            expected: 'devbox',
+            received: challengeData.service
+          }
+        });
+      }
+
+      // Verify the signature using the same format as the challenge endpoint
+      const secret =
+        process.env.DEVBOX_DOMAIN_CHALLENGE_SECRET || 'default-dev-secret-change-in-production';
+
+      const signatureData = `${challengeData.host}:${challengeData.token}:${challengeData.timestamp}:${challengeData.service}:${challengeData.isProxy}`;
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(signatureData)
+        .digest('hex');
+
+      if (challengeData.signature !== expectedSignature) {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'SIGNATURE_VERIFICATION_FAILED',
+            message: 'Domain challenge signature verification failed',
+            expected: expectedSignature,
+            received: challengeData.signature,
+            signatureData
+          }
+        });
+      }
+
+      // Verify that the token matches what we sent
+      if (challengeData.token !== token) {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'TOKEN_MISMATCH',
+            message: 'Challenge token mismatch',
+            expected: token,
+            received: challengeData.token
+          }
+        });
+      }
+
+      // Verify that the host matches the custom domain
+      if (challengeData.host !== customDomain) {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'HOST_MISMATCH',
+            message: 'Challenge host mismatch',
+            expected: customDomain,
+            received: challengeData.host
+          }
+        });
+      }
+
+      console.log('Domain challenge successful for:', customDomain);
+
+      return jsonRes({
+        data: {
+          verified: true,
+          domain: customDomain,
+          challengeUrl,
+          proxy: {
+            isProxy: challengeData.isProxy || false
+          }
+        },
+        message: 'Domain ownership verified successfully'
+      });
+    } catch (fetchError: any) {
+      console.log('Domain challenge fetch error:', fetchError);
+
+      if (fetchError.name === 'TimeoutError') {
+        return jsonRes({
+          code: 400,
+          error: {
+            code: 'CHALLENGE_TIMEOUT',
+            message: `Challenge request timeout for domain: ${customDomain}`,
+            url: challengeUrl
+          }
+        });
+      }
+
+      return jsonRes({
+        code: 400,
+        error: {
+          code: 'CHALLENGE_NETWORK_ERROR',
+          message: `Network error during challenge request: ${fetchError.message}`,
+          url: challengeUrl,
+          originalError: fetchError.code || fetchError.name
+        }
+      });
+    }
+  } catch (error: any) {
+    console.log('Domain challenge error:', error);
+    return jsonRes({
+      code: 500,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error?.message || 'Internal server error during domain challenge'
+      }
+    });
+  }
+}

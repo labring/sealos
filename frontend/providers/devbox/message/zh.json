@@ -4,6 +4,7 @@
   "Amount": "数量",
   "CNAME Tips": "请到您的域名服务商处，添加该域名的 `CNAME` 解析到 {domain}，解析生效后即可绑定自定义域名。",
   "CPU_with_Memory": "CPU、内存",
+  "domain_challenge_verify_failed_toast": "域名挑战验证失败",
   "Card": "张",
   "Container Port": "容器暴露端口",
   "Custom Domain": "自定义域名",
@@ -435,5 +436,7 @@
   "vscode": "VS Code",
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML 文件"
+  "yaml_file": "YAML 文件",
+  "proxy_detected_title": "检测到代理",
+  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。"
 }
