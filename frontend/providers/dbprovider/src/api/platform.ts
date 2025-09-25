@@ -3,7 +3,8 @@ import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersi
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 import type { AddonItem } from '@/pages/api/getAddonList';
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask } from '@/types/user';
+import type { UserTask } from '@/types/user';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 import { getUserSession } from '@/utils/user';
 import { AxiosProgressEvent } from 'axios';
 
@@ -14,11 +15,6 @@ export const getAppEnv = () => GET<SystemEnvResponse>('/api/getEnv');
 export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVersion');
 
 export const getAddonList = () => GET<AddonItem[]>('/api/getAddonList');
-
-export const getUserQuota = () =>
-  GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
 
 export const uploadFile = (
   data: FormData,
@@ -42,13 +38,6 @@ export const getUserTasks = () =>
 
 export const checkUserTask = () =>
   GET('/api/guide/checkTask', undefined, {
-    headers: {
-      Authorization: getUserSession()?.token
-    }
-  });
-
-export const getPriceBonus = () =>
-  GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
     headers: {
       Authorization: getUserSession()?.token
     }

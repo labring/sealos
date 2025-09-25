@@ -3,6 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { AccessTokenPayload, generateBillingToken, verifyInternalToken } from '../auth';
 import { jsonRes } from './response';
+
 export async function getRegionList() {
   const regionUrl =
     global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/regions';
@@ -21,6 +22,7 @@ export async function getRegionList() {
   }
   return regions;
 }
+
 export async function getRegionByUid(regionUid?: string) {
   const regions = await getRegionList();
   if (!regions) {
@@ -32,6 +34,7 @@ export async function getRegionByUid(regionUid?: string) {
   }
   return regions[currentRegionIdx];
 }
+
 const accountServiceCient = axios.create({
   baseURL: 'https://open.feishu.cn/open-apis',
   headers: {
@@ -39,6 +42,7 @@ const accountServiceCient = axios.create({
     'Accept-Encoding': 'gzip,deflate,compress'
   }
 });
+
 export async function makeRegionListAPIClientByHeader(req: NextApiRequest, res: NextApiResponse) {
   const token = req.body.internalToken;
   const payload = await verifyInternalToken(token);
@@ -53,6 +57,7 @@ export async function makeRegionListAPIClientByHeader(req: NextApiRequest, res: 
   });
   return clientList;
 }
+
 export function makeAPIClient(
   region: Region | undefined | null,
   payload?: AccessTokenPayload

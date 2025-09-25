@@ -114,13 +114,6 @@ export const theme = extendTheme(originTheme, {
     Tabs
   },
   breakpoints: { base: '0em', sm: '30em', md: '48em', lg: '62em', xl: '80em', '2xl': '96em' },
-  styles: {
-    global: {
-      'html, body': {
-        backgroundColor: '#F5F5F5'
-      }
-    }
-  },
   fonts: {
     '*': `'PingFang SC'`,
     div: `'PingFang SC'`,

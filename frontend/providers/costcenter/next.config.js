@@ -1,24 +1,24 @@
-const path = require('path');
-const { i18n } = require('./next-i18next.config');
+const path = require('path')
+const { i18n } = require('./next-i18next.config')
 const ContentSecurityPolicy = `
   connect-src 'self' https://checkout.stripe.com;
   frame-src 'self' https://js.stripe.com;
   script-src 'self' https://js.stripe.com 'unsafe-inline' 'unsafe-eval';
   style-src 'self' 'unsafe-inline';
   font-src 'self';
-`;
+`
 // https://checkout.stripe.com
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   i18n,
   reactStrictMode: false,
   output: 'standalone',
-  transpilePackages: ['echarts', 'sealos@ui'],
+  transpilePackages: ['echarts', 'sealos@ui', '@sealos/shadcn-ui'],
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')
   },
-  async headers() {
+  async headers () {
     return [
       {
         source: '/',
@@ -37,18 +37,27 @@ const nextConfig = {
             value: ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim()
           }
         ]
+      },
+      {
+        source: '/plan',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim()
+          }
+        ]
       }
-    ];
+    ]
   },
-  async redirects() {
+  async redirects () {
     return [
       {
-        source: '/',
-        destination: '/cost_overview',
-        permanent: true
-      }
-    ];
+        source: '/cost_overview',
+        destination: '/plan',
+        permanent: false
+      },
+    ]
   }
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
