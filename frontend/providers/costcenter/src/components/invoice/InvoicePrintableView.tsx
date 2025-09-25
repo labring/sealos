@@ -18,9 +18,7 @@ export type InvoicePrintableViewProps = {
     addressLines: string[];
     contactLines: string[];
   };
-  billTo: {
-    email: string;
-  };
+  billTo: string;
   items: InvoiceItem[];
   subtotal: string;
   total: string;
@@ -82,7 +80,16 @@ export const InvoicePrintableView = React.forwardRef<HTMLDivElement, InvoicePrin
           <section className="flex-1 flex flex-col gap-5 text-gray-600">
             <h2 className="font-semibold text-foreground">Bill to</h2>
 
-            <p className="leading-relaxed">{billTo.email}</p>
+            {billTo.split('\n\n').map((par, parIndex) => (
+              <p key={parIndex} className="leading-relaxed">
+                {par.split('\n').map((line) => (
+                  <>
+                    <span>{line}</span>
+                    <br />
+                  </>
+                ))}
+              </p>
+            ))}
           </section>
         </div>
 
