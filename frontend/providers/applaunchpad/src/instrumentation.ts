@@ -32,6 +32,7 @@ export async function register() {
             domainRegQueryLink: 'http://localhost:3000',
             domainBindingDocumentationLink: null
           },
+          domainChallengeSecret: 'default-dev-secret-change-in-production',
           meta: {
             title: 'Sealos Desktop App Demo',
             description: 'Sealos Desktop App Demo',

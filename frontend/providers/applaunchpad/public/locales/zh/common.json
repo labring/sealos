@@ -237,6 +237,7 @@
   "delete_sealaf_app_tip": "该应用是通过云开发部署的。仅删除应用无法清除应用的所有组件，这些组件可能仍会产生费用。要彻底卸载应用并清理所有相关组件，请在云开发中卸载整个应用。",
   "delete_template_app_tip": "该应用由应用商店部署与管理，即将前往应用商店删除该应用全部组件。",
   "domain_cname_verify_failed_toast": "CNAME 记录验证失败",
+  "domain_challenge_verify_failed_toast": "域名挑战验证失败",
   "domain_input_tip": "请自备域名并填入下方输入框中。",
   "domain_not_bound_modal_cancel": "取消",
   "domain_not_bound_modal_confirm": "确认",
@@ -397,5 +398,7 @@
   "websocket": "WebSocket",
   "within_1_day": "一天内",
   "within_1_hour": "一小时内",
-  "within_5_minute": "五分钟内"
+  "within_5_minute": "五分钟内",
+  "proxy_detected_title": "检测到代理",
+  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。"
 }

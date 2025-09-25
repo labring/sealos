@@ -46,6 +46,7 @@ export type AppConfigType = {
       domainRegQueryLink: string;
       domainBindingDocumentationLink: string | null;
     };
+    domainChallengeSecret?: string;
     meta: {
       title: string;
       description: string;

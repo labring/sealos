@@ -237,6 +237,7 @@
   "delete_sealaf_app_tip": "The application is deployed via cloud development. \nSimply deleting the app won't clear out all of the app's components, which may still accrue charges. \nTo completely uninstall the app and clean all related components, uninstall the entire app in cloud development.",
   "delete_template_app_tip": "This app is managed by the app store. You are now going to the app store to delete all app components.",
   "domain_cname_verify_failed_toast": "CNAME record verification failed",
+  "domain_challenge_verify_failed_toast": "Domain challenge verification failed",
   "domain_input_tip": "Please purchase a domain name and fill it below.",
   "domain_not_bound_modal_cancel": "Cancel",
   "domain_not_bound_modal_confirm": "Confirm",
@@ -397,5 +398,7 @@
   "websocket": "WebSocket",
   "within_1_day": "Within 1 day",
   "within_1_hour": "Within 1 hour",
-  "within_5_minute": "Within 5 minute"
+  "within_5_minute": "Within 5 minute",
+  "proxy_detected_title": "Proxy Detected",
+  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider."
 }
