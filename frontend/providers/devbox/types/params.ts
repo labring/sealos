@@ -8,7 +8,7 @@ export interface TemplateSearchParams {
 // 定义回调时可能传递的参数
 export interface TemplateCallbackParams {
   templateId: string;
-  [key: string]: string; // 其他可能的参数
+  [key: string]: string;
 }
 
 export type AuthCnamePrams = {
