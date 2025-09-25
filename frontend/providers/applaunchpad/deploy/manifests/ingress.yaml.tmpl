@@ -43,3 +43,23 @@ spec:
     - hosts:
         - applaunchpad.{{ .cloudDomain }}
       secretName: {{ .certSecretName }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: applaunchpad-challenge
+  namespace: applaunchpad-frontend
+spec:
+  rules:
+    - host: ""
+      http:
+        paths:
+          - backend:
+              service:
+                name: applaunchpad-frontend
+                port:
+                  number: 3000
+            path: /api/.well-known/applaunchpad-domain-challenge
+            pathType: Prefix

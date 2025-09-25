@@ -29,3 +29,23 @@ spec:
     - hosts:
         - devbox.{{ .cloudDomain }}
       secretName: {{ .certSecretName }} # wildcard-cert
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: devbox-challenge
+  namespace: devbox-frontend
+spec:
+  rules:
+    - host: ""
+      http:
+        paths:
+          - backend:
+              service:
+                name: devbox-frontend
+                port:
+                  number: 3000
+            path: /api/.well-known/devbox-domain-challenge
+            pathType: Prefix
