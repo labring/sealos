@@ -6,8 +6,8 @@ import {
   DialogTitle,
   DialogFooter
 } from '@sealos/shadcn-ui/dialog';
+import { Textarea } from '@sealos/shadcn-ui/textarea';
 import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { InvoicePrintable } from './InvoicePrintable';
 import { OrderListRow } from './OrderListView';
@@ -23,7 +23,7 @@ interface InvoiceDownloadModalProps {
 }
 
 export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownloadModalProps) {
-  const [email, setEmail] = useState('');
+  const [billTo, setBillTo] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState<string>('');
 
   const invoicePrintableRef = useRef<HTMLDivElement>(null);
@@ -76,13 +76,13 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
           {/* Customer Information Form */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="customerEmail">Email Address</Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email address"
+              <Label htmlFor="billTo">Bill To</Label>
+              <Textarea
+                id="billTo"
+                className="min-h-64"
+                value={billTo}
+                onChange={(e) => setBillTo(e.target.value)}
+                placeholder="Enter your info"
               />
             </div>
           </div>
@@ -93,9 +93,7 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
               ref={invoicePrintableRef}
               invoiceNumber={invoiceNumber}
               dateOfIssue={dateOfIssue}
-              billTo={{
-                email
-              }}
+              billTo={billTo}
               items={billingItems}
               subtotal={'$' + formatMoney(invoiceAmount)}
               total={'$' + formatMoney(invoiceAmount)}
@@ -107,7 +105,7 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleDownload} disabled={!email}>
+          <Button onClick={handleDownload} disabled={!billTo}>
             Download Invoice
           </Button>
         </DialogFooter>
