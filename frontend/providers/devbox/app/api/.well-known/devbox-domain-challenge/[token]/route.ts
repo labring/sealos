@@ -2,6 +2,8 @@ import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { jsonRes } from '../../../../../services/backend/response';
 
+export const dynamic = 'force-dynamic';
+
 function detectProxy(req: NextRequest): { isProxy: boolean } {
   const headers = req.headers;
   const headerObj: Record<string, string> = {};
