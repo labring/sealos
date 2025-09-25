@@ -4,6 +4,7 @@
   "Amount": "Amount",
   "CNAME Tips": "To set up a custom domain, please add a `CNAME` record for your domain pointing to {domain} at your domain registrar. You can bind your custom domain once the DNS resolution takes effect.",
   "CPU_with_Memory": "CPU、Memory",
+  "domain_challenge_verify_failed_toast": "Domain challenge verification failed",
   "Card": "cards",
   "Container Port": "Container Port",
   "Custom Domain": "Custom",
@@ -433,5 +434,7 @@
   "vm": "vm",
   "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
-  "yaml_file": "YAML"
+  "yaml_file": "YAML",
+  "proxy_detected_title": "Proxy Detected",
+  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider."
 }

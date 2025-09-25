@@ -1,6 +1,7 @@
 import { GET, POST } from '@/services/request';
 import type { UserQuotaItemType, UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
+import { AuthCnamePrams, AuthDomainChallengeParams } from '@/types/params';
 import { getDesktopSessionFromSessionStorage } from '@/utils/user';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
 
@@ -18,8 +19,19 @@ export const getRuntime = () => GET('/api/platform/getRuntime');
 
 export const getResourcePrice = () => GET('/api/platform/resourcePrice');
 
-export const postAuthCname = (data: { publicDomain: string; customDomain: string }) =>
-  POST('/api/platform/authCname', data);
+export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
+
+export const postAuthDomainChallenge = (data: AuthDomainChallengeParams) =>
+  POST<{
+    verified: boolean;
+    domain: string;
+    challengeUrl: string;
+    proxy: {
+      isProxy: boolean;
+      proxyType?: string;
+      details?: any;
+    };
+  }>('/api/platform/authDomainChallenge', data);
 
 export const getUserTasks = () =>
   POST<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', {

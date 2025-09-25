@@ -10,3 +10,12 @@ export interface TemplateCallbackParams {
   templateId: string;
   [key: string]: string; // 其他可能的参数
 }
+
+export type AuthCnamePrams = {
+  publicDomain: string;
+  customDomain: string;
+};
+
+export type AuthDomainChallengeParams = {
+  customDomain: string;
+};
