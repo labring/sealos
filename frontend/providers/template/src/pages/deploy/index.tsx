@@ -4,7 +4,6 @@ import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useCachedStore } from '@/store/cached';
-import { useGlobalStore } from '@/store/global';
 import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
@@ -58,7 +57,6 @@ export default function EditApp({
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
-  const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
@@ -95,14 +93,6 @@ export default function EditApp({
   const { openConfirm: openConfirm2, ConfirmChild: ConfirmChild2 } = useConfirm({
     content: 'Do you want to jump to the app details page'
   });
-
-  const pxVal = useMemo(() => {
-    const val = Math.floor((screenWidth - 1050) / 2);
-    if (val < 20) {
-      return 20;
-    }
-    return val;
-  }, [screenWidth]);
 
   const generateYamlData = useCallback(
     (templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
@@ -411,13 +401,7 @@ export default function EditApp({
           />
           <Flex w="100%" mt="32px" flexDirection="column">
             {/* <QuotaBox /> */}
-            <Form
-              formHook={formHook}
-              pxVal={pxVal}
-              formSource={templateSource!}
-              platformEnvs={platformEnvs!}
-            />
-            {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
+            <Form formHook={formHook} formSource={templateSource!} platformEnvs={platformEnvs!} />
             <ReadMe
               key={templateSource?.readUrl || 'readme_url'}
               readUrl={templateSource?.readUrl || ''}

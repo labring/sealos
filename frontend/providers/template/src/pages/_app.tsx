@@ -48,7 +48,7 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
   const router = useRouter();
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
-  const { setScreenWidth, setLastRoute } = useGlobalStore();
+  const { setLastRoute } = useGlobalStore();
   const { initSystemConfig, initSystemEnvs } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
@@ -74,21 +74,6 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
     NProgress.done();
     return response;
   }, []);
-
-  // add resize event
-  useEffect(() => {
-    const resize = throttle((e: Event) => {
-      const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
-      setScreenWidth(documentWidth);
-    }, 200);
-    window.addEventListener('resize', resize);
-    const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
-    setScreenWidth(documentWidth);
-
-    return () => {
-      window.removeEventListener('resize', resize);
-    };
-  }, [setScreenWidth]);
 
   useEffect(() => {
     const changeI18n = async (data: any) => {

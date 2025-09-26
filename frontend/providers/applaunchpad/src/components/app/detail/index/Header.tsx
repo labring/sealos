@@ -1,4 +1,4 @@
-import React, { Dispatch, useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
 import type { AppStatusMapType, TAppSource } from '@/types/app';
 import { useRouter } from 'next/router';
@@ -18,16 +18,12 @@ const Header = ({
   appName = 'app-name',
   appStatus = appStatusMap[AppStatusEnum.waiting],
   isPause = false,
-  isLargeScreen = true,
-  setShowSlider,
   refetch,
   source
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
   isPause?: boolean;
-  isLargeScreen: boolean;
-  setShowSlider: Dispatch<boolean>;
   refetch: () => void;
   source?: TAppSource;
 }) => {
@@ -44,7 +40,6 @@ const Header = ({
     onOpen: onOpenUpdateModal,
     onClose: onCloseUpdateModal
   } = useDisclosure();
-  const [updateAppName, setUpdateAppName] = useState('');
 
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Confirm to restart this application?'
@@ -120,20 +115,6 @@ const Header = ({
         {appName}
       </Box>
       <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
-      {/* {!isLargeScreen && (
-        <Box mx={4}>
-          <Button
-            minW={'75px'}
-            fontSize={'12px'}
-            height={'32px'}
-            leftIcon={<MyIcon name="detail" w="16px" h="16px" />}
-            variant={'outline'}
-            onClick={() => setShowSlider(true)}
-          >
-            {t('Details')}
-          </Button>
-        </Box>
-      )} */}
       <Box flex={1} />
 
       {/* btns */}
@@ -177,7 +158,6 @@ const Header = ({
           isLoading={loading}
           onClick={() => {
             if (source?.hasSource && source?.sourceType === 'sealaf') {
-              setUpdateAppName(appName);
               onOpenUpdateModal();
             } else {
               router.push(`/app/edit?name=${appName}`);
@@ -230,7 +210,6 @@ const Header = ({
         source={source}
         isOpen={isOpenUpdateModal}
         onClose={() => {
-          setUpdateAppName('');
           onCloseUpdateModal();
         }}
       />
