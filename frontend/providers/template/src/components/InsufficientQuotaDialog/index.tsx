@@ -110,10 +110,13 @@ export function InsufficientQuotaDialog({
                             {((item.limit - item.used) / props.scale).toFixed(2)} {props.unit}
                           </Text>
                           {showRequirement && (
-                            <Text color="red.500">
-                              {t('insufficient_quota_dialog.quota_required')}
-                              {(item.request! / props.scale).toFixed(2)} {props.unit}
-                            </Text>
+                            <>
+                              <Divider orientation="vertical" h={4} />
+                              <Text color="red.500">
+                                {t('insufficient_quota_dialog.quota_required')}
+                                {(item.request! / props.scale).toFixed(2)} {props.unit}
+                              </Text>
+                            </>
                           )}
                         </HStack>
                       </Flex>
