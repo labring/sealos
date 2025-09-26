@@ -26,7 +26,7 @@
     "@tanstack/react-query": "^4.35.3",
     "@tanstack/react-table": "^8.10.7",
     "ansi_up": "^5.2.1",
-    "axios": "^1.5.1",
+    "axios": "^1.12.0",
     "base64-stream": "^1.0.0",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
