@@ -7,10 +7,10 @@ import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { DBTypeEnum, defaultDBEditValue } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
 import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
-import { customAlphabet } from 'nanoid';
 import z from 'zod';
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
+
 const restoreBodySchema = z.object({
+  newDbName: z.string().min(1, 'New database name is required'),
   replicas: z.number().min(1).optional()
 });
 
@@ -81,8 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const { replicas } = bodyParseResult.data;
-      const newDbName = nanoid(8).toLowerCase();
+      const { newDbName, replicas } = bodyParseResult.data;
 
       const group = 'dataprotection.kubeblocks.io';
       const version = 'v1alpha1';
