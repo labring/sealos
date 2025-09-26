@@ -306,7 +306,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     labels: newLabels,
     source: getDBSource(db),
     autoBackup: adaptBackupByCluster(db),
-    terminationPolicy: db.spec?.terminationPolicy || 'Delete'
+    terminationPolicy: db.spec?.terminationPolicy || 'Delete',
+    cluster: db
   };
 };
 

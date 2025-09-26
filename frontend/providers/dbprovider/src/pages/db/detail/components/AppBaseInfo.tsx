@@ -172,15 +172,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ].find((item) => item === db.dbType);
   }, [db.dbType]);
 
-  const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
-    ['getDBStatefulSetByName', db.dbName, db.dbType],
-    () => getDBStatefulSetByName(db.dbName, db.dbType),
-    {
-      retry: 2,
-      enabled: !!db.dbName && !!db.dbType
-    }
-  );
-
   const { data: secret, refetch: refetchSecret } = useQuery(
     ['getDBSecret', db.dbName, db.dbType],
     () =>
@@ -192,7 +183,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           })
         : null,
     {
-      enabled: !!db.dbName && !!db.dbType
+      enabled: supportConnectDB
     }
   );
 
@@ -200,7 +191,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
-      enabled: !!db.dbName && !!db.dbType,
+      // enabled: supportConnectDB,
       retry: 3,
       onSuccess(data) {
         setIsChecked(!!data);
@@ -309,22 +300,20 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     });
   }, [db.dbType, secret]);
 
-  const refetchAll = useCallback(() => {
-    refetchDBStatefulSet();
+  const refetchAll = () => {
     refetchSecret();
     refetchService();
-  }, [refetchDBStatefulSet, refetchSecret, refetchService]);
+  };
 
   const openNetWorkService = useCallback(async () => {
     try {
-      console.log({ dbStatefulSet, db });
-      if (!dbStatefulSet || !db) {
+      if (!db) {
         return toast({
           title: 'Missing Parameters',
           status: 'error'
         });
       }
-      const yaml = json2NetworkService({ dbDetail: db, dbStatefulSet: dbStatefulSet });
+      const yaml = json2NetworkService({ dbDetail: db, dbCluster: db?.cluster });
       await applyYamlList([yaml], 'create');
       onClose();
       setIsChecked(true);
@@ -339,7 +328,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         status: 'error'
       });
     }
-  }, [onClose, refetchAll, db, dbStatefulSet, t, toast]);
+  }, [onClose, refetchAll, db, t, toast]);
 
   const closeNetWorkService = async () => {
     try {
