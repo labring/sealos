@@ -3,9 +3,9 @@ import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import Header from '@/components/app/detail/index/Header';
 import { useAppStore } from '@/store/app';
-import { Box, Flex } from '@chakra-ui/react';
+import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import { useLoading } from '@/hooks/useLoading';
 
@@ -20,27 +20,23 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const { appDetail = MOCK_APP_DETAIL, setAppDetail, intervalLoadPods } = useAppStore();
   const { Loading } = useLoading();
 
-  const { refetch, isInitialLoading: appDetailInitialLoading } = useQuery(
-    ['setAppDetail'],
-    () => setAppDetail(appName, router?.query?.guide === 'true'),
-    {
-      retryDelay: 3000,
-      retry: (_count, err) => {
-        toast({
-          title: String(err),
-          status: 'error'
-        });
-
-        return true;
-      },
-      onError(err) {
-        toast({
-          title: String(err),
-          status: 'error'
-        });
-      }
+  const {
+    refetch,
+    isInitialLoading: appDetailInitialLoading,
+    isError: appDetailError
+  } = useQuery(['setAppDetail'], () => setAppDetail(appName, router?.query?.guide === 'true'), {
+    retryDelay: 3000,
+    retry: (count, _err) => {
+      if (count >= 5) return false;
+      return true;
+    },
+    onError(err) {
+      toast({
+        title: String(err),
+        status: 'error'
+      });
     }
-  );
+  });
 
   useQuery(
     ['app-detail-pod'],
@@ -74,7 +70,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         <Sidebar />
 
         <Loading
-          loading={appDetailInitialLoading}
+          loading={appDetailInitialLoading || appDetailError}
           fixed={false}
           backdropProps={{ background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}
         />
