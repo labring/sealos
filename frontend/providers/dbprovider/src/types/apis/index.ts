@@ -759,9 +759,8 @@ export const document = createDocument({
                         },
                         newDbName: {
                           type: 'string',
-                          description:
-                            'Auto-generated name of the new restored database (8 random letters)',
-                          example: 'abcdefgh'
+                          description: 'Name of the new restored database',
+                          example: 'my-postgres-db-restored'
                         },
                         backupName: {
                           type: 'string',
@@ -778,16 +777,6 @@ export const document = createDocument({
                           description: 'Database version',
                           example: 'postgresql-14.8.2'
                         },
-                        resource: {
-                          type: 'object',
-                          properties: {
-                            cpu: { type: 'number' },
-                            memory: { type: 'number' },
-                            storage: { type: 'number' },
-                            replicas: { type: 'number' }
-                          },
-                          description: 'Resource configuration of the restored database'
-                        },
                         restoredAt: {
                           type: 'string',
                           format: 'date-time',
@@ -802,7 +791,7 @@ export const document = createDocument({
             }
           },
           '400': {
-            description: 'Bad Request - Invalid request body'
+            description: 'Bad Request - Invalid request body or missing parameters'
           },
           '404': {
             description: 'Backup or database not found'
