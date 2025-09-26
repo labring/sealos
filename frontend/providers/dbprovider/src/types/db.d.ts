@@ -12,7 +12,7 @@ import type {
   V1StatefulSet
 } from '@kubernetes/client-node';
 import { AutoBackupFormType } from './backup';
-import { KubeBlockClusterTerminationPolicy } from './cluster';
+import { KbPgClusterType, KubeBlockClusterTerminationPolicy } from './cluster';
 import { I18nCommonKey } from './i18next';
 
 export type DBType = `${DBTypeEnum}`;
@@ -133,6 +133,7 @@ export interface DBDetailType extends DBEditType {
   totalCpu: number;
   totalMemory: number;
   totalStorage: number;
+  cluster?: KbPgClusterType; // cluster info
 }
 
 export interface DBConditionItemType {

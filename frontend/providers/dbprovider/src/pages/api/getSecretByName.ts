@@ -43,16 +43,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    console.log(`[getSecretByName] Got k8s client, namespace: ${namespace}`);
-
     const { username, password, host, port } = await fetchDBSecret(
       k8sCore,
       dbName,
       dbType,
       namespace
     );
-
-    console.log(`[getSecretByName] fetchDBSecret result:`, { username, password, host, port });
 
     const connectionInfo = buildConnectionInfo(dbType, username, password, host, port, namespace);
 
