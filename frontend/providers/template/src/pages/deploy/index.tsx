@@ -26,7 +26,7 @@ import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { ExceededWorkspaceQuotaItem } from '@/types/workspace';
 import { useUserStore } from '@/store/user';
 import useSessionStore from '@/store/session';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
@@ -67,7 +67,7 @@ export default function EditApp({
   const { getSession } = useSessionStore();
 
   const [quotaLoaded, setQuotaLoaded] = useState(false);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededQuotas, setExceededQuotas] = useState<ExceededWorkspaceQuotaItem[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
 
   // load user quota on component mount
@@ -428,6 +428,7 @@ export default function EditApp({
         open={exceededDialogOpen}
         onOpenChange={setExceededDialogOpen}
         onConfirm={() => {}}
+        showRequirements={['cpu', 'memory', 'nodeport', 'storage']}
       />
       {!!errorMessage && (
         <ErrorModal

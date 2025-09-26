@@ -267,7 +267,7 @@
   "nodeport": "端口",
   "traffic": "流量",
   "insufficient_quota_dialog": {
-    "alert-title": "现在无法创建应用，您已经用尽了全部资源。",
+    "alert-title": "现在无法创建应用，需要的资源超出了您当前方案的配额。",
     "cancel": "取消",
     "confirm": "确认",
     "please_upgrade_plan": {
@@ -277,6 +277,7 @@
     },
     "quota_available": "可用: ",
     "quota_in_use": "使用中: ",
+    "quota_required": "需要: ",
     "quota_total": "总计: ",
     "title": "资源不足"
   }
