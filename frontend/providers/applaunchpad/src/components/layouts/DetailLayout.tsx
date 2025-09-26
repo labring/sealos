@@ -3,12 +3,11 @@ import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import Header from '@/components/app/detail/index/Header';
 import { useAppStore } from '@/store/app';
-import { useGlobalStore } from '@/store/global';
-import { Flex } from '@chakra-ui/react';
+import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { useLoading } from '@/hooks/useLoading';
 
 interface DetailLayoutProps {
   children: React.ReactNode;
@@ -18,17 +17,22 @@ interface DetailLayoutProps {
 export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const { screenWidth } = useGlobalStore();
-  const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const { t } = useTranslation();
   const { appDetail = MOCK_APP_DETAIL, setAppDetail, intervalLoadPods } = useAppStore();
+  const { Loading } = useLoading();
 
-  const [showSlider, setShowSlider] = useState(false);
-
-  const { refetch } = useQuery(
+  const { refetch, isInitialLoading: appDetailInitialLoading } = useQuery(
     ['setAppDetail'],
     () => setAppDetail(appName, router?.query?.guide === 'true'),
     {
+      retryDelay: 3000,
+      retry: (_count, err) => {
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+
+        return true;
+      },
       onError(err) {
         toast({
           title: String(err),
@@ -65,11 +69,15 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         appStatus={appDetail?.status}
         isPause={appDetail?.isPause}
         refetch={refetch}
-        setShowSlider={setShowSlider}
-        isLargeScreen={isLargeScreen}
       />
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'6px'}>
         <Sidebar />
+
+        <Loading
+          loading={appDetailInitialLoading}
+          fixed={false}
+          backdropProps={{ background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}
+        />
         {children}
       </Flex>
     </Flex>
