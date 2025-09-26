@@ -1187,10 +1187,12 @@ export const json2MigrateCR = (data: MigrateForm) => {
 
 export const json2NetworkService = ({
   dbDetail,
-  dbCluster
+  dbCluster,
+  dbStatefulSet
 }: {
   dbDetail: DBDetailType;
   dbCluster?: KbPgClusterType;
+  dbStatefulSet?: V1StatefulSet;
 }) => {
   const portMapping = {
     postgresql: 5432,
@@ -1249,6 +1251,18 @@ export const json2NetworkService = ({
             kind: 'Cluster',
             name: dbCluster?.metadata?.name,
             uid: dbCluster?.metadata?.uid,
+            blockOwnerDeletion: true,
+            controller: true
+          }
+        ]
+      }),
+      ...(dbStatefulSet && {
+        ownerReferences: [
+          {
+            apiVersion: dbStatefulSet?.apiVersion,
+            kind: 'StatefulSet',
+            name: dbStatefulSet?.metadata?.name,
+            uid: dbStatefulSet?.metadata?.uid,
             blockOwnerDeletion: true,
             controller: true
           }
