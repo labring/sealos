@@ -75,6 +75,9 @@ const CustomAccessModal = ({
     details?: any;
   }>({ isProxy: false });
 
+  const sanitizeDomain = (input: string) =>
+    input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
+
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async (silent: boolean) => {
       let cnameResult = await postAuthCname({
@@ -308,9 +311,18 @@ const CustomAccessModal = ({
                   <Button
                     height={'32px'}
                     onClick={() => {
-                      setProcessPhase('VERIFY_DOMAIN');
-                      setVerificationMethod('CNAME'); // Reset to try CNAME first
-                      authDomain(true);
+                      const sanitizedDomain = sanitizeDomain(customDomain);
+                      if (sanitizedDomain) {
+                        setCustomDomain(sanitizedDomain);
+                        setProcessPhase('VERIFY_DOMAIN');
+                        setVerificationMethod('CNAME'); // Reset to try CNAME first
+                        authDomain(true);
+                      } else {
+                        toast({
+                          title: t('domain_invalid_toast', { domain: customDomain }),
+                          status: 'error'
+                        });
+                      }
                     }}
                   >
                     {t('domain_verification_input_save')}
