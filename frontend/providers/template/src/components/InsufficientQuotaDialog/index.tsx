@@ -17,17 +17,18 @@ import {
 } from '@chakra-ui/react';
 import { WarningIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'next-i18next';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { ExceededWorkspaceQuotaItem, WorkspaceQuotaItemType } from '@/types/workspace';
 import { resourcePropertyMap } from '@/constants/resource';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import css from './index.module.css';
 
 interface InsufficientQuotaDialogProps {
-  items: WorkspaceQuotaItem[];
+  items: ExceededWorkspaceQuotaItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   showControls?: boolean;
+  showRequirements?: WorkspaceQuotaItemType[];
 }
 
 export function InsufficientQuotaDialog({
@@ -35,7 +36,8 @@ export function InsufficientQuotaDialog({
   open,
   onOpenChange,
   onConfirm,
-  showControls = true
+  showControls = true,
+  showRequirements = []
 }: InsufficientQuotaDialogProps) {
   const { t } = useTranslation();
 
@@ -56,7 +58,7 @@ export function InsufficientQuotaDialog({
   return (
     <Modal isOpen={open} onClose={() => onOpenChange(false)} isCentered>
       <ModalOverlay />
-      <ModalContent maxW="600px">
+      <ModalContent maxW="800px">
         <ModalHeader>
           <Flex alignItems="center" gap={2}>
             <WarningIcon color="orange.500" />
@@ -75,6 +77,8 @@ export function InsufficientQuotaDialog({
                 {items.map((item) => {
                   const props = resourcePropertyMap[item.type];
                   if (!props) return null;
+
+                  const showRequirement = showRequirements.includes(item.type) && !!item.request;
 
                   return (
                     <Box key={item.type} w="100%">
@@ -101,10 +105,16 @@ export function InsufficientQuotaDialog({
                             {(item.used / props.scale).toFixed(2)} {props.unit}
                           </Text>
                           <Divider orientation="vertical" h={4} />
-                          <Text color="red.500">
+                          <Text color={showRequirement ? undefined : 'red.500'}>
                             {t('insufficient_quota_dialog.quota_available')}
                             {((item.limit - item.used) / props.scale).toFixed(2)} {props.unit}
                           </Text>
+                          {showRequirement && (
+                            <Text color="red.500">
+                              {t('insufficient_quota_dialog.quota_required')}
+                              {(item.request! / props.scale).toFixed(2)} {props.unit}
+                            </Text>
+                          )}
                         </HStack>
                       </Flex>
                     </Box>

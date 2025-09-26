@@ -151,7 +151,7 @@ const Header = ({
           height={'60px'}
         />
       </Flex>
-      <Flex ml={'24px'} w="520px" flexDirection={'column'}>
+      <Flex ml={'24px'} w="100%" flexDirection={'column'}>
         <Flex alignItems={'center'} gap={'12px'}>
           <Text fontSize={'24px'} fontWeight={600} color={'#24282C'}>
             {templateDetail?.spec?.i18n?.[i18n.language]?.title ?? templateDetail?.spec?.title}
@@ -284,35 +284,38 @@ const Header = ({
           </Text>
         </Tooltip>
       </Flex>
-      <Popover trigger="hover" closeDelay={600}>
-        <PopoverTrigger>
-          <Flex
-            cursor={'pointer'}
-            ml={'auto'}
-            alignItems={'center'}
-            color={'brightBlue.600'}
-            fontSize={'20px'}
-            fontWeight={'bold'}
-            flexShrink={'0'}
-            gap={'4px'}
+
+      {session.subscription?.type === 'PAYG' && (
+        <Popover trigger="hover" closeDelay={600}>
+          <PopoverTrigger>
+            <Flex
+              cursor={'pointer'}
+              ml={'auto'}
+              alignItems={'center'}
+              color={'brightBlue.600'}
+              fontSize={'20px'}
+              fontWeight={'bold'}
+              flexShrink={'0'}
+              gap={'4px'}
+            >
+              <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
+              {priceList?.[priceList.length - 1]?.value}
+              <Text fontSize={'16px'}>/{t('Day')}</Text>
+              <MyIcon name="help" width={'16px'} height={'16px'} color={'grayModern.500'}></MyIcon>
+            </Flex>
+          </PopoverTrigger>
+          <PopoverContent
+            width={'205px'}
+            borderRadius={'8px'}
+            boxShadow={
+              '0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)'
+            }
+            border={'none'}
           >
-            <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
-            {priceList?.[priceList.length - 1]?.value}
-            <Text fontSize={'16px'}>/{t('Day')}</Text>
-            <MyIcon name="help" width={'16px'} height={'16px'} color={'grayModern.500'}></MyIcon>
-          </Flex>
-        </PopoverTrigger>
-        <PopoverContent
-          width={'205px'}
-          borderRadius={'8px'}
-          boxShadow={
-            '0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)'
-          }
-          border={'none'}
-        >
-          <PriceBox {...usage} />
-        </PopoverContent>
-      </Popover>
+            <PriceBox {...usage} />
+          </PopoverContent>
+        </Popover>
+      )}
 
       <Button
         h={'40px'}
