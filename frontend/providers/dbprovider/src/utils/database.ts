@@ -106,7 +106,7 @@ export async function fetchDBSecret(
       secretName = `${dbName}-conn-credential`;
       break;
     case DBTypeEnum.kafka:
-      secretName = `${dbName}-kafka-combine-account-admin`;
+      secretName = `${dbName}-broker-account-admin`;
       break;
     case DBTypeEnum.redis:
       secretName = `${dbName}-redis-account-default`;
@@ -119,15 +119,11 @@ export async function fetchDBSecret(
       break;
   }
 
-  console.log('[fetchDBSecret] Trying secret name:', secretName);
-
   try {
     const res = await k8sCore.readNamespacedSecret(secretName, namespace);
     if (!res?.body?.data) {
       throw Error(`Secret ${secretName} has no data`);
     }
-
-    console.log('[fetchDBSecret] Found secret:', secretName);
     const secret = res.body;
 
     const username = Buffer.from(secret.data?.[dbTypeMap[dbType].usernameKey] || '', 'base64')
@@ -185,12 +181,10 @@ export async function fetchDBSecret(
   } catch (e: any) {
     const statusCode = e?.response?.statusCode || e?.statusCode;
     if (statusCode && Number(statusCode) === 404) {
-      console.log('[fetchDBSecret] Secret not found:', secretName);
       throw Error(
         `Secret not found for database ${dbName} of type ${dbType}. Secret name: ${secretName}`
       );
     }
-    console.log('[fetchDBSecret] Error fetching secret:', secretName, e.message);
     throw Error(`Failed to fetch secret for database ${dbName} of type ${dbType}: ${e.message}`);
   }
 }

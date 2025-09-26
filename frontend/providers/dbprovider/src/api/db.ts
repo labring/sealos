@@ -104,6 +104,13 @@ export const getDBServiceByName = (name: string) =>
 
 export const delDBServiceByName = (name: string) => DELETE('/api/delServiceByName', { name });
 
+/**
+ * kb 0.9 StatefulSets have all been changed to instancesets
+ * @param name
+ * @param dbType
+ * @returns
+ * @deprecated
+ */
 export const getDBStatefulSetByName = (name: string, dbType: DBType) =>
   GET<V1StatefulSet>(`/api/getStatefulSetByName?name=${name}&dbType=${dbType}`);
 
