@@ -21,7 +21,6 @@ ENV namespaceWebhookEnabled="true"
 ENV namespaceWebhookFailurePolicy="Fail"
 
 ENV podWebhookEnabled="true"
-ENV podWebhookFailurePolicy="Fail"
 ENV defaultOversellRatio="10"
 ENV databaseOversellRatio="5"
 ENV skipCPUThreshold="100m"
