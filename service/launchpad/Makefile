@@ -12,6 +12,7 @@ PLATFORMS ?= linux_arm64 linux_amd64
 GOOS=linux
 CGO_ENABLED=0
 GOARCH=$(shell go env GOARCH)
+TARGETARCH ?= $(GOARCH)
 
 GO_BUILD_FLAGS=-trimpath -ldflags "-s -w"
 
