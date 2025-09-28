@@ -497,7 +497,7 @@ webhooks:
       name: admission-webhook-service
       namespace: sealos-system
       path: /mutate--v1-pod
-  failurePolicy: {{ .podWebhookFailurePolicy }}
+  failurePolicy: Ignore
   name: mpod.sealos.io
   namespaceSelector:
     matchExpressions:
@@ -593,7 +593,7 @@ webhooks:
       name: admission-webhook-service
       namespace: sealos-system
       path: /validate--v1-pod
-  failurePolicy: {{ .podWebhookFailurePolicy }}
+  failurePolicy: Ignore
   name: vpod.sealos.io
   namespaceSelector:
     matchExpressions:
