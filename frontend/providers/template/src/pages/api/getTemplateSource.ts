@@ -14,6 +14,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
+import { getResourceUsage } from '@/utils/usage';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -56,6 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code, message });
     }
 
+    // ? Not rendering the template here, hope it's parsable.
+    const requirements = getResourceUsage([appYaml ?? '']);
+
     jsonRes(res, {
       code: 200,
       data: {
@@ -66,7 +70,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         appYaml,
         templateYaml,
         readmeContent,
-        readUrl
+        readUrl,
+        requirements
       }
     });
   } catch (err: any) {
