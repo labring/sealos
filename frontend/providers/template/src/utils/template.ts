@@ -1,7 +1,7 @@
 import { EnvResponse, YamlItemType } from '@/types';
 import { TemplateSourceType } from '@/types/app';
 import { reduce, mapValues } from 'lodash';
-import { generateYamlList, parseTemplateString } from './json-yaml';
+import { developGenerateYamlList, generateYamlList, parseTemplateString } from './json-yaml';
 
 export const getTemplateInputDefaultValues = (templateSource: TemplateSourceType | undefined) => {
   const inputs = templateSource?.source?.inputs;
@@ -47,7 +47,8 @@ export function findTopKeyWords(keywordsList: string[][], topCount: number) {
 export const generateYamlData = (
   templateSource: TemplateSourceType,
   inputs: Record<string, string>,
-  platformEnvs?: EnvResponse
+  platformEnvs?: EnvResponse,
+  isDevelop: boolean = false
 ): YamlItemType[] => {
   if (!templateSource) return [];
   const app_name = templateSource?.source?.defaults?.app_name?.value;
@@ -62,5 +63,8 @@ export const generateYamlData = (
     defaults: defaults
   };
   const generateStr = parseTemplateString(templateSource.appYaml, data);
-  return generateYamlList(generateStr, app_name);
+
+  return isDevelop
+    ? developGenerateYamlList(generateStr, app_name)
+    : generateYamlList(generateStr, app_name);
 };
