@@ -290,9 +290,12 @@ spec:
       - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
         - --ingress-mutating-annotations={{ .ingressMutatingAnnotations }}
         - --domains={{ .domains }}
+        - --default-oversell-ratio={{ .defaultOversellRatio }}
+        - --database-oversell-ratio={{ .databaseOversellRatio }}
+        - --skip-cpu-threshold={{ .skipCPUThreshold }}
+        - --skip-memory-threshold={{ .skipMemoryThreshold }}
         command:
         - /manager
         env:
@@ -486,6 +489,32 @@ webhooks:
     - namespaces
   sideEffects: None
 {{ end }}
+{{ if .podWebhookEnabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /mutate--v1-pod
+  failurePolicy: {{ .podWebhookFailurePolicy }}
+  name: mpod.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+{{ end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -554,5 +583,31 @@ webhooks:
     - DELETE
     resources:
     - namespaces
+  sideEffects: None
+{{ end }}
+{{ if .podWebhookEnabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /validate--v1-pod
+  failurePolicy: {{ .podWebhookFailurePolicy }}
+  name: vpod.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
   sideEffects: None
 {{ end }}
