@@ -1,12 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import {
-  WorkspaceSubscriptionRequestSchema,
-  LastTransactionResponse,
-  LastTransactionResponseSchema
-} from '@/types/plan';
-import { ApiResp } from '@/types/api';
+import { WorkspaceSubscriptionRequestSchema, LastTransactionResponse } from '@/types/plan';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -36,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     );
 
-    console.log('response', response.data);
+    // console.log('response', response.data);
 
     return jsonRes<LastTransactionResponse>(res, {
       data: response.data

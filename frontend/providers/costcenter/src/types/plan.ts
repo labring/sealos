@@ -43,7 +43,8 @@ export const SubscriptionPlanSchema = z.object({
   CreatedAt: z.string(),
   UpdatedAt: z.string(),
   Tags: z.array(z.string()),
-  Order: z.number()
+  Order: z.number(),
+  AIQuota: z.number()
 });
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;
@@ -143,7 +144,11 @@ export const PaymentListRequestSchema = z.object({
 });
 export type PaymentListRequest = z.infer<typeof PaymentListRequestSchema>;
 
-// 响应类型
+export const PaymentStatusRequestSchema = z.object({
+  payId: z.string()
+});
+export type PaymentStatusRequest = z.infer<typeof PaymentStatusRequestSchema>;
+
 export const SubscriptionInfoResponseSchema = z.object({
   subscription: WorkspaceSubscriptionSchema
 });
@@ -172,9 +177,21 @@ export type UpgradeAmountResponse = z.infer<typeof UpgradeAmountResponseSchema>;
 export const PaymentResponseSchema = z.object({
   success: z.boolean(),
   redirectUrl: z.string().optional(),
-  message: z.string().optional()
+  message: z.string().optional(),
+  error: z.string().optional(),
+  payID: z.string().optional()
 });
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;
+
+export const PaymentStatusResponseSchema = z.object({
+  payId: z.string(),
+  status: z.string(), // 支付状态：pending, paid, failed, cancelled 等
+  amount: z.number().optional(),
+  currency: z.string().optional(),
+  createdAt: z.string().optional(),
+  paidAt: z.string().optional()
+});
+export type PaymentStatusResponse = z.infer<typeof PaymentStatusResponseSchema>;
 
 export const WorkspaceSubscriptionListResponseSchema = z.object({
   subscriptions: z.array(WorkspaceSubscriptionSchema)
