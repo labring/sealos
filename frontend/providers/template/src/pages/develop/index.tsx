@@ -6,7 +6,6 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { YamlItemType } from '@/types';
 import { TemplateSourceType } from '@/types/app';
-import { EnvResponse } from '@/types/index';
 import { serviceSideProps } from '@/utils/i18n';
 import { getYamlSource } from '@/utils/json-yaml';
 import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
@@ -54,7 +53,7 @@ export default function Develop() {
         const result = getYamlSource(str, platformEnvs);
         const formInputs = formHook.getValues();
         setTemplateSource(result);
-        const correctYamlList = generateYamlData(result, formInputs, platformEnvs);
+        const correctYamlList = generateYamlData(result, formInputs, platformEnvs, true);
         setYamlList(correctYamlList);
       } catch (error: any) {
         toast({
@@ -85,14 +84,19 @@ export default function Develop() {
     debounce((formInputData: Record<string, string>) => {
       try {
         if (templateSource) {
-          const correctYamlList = generateYamlData(templateSource, formInputData);
+          const correctYamlList = generateYamlData(
+            templateSource,
+            formInputData,
+            platformEnvs,
+            true
+          );
           setYamlList(correctYamlList);
         }
       } catch (error) {
         console.log(error);
       }
     }, 500),
-    [templateSource, generateYamlData]
+    [templateSource, generateYamlData, platformEnvs]
   );
 
   // watch form change, compute new yaml

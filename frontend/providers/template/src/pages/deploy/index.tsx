@@ -8,7 +8,6 @@ import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
-import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -234,7 +233,7 @@ export default function EditApp({
     try {
       setTemplateSource(res);
       const inputs = getCachedValue() ? JSON.parse(cached) : getTemplateInputDefaultValues(res);
-      const list = generateYamlData(res, inputs);
+      const list = generateYamlData(res, inputs, platformEnvs);
       setYamlList(list);
     } catch (err) {
       console.log(err, 'getTemplateData');
