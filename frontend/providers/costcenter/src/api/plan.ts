@@ -10,7 +10,9 @@ import {
   PaymentResponse,
   WorkspaceSubscriptionListResponse,
   PaymentListResponse,
-  PaymentListRequest
+  PaymentListRequest,
+  PaymentStatusRequest,
+  PaymentStatusResponse
 } from '@/types/plan';
 
 // Get all subscription plans
@@ -61,4 +63,11 @@ export const createSubscriptionPayment = (data: SubscriptionPayRequest) =>
 export const getWorkspaceSubscriptionList = () =>
   request<any, ApiResp<WorkspaceSubscriptionListResponse>>('/api/plan/subscription-list', {
     method: 'POST'
+  });
+
+// Get payment status by payId
+export const getPaymentStatus = (data: PaymentStatusRequest) =>
+  request<any, ApiResp<PaymentStatusResponse>>('/api/plan/status', {
+    method: 'POST',
+    data
   });
