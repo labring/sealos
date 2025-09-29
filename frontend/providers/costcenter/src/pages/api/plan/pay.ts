@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let finalWorkspace = workspace;
 
     // Step 1: Create workspace if needed
-
     if (createWorkspace) {
       try {
         const desktopUrl = global.AppConfig?.costCenter?.components?.desktopService?.url;
@@ -150,21 +149,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     console.log('requestBody', requestBody);
-    const response = await client.post<PaymentResponse>(
+    const response = (await client.post<PaymentResponse>(
       '/account/v1alpha1/workspace-subscription/pay',
       requestBody,
       { headers }
-    );
-    console.log('response.data', response.data);
+    )) as { data: PaymentResponse };
+
+    console.log('response', response.data);
 
     return jsonRes<PaymentResponse>(res, {
       data: response.data
     });
   } catch (error: any) {
-    console.log('error', error);
+    console.log('pay error', error?.response?.data);
     if (error?.response?.data?.code === 10004) {
       return jsonRes(res, {
         message: error?.response?.data?.code
+      });
+    }
+
+    if (error?.response?.data) {
+      return jsonRes(res, {
+        message: error?.response?.data?.error
       });
     }
 
