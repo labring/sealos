@@ -18,6 +18,7 @@ import { ValueOf } from '@/types/tools';
 import { TUserExist } from '@/types/user';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
+import { SubscriptionInfoResponse } from '@/types/plan';
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
@@ -268,3 +269,9 @@ export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
 export const getBanksListRequest = _getBanksListRequest(request);
 
 export const getAmount = _getAmount(request);
+
+export const getPlanInfo = (workspace: string) =>
+  request<SubscriptionInfoResponse>('/api/plan/info', {
+    method: 'POST',
+    data: { workspace }
+  });

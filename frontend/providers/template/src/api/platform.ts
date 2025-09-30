@@ -1,8 +1,7 @@
 import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
-import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
-import { getUserSession } from '@/utils/user';
+import type { UserTask, userPriceType } from '@/types/user';
 import useSessionStore from '@/store/session';
 
 export const updateRepo = () => GET('/api/updateRepo');
@@ -19,12 +18,6 @@ export const getPlatformEnv = (
 export const getSystemConfig = () => {
   return GET<SystemConfigType>('/api/platform/getSystemConfig');
 };
-
-export const getUserQuota = () =>
-  GET<{
-    balance: number;
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 

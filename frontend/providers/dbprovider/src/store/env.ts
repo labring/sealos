@@ -26,7 +26,13 @@ const useEnvStore = create<EnvState>()(
       CLIENT_DOMAIN_NAME: '',
       GATEWAY_DOMAIN_NAME: '',
       MANAGED_DB_ENABLED: '',
-      CHAT2DB_AES_KEY: ''
+      CHAT2DB_AES_KEY: '',
+      MIGRATION_JOB_CPU_REQUIREMENT: 2000,
+      MIGRATION_JOB_MEMORY_REQUIREMENT: 4096,
+      DUMPIMPORT_JOB_CPU_REQUIREMENT: 300,
+      DUMPIMPORT_JOB_MEMORY_REQUIREMENT: 256,
+      BACKUP_JOB_CPU_REQUIREMENT: 300,
+      BACKUP_JOB_MEMORY_REQUIREMENT: 256
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();

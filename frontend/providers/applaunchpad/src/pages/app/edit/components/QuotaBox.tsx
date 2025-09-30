@@ -5,27 +5,26 @@ import { useTranslation } from 'next-i18next';
 import { MyTooltip } from '@sealos/ui';
 
 import { useUserStore } from '@/store/user';
+import { resourcePropertyMap } from '@/constants/resource';
 
 const sourceMap = {
   cpu: {
-    color: '#33BABB',
-    unit: 'Core'
+    color: '#33BABB'
   },
   memory: {
-    color: '#36ADEF',
-    unit: 'Gi'
+    color: '#36ADEF'
   },
   storage: {
-    color: '#8172D8',
-    unit: 'GB'
+    color: '#8172D8'
   },
   gpu: {
-    color: '#89CD11',
-    unit: 'Card'
+    color: '#89CD11'
   },
-  nodeports: {
-    color: '#FFA500',
-    unit: ''
+  nodeport: {
+    color: '#FFA500'
+  },
+  traffic: {
+    color: '#FF6B6B'
   }
 };
 
@@ -37,16 +36,21 @@ const QuotaBox = () => {
 
   const quotaList = useMemo(() => {
     if (!userQuota) return [];
+
     return userQuota
-      .map((item) => ({
-        ...item,
-        tip: `${t('Total')}: ${`${item.limit} ${sourceMap[item.type]?.unit}`}
-${t('common.Used')}: ${`${item.used} ${sourceMap[item.type]?.unit}`}
-${t('common.Surplus')}: ${`${item.limit - item.used} ${sourceMap[item.type]?.unit}`}
-`,
-        color: sourceMap[item.type]?.color
-      }))
-      .filter((item) => item.limit > 0);
+      .filter((item) => item.limit > 0)
+      .map((item) => {
+        const { limit, used, type } = item;
+        const unit = resourcePropertyMap[type]?.unit;
+        const scale = resourcePropertyMap[type]?.scale;
+        const color = sourceMap[type]?.color;
+
+        const tip = `${t('Total')}: ${(limit / scale).toFixed(2)} ${unit}
+${t('common.Used')}: ${(used / scale).toFixed(2)} ${unit}
+${t('common.Surplus')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
+
+        return { ...item, tip, color };
+      });
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (

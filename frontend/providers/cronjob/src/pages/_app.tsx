@@ -1,7 +1,9 @@
 import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useLoading } from '@/hooks/useLoading';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
+import { useUserStore } from '@/store/user';
 import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -39,36 +41,34 @@ function App({ Component, pageProps }: AppProps) {
   const { SystemEnv, initSystemEnv } = useEnvStore();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute, lastRoute } = useGlobalStore();
+  const { setSession } = useUserStore();
+  const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: '跳转提示',
-    content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
+    title: 'jump_prompt',
+    content: 'not_allow_standalone_use'
   });
 
   useEffect(() => {
-    NProgress.start();
     const response = createSealosApp();
     (async () => {
-      const SystemEnv = await initSystemEnv();
+      const { domain } = await initSystemEnv();
       try {
-        const res = await sealosApp.getSession();
-        localStorage.setItem('session', JSON.stringify(res));
+        setSession(await sealosApp.getSession());
+        sealosApp.init();
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          localStorage.removeItem('session');
           openConfirm(() => {
-            window.open(`https://${SystemEnv.domain}`, '_self');
+            window.open(`https://${domain}`, '_self');
           })();
         }
       }
     })();
-    NProgress.done();
-
     return response;
-  }, [openConfirm]);
+  }, []);
 
   // add resize event
   useEffect(() => {
@@ -90,8 +90,8 @@ function App({ Component, pageProps }: AppProps) {
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
-      if (lastLang !== newLang) {
-        i18n.changeLanguage(newLang);
+      if (lastLang !== newLang && typeof i18n?.changeLanguage === 'function') {
+        i18n?.changeLanguage(newLang);
         setLangStore(newLang);
         setRefresh((state) => !state);
       }
@@ -105,12 +105,13 @@ function App({ Component, pageProps }: AppProps) {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'zh'
+          currentLanguage: 'en'
         });
       }
     })();
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // record route
@@ -118,15 +119,16 @@ function App({ Component, pageProps }: AppProps) {
     return () => {
       setLastRoute(router.asPath);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.pathname]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, router.asPath]);
 
   useEffect(() => {
-    // InternalAppCall
     const setupInternalAppCallListener = async () => {
       try {
         const event = async (e: MessageEvent) => {
@@ -137,9 +139,18 @@ function App({ Component, pageProps }: AppProps) {
           try {
             if (e.data?.type === 'InternalAppCall' && e.data?.name) {
               router.push({
-                pathname: '/job/detail',
+                pathname: '/redirect',
                 query: {
                   name: e.data.name
+                }
+              });
+            }
+
+            if (e.data?.action === 'guide') {
+              router.push({
+                pathname: '/redirect',
+                query: {
+                  action: e.data.action
                 }
               });
             }
@@ -151,7 +162,6 @@ function App({ Component, pageProps }: AppProps) {
         return () => window.removeEventListener('message', event);
       } catch (error) {}
     };
-
     setupInternalAppCallListener();
   }, [SystemEnv.domain, router]);
 
@@ -167,6 +177,7 @@ function App({ Component, pageProps }: AppProps) {
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
           <ConfirmChild />
+          <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
     </>

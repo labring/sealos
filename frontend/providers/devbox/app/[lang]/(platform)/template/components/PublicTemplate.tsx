@@ -671,10 +671,7 @@ const PublicTemplate = ({
               )}
             </ScrollArea>
             <Pagination
-              className="pr-2"
-              pageSize={pageQueryBody.pageSize}
               totalPages={pageQueryBody.totalPage}
-              totalItems={pageQueryBody.totalItems}
               currentPage={pageQueryBody.page}
               onPageChange={(currentPage) => {
                 setPageQueryBody((page) => ({
@@ -685,11 +682,11 @@ const PublicTemplate = ({
             />
           </>
         ) : (
-          // Category mode - paginated list with header
+          // Category view mode - paginated list with header
           <>
-            {/* Category mode header */}
+            {/* Category view mode header */}
             <div className="flex items-center gap-2 pb-4">
-              <Button variant="ghost" size="sm" className="h-6 w-6" onClick={switchToOverview}>
+              <Button variant="ghost" size="icon" onClick={switchToOverview} className="h-6 w-6">
                 <ArrowLeft className="h-4 w-4 text-zinc-400" />
               </Button>
               <h2 className="font-medium text-zinc-900">{getCategoryTitle(currentCategory, t)}</h2>
@@ -734,10 +731,7 @@ const PublicTemplate = ({
               )}
             </ScrollArea>
             <Pagination
-              className="pr-2"
-              pageSize={pageQueryBody.pageSize}
               totalPages={pageQueryBody.totalPage}
-              totalItems={pageQueryBody.totalItems}
               currentPage={pageQueryBody.page}
               onPageChange={(currentPage) => {
                 setPageQueryBody((page) => ({
@@ -748,6 +742,26 @@ const PublicTemplate = ({
             />
           </>
         )}
+
+        <div className="flex items-center justify-between gap-2.5 pt-2 pr-2 text-sm/5 text-zinc-500">
+          <span>{t('Total') + ': ' + pageQueryBody.totalItems}</span>
+          <div className="flex items-center gap-3">
+            <Pagination
+              totalPages={pageQueryBody.totalPage}
+              currentPage={pageQueryBody.page}
+              onPageChange={(currentPage) => {
+                setPageQueryBody((page) => ({
+                  ...page,
+                  page: currentPage
+                }));
+              }}
+            />
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-900">{pageQueryBody.pageSize}</span>/
+              <span>{t('Page')}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

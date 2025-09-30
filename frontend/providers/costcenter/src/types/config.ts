@@ -12,6 +12,7 @@ export type Mongo = {
 
 export type Invoice = {
   enabled: boolean;
+  directDownload: boolean;
   feishApp: {
     appId: string;
     appSecret: string;
@@ -26,6 +27,11 @@ export type Invoice = {
   serviceToken: string;
   aliSms: AliSms;
   mongo: Mongo;
+  billingInfo: {
+    companyName: string;
+    addressLines: string[];
+    contactLines: string[];
+  };
 };
 
 export type PayMethods = {
@@ -34,7 +40,7 @@ export type PayMethods = {
   };
   alipay: {
     enabled: boolean;
-  }
+  };
   stripe: {
     enabled: boolean;
     publicKey: string;
@@ -50,8 +56,13 @@ export type AccountService = {
   url: string;
 };
 
+export type DesktopService = {
+  url: string;
+};
+
 export type Components = {
   accountService: AccountService;
+  desktopService: DesktopService;
 };
 
 export type AppConfigType = {
@@ -91,6 +102,7 @@ export var DefaultAppConfig: AppConfigType = {
     currencyType: 'shellCoin',
     invoice: {
       enabled: false,
+      directDownload: true,
       feishApp: {
         appId: '',
         appSecret: '',
@@ -112,6 +124,11 @@ export var DefaultAppConfig: AppConfigType = {
       },
       mongo: {
         uri: ''
+      },
+      billingInfo: {
+        companyName: '',
+        addressLines: [],
+        contactLines: []
       }
     },
     recharge: {
@@ -132,6 +149,9 @@ export var DefaultAppConfig: AppConfigType = {
     components: {
       accountService: {
         url: 'http://account-service.account-system.svc:2333'
+      },
+      desktopService: {
+        url: 'http://desktop-frontend.sealos.svc:3000'
       }
     },
     layout: {

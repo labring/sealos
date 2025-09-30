@@ -1,15 +1,15 @@
 {
-	"TERMINAL": "Terminal",
-	"JOB":"CronJob",
-	"OTHER": "Other",
-	"OBJECT-STORAGE": "Object Storage",
-	"CLOUD-VM":"Cloud Server",
-	"DB": "Database",
-	"APP": "APP Launchpad",
-	"All APP": "ALL APP",
-	"APP-STORE": "APP Store",
-	"DB-BACKUP": "Database Backup",
-	"all_app_type": "ALL APP TYPE",
-	"DEV-BOX": "Devbox",
-	"LLM-TOKEN": "AI Proxy"
+  "TERMINAL": "Terminal",
+  "JOB": "CronJob",
+  "OTHER": "Other",
+  "OBJECT-STORAGE": "Object Storage",
+  "CLOUD-VM": "Cloud Server",
+  "DB": "Database",
+  "APP": "APP Launchpad",
+  "All APP": "ALL APP",
+  "APP-STORE": "APP Store",
+  "DB-BACKUP": "Database Backup",
+  "all_app_type": "ALL APP TYPE",
+  "DEV-BOX": "DevBox",
+  "LLM-TOKEN": "AI Proxy"
 }
