@@ -79,6 +79,8 @@ func GetQuery(query *api.PromRequest) (string, error) {
 		result = api.Minio[query.Query]
 	case "kafka":
 		result = api.Kafka[query.Query]
+	case "milvus":
+		result = api.Milvus[query.Query]
 	default:
 		fmt.Println(query.Type)
 	}
