@@ -138,6 +138,14 @@ export function PlanHeader({ children }: PlanHeaderProps) {
               </span>
             </div>
           )}
+          {currentPlan?.AIQuota && (
+            <div className="flex gap-2 items-center">
+              <CircleCheck size={16} className="text-blue-600"></CircleCheck>
+              <span className="text-gray-600 text-sm">
+                {formatMoney(currentPlan.AIQuota)} AI Credits
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
