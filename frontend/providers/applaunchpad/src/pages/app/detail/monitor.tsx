@@ -22,7 +22,6 @@ export default function MonitorPage({ appName }: { appName: string }) {
   const { startDateTime, endDateTime } = useDateTimeStore();
   const [podList, setPodList] = useState<ListItem[]>([]);
   const { refreshInterval } = useDateTimeStore();
-  console.log(appDetail, 'appDetail');
 
   useEffect(() => {
     track('module_view', {
