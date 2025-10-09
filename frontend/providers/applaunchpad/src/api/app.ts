@@ -88,6 +88,7 @@ export const getAppMonitorData = (payload: {
   step: string;
   start?: number;
   end?: number;
+  pvcName?: string;
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
 
 export const getAppLogs = (payload: LogQueryPayload) => POST<string>('/api/log/queryLogs', payload);

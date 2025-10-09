@@ -21,6 +21,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
   const { startDateTime, endDateTime } = useDateTimeStore();
   const [podList, setPodList] = useState<ListItem[]>([]);
   const { refreshInterval } = useDateTimeStore();
+  // console.log(appDetail, 'appDetail');
 
   useEffect(() => {
     track('module_view', {
@@ -65,7 +66,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
     if (!memoryData?.length) return 0;
 
     const sum = memoryData.reduce((acc, pod) => {
-      const lastValue = Number(pod.yData[pod.yData.length - 1]);
+      const lastValue = Number(pod?.yData?.[pod?.yData?.length - 1]);
       return acc + lastValue;
     }, 0);
 
@@ -87,17 +88,38 @@ export default function MonitorPage({ appName }: { appName: string }) {
       enabled: !!appDetailPods?.[0]?.podName
     }
   );
-
+  const { data: storageData, refetch: refetchStorageData } = useQuery(
+    ['monitor-data-storage', appName, appDetailPods?.[0]?.podName, startDateTime, endDateTime],
+    () =>
+      getAppMonitorData({
+        queryKey: 'storage',
+        queryName: appDetailPods?.[0]?.podName || appName,
+        step: '2m',
+        start: startDateTime.getTime(),
+        end: endDateTime.getTime(),
+        pvcName: 'test-pvc-test-0'
+      }),
+    {
+      refetchInterval: refreshInterval,
+      enabled: !!appDetailPods?.[0]?.podName
+    }
+  );
   const cpuLatestAvg = useMemo(() => {
     if (!cpuData?.length) return 0;
 
     const sum = cpuData.reduce((acc, pod) => {
-      const lastValue = Number(pod.yData[pod.yData.length - 1]);
+      const lastValue = Number(pod?.yData?.[pod?.yData?.length - 1]);
       return acc + lastValue;
     }, 0);
 
     return (sum / cpuData.length).toFixed(2);
   }, [cpuData]);
+
+  const storageLatestValue = useMemo(() => {
+    if (!storageData?.length) return 0;
+    const lastValue = Number(storageData?.[0]?.yData?.[storageData?.[0]?.yData?.length - 1]);
+    return lastValue.toFixed(2);
+  }, [storageData]);
 
   const memoryChartData = useMemo(() => {
     const selectedPods = podList.filter((pod) => pod.checked);
@@ -113,12 +135,12 @@ export default function MonitorPage({ appName }: { appName: string }) {
       };
     }
 
-    const xData = filteredData?.[0]?.xData.map(String) || [];
+    const xData = filteredData?.[0]?.xData?.map(String) || [];
     const yData =
       filteredData?.map((item) => ({
-        name: item.name || 'unknown',
+        name: item?.name || 'unknown',
         type: 'line',
-        data: item.yData.map(Number)
+        data: item?.yData?.map(Number) || []
       })) || [];
 
     return {
@@ -140,12 +162,12 @@ export default function MonitorPage({ appName }: { appName: string }) {
       };
     }
 
-    const xData = filteredData?.[0]?.xData.map(String) || [];
+    const xData = filteredData?.[0]?.xData?.map(String) || [];
     const yData =
       filteredData?.map((item) => ({
-        name: item.name || 'unknown',
+        name: item?.name || 'unknown',
         type: 'line',
-        data: item.yData.map(Number)
+        data: item?.yData?.map(Number) || []
       })) || [];
 
     return {
@@ -154,9 +176,26 @@ export default function MonitorPage({ appName }: { appName: string }) {
     };
   }, [cpuData, podList]);
 
+  const storageChartData = useMemo(() => {
+    const selectedPods = podList.filter((pod) => pod.checked);
+    const xData = storageData?.[0]?.xData?.map(String) || [];
+    const yData =
+      storageData?.map((item) => ({
+        name: item?.name || 'unknown',
+        type: 'line',
+        data: item?.yData?.map(Number) || []
+      })) || [];
+
+    return {
+      xData,
+      yData
+    };
+  }, [storageData, podList]);
+
   const refetchData = () => {
     refetchCpuData();
     refetchMemoryData();
+    refetchStorageData();
   };
 
   return (
@@ -194,6 +233,21 @@ export default function MonitorPage({ appName }: { appName: string }) {
             <Box mt={'24px'} height={'200px'} position={'relative'}>
               {memoryChartData?.yData?.length > 0 ? (
                 <MonitorChart data={memoryChartData} title={'chartTitle'} unit="%" />
+              ) : (
+                <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
+                  <EmptyChart />
+                  <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
+                    {t('no_data_available')}
+                  </Text>
+                </Center>
+              )}
+            </Box>
+            <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
+              Storage: {storageLatestValue}%
+            </Box>
+            <Box mt={'24px'} height={'200px'} position={'relative'}>
+              {storageChartData?.yData?.length > 0 ? (
+                <MonitorChart data={storageChartData} title={'chartTitle'} unit="%" />
               ) : (
                 <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
                   <EmptyChart />
