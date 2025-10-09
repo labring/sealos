@@ -46,6 +46,7 @@ const (
 	SealosShimSock            = "/var/run/image-cri-shim.sock"
 	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
 	DefaultRegistryDir        = "/etc/image-cri-shim.d"
+	DefaultReloadInterval     = 15 * time.Second
 )
 
 type Registry struct {
@@ -60,6 +61,7 @@ type Config struct {
 	Force           bool            `json:"force"`
 	Debug           bool            `json:"debug"`
 	Timeout         metav1.Duration `json:"timeout"`
+	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
 	RegistryDir     string          `json:"registry.d"`
 	Registries      []Registry      `json:"registries"`
@@ -99,12 +101,16 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		c.Timeout = metav1.Duration{}
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
 	}
+	if c.ReloadInterval.Duration <= 0 {
+		c.ReloadInterval = metav1.Duration{Duration: DefaultReloadInterval}
+	}
 
 	logger.Info("RegistryDomain: %v", domain)
 	logger.Info("Force: %v", c.Force)
 	logger.Info("Debug: %v", c.Debug)
 	logger.CfgConsoleLogger(c.Debug, false)
 	logger.Info("Timeout: %v", c.Timeout)
+	logger.Info("ReloadInterval: %v", c.ReloadInterval)
 	shimAuth := new(ShimAuthConfig)
 
 	splitNameAndPasswd := func(auth string) (string, string) {

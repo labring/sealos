@@ -70,6 +70,7 @@ cri: "/var/run/containerd/containerd.sock"
 address: "https://example.com"
 force: true
 auth: "offline:initial"
+reloadInterval: 10ms
 registry.d: %q
 `, registryDir))
 
@@ -81,13 +82,9 @@ registry.d: %q
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	origInterval := reloadInterval
-	reloadInterval = 10 * time.Millisecond
-	defer func() { reloadInterval = origInterval }()
-
 	done := make(chan error, 1)
 	go func() {
-		done <- watchAuthConfig(ctx, cfgPath, shim)
+		done <- watchAuthConfig(ctx, cfgPath, shim, 10*time.Millisecond)
 	}()
 
 	time.Sleep(20 * time.Millisecond)
@@ -97,6 +94,7 @@ cri: "/var/run/containerd/containerd.sock"
 address: "https://example.com"
 force: true
 auth: "offline:updated"
+reloadInterval: 10ms
 registry.d: %q
 `, registryDir))
 

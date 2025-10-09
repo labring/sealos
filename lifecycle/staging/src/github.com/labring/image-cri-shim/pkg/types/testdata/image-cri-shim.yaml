@@ -19,5 +19,6 @@ force: true
 debug: true
 image: /var/lib/image-cri-shim
 timeout: 15m
+reloadInterval: 15s
 auth: admin:passw0rd
 registry.d: testdata/registries

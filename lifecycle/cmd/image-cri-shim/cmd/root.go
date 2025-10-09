@@ -38,8 +38,6 @@ var cfg *types.Config
 var shimAuth *types.ShimAuthConfig
 var cfgFile string
 
-var reloadInterval = 15 * time.Second
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "image-cri-shim",
@@ -100,7 +98,7 @@ func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 	watchDone := make(chan struct{})
 	go func() {
 		defer close(watchDone)
-		if err := watchAuthConfig(ctx, cfgFile, imgShim); err != nil {
+		if err := watchAuthConfig(ctx, cfgFile, imgShim, cfg.ReloadInterval.Duration); err != nil {
 			logger.Error("config watcher stopped with error: %v", err)
 		}
 	}()
@@ -116,13 +114,16 @@ func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 	logger.Info("shutting down the image_shim")
 }
 
-func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim) error {
+func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interval time.Duration) error {
 	if path == "" {
 		logger.Warn("config file path is empty, skip dynamic auth reload")
 		return nil
 	}
 
 	logger.Info("start watching shim config: %s", path)
+	if interval <= 0 {
+		interval = types.DefaultReloadInterval
+	}
 
 	lastHash := ""
 	if data, err := os.ReadFile(path); err == nil {
@@ -140,7 +141,9 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim) error 
 		}
 	}
 
-	ticker := time.NewTicker(reloadInterval)
+	currentInterval := interval
+	// ticker acts like a pulse; changing the config lets us tune the heartbeat without restart.
+	ticker := time.NewTicker(currentInterval)
 	defer ticker.Stop()
 
 	for {
@@ -177,6 +180,16 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim) error 
 			imgShim.UpdateAuth(auth)
 			lastHash = hash
 			logger.Info("reloaded shim auth configuration from %s", path)
+			newInterval := cfg.ReloadInterval.Duration
+			if newInterval <= 0 {
+				newInterval = types.DefaultReloadInterval
+			}
+			if newInterval != currentInterval {
+				ticker.Stop()
+				ticker = time.NewTicker(newInterval)
+				currentInterval = newInterval
+				logger.Info("updated reload interval to %s", newInterval)
+			}
 		}
 	}
 }
