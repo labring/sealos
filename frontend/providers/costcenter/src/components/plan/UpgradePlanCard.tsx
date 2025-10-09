@@ -195,7 +195,9 @@ export function UpgradePlanCard({
           {plan.AIQuota && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{formatMoney(plan.AIQuota)} AI Credits</span>
+              <span className="text-sm text-gray-700">
+                {formatMoney(plan.AIQuota * 100)} AI Credits
+              </span>
             </li>
           )}
         </ul>

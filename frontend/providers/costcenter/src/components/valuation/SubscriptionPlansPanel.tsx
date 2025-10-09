@@ -62,12 +62,12 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                   key={plan.ID}
                   className="bg-white rounded-lg border border-gray-200 p-4 flex-1"
                 >
-                  <div className="flex w-full items-center justify-between">
+                  <div className="flex w-full flex-col justify-between">
                     <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 mt-1">
                       {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +{' '}
-                      {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport - $
-                      {monthlyPrice.toFixed(0)}
+                      {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport +{' '}
+                      {formatMoney(plan.AIQuota * 100)} AI Credits - ${monthlyPrice.toFixed(0)}
                     </div>
                   </div>
                 </div>
