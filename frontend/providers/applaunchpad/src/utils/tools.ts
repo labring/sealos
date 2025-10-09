@@ -4,7 +4,7 @@ import { AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import yaml from 'js-yaml';
 import { DeployKindsType } from '@/types/app';
-import type { AppPatchPropsType } from '@/types/app';
+import type { AppDetailType, AppPatchPropsType } from '@/types/app';
 import { YamlKindEnum } from './adapt';
 import { useTranslation } from 'next-i18next';
 import * as jsonpatch from 'fast-json-patch';
@@ -529,4 +529,14 @@ export const filterUnusedKeys = <T extends object>(
   });
 
   return filteredData;
+};
+
+export const generatePvcNameRegex = (appDetail?: AppDetailType): string => {
+  if (!appDetail?.storeList?.length || !appDetail?.labels?.app) {
+    return '';
+  }
+  const pvcPrefix = `(${appDetail.storeList.map((item) => item.name).join('|')})`;
+  const appName = appDetail.appName;
+  const pvcNameRegex = `${pvcPrefix}-${appName}-[0-9]+`;
+  return pvcNameRegex;
 };

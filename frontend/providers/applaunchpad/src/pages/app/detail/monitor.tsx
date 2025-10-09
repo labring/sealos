@@ -13,6 +13,7 @@ import useDateTimeStore from '@/store/date';
 import { getAppMonitorData } from '@/api/app';
 import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
 import { track } from '@sealos/gtm';
+import { generatePvcNameRegex } from '@/utils/tools';
 
 export default function MonitorPage({ appName }: { appName: string }) {
   const { toast } = useToast();
@@ -21,7 +22,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
   const { startDateTime, endDateTime } = useDateTimeStore();
   const [podList, setPodList] = useState<ListItem[]>([]);
   const { refreshInterval } = useDateTimeStore();
-  // console.log(appDetail, 'appDetail');
+  console.log(appDetail, 'appDetail');
 
   useEffect(() => {
     track('module_view', {
@@ -88,20 +89,22 @@ export default function MonitorPage({ appName }: { appName: string }) {
       enabled: !!appDetailPods?.[0]?.podName
     }
   );
+  const pvcNameRegex = generatePvcNameRegex(appDetail);
+
   const { data: storageData, refetch: refetchStorageData } = useQuery(
-    ['monitor-data-storage', appName, appDetailPods?.[0]?.podName, startDateTime, endDateTime],
+    ['monitor-data-storage', appName, pvcNameRegex, startDateTime, endDateTime],
     () =>
       getAppMonitorData({
         queryKey: 'storage',
-        queryName: appDetailPods?.[0]?.podName || appName,
+        queryName: pvcNameRegex || appName,
         step: '2m',
         start: startDateTime.getTime(),
         end: endDateTime.getTime(),
-        pvcName: 'test-pvc-test-0'
+        pvcName: pvcNameRegex
       }),
     {
       refetchInterval: refreshInterval,
-      enabled: !!appDetailPods?.[0]?.podName
+      enabled: !!pvcNameRegex
     }
   );
   const cpuLatestAvg = useMemo(() => {

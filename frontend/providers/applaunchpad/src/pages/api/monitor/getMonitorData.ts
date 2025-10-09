@@ -77,8 +77,7 @@ const AdapterChartData: Record<
   },
   storage: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
-      console.log(item, 'item');
-      let name = item.metric.pod;
+      let name = item.metric.persistentvolumeclaim;
       let xData = item.values.map((value) => value[0]);
       let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
@@ -136,7 +135,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       ...(pvcName && { pvcName: pvcName })
     };
 
-    console.log(params);
     const result: MonitorDataResult[] = await monitorFetch(
       {
         url: '/query',
