@@ -6,6 +6,7 @@ import (
 	rtype "github.com/docker/docker/api/types/registry"
 
 	"github.com/labring/image-cri-shim/pkg/types"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
