@@ -66,4 +66,12 @@ require (
 
 replace github.com/labring/sealos => ../../../../../
 
+replace github.com/docker/docker => github.com/docker/docker v25.0.1+incompatible
+
+replace gotest.tools/v3 => gotest.tools/v3 v3.5.0
+
+replace go.uber.org/goleak => go.uber.org/goleak v1.3.0
+
+replace github.com/containers/common => github.com/containers/common v0.55.4
+
 replace k8s.io/endpointslice => k8s.io/endpointslice v0.30.3

@@ -20,7 +20,4 @@ debug: true
 image: /var/lib/image-cri-shim
 timeout: 15m
 auth: admin:passw0rd
-
-registries:
-- address: http://192.168.64.1:5000
-  auth: admin:passw0rd
+registry.d: testdata/registries
