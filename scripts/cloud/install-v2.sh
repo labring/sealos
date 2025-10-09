@@ -222,7 +222,7 @@ proxy_github() {
   if [[ "${github_use_proxy,,}" == "true" ]]; then
     info "Using GitHub proxy for downloads."
     sealos_cli_proxy_prefix="https://ghfast.top"
-    image_registry="ghcr.nju.edu.cn"
+    image_registry="ghcr.dockerproxy.net"
   fi
 }
 
