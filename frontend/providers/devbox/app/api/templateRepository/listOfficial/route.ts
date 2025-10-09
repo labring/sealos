@@ -6,19 +6,20 @@ export const dynamic = 'force-dynamic';
 
 export const GET = async function GET(req: NextRequest) {
   try {
-    const organization = await devboxDB.organization.findUnique({
-      where: {
-        id: 'labring'
-      }
-    });
-    if (!organization) throw Error('organization not found');
     const regionUid = getRegionUid();
     const templateRepositoryList = await devboxDB.templateRepository.findMany({
       where: {
         isPublic: true,
         isDeleted: false,
-        organizationUid: organization.uid,
-        regionUid
+        regionUid,
+        // Filter by OFFICIAL_CONTENT tag type
+        templateRepositoryTags: {
+          some: {
+            tag: {
+              type: 'OFFICIAL_CONTENT'
+            }
+          }
+        }
       },
       select: {
         kind: true,
