@@ -212,7 +212,8 @@ export function PlansDisplay({
                       />
                       <div className="text-xs text-gray-500">
                         {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +
-                        {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport
+                        {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport +{' '}
+                        {formatMoney(plan.AIQuota * 100)} AI Credits
                       </div>
                       <Separator
                         orientation="vertical"
