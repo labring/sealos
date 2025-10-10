@@ -40,7 +40,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func TestRegistriesSyncToDir(t *testing.T) {
+func TestRegistriesLoadedFromDir(t *testing.T) {
 	dir := t.TempDir()
 	cfg := &Config{
 		ImageShimSocket: "/var/run/image-cri-shim.sock",
@@ -49,10 +49,20 @@ func TestRegistriesSyncToDir(t *testing.T) {
 		Force:           true,
 		Auth:            "offline:user",
 		RegistryDir:     dir,
-		Registries: []Registry{
-			{Address: "http://192.168.64.1:5000", Auth: "admin:passw0rd"},
-			{Address: "https://public.example.com"},
-		},
+	}
+
+	entries := map[string]Registry{
+		"192.168.64.1:5000.yaml":  {Address: "http://192.168.64.1:5000", Auth: "admin:passw0rd"},
+		"public.example.com.yaml": {Address: "https://public.example.com"},
+	}
+	for name, reg := range entries {
+		data, err := yaml.Marshal(reg)
+		if err != nil {
+			t.Fatalf("failed to marshal registry %s: %v", name, err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
+			t.Fatalf("failed to write registry file %s: %v", name, err)
+		}
 	}
 
 	auth, err := cfg.PreProcess()
@@ -60,32 +70,10 @@ func TestRegistriesSyncToDir(t *testing.T) {
 		t.Fatalf("preprocess failed: %v", err)
 	}
 
-	expectedFiles := map[string]Registry{
-		"192.168.64.1:5000.yaml":  {Address: "http://192.168.64.1:5000", Auth: "admin:passw0rd"},
-		"public.example.com.yaml": {Address: "https://public.example.com"},
-	}
-
-	for name, want := range expectedFiles {
-		path := filepath.Join(dir, name)
-		data, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatalf("expected registry file %s to exist: %v", name, err)
-		}
-
-		var got Registry
-		if err := yaml.Unmarshal(data, &got); err != nil {
-			t.Fatalf("failed to parse registry file %s: %v", name, err)
-		}
-		if got != want {
-			t.Fatalf("unexpected registry file contents for %s: got %#v want %#v", name, got, want)
-		}
-	}
-
 	if !auth.SkipLoginRegistries["public.example.com"] {
 		t.Fatalf("expected public.example.com to skip login, got %#v", auth.SkipLoginRegistries)
 	}
-
-	if cfg.Registries == nil || len(cfg.Registries) != 2 {
-		t.Fatalf("expected 2 registries after preprocessing, got %#v", cfg.Registries)
+	if authCfg, ok := auth.CRIConfigs["192.168.64.1:5000"]; !ok || authCfg.Username != "admin" || authCfg.Password != "passw0rd" {
+		t.Fatalf("expected credentials for 192.168.64.1:5000, got %#v", auth.CRIConfigs["192.168.64.1:5000"])
 	}
 }

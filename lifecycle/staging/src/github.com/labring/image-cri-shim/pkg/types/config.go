@@ -17,7 +17,6 @@ limitations under the License.
 package types
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -50,6 +49,7 @@ const (
 )
 
 type Registry struct {
+	Name    string `json:"name" yaml:"name,omitempty"`
 	Address string `json:"address" yaml:"address"`
 	Auth    string `json:"auth" yaml:"auth,omitempty"`
 }
@@ -64,7 +64,6 @@ type Config struct {
 	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
 	RegistryDir     string          `json:"registry.d"`
-	Registries      []Registry      `json:"registries"`
 }
 
 type ShimAuthConfig struct {
@@ -73,16 +72,21 @@ type ShimAuthConfig struct {
 	SkipLoginRegistries map[string]bool              `json:"-"`
 }
 
+func registryMatchDomain(reg Registry) string {
+	name := strings.TrimSpace(reg.Name)
+	if name != "" {
+		return registry2.NormalizeRegistry(name)
+	}
+	domain := registry2.GetRegistryDomain(reg.Address)
+	return registry2.NormalizeRegistry(domain)
+}
+
 func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	c.RegistryDir = NormalizeRegistryDir(c.RegistryDir)
-	if err := syncRegistriesToDir(c.RegistryDir, c.Registries); err != nil {
-		return nil, err
-	}
-	registriesFromDir, err := loadRegistriesFromDir(c.RegistryDir)
+	registries, err := loadRegistriesFromDir(c.RegistryDir)
 	if err != nil {
 		return nil, err
 	}
-	c.Registries = mergeRegistries(c.Registries, registriesFromDir)
 
 	if c.ImageShimSocket == "" {
 		c.ImageShimSocket = SealosShimSock
@@ -129,12 +133,15 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		// cri registry auth
 		criAuth := make(map[string]types2.AuthConfig)
 		skipLogin := make(map[string]bool)
-		for _, registry := range c.Registries {
+		for _, registry := range registries {
 			if registry.Address == "" {
 				continue
 			}
-			localDomain := registry2.GetRegistryDomain(registry.Address)
-			localDomain = registry2.NormalizeRegistry(localDomain)
+			localDomain := registryMatchDomain(registry)
+			if localDomain == "" {
+				logger.Warn("skip registry entry %q: unable to determine domain", registry.Address)
+				continue
+			}
 
 			authValue := strings.TrimSpace(registry.Auth)
 			cfg := types2.AuthConfig{ServerAddress: registry.Address}
@@ -275,88 +282,4 @@ func RegistryDirDigest(dir string) ([]byte, error) {
 		_, _ = hasher.Write(data)
 	}
 	return hasher.Sum(nil), nil
-}
-
-func syncRegistriesToDir(dir string, registries []Registry) error {
-	if len(registries) == 0 {
-		return nil
-	}
-
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("ensure registry.d %s: %w", dir, err)
-	}
-
-	for _, registry := range registries {
-		address := strings.TrimSpace(registry.Address)
-		if address == "" {
-			continue
-		}
-		domain := registry2.GetRegistryDomain(address)
-		domain = registry2.NormalizeRegistry(domain)
-		if domain == "" {
-			logger.Warn("skip registry %q: unable to determine domain", address)
-			continue
-		}
-
-		filePath := filepath.Join(dir, fmt.Sprintf("%s.yaml", domain))
-		payload, err := yaml.Marshal(registry)
-		if err != nil {
-			return fmt.Errorf("marshal registry %s: %w", address, err)
-		}
-		payload = bytes.TrimSpace(payload)
-		payload = append(payload, '\n')
-
-		if existing, err := os.ReadFile(filePath); err == nil {
-			if bytes.Equal(existing, payload) {
-				continue
-			}
-		}
-
-		if err := os.WriteFile(filePath, payload, 0o644); err != nil {
-			return fmt.Errorf("write registry config %s: %w", filePath, err)
-		}
-	}
-
-	return nil
-}
-
-func mergeRegistries(original, fromDir []Registry) []Registry {
-	if len(fromDir) == 0 {
-		return original
-	}
-
-	combined := make([]Registry, 0, len(fromDir)+len(original))
-	seen := make(map[string]struct{})
-
-	add := func(reg Registry) {
-		address := strings.TrimSpace(reg.Address)
-		if address == "" {
-			combined = append(combined, reg)
-			return
-		}
-		key := registryKey(address)
-		if key == "" {
-			combined = append(combined, reg)
-			return
-		}
-		if _, ok := seen[key]; ok {
-			return
-		}
-		seen[key] = struct{}{}
-		combined = append(combined, reg)
-	}
-
-	for _, reg := range fromDir {
-		add(reg)
-	}
-	for _, reg := range original {
-		add(reg)
-	}
-	return combined
-}
-
-func registryKey(address string) string {
-	domain := registry2.GetRegistryDomain(address)
-	domain = registry2.NormalizeRegistry(domain)
-	return domain
 }
