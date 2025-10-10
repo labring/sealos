@@ -49,7 +49,6 @@ const (
 )
 
 type Registry struct {
-	Name    string `json:"name" yaml:"name,omitempty"`
 	Address string `json:"address" yaml:"address"`
 	Auth    string `json:"auth" yaml:"auth,omitempty"`
 }
@@ -73,10 +72,6 @@ type ShimAuthConfig struct {
 }
 
 func registryMatchDomain(reg Registry) string {
-	name := strings.TrimSpace(reg.Name)
-	if name != "" {
-		return registry2.NormalizeRegistry(name)
-	}
 	domain := registry2.GetRegistryDomain(reg.Address)
 	return registry2.NormalizeRegistry(domain)
 }

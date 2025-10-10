@@ -34,15 +34,15 @@ type v1ImageService struct {
 }
 
 func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtype.AuthConfig) {
-	newImage, ok, auth := replaceImage(image, action, s.authStore.GetOfflineConfigs(), nil)
+	newImage, ok, auth := replaceImage(image, action, s.authStore.GetOfflineConfigs())
 	if ok {
 		return newImage, true, auth
 	}
-	registries, skip := s.authStore.GetCRIConfigs()
+	registries := s.authStore.GetCRIConfigs()
 	if len(registries) == 0 {
 		return image, false, nil
 	}
-	return replaceImage(image, action, registries, skip)
+	return replaceImage(image, action, registries)
 }
 
 func ToV1AuthConfig(c *rtype.AuthConfig) *api.AuthConfig {
@@ -103,7 +103,7 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 		if req.Auth == nil {
 			ref, _ := name.ParseReference(imageName)
 			registry := ref.Context().RegistryStr()
-			if cfg, ok := s.authStore.GetCRIConfig(registry); ok && !s.authStore.ShouldSkipLogin(registry) {
+			if cfg, ok := s.authStore.GetCRIConfig(registry); ok {
 				req.Auth = ToV1AuthConfig(&cfg)
 			}
 		}

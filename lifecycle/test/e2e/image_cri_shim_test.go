@@ -272,7 +272,7 @@ COPY image-cri-shim cri`
 				}
 			}()
 
-			mirrorConfig := shimType.Registry{Name: aliasDomain, Address: mirrorAddress}
+			mirrorConfig := shimType.Registry{Address: mirrorAddress}
 			mirrorPayload, err := yaml.Marshal(mirrorConfig)
 			utils.CheckErr(err, "failed to marshal mirror registry config")
 			writeRegistryConfig(registryFile, string(mirrorPayload))

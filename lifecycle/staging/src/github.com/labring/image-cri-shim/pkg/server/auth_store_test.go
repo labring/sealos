@@ -53,17 +53,9 @@ func TestAuthStoreUpdateAndGet(t *testing.T) {
 		t.Fatalf("unexpected registry credentials: %#v, ok=%v", cfg, ok)
 	}
 
-	if !store.ShouldSkipLogin("mirror.example.com") {
-		t.Fatalf("expected mirror.example.com to skip login")
-	}
-
-	registries, skip := store.GetCRIConfigs()
+	registries := store.GetCRIConfigs()
 	if _, ok := registries["registry.example.com"]; !ok {
 		t.Fatalf("expected registry.example.com to be present in GetCRIConfigs")
-	}
-	skip["mirror.example.com"] = false
-	if !store.ShouldSkipLogin("mirror.example.com") {
-		t.Fatalf("mutating returned skip map should not affect store state")
 	}
 
 	offline := store.GetOfflineConfigs()
@@ -77,10 +69,6 @@ func TestAuthStoreUpdateAndGet(t *testing.T) {
 
 	if _, ok := store.GetCRIConfig("registry.example.com"); ok {
 		t.Fatalf("expected registry credentials to be cleared after nil update")
-	}
-
-	if store.ShouldSkipLogin("mirror.example.com") {
-		t.Fatalf("expected skip login map to be cleared after nil update")
 	}
 
 	if len(store.GetOfflineConfigs()) != 0 {

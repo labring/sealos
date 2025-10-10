@@ -17,7 +17,6 @@ limitations under the License.
 package server
 
 import (
-	"sort"
 	"strings"
 
 	"github.com/docker/docker/api/types/registry"
@@ -30,7 +29,7 @@ import (
 )
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
-func replaceImage(image, action string, authConfig map[string]registry.AuthConfig, skipLogin map[string]bool) (newImage string,
+func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
 	isReplace bool, cfg *registry.AuthConfig) {
 	if len(authConfig) == 0 {
 		return image, false, nil
@@ -48,39 +47,15 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 		return image, false, nil
 	}
 
-	if len(skipLogin) > 0 {
-		domains := make([]string, 0, len(skipLogin))
-		for domain := range skipLogin {
-			domains = append(domains, domain)
-		}
-		sort.Strings(domains)
-		for _, domain := range domains {
-			if _, ok := authConfig[domain]; !ok {
-				continue
-			}
-			candidate := domain + "/" + repo + referenceSuffix(ref)
-			logger.Info("image: %s, newImage: %s, action: %s (skip login)", image, candidate, action)
-			return candidate, true, nil
-		}
-	}
-
 	newImage, _, cfg, err = crane.GetImageManifestFromAuth(image, authConfig)
 	if err != nil {
 		if strings.Contains(image, "@") {
-			return replaceImage(strings.Split(image, "@")[0], action, authConfig, skipLogin)
+			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
 		}
 		logger.Warn("get image %s manifest error %s", newImage, err.Error())
 		logger.Debug("image %s not found in registry, skipping", image)
-		return image, false, nil
+		return image, false, cfg
 	}
-
-	if domain := registryFromImage(newImage); domain != "" {
-		if shouldSkipAuth(domain, cfg, skipLogin) {
-			logger.Info("image: %s, newImage: %s, action: %s (skip login)", image, newImage, action)
-			return newImage, true, nil
-		}
-	}
-
 	logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
 	return newImage, true, cfg
 }

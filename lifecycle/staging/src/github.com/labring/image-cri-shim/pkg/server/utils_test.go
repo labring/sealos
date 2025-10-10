@@ -23,22 +23,26 @@ import (
 )
 
 func TestReplaceImageSkipLogin(t *testing.T) {
-	image := "docker.io/library/nginx:latest"
+	image := "nginx:1.29.2-alpine3.22-perl"
 	authConfig := map[string]registry.AuthConfig{
-		"mirror.example.com": {
-			ServerAddress: "https://mirror.example.com",
+		"docker.xpg666.xyz": {
+			ServerAddress: "https://docker.xpg666.xyz",
+		},
+		"192.168.64.4:5000": {
+			ServerAddress: "http://192.168.64.4:5000",
+			Username:      "admin",
+			Password:      "passw0rd",
 		},
 	}
-	skip := map[string]bool{"mirror.example.com": true}
 
-	newImage, replaced, cfg := replaceImage(image, "PullImage", authConfig, skip)
+	newImage, replaced, cfg := replaceImage(image, "PullImage", authConfig)
 	if !replaced {
 		t.Fatalf("expected image to be replaced when login is skipped")
 	}
-	if expected := "mirror.example.com/library/nginx:latest"; newImage != expected {
+	if expected := "docker.xpg666.xyz/library/nginx:1.29.2-alpine3.22-perl"; newImage != expected {
 		t.Fatalf("expected rewritten image %q, got %q", expected, newImage)
 	}
-	if cfg != nil {
-		t.Fatalf("expected no auth config when login is skipped, got %#v", cfg)
+	if cfg == nil {
+		t.Fatal("expected no auth config")
 	}
 }
