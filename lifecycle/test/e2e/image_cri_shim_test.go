@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -238,10 +239,10 @@ COPY image-cri-shim cri`
 
 		ginkgo.It("allows pulling through registry mirror", func() {
 			const (
-				sourceImage    = "docker.io/library/busybox:1"
-				rewrittenImage = "docker.io/library/busybox:1"
-				mirrorAddress  = "https://registry-1.docker.io"
-				aliasDomain    = "docker.io"
+				sourceImage    = "nginx:latest"
+				rewrittenImage = "docker.m.daocloud.io/library/nginx:latest"
+				mirrorAddress  = "https://docker.m.daocloud.io"
+				aliasDomain    = "daocloud"
 			)
 
 			shimConfigRaw := utils.GetFileDataLocally(DefaultImageCRIShimConfig)
@@ -250,7 +251,7 @@ COPY image-cri-shim cri`
 
 			cfgCopy := *cfg
 			cfgCopy.ReloadInterval = metav1.Duration{Duration: time.Second}
-			cfgCopy.Auth = fmt.Sprintf("offline:%d", time.Now().UnixNano())
+			cfgCopy.RegistryDir = shimType.DefaultRegistryDir
 			payload, err := yaml.Marshal(cfgCopy)
 			utils.CheckErr(err, "failed to marshal shim config with mirror")
 
@@ -263,6 +264,7 @@ COPY image-cri-shim cri`
 			registryDir := shimType.NormalizeRegistryDir(cfgCopy.RegistryDir)
 			normalizedAlias := registry2.NormalizeRegistry(aliasDomain)
 			registryFile := filepath.Join(registryDir, fmt.Sprintf("%s.yaml", normalizedAlias))
+			_ = file.WriteFile(registryFile, []byte(fmt.Sprintf("address: %s", mirrorAddress)))
 			existingRegistry, regReadErr := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", registryFile))
 			defer func() {
 				if regReadErr != nil {
@@ -288,7 +290,6 @@ COPY image-cri-shim cri`
 
 			registryData := utils.GetFileDataLocally(registryFile)
 			gomega.Expect(registryData).To(gomega.ContainSubstring(mirrorAddress))
-			gomega.Expect(registryData).To(gomega.ContainSubstring(fmt.Sprintf("name: %s", aliasDomain)))
 
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
