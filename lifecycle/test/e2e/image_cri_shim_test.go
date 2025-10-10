@@ -17,8 +17,12 @@ package e2e
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"time"
 
 	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
@@ -198,9 +202,88 @@ COPY image-cri-shim cri`
 		ginkgo.It("remove image", removeTestCases)
 		ginkgo.It("remove image by id", removeByIDTestCases)
 		ginkgo.It("get fs info", fsInfoTestCases)
+		ginkgo.It("rewrite registry config allows pulling via mirror", func() {
+			const (
+				sourceImage    = "docker.io/library/busybox:1"
+				rewrittenImage = "registry-1.docker.io/library/busybox:1"
+			)
+
+			shimConfigRaw := utils.GetFileDataLocally(DefaultImageCRIShimConfig)
+			cfg, err := shimType.UnmarshalData([]byte(shimConfigRaw))
+			utils.CheckErr(err, "failed to unmarshal original shim config")
+
+			cfgCopy := *cfg
+			cfgCopy.Registries = append([]shimType.Registry{}, cfg.Registries...)
+			cfgCopy.ReloadInterval = metav1.Duration{Duration: time.Second}
+			mirrorConfigured := false
+			for _, reg := range cfgCopy.Registries {
+				if reg.Address == "https://registry-1.docker.io" || reg.Address == "registry-1.docker.io" {
+					mirrorConfigured = true
+					break
+				}
+			}
+			if !mirrorConfigured {
+				cfgCopy.Registries = append(cfgCopy.Registries, shimType.Registry{Address: "https://registry-1.docker.io"})
+			}
+
+			cfgCopy.Auth = fmt.Sprintf("offline:%d", time.Now().UnixNano())
+			payload, err := yaml.Marshal(cfgCopy)
+			utils.CheckErr(err, "failed to marshal shim config with mirror")
+
+			defer func(content string) {
+				restoreSince := time.Now()
+				writeShimConfig([]byte(content))
+				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
+			}(shimConfigRaw)
+
+			since := time.Now()
+			writeShimConfig(payload)
+			waitForShimLog("reloaded shim auth configuration", since, 60*time.Second)
+
+			registryDir := shimType.NormalizeRegistryDir(cfgCopy.RegistryDir)
+			registryFile := filepath.Join(registryDir, "registry-1.docker.io.yaml")
+			gomega.Eventually(func() error {
+				_, err := exec.RunSimpleCmd(fmt.Sprintf("sudo test -f %s", registryFile))
+				return err
+			}, 30*time.Second, 2*time.Second).Should(gomega.Succeed(), fmt.Sprintf("expected registry config %s to exist", registryFile))
+
+			registryData := utils.GetFileDataLocally(registryFile)
+			gomega.Expect(registryData).To(gomega.ContainSubstring("https://registry-1.docker.io"))
+
+			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
+			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
+
+			pullOut, err := fakeClient.CmdInterface.Exec("crictl", "pull", sourceImage)
+			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
+			logger.Info("crictl pull output: %s", string(pullOut))
+
+			waitForShimLog(fmt.Sprintf("image: %s, newImage: %s, action: PullImage", sourceImage, rewrittenImage), since, 60*time.Second)
+
+			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
+			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
+		})
 		ginkgo.It("close grpc", func() {
 			clt.Close()
 		})
 	})
 
 })
+
+const shimJournalTimeLayout = "2006-01-02 15:04:05"
+
+func writeShimConfig(data []byte) {
+	cmd := fmt.Sprintf("cat <<'EOF' | sudo tee %s >/dev/null\n%s\nEOF", DefaultImageCRIShimConfig, string(data))
+	_, err := exec.RunSimpleCmd(cmd)
+	utils.CheckErr(err, "failed to write shim config")
+}
+
+func waitForShimLog(fragment string, since time.Time, timeout time.Duration) {
+	gomega.Eventually(func() string {
+		cmd := fmt.Sprintf("sudo journalctl -u image-cri-shim --since \"%s\" --no-pager", since.Add(-5*time.Second).Format(shimJournalTimeLayout))
+		out, err := exec.RunSimpleCmd(cmd)
+		if err != nil {
+			return ""
+		}
+		return out
+	}, timeout, 3*time.Second).Should(gomega.ContainSubstring(fragment), fmt.Sprintf("missing shim log fragment %q", fragment))
+}
