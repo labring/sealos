@@ -95,8 +95,8 @@ export const json2CreateCluster = (
     if (!mysqlRes) return [];
 
     // Branch structure for different database types and versions
-    if (data.dbType === 'apecloud-mysql' && data.dbVersion === 'mysql-5.7.42') {
-      // MySQL 5.7.42 specific configuration
+    if (data.dbType === 'apecloud-mysql' && data.dbVersion.startsWith('mysql-')) {
+      // start with mysql- specific configuration
       return [
         {
           apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -104,7 +104,7 @@ export const json2CreateCluster = (
           metadata: {
             labels: {
               'clusterdefinition.kubeblocks.io/name': 'mysql',
-              'clusterversion.kubeblocks.io/name': 'mysql-5.7.42'
+              'clusterversion.kubeblocks.io/name': data.dbVersion
             },
             name: `${data.dbName}`,
             namespace: getUserNamespace()
@@ -276,9 +276,9 @@ export const json2CreateCluster = (
     const mongoRes = resources['mongodb'];
     if (!mongoRes) return [];
 
-    const serviceVersion = data.dbVersion.startsWith('mongodb-')
-      ? data.dbVersion.replace('mongodb-', '')
-      : data.dbVersion;
+    // const serviceVersion = data.dbVersion.startsWith('mongodb-')
+    //   ? data.dbVersion.replace('mongodb-', '')
+    //   : data.dbVersion;
 
     return [
       {
@@ -288,7 +288,7 @@ export const json2CreateCluster = (
           labels: {
             'kb.io/database': data.dbVersion,
             'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/version': serviceVersion,
+            // 'app.kubernetes.io/version': serviceVersion,
             'helm.sh/chart': 'mongodb-cluster-0.9.1'
           },
           name: data.dbName,
@@ -307,7 +307,7 @@ export const json2CreateCluster = (
               replicas: mongoRes.other?.replicas ?? data.replicas,
               resources: mongoRes.cpuMemory,
               ...(mongoRes.storage > 0 && {
-                serviceVersion: serviceVersion,
+                serviceVersion: data.dbVersion,
                 volumeClaimTemplates: [
                   {
                     name: 'data',

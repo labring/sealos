@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { K8sApi } from '@/services/backend/kubernetes';
+import { K8sApi, K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { DBTypeEnum } from '@/constants/db';
 import * as k8s from '@kubernetes/client-node';
@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [DBTypeEnum.clickhouse]: []
     };
 
-    const kc = K8sApi();
+    const kc = K8sApiDefault();
     const k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi);
 
     // Fetch ClusterVersions (cv) - for most databases
@@ -66,6 +66,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       cvBody.items.forEach((item: any) => {
         const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
+        if (item?.spec?.clusterDefinitionRef === 'mysql') {
+          DBVersionMap[DBTypeEnum.mysql].unshift({
+            id: item.metadata.name,
+            label: item.metadata.name
+          });
+        }
         // Only use ClusterVersion for databases not using ComponentVersion
         if (
           DBVersionMap[db] &&
