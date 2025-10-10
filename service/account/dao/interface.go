@@ -117,7 +117,7 @@ type Interface interface {
 	GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, workspace string) (int64, error)
 	CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transaction ...*types.WorkspaceSubscriptionTransaction) error
 	GetUserStripeCustomerID(userUID uuid.UUID) (string, error)
-	GetWorkspaceRemainingAIQuota(workspace string) (RemainingQuota int64, err error)
+	GetWorkspaceRemainingAIQuota(workspace string) (TotalQuota, RemainingQuota int64, err error)
 	ChargeWorkspaceAIQuota(usage int64, workspace string) error
 }
 
@@ -168,17 +168,18 @@ func (g *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, e
 	return g.ck.GetAccountWithWorkspace(workspace)
 }
 
-func (g *Cockroach) GetWorkspaceRemainingAIQuota(workspace string) (RemainingQuota int64, err error) {
+func (g *Cockroach) GetWorkspaceRemainingAIQuota(workspace string) (TotalQuota, RemainingQuota int64, err error) {
 	// WorkspaceAIQuotaPackage
 	var pkgs []types.WorkspaceAIQuotaPackage
 	err = g.ck.GetGlobalDB().Model(&types.WorkspaceAIQuotaPackage{}).Where("workspace = ? AND expired_at > ? AND status = ?", workspace, time.Now(), types.PackageStatusActive).Find(&pkgs).Error
 	if err != nil {
-		return 0, fmt.Errorf("failed to get workspace ai quota package: %v", err)
+		return 0, 0, fmt.Errorf("failed to get workspace ai quota package: %v", err)
 	}
 	for _, pkg := range pkgs {
+		TotalQuota += pkg.Total
 		RemainingQuota += pkg.Total - pkg.Usage
 	}
-	return RemainingQuota, nil
+	return TotalQuota, RemainingQuota, nil
 }
 
 func (g *Cockroach) ChargeWorkspaceAIQuota(usage int64, workspace string) error {

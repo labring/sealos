@@ -409,6 +409,9 @@ func (c *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, e
 		}
 		return nil, fmt.Errorf("failed to get user uid with workspace %s: %v", workspace, err)
 	}
+	if userUIDString == "" {
+		return nil, fmt.Errorf("empty user uid with workspace %s", workspace)
+	}
 
 	userUID, err := uuid.Parse(userUIDString)
 	if err != nil {

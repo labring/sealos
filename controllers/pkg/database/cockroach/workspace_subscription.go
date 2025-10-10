@@ -170,7 +170,7 @@ func AddWorkspaceSubscriptionAIQuotaPackage(globalDB *gorm.DB, subscriptionID uu
 		CreatedAt:               time.Now(),
 		UpdatedAt:               time.Now(),
 	}
-	err = globalDB.Where("workspace_subscription_id = ?", subscriptionID).FirstOrCreate(&aiQuotaPackage).Error
+	err = globalDB.Where("from_id = ?", fromID).FirstOrCreate(&aiQuotaPackage).Error
 	if err != nil {
 		return fmt.Errorf("failed to create AI quota package: %v", err)
 	}

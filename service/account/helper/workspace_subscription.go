@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
+
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
@@ -42,17 +46,38 @@ func resumeWorkspaceTraffic(client client.Client, workspace string) error {
 }
 
 func updateNamespaceStatus(clt client.Client, ctx context.Context, status string, namespaces []string) error {
-	for i := range namespaces {
-		ns := &corev1.Namespace{}
-		if err := clt.Get(ctx, types2.NamespacedName{Name: namespaces[i]}, ns); err != nil {
-			return err
-		}
-		if ns.Annotations[types.NetworkStatusAnnoKey] == status {
-			continue
-		}
-		// 交给namespace controller处理
-		ns.Annotations[types.NetworkStatusAnnoKey] = status
-		if err := clt.Update(ctx, ns); err != nil {
+	logger := logr.FromContextOrDiscard(ctx)
+
+	for _, nsName := range namespaces {
+		// Use retry.RetryOnConflict to handle conflicts
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			// Fetch the latest namespace object
+			ns := &corev1.Namespace{}
+			if err := clt.Get(ctx, types2.NamespacedName{Name: nsName}, ns); err != nil {
+				if errors.IsNotFound(err) {
+					logger.Info("Namespace not found, skipping", "namespace", nsName)
+					return nil // Skip if namespace doesn't exist
+				}
+				return err
+			}
+
+			// Check if the annotation already matches the desired status
+			if ns.Annotations == nil {
+				ns.Annotations = make(map[string]string)
+			}
+			if ns.Annotations[types.NetworkStatusAnnoKey] == status {
+				logger.Info("Namespace already has desired status, skipping", "namespace", nsName, "status", status)
+				return nil
+			}
+
+			// Update the annotation
+			ns.Annotations[types.NetworkStatusAnnoKey] = status
+
+			// Attempt to update the namespace
+			return clt.Update(ctx, ns)
+		})
+
+		if err != nil {
 			return err
 		}
 	}
