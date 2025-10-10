@@ -12,13 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-shim: /var/run/image-cri-shim.sock
-cri: /run/containerd/containerd.sock
-address: http://sealos.hub:5000
-force: true
-debug: true
-image: /var/lib/image-cri-shim
-timeout: 15m
-reloadInterval: 15s
+address: http://192.168.64.1:5000
 auth: admin:passw0rd
-registry.d: testdata/registries
