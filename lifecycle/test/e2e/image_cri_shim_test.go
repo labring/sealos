@@ -101,11 +101,6 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 				return
 			}
 			imageShimService = image.NewFakeImageServiceClientWithV1(k8sv1.NewImageServiceClient(gCon))
-			ginkgo.DeferCleanup(func() {
-				if clt != nil {
-					clt.Close()
-				}
-			})
 		})
 		utils.CheckErr(shimInitErr, "failed to initialize image shim client")
 	}
