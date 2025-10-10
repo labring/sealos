@@ -63,7 +63,9 @@ const Form = ({
   countGpuInventory,
   pxVal,
   refresh,
-  isAdvancedOpen
+  isAdvancedOpen,
+
+  onDomainVerified
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -72,6 +74,7 @@ const Form = ({
   pxVal: number;
   refresh: boolean;
   isAdvancedOpen: boolean;
+  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -306,14 +309,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -947,8 +950,8 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                ? network.protocol
-                                : 'HTTP'
+                                  ? network.protocol
+                                  : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
@@ -998,14 +1001,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                  ? network?.nodePort
-                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                        network.nodePort
-                                      }`
-                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                        'pending_to_allocated'
-                                      )}`
-                                  : `${network.publicDomain}.${network.domain}`}
+                                    ? network?.nodePort
+                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                          network.nodePort
+                                        }`
+                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                          'pending_to_allocated'
+                                        )}`
+                                    : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1142,8 +1145,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1356,6 +1359,7 @@ const Form = ({
               ...networks[i],
               customDomain: e
             });
+            onDomainVerified?.({ index: i, customDomain: e });
           }}
         />
       )}

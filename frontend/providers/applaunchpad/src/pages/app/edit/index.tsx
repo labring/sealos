@@ -20,6 +20,9 @@ import {
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
+
+import { YamlKindEnum } from '@/utils/adapt';
+import yaml from 'js-yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -445,8 +448,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                              ? 'GPU'
-                              : 'RAM',
+                                ? 'GPU'
+                                : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined
@@ -468,6 +471,50 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               pxVal={pxVal}
               refresh={forceUpdate}
               isAdvancedOpen={isAdvancedOpen}
+              onDomainVerified={({ index, customDomain }) => {
+                try {
+                  const data = formHook.getValues();
+                  if (!data?.appName) return;
+                  if (data.networks?.[index]) {
+                    data.networks[index].customDomain = customDomain;
+                  }
+                  const newYamls = formData2Yamls(data);
+                  const patch = patchYamlList({
+                    parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+                    parsedNewYamlList: newYamls.map((item) => item.value),
+                    originalYamlList: crOldYamls.current
+                  });
+                  let ingressOnlyPatch = patch.filter((p) =>
+                    [YamlKindEnum.Ingress, YamlKindEnum.Issuer, YamlKindEnum.Certificate].includes(
+                      p.kind as YamlKindEnum
+                    )
+                  );
+                  // Avoid AlreadyExists for cert-manager resources: convert creates to patches
+                  ingressOnlyPatch = ingressOnlyPatch.map((p) => {
+                    if (
+                      p.type === 'create' &&
+                      (p.kind === YamlKindEnum.Issuer || p.kind === YamlKindEnum.Certificate)
+                    ) {
+                      try {
+                        const obj = yaml.load(p.value as unknown as string) as any;
+                        return { type: 'patch', kind: p.kind, value: obj } as any;
+                      } catch {}
+                    }
+                    return p;
+                  });
+                  if (ingressOnlyPatch.length === 0) return;
+                  setIsLoading(true);
+                  putApp({ patch: ingressOnlyPatch, appName: data.appName })
+                    .then(() => {
+                      toast({ status: 'success', title: t('Deployment Successful') });
+                      formOldYamls.current = newYamls;
+                    })
+                    .catch((err) => {
+                      toast({ status: 'error', title: getErrText(err) });
+                    })
+                    .finally(() => setIsLoading(false));
+                } catch (error) {}
+              }}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
