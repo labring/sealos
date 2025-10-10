@@ -95,11 +95,14 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 			return nil
 		}
 		commitMap.Store(devbox.Status.ContentID, true)
+		start := time.Now()
+		h.Logger.Info("start commit devbox", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", start)
 		if err := h.commitDevbox(ctx, devbox, targetState); err != nil {
 			commitMap.Delete(devbox.Status.ContentID)
 			h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 			return err
 		}
+		h.Logger.Info("commit devbox success", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", time.Since(start))
 	} else if currentState != targetState {
 		// Handle simple state transitions without commit
 		devbox.Status.State = targetState
