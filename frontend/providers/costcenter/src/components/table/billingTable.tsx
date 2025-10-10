@@ -61,8 +61,11 @@ export function BillingDetailsTable({
       return function CustomCell(props: CellContext<APPBillingItem, number>) {
         const resourceEntity = valuationMap.get(x);
         if (!resourceEntity) return '0';
+        const value = props.cell.getValue();
+        if (isNaN(value)) return '-';
         const unit = resourceEntity.unit;
-        return props.cell.getValue() / resourceEntity.scale + ' ' + t(unit, { ns: 'common' });
+        //return props.cell.getValue() / resourceEntity.scale + ' ' + t(unit, { ns: 'common' });
+        return value / resourceEntity.scale + ' ' + t(unit, { ns: 'common' });
       };
     };
     return [
