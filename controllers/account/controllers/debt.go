@@ -110,17 +110,21 @@ func (r *DebtReconciler) start() {
 	}()
 
 	// 2.1 recharge record processing
-	//wg.Add(1)
-	//go func() {
-	//	defer wg.Done()
-	//	r.processWithTimeRange(&types.Payment{}, "created_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
-	//		users := getUniqueUsers(db, &types.Payment{}, "created_at", start, end)
-	//		if len(users) > 0 {
-	//			r.processUsersInParallel(users)
-	//			r.Logger.Info("processed payment records", "count", len(users), "users", users, "start", start, "end", end)
-	//		}
-	//	})
-	//}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.processWithTimeRange(&types.Payment{}, "created_at", 10*time.Second, 1*time.Hour, func(db *gorm.DB, start, end time.Time) error {
+			users, err := getUniqueUsers(db, &types.Payment{}, "created_at", start, end)
+			if err != nil {
+				return fmt.Errorf("failed to get unique users: %w", err)
+			}
+			if len(users) > 0 {
+				r.processUsersInParallel(users)
+				r.Logger.Info("processed payment records", "count", len(users), "start", start, "end", end)
+			}
+			return nil
+		})
+	}()
 
 	// 2.2 subscription change processing
 	wg.Add(1)
