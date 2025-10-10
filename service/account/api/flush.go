@@ -157,6 +157,9 @@ func updateNamespaceStatus(ctx context.Context, clt client.Client, annoKey, stat
 		if ns.Annotations[annoKey] == status || ns.Annotations[annoKey] == status+"Completed" {
 			continue
 		}
+		if ns.Status.Phase == corev1.NamespaceTerminating {
+			continue
+		}
 
 		original := ns.DeepCopy()
 		ns.Annotations[annoKey] = status

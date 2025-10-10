@@ -699,7 +699,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 
 	// Handle concurrent safety and last transaction validation before payment processing
 	err = handleWorkspaceSubscriptionTransactionWithConcurrencyControl(c, currentSubscription, req, transaction)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrSamePendingOperation) {
 		// logrus.Errorf("handle workspace subscription transaction error: %v", err)
 		dao.Logger.Errorf("handle workspace subscription transaction error: %v", err)
 		// Error response already handled in the function
@@ -708,6 +708,8 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 }
 
 // Helper functions for workspace subscription payment logic
+
+var ErrSamePendingOperation = errors.New("same pending operation exists")
 
 // handleWorkspaceSubscriptionTransactionWithConcurrencyControl provides unified transaction handling with concurrency control
 func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(c *gin.Context, subscription *types.WorkspaceSubscription, req *helper.WorkspaceSubscriptionOperatorReq, transaction types.WorkspaceSubscriptionTransaction) error {
@@ -744,7 +746,7 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(c *gin.Context
 									"payID":       paymentOrder.ID,
 									"success":     true,
 								})
-								return nil
+								return ErrSamePendingOperation
 							}
 						}
 					}
@@ -1493,8 +1495,8 @@ func finalizeWorkspaceSubscriptionSuccess(tx *gorm.DB, workspaceSubscription *ty
 
 	// Set period for renewal
 	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed {
-		workspaceSubscription.CurrentPeriodStartAt = workspaceSubscription.CurrentPeriodEndAt
-		workspaceSubscription.CurrentPeriodEndAt = workspaceSubscription.CurrentPeriodEndAt.AddDate(0, 1, 0)
+		workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
+		workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
 		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
 	}
 
@@ -1516,7 +1518,7 @@ func finalizeWorkspaceSubscriptionSuccess(tx *gorm.DB, workspaceSubscription *ty
 	}
 	traffic := plan.Traffic
 	aiQuota := plan.AIQuota
-	if (wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded || wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed) && oldPlanName != "" && oldPlanName != types.FreeSubscriptionPlanName {
+	if (wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded || wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed) && oldPlanName != "" && oldPlanName != types.FreeSubscriptionPlanName && oldPlanName != wsTransaction.NewPlanName {
 		oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(oldPlanName)
 		if err != nil {
 			return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
@@ -1530,7 +1532,10 @@ func finalizeWorkspaceSubscriptionSuccess(tx *gorm.DB, workspaceSubscription *ty
 			aiQuota = 0
 		}
 	}
-	if wsTransaction.Period != "" && wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded {
+	if wsTransaction.Period == "" {
+		wsTransaction.Period = types.SubscriptionPeriodMonthly
+	}
+	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded {
 		if traffic > 0 {
 			period, err := types.ParsePeriod(wsTransaction.Period)
 			if err != nil {
@@ -1636,6 +1641,14 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
+	if workspaceSubscription != nil && workspaceSubscription.Status == types.SubscriptionStatusDeleted {
+		_, err := services.StripeServiceInstance.CancelSubscription(subscriptionID)
+		if err != nil {
+			return fmt.Errorf("failed to cancel subscription for deleted workspace: %w", err)
+		}
+		dao.Logger.Infof("subscription paid for deleted workspace %s/%s, subscription %s canceled", workspace, regionDomain, subscriptionID)
+		return nil
+	}
 	// subscription_update Upgrading the subscription payment can be completed without the need for webhook processing
 	isUpdateSubscription := invoice.BillingReason == "subscription_update"
 	if isUpdateSubscription {
@@ -1666,6 +1679,9 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 			}
 		default:
 			return fmt.Errorf("unsupported operator for subscription update: %s", operator)
+		}
+		if workspaceSubscription == nil {
+			return fmt.Errorf("workspace subscription not found for upgrade: %s/%s", workspace, regionDomain)
 		}
 
 		// 2. Prepare payment for upgrade
@@ -1775,8 +1791,7 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 				PayStatus:    types.SubscriptionPayStatusPaid,
 				PayID:        paymentID,
 				Period:       types.SubscriptionPeriodMonthly,
-				// TODO 抽象方法下
-				Amount: invoice.AmountPaid * 10_000,
+				Amount:       invoice.AmountPaid * 10_000,
 			}
 			if workspaceSubscription != nil {
 				wsTransaction.OldPlanName = workspaceSubscription.PlanName
@@ -1954,7 +1969,7 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 		notifyEventData.Operator = types.SubscriptionTransactionTypeRenewed
 	case isUpdateSubscription:
 		paymentID = subscription.Metadata["last_payment_id"]
-		operator = subscription.Metadata["last_operator"]
+		//operator = subscription.Metadata["last_operator"]
 		newPlanName = subscription.Metadata["new_plan_name"]
 		notifyEventData.Operator = types.SubscriptionOperator(operator)
 	default:
@@ -2036,7 +2051,7 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 
 			// Renewal failure - try balance
 			var account types.Account
-			if err := tx.Where("user_uid = ?", userUID).First(&account).Error; err != nil {
+			if err := tx.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).First(&account).Error; err != nil {
 				return fmt.Errorf("failed to get account: %w", err)
 			}
 

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	types2 "k8s.io/apimachinery/pkg/types"
@@ -49,7 +51,7 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 		return
 	}
 	if _, exist = ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; exist {
-		remainQuota, err := dao.DBClient.GetWorkspaceRemainingAIQuota(workspace)
+		totalQuota, remainQuota, err := dao.DBClient.GetWorkspaceRemainingAIQuota(workspace)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace remaining quota: %v", err)})
 			return
@@ -60,8 +62,11 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"userUID": userUID,
-			"balance": remainQuota,
+			// for subscription, there is no balance field
+			"userUID":               userUID,
+			"workspaceSubscription": true,
+			"totalAIQuota":          totalQuota,
+			"remainAIQuota":         remainQuota,
 		})
 		return
 	}
@@ -71,12 +76,12 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"userUID": account.UserUID,
-		"balance": account.Balance - account.DeductionBalance,
+		"userUID":               account.UserUID,
+		"balance":               account.Balance - account.DeductionBalance,
+		"workspaceSubscription": false,
 	})
 }
 
-// TODO 这个接口后续变更为专属ai扣费接口
 // AdminChargeBilling ChargeBilling
 // @Summary Charge billing
 // @Description Charge billing
@@ -99,7 +104,7 @@ func AdminChargeBilling(c *gin.Context) {
 		return
 	}
 	helper.CallCounter.WithLabelValues("ChargeBilling", billingReq.UserUID.String()).Inc()
-	// TODO if Namespace is workspacesubscription, should charge to workspace ai quota
+	// if Namespace is workspace subscription, should charge to workspace ai quota
 	isSubscription, err := GetWorkspaceIsSubscription(billingReq.Namespace)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace subscription status: %v", err)})
@@ -119,11 +124,107 @@ func AdminChargeBilling(c *gin.Context) {
 	})
 }
 
-var SubscriptionCache = make(map[string]bool)
+// WorkspaceSubscriptionCache 工作空间订阅状态缓存
+type WorkspaceSubscriptionCache struct {
+	cache map[string]*cacheEntry
+	mutex sync.RWMutex
+}
 
-// TODO 使用缓存存储起来已订阅本地空间ns, 并且读写锁
+// cacheEntry 缓存条目，记录最后访问时间用于LRU清理
+type cacheEntry struct {
+	lastAccessed time.Time
+}
+
+var (
+	subscriptionCache     *WorkspaceSubscriptionCache
+	subscriptionCacheOnce sync.Once
+)
+
+// 缓存配置常量
+const (
+	// 缓存清理间隔 - 30分钟
+	cacheCleanupInterval = 30 * time.Minute
+	// 未使用时间阈值 - 如果超过2小时未访问则清理
+	unusedThreshold = 2 * time.Hour
+	// 最大缓存条目数
+	maxCacheEntries = 10000
+)
+
+// getSubscriptionCache 获取缓存实例（单例模式）
+func getSubscriptionCache() *WorkspaceSubscriptionCache {
+	subscriptionCacheOnce.Do(func() {
+		subscriptionCache = &WorkspaceSubscriptionCache{
+			cache: make(map[string]*cacheEntry),
+		}
+		// 启动定期清理过期缓存的 goroutine
+		go subscriptionCache.startCleanupWorker()
+	})
+	return subscriptionCache
+}
+
+// get 从缓存中获取值，订阅状态一旦缓存就永远有效
+func (c *WorkspaceSubscriptionCache) get(key string) bool {
+	c.mutex.Lock() // 使用写锁因为需要更新lastAccessed
+	defer c.mutex.Unlock()
+
+	entry, exists := c.cache[key]
+	if !exists {
+		return false
+	}
+
+	// 更新最后访问时间
+	entry.lastAccessed = time.Now()
+	return true
+}
+
+// set 设置缓存值，只缓存订阅状态为true的工作空间
+func (c *WorkspaceSubscriptionCache) set(key string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	// 如果缓存条目过多，清理长期未使用的条目
+	if len(c.cache) >= maxCacheEntries {
+		c.cleanupUnusedEntries()
+	}
+
+	c.cache[key] = &cacheEntry{
+		lastAccessed: time.Now(),
+	}
+}
+
+// cleanupUnusedEntries 清理长期未使用的缓存条目（调用时需要持有写锁）
+func (c *WorkspaceSubscriptionCache) cleanupUnusedEntries() {
+	now := time.Now()
+	for key, entry := range c.cache {
+		if now.Sub(entry.lastAccessed) > unusedThreshold {
+			delete(c.cache, key)
+		}
+	}
+}
+
+// startCleanupWorker 启动定期清理工作协程
+func (c *WorkspaceSubscriptionCache) startCleanupWorker() {
+	ticker := time.NewTicker(cacheCleanupInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		c.mutex.Lock()
+		c.cleanupUnusedEntries()
+		c.mutex.Unlock()
+	}
+}
+
+// GetWorkspaceIsSubscription 获取工作空间是否为订阅状态
+// 使用缓存和读写锁确保并发安全性，只缓存订阅状态的工作空间
 func GetWorkspaceIsSubscription(workspace string) (bool, error) {
-	if SubscriptionCache[workspace] {
+	if workspace == "" {
+		return false, fmt.Errorf("workspace name cannot be empty")
+	}
+
+	cache := getSubscriptionCache()
+
+	// 先尝试从缓存中获取，如果存在说明一定是订阅状态
+	if cache.get(workspace) {
 		return true, nil
 	}
 	ns := &corev1.Namespace{}
@@ -131,13 +232,16 @@ func GetWorkspaceIsSubscription(workspace string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to get workspace %s: %v", workspace, err)
 	}
-	if _, exist := ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; exist {
-		SubscriptionCache[workspace] = true
-		return true, nil
+
+	// 检查是否有订阅状态注解
+	_, isSubscription := ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]
+
+	// 只缓存订阅状态的工作空间，因为订阅是不可逆的
+	if isSubscription {
+		cache.set(workspace)
 	}
-	// 未订阅ns不需要cache，随时会转为订阅状态
-	// SubscriptionCache[workspace] = false
-	return false, nil
+
+	return isSubscription, nil
 }
 
 // AdminGetUserRealNameInfo
