@@ -379,6 +379,13 @@ const DBList = ({
     return name.includes(searchTerm) || remark.includes(searchTerm);
   };
 
+  const getDBLabel = (dbType: string) => {
+    if (dbType === 'apecloud-mysql' || dbType === 'mysql') {
+      return 'MySQL';
+    }
+    return DBTypeList.find((i) => i.id === dbType)?.label || dbType;
+  };
+
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
       {
@@ -496,7 +503,7 @@ const DBList = ({
               alt={row.original.id}
               src={`/images/${row.original.dbType}.svg`}
             />
-            {DBTypeList.find((i) => i.id === row.original.dbType)?.label}
+            {getDBLabel(row.original.dbType)}
           </Flex>
         )
       },

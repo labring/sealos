@@ -234,10 +234,9 @@ export const DBTypeList = [
   { id: DBTypeEnum.milvus, label: 'Milvus' },
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  { id: DBTypeEnum.clickhouse, label: 'clickhouse' },
+  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
-  { id: 'mysql', label: 'MySQL' }
 ];
 
 export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
