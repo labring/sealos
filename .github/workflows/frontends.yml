@@ -44,6 +44,7 @@ jobs:
       matrix:
         module:
           [
+            providers/aiproxy,
             providers/license,
             providers/cronjob,
             providers/template,
