@@ -44,7 +44,15 @@ const Header = ({
   const { createCompleted, startTimeMs } = useGuideStore();
 
   return (
-    <Flex flexDirection={'column'} w={'100%'}>
+    <Flex
+      flexDirection={'column'}
+      w={'100%'}
+      position={'sticky'}
+      top={0}
+      zIndex={10}
+      bg={'grayModern.100'}
+      flexShrink={0}
+    >
       {isClientSide && !createCompleted && (
         <Center
           borderTop={'1px solid #BFDBFE'}
@@ -61,7 +69,14 @@ const Header = ({
           {t('driver.create_launchpad_header')}
         </Center>
       )}
-      <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
+      <Flex
+        w={'100%'}
+        px={10}
+        h={'86px'}
+        alignItems={'center'}
+        borderBottom={'1px solid'}
+        borderColor={'grayModern.200'}
+      >
         <Flex
           alignItems={'center'}
           cursor={'pointer'}

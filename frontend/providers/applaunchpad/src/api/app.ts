@@ -7,7 +7,8 @@ import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
 import { track } from '@sealos/gtm';
 
-export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
+export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
+  POST('/api/applyApp', { yamlList, mode });
 
 export const putApp = (data: {
   patch: AppPatchPropsType;

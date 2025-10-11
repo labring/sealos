@@ -63,7 +63,9 @@ const Form = ({
   countGpuInventory,
   pxVal,
   refresh,
-  isAdvancedOpen
+  isAdvancedOpen,
+
+  onDomainVerified
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -72,6 +74,7 @@ const Form = ({
   pxVal: number;
   refresh: boolean;
   isAdvancedOpen: boolean;
+  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -306,14 +309,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -838,7 +841,8 @@ const Form = ({
                   _notLast={{ pb: 6, borderBottom: theme.borders.base }}
                   _notFirst={{ pt: 6 }}
                 >
-                  <Box>
+                  {/* Container Port Column - Fixed Width */}
+                  <Box w={'140px'}>
                     <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                       {t('Container Port')}
                     </Box>
@@ -889,7 +893,9 @@ const Form = ({
                       </Box>
                     )}
                   </Box>
-                  <Box mx={7}>
+
+                  {/* Enable Internet Access Column - Fixed Width */}
+                  <Box w={'200px'} mx={7}>
                     <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                       {t('Open Public Access')}
                     </Box>
@@ -933,11 +939,13 @@ const Form = ({
                       ></Switch>
                     </Flex>
                   </Box>
-                  {(network.openPublicDomain || network.openNodePort) && (
-                    <>
-                      <Box flex={'1 0 0'}>
-                        <Box mb={'8px'} h={'20px'}></Box>
-                        <Flex alignItems={'center'} h={'35px'}>
+
+                  {/* Protocol and Domain Column - Fixed Width */}
+                  <Box w={'500px'}>
+                    <Box mb={'8px'} h={'20px'}></Box>
+                    <Flex alignItems={'center'} h={'35px'}>
+                      {network.openPublicDomain || network.openNodePort ? (
+                        <>
                           <MySelect
                             width={'120px'}
                             height={'32px'}
@@ -947,8 +955,8 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                ? network.protocol
-                                : 'HTTP'
+                                  ? network.protocol
+                                  : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
@@ -998,14 +1006,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                  ? network?.nodePort
-                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                        network.nodePort
-                                      }`
-                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                        'pending_to_allocated'
-                                      )}`
-                                  : `${network.publicDomain}.${network.domain}`}
+                                    ? network?.nodePort
+                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                          network.nodePort
+                                        }`
+                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                          'pending_to_allocated'
+                                        )}`
+                                    : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1026,12 +1034,16 @@ const Form = ({
                               </Box>
                             )}
                           </Flex>
-                        </Flex>
-                      </Box>
-                    </>
-                  )}
+                        </>
+                      ) : (
+                        <Box w={'470px'} h={'32px'}></Box>
+                      )}
+                    </Flex>
+                  </Box>
+
+                  {/* Delete Button Column - Fixed Width */}
                   {networks.length > 1 && (
-                    <Box ml={3}>
+                    <Box w={'50px'} ml={3}>
                       <Box mb={'8px'} h={'20px'}></Box>
                       <IconButton
                         height={'32px'}
@@ -1142,8 +1154,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1356,6 +1368,7 @@ const Form = ({
               ...networks[i],
               customDomain: e
             });
+            onDomainVerified?.({ index: i, customDomain: e });
           }}
         />
       )}
