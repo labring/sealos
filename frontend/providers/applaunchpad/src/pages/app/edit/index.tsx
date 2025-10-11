@@ -267,8 +267,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-
-        // 生成新的 ingress.yaml
         const ingressYaml = json2Ingress(data);
         setIsLoading(true);
         postDeployApp([ingressYaml])
