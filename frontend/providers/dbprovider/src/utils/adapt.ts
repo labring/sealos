@@ -234,6 +234,9 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     // First try clusterdefinition label
     dbType = labels['clusterdefinition.kubeblocks.io/name'] || '';
 
+    if (dbType === 'mysql') {
+      dbType = 'apecloud-mysql';
+    }
     // If still no dbType, try to infer from componentSpecs or helm chart
     if (!dbType) {
       const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDefRef;
