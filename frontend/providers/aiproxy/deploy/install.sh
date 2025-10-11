@@ -30,5 +30,11 @@ adminKey=$(kubectl get configmap aiproxy -n aiproxy-system -o jsonpath='{.data.A
 SEALOS_CLOUD_DOMAIN=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
 SEALOS_CLOUD_PORT=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
 CURRENCY_SYMBOL=$(kubectl get deployment -n dbprovider-frontend dbprovider-frontend -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="CURRENCY_SYMBOL")].value}')
+if [[ "${CURRENCY_SYMBOL}" == "usd" ]]; then
+  SUFFIX="/en/home"
+fi
+
 helm upgrade -i aiproxy-web -n aiproxy-system charts/aiproxy  ${HELM_OPTS} \
-  --set aiproxy.APP_TOKEN_JWT_KEY=${varJwtInternal}  --set aiproxy.AI_PROXY_BACKEND_KEY=${adminKey} --set cloudDomain=${SEALOS_CLOUD_DOMAIN} --set cloudPort=${SEALOS_CLOUD_PORT} --set aiproxy.CURRENCY_SYMBOL=${CURRENCY_SYMBOL} --create-namespace
+  --set aiproxy.APP_TOKEN_JWT_KEY=${varJwtInternal}  --set aiproxy.AI_PROXY_BACKEND_KEY=${adminKey} \
+  --set suffix=${SUFFIX} \
+  --set cloudDomain=${SEALOS_CLOUD_DOMAIN} --set cloudPort=${SEALOS_CLOUD_PORT} --set aiproxy.CURRENCY_SYMBOL=${CURRENCY_SYMBOL} --create-namespace

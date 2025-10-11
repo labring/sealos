@@ -14,6 +14,8 @@ image: ghcr.io/labring/sealos-aiproxy-frontend:latest
 cloudDomain: 127.0.0.1.nip.io
 cloudPort: 443
 
+suffix:
+
 aiproxy:
   AI_PROXY_BACKEND_KEY: ""
   APP_TOKEN_JWT_KEY: ""
