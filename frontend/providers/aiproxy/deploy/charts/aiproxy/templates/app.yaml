@@ -6,7 +6,7 @@ metadata:
 spec:
   data:
     desc: Sealos AI Proxy
-    url: https:// {{ include "aiproxy.fullname" . }}.{{.Values.cloudDomain}}{{.Values.suffix}}
+    url: https://{{ include "aiproxy.fullname" . }}.{{.Values.cloudDomain}}{{.Values.suffix}}
   displayType: more
   i18n:
     zh:

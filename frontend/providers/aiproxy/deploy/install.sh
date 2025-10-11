@@ -26,7 +26,7 @@ fi
 
 
 varJwtInternal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtInternal}')
-adminKey=$(kubectl get configmap aiproxy -n aiproxy-system -o jsonpath='{.data.ADMIN_KEY}' )
+adminKey=$(kubectl get configmap aiproxy-env -n aiproxy-system -o jsonpath='{.data.ADMIN_KEY}' )
 SEALOS_CLOUD_DOMAIN=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
 SEALOS_CLOUD_PORT=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
 CURRENCY_SYMBOL=$(kubectl get deployment -n dbprovider-frontend dbprovider-frontend -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="CURRENCY_SYMBOL")].value}')
