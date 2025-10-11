@@ -14,12 +14,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     if (!enablePhoneSms()) {
       throw new Error('SMS is not enabled');
     }
-    await filterCaptcha(req, res, () =>
-      filterPhoneParams(req, res, ({ phoneNumbers: phone }) =>
+    await filterCaptcha(req, res, async () =>
+      filterPhoneParams(req, res, async ({ phoneNumbers: phone }) =>
         sendSmsCodeGuard({
           id: phone,
           smsType: 'phone_login'
-        })(req, res, () => sendPhoneCodeSvc(phone, 'phone_login')(res))
+        })(req, res, async () => await sendPhoneCodeSvc(phone, 'phone_login')(res))
       )
     );
   });
