@@ -276,9 +276,9 @@ export const json2CreateCluster = (
     const mongoRes = resources['mongodb'];
     if (!mongoRes) return [];
 
-    // const serviceVersion = data.dbVersion.startsWith('mongodb-')
-    //   ? data.dbVersion.replace('mongodb-', '')
-    //   : data.dbVersion;
+    const serviceVersion = data.dbVersion.startsWith('mongodb-')
+      ? data.dbVersion.replace('mongodb-', '')
+      : data.dbVersion;
 
     return [
       {
@@ -307,7 +307,7 @@ export const json2CreateCluster = (
               replicas: mongoRes.other?.replicas ?? data.replicas,
               resources: mongoRes.cpuMemory,
               ...(mongoRes.storage > 0 && {
-                serviceVersion: data.dbVersion,
+                serviceVersion: serviceVersion,
                 volumeClaimTemplates: [
                   {
                     name: 'data',
