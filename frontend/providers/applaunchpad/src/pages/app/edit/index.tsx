@@ -269,7 +269,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }
         const ingressYaml = json2Ingress(data);
         setIsLoading(true);
-        postDeployApp([ingressYaml])
+        postDeployApp([ingressYaml], 'replace')
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
             formOldYamls.current = formData2Yamls(data);
