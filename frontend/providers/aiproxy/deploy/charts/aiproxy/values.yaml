@@ -1,0 +1,26 @@
+fullnameOverride: aiproxy-web
+
+replicas: 2
+resources:
+  requests:
+    cpu: 50m
+    memory: 50Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+image: ghcr.io/labring/sealos-aiproxy-frontend:latest
+
+cloudDomain: 127.0.0.1.nip.io
+cloudPort: 443
+
+aiproxy:
+  AI_PROXY_BACKEND_KEY: ""
+  APP_TOKEN_JWT_KEY: ""
+  AI_PROXY_BACKEND_INTERNAL: "http://aiproxy.apiproxy-system.svc:3000" #http://aiproxy.ns-bjwgfnik.svc.cluster.local:3000
+  ADMIN_NAMESPACES: "ns-admin"
+  ACCOUNT_SERVER_TOKEN_JWT_KEY: ""
+  CURRENCY_SYMBOL: ""
+  ACCOUNT_SERVER: "http://account-service.account-system.svc:2333"
+  IS_INVITATION_ACTIVE: "false"
+  DOC_URL: "https://sealos.run/docs/guides/ai-proxy"

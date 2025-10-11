@@ -298,8 +298,14 @@ jobs:
           ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
           ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
         run: |
-          sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
-
+          if [[ -d manifests ]]; then
+             echo "Found manifests"
+             sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+          fi
+          if [[ -f charts/${{ env.MODULE_NAME }}/values.yaml ]]; then
+             echo "Found charts charts/${{ env.MODULE_NAME }}/values.yaml"
+             sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" charts/${{ env.MODULE_NAME }}/values.yaml
+          fi
           # Build for GHCR
           sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
           sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
