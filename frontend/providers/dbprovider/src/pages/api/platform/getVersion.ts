@@ -150,12 +150,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     });
 
-    // Sort MySQL versions to ensure mysql-5.7.42 appears last
+    // Sort MySQL versions to put ac-mysql versions first
     if (DBVersionMap[DBTypeEnum.mysql].length > 0) {
       DBVersionMap[DBTypeEnum.mysql].sort((a, b) => {
-        // Move mysql-5.7.42 to the end
-        if (a.id === 'mysql-5.7.42') return 1;
-        if (b.id === 'mysql-5.7.42') return -1;
+        // Put ac-mysql versions first
+        const aIsAc = a.id.startsWith('ac-mysql');
+        const bIsAc = b.id.startsWith('ac-mysql');
+
+        if (aIsAc && !bIsAc) return -1;
+        if (!aIsAc && bIsAc) return 1;
+
         // Keep other versions in their original order
         return 0;
       });
