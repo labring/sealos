@@ -140,7 +140,19 @@ export const getLogContent = (payload: {
   dbType: SupportReconfigureDBType;
   logType: LogTypeEnum;
   podName: string;
+  startTime?: number;
+  endTime?: number;
 }) => POST<LogResult>(`/api/logs/get`, payload);
+
+export const getLogCounts = (payload: {
+  podName: string;
+  dbType: SupportReconfigureDBType;
+  logType: LogTypeEnum;
+  logPath?: string;
+  startTime?: number;
+  endTime?: number;
+  timeRange?: string;
+}) => POST<{ logs_total: string; _time: string }[]>(`/api/logs/getCounts`, payload);
 
 export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
   POST<Array<string>>(`/api/db/getDatabases`, payload);
