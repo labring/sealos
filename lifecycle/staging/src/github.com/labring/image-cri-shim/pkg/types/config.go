@@ -17,6 +17,7 @@ limitations under the License.
 package types
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -63,6 +64,7 @@ type Config struct {
 	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
 	RegistryDir     string          `json:"registry.d"`
+	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
 }
 
 type ShimAuthConfig struct {
@@ -78,6 +80,9 @@ func registryMatchDomain(reg Registry) string {
 
 func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	c.RegistryDir = NormalizeRegistryDir(c.RegistryDir)
+	if err := syncRegistriesToDir(c.RegistryDir, c.Registries); err != nil {
+		return nil, err
+	}
 	registries, err := loadRegistriesFromDir(c.RegistryDir)
 	if err != nil {
 		return nil, err
@@ -206,6 +211,77 @@ func NormalizeRegistryDir(dir string) string {
 		return DefaultRegistryDir
 	}
 	return dir
+}
+
+func syncRegistriesToDir(dir string, registries []Registry) error {
+	if len(registries) == 0 {
+		return nil
+	}
+
+	dir = NormalizeRegistryDir(dir)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("ensure registry.d %s: %w", dir, err)
+	}
+
+	for _, reg := range registries {
+		address := strings.TrimSpace(reg.Address)
+		if address == "" {
+			continue
+		}
+
+		host := registryFileName(address)
+		if host == "" {
+			logger.Warn("skip registry entry %q: unable to determine filename", address)
+			continue
+		}
+
+		data, err := yaml.Marshal(reg)
+		if err != nil {
+			return fmt.Errorf("marshal registry %s: %w", host, err)
+		}
+
+		path := filepath.Join(dir, fmt.Sprintf("%s.yaml", host))
+		if existing, err := os.ReadFile(path); err == nil {
+			if bytes.Equal(bytes.TrimSpace(existing), bytes.TrimSpace(data)) {
+				continue
+			}
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("read registry config %s: %w", path, err)
+		}
+
+		if err := os.WriteFile(path, data, 0o644); err != nil {
+			return fmt.Errorf("write registry config %s: %w", path, err)
+		}
+		logger.Debug("synced registry config to %s", path)
+	}
+
+	return nil
+}
+
+func registryFileName(address string) string {
+	if address == "" {
+		return ""
+	}
+
+	raw := strings.TrimSpace(address)
+	if raw == "" {
+		return ""
+	}
+
+	if u, err := url.Parse(raw); err == nil {
+		host := u.Host
+		if host != "" {
+			return host
+		}
+		// Some registry addresses might be provided without scheme, causing Parse to treat them as paths.
+	}
+
+	trimmed := strings.TrimPrefix(raw, "http://")
+	trimmed = strings.TrimPrefix(trimmed, "https://")
+	if idx := strings.Index(trimmed, "/"); idx != -1 {
+		trimmed = trimmed[:idx]
+	}
+	return strings.TrimSpace(trimmed)
 }
 
 func loadRegistriesFromDir(dir string) ([]Registry, error) {

@@ -77,3 +77,55 @@ func TestRegistriesLoadedFromDir(t *testing.T) {
 		t.Fatalf("expected credentials for 192.168.64.1:5000, got %#v", auth.CRIConfigs["192.168.64.1:5000"])
 	}
 }
+
+func TestRegistriesFieldSyncedToDir(t *testing.T) {
+	dir := t.TempDir()
+	registries := []Registry{
+		{Address: "https://hub.192.168.64.4.nip.io", Auth: "admin:syncpass"},
+		{Address: "http://192.168.64.1:5000"},
+	}
+
+	cfg := &Config{
+		ImageShimSocket: "/var/run/image-cri-shim.sock",
+		RuntimeSocket:   "/run/containerd/containerd.sock",
+		Address:         "https://registry.internal",
+		Force:           true,
+		Auth:            "sync:user",
+		RegistryDir:     dir,
+		Registries:      registries,
+	}
+
+	auth, err := cfg.PreProcess()
+	if err != nil {
+		t.Fatalf("preprocess with inline registries failed: %v", err)
+	}
+
+	expectedFiles := map[string]Registry{
+		"hub.192.168.64.4.nip.io.yaml": registries[0],
+		"192.168.64.1:5000.yaml":       registries[1],
+	}
+	for name, want := range expectedFiles {
+		path := filepath.Join(dir, name)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("expected registry file %s to be written: %v", path, err)
+		}
+		var got Registry
+		if err := yaml.Unmarshal(data, &got); err != nil {
+			t.Fatalf("failed to parse registry file %s: %v", path, err)
+		}
+		if got != want {
+			t.Fatalf("registry file %s content mismatch: got %#v, want %#v", path, got, want)
+		}
+	}
+
+	firstDomain := registryMatchDomain(registries[0])
+	if authCfg, ok := auth.CRIConfigs[firstDomain]; !ok || authCfg.Username != "admin" || authCfg.Password != "syncpass" {
+		t.Fatalf("expected credentials for %s, got %#v", firstDomain, auth.CRIConfigs[firstDomain])
+	}
+
+	secondDomain := registryMatchDomain(registries[1])
+	if !auth.SkipLoginRegistries[secondDomain] {
+		t.Fatalf("expected %s to skip login, got %#v", secondDomain, auth.SkipLoginRegistries)
+	}
+}
