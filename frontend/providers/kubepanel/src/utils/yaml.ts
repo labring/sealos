@@ -9,5 +9,11 @@ export function dumpKubeObject<K extends KubeObject = KubeObject>(obj: PartialDe
       objWithoutFunction[key] = value;
     }
   }
+  
+  // Remove managedFields from metadata if it exists
+  if (objWithoutFunction.metadata && objWithoutFunction.metadata.managedFields) {
+    delete objWithoutFunction.metadata.managedFields;
+  }
+  
   return dump(objWithoutFunction);
 }
