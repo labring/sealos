@@ -63,10 +63,5 @@ arch=$(uname -m)
 if [[ "$arch" != "x86_64" && "$arch" != "aarch64" ]]; then
   error "Host CPU architecture must be AMD64 (x86_64) or AArch64 (aarch64). Current: $arch"
 fi
-kernel_full=$(uname -r)
-if [ "$(ver_ge "$kernel_full" "4.19.57")" -ne 0 ]; then
-  if [[ "$kernel_full" != *"el8"* && "$kernel_full" != *"el9"* ]]; then
-    error "Linux kernel must be >= 4.19.57 or an equivalent supported version (for example RHEL8's 4.18). Current: $kernel_full"
-  fi
-fi
+bash kernel.sh
 logger "check root,port,cri success"
