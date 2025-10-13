@@ -9,24 +9,22 @@ import { type ResourceUsage } from '@/utils/usage';
 import { PriceIcon } from '@/components/icons/PriceIcon';
 import { useSystemConfigStore } from '@/store/config';
 
-const scale = 1000000;
-
 export const usePriceCalculation = ({ cpu, memory, storage, nodeport }: ResourceUsage) => {
   const { userSourcePrice } = useUserStore();
 
   return React.useMemo(() => {
     if (!userSourcePrice) return [];
 
-    const cpuPMin = +((userSourcePrice.cpu * cpu.min * 24) / scale).toFixed(2);
-    const cpuPMax = +((userSourcePrice.cpu * cpu.max * 24) / scale).toFixed(2);
+    const cpuPMin = +((userSourcePrice.cpu * cpu.min * 24) / 1000).toFixed(2);
+    const cpuPMax = +((userSourcePrice.cpu * cpu.max * 24) / 1000).toFixed(2);
 
-    const memoryPMin = +((userSourcePrice.memory * memory.min * 24) / scale).toFixed(2);
-    const memoryPMax = +((userSourcePrice.memory * memory.max * 24) / scale).toFixed(2);
+    const memoryPMin = +((userSourcePrice.memory * memory.min * 24) / 1024).toFixed(2);
+    const memoryPMax = +((userSourcePrice.memory * memory.max * 24) / 1024).toFixed(2);
 
-    const storagePMin = +((userSourcePrice.storage * storage.min * 24) / scale).toFixed(2);
-    const storagePMax = +((userSourcePrice.storage * storage.max * 24) / scale).toFixed(2);
+    const storagePMin = +(userSourcePrice.storage * storage.min * 24).toFixed(2);
+    const storagePMax = +(userSourcePrice.storage * storage.max * 24).toFixed(2);
 
-    const nodePortP = +((userSourcePrice.nodeports * nodeport * 24) / 1000).toFixed(2);
+    const nodePortP = +(userSourcePrice.nodeports * nodeport * 24).toFixed(2);
 
     const totalPMin = +(cpuPMin + memoryPMin + storagePMin + nodePortP).toFixed(2);
     const totalPMax = +(cpuPMax + memoryPMax + storagePMax + nodePortP).toFixed(2);

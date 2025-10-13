@@ -1,46 +1,51 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { POST } from '@/services/request';
-import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { authSession } from '@/services/backend/auth';
 import type { userPriceType } from '@/types/user';
 
-type properties = {
-  properties: property[];
-};
-
-type property = {
-  name: string;
-  unit_price: number;
-  unit: string;
-};
-
-export function transformProperties(data: properties): userPriceType {
-  const userPrice: userPriceType = {
-    cpu: 0,
-    memory: 0,
-    storage: 0,
-    nodeports: 0
+type ResourcePriceType = {
+  data: {
+    properties: {
+      name: string;
+      unit_price: number;
+      unit: string;
+    }[];
   };
+};
 
-  data.properties.forEach((property: property) => {
-    switch (property.name) {
-      case 'cpu':
-        userPrice.cpu = property.unit_price;
-        break;
-      case 'memory':
-        userPrice.memory = property.unit_price;
-        break;
-      case 'storage':
-        userPrice.storage = property.unit_price;
-        break;
-      case 'services.nodeports':
-        userPrice.nodeports = property.unit_price;
-        break;
-    }
-  });
+const PRICE_SCALE = 1000000;
 
-  return userPrice;
+export const valuationMap: Record<string, number> = {
+  cpu: 1000,
+  memory: 1024,
+  storage: 1024,
+  'services.nodeports': 1
+};
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const priceResponse = await getResourcePrice();
+
+    const data: userPriceType = {
+      cpu: countSourcePrice(priceResponse, 'cpu'),
+      memory: countSourcePrice(priceResponse, 'memory'),
+      storage: countSourcePrice(priceResponse, 'storage'),
+      nodeports: countSourcePrice(priceResponse, 'services.nodeports')
+    };
+
+    jsonRes<userPriceType>(res, {
+      data
+    });
+  } catch (error) {
+    console.log(error);
+    jsonRes(res, { code: 500, message: 'get price error' });
+  }
+}
+
+function countSourcePrice(rawData: ResourcePriceType['data']['properties'], type: string) {
+  const rawPrice = rawData.find((item) => item.name === type)?.unit_price || 1;
+  const sourceScale = rawPrice * (valuationMap[type] || 1);
+  const unitScale = sourceScale / PRICE_SCALE;
+  return unitScale;
 }
 
 const getResourcePrice = async () => {
@@ -51,20 +56,7 @@ const getResourcePrice = async () => {
   const res = await fetch(`${baseUrl}/account/v1alpha1/properties`, {
     method: 'POST'
   });
-  const data = await res.json();
-  return transformProperties(data.data as properties);
+  const data: ResourcePriceType = await res.json();
+
+  return data.data.properties;
 };
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const data = await getResourcePrice();
-
-    jsonRes<userPriceType>(res, {
-      code: 200,
-      data: data
-    });
-  } catch (error) {
-    console.log('get resoure price error: ', error);
-    jsonRes(res, { code: 500, message: 'get price error' });
-  }
-}
