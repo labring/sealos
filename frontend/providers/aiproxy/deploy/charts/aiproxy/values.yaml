@@ -19,7 +19,7 @@ suffix:
 aiproxy:
   AI_PROXY_BACKEND_KEY: ""
   APP_TOKEN_JWT_KEY: ""
-  AI_PROXY_BACKEND_INTERNAL: "http://aiproxy.apiproxy-system.svc:3000"
+  AI_PROXY_BACKEND_INTERNAL: "http://aiproxy.aiproxy-system.svc:3000"
   ADMIN_NAMESPACES: "ns-admin"
   ACCOUNT_SERVER_TOKEN_JWT_KEY: ""
   CURRENCY_SYMBOL: ""
