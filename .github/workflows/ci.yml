@@ -47,7 +47,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-modules.sh .
+        run: bash ./scripts/resolve-modules.sh ./lifecycle
 
   golangci-lint:
     needs: [ resolve-modules ]
@@ -68,8 +68,9 @@ jobs:
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.64.5
+          version: v2.5.0
           working-directory: ${{ matrix.workdir }}
-          args: "--out-${NO_FUTURE}format colored-line-number"
+          # args between =, not space
+          args: --color=always --config=${{ github.workspace }}/.golangci.yml
