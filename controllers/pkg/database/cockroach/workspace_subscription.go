@@ -138,7 +138,7 @@ func AddWorkspaceSubscriptionTrafficPackage(globalDB *gorm.DB, subscriptionID uu
 		CreatedAt:               time.Now(),
 		UpdatedAt:               time.Now(),
 	}
-	err = globalDB.Where("workspace_subscription_id = ?", subscriptionID).FirstOrCreate(&trafficPackage).Error
+	err = globalDB.Where("from_id = ?", fromID).FirstOrCreate(&trafficPackage).Error
 	if err != nil {
 		return fmt.Errorf("failed to create traffic package: %v", err)
 	}

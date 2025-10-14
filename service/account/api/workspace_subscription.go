@@ -1943,6 +1943,14 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 		}
 		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
+	if workspaceSubscription != nil && workspaceSubscription.Status == types.SubscriptionStatusDeleted {
+		_, err := services.StripeServiceInstance.CancelSubscription(subscriptionID)
+		if err != nil {
+			return fmt.Errorf("failed to cancel subscription for deleted workspace: %w", err)
+		}
+		dao.Logger.Infof("renewalFailure: subscription paid for deleted workspace %s/%s, subscription %s canceled", workspace, regionDomain, subscriptionID)
+		return nil
+	}
 	userUID := workspaceSubscription.UserUID
 
 	isInitialSubscription := invoice.BillingReason == "subscription_create"
@@ -2219,6 +2227,14 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 				return nil
 			}
 			return fmt.Errorf("failed to get workspace subscription: %w", err)
+		}
+		if workspaceSubscription.Status == types.SubscriptionStatusDeleted {
+			_, err := services.StripeServiceInstance.CancelSubscription(subscription.ID)
+			if err != nil {
+				return fmt.Errorf("failed to cancel subscription for deleted workspace: %w", err)
+			}
+			dao.Logger.Infof("handleSubscriptionDeletedEvent: subscription paid for deleted workspace %s/%s, subscription %s canceled", workspace, regionDomain, subscription.ID)
+			return nil
 		}
 		if workspaceSubscription.Status != types.SubscriptionStatusNormal {
 			return nil
