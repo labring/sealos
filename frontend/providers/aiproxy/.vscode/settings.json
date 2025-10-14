@@ -52,6 +52,8 @@
   },
   "typescript.tsdk": "node_modules/typescript/lib",
   "cSpell.words": [
+    "aiproxy",
+    "kubeconfig",
     "timespan"
   ]
 }
