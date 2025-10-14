@@ -890,7 +890,7 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 		Quantity: resource.NewQuantity(0, resource.DecimalSI),
 		detail:   "",
 	}
-	return
+	return rs
 }
 
 func initGpuResources() *quantity {

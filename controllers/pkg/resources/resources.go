@@ -327,7 +327,7 @@ func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) 
 	for k, v := range costs {
 		costsMap[DefaultPropertyTypeLS.EnumMap[k].Name] = v
 	}
-	return
+	return costsMap
 }
 
 func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
@@ -347,7 +347,7 @@ func newPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
 		ls.EnumMap[types[i].Enum] = types[i]
 		ls.StringMap[types[i].Name] = types[i]
 	}
-	return
+	return ls
 }
 
 type PropertyTypeEnumMap map[uint8]PropertyType

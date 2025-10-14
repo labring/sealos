@@ -77,7 +77,7 @@ func (csr *CsrConfig) newSignedToCsrKey() (csrData, keyPEM []byte, err error) {
 		return nil, nil, fmt.Errorf("new signed csr failed %w", err)
 	}
 
-	return
+	return csrData, keyPEM, err
 }
 
 func (csr *CsrConfig) Apply(config *rest.Config, client client.Client) (*api.Config, error) {

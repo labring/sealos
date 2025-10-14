@@ -131,7 +131,7 @@ var _ = BeforeSuite(func() {
 			dialer,
 			"tcp",
 			addrPort,
-			//nolint:gosec
+
 			&tls.Config{InsecureSkipVerify: true},
 		)
 		if err != nil {

@@ -50,7 +50,7 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 }
 
 func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
-	v.query += fmt.Sprintf("%s ", req.Keyword)
+	v.query += req.Keyword + " "
 }
 
 func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {

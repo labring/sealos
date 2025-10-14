@@ -1969,7 +1969,7 @@ func (c *Cockroach) InitTables() error {
 		tableName := types.Corporate{}.TableName()
 		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "type" TEXT;`, gorm.Expr(tableName)).Error
 		if err != nil {
-			return fmt.Errorf("failed to add column type: %v", err)
+			return fmt.Errorf("failed to add column type: %w", err)
 		}
 	}
 	if !c.DB.Migrator().HasColumn(&types.AccountTransaction{}, "credit_id_list") {

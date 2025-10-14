@@ -22,7 +22,6 @@ import (
 	"github.com/stripe/stripe-go/v74/checkout/session"
 )
 
-//nolint:gosec
 const StripeAPIKey = "STRIPE_API_KEY"
 
 type StripePayment struct{}

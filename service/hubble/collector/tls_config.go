@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 
 	"google.golang.org/grpc/credentials"
@@ -40,10 +41,21 @@ func NewDefaultTLSConfig() *TLSConfig {
 }
 
 // LoadTLSCredentials loads TLS credentials from Kubernetes Secrets
-func LoadTLSCredentials(ctx context.Context, k8sClient kubernetes.Interface, tlsConfig *TLSConfig) (credentials.TransportCredentials, error) {
-	clientSecret, err := k8sClient.CoreV1().Secrets(tlsConfig.SecretNamespace).Get(ctx, tlsConfig.ClientSecretName, metav1.GetOptions{})
+func LoadTLSCredentials(
+	ctx context.Context,
+	k8sClient kubernetes.Interface,
+	tlsConfig *TLSConfig,
+) (credentials.TransportCredentials, error) {
+	clientSecret, err := k8sClient.CoreV1().
+		Secrets(tlsConfig.SecretNamespace).
+		Get(ctx, tlsConfig.ClientSecretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client secret %s/%s: %v", tlsConfig.SecretNamespace, tlsConfig.ClientSecretName, err)
+		return nil, fmt.Errorf(
+			"failed to get client secret %s/%s: %w",
+			tlsConfig.SecretNamespace,
+			tlsConfig.ClientSecretName,
+			err,
+		)
 	}
 
 	clientCertData, ok := clientSecret.Data[ClientCertKey]
@@ -55,9 +67,16 @@ func LoadTLSCredentials(ctx context.Context, k8sClient kubernetes.Interface, tls
 	if !ok {
 		return nil, fmt.Errorf("%s not found in client secret", ClientKeyKey)
 	}
-	serverSecret, err := k8sClient.CoreV1().Secrets(tlsConfig.SecretNamespace).Get(ctx, tlsConfig.ServerSecretName, metav1.GetOptions{})
+	serverSecret, err := k8sClient.CoreV1().
+		Secrets(tlsConfig.SecretNamespace).
+		Get(ctx, tlsConfig.ServerSecretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get server secret %s/%s: %v", tlsConfig.SecretNamespace, tlsConfig.ServerSecretName, err)
+		return nil, fmt.Errorf(
+			"failed to get server secret %s/%s: %w",
+			tlsConfig.SecretNamespace,
+			tlsConfig.ServerSecretName,
+			err,
+		)
 	}
 
 	caCertData, ok := serverSecret.Data[CACertKey]
@@ -66,11 +85,11 @@ func LoadTLSCredentials(ctx context.Context, k8sClient kubernetes.Interface, tls
 	}
 	caCertPool := x509.NewCertPool()
 	if !caCertPool.AppendCertsFromPEM(caCertData) {
-		return nil, fmt.Errorf("failed to append CA certificate")
+		return nil, errors.New("failed to append CA certificate")
 	}
 	clientCert, err := tls.X509KeyPair(clientCertData, clientKeyData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load client certificate: %v", err)
+		return nil, fmt.Errorf("failed to load client certificate: %w", err)
 	}
 	config := &tls.Config{
 		Certificates: []tls.Certificate{clientCert},
