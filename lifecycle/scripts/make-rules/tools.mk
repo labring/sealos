@@ -28,7 +28,7 @@ tools.verify.%:
 
 .PHONY: install.golangci-lint
 install.golangci-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(TOOLS_DIR) v2.3.1
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(TOOLS_DIR) v2.5.0
 
 .PHONY: install.addlicense
 install.addlicense:

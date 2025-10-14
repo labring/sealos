@@ -66,7 +66,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.3.1
+          version: v2.5.0
           working-directory: ${{ matrix.workdir }}
           # args between =, not space
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
