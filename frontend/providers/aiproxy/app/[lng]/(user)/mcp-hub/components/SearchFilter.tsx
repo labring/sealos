@@ -1,15 +1,15 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { Button, Flex, HStack, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react'
+'use client';
+import { useEffect, useState } from 'react';
+import { Button, Flex, HStack, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export interface SearchFilterProps {
-  searchTerm: string
-  serviceType: 'hosted' | 'local' | ''
-  onSearchChange: (value: string) => void
-  onServiceTypeChange: (value: string) => void
+  searchTerm: string;
+  serviceType: 'hosted' | 'local' | '';
+  onSearchChange: (value: string) => void;
+  onServiceTypeChange: (value: string) => void;
 }
 
 export default function SearchFilter({
@@ -18,58 +18,58 @@ export default function SearchFilter({
   onSearchChange,
   onServiceTypeChange,
 }: SearchFilterProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
 
   // 本地输入状态
-  const [inputValue, setInputValue] = useState(searchTerm)
+  const [inputValue, setInputValue] = useState(searchTerm);
 
   // 本地多选状态管理 - 完全独立的视觉状态
   const [selectedTypes, setSelectedTypes] = useState<Set<'hosted' | 'local'>>(() => {
-    return new Set<'hosted' | 'local'>() // 默认都不选
-  })
+    return new Set<'hosted' | 'local'>(); // 默认都不选
+  });
 
   // 当外部searchTerm变化时，同步到本地状态
   useEffect(() => {
-    setInputValue(searchTerm)
-  }, [searchTerm])
+    setInputValue(searchTerm);
+  }, [searchTerm]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      onSearchChange(inputValue)
+      onSearchChange(inputValue);
     }
-  }
+  };
 
   const handleInputBlur = () => {
     // 当失去焦点时也触发搜索，提供更好的用户体验
     if (inputValue !== searchTerm) {
-      onSearchChange(inputValue)
+      onSearchChange(inputValue);
     }
-  }
+  };
 
   const handleServiceTypeToggle = (type: 'hosted' | 'local') => {
-    const newSelectedTypes = new Set(selectedTypes)
+    const newSelectedTypes = new Set(selectedTypes);
 
     if (newSelectedTypes.has(type)) {
       // 取消选择该类型
-      newSelectedTypes.delete(type)
+      newSelectedTypes.delete(type);
     } else {
       // 选择该类型
-      newSelectedTypes.add(type)
+      newSelectedTypes.add(type);
     }
 
-    setSelectedTypes(newSelectedTypes)
+    setSelectedTypes(newSelectedTypes);
 
     // 根据选择状态决定传递给父组件的值
     if (newSelectedTypes.size === 0 || newSelectedTypes.size === 2) {
       // 没有选择任何类型或选择了所有类型，都表示显示全部
-      onServiceTypeChange('')
+      onServiceTypeChange('');
     } else if (newSelectedTypes.has('hosted')) {
-      onServiceTypeChange('hosted')
+      onServiceTypeChange('hosted');
     } else if (newSelectedTypes.has('local')) {
-      onServiceTypeChange('local')
+      onServiceTypeChange('local');
     }
-  }
+  };
 
   return (
     <Flex gap="24px" flexWrap="wrap" alignItems="center">
@@ -212,5 +212,5 @@ export default function SearchFilter({
         </HStack>
       </HStack>
     </Flex>
-  )
+  );
 }

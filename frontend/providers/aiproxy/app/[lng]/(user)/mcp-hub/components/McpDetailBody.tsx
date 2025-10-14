@@ -1,13 +1,13 @@
-'use client'
-import { Box, Flex } from '@chakra-ui/react'
+'use client';
+import { Box, Flex } from '@chakra-ui/react';
 
-import { McpDetail } from '@/types/mcp'
+import { McpDetail } from '@/types/mcp';
 
-import McpParamsConfig from './McpParamsConfig'
-import McpReadme from './McpReadme'
+import McpParamsConfig from './McpParamsConfig';
+import McpReadme from './McpReadme';
 
 export interface McpDetailBodyProps {
-  mcpDetail: McpDetail
+  mcpDetail: McpDetail;
 }
 
 export default function McpDetailBody({ mcpDetail }: McpDetailBodyProps) {
@@ -27,5 +27,5 @@ export default function McpDetailBody({ mcpDetail }: McpDetailBodyProps) {
         </Box>
       )}
     </Flex>
-  )
+  );
 }

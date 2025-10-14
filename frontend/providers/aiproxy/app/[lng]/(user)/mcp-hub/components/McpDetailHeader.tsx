@@ -1,25 +1,25 @@
-'use client'
-import { Badge, Box, Flex, IconButton, Text } from '@chakra-ui/react'
-import Image from 'next/image'
+'use client';
+import { Badge, Box, Flex, IconButton, Text } from '@chakra-ui/react';
+import Image from 'next/image';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { McpDetail } from '@/types/mcp'
-import { getMcpIcon } from '@/ui/icons/mcp-icons'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { McpDetail } from '@/types/mcp';
+import { getMcpIcon } from '@/ui/icons/mcp-icons';
 
 export interface McpDetailHeaderProps {
-  mcpDetail: McpDetail
+  mcpDetail: McpDetail;
 }
 
 export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const mcpName = lng === 'zh' ? mcpDetail.name_cn || mcpDetail.name : mcpDetail.name
+  const mcpName = lng === 'zh' ? mcpDetail.name_cn || mcpDetail.name : mcpDetail.name;
   const mcpDescription =
-    lng === 'zh' ? mcpDetail.description_cn || mcpDetail.description : mcpDetail.description
+    lng === 'zh' ? mcpDetail.description_cn || mcpDetail.description : mcpDetail.description;
 
-  const iconSrc = getMcpIcon(mcpDetail.id)
+  const iconSrc = getMcpIcon(mcpDetail.id);
 
   return (
     <Flex direction="column" gap="16px">
@@ -100,5 +100,5 @@ export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
         </Flex>
       </Flex>
     </Flex>
-  )
+  );
 }

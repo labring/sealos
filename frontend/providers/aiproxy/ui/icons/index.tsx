@@ -1,4 +1,4 @@
-import { Icon, IconProps } from '@chakra-ui/react'
+import { Icon, IconProps } from '@chakra-ui/react';
 
 export function ToLeftIcon(props: IconProps) {
   return (
@@ -15,7 +15,7 @@ export function ToLeftIcon(props: IconProps) {
         fill="#111824"
       />
     </Icon>
-  )
+  );
 }
 
 export function RightFirstIcon(props: IconProps) {
@@ -33,7 +33,7 @@ export function RightFirstIcon(props: IconProps) {
         fill="#111824"
       />
     </Icon>
-  )
+  );
 }
 
 export const ChainIcon = (props: IconProps) => (
@@ -45,7 +45,7 @@ export const ChainIcon = (props: IconProps) => (
       fill="currentColor"
     />
   </Icon>
-)
+);
 
 export const ListIcon = (props: IconProps) => (
   <Icon viewBox="0 0 18 18" width="18" height="18" {...props}>
@@ -74,4 +74,4 @@ export const ListIcon = (props: IconProps) => (
       fill="currentColor"
     />
   </Icon>
-)
+);

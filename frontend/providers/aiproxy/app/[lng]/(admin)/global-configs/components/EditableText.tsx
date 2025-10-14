@@ -1,6 +1,6 @@
-'use client'
-import React, { useState } from 'react'
-import { CheckIcon, CloseIcon } from '@chakra-ui/icons'
+'use client';
+import React, { useState } from 'react';
+import { CheckIcon, CloseIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
@@ -14,29 +14,29 @@ import {
   PopoverTrigger,
   Text,
   useDisclosure,
-} from '@chakra-ui/react'
+} from '@chakra-ui/react';
 
 interface EditableTextProps {
-  value: string | number
-  label: string
-  onSubmit: (value: string) => void
-  flexProps?: FlexProps
+  value: string | number;
+  label: string;
+  onSubmit: (value: string) => void;
+  flexProps?: FlexProps;
 }
 
 export const EditableText = ({ value, label, onSubmit, flexProps }: EditableTextProps) => {
-  const [editValue, setEditValue] = useState(String(value))
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [editValue, setEditValue] = useState(String(value));
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const handleSubmit = () => {
-    onSubmit(editValue)
-    onClose()
-  }
+    onSubmit(editValue);
+    onClose();
+  };
 
   const handleCancel = () => {
     // 关闭时 恢复到传递来的初始值
-    setEditValue(String(value))
-    onClose()
-  }
+    setEditValue(String(value));
+    onClose();
+  };
 
   return (
     <Flex alignItems="center" gap="16px" justifyContent="space-between" {...flexProps}>
@@ -187,5 +187,5 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
         </PopoverContent>
       </Popover>
     </Flex>
-  )
-}
+  );
+};

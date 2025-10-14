@@ -1,5 +1,5 @@
-'use client'
-import { Dispatch, SetStateAction, useState } from 'react'
+'use client';
+import { Dispatch, SetStateAction, useState } from 'react';
 import {
   Badge,
   Box,
@@ -11,20 +11,20 @@ import {
   Input,
   Text,
   VStack,
-} from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { updateMcpParams } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { McpDetail } from '@/types/mcp'
-import { QueryKey } from '@/types/query-key'
+import { updateMcpParams } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { McpDetail } from '@/types/mcp';
+import { QueryKey } from '@/types/query-key';
 
 export interface McpParamsFormProps {
-  mcpDetail: McpDetail
-  showBackButton?: boolean
-  setViewMode?: Dispatch<SetStateAction<'info' | 'config'>>
+  mcpDetail: McpDetail;
+  showBackButton?: boolean;
+  setViewMode?: Dispatch<SetStateAction<'info' | 'config'>>;
 }
 
 export default function McpParamsForm({
@@ -32,21 +32,21 @@ export default function McpParamsForm({
   showBackButton,
   setViewMode,
 }: McpParamsFormProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { message } = useMessage()
-  const queryClient = useQueryClient()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { message } = useMessage();
+  const queryClient = useQueryClient();
 
   // 初始化表单数据
   const [formData, setFormData] = useState<Record<string, string>>(() => {
-    const initialData: Record<string, string> = {}
+    const initialData: Record<string, string> = {};
     Object.keys(mcpDetail.reusing || {}).forEach((key) => {
-      initialData[key] = mcpDetail.params?.[key] || ''
-    })
-    return initialData
-  })
+      initialData[key] = mcpDetail.params?.[key] || '';
+    });
+    return initialData;
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const updateParamsMutation = useMutation(
     (params: Record<string, string>) => updateMcpParams(mcpDetail.id, params),
@@ -56,9 +56,9 @@ export default function McpParamsForm({
           status: 'success',
           title: t('mcpHub.paramsSaved'),
           duration: 2000,
-        })
-        queryClient.invalidateQueries([QueryKey.mcpDetail, mcpDetail.id])
-        setViewMode?.('info')
+        });
+        queryClient.invalidateQueries([QueryKey.mcpDetail, mcpDetail.id]);
+        setViewMode?.('info');
       },
       onError: (error: any) => {
         message({
@@ -66,49 +66,49 @@ export default function McpParamsForm({
           title: t('mcpHub.paramsSaveFailed'),
           description: error?.message || t('mcpHub.paramsSaveFailed'),
           duration: 3000,
-        })
+        });
       },
     }
-  )
+  );
 
   const handleInputChange = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }))
+    setFormData((prev) => ({ ...prev, [key]: value }));
     // 清除错误
     if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: '' }))
+      setErrors((prev) => ({ ...prev, [key]: '' }));
     }
-  }
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     Object.entries(mcpDetail.reusing || {}).forEach(([key, config]) => {
       if (config.required && !formData[key]?.trim()) {
-        newErrors[key] = t('mcpHub.required')
+        newErrors[key] = t('mcpHub.required');
       }
-    })
+    });
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = () => {
     if (!validateForm()) {
-      return
+      return;
     }
 
     // 只提交有值的参数
-    const paramsToSubmit: Record<string, string> = {}
+    const paramsToSubmit: Record<string, string> = {};
     Object.entries(formData).forEach(([key, value]) => {
       if (value.trim()) {
-        paramsToSubmit[key] = value.trim()
+        paramsToSubmit[key] = value.trim();
       }
-    })
+    });
 
-    updateParamsMutation.mutate(paramsToSubmit)
-  }
+    updateParamsMutation.mutate(paramsToSubmit);
+  };
 
-  const reusingParams = mcpDetail.reusing || {}
+  const reusingParams = mcpDetail.reusing || {};
 
   return (
     <Flex flex="1" direction="column" h="full" justifyContent="space-between">
@@ -174,5 +174,5 @@ export default function McpParamsForm({
         </Button>
       </Flex>
     </Flex>
-  )
+  );
 }

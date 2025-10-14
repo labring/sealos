@@ -1,5 +1,5 @@
-'use client'
-import { useMemo, useState } from 'react'
+'use client';
+import { useMemo, useState } from 'react';
 import {
   Badge,
   Box,
@@ -16,48 +16,48 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from '@chakra-ui/react'
-import { CurrencySymbol } from '@sealos/ui'
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table'
+} from '@tanstack/react-table';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { MyTooltip } from '@/components/common/MyTooltip'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { ModelConfig } from '@/types/models/model'
-import { getTranslationWithFallback } from '@/utils/common'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { ModelConfig } from '@/types/models/model';
+import { getTranslationWithFallback } from '@/utils/common';
 
-import ApiDocDrawer from './ApiDoc'
-import { ModelComponent } from './Model'
-import { getTypeStyle } from './Model'
+import ApiDocDrawer from './ApiDoc';
+import { ModelComponent } from './Model';
+import { getTypeStyle } from './Model';
 
-type SortDirection = 'asc' | 'desc' | false
+type SortDirection = 'asc' | 'desc' | false;
 
 export function PriceTable({
   modelConfigs,
   isLoading,
 }: {
-  modelConfigs: ModelConfig[]
-  isLoading: boolean
+  modelConfigs: ModelConfig[];
+  isLoading: boolean;
 }) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null)
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const handleOpenApiDoc = (modelConfig: ModelConfig) => {
-    setSelectedModel(modelConfig)
-    onOpen()
-  }
+    setSelectedModel(modelConfig);
+    onOpen();
+  };
 
-  const { currencySymbol } = useBackendStore()
+  const { currencySymbol } = useBackendStore();
 
-  const columnHelper = createColumnHelper<ModelConfig>()
+  const columnHelper = createColumnHelper<ModelConfig>();
   const columns = [
     columnHelper.accessor((row) => row.model, {
       id: 'model',
@@ -217,7 +217,7 @@ export function PriceTable({
                 letterSpacing="0.5px"
               />
             </Flex>
-          )
+          );
         }
         return (
           <Flex direction="column" gap="8px">
@@ -363,7 +363,7 @@ export function PriceTable({
               </Flex>
             )}
           </Flex>
-        )
+        );
       },
     }),
     columnHelper.display({
@@ -380,7 +380,7 @@ export function PriceTable({
         </Text>
       ),
       cell: ({ row }) => {
-        const modelConfig = row.original
+        const modelConfig = row.original;
         return (
           <Button
             onClick={() => handleOpenApiDoc(modelConfig)}
@@ -437,21 +437,21 @@ export function PriceTable({
               {t('logs.detail')}
             </Text>
           </Button>
-        )
+        );
       },
       id: 'detail',
     }),
-  ]
+  ];
 
   const tableData = useMemo(() => {
-    return modelConfigs
-  }, [modelConfigs])
+    return modelConfigs;
+  }, [modelConfigs]);
 
   const table = useReactTable({
     data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-  })
+  });
 
   return (
     <>
@@ -514,5 +514,5 @@ export function PriceTable({
         <ApiDocDrawer isOpen={isOpen} onClose={onClose} modelConfig={selectedModel} />
       )}
     </>
-  )
+  );
 }
