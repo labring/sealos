@@ -12,18 +12,6 @@
   "embeddedLanguageFormatting": "auto",
   "overrides": [
     {
-      "files": "*.tsx",
-      "options": {
-        "semi": true
-      }
-    },
-    {
-      "files": "*.jsx",
-      "options": {
-        "semi": true
-      }
-    },
-    {
       "files": ["*.json", "*.jsonc"],
       "options": {
         "parser": "json"

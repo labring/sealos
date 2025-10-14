@@ -1,10 +1,10 @@
-'use client';
-import { ReactNode } from 'react';
-import { Box, List, ListItem, Text } from '@chakra-ui/react';
-import { useSelect } from 'downshift';
+'use client'
+import { ReactNode } from 'react'
+import { Box, List, ListItem, Text } from '@chakra-ui/react'
+import { useSelect } from 'downshift'
 
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
 
 export const CustomSelect = function <T>({
   listItems,
@@ -14,16 +14,16 @@ export const CustomSelect = function <T>({
   placeholder,
   initSelectedItem,
 }: {
-  listItems: T[];
-  handleSelectedItemChange: (selectedItem: T) => void;
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
-  handleSelectedItemDisplay: (selectedItem: T) => ReactNode;
-  placeholder?: string;
-  initSelectedItem?: T;
+  listItems: T[]
+  handleSelectedItemChange: (selectedItem: T) => void
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  handleSelectedItemDisplay: (selectedItem: T) => ReactNode
+  placeholder?: string
+  initSelectedItem?: T
 }) {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const items = [placeholder, ...listItems];
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const items = [placeholder, ...listItems]
 
   const {
     isOpen,
@@ -37,12 +37,12 @@ export const CustomSelect = function <T>({
     initialSelectedItem: initSelectedItem,
     onSelectedItemChange: ({ selectedItem: newSelectedItem }) => {
       if (newSelectedItem === placeholder) {
-        handleSelectedItemChange(undefined as T);
+        handleSelectedItemChange(undefined as T)
       } else {
-        handleSelectedItemChange(newSelectedItem as T);
+        handleSelectedItemChange(newSelectedItem as T)
       }
     },
-  });
+  })
 
   return (
     <Box w="full" position="relative" flex={1}>
@@ -143,5 +143,5 @@ export const CustomSelect = function <T>({
           ))}
       </List>
     </Box>
-  );
-};
+  )
+}

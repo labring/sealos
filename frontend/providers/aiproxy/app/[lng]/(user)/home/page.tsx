@@ -1,27 +1,27 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
-import { CurrencySymbol, MySelect } from '@sealos/ui';
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useState } from 'react'
+import { Box, Button, Center, Flex, Text } from '@chakra-ui/react'
+import { CurrencySymbol, MySelect } from '@sealos/ui'
+import { useQuery, UseQueryResult } from '@tanstack/react-query'
 
-import { getDashboardData } from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { useBackendStore } from '@/store/backend';
-import { QueryKey } from '@/types/query-key';
-import { DashboardResponse } from '@/types/user/dashboard';
+import { getDashboardData } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { useBackendStore } from '@/store/backend'
+import { QueryKey } from '@/types/query-key'
+import { DashboardResponse } from '@/types/user/dashboard'
 
-import RequestDataChart from './components/RequestDataChart';
+import RequestDataChart from './components/RequestDataChart'
 
 export default function Home(): React.JSX.Element {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const { currencySymbol } = useBackendStore();
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const { currencySymbol } = useBackendStore()
 
-  const [tokenName, setTokenName] = useState<string>('');
-  const [model, setModel] = useState<string>('');
-  const [type, setType] = useState<'week' | 'day' | 'two_week' | 'month'>('week'); // default is week
+  const [tokenName, setTokenName] = useState<string>('')
+  const [model, setModel] = useState<string>('')
+  const [type, setType] = useState<'week' | 'day' | 'two_week' | 'month'>('week') // default is week
 
   const { data: dashboardData, isLoading }: UseQueryResult<DashboardResponse['data']> = useQuery(
     [QueryKey.GetDashboardData, type, tokenName, model],
@@ -31,7 +31,7 @@ export default function Home(): React.JSX.Element {
         ...(tokenName && { token_name: tokenName }),
         ...(model && { model }),
       })
-  );
+  )
 
   return (
     <Flex
@@ -98,9 +98,9 @@ export default function Home(): React.JSX.Element {
                 placeholder={t('dataDashboard.selectToken')}
                 onchange={(token: string) => {
                   if (token === 'all') {
-                    setTokenName('');
+                    setTokenName('')
                   } else {
-                    setTokenName(token);
+                    setTokenName(token)
                   }
                 }}
               />
@@ -125,9 +125,9 @@ export default function Home(): React.JSX.Element {
                 ]}
                 onchange={(model: string) => {
                   if (model === 'all') {
-                    setModel('');
+                    setModel('')
                   } else {
-                    setModel(model);
+                    setModel(model)
                   }
                 }}
               />
@@ -734,5 +734,5 @@ export default function Home(): React.JSX.Element {
         </Flex>
       </Flex>
     </Flex>
-  );
+  )
 }

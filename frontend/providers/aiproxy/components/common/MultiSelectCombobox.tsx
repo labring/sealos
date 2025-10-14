@@ -1,5 +1,5 @@
-'use client';
-import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from 'react';
+'use client'
+import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -11,11 +11,11 @@ import {
   ListItem,
   Text,
   VStack,
-} from '@chakra-ui/react';
-import { useCombobox, useMultipleSelection } from 'downshift';
+} from '@chakra-ui/react'
+import { useCombobox, useMultipleSelection } from 'downshift'
 
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
 
 export const MultiSelectCombobox = function <T>({
   dropdownItems,
@@ -26,30 +26,30 @@ export const MultiSelectCombobox = function <T>({
   handleSelectedItemDisplay,
   handleSetCustomSelectedItem,
 }: {
-  dropdownItems: T[];
-  selectedItems: T[];
-  setSelectedItems: Dispatch<SetStateAction<T[]>>;
-  handleFilteredDropdownItems: (dropdownItems: T[], selectedItems: T[], inputValue: string) => T[];
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
-  handleSelectedItemDisplay: (selectedItem: T) => ReactNode;
+  dropdownItems: T[]
+  selectedItems: T[]
+  setSelectedItems: Dispatch<SetStateAction<T[]>>
+  handleFilteredDropdownItems: (dropdownItems: T[], selectedItems: T[], inputValue: string) => T[]
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  handleSelectedItemDisplay: (selectedItem: T) => ReactNode
   handleSetCustomSelectedItem?: (
     selectedItems: T[],
     setSelectedItems: Dispatch<SetStateAction<T[]>>,
     customSelectedItemName: string,
     setCustomSelectedItemName: Dispatch<SetStateAction<string>>
-  ) => void;
+  ) => void
 }): JSX.Element {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
 
-  const [inputValue, setInputValue] = useState<string>('');
-  const [customSelectedItemName, setCustomSelectedItemName] = useState('');
+  const [inputValue, setInputValue] = useState<string>('')
+  const [customSelectedItemName, setCustomSelectedItemName] = useState('')
 
   // Dropdown list excludes already selected options and includes those matching the input.
   const items = useMemo(
     () => handleFilteredDropdownItems(dropdownItems, selectedItems, inputValue),
     [inputValue, selectedItems, dropdownItems, handleFilteredDropdownItems]
-  );
+  )
 
   // 对已经选中的项目 添加处理事件
   const { getSelectedItemProps, getDropdownProps, removeSelectedItem } = useMultipleSelection({
@@ -61,14 +61,14 @@ export const MultiSelectCombobox = function <T>({
         case useMultipleSelection.stateChangeTypes.DropdownKeyDownBackspace:
         case useMultipleSelection.stateChangeTypes.FunctionRemoveSelectedItem:
           if (newSelectedItems) {
-            setSelectedItems(newSelectedItems);
+            setSelectedItems(newSelectedItems)
           }
-          break;
+          break
         default:
-          break;
+          break
       }
     },
-  });
+  })
   const {
     isOpen,
     getToggleButtonProps,
@@ -84,7 +84,7 @@ export const MultiSelectCombobox = function <T>({
     selectedItem: null,
     inputValue,
     stateReducer(state, actionAndChanges) {
-      const { changes, type } = actionAndChanges;
+      const { changes, type } = actionAndChanges
 
       switch (type) {
         case useCombobox.stateChangeTypes.InputKeyDownEnter:
@@ -93,9 +93,9 @@ export const MultiSelectCombobox = function <T>({
             ...changes,
             isOpen: true, // keep the menu open after selection.
             highlightedIndex: 0, // with the first option highlighted.
-          };
+          }
         default:
-          return changes;
+          return changes
       }
     },
     onStateChange({ inputValue: newInputValue, type, selectedItem: newSelectedItem }) {
@@ -104,20 +104,20 @@ export const MultiSelectCombobox = function <T>({
         case useCombobox.stateChangeTypes.ItemClick:
         case useCombobox.stateChangeTypes.InputBlur:
           if (newSelectedItem) {
-            setSelectedItems([...selectedItems, newSelectedItem]);
-            setInputValue('');
+            setSelectedItems([...selectedItems, newSelectedItem])
+            setInputValue('')
           }
-          break;
+          break
 
         case useCombobox.stateChangeTypes.InputChange:
-          setInputValue(newInputValue ?? '');
+          setInputValue(newInputValue ?? '')
 
-          break;
+          break
         default:
-          break;
+          break
       }
     },
-  });
+  })
 
   return (
     <Box w="full">
@@ -215,7 +215,7 @@ export const MultiSelectCombobox = function <T>({
                     setSelectedItems,
                     customSelectedItemName,
                     setCustomSelectedItemName
-                  );
+                  )
                 }}
                 _hover={{
                   transform: 'scale(1.05)',
@@ -282,8 +282,8 @@ export const MultiSelectCombobox = function <T>({
                     justifyContent="center"
                     cursor="pointer"
                     onClick={(e) => {
-                      e.stopPropagation();
-                      removeSelectedItem(selectedItemForRender);
+                      e.stopPropagation()
+                      removeSelectedItem(selectedItemForRender)
                     }}
                   >
                     <svg
@@ -417,5 +417,5 @@ export const MultiSelectCombobox = function <T>({
           ))}
       </List>
     </Box>
-  );
-};
+  )
+}

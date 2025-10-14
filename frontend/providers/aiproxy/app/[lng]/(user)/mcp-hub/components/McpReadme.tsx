@@ -1,21 +1,21 @@
-'use client';
-import Markdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Box, Text } from '@chakra-ui/react';
-import remarkGfm from 'remark-gfm';
+'use client'
+import Markdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { Box, Text } from '@chakra-ui/react'
+import remarkGfm from 'remark-gfm'
 
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { McpDetail } from '@/types/mcp';
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { McpDetail } from '@/types/mcp'
 
 export interface McpReadmeProps {
-  mcpDetail: McpDetail;
+  mcpDetail: McpDetail
 }
 
 export default function McpReadme({ mcpDetail }: McpReadmeProps) {
-  const { lng } = useI18n();
+  const { lng } = useI18n()
 
-  const readmeContent = lng === 'zh' ? mcpDetail.readme_cn || mcpDetail.readme : mcpDetail.readme;
+  const readmeContent = lng === 'zh' ? mcpDetail.readme_cn || mcpDetail.readme : mcpDetail.readme
 
   return (
     <Box h="full" overflow="hidden" w="100%" maxW="100%" position="relative">
@@ -276,8 +276,8 @@ export default function McpReadme({ mcpDetail }: McpReadmeProps) {
               remarkPlugins={[remarkGfm]}
               components={{
                 code(props) {
-                  const { children, className, node, inline, ...rest } = props;
-                  const match = /language-(\w+)/.exec(className || '');
+                  const { children, className, node, inline, ...rest } = props
+                  const match = /language-(\w+)/.exec(className || '')
                   return !inline && match ? (
                     <Box
                       className="code-block-wrapper"
@@ -329,7 +329,7 @@ export default function McpReadme({ mcpDetail }: McpReadmeProps) {
                     <code {...rest} className={className}>
                       {children}
                     </code>
-                  );
+                  )
                 },
               }}
             >
@@ -369,5 +369,5 @@ export default function McpReadme({ mcpDetail }: McpReadmeProps) {
         )}
       </Box>
     </Box>
-  );
+  )
 }

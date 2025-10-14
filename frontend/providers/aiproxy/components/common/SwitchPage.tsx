@@ -1,7 +1,7 @@
-import { Button, ButtonProps, Flex, FlexProps, Text } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
+import { Button, ButtonProps, Flex, FlexProps, Text } from '@chakra-ui/react'
+import { useTranslation } from 'next-i18next'
 
-import { RightFirstIcon, ToLeftIcon } from '@/ui/icons';
+import { RightFirstIcon, ToLeftIcon } from '@/ui/icons'
 
 export default function SwitchPage({
   totalPage,
@@ -12,14 +12,14 @@ export default function SwitchPage({
   isPreviousData,
   ...props
 }: {
-  currentPage: number;
-  totalPage: number;
-  totalItem: number;
-  pageSize: number;
-  isPreviousData?: boolean;
-  setCurrentPage: (idx: number) => void;
+  currentPage: number
+  totalPage: number
+  totalItem: number
+  pageSize: number
+  isPreviousData?: boolean
+  setCurrentPage: (idx: number) => void
 } & FlexProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   const switchStyle: ButtonProps = {
     width: '24px',
     height: '24px',
@@ -38,7 +38,7 @@ export default function SwitchPage({
       cursor: 'not-allowed',
       minW: '0',
     },
-  };
+  }
   return (
     <Flex minW="370px" h="32px" align={'center'} mb={'8px'} fontSize="14px" {...props}>
       <Text fontSize="14px" color={'grayModern.500'}>
@@ -56,8 +56,8 @@ export default function SwitchPage({
           minW="0"
           boxSize="24px"
           onClick={(e) => {
-            e.preventDefault();
-            setCurrentPage(1);
+            e.preventDefault()
+            setCurrentPage(1)
           }}
         >
           <RightFirstIcon transform={'rotate(-180deg)'} />
@@ -70,8 +70,8 @@ export default function SwitchPage({
           minW="0"
           boxSize="24px"
           onClick={(e) => {
-            e.preventDefault();
-            setCurrentPage(currentPage - 1);
+            e.preventDefault()
+            setCurrentPage(currentPage - 1)
           }}
         >
           <ToLeftIcon />
@@ -88,8 +88,8 @@ export default function SwitchPage({
           minW="0"
           borderRadius={'50%'}
           onClick={(e) => {
-            e.preventDefault();
-            setCurrentPage(currentPage + 1);
+            e.preventDefault()
+            setCurrentPage(currentPage + 1)
           }}
         >
           <ToLeftIcon transform={'rotate(180deg)'} />
@@ -104,8 +104,8 @@ export default function SwitchPage({
           borderRadius={'50%'}
           mr={'10px'}
           onClick={(e) => {
-            e.preventDefault();
-            setCurrentPage(totalPage);
+            e.preventDefault()
+            setCurrentPage(totalPage)
           }}
         >
           <RightFirstIcon />
@@ -118,5 +118,5 @@ export default function SwitchPage({
         /{t('Page')}
       </Text>
     </Flex>
-  );
+  )
 }

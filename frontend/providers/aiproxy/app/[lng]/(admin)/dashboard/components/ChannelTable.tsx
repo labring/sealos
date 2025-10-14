@@ -1,5 +1,5 @@
-'use client';
-import { useEffect, useMemo, useState } from 'react';
+'use client'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Checkbox,
@@ -18,51 +18,51 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+} from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Column,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table';
+} from '@tanstack/react-table'
 
 import {
   deleteChannel,
   getChannels,
   getChannelTypeNames,
   updateChannelStatus,
-} from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import SwitchPage from '@/components/common/SwitchPage';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo';
-import { QueryKey } from '@/types/query-key';
-import { downloadJson } from '@/utils/common';
+} from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import SwitchPage from '@/components/common/SwitchPage'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo'
+import { QueryKey } from '@/types/query-key'
+import { downloadJson } from '@/utils/common'
 
-import UpdateChannelModal from './UpdateChannelModal';
+import UpdateChannelModal from './UpdateChannelModal'
 
 export default function ChannelTable({
   exportData,
 }: {
-  exportData: (data: ChannelInfo[]) => void;
+  exportData: (data: ChannelInfo[]) => void
 }) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const [operationType, setOperationType] = useState<'create' | 'update'>('update');
-  const [channelInfo, setChannelInfo] = useState<ChannelInfo | undefined>(undefined);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const [operationType, setOperationType] = useState<'create' | 'update'>('update')
+  const [channelInfo, setChannelInfo] = useState<ChannelInfo | undefined>(undefined)
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
-  const [selectedChannels, setSelectedChannels] = useState<ChannelInfo[]>([]);
+  const [selectedChannels, setSelectedChannels] = useState<ChannelInfo[]>([])
 
   useEffect(() => {
-    exportData(selectedChannels);
-  }, [selectedChannels]);
+    exportData(selectedChannels)
+  }, [selectedChannels])
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -71,23 +71,23 @@ export default function ChannelTable({
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  });
+  })
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
     queryKey: [QueryKey.GetChannelTypeNames],
     queryFn: () => getChannelTypeNames(),
-  });
+  })
 
   const { data, isLoading: isChannelsLoading } = useQuery({
     queryKey: [QueryKey.GetChannels, page, pageSize],
     queryFn: () => getChannels({ page, perPage: pageSize }),
     refetchOnReconnect: true,
     onSuccess(data) {
-      setTotal(data?.total || 0);
+      setTotal(data?.total || 0)
     },
-  });
+  })
 
   const updateChannelStatusMutation = useMutation(
     ({ id, status }: { id: string; status: number }) => updateChannelStatus(id, status),
@@ -99,9 +99,9 @@ export default function ChannelTable({
           isClosable: true,
           duration: 2000,
           position: 'top',
-        });
-        queryClient.invalidateQueries([QueryKey.GetChannels]);
-        queryClient.invalidateQueries([QueryKey.GetChannelTypeNames]);
+        })
+        queryClient.invalidateQueries([QueryKey.GetChannels])
+        queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
       },
       onError(err: any) {
         message({
@@ -110,10 +110,10 @@ export default function ChannelTable({
           description: err?.message || t('channel.updateFailed'),
           isClosable: true,
           position: 'top',
-        });
+        })
       },
     }
-  );
+  )
   const deleteChannelMutation = useMutation(({ id }: { id: string }) => deleteChannel(id), {
     onSuccess() {
       message({
@@ -122,9 +122,9 @@ export default function ChannelTable({
         isClosable: true,
         duration: 2000,
         position: 'top',
-      });
-      queryClient.invalidateQueries([QueryKey.GetChannels]);
-      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames]);
+      })
+      queryClient.invalidateQueries([QueryKey.GetChannels])
+      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
     },
     onError(err: any) {
       message({
@@ -133,42 +133,42 @@ export default function ChannelTable({
         description: err?.message || t('channel.deleteFailed'),
         isClosable: true,
         position: 'top',
-      });
+      })
     },
-  });
+  })
 
   // Update the button click handlers in the table actions column:
   const handleStatusUpdate = (id: string, currentStatus: number) => {
     const newStatus =
       currentStatus === ChannelStatus.ChannelStatusDisabled
         ? ChannelStatus.ChannelStatusEnabled
-        : ChannelStatus.ChannelStatusDisabled;
-    updateChannelStatusMutation.mutate({ id, status: newStatus });
-  };
+        : ChannelStatus.ChannelStatusDisabled
+    updateChannelStatusMutation.mutate({ id, status: newStatus })
+  }
 
-  const columnHelper = createColumnHelper<ChannelInfo>();
+  const columnHelper = createColumnHelper<ChannelInfo>()
 
   const handleHeaderCheckboxChange = (isChecked: boolean) => {
     if (isChecked) {
-      setSelectedChannels(data?.channels || []);
+      setSelectedChannels(data?.channels || [])
     } else {
-      setSelectedChannels([]);
+      setSelectedChannels([])
     }
-  };
+  }
 
   const handleRowCheckboxChange = (channel: ChannelInfo, isChecked: boolean) => {
     if (isChecked) {
-      setSelectedChannels([...selectedChannels, channel]);
+      setSelectedChannels([...selectedChannels, channel])
     } else {
-      setSelectedChannels(selectedChannels.filter((c) => c.id !== channel.id));
+      setSelectedChannels(selectedChannels.filter((c) => c.id !== channel.id))
     }
-  };
+  }
 
   const handleExportRow = (channel: ChannelInfo) => {
-    const channels = [channel];
-    const filename = `channel_${channels[0].id}_${new Date().toISOString()}.json`;
-    downloadJson(channels, filename);
-  };
+    const channels = [channel]
+    const filename = `channel_${channels[0].id}_${new Date().toISOString()}.json`
+    downloadJson(channels, filename)
+  }
 
   const columns = [
     columnHelper.accessor((row) => row.id, {
@@ -345,26 +345,26 @@ export default function ChannelTable({
         </Text>
       ),
       cell: (info) => {
-        const status = info.getValue();
-        let statusText = '';
-        let statusColor = '';
+        const status = info.getValue()
+        let statusText = ''
+        let statusColor = ''
 
         switch (status) {
           case ChannelStatus.ChannelStatusEnabled:
-            statusText = t('keystatus.enabled');
-            statusColor = 'green.600';
-            break;
+            statusText = t('keystatus.enabled')
+            statusColor = 'green.600'
+            break
           case ChannelStatus.ChannelStatusDisabled:
-            statusText = t('keystatus.disabled');
-            statusColor = 'red.600';
-            break;
+            statusText = t('keystatus.disabled')
+            statusColor = 'red.600'
+            break
           case ChannelStatus.ChannelStatusAutoDisabled:
-            statusText = t('channelStatus.autoDisabled');
-            statusColor = 'orange.500';
-            break;
+            statusText = t('channelStatus.autoDisabled')
+            statusColor = 'orange.500'
+            break
           default:
-            statusText = t('keystatus.unknown');
-            statusColor = 'gray.500';
+            statusText = t('keystatus.unknown')
+            statusColor = 'gray.500'
         }
 
         return (
@@ -378,7 +378,7 @@ export default function ChannelTable({
           >
             {statusText}
           </Text>
-        );
+        )
       },
     }),
 
@@ -570,9 +570,9 @@ export default function ChannelTable({
                 color: 'brightBlue.600',
               }}
               onClick={() => {
-                setOperationType('update');
-                setChannelInfo(info.row.original);
-                onOpen();
+                setOperationType('update')
+                setChannelInfo(info.row.original)
+                onOpen()
               }}
             >
               <svg
@@ -689,15 +689,15 @@ export default function ChannelTable({
         </Menu>
       ),
     }),
-  ];
+  ]
 
-  const tableData = useMemo(() => data?.channels || [], [data]);
+  const tableData = useMemo(() => data?.channels || [], [data])
 
   const table = useReactTable({
     data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-  });
+  })
 
   return (
     <Box
@@ -780,5 +780,5 @@ export default function ChannelTable({
         channelInfo={channelInfo}
       />
     </Box>
-  );
+  )
 }

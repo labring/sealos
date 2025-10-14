@@ -1,5 +1,5 @@
-'use client';
-import { useMemo, useState } from 'react';
+'use client'
+import { useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -9,36 +9,36 @@ import {
   InputGroup,
   InputRightElement,
   Text,
-} from '@chakra-ui/react';
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import Image from 'next/image';
+} from '@chakra-ui/react'
+import { useQuery, UseQueryResult } from '@tanstack/react-query'
+import Image from 'next/image'
 
-import { getEnabledMode } from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { ModelConfig } from '@/types/models/model';
-import { QueryKey } from '@/types/query-key';
-import { getTranslationWithFallback } from '@/utils/common';
+import { getEnabledMode } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
+import { useDebounce } from '@/hooks/useDebounce'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { ModelConfig } from '@/types/models/model'
+import { QueryKey } from '@/types/query-key'
+import { getTranslationWithFallback } from '@/utils/common'
 
-import { getModelIcon } from './component/Model';
-import { PriceTable } from './component/PriceTable';
+import { getModelIcon } from './component/Model'
+import { PriceTable } from './component/PriceTable'
 
 export default function Price() {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
 
-  const [modelOwner, setModelOwner] = useState<string>('');
-  const [modelType, setModelType] = useState<string>('');
+  const [modelOwner, setModelOwner] = useState<string>('')
+  const [modelType, setModelType] = useState<string>('')
 
-  const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebounce(searchInput, 500);
+  const [searchInput, setSearchInput] = useState('')
+  const debouncedSearch = useDebounce(searchInput, 500)
 
   interface FilterParams {
-    owner: string;
-    type: string;
-    name: string;
+    owner: string
+    type: string
+    name: string
   }
 
   const filterModels = (modelConfigs: ModelConfig[], filterParams: FilterParams): ModelConfig[] => {
@@ -50,34 +50,34 @@ export default function Price() {
           `modeOwner.${String(config.owner)}`,
           'modeOwner.unknown',
           t as any
-        ) === filterParams.owner;
+        ) === filterParams.owner
 
       const typeMatch =
         !filterParams.type ||
         filterParams.type === t('price.all') ||
         getTranslationWithFallback(`modeType.${String(config.type)}`, 'modeType.0', t as any) ===
-          filterParams.type;
+          filterParams.type
 
       const nameMatch =
-        !filterParams.name || config.model.toLowerCase().includes(filterParams.name.toLowerCase());
+        !filterParams.name || config.model.toLowerCase().includes(filterParams.name.toLowerCase())
 
-      return ownerMatch && typeMatch && nameMatch;
-    });
-  };
+      return ownerMatch && typeMatch && nameMatch
+    })
+  }
 
   const {
     isLoading,
     data: modelConfigs = [] as ModelConfig[],
     refetch,
-  }: UseQueryResult<ModelConfig[]> = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode());
+  }: UseQueryResult<ModelConfig[]> = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
 
   const filteredModelConfigs = useMemo(() => {
     return filterModels(modelConfigs, {
       owner: modelOwner,
       type: modelType,
       name: debouncedSearch,
-    });
-  }, [modelConfigs, modelOwner, modelType, debouncedSearch]);
+    })
+  }, [modelConfigs, modelOwner, modelType, debouncedSearch])
 
   return (
     <Box w="full" h="full" display="inline-flex" pt="4px" pb="12px" pr="12px" alignItems="center">
@@ -129,7 +129,7 @@ export default function Price() {
                 bg="white"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
                 onClick={() => {
-                  refetch();
+                  refetch()
                 }}
               >
                 <Icon
@@ -189,16 +189,16 @@ export default function Price() {
                       ),
                     ]}
                     setSelectedItem={(modelOwner) => {
-                      setModelOwner(modelOwner.name);
+                      setModelOwner(modelOwner.name)
                     }}
                     handleDropdownItemFilter={(dropdownItems, inputValue) => {
-                      const lowerCasedInput = inputValue.toLowerCase();
+                      const lowerCasedInput = inputValue.toLowerCase()
                       return dropdownItems.filter(
                         (item) => !inputValue || item.name.toLowerCase().includes(lowerCasedInput)
-                      );
+                      )
                     }}
                     handleDropdownItemDisplay={(dropdownItem) => {
-                      const iconSrc = getModelIcon(dropdownItem.icon);
+                      const iconSrc = getModelIcon(dropdownItem.icon)
                       if (dropdownItem.name === t('price.all')) {
                         return (
                           <Flex alignItems="center" gap="8px">
@@ -215,7 +215,7 @@ export default function Price() {
                               {dropdownItem.name}
                             </Text>
                           </Flex>
-                        );
+                        )
                       }
                       return (
                         <Flex alignItems="center" gap="8px">
@@ -232,7 +232,7 @@ export default function Price() {
                             {dropdownItem.name}
                           </Text>
                         </Flex>
-                      );
+                      )
                     }}
                     flexProps={{ w: '240px' }}
                     initSelectedItem={{ icon: '', name: t('price.all') }}
@@ -266,13 +266,13 @@ export default function Price() {
                       ),
                     ]}
                     setSelectedItem={(modelType) => {
-                      setModelType(modelType);
+                      setModelType(modelType)
                     }}
                     handleDropdownItemFilter={(dropdownItems, inputValue) => {
-                      const lowerCasedInput = inputValue.toLowerCase();
+                      const lowerCasedInput = inputValue.toLowerCase()
                       return dropdownItems.filter(
                         (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
-                      );
+                      )
                     }}
                     handleDropdownItemDisplay={(dropdownItem) => {
                       return (
@@ -287,7 +287,7 @@ export default function Price() {
                         >
                           {dropdownItem}
                         </Text>
-                      );
+                      )
                     }}
                     flexProps={{ w: '240px' }}
                     initSelectedItem={t('price.all')}
@@ -320,7 +320,7 @@ export default function Price() {
                     }}
                     value={searchInput}
                     onChange={(e) => {
-                      setSearchInput(e.target.value);
+                      setSearchInput(e.target.value)
                     }}
                   />
                   <InputRightElement w="32px" h="32px">
@@ -364,5 +364,5 @@ export default function Price() {
         </Flex>
       </Box>
     </Box>
-  );
+  )
 }

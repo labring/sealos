@@ -1,26 +1,26 @@
-'use client';
-import { useRef, useState } from 'react';
-import { Button, Flex, Text, useDisclosure, useToast } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+'use client'
+import { useRef, useState } from 'react'
+import { Button, Flex, Text, useDisclosure, useToast } from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { getAllChannels, uploadChannels } from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { ChannelInfo } from '@/types/admin/channels/channelInfo';
-import { QueryKey } from '@/types/query-key';
-import { downloadJson } from '@/utils/common';
+import { getAllChannels, uploadChannels } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { ChannelInfo } from '@/types/admin/channels/channelInfo'
+import { QueryKey } from '@/types/query-key'
+import { downloadJson } from '@/utils/common'
 
-import ChannelTable from './components/ChannelTable';
-import UpdateChannelModal from './components/UpdateChannelModal';
+import ChannelTable from './components/ChannelTable'
+import UpdateChannelModal from './components/UpdateChannelModal'
 
 export default function DashboardPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [operationType, setOperationType] = useState<'create' | 'update'>('create');
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const [exportData, setExportData] = useState<ChannelInfo[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [operationType, setOperationType] = useState<'create' | 'update'>('create')
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const [exportData, setExportData] = useState<ChannelInfo[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { message } = useMessage({
     warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
@@ -30,9 +30,9 @@ export default function DashboardPage() {
     successBoxBg: 'var(--Green-50, #EDFBF3)',
     successIconBg: 'var(--Green-600, #039855)',
     successIconFill: 'white',
-  });
+  })
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   const {
     data: allChannels,
@@ -43,57 +43,57 @@ export default function DashboardPage() {
     queryFn: getAllChannels,
     refetchOnReconnect: false,
     enabled: false,
-  });
+  })
 
   const uploadMutation = useMutation({
     mutationFn: uploadChannels,
-  });
+  })
 
   const handleExport = async () => {
     if (exportData.length === 0) {
-      const result = await refetch();
-      const dataToExport = result.data || [];
-      downloadJson(dataToExport, 'channels');
+      const result = await refetch()
+      const dataToExport = result.data || []
+      downloadJson(dataToExport, 'channels')
     } else {
-      downloadJson(exportData, 'channels');
+      downloadJson(exportData, 'channels')
     }
-  };
+  }
 
   const handleImport = () => {
-    fileInputRef.current?.click();
-  };
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const file = event.target.files?.[0]
+    if (!file) return
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData()
+    formData.append('file', file)
 
     try {
-      await uploadMutation.mutateAsync(formData);
+      await uploadMutation.mutateAsync(formData)
       message({
         title: t('dashboard.importSuccess'),
         status: 'success',
         duration: 3000,
         isClosable: true,
-      });
-      queryClient.invalidateQueries([QueryKey.GetChannels]);
-      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames]);
+      })
+      queryClient.invalidateQueries([QueryKey.GetChannels])
+      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
     } catch (error) {
-      console.error('Import error:', error);
+      console.error('Import error:', error)
       message({
         title: t('dashboard.importError'),
         status: 'error',
         duration: 3000,
         isClosable: true,
-      });
+      })
     } finally {
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = ''
       }
     }
-  };
+  }
 
   return (
     <Flex pt="4px" pb="12px" pr="12px" h="full" width="full">
@@ -158,8 +158,8 @@ export default function DashboardPage() {
                 },
               }}
               onClick={() => {
-                setOperationType('create');
-                onOpen();
+                setOperationType('create')
+                onOpen()
               }}
             >
               <svg
@@ -298,5 +298,5 @@ export default function DashboardPage() {
         <UpdateChannelModal isOpen={isOpen} onClose={onClose} operationType={operationType} />
       </Flex>
     </Flex>
-  );
+  )
 }

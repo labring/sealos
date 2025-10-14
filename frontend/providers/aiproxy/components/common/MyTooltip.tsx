@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { Tooltip, TooltipProps } from '@chakra-ui/react';
+import { Tooltip, TooltipProps } from '@chakra-ui/react'
 
 export const MyTooltip = ({ children, ...tooltipProps }: TooltipProps) => {
   const tooltipStyles = {
@@ -42,11 +42,11 @@ export const MyTooltip = ({ children, ...tooltipProps }: TooltipProps) => {
         },
       },
     },
-  };
+  }
 
   return (
     <Tooltip {...tooltipStyles} {...tooltipProps}>
       {children}
     </Tooltip>
-  );
-};
+  )
+}

@@ -1,23 +1,23 @@
-'use client';
-import { useRef } from 'react';
-import { Button, Divider, Flex, Text, useDisclosure } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui/src/components';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+'use client'
+import { useRef } from 'react'
+import { Button, Divider, Flex, Text, useDisclosure } from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui/src/components'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { getOption, uploadOptions } from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { QueryKey } from '@/types/query-key';
-import { downloadJson } from '@/utils/common';
+import { getOption, uploadOptions } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { QueryKey } from '@/types/query-key'
+import { downloadJson } from '@/utils/common'
 
-import CommonConfig from './components/CommonConfig';
-import ModelConfig from './components/ModelConfig';
+import CommonConfig from './components/CommonConfig'
+import ModelConfig from './components/ModelConfig'
 
 export default function GlobalConfigPage() {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -27,9 +27,9 @@ export default function GlobalConfigPage() {
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  });
+  })
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   const {
     isFetching: isOptionFetching,
@@ -40,53 +40,53 @@ export default function GlobalConfigPage() {
     queryFn: () => getOption(),
     refetchOnReconnect: false,
     enabled: false,
-  });
+  })
 
   const uploadMutation = useMutation({
     mutationFn: uploadOptions,
-  });
+  })
 
   const handleExport = async () => {
-    const result = await refetch();
-    const dataToExport = result.data || [];
-    downloadJson(dataToExport, 'global_configs');
-  };
+    const result = await refetch()
+    const dataToExport = result.data || []
+    downloadJson(dataToExport, 'global_configs')
+  }
 
   const handleImport = () => {
-    fileInputRef.current?.click();
-  };
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const file = event.target.files?.[0]
+    if (!file) return
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData()
+    formData.append('file', file)
 
     try {
-      await uploadMutation.mutateAsync(formData);
+      await uploadMutation.mutateAsync(formData)
       message({
         title: t('dashboard.importSuccess'),
         status: 'success',
         duration: 3000,
         isClosable: true,
-      });
-      queryClient.invalidateQueries([QueryKey.GetOption]);
-      queryClient.invalidateQueries([QueryKey.GetCommonConfig]);
+      })
+      queryClient.invalidateQueries([QueryKey.GetOption])
+      queryClient.invalidateQueries([QueryKey.GetCommonConfig])
     } catch (error) {
-      console.error('Import error:', error);
+      console.error('Import error:', error)
       message({
         title: t('dashboard.importError'),
         status: 'error',
         duration: 3000,
         isClosable: true,
-      });
+      })
     } finally {
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = ''
       }
     }
-  };
+  }
 
   return (
     <Flex pt="4px" pb="12px" pr="12px" pl="0px" h="100vh" width="full">
@@ -265,5 +265,5 @@ export default function GlobalConfigPage() {
         {/* -- config end */}
       </Flex>
     </Flex>
-  );
+  )
 }

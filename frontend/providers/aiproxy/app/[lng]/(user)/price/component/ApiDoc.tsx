@@ -1,5 +1,5 @@
-'use client';
-import React from 'react';
+'use client'
+import React from 'react'
 import {
   Badge,
   Box,
@@ -11,38 +11,38 @@ import {
   DrawerOverlay,
   Flex,
   Text,
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+} from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui'
 
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { useBackendStore } from '@/store/backend';
-import { ModelConfig } from '@/types/models/model';
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { useBackendStore } from '@/store/backend'
+import { ModelConfig } from '@/types/models/model'
 
-import CodeBlock from './CodeHight';
-import { ModelComponent } from './Model';
+import CodeBlock from './CodeHight'
+import { ModelComponent } from './Model'
 
 interface ApiDocContent {
-  title: string;
-  endpoint: string;
-  method: string;
-  requestExample: string;
-  responseExample: string;
-  responseFormat: string;
+  title: string
+  endpoint: string
+  method: string
+  requestExample: string
+  responseExample: string
+  responseFormat: string
   requestAdditionalInfo?: {
-    voices?: string[];
-    formats?: string[];
-  };
+    voices?: string[]
+    formats?: string[]
+  }
   responseAdditionalInfo?: {
-    voices?: string[];
-    formats?: string[];
-  };
+    voices?: string[]
+    formats?: string[]
+  }
 }
 
 interface ApiDocDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  modelConfig: ModelConfig;
+  isOpen: boolean
+  onClose: () => void
+  modelConfig: ModelConfig
 }
 
 const getApiDocContent = (
@@ -93,7 +93,7 @@ const getApiDocContent = (
     "total_tokens": 70
   }
 }`,
-      };
+      }
     case 3:
       return {
         title: t('modeType.3'),
@@ -129,7 +129,7 @@ const getApiDocContent = (
     "total_tokens": 4
   }
 }`,
-      };
+      }
     case 5:
       return {
         title: t('modeType.5'),
@@ -162,7 +162,7 @@ const getApiDocContent = (
     }
   }
 }`,
-      };
+      }
     case 7:
       return {
         title: t('modeType.7'),
@@ -192,7 +192,7 @@ ${
           voices: modelConfig?.config?.support_voices,
           formats: modelConfig?.config?.support_formats,
         },
-      };
+      }
     case 8:
       return {
         title: t('modeType.8'),
@@ -208,7 +208,7 @@ ${
         responseExample: `{
   "text": "<string>"
 }`,
-      };
+      }
     case 10:
       return {
         title: t('modeType.10'),
@@ -258,7 +258,7 @@ ${
     }
   }
 }`,
-      };
+      }
     case 11:
       return {
         title: t('modeType.11'),
@@ -275,7 +275,7 @@ ${
   "pages": 1,
   "markdown": "sf ad fda daf da \\\\( f \\\\) ds f sd fs d afdas fsd asfad f\\n\\n\\n\\n![img](data:image/jpeg;base64,/9...)\\n\\n| sadsa |  |  |\\n| --- | --- | --- |\\n|  | sadasdsa | sad |\\n|  |  | dsadsadsa |\\n|  |  |  |\\n\\n\\n\\na fda"
 }`,
-      };
+      }
     default:
       return {
         title: t('modeType.0'),
@@ -284,16 +284,16 @@ ${
         responseFormat: 'json',
         requestExample: 'unknown',
         responseExample: 'unknown',
-      };
+      }
   }
-};
+}
 
 const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfig }) => {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend);
-  const { docUrl } = useBackendStore();
-  const apiDoc = getApiDocContent(modelConfig, aiproxyBackend, t);
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend)
+  const { docUrl } = useBackendStore()
+  const apiDoc = getApiDocContent(modelConfig, aiproxyBackend, t)
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -302,7 +302,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  });
+  })
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="full">
@@ -363,7 +363,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
               <ModelComponent modelConfig={modelConfig} displayType={true} />
               <Button
                 onClick={() => {
-                  window.open(docUrl, '_blank');
+                  window.open(docUrl, '_blank')
                 }}
                 variant="unstyled"
                 position="absolute"
@@ -525,7 +525,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               isClosable: true,
                               duration: 2000,
                               position: 'top',
-                            });
+                            })
                           },
                           (err) => {
                             message({
@@ -534,9 +534,9 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               description: err?.message || t('copyFailed'),
                               isClosable: true,
                               position: 'top',
-                            });
+                            })
                           }
-                        );
+                        )
                       }}
                       variant="unstyled"
                       display="inline-flex"
@@ -876,7 +876,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               isClosable: true,
                               duration: 2000,
                               position: 'top',
-                            });
+                            })
                           },
                           (err) => {
                             message({
@@ -885,9 +885,9 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               description: err?.message || t('copyFailed'),
                               isClosable: true,
                               position: 'top',
-                            });
+                            })
                           }
-                        );
+                        )
                       }}
                       variant="unstyled"
                       display="inline-flex"
@@ -931,7 +931,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
         </DrawerBody>
       </DrawerContent>
     </Drawer>
-  );
-};
+  )
+}
 
-export default ApiDocDrawer;
+export default ApiDocDrawer

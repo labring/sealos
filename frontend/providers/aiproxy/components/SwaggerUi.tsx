@@ -1,12 +1,12 @@
-'use client';
+'use client'
 
-import { memo } from 'react';
-import SwaggerUI from 'swagger-ui-react';
+import { memo } from 'react'
+import SwaggerUI from 'swagger-ui-react'
 
-import 'swagger-ui-react/swagger-ui.css';
+import 'swagger-ui-react/swagger-ui.css'
 
 interface ReactSwaggerProps {
-  spec: object | string;
+  spec: object | string
 }
 
 const ReactSwagger = memo(({ spec }: ReactSwaggerProps) => {
@@ -50,9 +50,9 @@ const ReactSwagger = memo(({ spec }: ReactSwaggerProps) => {
         }}
       />
     </div>
-  );
-});
+  )
+})
 
-ReactSwagger.displayName = 'ReactSwagger';
+ReactSwagger.displayName = 'ReactSwagger'
 
-export default ReactSwagger;
+export default ReactSwagger

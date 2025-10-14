@@ -1,5 +1,5 @@
-'use client';
-import React, { useMemo, useState } from 'react';
+'use client'
+import React, { useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -28,33 +28,33 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from '@chakra-ui/react';
-import { CurrencySymbol } from '@sealos/ui';
-import { useMessage } from '@sealos/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+} from '@chakra-ui/react'
+import { CurrencySymbol } from '@sealos/ui'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Column,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table';
-import { TFunction } from 'i18next';
+} from '@tanstack/react-table'
+import { TFunction } from 'i18next'
 
-import { createToken, deleteToken, getTokens, updateToken } from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { MyTooltip } from '@/components/common/MyTooltip';
-import SwitchPage from '@/components/common/SwitchPage';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { useBackendStore } from '@/store/backend';
-import { QueryKey } from '@/types/query-key';
-import { TokenInfo } from '@/types/user/token';
-import { ChainIcon } from '@/ui/icons/index';
+import { createToken, deleteToken, getTokens, updateToken } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { MyTooltip } from '@/components/common/MyTooltip'
+import SwitchPage from '@/components/common/SwitchPage'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { useBackendStore } from '@/store/backend'
+import { QueryKey } from '@/types/query-key'
+import { TokenInfo } from '@/types/user/token'
+import { ChainIcon } from '@/ui/icons/index'
 
 export function KeyList(): JSX.Element {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
     <>
@@ -78,7 +78,7 @@ export function KeyList(): JSX.Element {
       {/* modal */}
       <CreateKeyModal isOpen={isOpen} onClose={onClose} t={t} />
     </>
-  );
+  )
 }
 
 export enum TableHeaderId {
@@ -100,7 +100,7 @@ enum KeyStatus {
 }
 
 const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }) => {
-  const { currencySymbol } = useBackendStore();
+  const { currencySymbol } = useBackendStore()
   if (column.id === TableHeaderId.USED_AMOUNT) {
     return (
       <Flex alignItems={'center'} gap={'4px'}>
@@ -116,7 +116,7 @@ const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }
         </Text>
         <CurrencySymbol type={currencySymbol} />
       </Flex>
-    );
+    )
   }
   return (
     <Text
@@ -129,15 +129,15 @@ const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }
     >
       {t(column.id as TableHeaderId)}
     </Text>
-  );
-};
+  )
+}
 
 const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
-  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
+  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend)
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [openPopoverId, setOpenPopoverId] = useState<number | null>(null)
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -146,28 +146,28 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  });
-  const queryClient = useQueryClient();
+  })
+  const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: [QueryKey.GetTokens, page, pageSize],
     queryFn: () => getTokens({ page, perPage: pageSize }),
     refetchOnReconnect: true,
     onSuccess(data) {
-      setTotal(data?.total || 0);
+      setTotal(data?.total || 0)
     },
-  });
+  })
 
   const deleteKeyMutation = useMutation((id: number) => deleteToken(id), {
     onSuccess() {
-      queryClient.invalidateQueries([QueryKey.GetTokens]);
+      queryClient.invalidateQueries([QueryKey.GetTokens])
       message({
         status: 'success',
         title: t('key.deleteSuccess'),
         isClosable: true,
         duration: 2000,
         position: 'top',
-      });
+      })
     },
     onError(err: any) {
       message({
@@ -176,22 +176,22 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         description: err?.message || t('key.deleteFailed'),
         isClosable: true,
         position: 'top',
-      });
+      })
     },
-  });
+  })
 
   const updateKeyMutation = useMutation(
     ({ id, status }: { id: number; status: number }) => updateToken(id, status),
     {
       onSuccess() {
-        queryClient.invalidateQueries([QueryKey.GetTokens]);
+        queryClient.invalidateQueries([QueryKey.GetTokens])
         message({
           status: 'success',
           title: t('key.updateSuccess'),
           isClosable: true,
           duration: 2000,
           position: 'top',
-        });
+        })
       },
       onError(err: any) {
         message({
@@ -200,22 +200,22 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           description: err?.message ? t(err.message) : t('key.updateFailed'),
           isClosable: true,
           position: 'top',
-        });
+        })
       },
     }
-  );
+  )
 
   // Update the button click handlers in the table actions column:
   const handleStatusUpdate = (id: number, currentStatus: number) => {
-    const newStatus = currentStatus === KeyStatus.DISABLED ? KeyStatus.ENABLED : KeyStatus.DISABLED;
-    updateKeyMutation.mutate({ id, status: newStatus });
-  };
+    const newStatus = currentStatus === KeyStatus.DISABLED ? KeyStatus.ENABLED : KeyStatus.DISABLED
+    updateKeyMutation.mutate({ id, status: newStatus })
+  }
 
   const handleDelete = (id: number) => {
-    deleteKeyMutation.mutate(id);
-  };
+    deleteKeyMutation.mutate(id)
+  }
 
-  const columnHelper = createColumnHelper<TokenInfo>();
+  const columnHelper = createColumnHelper<TokenInfo>()
 
   const columns = [
     columnHelper.accessor((row) => row.name, {
@@ -247,7 +247,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           letterSpacing="0.5px"
           cursor="pointer"
           onClick={() => {
-            const key = 'sk-' + info.getValue();
+            const key = 'sk-' + info.getValue()
             navigator.clipboard.writeText(key).then(
               () => {
                 message({
@@ -256,7 +256,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   isClosable: true,
                   duration: 2000,
                   position: 'top',
-                });
+                })
               },
               (err) => {
                 message({
@@ -265,9 +265,9 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   description: err?.message || t('copyFailed'),
                   isClosable: true,
                   position: 'top',
-                });
+                })
               }
-            );
+            )
           }}
         >
           <MyTooltip label={t('copy')}>
@@ -296,7 +296,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       id: TableHeaderId.LAST_USED_AT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => {
-        const timestamp = info.getValue();
+        const timestamp = info.getValue()
 
         if (timestamp && timestamp < 0) {
           return (
@@ -310,7 +310,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             >
               {t('key.unused')}
             </Text>
-          );
+          )
         }
 
         return (
@@ -324,37 +324,37 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           >
             {new Date(timestamp).toLocaleString()}
           </Text>
-        );
+        )
       },
     }),
     columnHelper.accessor((row) => row.status, {
       id: TableHeaderId.STATUS,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => {
-        const status = info.getValue();
-        let statusText = '';
-        let statusColor = '';
+        const status = info.getValue()
+        let statusText = ''
+        let statusColor = ''
 
         switch (status) {
           case KeyStatus.ENABLED:
-            statusText = t('keystatus.enabled');
-            statusColor = 'green.600';
-            break;
+            statusText = t('keystatus.enabled')
+            statusColor = 'green.600'
+            break
           case KeyStatus.DISABLED:
-            statusText = t('keystatus.disabled');
-            statusColor = 'red.600';
-            break;
+            statusText = t('keystatus.disabled')
+            statusColor = 'red.600'
+            break
           case KeyStatus.EXPIRED:
-            statusText = t('keystatus.expired');
-            statusColor = 'orange.500';
-            break;
+            statusText = t('keystatus.expired')
+            statusColor = 'orange.500'
+            break
           case KeyStatus.EXHAUSTED:
-            statusText = t('keystatus.exhausted');
-            statusColor = 'gray.500';
-            break;
+            statusText = t('keystatus.exhausted')
+            statusColor = 'gray.500'
+            break
           default:
-            statusText = t('keystatus.unknown');
-            statusColor = 'gray.500';
+            statusText = t('keystatus.unknown')
+            statusColor = 'gray.500'
         }
 
         return (
@@ -368,7 +368,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           >
             {statusText}
           </Text>
-        );
+        )
       },
     }),
 
@@ -393,11 +393,11 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       id: TableHeaderId.USED_AMOUNT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => {
-        const value = Number(info.getValue());
+        const value = Number(info.getValue())
         // 获取小数部分的长度
-        const decimalLength = value.toString().split('.')[1]?.length || 0;
+        const decimalLength = value.toString().split('.')[1]?.length || 0
         // 如果小数位超过6位则保留6位，否则保持原样
-        const formattedValue = decimalLength > 6 ? value.toFixed(6) : value;
+        const formattedValue = decimalLength > 6 ? value.toFixed(6) : value
 
         return (
           <Text
@@ -410,7 +410,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           >
             {formattedValue}
           </Text>
-        );
+        )
       },
     }),
 
@@ -485,8 +485,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       color: 'brightBlue.600',
                     }}
                     onClick={() => {
-                      handleStatusUpdate(info.row.original.id, info.row.original.status);
-                      setOpenPopoverId(null);
+                      handleStatusUpdate(info.row.original.id, info.row.original.status)
+                      setOpenPopoverId(null)
                     }}
                   >
                     <svg
@@ -532,8 +532,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       color: 'brightBlue.600',
                     }}
                     onClick={() => {
-                      setOpenPopoverId(null);
-                      handleStatusUpdate(info.row.original.id, info.row.original.status);
+                      setOpenPopoverId(null)
+                      handleStatusUpdate(info.row.original.id, info.row.original.status)
                     }}
                   >
                     <svg
@@ -579,8 +579,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     color: '#D92D20',
                   }}
                   onClick={() => {
-                    handleDelete(info.row.original.id);
-                    setOpenPopoverId(null);
+                    handleDelete(info.row.original.id)
+                    setOpenPopoverId(null)
                   }}
                 >
                   <svg
@@ -614,19 +614,19 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         </Popover>
       ),
     }),
-  ];
+  ]
 
   const sortTableData = (data: TokenInfo[]) => {
-    return data.sort((a, b) => b.created_at - a.created_at);
-  };
+    return data.sort((a, b) => b.created_at - a.created_at)
+  }
 
-  const sortedData = useMemo(() => sortTableData(data?.tokens || []), [data]);
+  const sortedData = useMemo(() => sortTableData(data?.tokens || []), [data])
 
   const table = useReactTable({
     data: sortedData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-  });
+  })
 
   return (
     <>
@@ -767,7 +767,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   cursor="pointer"
                   whiteSpace="nowrap"
                   onClick={() => {
-                    const endpoint = aiproxyBackend;
+                    const endpoint = aiproxyBackend
                     navigator.clipboard.writeText(endpoint).then(
                       () => {
                         message({
@@ -776,7 +776,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                           isClosable: true,
                           duration: 2000,
                           position: 'top',
-                        });
+                        })
                       },
                       (err) => {
                         message({
@@ -785,9 +785,9 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                           description: err?.message || t('copyFailed'),
                           isClosable: true,
                           position: 'top',
-                        });
+                        })
                       }
-                    );
+                    )
                   }}
                 >
                   {aiproxyBackend}
@@ -857,10 +857,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                             >
                               {flexRender(header.column.columnDef.header, header.getContext())}
                             </Th>
-                          );
+                          )
                         })}
                       </Tr>
-                    );
+                    )
                   })}
                 </Thead>
                 <Tbody>
@@ -878,10 +878,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                             <Td key={cell.id}>
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </Td>
-                          );
+                          )
                         })}
                       </Tr>
-                    );
+                    )
                   })}
                 </Tbody>
               </Table>
@@ -900,22 +900,22 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         </Flex>
       )}
     </>
-  );
-};
+  )
+}
 
 function CreateKeyModal({
   isOpen,
   onClose,
   t,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  t: TFunction;
+  isOpen: boolean
+  onClose: () => void
+  t: TFunction
 }) {
-  const initialRef = React.useRef(null);
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-  const queryClient = useQueryClient();
+  const initialRef = React.useRef(null)
+  const [name, setName] = useState('')
+  const [error, setError] = useState('')
+  const queryClient = useQueryClient()
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
     warningIconBg: '#F79009',
@@ -924,58 +924,58 @@ function CreateKeyModal({
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  });
+  })
 
   const createKeyMutation = useMutation((name: string) => createToken(name), {
     onSuccess(data) {
-      createKeyMutation.reset();
-      setName('');
-      queryClient.invalidateQueries([QueryKey.GetTokens]);
+      createKeyMutation.reset()
+      setName('')
+      queryClient.invalidateQueries([QueryKey.GetTokens])
       message({
         status: 'success',
         title: t('key.createSuccess'),
         isClosable: true,
         duration: 2000,
         position: 'top',
-      });
-      onClose();
+      })
+      onClose()
     },
     onError(err) {
-      console.error(err);
+      console.error(err)
       message({
         status: 'warning',
         title: t('key.createFailed'),
         description: err instanceof Error ? t(err.message as any) : t('key.createFailed'),
         isClosable: true,
         position: 'top',
-      });
+      })
     },
-  });
+  })
 
   const validateName = (value: string) => {
     if (!value) {
-      setError(t('key.nameRequired'));
+      setError(t('key.nameRequired'))
     } else if (value.length >= 32) {
-      setError(t('key.nameMaxLength'));
+      setError(t('key.nameMaxLength'))
     } else if (!/^[A-Za-z0-9-]+$/.test(value)) {
-      setError(t('key.nameOnlyLettersAndNumbers'));
+      setError(t('key.nameOnlyLettersAndNumbers'))
     } else {
-      setError('');
+      setError('')
     }
-  };
+  }
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    validateName(newName);
-    setName(newName);
-  };
+    const newName = e.target.value
+    validateName(newName)
+    setName(newName)
+  }
 
   const handleConfirm = () => {
     if (error === '' && name !== '') {
-      createKeyMutation.mutate(name);
-      return;
+      createKeyMutation.mutate(name)
+      return
     }
-  };
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered initialFocusRef={initialRef}>
@@ -1098,7 +1098,7 @@ function CreateKeyModal({
         </Flex>
       </Flex>
     </Modal>
-  );
+  )
 }
 
-export default KeyList;
+export default KeyList

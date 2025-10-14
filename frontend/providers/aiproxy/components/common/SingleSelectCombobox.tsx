@@ -1,26 +1,17 @@
-'use client';
-import { ReactNode, useEffect, useState } from 'react';
-import {
-  Box,
-  Button,
-  FormLabel,
-  Input,
-  InputGroup,
-  List,
-  ListItem,
-  VStack,
-} from '@chakra-ui/react';
-import { useCombobox, UseComboboxReturnValue } from 'downshift';
+'use client'
+import { ReactNode, useEffect, useState } from 'react'
+import { Box, Button, FormLabel, Input, InputGroup, List, ListItem, VStack } from '@chakra-ui/react'
+import { useCombobox, UseComboboxReturnValue } from 'downshift'
 
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
 
 export const SingleSelectCombobox: <T>(props: {
-  dropdownItems: T[];
-  setSelectedItem: (value: T) => void;
-  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[];
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
-  initSelectedItem?: T;
+  dropdownItems: T[]
+  setSelectedItem: (value: T) => void
+  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  initSelectedItem?: T
 }) => JSX.Element = function <T>({
   dropdownItems,
   setSelectedItem,
@@ -28,18 +19,18 @@ export const SingleSelectCombobox: <T>(props: {
   handleDropdownItemDisplay,
   initSelectedItem,
 }: {
-  dropdownItems: T[];
-  setSelectedItem: (value: T) => void;
-  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[];
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
-  initSelectedItem?: T;
+  dropdownItems: T[]
+  setSelectedItem: (value: T) => void
+  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  initSelectedItem?: T
 }) {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems);
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems)
   useEffect(() => {
-    setGetFilteredDropdownItems(dropdownItems);
-  }, [dropdownItems]);
+    setGetFilteredDropdownItems(dropdownItems)
+  }, [dropdownItems])
 
   const {
     isOpen: isComboboxOpen,
@@ -53,18 +44,18 @@ export const SingleSelectCombobox: <T>(props: {
   }: UseComboboxReturnValue<T> = useCombobox({
     items: getFilteredDropdownItems,
     onInputValueChange: ({ inputValue }) => {
-      setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue));
+      setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue))
     },
 
     initialSelectedItem: initSelectedItem || undefined,
 
     onSelectedItemChange: ({ selectedItem }) => {
-      const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem);
+      const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem)
       if (selectedDropdownItem) {
-        setSelectedItem(selectedDropdownItem);
+        setSelectedItem(selectedDropdownItem)
       }
     },
-  });
+  })
   return (
     <Box w="full">
       <VStack w="full" align="stretch" alignItems="flex-start" spacing="8px">
@@ -206,5 +197,5 @@ export const SingleSelectCombobox: <T>(props: {
           ))}
       </List>
     </Box>
-  );
-};
+  )
+}

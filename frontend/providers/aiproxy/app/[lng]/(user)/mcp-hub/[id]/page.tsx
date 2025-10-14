@@ -1,32 +1,32 @@
-'use client';
-import { Badge, Box, Center, Flex, Icon, Skeleton, SkeletonText, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
+'use client'
+import { Badge, Box, Center, Flex, Icon, Skeleton, SkeletonText, Text } from '@chakra-ui/react'
+import { useQuery } from '@tanstack/react-query'
+import { useParams, useRouter } from 'next/navigation'
 
-import { getMcpDetail } from '@/api/platform';
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { QueryKey } from '@/types/query-key';
+import { getMcpDetail } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { QueryKey } from '@/types/query-key'
 
-import McpDetailBody from '../components/McpDetailBody';
-import McpDetailHeader from '../components/McpDetailHeader';
+import McpDetailBody from '../components/McpDetailBody'
+import McpDetailHeader from '../components/McpDetailHeader'
 
 export default function McpDetailPage() {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const params = useParams();
-  const router = useRouter();
-  const id = params.id as string;
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const params = useParams()
+  const router = useRouter()
+  const id = params.id as string
 
   const { data: mcpDetail, isLoading } = useQuery({
     queryKey: [QueryKey.mcpDetail, id],
     queryFn: () => getMcpDetail(id),
     enabled: !!id,
-  });
+  })
 
   const handleNavigateToHub = () => {
-    router.push(`/${lng}/mcp-hub`);
-  };
+    router.push(`/${lng}/mcp-hub`)
+  }
 
   if (isLoading) {
     return (
@@ -115,7 +115,7 @@ export default function McpDetailPage() {
           </Flex>
         </Box>
       </Box>
-    );
+    )
   }
 
   if (!mcpDetail) {
@@ -127,7 +127,7 @@ export default function McpDetailPage() {
           </Text>
         </Box>
       </Center>
-    );
+    )
   }
 
   return (
@@ -205,5 +205,5 @@ export default function McpDetailPage() {
         </Flex>
       </Box>
     </Box>
-  );
+  )
 }

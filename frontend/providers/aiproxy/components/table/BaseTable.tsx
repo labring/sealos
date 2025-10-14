@@ -8,8 +8,8 @@ import {
   Th,
   Thead,
   Tr,
-} from '@chakra-ui/react';
-import { flexRender, Table as ReactTable } from '@tanstack/react-table';
+} from '@chakra-ui/react'
+import { flexRender, Table as ReactTable } from '@tanstack/react-table'
 
 export function BaseTable<T extends unknown>({
   table,
@@ -38,10 +38,10 @@ export function BaseTable<T extends unknown>({
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Th>
-                  );
+                  )
                 })}
               </Tr>
-            );
+            )
           })}
         </Thead>
         <Tbody>
@@ -72,14 +72,14 @@ export function BaseTable<T extends unknown>({
                       <Td py="10px" key={cell.id} px="24px">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Td>
-                    );
+                    )
                   })}
                 </Tr>
-              );
+              )
             })
           )}
         </Tbody>
       </Table>
     </TableContainer>
-  );
+  )
 }

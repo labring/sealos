@@ -1,7 +1,7 @@
-import React from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Box } from '@chakra-ui/react';
+import React from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { Box } from '@chakra-ui/react'
 
 const CodeBlock = ({ code, language = 'bash' }: { code: string; language?: string }) => {
   const customizedStyle = {
@@ -12,7 +12,7 @@ const CodeBlock = ({ code, language = 'bash' }: { code: string; language?: strin
       margin: 0,
       padding: 0,
     },
-  };
+  }
 
   return (
     <Box
@@ -63,7 +63,7 @@ const CodeBlock = ({ code, language = 'bash' }: { code: string; language?: strin
         {code}
       </SyntaxHighlighter>
     </Box>
-  );
-};
+  )
+}
 
-export default CodeBlock;
+export default CodeBlock

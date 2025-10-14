@@ -1,29 +1,29 @@
-'use client';
-import { Badge, Box, Flex, Icon, Text } from '@chakra-ui/react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+'use client'
+import { Badge, Box, Flex, Icon, Text } from '@chakra-ui/react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
-import { useTranslationClientSide } from '@/app/i18n/client';
-import { useI18n } from '@/providers/i18n/i18nContext';
-import { Mcp } from '@/types/mcp';
-import { getMcpIcon } from '@/ui/icons/mcp-icons';
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { Mcp } from '@/types/mcp'
+import { getMcpIcon } from '@/ui/icons/mcp-icons'
 
 export interface McpCardProps {
-  mcp: Mcp;
+  mcp: Mcp
 }
 
 export default function McpCard({ mcp }: McpCardProps) {
-  const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, 'common');
-  const router = useRouter();
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
+  const router = useRouter()
 
-  const mcpName = lng === 'zh' ? mcp.name_cn || mcp.name : mcp.name;
-  const mcpDescription = lng === 'zh' ? mcp.description_cn || mcp.description : mcp.description;
+  const mcpName = lng === 'zh' ? mcp.name_cn || mcp.name : mcp.name
+  const mcpDescription = lng === 'zh' ? mcp.description_cn || mcp.description : mcp.description
 
   const handleCardClick = () => {
-    router.push(`/${lng}/mcp-hub/${mcp.id}`);
-  };
-  const iconSrc = getMcpIcon(mcp.id);
+    router.push(`/${lng}/mcp-hub/${mcp.id}`)
+  }
+  const iconSrc = getMcpIcon(mcp.id)
   return (
     <Box
       bg="white"
@@ -132,5 +132,5 @@ export default function McpCard({ mcp }: McpCardProps) {
         </Flex>
       </Flex>
     </Box>
-  );
+  )
 }
