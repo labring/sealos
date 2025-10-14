@@ -1,6 +1,15 @@
 name: 🚀 Tagpr for GitHub Actions
 on:
   workflow_dispatch:
+    inputs:
+      pre-version:
+        description: 'Pre Version to release. Has v prefix'
+        required: true
+        default: 'v5.0.1'
+      version:
+        description: 'Version to release. Has v prefix'
+        required: true
+        default: 'v5.1.0'
   push:
     branches: [ "**" ]
     paths:
@@ -17,6 +26,18 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
+          if [[ -z "$VERSION" || -z "$PRE_VERSION" ]]; then
+            echo "Error: VERSION and PRE_VERSION inputs are required."
+            exit 1
+          fi
+          cat << EOF > .tagpr.json
+          {
+              "name": "sealos",
+              "version": "${VERSION}",
+              "command": "bash scripts/changelog.sh ${VERSION} ${PRE_VERSION}",
+              "pre-version": "${PRE_VERSION}"
+          }
+          EOF
           # check if .tagpr.json exists
           if [ ! -f .tagpr.json ]; then
             echo "No .tagpr.json file found."
@@ -31,6 +52,9 @@ jobs:
           echo version=${version} >> $GITHUB_OUTPUT
           echo command=${command} >> $GITHUB_OUTPUT
         id: tagpr
+        env:
+          VERSION: "${{ inputs.version }}"
+          PRE_VERSION: "${{ inputs.pre-version }}"
         name: Print git-chglog tag
       - name: Use command to generate version
         if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}

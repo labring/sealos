@@ -35,4 +35,8 @@ echo ""  > images/shim/allImage.txt
 for img in "${!images[@]}"; do
   echo "=== Pulling $img ==="
   echo "$img" >> images/shim/allImage.txt
+  while ! sealos registry save --registry-dir=registry --images="$img"; do
+    echo "Failed to pull $img, retrying..."
+    sleep 5
+  done
 done
