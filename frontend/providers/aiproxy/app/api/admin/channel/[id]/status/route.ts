@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { ChannelInfo } from '@/types/admin/channels/channelInfo'
-import { parseJwtToken } from '@/utils/backend/auth'
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
 import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,10 +22,10 @@ async function updateChannelStatus(id: string, status: number): Promise<void> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
       body: JSON.stringify({ status }),
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -54,7 +55,7 @@ export async function POST(
         {
           code: 400,
           message: 'Channel id is required',
-          error: 'Bad Request'
+          error: 'Bad Request',
         },
         { status: 400 }
       )
@@ -65,7 +66,7 @@ export async function POST(
 
     return NextResponse.json({
       code: 200,
-      message: 'Channel status updated successfully'
+      message: 'Channel status updated successfully',
     } satisfies ApiResp)
   } catch (error) {
     console.error('admin channels api: update channel status error:## ', error)
@@ -73,7 +74,7 @@ export async function POST(
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies ApiResp,
       { status: 500 }
     )

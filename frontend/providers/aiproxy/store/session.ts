@@ -1,7 +1,7 @@
+import { SessionV1 } from 'sealos-desktop-sdk'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { SessionV1 } from 'sealos-desktop-sdk'
 
 interface SessionState {
   session: SessionV1 | null
@@ -15,10 +15,10 @@ export const useSessionStore = create<SessionState>()(
       setSession: (session) =>
         set((state) => {
           state.session = session
-        })
+        }),
     })),
     {
-      name: 'session'
+      name: 'session',
     }
   )
 )

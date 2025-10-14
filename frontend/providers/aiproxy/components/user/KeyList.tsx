@@ -3,11 +3,22 @@ import React, { useMemo, useState } from 'react'
 import {
   Box,
   Button,
+  Center,
   Flex,
+  FormControl,
+  FormErrorMessage,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
   Popover,
   PopoverBody,
   PopoverContent,
   PopoverTrigger,
+  Spinner,
   Table,
   TableContainer,
   Tbody,
@@ -16,40 +27,29 @@ import {
   Th,
   Thead,
   Tr,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  Input,
-  FormErrorMessage,
   useDisclosure,
-  Center,
-  Spinner
 } from '@chakra-ui/react'
 import { CurrencySymbol } from '@sealos/ui'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Column,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  useReactTable
+  useReactTable,
 } from '@tanstack/react-table'
 import { TFunction } from 'i18next'
-import { createToken, deleteToken, getTokens, updateToken } from '@/api/platform'
 
+import { createToken, deleteToken, getTokens, updateToken } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChainIcon } from '@/ui/icons/index'
-import { useMessage } from '@sealos/ui'
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import { TokenInfo } from '@/types/user/token'
-import SwitchPage from '@/components/common/SwitchPage'
-import { useBackendStore } from '@/store/backend'
 import { MyTooltip } from '@/components/common/MyTooltip'
+import SwitchPage from '@/components/common/SwitchPage'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { useBackendStore } from '@/store/backend'
 import { QueryKey } from '@/types/query-key'
+import { TokenInfo } from '@/types/user/token'
+import { ChainIcon } from '@/ui/icons/index'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
@@ -67,7 +67,8 @@ export function KeyList(): JSX.Element {
           fontStyle="normal"
           fontWeight={500}
           lineHeight="26px"
-          letterSpacing="0.15px">
+          letterSpacing="0.15px"
+        >
           {t('keyList.title')}
         </Text>
       </Flex>
@@ -88,14 +89,14 @@ export enum TableHeaderId {
   STATUS = 'key.status',
   ACTIONS = 'key.actions',
   REQUEST_COUNT = 'key.requestCount',
-  USED_AMOUNT = 'key.usedAmount'
+  USED_AMOUNT = 'key.usedAmount',
 }
 
 enum KeyStatus {
   ENABLED = 1,
   DISABLED = 2,
   EXPIRED = 3,
-  EXHAUSTED = 4
+  EXHAUSTED = 4,
 }
 
 const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }) => {
@@ -109,7 +110,8 @@ const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
+          letterSpacing="0.5px"
+        >
           {t(column.id as TableHeaderId)}
         </Text>
         <CurrencySymbol type={currencySymbol} />
@@ -123,7 +125,8 @@ const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }
       fontSize="12px"
       fontWeight={500}
       lineHeight="16px"
-      letterSpacing="0.5px">
+      letterSpacing="0.5px"
+    >
       {t(column.id as TableHeaderId)}
     </Text>
   )
@@ -142,7 +145,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
     warningIconFill: 'white',
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
+    successIconFill: 'white',
   })
   const queryClient = useQueryClient()
 
@@ -152,7 +155,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
     refetchOnReconnect: true,
     onSuccess(data) {
       setTotal(data?.total || 0)
-    }
+    },
   })
 
   const deleteKeyMutation = useMutation((id: number) => deleteToken(id), {
@@ -163,7 +166,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         title: t('key.deleteSuccess'),
         isClosable: true,
         duration: 2000,
-        position: 'top'
+        position: 'top',
       })
     },
     onError(err: any) {
@@ -172,9 +175,9 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         title: t('key.deleteFailed'),
         description: err?.message || t('key.deleteFailed'),
         isClosable: true,
-        position: 'top'
+        position: 'top',
       })
-    }
+    },
   })
 
   const updateKeyMutation = useMutation(
@@ -187,7 +190,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           title: t('key.updateSuccess'),
           isClosable: true,
           duration: 2000,
-          position: 'top'
+          position: 'top',
         })
       },
       onError(err: any) {
@@ -196,9 +199,9 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           title: t('key.updateFailed'),
           description: err?.message ? t(err.message) : t('key.updateFailed'),
           isClosable: true,
-          position: 'top'
+          position: 'top',
         })
-      }
+      },
     }
   )
 
@@ -225,10 +228,11 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           fontSize="14px"
           fontWeight={500}
           lineHeight="20px"
-          letterSpacing="0.1px">
+          letterSpacing="0.1px"
+        >
           {info.getValue()}
         </Text>
-      )
+      ),
     }),
     columnHelper.accessor((row) => row.key, {
       id: TableHeaderId.KEY,
@@ -251,7 +255,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   title: t('copySuccess'),
                   isClosable: true,
                   duration: 2000,
-                  position: 'top'
+                  position: 'top',
                 })
               },
               (err) => {
@@ -260,16 +264,17 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   title: t('copyFailed'),
                   description: err?.message || t('copyFailed'),
                   isClosable: true,
-                  position: 'top'
+                  position: 'top',
                 })
               }
             )
-          }}>
+          }}
+        >
           <MyTooltip label={t('copy')}>
             {'sk-' + info.getValue().substring(0, 8) + '*'.repeat(3)}
           </MyTooltip>
         </Text>
-      )
+      ),
     }),
     columnHelper.accessor((row) => row.created_at, {
       id: TableHeaderId.CREATED_AT,
@@ -281,10 +286,11 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
+          letterSpacing="0.5px"
+        >
           {new Date(info.getValue()).toLocaleString()}
         </Text>
-      )
+      ),
     }),
     columnHelper.accessor((row) => row.accessed_at, {
       id: TableHeaderId.LAST_USED_AT,
@@ -300,7 +306,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               fontSize="12px"
               fontWeight={500}
               lineHeight="16px"
-              letterSpacing="0.5px">
+              letterSpacing="0.5px"
+            >
               {t('key.unused')}
             </Text>
           )
@@ -313,11 +320,12 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             fontSize="12px"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {new Date(timestamp).toLocaleString()}
           </Text>
         )
-      }
+      },
     }),
     columnHelper.accessor((row) => row.status, {
       id: TableHeaderId.STATUS,
@@ -356,11 +364,12 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             fontSize="12px"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {statusText}
           </Text>
         )
-      }
+      },
     }),
 
     columnHelper.accessor((row) => row.request_count, {
@@ -373,10 +382,11 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           fontSize="14px"
           fontWeight={500}
           lineHeight="20px"
-          letterSpacing="0.1px">
+          letterSpacing="0.1px"
+        >
           {info.getValue()}
         </Text>
-      )
+      ),
     }),
 
     columnHelper.accessor((row) => row.used_amount, {
@@ -396,11 +406,12 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             fontSize="14px"
             fontWeight={500}
             lineHeight="20px"
-            letterSpacing="0.1px">
+            letterSpacing="0.1px"
+          >
             {formattedValue}
           </Text>
         )
-      }
+      },
     }),
 
     columnHelper.display({
@@ -410,7 +421,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         <Popover
           placement="bottom-end"
           isOpen={openPopoverId === info.row.original.id}
-          onClose={() => setOpenPopoverId(null)}>
+          onClose={() => setOpenPopoverId(null)}
+        >
           <PopoverTrigger>
             <Box
               cursor="pointer"
@@ -421,13 +433,15 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               gap="6px"
               borderRadius="6px"
               _hover={{ bg: 'gray.100' }}
-              onClick={() => setOpenPopoverId(info.row.original.id)}>
+              onClick={() => setOpenPopoverId(info.row.original.id)}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -444,13 +458,15 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               alignItems="flex-start"
               gap="10px"
               borderRadius="6px"
-              bg="white">
+              bg="white"
+            >
               <Flex
                 width="88px"
                 alignItems="flex-start"
                 direction="column"
                 gap="2px"
-                flexShrink={0}>
+                flexShrink={0}
+              >
                 {info.row.original.status === KeyStatus.DISABLED ? (
                   <Button
                     variant="ghost"
@@ -466,18 +482,20 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     color="grayModern.600"
                     _hover={{
                       background: 'rgba(17, 24, 36, 0.05)',
-                      color: 'brightBlue.600'
+                      color: 'brightBlue.600',
                     }}
                     onClick={() => {
                       handleStatusUpdate(info.row.original.id, info.row.original.status)
                       setOpenPopoverId(null)
-                    }}>
+                    }}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
                       height="16"
                       viewBox="0 0 16 16"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -491,7 +509,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       fontStyle="normal"
                       fontWeight="500"
                       lineHeight="16px"
-                      letterSpacing="0.5px">
+                      letterSpacing="0.5px"
+                    >
                       {t('enable')}
                     </Text>
                   </Button>
@@ -510,18 +529,20 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     color="grayModern.600"
                     _hover={{
                       background: 'rgba(17, 24, 36, 0.05)',
-                      color: 'brightBlue.600'
+                      color: 'brightBlue.600',
                     }}
                     onClick={() => {
                       setOpenPopoverId(null)
                       handleStatusUpdate(info.row.original.id, info.row.original.status)
-                    }}>
+                    }}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
                       height="16"
                       viewBox="0 0 16 16"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -535,7 +556,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       fontStyle="normal"
                       fontWeight="500"
                       lineHeight="16px"
-                      letterSpacing="0.5px">
+                      letterSpacing="0.5px"
+                    >
                       {t('disable')}
                     </Text>
                   </Button>
@@ -554,18 +576,20 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   color="grayModern.600"
                   _hover={{
                     background: 'rgba(17, 24, 36, 0.05)',
-                    color: '#D92D20'
+                    color: '#D92D20',
                   }}
                   onClick={() => {
                     handleDelete(info.row.original.id)
                     setOpenPopoverId(null)
-                  }}>
+                  }}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
                     height="16"
                     viewBox="0 0 16 16"
-                    fill="none">
+                    fill="none"
+                  >
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
@@ -579,7 +603,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     fontStyle="normal"
                     fontWeight="500"
                     lineHeight="16px"
-                    letterSpacing="0.5px">
+                    letterSpacing="0.5px"
+                  >
                     {t('delete')}
                   </Text>
                 </Button>
@@ -587,8 +612,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             </PopoverBody>
           </PopoverContent>
         </Popover>
-      )
-    })
+      ),
+    }),
   ]
 
   const sortTableData = (data: TokenInfo[]) => {
@@ -600,7 +625,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
   const table = useReactTable({
     data: sortedData,
     columns,
-    getCoreRowModel: getCoreRowModel()
+    getCoreRowModel: getCoreRowModel(),
   })
 
   return (
@@ -622,14 +647,16 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   height="64px"
                   justifyContent="center"
                   alignItems="center"
-                  position="relative">
+                  position="relative"
+                >
                   <Box width="64px" height="64px">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="64"
                       height="64"
                       viewBox="0 0 64 64"
-                      fill="none">
+                      fill="none"
+                    >
                       <circle
                         cx="32"
                         cy="32"
@@ -646,13 +673,15 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     position="absolute"
                     left="50%"
                     top="50%"
-                    transform="translate(-50%, -50%)">
+                    transform="translate(-50%, -50%)"
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="40"
                       height="39"
                       viewBox="0 0 40 39"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         d="M6.95009 33.671L6.91264 33.6702C6.69615 33.6632 5.57087 33.5909 4.8212 32.8881C4.05254 32.1673 3.96079 31.1308 3.95022 30.9301C3.9492 30.9113 3.9487 30.8924 3.94873 30.8735V25.2283C3.93754 24.9957 3.92251 24.2101 4.18574 23.3377C4.43794 22.5011 4.74952 21.9519 4.83875 21.8037L7.67287 16.7898C7.68704 16.7646 7.70202 16.7403 7.71809 16.7166C7.80645 16.5855 8.28149 15.9107 8.93285 15.5055C9.61822 15.0786 10.4478 15.0457 10.6858 15.0457H28.5882C28.6112 15.0457 28.634 15.0463 28.6575 15.0478C28.8355 15.0592 29.7596 15.1372 30.4747 15.5463C31.1576 15.9374 31.7072 16.6208 31.8104 16.7536C31.8314 16.7808 31.851 16.809 31.8694 16.838L35.2354 22.1717C35.2498 22.1952 35.2643 22.2198 35.2775 22.2449C35.342 22.3688 35.6747 23.0233 35.8432 23.6598C36.0096 24.2896 36.0497 24.9856 36.0558 25.1185L36.0567 25.164V30.81C36.0605 31.1085 36.0055 32.133 35.1557 32.8943C34.3509 33.6148 33.2674 33.6706 32.9545 33.6706H6.95009V33.671ZM6.66171 22.9478C6.59978 23.058 6.40716 23.4223 6.24522 23.959C6.07419 24.5264 6.09451 25.0568 6.09723 25.1156C6.09875 25.141 6.09967 25.1665 6.1 25.1919V30.8363L6.10211 30.8519C6.11544 30.9534 6.17738 31.1993 6.28416 31.3102L6.29852 31.3255L6.31545 31.3379C6.46492 31.4481 6.8353 31.5113 6.96466 31.5191L32.9562 31.5195C33.1719 31.517 33.5488 31.4451 33.7196 31.292C33.8724 31.155 33.9067 30.92 33.9067 30.8823L33.9046 30.817V25.197C33.893 24.9777 33.8505 24.5408 33.7625 24.2097C33.6629 23.8315 33.4401 23.3785 33.3964 23.2918L33.3843 23.2706L30.0811 18.0358L30.0708 18.0233C29.9456 17.8726 29.6454 17.5504 29.4057 17.413C29.1981 17.2942 28.7752 17.2181 28.5575 17.1978L28.5349 17.1967H10.6896C10.5226 17.1982 10.2123 17.2424 10.069 17.332C9.86704 17.4578 9.62797 17.7453 9.52966 17.8796L9.52119 17.8912L6.70482 22.8736L6.67439 22.9248L6.6748 22.9235C6.67398 22.926 6.66171 22.9478 6.66171 22.9478ZM19.9 13.4682C19.6148 13.4679 19.3413 13.3545 19.1396 13.1528C18.9379 12.9512 18.8245 12.6777 18.8241 12.3925V6.20461C18.8245 5.91948 18.9379 5.64612 19.1395 5.44448C19.3411 5.24285 19.6144 5.12939 19.8996 5.129C20.1848 5.12928 20.4582 5.24268 20.66 5.44433C20.8617 5.64597 20.9752 5.91939 20.9756 6.20461V12.3925C20.9753 12.6776 20.8619 12.9511 20.6602 13.1527C20.4586 13.3544 20.1852 13.4678 19.9 13.4681V13.4682ZM27.1119 13.4274C26.8267 13.427 26.5533 13.3135 26.3517 13.1118C26.15 12.9101 26.0366 12.6367 26.0363 12.3515C26.0365 12.1048 26.1213 11.8656 26.2766 11.6739L28.7355 8.64132C28.8363 8.51661 28.9638 8.41609 29.1086 8.34716C29.2533 8.27823 29.4117 8.24265 29.5721 8.24303C29.8206 8.24303 30.0547 8.32611 30.2483 8.48318C30.3584 8.5718 30.4499 8.68143 30.5173 8.8057C30.5847 8.92996 30.6267 9.06639 30.6409 9.20704C30.6561 9.34752 30.6432 9.48962 30.603 9.6251C30.5628 9.76057 30.4962 9.88671 30.4069 9.99622L27.948 13.0289C27.8477 13.1535 27.7206 13.2541 27.5761 13.323C27.4317 13.3919 27.2736 13.4275 27.1136 13.4272H27.1119V13.4274ZM12.809 13.3451C12.6474 13.3455 12.4878 13.3093 12.3423 13.2392C12.1967 13.169 12.0689 13.0667 11.9686 12.9401L9.55142 9.90765C9.37386 9.68444 9.29211 9.39991 9.32409 9.11649C9.35608 8.83307 9.49919 8.57391 9.72203 8.39589C9.91185 8.24335 10.1482 8.16052 10.3918 8.16124C10.7215 8.16124 11.0283 8.30897 11.2336 8.5665L13.651 11.5989C13.8286 11.822 13.9105 12.1065 13.8786 12.3899C13.8467 12.6732 13.7036 12.9324 13.4809 13.1105C13.2903 13.262 13.0542 13.3447 12.8107 13.3451H12.809Z"
                         fill="#7B838B"
@@ -670,7 +699,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   fontSize="14px"
                   fontWeight={500}
                   lineHeight="20px"
-                  letterSpacing="0.1px">
+                  letterSpacing="0.1px"
+                >
                   {t('noData')}
                 </Text>
               </Flex>
@@ -686,13 +716,15 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                 borderRadius="6px"
                 background="grayModern.900"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-                _hover={{ background: 'grayModern.800' }}>
+                _hover={{ background: 'grayModern.800' }}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -718,7 +750,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                 fontWeight={500}
                 lineHeight="20px"
                 whiteSpace="nowrap"
-                letterSpacing="0.1px">
+                letterSpacing="0.1px"
+              >
                 API Endpoint:
               </Text>
               <MyTooltip label={t('copy')}>
@@ -742,7 +775,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                           title: t('copySuccess'),
                           isClosable: true,
                           duration: 2000,
-                          position: 'top'
+                          position: 'top',
                         })
                       },
                       (err) => {
@@ -751,11 +784,12 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                           title: t('copyFailed'),
                           description: err?.message || t('copyFailed'),
                           isClosable: true,
-                          position: 'top'
+                          position: 'top',
                         })
                       }
                     )
-                  }}>
+                  }}
+                >
                   {aiproxyBackend}
                 </Text>
               </MyTooltip>
@@ -771,13 +805,15 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               color="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               _hover={{ bg: 'grayModern.800' }}
-              onClick={onOpen}>
+              onClick={onOpen}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -801,7 +837,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                         key={headerGroup.id}
                         height="42px"
                         alignSelf="stretch"
-                        bg="grayModern.100">
+                        bg="grayModern.100"
+                      >
                         {headerGroup.headers.map((header, i) => {
                           return (
                             <Th
@@ -816,7 +853,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                               }
                               borderBottomRightRadius={
                                 i === headerGroup.headers.length - 1 ? '6px' : '0'
-                              }>
+                              }
+                            >
                               {flexRender(header.column.columnDef.header, header.getContext())}
                             </Th>
                           )
@@ -833,7 +871,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                         height="48px"
                         alignSelf="stretch"
                         borderBottom="1px solid"
-                        borderColor="grayModern.150">
+                        borderColor="grayModern.150"
+                      >
                         {row.getVisibleCells().map((cell) => {
                           return (
                             <Td key={cell.id}>
@@ -867,7 +906,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
 function CreateKeyModal({
   isOpen,
   onClose,
-  t
+  t,
 }: {
   isOpen: boolean
   onClose: () => void
@@ -884,7 +923,7 @@ function CreateKeyModal({
 
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
+    successIconFill: 'white',
   })
 
   const createKeyMutation = useMutation((name: string) => createToken(name), {
@@ -897,7 +936,7 @@ function CreateKeyModal({
         title: t('key.createSuccess'),
         isClosable: true,
         duration: 2000,
-        position: 'top'
+        position: 'top',
       })
       onClose()
     },
@@ -908,9 +947,9 @@ function CreateKeyModal({
         title: t('key.createFailed'),
         description: err instanceof Error ? t(err.message as any) : t('key.createFailed'),
         isClosable: true,
-        position: 'top'
+        position: 'top',
       })
-    }
+    },
   })
 
   const validateName = (value: string) => {
@@ -949,7 +988,8 @@ function CreateKeyModal({
         alignItems="flex-start"
         borderRadius="var(--semilg, 10px)"
         background="var(--White, #FFF)"
-        boxShadow="0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)">
+        boxShadow="0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)"
+      >
         {/* header */}
         <Flex
           as={ModalHeader}
@@ -959,7 +999,8 @@ function CreateKeyModal({
           alignItems="center"
           borderBottom="1px solid grayModern.100"
           background="grayModern.25"
-          w="full">
+          w="full"
+        >
           <Flex w="360px" justifyContent="space-between" alignItems="center">
             <Flex alignItems="center" gap="10px" flexShrink={0}>
               {t('Key.create')}
@@ -985,14 +1026,16 @@ function CreateKeyModal({
           padding="24px 36.5px 24px 35.5px"
           justifyContent="center"
           alignItems="center"
-          w="full">
+          w="full"
+        >
           <Flex w="328px" direction="column" alignItems="flex-end" gap="24px">
             <Flex
               direction="column"
               alignItems="flex-start"
               gap="10px"
               alignSelf="stretch"
-              w="full">
+              w="full"
+            >
               <Text
                 color="grayModern.900"
                 w="full"
@@ -1001,7 +1044,8 @@ function CreateKeyModal({
                 fontStyle="normal"
                 fontWeight={500}
                 lineHeight="20px"
-                letterSpacing="0.1px">
+                letterSpacing="0.1px"
+              >
                 {t('key.createName')}
               </Text>
               <FormControl isInvalid={!!error}>
@@ -1018,7 +1062,7 @@ function CreateKeyModal({
                   border="1px solid grayModern.200"
                   background="grayModern.50"
                   _placeholder={{
-                    color: 'grayModern.400'
+                    color: 'grayModern.400',
                   }}
                   isDisabled={createKeyMutation.isLoading}
                 />
@@ -1031,7 +1075,8 @@ function CreateKeyModal({
               justifyContent="flex-end"
               alignItems="center"
               alignSelf="stretch"
-              gap="12px">
+              gap="12px"
+            >
               <Button
                 display="flex"
                 padding="8px 14px"
@@ -1044,7 +1089,8 @@ function CreateKeyModal({
                 _hover={{ background: 'var(--Gray-Modern-800, #1F2937)' }}
                 onClick={handleConfirm}
                 isDisabled={!!error}
-                isLoading={createKeyMutation.isLoading}>
+                isLoading={createKeyMutation.isLoading}
+              >
                 {t('confirm')}
               </Button>
             </Flex>

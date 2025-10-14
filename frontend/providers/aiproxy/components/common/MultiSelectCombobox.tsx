@@ -1,20 +1,21 @@
 'use client'
+import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from 'react'
 import {
   Box,
   Button,
   Flex,
-  Text,
-  InputGroup,
-  Input,
   FormLabel,
-  VStack,
+  Input,
+  InputGroup,
+  List,
   ListItem,
-  List
+  Text,
+  VStack,
 } from '@chakra-ui/react'
+import { useCombobox, useMultipleSelection } from 'downshift'
+
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState, useMemo, Dispatch, SetStateAction, ReactNode } from 'react'
-import { useCombobox, useMultipleSelection } from 'downshift'
 
 export const MultiSelectCombobox = function <T>({
   dropdownItems,
@@ -23,7 +24,7 @@ export const MultiSelectCombobox = function <T>({
   handleFilteredDropdownItems,
   handleDropdownItemDisplay,
   handleSelectedItemDisplay,
-  handleSetCustomSelectedItem
+  handleSetCustomSelectedItem,
 }: {
   dropdownItems: T[]
   selectedItems: T[]
@@ -66,7 +67,7 @@ export const MultiSelectCombobox = function <T>({
         default:
           break
       }
-    }
+    },
   })
   const {
     isOpen,
@@ -76,7 +77,7 @@ export const MultiSelectCombobox = function <T>({
     getInputProps,
     highlightedIndex,
     getItemProps,
-    selectedItem
+    selectedItem,
   } = useCombobox({
     items,
     defaultHighlightedIndex: 0, // after selection, highlight the first item.
@@ -91,7 +92,7 @@ export const MultiSelectCombobox = function <T>({
           return {
             ...changes,
             isOpen: true, // keep the menu open after selection.
-            highlightedIndex: 0 // with the first option highlighted.
+            highlightedIndex: 0, // with the first option highlighted.
           }
         default:
           return changes
@@ -115,7 +116,7 @@ export const MultiSelectCombobox = function <T>({
         default:
           break
       }
-    }
+    },
   })
 
   return (
@@ -128,7 +129,8 @@ export const MultiSelectCombobox = function <T>({
           h={handleSetCustomSelectedItem ? '28px' : '20px'}
           justifyContent="space-between"
           alignItems="center"
-          {...getLabelProps()}>
+          {...getLabelProps()}
+        >
           <Flex gap="3.5px" alignItems="flex-start">
             <Text
               whiteSpace="nowrap"
@@ -138,7 +140,8 @@ export const MultiSelectCombobox = function <T>({
               fontStyle="normal"
               fontWeight={500}
               lineHeight="20px"
-              letterSpacing="0.1px">
+              letterSpacing="0.1px"
+            >
               {t('channelsForm.models')}
             </Text>
             <Text
@@ -148,7 +151,8 @@ export const MultiSelectCombobox = function <T>({
               fontStyle="normal"
               fontWeight={500}
               lineHeight="20px"
-              letterSpacing="0.1px">
+              letterSpacing="0.1px"
+            >
               *
             </Text>
           </Flex>
@@ -160,7 +164,8 @@ export const MultiSelectCombobox = function <T>({
               alignItems="center"
               gap="8px"
               display="flex"
-              marginLeft="auto">
+              marginLeft="auto"
+            >
               <Input
                 display="flex"
                 w="220px"
@@ -185,7 +190,7 @@ export const MultiSelectCombobox = function <T>({
                   fontSize: '12px',
                   fontWeight: 400,
                   lineHeight: '16px',
-                  letterSpacing: '0.048px'
+                  letterSpacing: '0.048px',
                 }}
                 value={customSelectedItemName}
                 onChange={(e) => setCustomSelectedItemName(e.target.value)}
@@ -214,19 +219,20 @@ export const MultiSelectCombobox = function <T>({
                 }}
                 _hover={{
                   transform: 'scale(1.05)',
-                  transition: 'transform 0.2s ease'
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
                   transform: 'scale(0.92)',
-                  animation: 'pulse 0.3s ease'
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
                   '@keyframes pulse': {
                     '0%': { transform: 'scale(0.92)' },
                     '50%': { transform: 'scale(0.96)' },
-                    '100%': { transform: 'scale(0.92)' }
-                  }
-                }}>
+                    '100%': { transform: 'scale(0.92)' },
+                  },
+                }}
+              >
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.600"
@@ -235,7 +241,8 @@ export const MultiSelectCombobox = function <T>({
                   fontStyle="normal"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
+                  letterSpacing="0.5px"
+                >
                   {t('common.add')}
                 </Text>
               </Button>
@@ -249,7 +256,8 @@ export const MultiSelectCombobox = function <T>({
           borderRadius="6px"
           border="1px solid"
           borderColor="grayModern.200"
-          p="8px">
+          p="8px"
+        >
           <Flex wrap="wrap" gap="8px" alignItems="center">
             {selectedItems.map((selectedItemForRender, index) => (
               <Box
@@ -261,8 +269,9 @@ export const MultiSelectCombobox = function <T>({
                 _focus={{ bg: 'red.100' }}
                 {...getSelectedItemProps({
                   selectedItem: selectedItemForRender,
-                  index: index
-                })}>
+                  index: index,
+                })}
+              >
                 <Flex alignItems="center" gap="8px">
                   {handleSelectedItemDisplay(selectedItemForRender)}
                   <Box
@@ -275,13 +284,15 @@ export const MultiSelectCombobox = function <T>({
                     onClick={(e) => {
                       e.stopPropagation()
                       removeSelectedItem(selectedItemForRender)
-                    }}>
+                    }}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
                       height="16"
                       viewBox="0 0 16 16"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -310,7 +321,7 @@ export const MultiSelectCombobox = function <T>({
                   fontSize: '12px',
                   fontWeight: 400,
                   lineHeight: '16px',
-                  letterSpacing: '0.048px'
+                  letterSpacing: '0.048px',
                 }}
                 {...getInputProps(getDropdownProps({ preventKeyAction: isOpen }))}
               />
@@ -323,14 +334,16 @@ export const MultiSelectCombobox = function <T>({
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
-                {...getToggleButtonProps()}>
+                {...getToggleButtonProps()}
+              >
                 {isOpen ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="17"
                     height="16"
                     viewBox="0 0 17 16"
-                    fill="none">
+                    fill="none"
+                  >
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
@@ -344,7 +357,8 @@ export const MultiSelectCombobox = function <T>({
                     width="17"
                     height="16"
                     viewBox="0 0 17 16"
-                    fill="none">
+                    fill="none"
+                  >
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
@@ -374,7 +388,8 @@ export const MultiSelectCombobox = function <T>({
         zIndex="10"
         borderRadius="6px"
         display={isOpen && items.length ? 'block' : 'none'}
-        {...getMenuProps()}>
+        {...getMenuProps()}
+      >
         {isOpen &&
           items.map((item, index) => (
             <ListItem
@@ -395,7 +410,8 @@ export const MultiSelectCombobox = function <T>({
               lineHeight="16px"
               letterSpacing="0.5px"
               _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-              {...getItemProps({ item, index })}>
+              {...getItemProps({ item, index })}
+            >
               {handleDropdownItemDisplay(item)}
             </ListItem>
           ))}

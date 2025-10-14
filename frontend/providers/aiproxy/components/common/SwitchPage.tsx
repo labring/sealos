@@ -1,6 +1,7 @@
-import { RightFirstIcon, ToLeftIcon } from '@/ui/icons'
 import { Button, ButtonProps, Flex, FlexProps, Text } from '@chakra-ui/react'
 import { useTranslation } from 'next-i18next'
+
+import { RightFirstIcon, ToLeftIcon } from '@/ui/icons'
 
 export default function SwitchPage({
   totalPage,
@@ -29,14 +30,14 @@ export default function SwitchPage({
     // variant:'unstyled',
     _hover: {
       background: 'grayModern.150',
-      minW: '0'
+      minW: '0',
     },
     _disabled: {
       borderRadius: 'full',
       background: 'grayModern.150',
       cursor: 'not-allowed',
-      minW: '0'
-    }
+      minW: '0',
+    },
   }
   return (
     <Flex minW="370px" h="32px" align={'center'} mb={'8px'} fontSize="14px" {...props}>
@@ -57,7 +58,8 @@ export default function SwitchPage({
           onClick={(e) => {
             e.preventDefault()
             setCurrentPage(1)
-          }}>
+          }}
+        >
           <RightFirstIcon transform={'rotate(-180deg)'} />
         </Button>
         <Button
@@ -70,7 +72,8 @@ export default function SwitchPage({
           onClick={(e) => {
             e.preventDefault()
             setCurrentPage(currentPage - 1)
-          }}>
+          }}
+        >
           <ToLeftIcon />
         </Button>
         <Text color={'grayModern.500'}>{currentPage}</Text>
@@ -87,7 +90,8 @@ export default function SwitchPage({
           onClick={(e) => {
             e.preventDefault()
             setCurrentPage(currentPage + 1)
-          }}>
+          }}
+        >
           <ToLeftIcon transform={'rotate(180deg)'} />
         </Button>
         <Button
@@ -102,7 +106,8 @@ export default function SwitchPage({
           onClick={(e) => {
             e.preventDefault()
             setCurrentPage(totalPage)
-          }}>
+          }}
+        >
           <RightFirstIcon />
         </Button>
       </Flex>

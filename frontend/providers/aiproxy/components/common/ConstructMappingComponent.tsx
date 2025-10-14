@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { VStack, Flex, FormLabel, Input, Button, Text, Box } from '@chakra-ui/react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Box, Button, Flex, FormLabel, Input, Text, VStack } from '@chakra-ui/react'
+
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
+
 import { CustomSelect } from './Select'
 type MapKeyValuePair = { key: string; value: string }
 
@@ -9,7 +11,7 @@ type MapKeyValuePair = { key: string; value: string }
 export const ConstructMappingComponent = function ({
   mapKeys,
   mapData,
-  setMapData
+  setMapData,
 }: {
   mapKeys: string[]
   mapData: Record<string, string>
@@ -46,7 +48,8 @@ export const ConstructMappingComponent = function ({
           fontStyle="normal"
           fontWeight={400}
           lineHeight="16px"
-          letterSpacing="0.048px">
+          letterSpacing="0.048px"
+        >
           {t('channelsFormPlaceholder.modelMappingInput')}
         </Text>
       )
@@ -59,7 +62,8 @@ export const ConstructMappingComponent = function ({
         fontStyle="normal"
         fontWeight={400}
         lineHeight="16px"
-        letterSpacing="0.048px">
+        letterSpacing="0.048px"
+      >
         {dropdownItem}
       </Text>
     )
@@ -75,7 +79,8 @@ export const ConstructMappingComponent = function ({
           fontStyle="normal"
           fontWeight={400}
           lineHeight="16px"
-          letterSpacing="0.048px">
+          letterSpacing="0.048px"
+        >
           {t('channelsFormPlaceholder.modelMappingInput')}
         </Text>
       )
@@ -88,8 +93,9 @@ export const ConstructMappingComponent = function ({
         css={{
           '&::-webkit-scrollbar': { display: 'none' },
           msOverflowStyle: 'none',
-          scrollbarWidth: 'none'
-        }}>
+          scrollbarWidth: 'none',
+        }}
+      >
         <Text
           color="grayModern.900"
           fontFamily="PingFang SC"
@@ -97,7 +103,8 @@ export const ConstructMappingComponent = function ({
           fontStyle="normal"
           fontWeight={400}
           lineHeight="16px"
-          letterSpacing="0.048px">
+          letterSpacing="0.048px"
+        >
           {selectedItem}
         </Text>
       </Box>
@@ -211,7 +218,8 @@ export const ConstructMappingComponent = function ({
         alignItems="center"
         justifyContent="center"
         h="20px"
-        m={0}>
+        m={0}
+      >
         {t('channelsForm.model_mapping')}
       </FormLabel>
 
@@ -248,8 +256,8 @@ export const ConstructMappingComponent = function ({
                 fontStyle: 'normal',
                 fontWeight: 400,
                 lineHeight: '16px',
-                letterSpacing: '0.048px'
-              }
+                letterSpacing: '0.048px',
+              },
             }}
           />
 
@@ -265,14 +273,16 @@ export const ConstructMappingComponent = function ({
             borderRadius="6px"
             _hover={{
               bg: 'rgba(17, 24, 36, 0.05)',
-              color: '#D92D20'
-            }}>
+              color: '#D92D20',
+            }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="19"
               height="18"
               viewBox="0 0 19 18"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -299,13 +309,15 @@ export const ConstructMappingComponent = function ({
           borderRadius="6px"
           border="1px solid var(--Gray-Modern-250, #DFE2EA)"
           bg="white"
-          boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)">
+          boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="17"
             height="16"
             viewBox="0 0 17 16"
-            fill="none">
+            fill="none"
+          >
             <path
               fillRule="evenodd"
               clipRule="evenodd"
@@ -320,7 +332,8 @@ export const ConstructMappingComponent = function ({
             fontStyle="normal"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {t('channelsForm.add')}
           </Text>
         </Button>

@@ -5,15 +5,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import configIcon from '@/ui/svg/icons/admin-sidebar/config.svg'
+import configIcon_a from '@/ui/svg/icons/admin-sidebar/config_a.svg'
 import homeIcon from '@/ui/svg/icons/admin-sidebar/home.svg'
 import homeIcon_a from '@/ui/svg/icons/admin-sidebar/home_a.svg'
 import logsIcon from '@/ui/svg/icons/admin-sidebar/logs.svg'
 import logsIcon_a from '@/ui/svg/icons/admin-sidebar/logs_a.svg'
-import configIcon from '@/ui/svg/icons/admin-sidebar/config.svg'
-import configIcon_a from '@/ui/svg/icons/admin-sidebar/config_a.svg'
 import nsManagerIcon from '@/ui/svg/icons/admin-sidebar/nsManager.svg'
 import nsManagerIcon_a from '@/ui/svg/icons/admin-sidebar/nsManager_a.svg'
-import { useI18n } from '@/providers/i18n/i18nContext'
 
 type Menu = {
   id: string
@@ -36,7 +36,7 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.Dashboard'),
       icon: homeIcon,
       activeIcon: homeIcon_a,
-      display: true
+      display: true,
     },
     {
       id: 'global-logs',
@@ -44,7 +44,7 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.GlobalLogs'),
       icon: logsIcon,
       activeIcon: logsIcon_a,
-      display: true
+      display: true,
     },
     {
       id: 'global-configs',
@@ -52,7 +52,7 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.GlobalConfigs'),
       icon: configIcon,
       activeIcon: configIcon_a,
-      display: true
+      display: true,
     },
     {
       id: 'ns-manager',
@@ -60,8 +60,8 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.NsManager'),
       icon: nsManagerIcon,
       activeIcon: nsManagerIcon_a,
-      display: true
-    }
+      display: true,
+    },
   ]
 
   return (
@@ -71,7 +71,8 @@ const SideBar = (): JSX.Element => {
       px="8px"
       gap="var(--md, 8px)"
       alignContent="center"
-      flex="1">
+      flex="1"
+    >
       {menus
         .filter((menu) => menu.display)
         .map((menu) => {
@@ -92,7 +93,8 @@ const SideBar = (): JSX.Element => {
                 borderRadius="8px"
                 cursor="pointer"
                 role="group"
-                _hover={{ backgroundColor: '#9699B426' }}>
+                _hover={{ backgroundColor: '#9699B426' }}
+              >
                 <Image
                   src={isActive ? menu.activeIcon : menu.icon}
                   alt={menu.value}
@@ -107,7 +109,8 @@ const SideBar = (): JSX.Element => {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                   textAlign="center"
-                  whiteSpace="nowrap">
+                  whiteSpace="nowrap"
+                >
                   {menu.value}
                 </Text>
               </Flex>

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/backend/auth'
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
+
 import { BatchOptionData } from '@/types/admin/option'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,10 +19,10 @@ async function batchOption(batchOptionData: BatchOptionData): Promise<string> {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
       body: JSON.stringify(batchOptionData),
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -61,7 +62,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiResp>> 
         {
           code: 400,
           message: 'Invalid request body',
-          error: 'Invalid request body'
+          error: 'Invalid request body',
         } satisfies ApiResp,
         { status: 400 }
       )
@@ -71,7 +72,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiResp>> 
 
     return NextResponse.json({
       code: 200,
-      message: 'Option batch updated successfully'
+      message: 'Option batch updated successfully',
     } satisfies ApiResp)
   } catch (error) {
     console.error('admin batch options api: put option error:', error)
@@ -79,7 +80,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiResp>> 
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies ApiResp,
       { status: 500 }
     )

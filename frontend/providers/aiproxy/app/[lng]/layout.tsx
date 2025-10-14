@@ -1,23 +1,23 @@
 import { dir } from 'i18next'
 import type { Metadata } from 'next'
+import Script from 'next/script'
 
 import { useTranslationServerSide } from '@/app/i18n/server'
 import { fallbackLng, languages } from '@/app/i18n/settings'
+import InitializeApp from '@/components/InitializeApp'
 import ChakraProviders from '@/providers/chakra/providers'
 import { I18nProvider } from '@/providers/i18n/i18nContext'
 import QueryProvider from '@/providers/tanstack-query/QueryProvider'
-import InitializeApp from '@/components/InitializeApp'
 
 import './globals.css'
 import 'react-day-picker/dist/style.css'
-import Script from 'next/script'
 
 export async function generateStaticParams(): Promise<{ lng: string }[]> {
   return languages.map((lng) => ({ lng }))
 }
 
 export async function generateMetadata({
-  params
+  params,
 }: {
   params: {
     lng: string
@@ -29,22 +29,24 @@ export async function generateMetadata({
   const { t } = await useTranslationServerSide(lng, 'common')
   return {
     icons: {
-      icon: '/favicon.svg'
+      icon: '/favicon.svg',
     },
     title: t('title'),
-    description: t('description')
+    description: t('description'),
   }
 }
 
 export default async function RootLayout({
   children,
-  params
+  params,
 }: Readonly<{
   children: React.ReactNode
   params: Promise<{ lng: string }>
 }>): Promise<React.JSX.Element> {
   const lng = (await params).lng
-  const scripts: { [key: string]: string }[] = JSON.parse(process.env.NEXT_PUBLIC_CUSTOM_SCRIPTS ?? '[]')
+  const scripts: { [key: string]: string }[] = JSON.parse(
+    process.env.NEXT_PUBLIC_CUSTOM_SCRIPTS ?? '[]'
+  )
   return (
     <html lang={lng} dir={dir(lng)}>
       <body>

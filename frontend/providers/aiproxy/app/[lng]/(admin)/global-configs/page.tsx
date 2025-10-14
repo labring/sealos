@@ -1,15 +1,17 @@
 'use client'
+import { useRef } from 'react'
 import { Button, Divider, Flex, Text, useDisclosure } from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui/src/components'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
+import { getOption, uploadOptions } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
+import { QueryKey } from '@/types/query-key'
+import { downloadJson } from '@/utils/common'
+
 import CommonConfig from './components/CommonConfig'
 import ModelConfig from './components/ModelConfig'
-import { getOption, uploadOptions } from '@/api/platform'
-import { QueryKey } from '@/types/query-key'
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { useMessage } from '@sealos/ui/src/components'
-import { useRef } from 'react'
-import { downloadJson } from '@/utils/common'
 
 export default function GlobalConfigPage() {
   const { lng } = useI18n()
@@ -24,7 +26,7 @@ export default function GlobalConfigPage() {
 
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
+    successIconFill: 'white',
   })
 
   const queryClient = useQueryClient()
@@ -32,16 +34,16 @@ export default function GlobalConfigPage() {
   const {
     isFetching: isOptionFetching,
     data: optionData,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: [QueryKey.GetOption],
     queryFn: () => getOption(),
     refetchOnReconnect: false,
-    enabled: false
+    enabled: false,
   })
 
   const uploadMutation = useMutation({
-    mutationFn: uploadOptions
+    mutationFn: uploadOptions,
   })
 
   const handleExport = async () => {
@@ -67,7 +69,7 @@ export default function GlobalConfigPage() {
         title: t('dashboard.importSuccess'),
         status: 'success',
         duration: 3000,
-        isClosable: true
+        isClosable: true,
       })
       queryClient.invalidateQueries([QueryKey.GetOption])
       queryClient.invalidateQueries([QueryKey.GetCommonConfig])
@@ -77,7 +79,7 @@ export default function GlobalConfigPage() {
         title: t('dashboard.importError'),
         status: 'error',
         duration: 3000,
-        isClosable: true
+        isClosable: true,
       })
     } finally {
       if (fileInputRef.current) {
@@ -98,14 +100,16 @@ export default function GlobalConfigPage() {
         flexDirection="column"
         borderRadius="12px"
         w="full"
-        flex="1">
+        flex="1"
+      >
         {/* header */}
         <Flex
           h="32px"
           w="full"
           alignSelf="stretch"
           alignItems="center"
-          justifyContent="space-between">
+          justifyContent="space-between"
+        >
           <Text
             whiteSpace="nowrap"
             color="black"
@@ -114,7 +118,8 @@ export default function GlobalConfigPage() {
             fontStyle="normal"
             fontWeight="500"
             lineHeight="26px"
-            letterSpacing="0.15px">
+            letterSpacing="0.15px"
+          >
             {t('global_configs.title')}
           </Text>
 
@@ -147,25 +152,27 @@ export default function GlobalConfigPage() {
                 letterSpacing="0.5px"
                 _hover={{
                   transform: 'scale(1.05)',
-                  transition: 'transform 0.2s ease'
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
                   transform: 'scale(0.92)',
-                  animation: 'pulse 0.3s ease'
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
                   '@keyframes pulse': {
                     '0%': { transform: 'scale(0.92)' },
                     '50%': { transform: 'scale(0.96)' },
-                    '100%': { transform: 'scale(0.92)' }
-                  }
-                }}>
+                    '100%': { transform: 'scale(0.92)' },
+                  },
+                }}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     d="M4.67403 1.54568C4.67403 1.42836 4.57892 1.33325 4.4616 1.33325C2.77074 1.33325 1.40002 2.70397 1.40002 4.39483V11.605C1.40002 13.2959 2.77074 14.6666 4.4616 14.6666H11.6718C13.3626 14.6666 14.7334 13.2959 14.7334 11.605V4.39483C14.7334 2.70397 13.3626 1.33325 11.6718 1.33325H10.1347C9.76646 1.33325 9.46799 1.63173 9.46799 1.99992C9.46799 2.36811 9.76646 2.66659 10.1347 2.66659H11.6718C12.6263 2.66659 13.4 3.44035 13.4 4.39483V11.605C13.4 12.5595 12.6263 13.3333 11.6718 13.3333H4.4616C3.50712 13.3333 2.73336 12.5595 2.73336 11.605V4.39483C2.73336 3.44035 3.50712 2.66659 4.4616 2.66659C4.57892 2.66659 4.67403 2.57148 4.67403 2.45416V1.54568Z"
                     fill="white"
@@ -199,25 +206,27 @@ export default function GlobalConfigPage() {
               transition="all 0.2s ease"
               _hover={{
                 transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
+                transition: 'transform 0.2s ease',
               }}
               _active={{
                 transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
+                animation: 'pulse 0.3s ease',
               }}
               sx={{
                 '@keyframes pulse': {
                   '0%': { transform: 'scale(0.92)' },
                   '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
-              }}>
+                  '100%': { transform: 'scale(0.92)' },
+                },
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -247,7 +256,8 @@ export default function GlobalConfigPage() {
           gap="36px"
           flexDirection="column"
           flex="1"
-          overflow="hidden">
+          overflow="hidden"
+        >
           <CommonConfig />
           <Divider />
           <ModelConfig />

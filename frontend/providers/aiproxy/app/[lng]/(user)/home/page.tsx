@@ -1,17 +1,18 @@
 'use client'
 
-import { Box, Flex, Text, Button, Center } from '@chakra-ui/react'
-import { CurrencySymbol, MySelect } from '@sealos/ui'
 import { useState } from 'react'
+import { Box, Button, Center, Flex, Text } from '@chakra-ui/react'
+import { CurrencySymbol, MySelect } from '@sealos/ui'
+import { useQuery, UseQueryResult } from '@tanstack/react-query'
 
 import { getDashboardData } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { UseQueryResult, useQuery } from '@tanstack/react-query'
-import { QueryKey } from '@/types/query-key'
 import { useBackendStore } from '@/store/backend'
-import RequestDataChart from './components/RequestDataChart'
+import { QueryKey } from '@/types/query-key'
 import { DashboardResponse } from '@/types/user/dashboard'
+
+import RequestDataChart from './components/RequestDataChart'
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
@@ -28,7 +29,7 @@ export default function Home(): React.JSX.Element {
       getDashboardData({
         type,
         ...(tokenName && { token_name: tokenName }),
-        ...(model && { model })
+        ...(model && { model }),
       })
   )
 
@@ -40,7 +41,8 @@ export default function Home(): React.JSX.Element {
       h="100vh"
       width="full"
       flexDirection="column"
-      overflow="hidden">
+      overflow="hidden"
+    >
       <Flex
         bg="white"
         px="32px"
@@ -51,7 +53,8 @@ export default function Home(): React.JSX.Element {
         flexDirection="column"
         h="full"
         w="full"
-        flex="1">
+        flex="1"
+      >
         {/* -- header */}
         <Flex
           w="full"
@@ -59,7 +62,8 @@ export default function Home(): React.JSX.Element {
           alignItems="center"
           alignSelf="stretch"
           gap="24px"
-          flexWrap="wrap">
+          flexWrap="wrap"
+        >
           <Flex gap="24px" alignItems="center">
             <Text
               color="black"
@@ -69,26 +73,27 @@ export default function Home(): React.JSX.Element {
               fontWeight="500"
               lineHeight="26px"
               letterSpacing="0.15px"
-              whiteSpace="nowrap">
+              whiteSpace="nowrap"
+            >
               {t('dataDashboard.title')}
             </Text>
             <Flex gap="12px" alignItems="center">
               <MySelect
                 w="200px"
                 boxStyle={{
-                  w: '100%'
+                  w: '100%',
                 }}
                 height="36px"
                 value={tokenName}
                 list={[
                   {
                     value: 'all',
-                    label: 'all'
+                    label: 'all',
                   },
                   ...(dashboardData?.token_names?.map((token) => ({
                     value: token,
-                    label: token
-                  })) || [])
+                    label: token,
+                  })) || []),
                 ]}
                 placeholder={t('dataDashboard.selectToken')}
                 onchange={(token: string) => {
@@ -102,7 +107,7 @@ export default function Home(): React.JSX.Element {
 
               <MySelect
                 boxStyle={{
-                  w: '100%'
+                  w: '100%',
                 }}
                 w="200px"
                 height="36px"
@@ -111,12 +116,12 @@ export default function Home(): React.JSX.Element {
                 list={[
                   {
                     value: 'all',
-                    label: 'all'
+                    label: 'all',
                   },
                   ...(dashboardData?.models?.map((model) => ({
                     value: model,
-                    label: model
-                  })) || [])
+                    label: model,
+                  })) || []),
                 ]}
                 onchange={(model: string) => {
                   if (model === 'all') {
@@ -134,12 +139,13 @@ export default function Home(): React.JSX.Element {
             p="3px"
             borderColor="gray.200"
             bg="grayModern.50"
-            borderRadius="6px">
+            borderRadius="6px"
+          >
             {[
               { label: t('dataDashboard.day'), value: 'day' },
               { label: t('dataDashboard.week'), value: 'week' },
               { label: t('dataDashboard.twoWeek'), value: 'two_week' },
-              { label: t('dataDashboard.month'), value: 'month' }
+              { label: t('dataDashboard.month'), value: 'month' },
             ].map((item) => (
               <Button
                 key={item.value}
@@ -165,8 +171,9 @@ export default function Home(): React.JSX.Element {
                   bg: 'white',
                   color: '#0884DD',
                   boxShadow:
-                    '0px 1px 2px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.15)'
-                }}>
+                    '0px 1px 2px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.15)',
+                }}
+              >
                 {item.label}
               </Button>
             ))}
@@ -185,11 +192,12 @@ export default function Home(): React.JSX.Element {
           overflowX="hidden"
           sx={{
             '&::-webkit-scrollbar': {
-              display: 'none'
+              display: 'none',
             },
             msOverflowStyle: 'none',
-            scrollbarWidth: 'none'
-          }}>
+            scrollbarWidth: 'none',
+          }}
+        >
           {/* chart 1 */}
           <Flex
             w="full"
@@ -199,11 +207,12 @@ export default function Home(): React.JSX.Element {
             overflowX="auto"
             sx={{
               '&::-webkit-scrollbar': {
-                display: 'none'
+                display: 'none',
               },
               msOverflowStyle: 'none',
-              scrollbarWidth: 'none'
-            }}>
+              scrollbarWidth: 'none',
+            }}
+          >
             <Flex
               flex="1"
               bg="#EDFAFF"
@@ -212,20 +221,23 @@ export default function Home(): React.JSX.Element {
               px="20px"
               py="28px"
               alignItems="center"
-              alignSelf="stretch">
+              alignSelf="stretch"
+            >
               <Box
                 display="flex"
                 alignItems="center"
                 p="8px"
                 borderRadius="999px"
                 bg="white"
-                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)">
+                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
                   height="25"
                   viewBox="0 0 24 25"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     d="M13.3333 3.66656C13.3333 2.83814 14.0049 2.16656 14.8333 2.16656C15.6618 2.16656 16.3333 2.83814 16.3333 3.66656V20.6666C16.3333 21.495 15.6618 22.1666 14.8333 22.1666C14.0049 22.1666 13.3333 21.495 13.3333 20.6666V3.66656Z"
                     fill="#219BF4"
@@ -252,7 +264,8 @@ export default function Home(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px">
+                  letterSpacing="0.25px"
+                >
                   {t('dataDashboard.callCount')}
                 </Text>
                 <Text
@@ -261,7 +274,8 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontSize="32px"
                   fontWeight="500"
-                  lineHeight="40px">
+                  lineHeight="40px"
+                >
                   {dashboardData?.total_count
                     ? dashboardData.total_count >= 10000
                       ? `${Number((dashboardData.total_count / 10000).toFixed(3))}W`
@@ -279,20 +293,23 @@ export default function Home(): React.JSX.Element {
               px="20px"
               py="28px"
               alignItems="center"
-              alignSelf="stretch">
+              alignSelf="stretch"
+            >
               <Box
                 display="flex"
                 alignItems="center"
                 p="8px"
                 borderRadius="999px"
                 bg="white"
-                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)">
+                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
                   height="25"
                   viewBox="0 0 24 25"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -309,7 +326,8 @@ export default function Home(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px">
+                  letterSpacing="0.25px"
+                >
                   {t('dataDashboard.exceptionCount')}
                 </Text>
                 <Text
@@ -318,7 +336,8 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontSize="32px"
                   fontWeight="500"
-                  lineHeight="40px">
+                  lineHeight="40px"
+                >
                   {dashboardData?.exception_count || 0}
                 </Text>
               </Flex>
@@ -332,20 +351,23 @@ export default function Home(): React.JSX.Element {
               px="20px"
               py="28px"
               alignItems="center"
-              alignSelf="stretch">
+              alignSelf="stretch"
+            >
               <Box
                 display="flex"
                 alignItems="center"
                 p="8px"
                 borderRadius="999px"
                 bg="white"
-                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)">
+                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
                   height="25"
                   viewBox="0 0 24 25"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -362,7 +384,8 @@ export default function Home(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px">
+                  letterSpacing="0.25px"
+                >
                   {t('dataDashboard.rpm')}
                 </Text>
                 <Text
@@ -371,7 +394,8 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontSize="32px"
                   fontWeight="500"
-                  lineHeight="40px">
+                  lineHeight="40px"
+                >
                   {dashboardData?.rpm || 0}
                 </Text>
               </Flex>
@@ -385,20 +409,23 @@ export default function Home(): React.JSX.Element {
               px="20px"
               py="28px"
               alignItems="center"
-              alignSelf="stretch">
+              alignSelf="stretch"
+            >
               <Box
                 display="flex"
                 alignItems="center"
                 p="8px"
                 borderRadius="999px"
                 bg="white"
-                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)">
+                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
                   height="25"
                   viewBox="0 0 24 25"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     d="M8.39407 10.6488C9.49864 10.6488 10.3941 9.75332 10.3941 8.64875C10.3941 7.54418 9.49864 6.64875 8.39407 6.64875C7.2895 6.64875 6.39407 7.54418 6.39407 8.64875C6.39407 9.75332 7.2895 10.6488 8.39407 10.6488Z"
                     fill="#6F5DD7"
@@ -419,7 +446,8 @@ export default function Home(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px">
+                  letterSpacing="0.25px"
+                >
                   {t('dataDashboard.tpm')}
                 </Text>
                 <Text
@@ -428,7 +456,8 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontSize="32px"
                   fontWeight="500"
-                  lineHeight="40px">
+                  lineHeight="40px"
+                >
                   {dashboardData?.tpm || 0}
                 </Text>
               </Flex>
@@ -442,20 +471,23 @@ export default function Home(): React.JSX.Element {
               px="20px"
               py="28px"
               alignItems="center"
-              alignSelf="stretch">
+              alignSelf="stretch"
+            >
               <Box
                 display="flex"
                 alignItems="center"
                 p="8px"
                 borderRadius="999px"
                 bg="white"
-                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)">
+                boxShadow="0px 4px 16px -1px rgba(19, 51, 107, 0.02)"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
                   height="25"
                   viewBox="0 0 24 25"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -477,7 +509,8 @@ export default function Home(): React.JSX.Element {
                     fontSize="14px"
                     fontWeight="400"
                     lineHeight="20px"
-                    letterSpacing="0.25px">
+                    letterSpacing="0.25px"
+                  >
                     {t('dataDashboard.cost')}
                   </Text>
                   {currencySymbol === 'shellCoin' ? (
@@ -486,7 +519,8 @@ export default function Home(): React.JSX.Element {
                       width="15"
                       height="15"
                       viewBox="0 0 15 15"
-                      fill="none">
+                      fill="none"
+                    >
                       <circle
                         cx="7"
                         cy="7.4854"
@@ -537,7 +571,8 @@ export default function Home(): React.JSX.Element {
                           width="9.56123"
                           height="9.56123"
                           filterUnits="userSpaceOnUse"
-                          colorInterpolationFilters="sRGB">
+                          colorInterpolationFilters="sRGB"
+                        >
                           <feFlood floodOpacity="0" result="BackgroundImageFix" />
                           <feColorMatrix
                             in="SourceAlpha"
@@ -570,7 +605,8 @@ export default function Home(): React.JSX.Element {
                           y1="1.1854"
                           x2="10.5"
                           y2="13.7854"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#F0F0F0" />
                           <stop offset="1" stopColor="#EBEBED" />
                         </linearGradient>
@@ -580,7 +616,8 @@ export default function Home(): React.JSX.Element {
                           y1="13.0854"
                           x2="2.1"
                           y2="2.2354"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#2B3750" />
                           <stop offset="1" stopColor="#9AA4B9" />
                         </linearGradient>
@@ -590,7 +627,8 @@ export default function Home(): React.JSX.Element {
                           y1="2.9354"
                           x2="10.5"
                           y2="12.7354"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#D6D8DF" />
                           <stop offset="1" stopColor="#DADCE3" />
                         </linearGradient>
@@ -600,7 +638,8 @@ export default function Home(): React.JSX.Element {
                           y1="11.6854"
                           x2="4.20003"
                           y2="6.0854"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#ABAFBF" />
                           <stop offset="1" stopColor="#B7BACC" />
                         </linearGradient>
@@ -610,7 +649,8 @@ export default function Home(): React.JSX.Element {
                           y1="3.2854"
                           x2="9.8"
                           y2="11.3354"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#9DA1B3" />
                           <stop offset="1" stopColor="#535A73" />
                         </linearGradient>
@@ -620,7 +660,8 @@ export default function Home(): React.JSX.Element {
                           y1="4.68541"
                           x2="9.09999"
                           y2="10.2854"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#FCFCFC" />
                           <stop offset="1" stopColor="#DDDFE6" />
                         </linearGradient>
@@ -630,7 +671,8 @@ export default function Home(): React.JSX.Element {
                           y1="4.68541"
                           x2="9.09999"
                           y2="10.2854"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#FCFCFC" />
                           <stop offset="1" stopColor="#DDDFE6" />
                         </linearGradient>
@@ -640,7 +682,8 @@ export default function Home(): React.JSX.Element {
                           y1="4.68541"
                           x2="9.09999"
                           y2="10.2854"
-                          gradientUnits="userSpaceOnUse">
+                          gradientUnits="userSpaceOnUse"
+                        >
                           <stop stopColor="#FCFCFC" />
                           <stop offset="1" stopColor="#DDDFE6" />
                         </linearGradient>
@@ -654,7 +697,8 @@ export default function Home(): React.JSX.Element {
                       fontSize="14px"
                       fontWeight="400"
                       lineHeight="20px"
-                      letterSpacing="0.25px">
+                      letterSpacing="0.25px"
+                    >
                       ￥
                     </Text>
                   ) : (
@@ -665,7 +709,8 @@ export default function Home(): React.JSX.Element {
                       fontSize="14px"
                       fontWeight="400"
                       lineHeight="20px"
-                      letterSpacing="0.25px">
+                      letterSpacing="0.25px"
+                    >
                       $
                     </Text>
                   )}
@@ -676,7 +721,8 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontSize="32px"
                   fontWeight="500"
-                  lineHeight="40px">
+                  lineHeight="40px"
+                >
                   {dashboardData?.used_amount ? Number(dashboardData.used_amount.toFixed(2)) : 0}
                 </Text>
               </Flex>

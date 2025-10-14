@@ -1,26 +1,27 @@
 'use client'
-import { Button, Flex, Text, FormControl, VStack, Skeleton } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
-import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
-import { useForm, Controller, FieldErrors, FieldErrorsImpl, FieldError } from 'react-hook-form'
+import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import { Controller, FieldError, FieldErrors, FieldErrorsImpl, useForm } from 'react-hook-form'
+import { Button, Flex, FormControl, Skeleton, Text, VStack } from '@chakra-ui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
+
 import {
   batchOption,
   getChannelBuiltInSupportModels,
   getChannelTypeNames,
-  getOption
+  getOption,
 } from '@/api/platform'
-import { SetStateAction, Dispatch, useEffect, useState } from 'react'
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
+import { useTranslationClientSide } from '@/app/i18n/client'
 import ConstructMappingComponent from '@/components/common/ConstructMappingComponent'
-import { DefaultChannelModel, DefaultChannelModelMapping } from '@/types/admin/option'
+import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
+import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
+import { useI18n } from '@/providers/i18n/i18nContext'
 import { ChannelType } from '@/types/admin/channels/channelInfo'
-import { QueryKey } from '@/types/query-key'
-import { useMessage } from '@sealos/ui'
+import { DefaultChannelModel, DefaultChannelModelMapping } from '@/types/admin/option'
 import { BatchOptionData } from '@/types/admin/option'
+import { QueryKey } from '@/types/query-key'
 
 const ModelConfig = () => {
   const { lng } = useI18n()
@@ -34,7 +35,7 @@ const ModelConfig = () => {
 
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
+    successIconFill: 'white',
   })
 
   const [allSupportChannel, setAllSupportChannel] = useState<string[]>([])
@@ -47,12 +48,12 @@ const ModelConfig = () => {
 
   const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
     queryKey: [QueryKey.GetChannelTypeNames],
-    queryFn: () => getChannelTypeNames()
+    queryFn: () => getChannelTypeNames(),
   })
 
   const { isLoading: isBuiltInSupportModelsLoading, data: builtInSupportModels } = useQuery({
     queryKey: [QueryKey.GetAllChannelModes],
-    queryFn: () => getChannelBuiltInSupportModels()
+    queryFn: () => getChannelBuiltInSupportModels(),
   })
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
@@ -68,7 +69,7 @@ const ModelConfig = () => {
 
       setDefaultModel(defaultModels)
       setDefaultModelMapping(defaultModelMappings)
-    }
+    },
   })
 
   useEffect(() => {
@@ -92,7 +93,7 @@ const ModelConfig = () => {
 
         return {
           ...acc,
-          [channelType]: models
+          [channelType]: models,
         }
       }, {} as { [key in ChannelType]: string[] })
 
@@ -109,7 +110,7 @@ const ModelConfig = () => {
         // 检查所有值不能为空字符串
         return Object.values(mapping).every((value) => value.trim() !== '')
       })
-      .default({})
+      .default({}),
   })
 
   const schema = z.array(itemSchema)
@@ -124,12 +125,12 @@ const ModelConfig = () => {
     setValue,
     watch,
     formState: { errors },
-    control
+    control,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: [],
     mode: 'onChange',
-    reValidateMode: 'onChange'
+    reValidateMode: 'onChange',
   })
 
   useEffect(() => {
@@ -142,7 +143,7 @@ const ModelConfig = () => {
       return {
         type: Number(channelType),
         defaultMode: modes || [], // Using first mode as default
-        defaultModeMapping: defaultModelMapping[channelType as ChannelType] || {}
+        defaultModeMapping: defaultModelMapping[channelType as ChannelType] || {},
       }
     })
 
@@ -154,7 +155,7 @@ const ModelConfig = () => {
     const newItem = {
       type: undefined, // Default type value
       defaultMode: [],
-      defaultModeMapping: {}
+      defaultModeMapping: {},
     }
 
     // Get current form values
@@ -176,9 +177,9 @@ const ModelConfig = () => {
     onSuccess: () => {
       message({
         title: t('globalConfigs.saveDefaultModelSuccess'),
-        status: 'success'
+        status: 'success',
       })
-    }
+    },
   })
 
   const transformFormDataToConfig = (formData: FormData): BatchOptionData => {
@@ -204,7 +205,7 @@ const ModelConfig = () => {
     return {
       // 转换为 JSON 字符串
       DefaultChannelModelMapping: JSON.stringify(defaultChannelModelMapping),
-      DefaultChannelModels: JSON.stringify(defaultChannelModels)
+      DefaultChannelModels: JSON.stringify(defaultChannelModels),
     }
   }
 
@@ -243,7 +244,7 @@ const ModelConfig = () => {
               {
                 type: 'Type',
                 defaultMode: 'Default Mode',
-                defaultModeMapping: 'Model Mapping'
+                defaultModeMapping: 'Model Mapping',
               }[fieldName as string] || fieldName
 
             return `Item ${Number(index) + 1} ${fieldLabel}: ${nestedError.message}`
@@ -271,7 +272,7 @@ const ModelConfig = () => {
         duration: 2000,
         isClosable: true,
         description:
-          error instanceof Error ? error.message : t('globalConfigs.saveDefaultModelFailed')
+          error instanceof Error ? error.message : t('globalConfigs.saveDefaultModelFailed'),
       })
       console.error(error)
     }
@@ -287,7 +288,7 @@ const ModelConfig = () => {
       status: 'error',
       position: 'top',
       duration: 2000,
-      isClosable: true
+      isClosable: true,
     })
   }
 
@@ -310,7 +311,8 @@ const ModelConfig = () => {
           fontStyle="normal"
           fontWeight="500"
           lineHeight="24px"
-          letterSpacing="0.15px">
+          letterSpacing="0.15px"
+        >
           {t('globalConfigs.model_config')}
         </Text>
       </Flex>
@@ -328,7 +330,8 @@ const ModelConfig = () => {
             fontStyle="normal"
             fontWeight="500"
             lineHeight="20px"
-            letterSpacing="0.1px">
+            letterSpacing="0.1px"
+          >
             {t('globalConfigs.defaultModel')}
           </Text>
           <Flex justifyContent="flex-end" alignItems="center" gap="15px" minW="0">
@@ -344,13 +347,15 @@ const ModelConfig = () => {
               border="1px solid"
               borderColor="grayModern.250"
               bg="white"
-              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)">
+              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -366,7 +371,8 @@ const ModelConfig = () => {
                 fontStyle="normal"
                 fontWeight="500"
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.5px"
+              >
                 {t('globalConfigs.addDefaultModel')}
               </Text>
             </Button>
@@ -384,13 +390,15 @@ const ModelConfig = () => {
               border="1px solid"
               borderColor="brightBlue.300"
               bg="white"
-              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)">
+              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -406,7 +414,8 @@ const ModelConfig = () => {
                 fontStyle="normal"
                 fontWeight="500"
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.5px"
+              >
                 {t('globalConfigs.saveDefaultModel')}
               </Text>
             </Button>
@@ -426,7 +435,8 @@ const ModelConfig = () => {
           // bg="red"
           borderRadius="6px"
           overflow="hidden"
-          overflowY="auto">
+          overflowY="auto"
+        >
           {isChannelTypeNamesLoading ||
           isBuiltInSupportModelsLoading ||
           isOptionLoading ||
@@ -445,7 +455,8 @@ const ModelConfig = () => {
                   alignSelf="stretch"
                   borderRadius="4px"
                   bg="grayModern.100"
-                  position="relative">
+                  position="relative"
+                >
                   <Button
                     position="absolute"
                     right="12px"
@@ -457,19 +468,21 @@ const ModelConfig = () => {
                     variant="ghost"
                     _hover={{
                       bg: 'rgba(17, 24, 36, 0.05)',
-                      color: '#D92D20'
+                      color: '#D92D20',
                     }}
                     onClick={() => {
                       const currentValues = watch()
                       const newValues = Object.values(currentValues).filter((_, i) => i !== index)
                       reset(newValues)
-                    }}>
+                    }}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="18"
                       height="18"
                       viewBox="0 0 18 18"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -484,7 +497,8 @@ const ModelConfig = () => {
                     spacing="24px"
                     justifyContent="center"
                     alignItems="center"
-                    align="stretch">
+                    align="stretch"
+                  >
                     <FormControl isRequired>
                       <Controller
                         name={`${index}.type`}
@@ -556,7 +570,8 @@ const ModelConfig = () => {
                                   fontStyle="normal"
                                   fontWeight={400}
                                   lineHeight="16px"
-                                  letterSpacing="0.048px">
+                                  letterSpacing="0.048px"
+                                >
                                   {item}
                                 </Text>
                               )}
@@ -624,7 +639,8 @@ const ModelConfig = () => {
                                   fontSize="12px"
                                   fontWeight={500}
                                   lineHeight="16px"
-                                  letterSpacing="0.5px">
+                                  letterSpacing="0.5px"
+                                >
                                   {item}
                                 </Text>
                               )}
@@ -636,7 +652,8 @@ const ModelConfig = () => {
                                   fontStyle="normal"
                                   fontWeight={400}
                                   lineHeight="20px"
-                                  letterSpacing="0.25px">
+                                  letterSpacing="0.25px"
+                                >
                                   {item}
                                 </Text>
                               )}

@@ -1,21 +1,23 @@
 'use client'
+import { useState } from 'react'
 import { Button, Flex, Text, useDisclosure } from '@chakra-ui/react'
+import { Switch } from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { produce } from 'immer'
+
+import { getOption, updateOption } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import { Switch } from '@chakra-ui/react'
-import { EditableText } from './EditableText'
-import { getOption, updateOption } from '@/api/platform'
-import { useMessage } from '@sealos/ui'
 import { QueryKey } from '@/types/query-key'
-import { useState } from 'react'
-import { produce } from 'immer'
+
+import { EditableText } from './EditableText'
 
 export enum CommonConfigKey {
   GlobalApiRateLimitNum = 'GlobalApiRateLimitNum',
   DisableServe = 'DisableServe',
   RetryTimes = 'RetryTimes',
-  GroupMaxTokenNum = 'GroupMaxTokenNum'
+  GroupMaxTokenNum = 'GroupMaxTokenNum',
 }
 
 type CommonConfig = {
@@ -45,7 +47,7 @@ const CommonConfig = () => {
     warningIconFill: 'white',
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
+    successIconFill: 'white',
   })
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
@@ -62,7 +64,7 @@ const CommonConfig = () => {
           draft.GroupMaxTokenNum = data.GroupMaxTokenNum || ''
         })
       )
-    }
+    },
   })
 
   const updateOptionMutation = useMutation({
@@ -70,16 +72,16 @@ const CommonConfig = () => {
     onSuccess: () => {
       message({
         title: t('globalConfigs.saveCommonConfigSuccess'),
-        status: 'success'
+        status: 'success',
       })
       queryClient.invalidateQueries({ queryKey: [QueryKey.GetCommonConfig] })
     },
     onError: () => {
       message({
         title: t('globalConfigs.saveCommonConfigFailed'),
-        status: 'error'
+        status: 'error',
       })
-    }
+    },
   })
 
   const updateConfigField = (field: CommonConfigKey, value: string) => {
@@ -114,7 +116,8 @@ const CommonConfig = () => {
           fontStyle="normal"
           fontWeight="500"
           lineHeight="24px"
-          letterSpacing="0.15px">
+          letterSpacing="0.15px"
+        >
           {t('globalConfigs.common_config')}
         </Text>
       </Flex>

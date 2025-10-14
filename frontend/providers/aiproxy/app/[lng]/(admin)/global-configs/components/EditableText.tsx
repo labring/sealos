@@ -1,20 +1,20 @@
 'use client'
 import React, { useState } from 'react'
-import {
-  Flex,
-  Text,
-  Button,
-  Input,
-  useDisclosure,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  HStack,
-  FlexProps,
-  Box
-} from '@chakra-ui/react'
 import { CheckIcon, CloseIcon } from '@chakra-ui/icons'
+import {
+  Box,
+  Button,
+  Flex,
+  FlexProps,
+  HStack,
+  Input,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  useDisclosure,
+} from '@chakra-ui/react'
 
 interface EditableTextProps {
   value: string | number
@@ -47,7 +47,8 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
         fontStyle="normal"
         fontWeight="500"
         lineHeight="20px"
-        letterSpacing="0.1px">
+        letterSpacing="0.1px"
+      >
         {label}
       </Text>
       <Popover isOpen={isOpen} onClose={handleCancel} placement="bottom-end">
@@ -60,7 +61,8 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
               fontStyle="normal"
               fontWeight="400"
               lineHeight="20px"
-              letterSpacing="0.25px">
+              letterSpacing="0.25px"
+            >
               {value}
             </Text>
             <Button
@@ -71,13 +73,15 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
               p="4px"
               alignItems="center"
               gap="6px"
-              borderRadius="6px">
+              borderRadius="6px"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   d="M2.35532 12.6736C2.34997 12.6822 2.34494 12.691 2.34024 12.7C2.29614 12.7849 2.29614 12.8965 2.29614 13.1195V13.4633C2.29614 13.6864 2.29614 13.7979 2.34024 13.8828C2.3774 13.9544 2.43573 14.0127 2.50727 14.0499C2.59216 14.094 2.70369 14.094 2.92675 14.094H3.26459C3.45553 14.094 3.56475 14.094 3.64549 14.0663C3.65082 14.0648 3.65613 14.0632 3.66142 14.0615C3.79824 14.0182 3.91653 13.8999 4.15312 13.6633L11.6771 6.13933L10.254 4.7162L2.72999 12.2402C2.52747 12.4427 2.41162 12.5586 2.35532 12.6736Z"
                   fill="#485264"
@@ -131,20 +135,21 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                   transition="all 0.2s ease"
                   _hover={{
                     transform: 'scale(1.05)',
-                    transition: 'transform 0.2s ease'
+                    transition: 'transform 0.2s ease',
                   }}
                   _active={{
                     transform: 'scale(0.92)',
-                    animation: 'pulse 0.3s ease'
+                    animation: 'pulse 0.3s ease',
                   }}
                   sx={{
                     '@keyframes pulse': {
                       '0%': { transform: 'scale(0.92)' },
                       '50%': { transform: 'scale(0.96)' },
-                      '100%': { transform: 'scale(0.92)' }
-                    }
+                      '100%': { transform: 'scale(0.92)' },
+                    },
                   }}
-                  onClick={handleCancel}>
+                  onClick={handleCancel}
+                >
                   <CloseIcon />
                 </Button>
                 <Button
@@ -159,20 +164,21 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                   transition="all 0.2s ease"
                   _hover={{
                     transform: 'scale(1.05)',
-                    transition: 'transform 0.2s ease'
+                    transition: 'transform 0.2s ease',
                   }}
                   _active={{
                     transform: 'scale(0.92)',
-                    animation: 'pulse 0.3s ease'
+                    animation: 'pulse 0.3s ease',
                   }}
                   sx={{
                     '@keyframes pulse': {
                       '0%': { transform: 'scale(0.92)' },
                       '50%': { transform: 'scale(0.96)' },
-                      '100%': { transform: 'scale(0.92)' }
-                    }
+                      '100%': { transform: 'scale(0.92)' },
+                    },
                   }}
-                  onClick={handleSubmit}>
+                  onClick={handleSubmit}
+                >
                   <CheckIcon />
                 </Button>
               </HStack>

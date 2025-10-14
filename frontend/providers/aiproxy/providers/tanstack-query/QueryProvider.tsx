@@ -11,9 +11,9 @@ const QueryProvider = ({ children }: { children: React.ReactNode }) => {
           queries: {
             refetchOnWindowFocus: false,
             retry: false,
-            cacheTime: 0
-          }
-        }
+            cacheTime: 0,
+          },
+        },
       })
   )
 

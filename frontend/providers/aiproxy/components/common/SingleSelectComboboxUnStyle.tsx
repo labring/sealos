@@ -1,9 +1,10 @@
 'use client'
-import { Button, InputGroup, Input, ListItem, List, Flex, FlexProps, Box } from '@chakra-ui/react'
+import { ReactNode, useEffect, useState } from 'react'
+import { Box, Button, Flex, FlexProps, Input, InputGroup, List, ListItem } from '@chakra-ui/react'
+import { useCombobox, UseComboboxReturnValue } from 'downshift'
+
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState, ReactNode, useEffect } from 'react'
-import { useCombobox, UseComboboxReturnValue } from 'downshift'
 
 export const SingleSelectComboboxUnstyle: <T>(props: {
   dropdownItems: T[]
@@ -22,7 +23,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   handleInputDisplay,
   initSelectedItem,
   flexProps,
-  placeholder
+  placeholder,
 }: {
   dropdownItems: T[]
   setSelectedItem: (value: T) => void
@@ -47,7 +48,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
     getInputProps,
     highlightedIndex,
     getItemProps,
-    selectedItem
+    selectedItem,
   }: UseComboboxReturnValue<T> = useCombobox({
     items: getFilteredDropdownItems,
     onInputValueChange: ({ inputValue }) => {
@@ -65,7 +66,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
       if (selectedDropdownItem) {
         setSelectedItem(selectedDropdownItem)
       }
-    }
+    },
   })
 
   return (
@@ -96,7 +97,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
             fontSize: '12px',
             fontWeight: 400,
             lineHeight: '16px',
-            letterSpacing: '0.048px'
+            letterSpacing: '0.048px',
           }}
           {...getInputProps()}
         />
@@ -110,14 +111,16 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
           display="flex"
           alignItems="center"
           justifyContent="center"
-          {...getToggleButtonProps()}>
+          {...getToggleButtonProps()}
+        >
           {isComboboxOpen ? (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="17"
               height="16"
               viewBox="0 0 17 16"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -131,7 +134,8 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
               width="17"
               height="16"
               viewBox="0 0 17 16"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -162,7 +166,8 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
         zIndex="10"
         borderRadius="6px"
         display={isComboboxOpen && getFilteredDropdownItems.length ? 'block' : 'none'}
-        {...getMenuProps()}>
+        {...getMenuProps()}
+      >
         {isComboboxOpen &&
           getFilteredDropdownItems.map((item, index) => (
             <ListItem
@@ -183,7 +188,8 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
               lineHeight="16px"
               letterSpacing="0.5px"
               _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-              {...getItemProps({ item, index })}>
+              {...getItemProps({ item, index })}
+            >
               {handleDropdownItemDisplay(item)}
             </ListItem>
           ))}

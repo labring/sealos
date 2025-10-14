@@ -33,7 +33,7 @@ export enum ChannelStatus {
   ChannelStatusUnknown = 0,
   ChannelStatusEnabled = 1,
   ChannelStatusDisabled = 2,
-  ChannelStatusAutoDisabled = 3
+  ChannelStatusAutoDisabled = 3,
 }
 
 export type ChannelType = `${number}`

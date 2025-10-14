@@ -1,3 +1,20 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": ["next/core-web-vitals", "prettier"],
+  "plugins": ["simple-import-sort"],
+  "rules": {
+    "simple-import-sort/imports": [
+      "error",
+      {
+        "groups": [
+          ["^react", "^@?\\w"],
+          ["^(@|components)(/.*|$)"],
+          ["^\\u0000"],
+          ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+          ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+          ["^.+\\.?(css)$"]
+        ]
+      }
+    ],
+    "simple-import-sort/exports": "error"
+  }
 }

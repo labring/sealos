@@ -62,5 +62,5 @@ export const modelIcons = {
   huggingface: HuggingFaceIcon,
   lingyiwanwu: LingyiWanwuIcon,
   stepfun: StepFunIcon,
-  default: DefaultIcon
+  default: DefaultIcon,
 }

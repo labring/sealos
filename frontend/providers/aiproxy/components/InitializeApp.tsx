@@ -1,14 +1,15 @@
 'use client'
 
-import { EVENT_NAME } from 'sealos-desktop-sdk'
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 import { useCallback, useEffect } from 'react'
-import { initAppConfig } from '@/api/platform'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { useTranslationClientSide } from '@/app/i18n/client'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
+import { EVENT_NAME } from 'sealos-desktop-sdk'
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
+
+import { initAppConfig } from '@/api/platform'
+import { useTranslationClientSide } from '@/app/i18n/client'
+import { useI18n } from '@/providers/i18n/i18nContext'
+import { useBackendStore } from '@/store/backend'
 import { useSessionStore } from '@/store/session'
 
 export default function InitializeApp() {
@@ -21,7 +22,7 @@ export default function InitializeApp() {
     setCurrencySymbol,
     setDocUrl,
     setIsInvitationActive,
-    setInvitationUrl
+    setInvitationUrl,
   } = useBackendStore()
 
   const handleI18nChange = useCallback(

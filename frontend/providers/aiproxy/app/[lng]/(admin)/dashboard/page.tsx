@@ -1,16 +1,18 @@
 'use client'
+import { useRef, useState } from 'react'
 import { Button, Flex, Text, useDisclosure, useToast } from '@chakra-ui/react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMessage } from '@sealos/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
+import { getAllChannels, uploadChannels } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import ChannelTable from './components/ChannelTable'
-import UpdateChannelModal from './components/UpdateChannelModal'
-import { useState, useRef } from 'react'
 import { ChannelInfo } from '@/types/admin/channels/channelInfo'
-import { getAllChannels, uploadChannels } from '@/api/platform'
 import { QueryKey } from '@/types/query-key'
 import { downloadJson } from '@/utils/common'
-import { useMessage } from '@sealos/ui'
+
+import ChannelTable from './components/ChannelTable'
+import UpdateChannelModal from './components/UpdateChannelModal'
 
 export default function DashboardPage() {
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -27,7 +29,7 @@ export default function DashboardPage() {
 
     successBoxBg: 'var(--Green-50, #EDFBF3)',
     successIconBg: 'var(--Green-600, #039855)',
-    successIconFill: 'white'
+    successIconFill: 'white',
   })
 
   const queryClient = useQueryClient()
@@ -35,16 +37,16 @@ export default function DashboardPage() {
   const {
     data: allChannels,
     isFetching: isAllChannelsFetching,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: [QueryKey.GetAllChannels],
     queryFn: getAllChannels,
     refetchOnReconnect: false,
-    enabled: false
+    enabled: false,
   })
 
   const uploadMutation = useMutation({
-    mutationFn: uploadChannels
+    mutationFn: uploadChannels,
   })
 
   const handleExport = async () => {
@@ -74,7 +76,7 @@ export default function DashboardPage() {
         title: t('dashboard.importSuccess'),
         status: 'success',
         duration: 3000,
-        isClosable: true
+        isClosable: true,
       })
       queryClient.invalidateQueries([QueryKey.GetChannels])
       queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
@@ -84,7 +86,7 @@ export default function DashboardPage() {
         title: t('dashboard.importError'),
         status: 'error',
         duration: 3000,
-        isClosable: true
+        isClosable: true,
       })
     } finally {
       if (fileInputRef.current) {
@@ -105,7 +107,8 @@ export default function DashboardPage() {
         flexDirection="column"
         borderRadius="12px"
         w="full"
-        flex="1">
+        flex="1"
+      >
         {/* header */}
         <Flex w="full" alignSelf="stretch" alignItems="center" justifyContent="space-between">
           <Text
@@ -116,7 +119,8 @@ export default function DashboardPage() {
             fontStyle="normal"
             fontWeight="500"
             lineHeight="26px"
-            letterSpacing="0.15px">
+            letterSpacing="0.15px"
+          >
             {t('dashboard.title')}
           </Text>
 
@@ -140,29 +144,31 @@ export default function DashboardPage() {
               transition="all 0.2s ease"
               _hover={{
                 transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
+                transition: 'transform 0.2s ease',
               }}
               _active={{
                 transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
+                animation: 'pulse 0.3s ease',
               }}
               sx={{
                 '@keyframes pulse': {
                   '0%': { transform: 'scale(0.92)' },
                   '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
+                  '100%': { transform: 'scale(0.92)' },
+                },
               }}
               onClick={() => {
                 setOperationType('create')
                 onOpen()
-              }}>
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -200,25 +206,27 @@ export default function DashboardPage() {
                 letterSpacing="0.5px"
                 _hover={{
                   transform: 'scale(1.05)',
-                  transition: 'transform 0.2s ease'
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
                   transform: 'scale(0.92)',
-                  animation: 'pulse 0.3s ease'
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
                   '@keyframes pulse': {
                     '0%': { transform: 'scale(0.92)' },
                     '50%': { transform: 'scale(0.96)' },
-                    '100%': { transform: 'scale(0.92)' }
-                  }
-                }}>
+                    '100%': { transform: 'scale(0.92)' },
+                  },
+                }}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     d="M4.67403 1.54568C4.67403 1.42836 4.57892 1.33325 4.4616 1.33325C2.77074 1.33325 1.40002 2.70397 1.40002 4.39483V11.605C1.40002 13.2959 2.77074 14.6666 4.4616 14.6666H11.6718C13.3626 14.6666 14.7334 13.2959 14.7334 11.605V4.39483C14.7334 2.70397 13.3626 1.33325 11.6718 1.33325H10.1347C9.76646 1.33325 9.46799 1.63173 9.46799 1.99992C9.46799 2.36811 9.76646 2.66659 10.1347 2.66659H11.6718C12.6263 2.66659 13.4 3.44035 13.4 4.39483V11.605C13.4 12.5595 12.6263 13.3333 11.6718 13.3333H4.4616C3.50712 13.3333 2.73336 12.5595 2.73336 11.605V4.39483C2.73336 3.44035 3.50712 2.66659 4.4616 2.66659C4.57892 2.66659 4.67403 2.57148 4.67403 2.45416V1.54568Z"
                     fill="white"
@@ -251,25 +259,27 @@ export default function DashboardPage() {
               letterSpacing="0.5px"
               _hover={{
                 transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
+                transition: 'transform 0.2s ease',
               }}
               _active={{
                 transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
+                animation: 'pulse 0.3s ease',
               }}
               sx={{
                 '@keyframes pulse': {
                   '0%': { transform: 'scale(0.92)' },
                   '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
-              }}>
+                  '100%': { transform: 'scale(0.92)' },
+                },
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"

@@ -1,9 +1,10 @@
 'use client'
-import { Box, Button, InputGroup, Input, FormLabel, VStack, ListItem, List } from '@chakra-ui/react'
+import { ReactNode, useEffect, useState } from 'react'
+import { Box, Button, FormLabel, Input, InputGroup, List, ListItem, VStack } from '@chakra-ui/react'
+import { useCombobox, UseComboboxReturnValue } from 'downshift'
+
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState, ReactNode, useEffect } from 'react'
-import { useCombobox, UseComboboxReturnValue } from 'downshift'
 
 export const SingleSelectCombobox: <T>(props: {
   dropdownItems: T[]
@@ -16,7 +17,7 @@ export const SingleSelectCombobox: <T>(props: {
   setSelectedItem,
   handleDropdownItemFilter,
   handleDropdownItemDisplay,
-  initSelectedItem
+  initSelectedItem,
 }: {
   dropdownItems: T[]
   setSelectedItem: (value: T) => void
@@ -39,7 +40,7 @@ export const SingleSelectCombobox: <T>(props: {
     getInputProps,
     highlightedIndex,
     getItemProps,
-    selectedItem
+    selectedItem,
   }: UseComboboxReturnValue<T> = useCombobox({
     items: getFilteredDropdownItems,
     onInputValueChange: ({ inputValue }) => {
@@ -53,7 +54,7 @@ export const SingleSelectCombobox: <T>(props: {
       if (selectedDropdownItem) {
         setSelectedItem(selectedDropdownItem)
       }
-    }
+    },
   })
   return (
     <Box w="full">
@@ -72,7 +73,8 @@ export const SingleSelectCombobox: <T>(props: {
           justifyContent="flex-start"
           whiteSpace="nowrap"
           m={0}
-          {...getLabelProps()}>
+          {...getLabelProps()}
+        >
           {t('channelsForm.type')}
         </FormLabel>
 
@@ -101,7 +103,7 @@ export const SingleSelectCombobox: <T>(props: {
               fontSize: '12px',
               fontWeight: 400,
               lineHeight: '16px',
-              letterSpacing: '0.048px'
+              letterSpacing: '0.048px',
             }}
             {...getInputProps()}
           />
@@ -115,14 +117,16 @@ export const SingleSelectCombobox: <T>(props: {
             display="flex"
             alignItems="center"
             justifyContent="center"
-            {...getToggleButtonProps()}>
+            {...getToggleButtonProps()}
+          >
             {isComboboxOpen ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -136,7 +140,8 @@ export const SingleSelectCombobox: <T>(props: {
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -163,7 +168,8 @@ export const SingleSelectCombobox: <T>(props: {
         zIndex="10"
         borderRadius="6px"
         display={isComboboxOpen && getFilteredDropdownItems.length ? 'block' : 'none'}
-        {...getMenuProps()}>
+        {...getMenuProps()}
+      >
         {isComboboxOpen &&
           getFilteredDropdownItems.map((item, index) => (
             <ListItem
@@ -184,7 +190,8 @@ export const SingleSelectCombobox: <T>(props: {
               lineHeight="16px"
               letterSpacing="0.5px"
               _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-              {...getItemProps({ item, index })}>
+              {...getItemProps({ item, index })}
+            >
               {handleDropdownItemDisplay(item)}
             </ListItem>
           ))}
