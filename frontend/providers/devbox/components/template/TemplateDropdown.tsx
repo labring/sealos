@@ -7,6 +7,7 @@ import { Tag, type Tag as TTag } from '@/prisma/generated/client';
 
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { cn } from '@sealos/shadcn-ui';
 
 interface TRepositoryItem {
@@ -117,13 +118,23 @@ const TemplateButton = ({
           <div className="flex items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
             <Image src={`/images/runtime/${iconId || ''}.svg`} width={32} height={32} alt={title} />
           </div>
-          <div className="flex w-full flex-col items-start">
+          <div className="flex w-full flex-col items-start min-w-0">
             {/* name */}
-            <span className="font-medium">{title}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-medium truncate w-80">{title}</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{title}</TooltipContent>
+            </Tooltip>
             {/* description */}
-            <span className="h-5 truncate text-sm/5 font-normal text-zinc-500">
-              {description || t('no_description')}
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="h-5 truncate text-sm/5 font-normal text-zinc-500 w-80">
+                  {description || t('no_description')}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{description || t('no_description')}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
         {/* TODO: tag color need to be supported */}
