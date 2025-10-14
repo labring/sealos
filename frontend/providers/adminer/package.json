@@ -11,7 +11,7 @@
   "dependencies": {
     "@kubernetes/client-node": "0.18.1",
     "@tanstack/react-query": "^4.35.3",
-    "axios": "1.4.0",
+    "axios": "1.12.0",
     "clsx": "^1.2.1",
     "i18next": "^23.11.5",
     "immer": "^10.0.2",

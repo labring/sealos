@@ -11,7 +11,7 @@
   "dependencies": {
     "@kubernetes/client-node": "0.18.0",
     "@tanstack/react-query": "^4.35.3",
-    "axios": "1.2.1",
+    "axios": "1.12.0",
     "clsx": "^1.2.1",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
