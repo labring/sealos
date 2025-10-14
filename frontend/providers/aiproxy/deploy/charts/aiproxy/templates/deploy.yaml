@@ -34,9 +34,6 @@ spec:
           imagePullPolicy: IfNotPresent
           name: aiproxy
           resources: {{ toYaml .Values.resources | nindent 12 }}
-          env:
-            - name: AI_PROXY_BACKEND
-              value: https://aiproxy.{{.Values.cloudDomain}}
           envFrom:
             - configMapRef:
                 name: {{ include "aiproxy.fullname" . }}
