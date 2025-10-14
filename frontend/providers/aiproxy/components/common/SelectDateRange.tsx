@@ -1,5 +1,5 @@
-import { ChangeEventHandler, Dispatch, SetStateAction, useState } from 'react'
-import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker'
+import { ChangeEventHandler, Dispatch, SetStateAction, useState } from 'react';
+import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 import {
   Box,
   Button,
@@ -10,16 +10,16 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@chakra-ui/react'
-import { endOfDay, format, isAfter, isBefore, isValid, parse, startOfDay } from 'date-fns'
+} from '@chakra-ui/react';
+import { endOfDay, format, isAfter, isBefore, isValid, parse, startOfDay } from 'date-fns';
 
 type SelectDateRangeProps = {
-  isDisabled?: boolean
-  startTime: Date
-  setStartTime: Dispatch<SetStateAction<Date>>
-  endTime: Date
-  setEndTime: Dispatch<SetStateAction<Date>>
-}
+  isDisabled?: boolean;
+  startTime: Date;
+  setStartTime: Dispatch<SetStateAction<Date>>;
+  endTime: Date;
+  setEndTime: Dispatch<SetStateAction<Date>>;
+};
 
 export default function SelectDateRange({
   isDisabled,
@@ -29,146 +29,146 @@ export default function SelectDateRange({
   setEndTime,
   ...props
 }: SelectDateRangeProps & FlexProps): JSX.Element {
-  const initState = { from: startTime, to: endTime }
+  const initState = { from: startTime, to: endTime };
 
-  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState)
-  const [fromValue, setFromValue] = useState<string>(format(initState.from, 'y-MM-dd'))
-  const [toValue, setToValue] = useState<string>(format(initState.to, 'y-MM-dd'))
-  const [inputState, setInputState] = useState<0 | 1>(0)
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
+  const [fromValue, setFromValue] = useState<string>(format(initState.from, 'y-MM-dd'));
+  const [toValue, setToValue] = useState<string>(format(initState.to, 'y-MM-dd'));
+  const [inputState, setInputState] = useState<0 | 1>(0);
   const onClose = () => {
-    selectedRange?.from && setStartTime(startOfDay(selectedRange.from))
-    selectedRange?.to && setEndTime(endOfDay(selectedRange.to))
-  }
+    selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
+    selectedRange?.to && setEndTime(endOfDay(selectedRange.to));
+  };
 
   const handleFromChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setFromValue(e.target.value)
-    const date = parse(e.target.value, 'y-MM-dd', new Date())
+    setFromValue(e.target.value);
+    const date = parse(e.target.value, 'y-MM-dd', new Date());
     if (!isValid(date)) {
-      return setSelectedRange({ from: undefined, to: selectedRange?.to })
+      return setSelectedRange({ from: undefined, to: selectedRange?.to });
     }
 
     if (selectedRange?.to) {
       if (isAfter(date, selectedRange.to)) {
-        setSelectedRange({ from: selectedRange.to, to: date })
+        setSelectedRange({ from: selectedRange.to, to: date });
       } else {
-        setSelectedRange({ from: date, to: selectedRange?.to })
+        setSelectedRange({ from: date, to: selectedRange?.to });
       }
     } else {
-      setSelectedRange({ from: date, to: date })
+      setSelectedRange({ from: date, to: date });
     }
-  }
+  };
 
   const handleToChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setToValue(e.target.value)
-    const date = parse(e.target.value, 'y-MM-dd', new Date())
+    setToValue(e.target.value);
+    const date = parse(e.target.value, 'y-MM-dd', new Date());
 
     if (!isValid(date)) {
-      return setSelectedRange({ from: selectedRange?.from, to: undefined })
+      return setSelectedRange({ from: selectedRange?.from, to: undefined });
     }
     if (selectedRange?.from) {
       if (isBefore(date, selectedRange.from)) {
-        setSelectedRange({ from: date, to: selectedRange.from })
+        setSelectedRange({ from: date, to: selectedRange.from });
       } else {
-        setSelectedRange({ from: selectedRange?.from, to: date })
+        setSelectedRange({ from: selectedRange?.from, to: date });
       }
     } else {
-      setSelectedRange({ from: date, to: date })
+      setSelectedRange({ from: date, to: date });
     }
-  }
+  };
 
   const handleRangeSelect: SelectRangeEventHandler = (range: DateRange | undefined) => {
     if (range) {
-      let { from, to } = range
+      let { from, to } = range;
       if (inputState === 0) {
         if (from === selectedRange?.from) {
-          from = to
+          from = to;
         } else {
-          to = from
+          to = from;
         }
-        setInputState(1)
+        setInputState(1);
       } else {
-        setInputState(0)
+        setInputState(0);
       }
       setSelectedRange({
         from,
         to,
-      })
+      });
       if (from) {
-        setFromValue(format(from, 'y-MM-dd'))
+        setFromValue(format(from, 'y-MM-dd'));
       } else {
-        setFromValue('')
+        setFromValue('');
       }
       if (to) {
-        setToValue(format(to, 'y-MM-dd'))
+        setToValue(format(to, 'y-MM-dd'));
       } else {
-        setToValue(from ? format(from, 'y-MM-dd') : '')
+        setToValue(from ? format(from, 'y-MM-dd') : '');
       }
     } else {
       if (fromValue && selectedRange?.from) {
-        setToValue(fromValue)
+        setToValue(fromValue);
         setSelectedRange({
           ...selectedRange,
           to: selectedRange.from,
-        })
-        setInputState(1)
+        });
+        setInputState(1);
       }
     }
-  }
+  };
 
   const handleRangeSelectFrom: SelectRangeEventHandler = (range: DateRange | undefined) => {
     if (range) {
-      let { from, to } = range
+      let { from, to } = range;
       if (selectedRange?.to) {
         if (from) {
           if (!to) {
-            to = from
+            to = from;
           } else if (from === selectedRange?.from) {
-            from = to
-            to = selectedRange.to
+            from = to;
+            to = selectedRange.to;
           }
           if (isBefore(from, selectedRange.to)) {
             setSelectedRange({
               ...selectedRange,
               from,
-            })
-            setFromValue(format(from, 'y-MM-dd'))
+            });
+            setFromValue(format(from, 'y-MM-dd'));
           }
         }
       }
     }
-  }
+  };
 
   const handleRangeSelectTo: SelectRangeEventHandler = (range: DateRange | undefined) => {
     if (range) {
-      let { from, to } = range
+      let { from, to } = range;
       if (selectedRange?.from) {
         if (to) {
           if (!from) {
-            from = to
+            from = to;
           } else if (to === selectedRange?.to) {
-            to = from
-            from = selectedRange.from
+            to = from;
+            from = selectedRange.from;
           }
           if (isAfter(to, selectedRange.from)) {
             setSelectedRange({
               ...selectedRange,
               to,
-            })
-            setToValue(format(to, 'y-MM-dd'))
+            });
+            setToValue(format(to, 'y-MM-dd'));
           }
         }
       }
     } else {
       if (fromValue && selectedRange?.from) {
-        setToValue(fromValue)
+        setToValue(fromValue);
         setSelectedRange({
           ...selectedRange,
           to: selectedRange.from,
-        })
-        setInputState(1)
+        });
+        setInputState(1);
       }
     }
-  }
+  };
 
   return (
     <Flex
@@ -196,7 +196,7 @@ export default function SelectDateRange({
               minW="50px"
               onChange={handleFromChange}
               onBlur={() => {
-                selectedRange?.from && setStartTime(startOfDay(selectedRange.from))
+                selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
               }}
             />
           </Button>
@@ -229,7 +229,7 @@ export default function SelectDateRange({
               minW="90px"
               onChange={handleToChange}
               onBlur={() => {
-                selectedRange?.to && setEndTime(endOfDay(selectedRange.to))
+                selectedRange?.to && setEndTime(endOfDay(selectedRange.to));
               }}
             />
           </Button>
@@ -251,8 +251,8 @@ export default function SelectDateRange({
       </Popover>
       <Popover
         onClose={() => {
-          setInputState(0)
-          onClose()
+          setInputState(0);
+          onClose();
         }}
       >
         <PopoverTrigger>
@@ -286,5 +286,5 @@ export default function SelectDateRange({
         </PopoverContent>
       </Popover>
     </Flex>
-  )
+  );
 }

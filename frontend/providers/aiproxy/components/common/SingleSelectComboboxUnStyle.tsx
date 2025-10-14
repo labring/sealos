@@ -1,20 +1,20 @@
-'use client'
-import { ReactNode, useEffect, useState } from 'react'
-import { Box, Button, Flex, FlexProps, Input, InputGroup, List, ListItem } from '@chakra-ui/react'
-import { useCombobox, UseComboboxReturnValue } from 'downshift'
+'use client';
+import { ReactNode, useEffect, useState } from 'react';
+import { Box, Button, Flex, FlexProps, Input, InputGroup, List, ListItem } from '@chakra-ui/react';
+import { useCombobox, UseComboboxReturnValue } from 'downshift';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export const SingleSelectComboboxUnstyle: <T>(props: {
-  dropdownItems: T[]
-  setSelectedItem: (value: T) => void
-  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
-  handleInputDisplay?: (item: T) => string
-  initSelectedItem?: T
-  flexProps?: FlexProps
-  placeholder?: string
+  dropdownItems: T[];
+  setSelectedItem: (value: T) => void;
+  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[];
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
+  handleInputDisplay?: (item: T) => string;
+  initSelectedItem?: T;
+  flexProps?: FlexProps;
+  placeholder?: string;
 }) => JSX.Element = function <T>({
   dropdownItems,
   setSelectedItem,
@@ -25,21 +25,21 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   flexProps,
   placeholder,
 }: {
-  dropdownItems: T[]
-  setSelectedItem: (value: T) => void
-  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
-  handleInputDisplay?: (item: T) => string
-  initSelectedItem?: T
-  flexProps?: FlexProps
-  placeholder?: string
+  dropdownItems: T[];
+  setSelectedItem: (value: T) => void;
+  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[];
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
+  handleInputDisplay?: (item: T) => string;
+  initSelectedItem?: T;
+  flexProps?: FlexProps;
+  placeholder?: string;
 }) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems)
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems);
   useEffect(() => {
-    setGetFilteredDropdownItems(dropdownItems)
-  }, [dropdownItems])
+    setGetFilteredDropdownItems(dropdownItems);
+  }, [dropdownItems]);
 
   const {
     isOpen: isComboboxOpen,
@@ -52,22 +52,22 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   }: UseComboboxReturnValue<T> = useCombobox({
     items: getFilteredDropdownItems,
     onInputValueChange: ({ inputValue }) => {
-      setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue))
+      setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue));
     },
     initialSelectedItem: initSelectedItem || undefined,
 
     itemToString: (item) => {
-      if (!item) return ''
-      return handleInputDisplay ? handleInputDisplay(item) : String(item)
+      if (!item) return '';
+      return handleInputDisplay ? handleInputDisplay(item) : String(item);
     },
 
     onSelectedItemChange: ({ selectedItem }) => {
-      const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem)
+      const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem);
       if (selectedDropdownItem) {
-        setSelectedItem(selectedDropdownItem)
+        setSelectedItem(selectedDropdownItem);
       }
     },
-  })
+  });
 
   return (
     <Flex flexDirection="column" w="full" {...flexProps} position="relative">
@@ -195,5 +195,5 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
           ))}
       </List>
     </Flex>
-  )
-}
+  );
+};

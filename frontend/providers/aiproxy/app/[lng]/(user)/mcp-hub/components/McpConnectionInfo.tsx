@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import {
   Alert,
   AlertIcon,
@@ -12,33 +12,33 @@ import {
   TabPanels,
   Tabs,
   Text,
-} from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useRouter } from 'next/navigation'
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useRouter } from 'next/navigation';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { McpDetail } from '@/types/mcp'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { McpDetail } from '@/types/mcp';
 
 export interface McpConnectionInfoProps {
-  mcpDetail: McpDetail
-  setViewMode?: () => void
+  mcpDetail: McpDetail;
+  setViewMode?: () => void;
 }
 
 // 自定义配置渲染组件
 const ConfigRenderer = ({ config, lng }: { config: any; lng: string }) => {
-  const router = useRouter()
+  const router = useRouter();
 
   const handleTokenClick = () => {
-    router.push(`/${lng}/key`)
-  }
+    router.push(`/${lng}/key`);
+  };
 
   const renderConfigContent = () => {
-    const configString = JSON.stringify(config, null, 2)
-    const parts = configString.split('your_token')
+    const configString = JSON.stringify(config, null, 2);
+    const parts = configString.split('your_token');
 
     if (parts.length === 1) {
-      return <span>{configString}</span>
+      return <span>{configString}</span>;
     }
 
     return (
@@ -61,8 +61,8 @@ const ConfigRenderer = ({ config, lng }: { config: any; lng: string }) => {
           </span>
         ))}
       </>
-    )
-  }
+    );
+  };
 
   return (
     <Code
@@ -77,20 +77,20 @@ const ConfigRenderer = ({ config, lng }: { config: any; lng: string }) => {
     >
       {renderConfigContent()}
     </Code>
-  )
-}
+  );
+};
 
 export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnectionInfoProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { message } = useMessage()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { message } = useMessage();
 
-  const hasSSE = mcpDetail.endpoints?.sse
-  const hasHTTP = mcpDetail.endpoints?.streamable_http
+  const hasSSE = mcpDetail.endpoints?.sse;
+  const hasHTTP = mcpDetail.endpoints?.streamable_http;
 
   const generateConfig = (type: 'sse' | 'streamable_http') => {
-    const endpoint = type === 'sse' ? mcpDetail.endpoints.sse : mcpDetail.endpoints.streamable_http
-    const url = `https://${mcpDetail.endpoints.host}${endpoint}?key=your_token`
+    const endpoint = type === 'sse' ? mcpDetail.endpoints.sse : mcpDetail.endpoints.streamable_http;
+    const url = `https://${mcpDetail.endpoints.host}${endpoint}?key=your_token`;
 
     return {
       mcpServers: {
@@ -99,11 +99,11 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
           url: url,
         },
       },
-    }
-  }
+    };
+  };
 
   const copyToClipboard = (config: object) => {
-    const configString = JSON.stringify(config, null, 2)
+    const configString = JSON.stringify(config, null, 2);
     navigator.clipboard
       .writeText(configString)
       .then(() => {
@@ -111,20 +111,20 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
           status: 'success',
           title: t('copySuccess'),
           duration: 2000,
-        })
+        });
       })
       .catch(() => {
         message({
           status: 'error',
           title: t('copyFailed'),
           duration: 2000,
-        })
-      })
-  }
+        });
+      });
+  };
 
   // 如果只有一种连接方式，就不显示Tab
   if (hasSSE && !hasHTTP) {
-    const config = generateConfig('sse')
+    const config = generateConfig('sse');
     return (
       <Box h="full" overflow="hidden">
         <Flex direction="column" gap="16px" h="full">
@@ -150,11 +150,11 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
           </Box>
         </Flex>
       </Box>
-    )
+    );
   }
 
   if (!hasSSE && hasHTTP) {
-    const config = generateConfig('streamable_http')
+    const config = generateConfig('streamable_http');
     return (
       <Box h="full" overflow="hidden">
         <Flex direction="column" gap="16px" h="full">
@@ -180,7 +180,7 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
           </Box>
         </Flex>
       </Box>
-    )
+    );
   }
 
   // 有两种连接方式，显示Tab
@@ -254,5 +254,5 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
         </TabPanels>
       </Tabs>
     </Box>
-  )
+  );
 }

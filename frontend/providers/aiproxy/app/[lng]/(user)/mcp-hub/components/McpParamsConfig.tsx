@@ -1,28 +1,28 @@
-'use client'
-import { useState } from 'react'
-import { Box, Flex, Text } from '@chakra-ui/react'
+'use client';
+import { useState } from 'react';
+import { Box, Flex, Text } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { McpDetail } from '@/types/mcp'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { McpDetail } from '@/types/mcp';
 
-import McpConnectionInfo from './McpConnectionInfo'
-import McpParamsForm from './McpParamsForm'
+import McpConnectionInfo from './McpConnectionInfo';
+import McpParamsForm from './McpParamsForm';
 
 export interface McpParamsConfigProps {
-  mcpDetail: McpDetail
+  mcpDetail: McpDetail;
 }
 
-type ViewMode = 'info' | 'config'
+type ViewMode = 'info' | 'config';
 
 export default function McpParamsConfig({ mcpDetail }: McpParamsConfigProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const [viewMode, setViewMode] = useState<ViewMode>('info')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const [viewMode, setViewMode] = useState<ViewMode>('info');
 
   // 检查是否有连接信息
-  const hasConnectionInfo = !!mcpDetail.endpoints?.host
-  const hasReusing = Object.keys(mcpDetail.reusing || {}).length > 0
+  const hasConnectionInfo = !!mcpDetail.endpoints?.host;
+  const hasReusing = Object.keys(mcpDetail.reusing || {}).length > 0;
 
   return (
     <Box minH="0px" overflow="hidden" bg="grayModern.25" borderRadius="8px" p="20px">
@@ -56,5 +56,5 @@ export default function McpParamsConfig({ mcpDetail }: McpParamsConfigProps) {
         </Box>
       </Flex>
     </Box>
-  )
+  );
 }

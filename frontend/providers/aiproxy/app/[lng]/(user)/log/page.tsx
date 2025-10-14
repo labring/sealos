@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -11,51 +11,51 @@ import {
   InputRightElement,
   Text,
   useDisclosure,
-} from '@chakra-ui/react'
-import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui'
-import { useQuery } from '@tanstack/react-query'
-import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import dynamic from 'next/dynamic'
+} from '@chakra-ui/react';
+import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
+import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import dynamic from 'next/dynamic';
 
-import { getEnabledMode, getTokens, getUserLogs } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import SelectDateRange from '@/components/common/SelectDateRange'
-import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
-import SwitchPage from '@/components/common/SwitchPage'
-import { BaseTable } from '@/components/table/BaseTable'
-import { useDebounce } from '@/hooks/useDebounce'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { QueryKey } from '@/types/query-key'
-import { LogItem } from '@/types/user/logs'
+import { getEnabledMode, getTokens, getUserLogs } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import SelectDateRange from '@/components/common/SelectDateRange';
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle';
+import SwitchPage from '@/components/common/SwitchPage';
+import { BaseTable } from '@/components/table/BaseTable';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { LogItem } from '@/types/user/logs';
 
-import { getTimeDiff } from './tools/handleTime'
+import { getTimeDiff } from './tools/handleTime';
 
 const LogDetailModal = dynamic(
   () => import('./components/LogDetailModal'),
   { ssr: false } // 禁用服务端渲染
-)
+);
 
 export default function Logs(): React.JSX.Element {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { currencySymbol } = useBackendStore()
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  const [selectedRow, setSelectedRow] = useState<LogItem | null>(null)
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { currencySymbol } = useBackendStore();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedRow, setSelectedRow] = useState<LogItem | null>(null);
 
   const [startTime, setStartTime] = useState(() => {
-    const currentDate = new Date()
-    currentDate.setDate(currentDate.getDate() - 3)
-    return currentDate
-  })
-  const [endTime, setEndTime] = useState(new Date())
-  const [keyName, setKeyName] = useState('')
-  const [codeType, setCodeType] = useState('all')
-  const [modelName, setModelName] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [inputKeyword, setInputKeyword] = useState('')
-  const debouncedKeyword = useDebounce(inputKeyword, 500) // 500ms 延迟 0.5s
+    const currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - 3);
+    return currentDate;
+  });
+  const [endTime, setEndTime] = useState(new Date());
+  const [keyName, setKeyName] = useState('');
+  const [codeType, setCodeType] = useState('all');
+  const [modelName, setModelName] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [inputKeyword, setInputKeyword] = useState('');
+  const debouncedKeyword = useDebounce(inputKeyword, 500); // 500ms 延迟 0.5s
 
   const { data: logData, isLoading } = useQuery(
     [
@@ -80,9 +80,9 @@ export default function Logs(): React.JSX.Element {
         start_timestamp: startTime.getTime().toString(),
         end_timestamp: endTime.getTime().toString(),
       })
-  )
+  );
 
-  const columnHelper = createColumnHelper<LogItem>()
+  const columnHelper = createColumnHelper<LogItem>();
 
   const columns = useMemo(
     () => [
@@ -189,7 +189,7 @@ export default function Logs(): React.JSX.Element {
           </Text>
         ),
         cell: ({ getValue, row }) => {
-          const code = getValue()
+          const code = getValue();
           return (
             <Flex alignItems="center" gap="4px" w="fit-content">
               <Text
@@ -221,7 +221,7 @@ export default function Logs(): React.JSX.Element {
                 </MyTooltip>
               )}
             </Flex>
-          )
+          );
         },
         id: 'status',
       }),
@@ -256,7 +256,7 @@ export default function Logs(): React.JSX.Element {
                 </Flex>
               </MyTooltip>
             </Box>
-          )
+          );
         },
         id: 'used_amount',
       }),
@@ -277,8 +277,8 @@ export default function Logs(): React.JSX.Element {
         cell: ({ row }) => (
           <Button
             onClick={() => {
-              setSelectedRow(row.original)
-              onOpen()
+              setSelectedRow(row.original);
+              onOpen();
             }}
             h="28px"
             variant="unstyled"
@@ -338,13 +338,13 @@ export default function Logs(): React.JSX.Element {
       }),
     ],
     [t, currencySymbol]
-  )
+  );
 
   const table = useReactTable({
     data: logData?.logs || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-  })
+  });
 
   return (
     <Flex
@@ -414,7 +414,7 @@ export default function Logs(): React.JSX.Element {
                   }}
                   value={inputKeyword}
                   onChange={(e) => {
-                    setInputKeyword(e.target.value)
+                    setInputKeyword(e.target.value);
                   }}
                 />
                 <InputRightElement w="32px" h="32px">
@@ -472,9 +472,9 @@ export default function Logs(): React.JSX.Element {
                 bg="white"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
                 onClick={() => {
-                  setKeyName('')
-                  setModelName('')
-                  setCodeType('all')
+                  setKeyName('');
+                  setModelName('');
+                  setCodeType('all');
                 }}
               >
                 <Icon
@@ -524,16 +524,16 @@ export default function Logs(): React.JSX.Element {
                   dropdownItems={['all', ...(logData?.token_names || [])]}
                   setSelectedItem={(value) => {
                     if (value === 'all') {
-                      setKeyName('')
+                      setKeyName('');
                     } else {
-                      setKeyName(value)
+                      setKeyName(value);
                     }
                   }}
                   handleDropdownItemFilter={(dropdownItems, inputValue) => {
-                    const lowerCasedInput = inputValue.toLowerCase()
+                    const lowerCasedInput = inputValue.toLowerCase();
                     return dropdownItems.filter(
                       (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
-                    )
+                    );
                   }}
                   handleDropdownItemDisplay={(dropdownItem) => {
                     return (
@@ -548,7 +548,7 @@ export default function Logs(): React.JSX.Element {
                       >
                         {dropdownItem}
                       </Text>
-                    )
+                    );
                   }}
                   flexProps={{ w: '280px' }}
                   placeholder={t('logs.select_token_name')}
@@ -572,16 +572,16 @@ export default function Logs(): React.JSX.Element {
                   dropdownItems={['all', ...(logData?.models || [])]}
                   setSelectedItem={(value) => {
                     if (value === 'all') {
-                      setModelName('')
+                      setModelName('');
                     } else {
-                      setModelName(value)
+                      setModelName(value);
                     }
                   }}
                   handleDropdownItemFilter={(dropdownItems, inputValue) => {
-                    const lowerCasedInput = inputValue.toLowerCase()
+                    const lowerCasedInput = inputValue.toLowerCase();
                     return dropdownItems.filter(
                       (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
-                    )
+                    );
                   }}
                   handleDropdownItemDisplay={(dropdownItem) => {
                     return (
@@ -596,7 +596,7 @@ export default function Logs(): React.JSX.Element {
                       >
                         {dropdownItem}
                       </Text>
-                    )
+                    );
                   }}
                   flexProps={{ w: '280px' }}
                   placeholder={t('logs.select_modal')}
@@ -639,7 +639,7 @@ export default function Logs(): React.JSX.Element {
                     },
                   ]}
                   onchange={(val: string) => {
-                    setCodeType(val)
+                    setCodeType(val);
                   }}
                 />
               </Flex>
@@ -688,5 +688,5 @@ export default function Logs(): React.JSX.Element {
       </Flex>
       <LogDetailModal isOpen={isOpen} onClose={onClose} rowData={selectedRow} />
     </Flex>
-  )
+  );
 }

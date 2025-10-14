@@ -1,15 +1,15 @@
-'use client'
-import { Box, Center, Grid, Skeleton, SkeletonText, Text } from '@chakra-ui/react'
+'use client';
+import { Box, Center, Grid, Skeleton, SkeletonText, Text } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { Mcp } from '@/types/mcp'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { Mcp } from '@/types/mcp';
 
-import McpCard from './McpCard'
+import McpCard from './McpCard';
 
 export interface McpListProps {
-  mcps: Mcp[]
-  isLoading: boolean
+  mcps: Mcp[];
+  isLoading: boolean;
 }
 
 // Skeleton Card Component
@@ -39,12 +39,12 @@ function McpCardSkeleton() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 export default function McpList({ mcps, isLoading }: McpListProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
 
   if (isLoading) {
     return (
@@ -61,7 +61,7 @@ export default function McpList({ mcps, isLoading }: McpListProps) {
           <McpCardSkeleton key={index} />
         ))}
       </Grid>
-    )
+    );
   }
 
   if (mcps.length === 0) {
@@ -73,7 +73,7 @@ export default function McpList({ mcps, isLoading }: McpListProps) {
           </Text>
         </Box>
       </Center>
-    )
+    );
   }
 
   return (
@@ -90,5 +90,5 @@ export default function McpList({ mcps, isLoading }: McpListProps) {
         <McpCard key={mcp.id} mcp={mcp} />
       ))}
     </Grid>
-  )
+  );
 }

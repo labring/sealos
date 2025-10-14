@@ -1,6 +1,6 @@
-'use client'
-import { Dispatch, SetStateAction, useEffect } from 'react'
-import { Controller, FieldErrors, useForm } from 'react-hook-form'
+'use client';
+import { Dispatch, SetStateAction, useEffect } from 'react';
+import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import {
   Badge,
   Button,
@@ -20,30 +20,30 @@ import {
   Spinner,
   Text,
   VStack,
-} from '@chakra-ui/react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMessage } from '@sealos/ui'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { z } from 'zod'
+} from '@chakra-ui/react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import {
   getChannelBuiltInSupportModels,
   getChannelDefaultModelAndDefaultModeMapping,
   getChannelTypeNames,
-} from '@/api/platform'
-import { createChannel, updateChannel } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent'
-import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
-import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo'
-import { QueryKey } from '@/types/query-key'
+} from '@/api/platform';
+import { createChannel, updateChannel } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent';
+import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox';
+import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo';
+import { QueryKey } from '@/types/query-key';
 
 type Model = {
-  name: string
-  isDefault: boolean
-}
+  name: string;
+  isDefault: boolean;
+};
 
 export const UpdateChannelModal = function ({
   isOpen,
@@ -51,14 +51,14 @@ export const UpdateChannelModal = function ({
   operationType,
   channelInfo,
 }: {
-  isOpen: boolean
-  onClose: () => void
-  operationType: 'create' | 'update'
-  channelInfo?: ChannelInfo
+  isOpen: boolean;
+  onClose: () => void;
+  operationType: 'create' | 'update';
+  channelInfo?: ChannelInfo;
 }): JSX.Element {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const queryClient = useQueryClient()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const queryClient = useQueryClient();
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -68,30 +68,30 @@ export const UpdateChannelModal = function ({
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  })
+  });
 
   const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
     queryKey: [QueryKey.GetChannelTypeNames],
     queryFn: () => getChannelTypeNames(),
-  })
+  });
 
   const { isLoading: isBuiltInSupportModelsLoading, data: builtInSupportModels } = useQuery({
     queryKey: [QueryKey.GetAllChannelModes],
     queryFn: () => getChannelBuiltInSupportModels(),
-  })
+  });
 
   const { isLoading: isDefaultEnabledModelsLoading, data: defaultEnabledModels } = useQuery({
     queryKey: [QueryKey.GetDefaultModelAndModeMapping],
     queryFn: () => getChannelDefaultModelAndDefaultModeMapping(),
-  })
+  });
 
   // model type select combobox
   const handleModelTypeDropdownItemFilter = (dropdownItems: string[], inputValue: string) => {
-    const lowerCasedInput = inputValue.toLowerCase()
+    const lowerCasedInput = inputValue.toLowerCase();
     return dropdownItems.filter(
       (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
-    )
-  }
+    );
+  };
 
   const handleModelTypeDropdownItemDisplay = (dropdownItem: string) => {
     return (
@@ -106,8 +106,8 @@ export const UpdateChannelModal = function ({
       >
         {dropdownItem}
       </Text>
-    )
-  }
+    );
+  };
 
   // model select combobox
   const handleModelFilteredDropdownItems = (
@@ -115,17 +115,17 @@ export const UpdateChannelModal = function ({
     selectedItems: Model[],
     inputValue: string
   ) => {
-    const lowerCasedInputValue = inputValue.toLowerCase()
+    const lowerCasedInputValue = inputValue.toLowerCase();
 
     // First filter out items that are already selected
     const unselectedItems = dropdownItems.filter(
       (dropdownItem) =>
         !selectedItems.some((selectedItem) => selectedItem.name === dropdownItem.name)
-    )
+    );
 
     // Then filter by input value
-    return unselectedItems.filter((item) => item.name.toLowerCase().includes(lowerCasedInputValue))
-  }
+    return unselectedItems.filter((item) => item.name.toLowerCase().includes(lowerCasedInputValue));
+  };
 
   const handleModelDropdownItemDisplay = (dropdownItem: Model) => {
     if (dropdownItem.isDefault) {
@@ -190,7 +190,7 @@ export const UpdateChannelModal = function ({
             </Text>
           </Badge>
         </Flex>
-      )
+      );
     }
     return (
       <Text
@@ -203,8 +203,8 @@ export const UpdateChannelModal = function ({
       >
         {dropdownItem.name}
       </Text>
-    )
-  }
+    );
+  };
 
   const handleModelSelectedItemDisplay = (selectedItem: Model) => {
     if (selectedItem.isDefault) {
@@ -259,7 +259,7 @@ export const UpdateChannelModal = function ({
             </svg>
           </Badge>
         </Flex>
-      )
+      );
     }
     return (
       <Text
@@ -273,8 +273,8 @@ export const UpdateChannelModal = function ({
       >
         {selectedItem.name}
       </Text>
-    )
-  }
+    );
+  };
 
   const handleSetCustomModel = (
     selectedItems: Model[],
@@ -286,16 +286,16 @@ export const UpdateChannelModal = function ({
       const newModel: Model = {
         name: customModeName.trim(),
         isDefault: false,
-      }
+      };
 
-      const exists = selectedItems.some((item) => item.name === customModeName.trim())
+      const exists = selectedItems.some((item) => item.name === customModeName.trim());
 
       if (!exists) {
-        setSelectedItems([...selectedItems, newModel])
-        setCustomModeName('')
+        setSelectedItems([...selectedItems, newModel]);
+        setCustomModeName('');
       }
     }
-  }
+  };
 
   // form schema
   const schema = z.object({
@@ -306,10 +306,10 @@ export const UpdateChannelModal = function ({
     base_url: z.string(),
     models: z.array(z.string()).default([]),
     model_mapping: z.record(z.string(), z.any()).default({}),
-  })
+  });
 
-  const id = channelInfo?.id
-  type FormData = z.infer<typeof schema>
+  const id = channelInfo?.id;
+  type FormData = z.infer<typeof schema>;
 
   const {
     register,
@@ -332,18 +332,18 @@ export const UpdateChannelModal = function ({
     },
     mode: 'onChange',
     reValidateMode: 'onChange',
-  })
+  });
 
   useEffect(() => {
     if (channelInfo) {
-      const { id, type, name, key, base_url, models, model_mapping } = channelInfo
-      reset({ id, type, name, key, base_url, models, model_mapping })
+      const { id, type, name, key, base_url, models, model_mapping } = channelInfo;
+      reset({ id, type, name, key, base_url, models, model_mapping });
     }
-  }, [channelInfo])
+  }, [channelInfo]);
 
   const resetModalState = () => {
-    reset()
-  }
+    reset();
+  };
 
   const createChannelMutation = useMutation({
     mutationFn: createChannel,
@@ -351,9 +351,9 @@ export const UpdateChannelModal = function ({
       message({
         title: t('channels.createSuccess'),
         status: 'success',
-      })
+      });
     },
-  })
+  });
 
   const updateChannelMutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -372,9 +372,9 @@ export const UpdateChannelModal = function ({
       message({
         title: t('channels.updateSuccess'),
         status: 'success',
-      })
+      });
     },
-  })
+  });
 
   const onValidate = async (data: FormData) => {
     try {
@@ -387,18 +387,18 @@ export const UpdateChannelModal = function ({
             base_url: data.base_url,
             models: data.models,
             model_mapping: data.model_mapping,
-          })
-          break
+          });
+          break;
         case 'update':
-          await updateChannelMutation.mutateAsync(data)
-          break
+          await updateChannelMutation.mutateAsync(data);
+          break;
       }
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannels] })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetDefaultModelAndModeMapping] })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannelTypeNames] })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetAllChannelModes] })
-      resetModalState()
-      onClose()
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannels] });
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetDefaultModelAndModeMapping] });
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannelTypeNames] });
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetAllChannelModes] });
+      resetModalState();
+      onClose();
     } catch (error) {
       switch (operationType) {
         case 'create':
@@ -409,8 +409,8 @@ export const UpdateChannelModal = function ({
             duration: 2000,
             isClosable: true,
             description: error instanceof Error ? error.message : t('channels.createFailed'),
-          })
-          break
+          });
+          break;
         case 'update':
           message({
             title: t('channels.updateFailed'),
@@ -419,14 +419,14 @@ export const UpdateChannelModal = function ({
             duration: 2000,
             isClosable: true,
             description: error instanceof Error ? error.message : t('channels.updateFailed'),
-          })
-          break
+          });
+          break;
       }
     }
-  }
+  };
 
   const onInvalid = (errors: FieldErrors<FormData>): void => {
-    const firstErrorMessage = Object.values(errors)[0]?.message
+    const firstErrorMessage = Object.values(errors)[0]?.message;
     if (firstErrorMessage) {
       message({
         title: firstErrorMessage as string,
@@ -434,11 +434,11 @@ export const UpdateChannelModal = function ({
         position: 'top',
         duration: 2000,
         isClosable: true,
-      })
+      });
     }
-  }
+  };
 
-  const onSubmit = handleSubmit(onValidate, onInvalid)
+  const onSubmit = handleSubmit(onValidate, onInvalid);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -611,11 +611,11 @@ export const UpdateChannelModal = function ({
                       render={({ field }) => {
                         const availableChannels = Object.entries(channelTypeNames)
                           .filter(([channel]) => channel in builtInSupportModels)
-                          .map(([_, name]) => name)
+                          .map(([_, name]) => name);
 
                         const initSelectedItem = field.value
                           ? channelTypeNames[String(field.value) as ChannelType]
-                          : undefined
+                          : undefined;
 
                         return (
                           <SingleSelectCombobox<string>
@@ -625,20 +625,20 @@ export const UpdateChannelModal = function ({
                               if (channelName) {
                                 const channelType = Object.entries(channelTypeNames).find(
                                   ([_, name]) => name === channelName
-                                )?.[0]
+                                )?.[0];
 
                                 if (channelType) {
-                                  const numericChannel = Number(channelType)
-                                  field.onChange(numericChannel)
-                                  setValue('models', [])
-                                  setValue('model_mapping', {})
+                                  const numericChannel = Number(channelType);
+                                  field.onChange(numericChannel);
+                                  setValue('models', []);
+                                  setValue('model_mapping', {});
                                 }
                               }
                             }}
                             handleDropdownItemFilter={handleModelTypeDropdownItemFilter}
                             handleDropdownItemDisplay={handleModelTypeDropdownItemDisplay}
                           />
-                        )
+                        );
                       }}
                     />
                     {errors.type && <FormErrorMessage>{errors.type.message}</FormErrorMessage>}
@@ -649,35 +649,35 @@ export const UpdateChannelModal = function ({
                       name="models"
                       control={control}
                       render={({ field }) => {
-                        const channelType = String(watch('type')) as ChannelType
+                        const channelType = String(watch('type')) as ChannelType;
 
                         const builtInModes =
-                          builtInSupportModels[channelType]?.map((mode) => mode.model) || []
-                        const defaultModes = defaultEnabledModels.models[channelType] || []
+                          builtInSupportModels[channelType]?.map((mode) => mode.model) || [];
+                        const defaultModes = defaultEnabledModels.models[channelType] || [];
 
                         const allModes: Model[] = builtInModes.map((modeName) => ({
                           name: modeName,
                           isDefault: defaultModes.includes(modeName),
-                        }))
+                        }));
 
                         const selectedModels: Model[] = field.value.map((modeName) => ({
                           name: modeName,
                           isDefault: defaultModes.includes(modeName),
-                        }))
+                        }));
 
                         return (
                           <MultiSelectCombobox<Model>
                             dropdownItems={allModes}
                             selectedItems={selectedModels}
                             setSelectedItems={(models) => {
-                              field.onChange((models as Model[]).map((m) => m.name))
+                              field.onChange((models as Model[]).map((m) => m.name));
                             }}
                             handleFilteredDropdownItems={handleModelFilteredDropdownItems}
                             handleDropdownItemDisplay={handleModelDropdownItemDisplay}
                             handleSelectedItemDisplay={handleModelSelectedItemDisplay}
                             handleSetCustomSelectedItem={handleSetCustomModel}
                           />
-                        )
+                        );
                       }}
                     />
                     {errors.models && <FormErrorMessage>{errors.models.message}</FormErrorMessage>}
@@ -688,24 +688,24 @@ export const UpdateChannelModal = function ({
                       name="model_mapping"
                       control={control}
                       render={({ field }) => {
-                        const channelType = String(watch('type')) as ChannelType
+                        const channelType = String(watch('type')) as ChannelType;
 
-                        const selectedModels = watch('models')
-                        const defaultModes = defaultEnabledModels.models[channelType] || []
+                        const selectedModels = watch('models');
+                        const defaultModes = defaultEnabledModels.models[channelType] || [];
 
                         const covertedSelectedModels: Model[] = selectedModels.map((modeName) => ({
                           name: modeName,
                           isDefault: defaultModes.includes(modeName),
-                        }))
+                        }));
                         return (
                           <ConstructModeMappingComponent
                             mapKeys={covertedSelectedModels}
                             mapData={field.value}
                             setMapData={(mapping) => {
-                              field.onChange(mapping)
+                              field.onChange(mapping);
                             }}
                           />
-                        )
+                        );
                       }}
                     />
                     {errors.model_mapping?.message && (
@@ -849,7 +849,7 @@ export const UpdateChannelModal = function ({
           </>
         ))}
     </Modal>
-  )
-}
+  );
+};
 
-export default UpdateChannelModal
+export default UpdateChannelModal;

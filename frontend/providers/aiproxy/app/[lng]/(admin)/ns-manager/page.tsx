@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -12,31 +12,31 @@ import {
   MenuItem,
   MenuList,
   Text,
-} from '@chakra-ui/react'
-import { CurrencySymbol } from '@sealos/ui'
-import { useMessage } from '@sealos/ui'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ColumnDef,
   createColumnHelper,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table'
+} from '@tanstack/react-table';
 
-import { deleteGroup, getGroups, updateGroupQpm, updateGroupStatus } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { EditableTextNoLable } from '@/components/common/EditableTextNoLable'
-import SwitchPage from '@/components/common/SwitchPage'
-import { BaseTable } from '@/components/table/BaseTable'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { GroupInfo, GroupStatus } from '@/types/admin/group'
-import { QueryKey } from '@/types/query-key'
+import { deleteGroup, getGroups, updateGroupQpm, updateGroupStatus } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { EditableTextNoLable } from '@/components/common/EditableTextNoLable';
+import SwitchPage from '@/components/common/SwitchPage';
+import { BaseTable } from '@/components/table/BaseTable';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { GroupInfo, GroupStatus } from '@/types/admin/group';
+import { QueryKey } from '@/types/query-key';
 
 export default function Home(): React.JSX.Element {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { currencySymbol } = useBackendStore()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { currencySymbol } = useBackendStore();
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
     warningIconBg: '#F79009',
@@ -44,15 +44,15 @@ export default function Home(): React.JSX.Element {
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  })
+  });
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
-  const [groupId, setGroupId] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [groupData, setGroupData] = useState<GroupInfo[]>([])
-  const [total, setTotal] = useState(0)
+  const [groupId, setGroupId] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [groupData, setGroupData] = useState<GroupInfo[]>([]);
+  const [total, setTotal] = useState(0);
 
   const { isLoading } = useQuery(
     [QueryKey.GetGroups, page, pageSize, groupId],
@@ -65,15 +65,15 @@ export default function Home(): React.JSX.Element {
     {
       onSuccess: (data) => {
         if (!data?.groups) {
-          setGroupData([])
-          setTotal(0)
-          return
+          setGroupData([]);
+          setTotal(0);
+          return;
         }
-        setGroupData(data?.groups || [])
-        setTotal(data?.total || 0)
+        setGroupData(data?.groups || []);
+        setTotal(data?.total || 0);
       },
     }
-  )
+  );
 
   const deleteGroupMutation = useMutation(({ id }: { id: string }) => deleteGroup(id), {
     onSuccess() {
@@ -83,8 +83,8 @@ export default function Home(): React.JSX.Element {
         isClosable: true,
         duration: 2000,
         position: 'top',
-      })
-      queryClient.invalidateQueries([QueryKey.GetGroups])
+      });
+      queryClient.invalidateQueries([QueryKey.GetGroups]);
     },
     onError(err: any) {
       message({
@@ -93,9 +93,9 @@ export default function Home(): React.JSX.Element {
         description: err?.message || t('nsManager.deleteGroupFailed'),
         isClosable: true,
         position: 'top',
-      })
+      });
     },
-  })
+  });
 
   const updateGroupStatusMutation = useMutation(
     ({ id, status }: { id: string; status: number }) => updateGroupStatus(id, status),
@@ -107,8 +107,8 @@ export default function Home(): React.JSX.Element {
           isClosable: true,
           duration: 2000,
           position: 'top',
-        })
-        queryClient.invalidateQueries([QueryKey.GetGroups])
+        });
+        queryClient.invalidateQueries([QueryKey.GetGroups]);
       },
       onError(err: any) {
         message({
@@ -117,10 +117,10 @@ export default function Home(): React.JSX.Element {
           description: err?.message || t('nsManager.updateGroupStatusFailed'),
           isClosable: true,
           position: 'top',
-        })
+        });
       },
     }
-  )
+  );
 
   const updateGroupQpmMutation = useMutation(
     ({ id, qpm }: { id: string; qpm: number }) => updateGroupQpm(id, qpm),
@@ -132,8 +132,8 @@ export default function Home(): React.JSX.Element {
           isClosable: true,
           duration: 2000,
           position: 'top',
-        })
-        queryClient.invalidateQueries([QueryKey.GetGroups])
+        });
+        queryClient.invalidateQueries([QueryKey.GetGroups]);
       },
       onError(err: any) {
         message({
@@ -142,18 +142,18 @@ export default function Home(): React.JSX.Element {
           description: err?.message || t('nsManager.updateGroupQpmFailed'),
           isClosable: true,
           position: 'top',
-        })
+        });
       },
     }
-  )
+  );
 
   // Update the button click handlers in the table actions column:
   const handleStatusUpdate = (id: string, currentStatus: number) => {
     const newStatus =
-      currentStatus === GroupStatus.DISABLED ? GroupStatus.ENABLED : GroupStatus.DISABLED
-    updateGroupStatusMutation.mutate({ id, status: newStatus })
-  }
-  const columnHelper = createColumnHelper<GroupInfo>()
+      currentStatus === GroupStatus.DISABLED ? GroupStatus.ENABLED : GroupStatus.DISABLED;
+    updateGroupStatusMutation.mutate({ id, status: newStatus });
+  };
+  const columnHelper = createColumnHelper<GroupInfo>();
 
   const columns = useMemo<ColumnDef<GroupInfo>[]>(() => {
     return [
@@ -186,10 +186,10 @@ export default function Home(): React.JSX.Element {
         header: t('nsManager.accessed_at'),
         accessorFn: (row) => {
           if (row.accessed_at && row.accessed_at < 0) {
-            return t('key.unused')
+            return t('key.unused');
           }
 
-          return new Date(row.accessed_at).toLocaleString()
+          return new Date(row.accessed_at).toLocaleString();
         },
         id: 'accessed_at',
       },
@@ -202,7 +202,7 @@ export default function Home(): React.JSX.Element {
         accessorFn: (row) =>
           row.status === GroupStatus.ENABLED ? t('nsManager.enabled') : t('nsManager.disabled'),
         cell: ({ getValue }) => {
-          const value = getValue() as string
+          const value = getValue() as string;
           return (
             <Text
               color={
@@ -218,7 +218,7 @@ export default function Home(): React.JSX.Element {
             >
               {value}
             </Text>
-          )
+          );
         },
         id: 'status',
       },
@@ -243,7 +243,7 @@ export default function Home(): React.JSX.Element {
                 <CurrencySymbol type={currencySymbol} />
               </Flex>
             </Box>
-          )
+          );
         },
       },
       columnHelper.display({
@@ -409,14 +409,14 @@ export default function Home(): React.JSX.Element {
           </Menu>
         ),
       }),
-    ]
-  }, [])
+    ];
+  }, []);
 
   const table = useReactTable({
     data: groupData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-  })
+  });
 
   return (
     <Flex
@@ -487,7 +487,7 @@ export default function Home(): React.JSX.Element {
               bg="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               onClick={() => {
-                setGroupId('')
+                setGroupId('');
               }}
             >
               <Icon
@@ -574,5 +574,5 @@ export default function Home(): React.JSX.Element {
         {/* -- table end */}
       </Flex>
     </Flex>
-  )
+  );
 }

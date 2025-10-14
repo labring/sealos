@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
-import { Button, Flex, Text } from '@chakra-ui/react'
+import { Button, Flex, Text } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { MyTooltip } from '@/components/common/MyTooltip'
-import KeyList from '@/components/user/KeyList'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { useSessionStore } from '@/store/session'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import KeyList from '@/components/user/KeyList';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { useSessionStore } from '@/store/session';
 export default function Key(): JSX.Element {
-  const { isInvitationActive } = useBackendStore()
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { session } = useSessionStore.getState()
-  const { invitationUrl } = useBackendStore()
-  let userInvitationUrl = ''
+  const { isInvitationActive } = useBackendStore();
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { session } = useSessionStore.getState();
+  const { invitationUrl } = useBackendStore();
+  let userInvitationUrl = '';
   if (isInvitationActive && invitationUrl) {
-    const userId = session?.user.id
-    const baseUrl = new URL(invitationUrl).origin
-    userInvitationUrl = `${baseUrl}/?uid=${userId}`
+    const userId = session?.user.id;
+    const baseUrl = new URL(invitationUrl).origin;
+    userInvitationUrl = `${baseUrl}/?uid=${userId}`;
   }
 
   return (
@@ -115,7 +115,7 @@ export default function Key(): JSX.Element {
                       textUnderlineOffset="auto"
                       cursor="pointer"
                       onClick={() => {
-                        navigator.clipboard.writeText(userInvitationUrl)
+                        navigator.clipboard.writeText(userInvitationUrl);
                       }}
                     >
                       {userInvitationUrl}
@@ -139,7 +139,7 @@ export default function Key(): JSX.Element {
                 bgGradient="linear(90deg, #1058FF 0%, #838AF1 57.5%, #FF80E6 100%)"
                 color="white"
                 onClick={() => {
-                  window.open(invitationUrl, '_blank')
+                  window.open(invitationUrl, '_blank');
                 }}
               >
                 <Text
@@ -191,5 +191,5 @@ export default function Key(): JSX.Element {
         </Flex>
       )}
     </Flex>
-  )
+  );
 }

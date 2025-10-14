@@ -1,42 +1,42 @@
-'use client'
+'use client';
 
-import { useMemo, useState } from 'react'
-import { Box, Button, Flex, Icon, Input, Text } from '@chakra-ui/react'
-import { CurrencySymbol, MyTooltip } from '@sealos/ui'
-import { useQuery } from '@tanstack/react-query'
-import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { useMemo, useState } from 'react';
+import { Box, Button, Flex, Icon, Input, Text } from '@chakra-ui/react';
+import { CurrencySymbol, MyTooltip } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
+import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
-import { getEnabledMode, getGlobalLogs } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import SelectDateRange from '@/components/common/SelectDateRange'
-import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
-import SwitchPage from '@/components/common/SwitchPage'
-import { BaseTable } from '@/components/table/BaseTable'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { QueryKey } from '@/types/query-key'
-import { GlobalLogItem } from '@/types/user/logs'
+import { getEnabledMode, getGlobalLogs } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import SelectDateRange from '@/components/common/SelectDateRange';
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle';
+import SwitchPage from '@/components/common/SwitchPage';
+import { BaseTable } from '@/components/table/BaseTable';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { GlobalLogItem } from '@/types/user/logs';
 
 export default function Home(): React.JSX.Element {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { currencySymbol } = useBackendStore()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { currencySymbol } = useBackendStore();
 
   const [startTime, setStartTime] = useState(() => {
-    const currentDate = new Date()
-    currentDate.setMonth(currentDate.getMonth() - 1)
-    return currentDate
-  })
-  const [endTime, setEndTime] = useState(new Date())
-  const [groupId, setGroupId] = useState('')
-  const [name, setName] = useState('')
-  const [modelName, setModelName] = useState<string>('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [logData, setLogData] = useState<GlobalLogItem[]>([])
-  const [total, setTotal] = useState(0)
+    const currentDate = new Date();
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    return currentDate;
+  });
+  const [endTime, setEndTime] = useState(new Date());
+  const [groupId, setGroupId] = useState('');
+  const [name, setName] = useState('');
+  const [modelName, setModelName] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [logData, setLogData] = useState<GlobalLogItem[]>([]);
+  const [total, setTotal] = useState(0);
 
-  const { data: models = [] } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
+  const { data: models = [] } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode());
 
   const { isLoading } = useQuery(
     [QueryKey.GetGlobalLogs, page, pageSize, name, modelName, startTime, endTime, groupId],
@@ -53,15 +53,15 @@ export default function Home(): React.JSX.Element {
     {
       onSuccess: (data) => {
         if (!data?.logs) {
-          setLogData([])
-          setTotal(0)
-          return
+          setLogData([]);
+          setTotal(0);
+          return;
         }
-        setLogData(data?.logs || [])
-        setTotal(data?.total || 0)
+        setLogData(data?.logs || []);
+        setTotal(data?.total || 0);
       },
     }
-  )
+  );
 
   const columns = useMemo<ColumnDef<GlobalLogItem>[]>(() => {
     return [
@@ -94,7 +94,7 @@ export default function Home(): React.JSX.Element {
         header: t('logs.status'),
         accessorFn: (row) => (row.code === 200 ? t('logs.success') : t('logs.failed')),
         cell: ({ getValue }) => {
-          const value = getValue() as string
+          const value = getValue() as string;
           return (
             <Text
               color={
@@ -110,7 +110,7 @@ export default function Home(): React.JSX.Element {
             >
               {value}
             </Text>
-          )
+          );
         },
         id: 'status',
       },
@@ -142,17 +142,17 @@ export default function Home(): React.JSX.Element {
                 </Flex>
               </MyTooltip>
             </Box>
-          )
+          );
         },
       },
-    ]
-  }, [])
+    ];
+  }, []);
 
   const table = useReactTable({
     data: logData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-  })
+  });
 
   return (
     <Flex
@@ -223,8 +223,8 @@ export default function Home(): React.JSX.Element {
               bg="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               onClick={() => {
-                setName('')
-                setModelName('')
+                setName('');
+                setModelName('');
               }}
             >
               <Icon
@@ -315,16 +315,16 @@ export default function Home(): React.JSX.Element {
                   dropdownItems={['all', ...models.map((item) => item.model)]}
                   setSelectedItem={(value) => {
                     if (value === 'all') {
-                      setModelName('')
+                      setModelName('');
                     } else {
-                      setModelName(value)
+                      setModelName(value);
                     }
                   }}
                   handleDropdownItemFilter={(dropdownItems, inputValue) => {
-                    const lowerCasedInput = inputValue.toLowerCase()
+                    const lowerCasedInput = inputValue.toLowerCase();
                     return dropdownItems.filter(
                       (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
-                    )
+                    );
                   }}
                   handleDropdownItemDisplay={(dropdownItem) => {
                     return (
@@ -339,7 +339,7 @@ export default function Home(): React.JSX.Element {
                       >
                         {dropdownItem}
                       </Text>
-                    )
+                    );
                   }}
                   flexProps={{ w: '500px' }}
                   placeholder={t('GlobalLogs.selectModel')}
@@ -447,5 +447,5 @@ export default function Home(): React.JSX.Element {
         {/* -- table end */}
       </Flex>
     </Flex>
-  )
+  );
 }

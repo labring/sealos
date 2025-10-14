@@ -1,19 +1,19 @@
-'use client'
-import { Badge, Flex, Text } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import Image, { StaticImageData } from 'next/image'
+'use client';
+import { Badge, Flex, Text } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import Image, { StaticImageData } from 'next/image';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { MyTooltip } from '@/components/common/MyTooltip'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { ModelConfig } from '@/types/models/model'
-import { modelIcons } from '@/ui/icons/mode-icons'
-import { getTranslationWithFallback } from '@/utils/common'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ModelConfig } from '@/types/models/model';
+import { modelIcons } from '@/ui/icons/mode-icons';
+import { getTranslationWithFallback } from '@/utils/common';
 
 export const getModelIcon = (modelOwner: string): StaticImageData => {
-  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default']
-  return icon
-}
+  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default'];
+  return icon;
+};
 
 // 在组件外部定义样式配置
 const MODEL_TYPE_STYLES = {
@@ -61,22 +61,22 @@ const MODEL_TYPE_STYLES = {
     background: '#F4F4F7',
     color: '#383F50',
   },
-} as const
+} as const;
 
 // 在组件中使用
 export const getTypeStyle = (type: number) => {
-  return MODEL_TYPE_STYLES[type as keyof typeof MODEL_TYPE_STYLES] || MODEL_TYPE_STYLES.default
-}
+  return MODEL_TYPE_STYLES[type as keyof typeof MODEL_TYPE_STYLES] || MODEL_TYPE_STYLES.default;
+};
 
 export const ModelComponent = ({
   modelConfig,
   displayType = false,
 }: {
-  modelConfig: ModelConfig
-  displayType?: boolean
+  modelConfig: ModelConfig;
+  displayType?: boolean;
 }) => {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
     warningIconBg: '#F79009',
@@ -84,9 +84,9 @@ export const ModelComponent = ({
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  })
+  });
 
-  const iconSrc = getModelIcon(modelConfig.owner)
+  const iconSrc = getModelIcon(modelConfig.owner);
 
   return (
     <Flex alignItems="center" justifyContent="flex-start" gap="8px" h="42px">
@@ -120,7 +120,7 @@ export const ModelComponent = ({
                   isClosable: true,
                   duration: 2000,
                   position: 'top',
-                })
+                });
               },
               (err) => {
                 message({
@@ -129,7 +129,7 @@ export const ModelComponent = ({
                   description: err?.message || t('copyFailed'),
                   isClosable: true,
                   position: 'top',
-                })
+                });
               }
             )
           }
@@ -343,5 +343,5 @@ export const ModelComponent = ({
         </Flex>
       </Flex>
     </Flex>
-  )
-}
+  );
+};

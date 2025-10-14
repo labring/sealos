@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import ReactJson, { OnCopyProps } from 'react-json-view'
+import ReactJson, { OnCopyProps } from 'react-json-view';
 import {
   Box,
   Center,
@@ -14,45 +14,45 @@ import {
   ModalOverlay,
   Spinner,
   Text,
-} from '@chakra-ui/react'
-import { CurrencySymbol } from '@sealos/ui'
-import { useMessage } from '@sealos/ui'
-import { useQuery } from '@tanstack/react-query'
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
 
-import { getUserLogDetail } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { MyTooltip } from '@/components/common/MyTooltip'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
-import { QueryKey } from '@/types/query-key'
-import { LogItem } from '@/types/user/logs'
-import { getTranslationWithFallback } from '@/utils/common'
+import { getUserLogDetail } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { LogItem } from '@/types/user/logs';
+import { getTranslationWithFallback } from '@/utils/common';
 
-import { getTimeDiff } from '../tools/handleTime'
+import { getTimeDiff } from '../tools/handleTime';
 
 export default function LogDetailModal({
   isOpen,
   onClose,
   rowData,
 }: {
-  isOpen: boolean
-  onClose: () => void
-  rowData: LogItem | null
+  isOpen: boolean;
+  onClose: () => void;
+  rowData: LogItem | null;
 }): React.JSX.Element {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { currencySymbol } = useBackendStore()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const { currencySymbol } = useBackendStore();
 
   const { data: logDetail, isLoading } = useQuery({
     queryKey: [QueryKey.GetUserLogDetail, rowData?.request_detail?.log_id],
     queryFn: () => {
-      if (!rowData?.request_detail?.log_id) throw new Error('No log ID')
-      return getUserLogDetail(rowData.request_detail.log_id)
+      if (!rowData?.request_detail?.log_id) throw new Error('No log ID');
+      return getUserLogDetail(rowData.request_detail.log_id);
     },
     enabled: !!rowData?.request_detail?.log_id,
-  })
+  });
 
-  const isDetailLoading = !!rowData?.request_detail?.log_id && isLoading
+  const isDetailLoading = !!rowData?.request_detail?.log_id && isLoading;
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -61,14 +61,14 @@ export default function LogDetailModal({
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
     successIconFill: 'white',
-  })
+  });
 
   // 定义默认的网格配置
   const gridConfig = {
     labelWidth: '153px',
     rowHeight: '48px',
     jsonContentHeight: '122px',
-  }
+  };
 
   const renderDetailRow = (
     leftLabel: string | React.ReactNode | null,
@@ -76,15 +76,15 @@ export default function LogDetailModal({
     rightLabel?: string | React.ReactNode | null,
     rightValue?: string | number | React.ReactNode | undefined,
     options?: {
-      labelWidth?: string
-      rowHeight?: string
-      isFirst?: boolean
-      isLast?: boolean
+      labelWidth?: string;
+      rowHeight?: string;
+      isFirst?: boolean;
+      isLast?: boolean;
     }
   ) => {
     // 辅助函数：渲染标签
     const renderLabel = (label: string | React.ReactNode | null) => {
-      if (label === null) return null
+      if (label === null) return null;
       if (typeof label === 'string') {
         return (
           <Text
@@ -96,10 +96,10 @@ export default function LogDetailModal({
           >
             {label}
           </Text>
-        )
+        );
       }
-      return label
-    }
+      return label;
+    };
 
     // 辅助函数：渲染值
     const renderValue = (value: string | number | React.ReactNode | undefined) => {
@@ -115,17 +115,17 @@ export default function LogDetailModal({
           >
             {value}
           </Text>
-        )
+        );
       }
-      return value
-    }
+      return value;
+    };
 
     // 判断是否显示左侧或右侧列
-    const showLeftSection = leftLabel !== null && leftLabel !== undefined
-    const showRightSection = rightLabel !== null && rightLabel !== undefined
+    const showLeftSection = leftLabel !== null && leftLabel !== undefined;
+    const showRightSection = rightLabel !== null && rightLabel !== undefined;
 
     // 根据显示的列数设置模板
-    const gridTemplateColumns = showLeftSection && showRightSection ? '1fr 1fr' : '1fr'
+    const gridTemplateColumns = showLeftSection && showRightSection ? '1fr 1fr' : '1fr';
 
     return (
       <Grid
@@ -206,35 +206,35 @@ export default function LogDetailModal({
           </Grid>
         )}
       </Grid>
-    )
-  }
+    );
+  };
 
   const renderJsonContent = (
     label: string,
     content: string | undefined,
     options?: {
-      labelWidth?: string
-      contentHeight?: string
-      isFirst?: boolean
-      isLast?: boolean
+      labelWidth?: string;
+      contentHeight?: string;
+      isFirst?: boolean;
+      isLast?: boolean;
     }
   ) => {
-    if (!content) return null
+    if (!content) return null;
     const handleCopy = (copy: OnCopyProps) => {
-      if (typeof window === 'undefined') return
+      if (typeof window === 'undefined') return;
 
       const copyText =
-        typeof copy.src === 'object' ? JSON.stringify(copy.src, null, 2) : String(copy.src)
+        typeof copy.src === 'object' ? JSON.stringify(copy.src, null, 2) : String(copy.src);
 
-      navigator.clipboard.writeText(copyText)
-    }
+      navigator.clipboard.writeText(copyText);
+    };
 
-    let parsed = null
+    let parsed = null;
 
     try {
-      parsed = JSON.parse(content)
+      parsed = JSON.parse(content);
     } catch {
-      parsed = content
+      parsed = content;
     }
     return (
       <Grid
@@ -325,8 +325,8 @@ export default function LogDetailModal({
           )}
         </Box>
       </Grid>
-    )
-  }
+    );
+  };
 
   return isDetailLoading ? (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -522,7 +522,7 @@ export default function LogDetailModal({
                             isClosable: true,
                             duration: 2000,
                             position: 'top',
-                          })
+                          });
                         },
                         (err) => {
                           message({
@@ -531,9 +531,9 @@ export default function LogDetailModal({
                             description: err?.message || t('copyFailed'),
                             isClosable: true,
                             position: 'top',
-                          })
+                          });
                         }
-                      )
+                      );
                     }}
                   >
                     {rowData.content}
@@ -771,5 +771,5 @@ export default function LogDetailModal({
         </ModalBody>
       </ModalContent>
     </Modal>
-  )
+  );
 }
