@@ -183,46 +183,48 @@ const SideBar = (): JSX.Element => {
             />
           </svg>
         </Button>
-        <Button
-          display="flex"
-          padding="8px"
-          justifyContent="center"
-          alignItems="center"
-          width="64px"
-          gap="4px"
-          borderRadius="6px"
-          bg="rgba(150, 153, 180, 0.10)"
-          _hover={{ bg: "rgba(150, 153, 180, 0.15)" }}
-          onClick={() => {
-            window.open(invitationUrl, "_blank");
-          }}
-        >
-          <Text
-            color="grayModern.600"
-            fontFamily="PingFang SC"
-            fontSize="12px"
-            fontStyle="normal"
-            fontWeight={500}
-            lineHeight="16px"
-            letterSpacing="0.5px"
+        {invitationUrl && (
+          <Button
+            display="flex"
+            padding="8px"
+            justifyContent="center"
+            alignItems="center"
+            width="64px"
+            gap="4px"
+            borderRadius="6px"
+            bg="rgba(150, 153, 180, 0.10)"
+            _hover={{ bg: "rgba(150, 153, 180, 0.15)" }}
+            onClick={() => {
+              window.open(invitationUrl, "_blank");
+            }}
           >
-            {t("dashboard.invite")}
-          </Text>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="15"
-            height="14"
-            viewBox="0 0 15 14"
-            fill="none"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M5.26675 3.70022C5.26675 4.02239 5.52792 4.28356 5.85009 4.28356L9.39154 4.28356L3.78769 9.88741C3.55988 10.1152 3.55988 10.4846 3.78769 10.7124C4.0155 10.9402 4.38484 10.9402 4.61265 10.7124L10.2165 5.10851L10.2165 8.64997C10.2165 8.97214 10.4777 9.2333 10.7998 9.2333C11.122 9.2333 11.3832 8.97214 11.3832 8.64997L11.3832 3.70022C11.3832 3.37806 11.122 3.11689 10.7998 3.11689L5.85009 3.11689C5.52792 3.11689 5.26675 3.37806 5.26675 3.70022Z"
-              fill="#485264"
-            />
-          </svg>
-        </Button>
+            <Text
+              color="grayModern.600"
+              fontFamily="PingFang SC"
+              fontSize="12px"
+              fontStyle="normal"
+              fontWeight={500}
+              lineHeight="16px"
+              letterSpacing="0.5px"
+            >
+              {t("dashboard.invite")}
+            </Text>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="14"
+              viewBox="0 0 15 14"
+              fill="none"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M5.26675 3.70022C5.26675 4.02239 5.52792 4.28356 5.85009 4.28356L9.39154 4.28356L3.78769 9.88741C3.55988 10.1152 3.55988 10.4846 3.78769 10.7124C4.0155 10.9402 4.38484 10.9402 4.61265 10.7124L10.2165 5.10851L10.2165 8.64997C10.2165 8.97214 10.4777 9.2333 10.7998 9.2333C11.122 9.2333 11.3832 8.97214 11.3832 8.64997L11.3832 3.70022C11.3832 3.37806 11.122 3.11689 10.7998 3.11689L5.85009 3.11689C5.52792 3.11689 5.26675 3.37806 5.26675 3.70022Z"
+                fill="#485264"
+              />
+            </svg>
+          </Button>
+        )}
       </Flex>
     </Flex>
   );
