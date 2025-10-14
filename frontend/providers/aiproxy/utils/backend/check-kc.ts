@@ -1,4 +1,4 @@
-import * as k8s from "@kubernetes/client-node"
+import * as k8s from '@kubernetes/client-node'
 
 /**
  * 从 KubeConfig 字符串中获取命名空间
@@ -11,8 +11,8 @@ export function getNamespaceFromKubeConfigString(configStr: string): string {
     kc.loadFromString(configStr)
     return getNamespaceFromKubeConfig(kc)
   } catch (error) {
-    console.error("解析 KubeConfig 字符串失败:", error)
-    throw new Error("解析 KubeConfig 获取命名空间失败")
+    console.error('解析 KubeConfig 字符串失败:', error)
+    throw new Error('解析 KubeConfig 获取命名空间失败')
   }
 }
 
@@ -26,19 +26,19 @@ export function getNamespaceFromKubeConfig(kc: k8s.KubeConfig): string {
     // 获取当前上下文名称
     const currentContextName = kc.getCurrentContext()
     if (!currentContextName) {
-      throw new Error("当前上下文名称为空")
+      throw new Error('当前上下文名称为空')
     }
 
     // 从当前上下文中获取命名空间信息
     const currentContext = kc.getContextObject(currentContextName)
     if (!currentContext || !currentContext.namespace) {
-      throw new Error("当前上下文没有命名空间")
+      throw new Error('当前上下文没有命名空间')
     }
 
     return currentContext.namespace
   } catch (error) {
-    console.error("获取命名空间失败:", error)
-    throw new Error("获取命名空间失败")
+    console.error('获取命名空间失败:', error)
+    throw new Error('获取命名空间失败')
   }
 }
 
@@ -60,13 +60,13 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
     try {
       namespace = getNamespaceFromKubeConfig(kc)
     } catch (error) {
-      console.error("获取命名空间失败:", error)
+      console.error('获取命名空间失败:', error)
       return false
     }
 
     // 固定本集群地址
     const [inCluster, hosts] = CheckIsInCluster()
-    const clusterEndpoint = inCluster && hosts ? hosts : "https://apiserver.cluster.local:6443"
+    const clusterEndpoint = inCluster && hosts ? hosts : 'https://apiserver.cluster.local:6443'
 
     // 创建一个用于验证的新 KubeConfig
     const verificationKc = new k8s.KubeConfig()
@@ -83,7 +83,7 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
     ]
     verificationKc.users = kc.users
     verificationKc.contexts = kc.contexts
-    verificationKc.setCurrentContext(kc.getCurrentContext() || "")
+    verificationKc.setCurrentContext(kc.getCurrentContext() || '')
 
     // 1. 首先验证集群连接
     const k8sApi = verificationKc.makeApiClient(k8s.VersionApi)
@@ -91,7 +91,7 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
       // 尝试获取 API 服务器版本信息
       await k8sApi.getCode()
     } catch (error) {
-      console.error("验证 KubeConfig 集群连接失败:", error)
+      console.error('验证 KubeConfig 集群连接失败:', error)
       return false
     }
 
@@ -113,15 +113,15 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
       return true
     } catch (error: any) {
       if (error.code === 403) {
-        console.error("用户没有命名空间 %s 的访问权限", namespace)
+        console.error('用户没有命名空间 %s 的访问权限', namespace)
         return false
       }
 
-      console.error("验证命名空间权限时出错: %s", namespace, error)
+      console.error('验证命名空间权限时出错: %s', namespace, error)
       return false
     }
   } catch (error) {
-    console.error("验证过程中出错:", error)
+    console.error('验证过程中出错:', error)
     return false
   }
 }
@@ -137,7 +137,7 @@ export async function verifyK8sConfigString(configStr: string): Promise<boolean>
     kc.loadFromString(configStr)
     return await verifyK8sConfigAsync(kc)
   } catch (error) {
-    console.error("解析 KubeConfig 字符串失败:", error)
+    console.error('解析 KubeConfig 字符串失败:', error)
     return false
   }
 }
@@ -145,14 +145,14 @@ export async function verifyK8sConfigString(configStr: string): Promise<boolean>
 export function CheckIsInCluster(): [boolean, string] {
   if (
     process.env.KUBERNETES_SERVICE_HOST !== undefined &&
-    process.env.KUBERNETES_SERVICE_HOST !== "" &&
+    process.env.KUBERNETES_SERVICE_HOST !== '' &&
     process.env.KUBERNETES_SERVICE_PORT !== undefined &&
-    process.env.KUBERNETES_SERVICE_PORT !== ""
+    process.env.KUBERNETES_SERVICE_PORT !== ''
   ) {
     return [
       true,
-      "https://" + process.env.KUBERNETES_SERVICE_HOST + ":" + process.env.KUBERNETES_SERVICE_PORT,
+      'https://' + process.env.KUBERNETES_SERVICE_HOST + ':' + process.env.KUBERNETES_SERVICE_PORT,
     ]
   }
-  return [false, ""]
+  return [false, '']
 }

@@ -1,19 +1,19 @@
-"use client";
-import { Badge, Box, Center, Flex, Icon, Skeleton, SkeletonText, Text } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+'use client';
+import { Badge, Box, Center, Flex, Icon, Skeleton, SkeletonText, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
 
-import { getMcpDetail } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { QueryKey } from "@/types/query-key";
+import { getMcpDetail } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { QueryKey } from '@/types/query-key';
 
-import McpDetailBody from "../components/McpDetailBody";
-import McpDetailHeader from "../components/McpDetailHeader";
+import McpDetailBody from '../components/McpDetailBody';
+import McpDetailHeader from '../components/McpDetailHeader';
 
 export default function McpDetailPage() {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -123,7 +123,7 @@ export default function McpDetailPage() {
       <Center h="400px">
         <Box textAlign="center">
           <Text color="grayModern.500" fontSize="16px" fontWeight={500} lineHeight="22px">
-            {t("mcpHub.noResults")}
+            {t('mcpHub.noResults')}
           </Text>
         </Box>
       </Center>
@@ -154,23 +154,23 @@ export default function McpDetailPage() {
           {/* Breadcrumb Navigation */}
           <Flex alignItems="center">
             <Flex
-              alignItems={"center"}
+              alignItems={'center'}
               css={{
-                ":hover": {
-                  fill: "#219BF4",
-                  color: "#219BF4",
-                  "> svg": {
-                    fill: "#219BF4",
+                ':hover': {
+                  fill: '#219BF4',
+                  color: '#219BF4',
+                  '> svg': {
+                    fill: '#219BF4',
                   },
                 },
               }}
               onClick={handleNavigateToHub}
             >
-              <Icon viewBox="0 0 15 15" fill={"#24282C"} w={"15px"} h="15px">
+              <Icon viewBox="0 0 15 15" fill={'#24282C'} w={'15px'} h="15px">
                 <path d="M9.1875 13.1875L3.92187 7.9375C3.85937 7.875 3.81521 7.80729 3.78937 7.73438C3.76312 7.66146 3.75 7.58333 3.75 7.5C3.75 7.41667 3.76312 7.33854 3.78937 7.26562C3.81521 7.19271 3.85937 7.125 3.92187 7.0625L9.1875 1.79687C9.33333 1.65104 9.51562 1.57812 9.73438 1.57812C9.95312 1.57812 10.1406 1.65625 10.2969 1.8125C10.4531 1.96875 10.5312 2.15104 10.5312 2.35938C10.5312 2.56771 10.4531 2.75 10.2969 2.90625L5.70312 7.5L10.2969 12.0938C10.4427 12.2396 10.5156 12.4192 10.5156 12.6325C10.5156 12.8463 10.4375 13.0312 10.2812 13.1875C10.125 13.3438 9.94271 13.4219 9.73438 13.4219C9.52604 13.4219 9.34375 13.3438 9.1875 13.1875Z" />
               </Icon>
               <Text
-                _hover={{ fill: "#219BF4", color: "#219BF4" }}
+                _hover={{ fill: '#219BF4', color: '#219BF4' }}
                 ml="4px"
                 color="#7B838B"
                 fontSize="16px"
@@ -178,7 +178,7 @@ export default function McpDetailPage() {
                 lineHeight="20px"
                 cursor="pointer"
               >
-                {t("Sidebar.McpHub")}
+                {t('Sidebar.McpHub')}
               </Text>
             </Flex>
             <Text color="#7B838B" fontSize="16px" fontWeight={500} px="8px">

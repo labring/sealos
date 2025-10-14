@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Badge, Box, Button, Flex, FormLabel, Input, Text, VStack } from "@chakra-ui/react";
+import React, { useEffect, useMemo, useState } from 'react';
+import { Badge, Box, Button, Flex, FormLabel, Input, Text, VStack } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
-import { CustomSelect } from "./Select";
+import { CustomSelect } from './Select';
 type MapKeyValuePair = { key: string; value: string };
 
 type Model = {
@@ -23,10 +23,10 @@ export const ConstructModeMappingComponent = function ({
   setMapData: (mapping: Record<string, string>) => void;
 }) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
   const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([
-    { key: "", value: "" },
+    { key: '', value: '' },
   ]);
 
   const [isInternalUpdate, setIsInternalUpdate] = useState(false);
@@ -37,14 +37,14 @@ export const ConstructModeMappingComponent = function ({
       setMapkeyValuePairs(
         entries.length > 0
           ? entries.map(([key, value]) => ({ key, value }))
-          : [{ key: "", value: "" }]
+          : [{ key: '', value: '' }]
       );
     }
     setIsInternalUpdate(false);
   }, [mapData]);
 
   const handleDropdownItemDisplay = (dropdownItem: Model | string) => {
-    if (dropdownItem === t("channelsFormPlaceholder.modelMappingInput")) {
+    if (dropdownItem === t('channelsFormPlaceholder.modelMappingInput')) {
       return (
         <Text
           color="grayModern.600"
@@ -55,7 +55,7 @@ export const ConstructModeMappingComponent = function ({
           lineHeight="16px"
           letterSpacing="0.048px"
         >
-          {t("channelsFormPlaceholder.modelMappingInput")}
+          {t('channelsFormPlaceholder.modelMappingInput')}
         </Text>
       );
     }
@@ -130,7 +130,7 @@ export const ConstructModeMappingComponent = function ({
   };
 
   const handleSeletedItemDisplay = (selectedItem: Model | string) => {
-    if (selectedItem === t("channelsFormPlaceholder.modelMappingInput")) {
+    if (selectedItem === t('channelsFormPlaceholder.modelMappingInput')) {
       return (
         <Text
           color="grayModern.900"
@@ -141,7 +141,7 @@ export const ConstructModeMappingComponent = function ({
           lineHeight="16px"
           letterSpacing="0.048px"
         >
-          {t("channelsFormPlaceholder.modelMappingInput")}
+          {t('channelsFormPlaceholder.modelMappingInput')}
         </Text>
       );
     }
@@ -158,9 +158,9 @@ export const ConstructModeMappingComponent = function ({
             overflowX="auto" // overflowX needed for long text
             whiteSpace="nowrap" // prevent text from wrapping
             css={{
-              "&::-webkit-scrollbar": { display: "none" },
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
+              '&::-webkit-scrollbar': { display: 'none' },
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
             }}
           >
             <Text
@@ -223,9 +223,9 @@ export const ConstructModeMappingComponent = function ({
         overflowX="auto" // overflowX needed for long text
         whiteSpace="nowrap" // prevent text from wrapping
         css={{
-          "&::-webkit-scrollbar": { display: "none" },
-          msOverflowStyle: "none",
-          scrollbarWidth: "none",
+          '&::-webkit-scrollbar': { display: 'none' },
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
         }}
       >
         <Text
@@ -284,7 +284,7 @@ export const ConstructModeMappingComponent = function ({
 
   // Handling adding a new row
   const handleAddNewMapKeyPair = () => {
-    setMapkeyValuePairs([...mapKeyValuePairs, { key: "", value: "" }]);
+    setMapkeyValuePairs([...mapKeyValuePairs, { key: '', value: '' }]);
   };
 
   // Handling deleting a row
@@ -302,18 +302,18 @@ export const ConstructModeMappingComponent = function ({
   };
 
   // Handling selection/input changes
-  const handleInputChange = (index: number, field: "key" | "value", value: string) => {
+  const handleInputChange = (index: number, field: 'key' | 'value', value: string) => {
     const newMapKeyValuePairs = [...mapKeyValuePairs];
     const oldValue = newMapKeyValuePairs[index][field];
     newMapKeyValuePairs[index][field] = value;
 
     // Update the mapping relationship
     const newMapData = { ...mapData };
-    if (field === "key") {
+    if (field === 'key') {
       if (oldValue) delete newMapData[oldValue];
 
       if (!value) {
-        newMapKeyValuePairs[index].value = "";
+        newMapKeyValuePairs[index].value = '';
       }
 
       if (value && newMapKeyValuePairs[index].value) {
@@ -358,7 +358,7 @@ export const ConstructModeMappingComponent = function ({
         h="20px"
         m={0}
       >
-        {t("channelsForm.model_mapping")}
+        {t('channelsForm.model_mapping')}
       </FormLabel>
 
       {mapKeyValuePairs.map((row, index) => (
@@ -370,14 +370,14 @@ export const ConstructModeMappingComponent = function ({
               // when select placeholder, the newSelectedItem is null
               handleSelectedItemChange={(newSelectedItem) => {
                 if (newSelectedItem) {
-                  handleInputChange(index, "key", newSelectedItem.name);
+                  handleInputChange(index, 'key', newSelectedItem.name);
                 } else {
-                  handleInputChange(index, "key", "");
+                  handleInputChange(index, 'key', '');
                 }
               }}
               handleDropdownItemDisplay={handleDropdownItemDisplay}
               handleSelectedItemDisplay={handleSeletedItemDisplay}
-              placeholder={t("channelsFormPlaceholder.modelMappingInput")}
+              placeholder={t('channelsFormPlaceholder.modelMappingInput')}
             />
           </Box>
 
@@ -386,26 +386,26 @@ export const ConstructModeMappingComponent = function ({
               w="full"
               h="32px"
               value={row.value}
-              onChange={(e) => handleInputChange(index, "value", e.target.value)}
-              placeholder={t("channelsFormPlaceholder.modelMappingOutput")}
+              onChange={(e) => handleInputChange(index, 'value', e.target.value)}
+              placeholder={t('channelsFormPlaceholder.modelMappingOutput')}
               py="8px"
               px="12px"
               borderRadius="6px"
               border="1px solid var(--Gray-Modern-200, #E8EBF0)"
               bgColor="white"
-              _hover={{ borderColor: "grayModern.300" }}
-              _focus={{ borderColor: "grayModern.300" }}
-              _focusVisible={{ borderColor: "grayModern.300" }}
-              _active={{ borderColor: "grayModern.300" }}
+              _hover={{ borderColor: 'grayModern.300' }}
+              _focus={{ borderColor: 'grayModern.300' }}
+              _focusVisible={{ borderColor: 'grayModern.300' }}
+              _active={{ borderColor: 'grayModern.300' }}
               sx={{
-                "&::placeholder": {
-                  color: "grayModern.500",
+                '&::placeholder': {
+                  color: 'grayModern.500',
                   fontFamily: '"PingFang SC"',
-                  fontSize: "12px",
-                  fontStyle: "normal",
+                  fontSize: '12px',
+                  fontStyle: 'normal',
                   fontWeight: 400,
-                  lineHeight: "16px",
-                  letterSpacing: "0.048px",
+                  lineHeight: '16px',
+                  letterSpacing: '0.048px',
                 },
               }}
             />
@@ -422,8 +422,8 @@ export const ConstructModeMappingComponent = function ({
             gap="6px"
             borderRadius="6px"
             _hover={{
-              bg: "rgba(17, 24, 36, 0.05)",
-              color: "#D92D20",
+              bg: 'rgba(17, 24, 36, 0.05)',
+              color: '#D92D20',
             }}
           >
             <svg
@@ -484,7 +484,7 @@ export const ConstructModeMappingComponent = function ({
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("channelsForm.add")}
+            {t('channelsForm.add')}
           </Text>
         </Button>
       )}

@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ChannelInfo } from "@/types/admin/channels/channelInfo"
-import { CreateChannelRequest } from "@/types/admin/channels/channelInfo"
-import { ApiProxyBackendResp, ApiResp } from "@/types/api"
-import { parseJwtToken } from "@/utils/backend/auth"
-import { isAdmin } from "@/utils/backend/isAdmin"
+import { ChannelInfo } from '@/types/admin/channels/channelInfo'
+import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 
 export type GetChannelsResponse = ApiResp<{
   channels: ChannelInfo[]
@@ -22,13 +22,13 @@ async function updateChannel(channelData: CreateChannelRequest, id: string): Pro
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: "PUT",
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
       body: JSON.stringify(channelData),
-      cache: "no-store",
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -37,10 +37,10 @@ async function updateChannel(channelData: CreateChannelRequest, id: string): Pro
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || "Failed to create channel")
+      throw new Error(result.message || 'Failed to create channel')
     }
   } catch (error) {
-    console.error("admin channels api: create channel error:## ", error)
+    console.error('admin channels api: create channel error:## ', error)
     throw error
   }
 }
@@ -58,8 +58,8 @@ export async function PUT(
       return NextResponse.json(
         {
           code: 400,
-          message: "Channel id is required",
-          error: "Bad Request",
+          message: 'Channel id is required',
+          error: 'Bad Request',
         },
         { status: 400 }
       )
@@ -70,15 +70,15 @@ export async function PUT(
 
     return NextResponse.json({
       code: 200,
-      message: "Channel created successfully",
+      message: 'Channel created successfully',
     } satisfies ApiResp)
   } catch (error) {
-    console.error("admin channels api: create channel error:## ", error)
+    console.error('admin channels api: create channel error:## ', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "server error",
-        error: error instanceof Error ? error.message : "server error",
+        message: error instanceof Error ? error.message : 'server error',
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies ApiResp,
       { status: 500 }
     )
@@ -93,22 +93,22 @@ async function deleteChannel(id: string): Promise<void> {
     )
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: "DELETE",
+      method: 'DELETE',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
     }
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || "admin channels api:ai proxy backend error")
+      throw new Error(result.message || 'admin channels api:ai proxy backend error')
     }
   } catch (error) {
-    console.error("admin channels api: delete channel error:", error)
+    console.error('admin channels api: delete channel error:', error)
     throw error
   }
 }
@@ -126,8 +126,8 @@ export async function DELETE(
       return NextResponse.json(
         {
           code: 400,
-          message: "Channel id is required",
-          error: "Bad Request",
+          message: 'Channel id is required',
+          error: 'Bad Request',
         },
         { status: 400 }
       )
@@ -136,15 +136,15 @@ export async function DELETE(
     await deleteChannel(params.id)
     return NextResponse.json({
       code: 200,
-      message: "Channel deleted successfully",
+      message: 'Channel deleted successfully',
     } satisfies ApiResp)
   } catch (error) {
-    console.error("admin channels api: delete channel error:", error)
+    console.error('admin channels api: delete channel error:', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "server error",
-        error: error instanceof Error ? error.message : "server error",
+        message: error instanceof Error ? error.message : 'server error',
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies ApiResp,
       { status: 500 }
     )

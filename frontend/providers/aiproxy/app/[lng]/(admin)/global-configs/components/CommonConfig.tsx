@@ -1,23 +1,23 @@
-"use client";
-import { useState } from "react";
-import { Button, Flex, Text, useDisclosure } from "@chakra-ui/react";
-import { Switch } from "@chakra-ui/react";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { produce } from "immer";
+'use client';
+import { useState } from 'react';
+import { Button, Flex, Text, useDisclosure } from '@chakra-ui/react';
+import { Switch } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { produce } from 'immer';
 
-import { getOption, updateOption } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { QueryKey } from "@/types/query-key";
+import { getOption, updateOption } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { QueryKey } from '@/types/query-key';
 
-import { EditableText } from "./EditableText";
+import { EditableText } from './EditableText';
 
 export enum CommonConfigKey {
-  GlobalApiRateLimitNum = "GlobalApiRateLimitNum",
-  DisableServe = "DisableServe",
-  RetryTimes = "RetryTimes",
-  GroupMaxTokenNum = "GroupMaxTokenNum",
+  GlobalApiRateLimitNum = 'GlobalApiRateLimitNum',
+  DisableServe = 'DisableServe',
+  RetryTimes = 'RetryTimes',
+  GroupMaxTokenNum = 'GroupMaxTokenNum',
 }
 
 type CommonConfig = {
@@ -29,25 +29,25 @@ type CommonConfig = {
 
 const CommonConfig = () => {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const queryClient = useQueryClient();
 
   const [commonConfig, setCommonConfig] = useState<CommonConfig>(() =>
     produce({} as CommonConfig, (draft) => {
-      draft.GlobalApiRateLimitNum = "";
-      draft.DisableServe = "";
-      draft.RetryTimes = "";
-      draft.GroupMaxTokenNum = "";
+      draft.GlobalApiRateLimitNum = '';
+      draft.DisableServe = '';
+      draft.RetryTimes = '';
+      draft.GroupMaxTokenNum = '';
     })
   );
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
@@ -58,10 +58,10 @@ const CommonConfig = () => {
 
       setCommonConfig(
         produce(commonConfig, (draft) => {
-          draft.GlobalApiRateLimitNum = data.GlobalApiRateLimitNum || "";
-          draft.DisableServe = data.DisableServe || "";
-          draft.RetryTimes = data.RetryTimes || "";
-          draft.GroupMaxTokenNum = data.GroupMaxTokenNum || "";
+          draft.GlobalApiRateLimitNum = data.GlobalApiRateLimitNum || '';
+          draft.DisableServe = data.DisableServe || '';
+          draft.RetryTimes = data.RetryTimes || '';
+          draft.GroupMaxTokenNum = data.GroupMaxTokenNum || '';
         })
       );
     },
@@ -71,15 +71,15 @@ const CommonConfig = () => {
     mutationFn: (params: { key: string; value: string }) => updateOption(params),
     onSuccess: () => {
       message({
-        title: t("globalConfigs.saveCommonConfigSuccess"),
-        status: "success",
+        title: t('globalConfigs.saveCommonConfigSuccess'),
+        status: 'success',
       });
       queryClient.invalidateQueries({ queryKey: [QueryKey.GetCommonConfig] });
     },
     onError: () => {
       message({
-        title: t("globalConfigs.saveCommonConfigFailed"),
-        status: "error",
+        title: t('globalConfigs.saveCommonConfigFailed'),
+        status: 'error',
       });
     },
   });
@@ -94,7 +94,7 @@ const CommonConfig = () => {
   };
 
   const handleDisableServeChange = (checked: boolean) => {
-    const value = checked ? "true" : "false";
+    const value = checked ? 'true' : 'false';
     updateConfigField(CommonConfigKey.DisableServe, value);
   };
 
@@ -118,7 +118,7 @@ const CommonConfig = () => {
           lineHeight="24px"
           letterSpacing="0.15px"
         >
-          {t("globalConfigs.common_config")}
+          {t('globalConfigs.common_config')}
         </Text>
       </Flex>
       {/* -- title end */}
@@ -128,36 +128,36 @@ const CommonConfig = () => {
       <Flex flexDirection="column" gap="20px" flex="1" minW="0">
         {/* QPM Limit */}
         <EditableText
-          label={t("global_configs.qpm_limit")}
+          label={t('global_configs.qpm_limit')}
           value={commonConfig.GlobalApiRateLimitNum}
           onSubmit={(value) => updateConfigField(CommonConfigKey.GlobalApiRateLimitNum, value)}
-          flexProps={{ h: "24px" }}
+          flexProps={{ h: '24px' }}
         />
 
         {/* Pause Service */}
         <Flex alignItems="center" gap="16px" h="20px">
-          <Text flex="1">{t("global_configs.pause_service")}</Text>
+          <Text flex="1">{t('global_configs.pause_service')}</Text>
           <Switch
             size="md"
-            isChecked={commonConfig.DisableServe === "true"}
+            isChecked={commonConfig.DisableServe === 'true'}
             onChange={(e) => handleDisableServeChange(e.target.checked)}
           />
         </Flex>
 
         {/* Retry Count */}
         <EditableText
-          label={t("global_configs.retry_count")}
+          label={t('global_configs.retry_count')}
           value={commonConfig.RetryTimes}
           onSubmit={(value) => updateConfigField(CommonConfigKey.RetryTimes, value)}
-          flexProps={{ h: "24px" }}
+          flexProps={{ h: '24px' }}
         />
 
         {/* Max Token */}
         <EditableText
-          label={t("global_configs.max_token")}
+          label={t('global_configs.max_token')}
           value={commonConfig.GroupMaxTokenNum}
           onSubmit={(value) => updateConfigField(CommonConfigKey.GroupMaxTokenNum, value)}
-          flexProps={{ h: "24px" }}
+          flexProps={{ h: '24px' }}
         />
       </Flex>
 

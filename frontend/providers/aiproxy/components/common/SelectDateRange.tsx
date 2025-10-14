@@ -1,5 +1,5 @@
-import { ChangeEventHandler, Dispatch, SetStateAction, useState } from "react";
-import { DateRange, DayPicker, SelectRangeEventHandler } from "react-day-picker";
+import { ChangeEventHandler, Dispatch, SetStateAction, useState } from 'react';
+import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 import {
   Box,
   Button,
@@ -10,8 +10,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@chakra-ui/react";
-import { endOfDay, format, isAfter, isBefore, isValid, parse, startOfDay } from "date-fns";
+} from '@chakra-ui/react';
+import { endOfDay, format, isAfter, isBefore, isValid, parse, startOfDay } from 'date-fns';
 
 type SelectDateRangeProps = {
   isDisabled?: boolean;
@@ -32,8 +32,8 @@ export default function SelectDateRange({
   const initState = { from: startTime, to: endTime };
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
-  const [fromValue, setFromValue] = useState<string>(format(initState.from, "y-MM-dd"));
-  const [toValue, setToValue] = useState<string>(format(initState.to, "y-MM-dd"));
+  const [fromValue, setFromValue] = useState<string>(format(initState.from, 'y-MM-dd'));
+  const [toValue, setToValue] = useState<string>(format(initState.to, 'y-MM-dd'));
   const [inputState, setInputState] = useState<0 | 1>(0);
   const onClose = () => {
     selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
@@ -42,7 +42,7 @@ export default function SelectDateRange({
 
   const handleFromChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setFromValue(e.target.value);
-    const date = parse(e.target.value, "y-MM-dd", new Date());
+    const date = parse(e.target.value, 'y-MM-dd', new Date());
     if (!isValid(date)) {
       return setSelectedRange({ from: undefined, to: selectedRange?.to });
     }
@@ -60,7 +60,7 @@ export default function SelectDateRange({
 
   const handleToChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setToValue(e.target.value);
-    const date = parse(e.target.value, "y-MM-dd", new Date());
+    const date = parse(e.target.value, 'y-MM-dd', new Date());
 
     if (!isValid(date)) {
       return setSelectedRange({ from: selectedRange?.from, to: undefined });
@@ -94,14 +94,14 @@ export default function SelectDateRange({
         to,
       });
       if (from) {
-        setFromValue(format(from, "y-MM-dd"));
+        setFromValue(format(from, 'y-MM-dd'));
       } else {
-        setFromValue("");
+        setFromValue('');
       }
       if (to) {
-        setToValue(format(to, "y-MM-dd"));
+        setToValue(format(to, 'y-MM-dd'));
       } else {
-        setToValue(from ? format(from, "y-MM-dd") : "");
+        setToValue(from ? format(from, 'y-MM-dd') : '');
       }
     } else {
       if (fromValue && selectedRange?.from) {
@@ -131,7 +131,7 @@ export default function SelectDateRange({
               ...selectedRange,
               from,
             });
-            setFromValue(format(from, "y-MM-dd"));
+            setFromValue(format(from, 'y-MM-dd'));
           }
         }
       }
@@ -154,7 +154,7 @@ export default function SelectDateRange({
               ...selectedRange,
               to,
             });
-            setToValue(format(to, "y-MM-dd"));
+            setToValue(format(to, 'y-MM-dd'));
           }
         }
       }
@@ -172,25 +172,25 @@ export default function SelectDateRange({
 
   return (
     <Flex
-      w={"100%"}
-      maxW={"500px"}
-      h={"32px"}
+      w={'100%'}
+      maxW={'500px'}
+      h={'32px'}
       bg="#F7F8FA"
-      gap={"12px"}
-      align={"center"}
-      px={"12px"}
-      boxSizing={"border-box"}
-      justify={"space-between"}
-      border={"1px solid #DEE0E2"}
+      gap={'12px'}
+      align={'center'}
+      px={'12px'}
+      boxSizing={'border-box'}
+      justify={'space-between'}
+      border={'1px solid #DEE0E2'}
       borderRadius="6px"
       {...props}
     >
       <Popover onClose={onClose}>
         <PopoverTrigger>
-          <Button display={"flex"} variant={"unstyled"} isDisabled={isDisabled}>
+          <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>
             <Input
               isDisabled={!!isDisabled}
-              variant={"unstyled"}
+              variant={'unstyled'}
               flex={1}
               value={fromValue}
               minW="50px"
@@ -209,8 +209,8 @@ export default function SelectDateRange({
             defaultMonth={startTime}
             styles={{
               day: {
-                borderRadius: "unset",
-                transition: "all 0.2s ease-in-out",
+                borderRadius: 'unset',
+                transition: 'all 0.2s ease-in-out',
               },
             }}
           />
@@ -220,10 +220,10 @@ export default function SelectDateRange({
 
       <Popover onClose={onClose}>
         <PopoverTrigger>
-          <Button display={"flex"} variant={"unstyled"} isDisabled={isDisabled}>
+          <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>
             <Input
               isDisabled={!!isDisabled}
-              variant={"unstyled"}
+              variant={'unstyled'}
               value={toValue}
               flex={1}
               minW="90px"
@@ -242,8 +242,8 @@ export default function SelectDateRange({
             defaultMonth={endTime}
             styles={{
               day: {
-                borderRadius: "unset",
-                transition: "all 0.2s ease-in-out",
+                borderRadius: 'unset',
+                transition: 'all 0.2s ease-in-out',
               },
             }}
           />
@@ -256,7 +256,7 @@ export default function SelectDateRange({
         }}
       >
         <PopoverTrigger>
-          <Button display={"flex"} variant={"unstyled"} isDisabled={isDisabled}>
+          <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>
             <Icon
               xmlns="http://www.w3.org/2000/svg"
               width="17px"
@@ -278,8 +278,8 @@ export default function SelectDateRange({
             onSelect={handleRangeSelect}
             styles={{
               day: {
-                borderRadius: "unset",
-                transition: "all 0.2s ease-in-out",
+                borderRadius: 'unset',
+                transition: 'all 0.2s ease-in-out',
               },
             }}
           />

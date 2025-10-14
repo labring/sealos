@@ -1,10 +1,10 @@
-"use client";
-import { ReactNode, useEffect, useState } from "react";
-import { Box, Button, Flex, FlexProps, Input, InputGroup, List, ListItem } from "@chakra-ui/react";
-import { useCombobox, UseComboboxReturnValue } from "downshift";
+'use client';
+import { ReactNode, useEffect, useState } from 'react';
+import { Box, Button, Flex, FlexProps, Input, InputGroup, List, ListItem } from '@chakra-ui/react';
+import { useCombobox, UseComboboxReturnValue } from 'downshift';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export const SingleSelectComboboxUnstyle: <T>(props: {
   dropdownItems: T[];
@@ -35,7 +35,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   placeholder?: string;
 }) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems);
   useEffect(() => {
     setGetFilteredDropdownItems(dropdownItems);
@@ -57,7 +57,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
     initialSelectedItem: initSelectedItem || undefined,
 
     itemToString: (item) => {
-      if (!item) return "";
+      if (!item) return '';
       return handleInputDisplay ? handleInputDisplay(item) : String(item);
     },
 
@@ -92,12 +92,12 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
           lineHeight="16px"
           letterSpacing="0.048px"
           _placeholder={{
-            color: "grayModern.500",
-            fontFamily: "PingFang SC",
-            fontSize: "12px",
+            color: 'grayModern.500',
+            fontFamily: 'PingFang SC',
+            fontSize: '12px',
             fontWeight: 400,
-            lineHeight: "16px",
-            letterSpacing: "0.048px",
+            lineHeight: '16px',
+            letterSpacing: '0.048px',
           }}
           {...getInputProps()}
         />
@@ -165,7 +165,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
         overflowY="auto"
         zIndex="10"
         borderRadius="6px"
-        display={isComboboxOpen && getFilteredDropdownItems.length ? "block" : "none"}
+        display={isComboboxOpen && getFilteredDropdownItems.length ? 'block' : 'none'}
         {...getMenuProps()}
       >
         {isComboboxOpen &&
@@ -178,8 +178,8 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
               gap="8px"
               alignSelf="stretch"
               borderRadius="4px"
-              bg={highlightedIndex === index ? "rgba(17, 24, 36, 0.05)" : "transparent"}
-              fontWeight={selectedItem === item ? "bold" : "normal"}
+              bg={highlightedIndex === index ? 'rgba(17, 24, 36, 0.05)' : 'transparent'}
+              fontWeight={selectedItem === item ? 'bold' : 'normal'}
               cursor="pointer"
               color="grayModern.900"
               fontFamily="PingFang SC"
@@ -187,7 +187,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
               fontStyle="normal"
               lineHeight="16px"
               letterSpacing="0.5px"
-              _hover={{ bg: "rgba(17, 24, 36, 0.05)" }}
+              _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
               {...getItemProps({ item, index })}
             >
               {handleDropdownItemDisplay(item)}

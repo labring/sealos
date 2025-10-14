@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ApiProxyBackendResp, ApiResp } from "@/types/api"
-import { RequestDetail } from "@/types/user/logs"
-import { kcOrAppTokenAuth, parseJwtToken } from "@/utils/backend/auth"
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { RequestDetail } from '@/types/user/logs'
+import { kcOrAppTokenAuth, parseJwtToken } from '@/utils/backend/auth'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 export type ApiProxyBackendUserLogDetailResponse = ApiProxyBackendResp<RequestDetail>
 
 export type UserLogDetailResponse = ApiResp<RequestDetail>
@@ -23,12 +23,12 @@ async function fetchLogs(log_id: string, group: string): Promise<RequestDetail |
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -38,12 +38,12 @@ async function fetchLogs(log_id: string, group: string): Promise<RequestDetail |
     const result: ApiProxyBackendUserLogDetailResponse = await response.json()
 
     if (!result.success) {
-      throw new Error(result.message || "Get logs detail API request failed")
+      throw new Error(result.message || 'Get logs detail API request failed')
     }
 
     return result.data || null
   } catch (error) {
-    console.error("Get logs detail error:", error)
+    console.error('Get logs detail error:', error)
     throw error
   }
 }
@@ -179,8 +179,8 @@ export async function GET(
       return NextResponse.json(
         {
           code: 400,
-          message: "Log_id is required",
-          error: "Bad Request",
+          message: 'Log_id is required',
+          error: 'Bad Request',
         },
         { status: 400 }
       )
@@ -193,12 +193,12 @@ export async function GET(
       data: detail || undefined,
     } satisfies UserLogDetailResponse)
   } catch (error) {
-    console.error("Get logs detail error:", error)
+    console.error('Get logs detail error:', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "Internal server error",
-        error: error instanceof Error ? error.message : "Internal server error",
+        message: error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     )

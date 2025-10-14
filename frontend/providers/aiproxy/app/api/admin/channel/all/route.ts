@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ChannelInfo } from "@/types/admin/channels/channelInfo"
-import { ApiProxyBackendResp, ApiResp } from "@/types/api"
-import { parseJwtToken } from "@/utils/backend/auth"
-import { isAdmin } from "@/utils/backend/isAdmin"
+import { ChannelInfo } from '@/types/admin/channels/channelInfo'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 
 type ApiProxyBackendAllChannelResponse = ApiProxyBackendResp<ChannelInfo[]>
 
@@ -19,23 +19,23 @@ async function fetchChannels(): Promise<ChannelInfo[]> {
     )
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
     }
     const result: ApiProxyBackendAllChannelResponse = await response.json()
     if (!result.success) {
-      throw new Error(result.message || "admin channels api:ai proxy backend error")
+      throw new Error(result.message || 'admin channels api:ai proxy backend error')
     }
     return result?.data || []
   } catch (error) {
-    console.error("admin channels api: fetch all channels from ai proxy backend error:", error)
+    console.error('admin channels api: fetch all channels from ai proxy backend error:', error)
     throw error
   }
 }
@@ -52,12 +52,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetAllChan
       data: channels,
     } satisfies GetAllChannelResponse)
   } catch (error) {
-    console.error("admin channels api: get all channels error:", error)
+    console.error('admin channels api: get all channels error:', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "server error",
-        error: error instanceof Error ? error.message : "server error",
+        message: error instanceof Error ? error.message : 'server error',
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetAllChannelResponse,
       { status: 500 }
     )

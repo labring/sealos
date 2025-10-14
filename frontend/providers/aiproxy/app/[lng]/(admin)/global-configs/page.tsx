@@ -1,32 +1,32 @@
-"use client";
-import { useRef } from "react";
-import { Button, Divider, Flex, Text, useDisclosure } from "@chakra-ui/react";
-import { useMessage } from "@sealos/ui/src/components";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+'use client';
+import { useRef } from 'react';
+import { Button, Divider, Flex, Text, useDisclosure } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui/src/components';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { getOption, uploadOptions } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { QueryKey } from "@/types/query-key";
-import { downloadJson } from "@/utils/common";
+import { getOption, uploadOptions } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { QueryKey } from '@/types/query-key';
+import { downloadJson } from '@/utils/common';
 
-import CommonConfig from "./components/CommonConfig";
-import ModelConfig from "./components/ModelConfig";
+import CommonConfig from './components/CommonConfig';
+import ModelConfig from './components/ModelConfig';
 
 export default function GlobalConfigPage() {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
 
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const queryClient = useQueryClient();
@@ -49,7 +49,7 @@ export default function GlobalConfigPage() {
   const handleExport = async () => {
     const result = await refetch();
     const dataToExport = result.data || [];
-    downloadJson(dataToExport, "global_configs");
+    downloadJson(dataToExport, 'global_configs');
   };
 
   const handleImport = () => {
@@ -61,29 +61,29 @@ export default function GlobalConfigPage() {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
       await uploadMutation.mutateAsync(formData);
       message({
-        title: t("dashboard.importSuccess"),
-        status: "success",
+        title: t('dashboard.importSuccess'),
+        status: 'success',
         duration: 3000,
         isClosable: true,
       });
       queryClient.invalidateQueries([QueryKey.GetOption]);
       queryClient.invalidateQueries([QueryKey.GetCommonConfig]);
     } catch (error) {
-      console.error("Import error:", error);
+      console.error('Import error:', error);
       message({
-        title: t("dashboard.importError"),
-        status: "error",
+        title: t('dashboard.importError'),
+        status: 'error',
         duration: 3000,
         isClosable: true,
       });
     } finally {
       if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        fileInputRef.current.value = '';
       }
     }
   };
@@ -120,7 +120,7 @@ export default function GlobalConfigPage() {
             lineHeight="26px"
             letterSpacing="0.15px"
           >
-            {t("global_configs.title")}
+            {t('global_configs.title')}
           </Text>
 
           <Flex justifyContent="flex-end" alignContent="center" gap="12px">
@@ -130,7 +130,7 @@ export default function GlobalConfigPage() {
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 accept=".json"
-                style={{ display: "none" }}
+                style={{ display: 'none' }}
               />
               <Button
                 onClick={handleImport}
@@ -151,18 +151,18 @@ export default function GlobalConfigPage() {
                 lineHeight="16px"
                 letterSpacing="0.5px"
                 _hover={{
-                  transform: "scale(1.05)",
-                  transition: "transform 0.2s ease",
+                  transform: 'scale(1.05)',
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
-                  transform: "scale(0.92)",
-                  animation: "pulse 0.3s ease",
+                  transform: 'scale(0.92)',
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
-                  "@keyframes pulse": {
-                    "0%": { transform: "scale(0.92)" },
-                    "50%": { transform: "scale(0.96)" },
-                    "100%": { transform: "scale(0.92)" },
+                  '@keyframes pulse': {
+                    '0%': { transform: 'scale(0.92)' },
+                    '50%': { transform: 'scale(0.96)' },
+                    '100%': { transform: 'scale(0.92)' },
                   },
                 }}
               >
@@ -182,7 +182,7 @@ export default function GlobalConfigPage() {
                     fill="white"
                   />
                 </svg>
-                {t("global_configs.import")}
+                {t('global_configs.import')}
               </Button>
             </>
             <Button
@@ -205,18 +205,18 @@ export default function GlobalConfigPage() {
               letterSpacing="0.5px"
               transition="all 0.2s ease"
               _hover={{
-                transform: "scale(1.05)",
-                transition: "transform 0.2s ease",
+                transform: 'scale(1.05)',
+                transition: 'transform 0.2s ease',
               }}
               _active={{
-                transform: "scale(0.92)",
-                animation: "pulse 0.3s ease",
+                transform: 'scale(0.92)',
+                animation: 'pulse 0.3s ease',
               }}
               sx={{
-                "@keyframes pulse": {
-                  "0%": { transform: "scale(0.92)" },
-                  "50%": { transform: "scale(0.96)" },
-                  "100%": { transform: "scale(0.92)" },
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(0.92)' },
+                  '50%': { transform: 'scale(0.96)' },
+                  '100%': { transform: 'scale(0.92)' },
                 },
               }}
             >
@@ -234,7 +234,7 @@ export default function GlobalConfigPage() {
                   fill="white"
                 />
               </svg>
-              {t("global_configs.export")}
+              {t('global_configs.export')}
             </Button>
           </Flex>
         </Flex>

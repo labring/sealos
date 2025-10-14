@@ -1,6 +1,6 @@
-"use client";
-import { Dispatch, SetStateAction, useEffect } from "react";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
+'use client';
+import { Dispatch, SetStateAction, useEffect } from 'react';
+import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import {
   Badge,
   Button,
@@ -20,25 +20,25 @@ import {
   Spinner,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+} from '@chakra-ui/react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import {
   getChannelBuiltInSupportModels,
   getChannelDefaultModelAndDefaultModeMapping,
   getChannelTypeNames,
-} from "@/api/platform";
-import { createChannel, updateChannel } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import ConstructModeMappingComponent from "@/components/common/ConstructModeMappingComponent";
-import { MultiSelectCombobox } from "@/components/common/MultiSelectCombobox";
-import { SingleSelectCombobox } from "@/components/common/SingleSelectCombobox";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { ChannelInfo, ChannelStatus, ChannelType } from "@/types/admin/channels/channelInfo";
-import { QueryKey } from "@/types/query-key";
+} from '@/api/platform';
+import { createChannel, updateChannel } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent';
+import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox';
+import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo';
+import { QueryKey } from '@/types/query-key';
 
 type Model = {
   name: string;
@@ -53,21 +53,21 @@ export const UpdateChannelModal = function ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  operationType: "create" | "update";
+  operationType: 'create' | 'update';
   channelInfo?: ChannelInfo;
 }): JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const queryClient = useQueryClient();
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
 
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
@@ -186,7 +186,7 @@ export const UpdateChannelModal = function ({
               lineHeight="14px"
               letterSpacing="0.2px"
             >
-              {t("channels.modelDefault")}
+              {t('channels.modelDefault')}
             </Text>
           </Badge>
         </Flex>
@@ -292,7 +292,7 @@ export const UpdateChannelModal = function ({
 
       if (!exists) {
         setSelectedItems([...selectedItems, newModel]);
-        setCustomModeName("");
+        setCustomModeName('');
       }
     }
   };
@@ -301,8 +301,8 @@ export const UpdateChannelModal = function ({
   const schema = z.object({
     id: z.number().optional(),
     type: z.number(),
-    name: z.string().min(1, { message: t("channels.name_required") }),
-    key: z.string().min(1, { message: t("channels.key_required") }),
+    name: z.string().min(1, { message: t('channels.name_required') }),
+    key: z.string().min(1, { message: t('channels.key_required') }),
     base_url: z.string(),
     models: z.array(z.string()).default([]),
     model_mapping: z.record(z.string(), z.any()).default({}),
@@ -324,14 +324,14 @@ export const UpdateChannelModal = function ({
     defaultValues: {
       id: id,
       type: undefined,
-      name: "",
-      key: "",
-      base_url: "",
+      name: '',
+      key: '',
+      base_url: '',
       models: [],
       model_mapping: {},
     },
-    mode: "onChange",
-    reValidateMode: "onChange",
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   useEffect(() => {
@@ -349,8 +349,8 @@ export const UpdateChannelModal = function ({
     mutationFn: createChannel,
     onSuccess: () => {
       message({
-        title: t("channels.createSuccess"),
-        status: "success",
+        title: t('channels.createSuccess'),
+        status: 'success',
       });
     },
   });
@@ -370,8 +370,8 @@ export const UpdateChannelModal = function ({
       ),
     onSuccess: () => {
       message({
-        title: t("channels.updateSuccess"),
-        status: "success",
+        title: t('channels.updateSuccess'),
+        status: 'success',
       });
     },
   });
@@ -379,7 +379,7 @@ export const UpdateChannelModal = function ({
   const onValidate = async (data: FormData) => {
     try {
       switch (operationType) {
-        case "create":
+        case 'create':
           await createChannelMutation.mutateAsync({
             type: data.type,
             name: data.name,
@@ -389,7 +389,7 @@ export const UpdateChannelModal = function ({
             model_mapping: data.model_mapping,
           });
           break;
-        case "update":
+        case 'update':
           await updateChannelMutation.mutateAsync(data);
           break;
       }
@@ -401,24 +401,24 @@ export const UpdateChannelModal = function ({
       onClose();
     } catch (error) {
       switch (operationType) {
-        case "create":
+        case 'create':
           message({
-            title: t("channels.createFailed"),
-            status: "error",
-            position: "top",
+            title: t('channels.createFailed'),
+            status: 'error',
+            position: 'top',
             duration: 2000,
             isClosable: true,
-            description: error instanceof Error ? error.message : t("channels.createFailed"),
+            description: error instanceof Error ? error.message : t('channels.createFailed'),
           });
           break;
-        case "update":
+        case 'update':
           message({
-            title: t("channels.updateFailed"),
-            status: "error",
-            position: "top",
+            title: t('channels.updateFailed'),
+            status: 'error',
+            position: 'top',
             duration: 2000,
             isClosable: true,
-            description: error instanceof Error ? error.message : t("channels.updateFailed"),
+            description: error instanceof Error ? error.message : t('channels.updateFailed'),
           });
           break;
       }
@@ -430,8 +430,8 @@ export const UpdateChannelModal = function ({
     if (firstErrorMessage) {
       message({
         title: firstErrorMessage as string,
-        status: "error",
-        position: "top",
+        status: 'error',
+        position: 'top',
         duration: 2000,
         isClosable: true,
       });
@@ -472,7 +472,7 @@ export const UpdateChannelModal = function ({
                     lineHeight="24px"
                     letterSpacing="0.15px"
                   >
-                    {operationType === "create" ? t("channels.create") : t("channels.edit")}
+                    {operationType === 'create' ? t('channels.create') : t('channels.edit')}
                   </Text>
                 </Flex>
               </ModalHeader>
@@ -528,7 +528,7 @@ export const UpdateChannelModal = function ({
                     lineHeight="24px"
                     letterSpacing="0.15px"
                   >
-                    {operationType === "create" ? t("channels.create") : t("channels.edit")}
+                    {operationType === 'create' ? t('channels.create') : t('channels.edit')}
                   </Text>
                 </Flex>
               </ModalHeader>
@@ -570,7 +570,7 @@ export const UpdateChannelModal = function ({
                         justifyContent="flex-start"
                         m={0}
                       >
-                        {t("channelsForm.name")}
+                        {t('channelsForm.name')}
                       </FormLabel>
 
                       <Input
@@ -583,7 +583,7 @@ export const UpdateChannelModal = function ({
                         border="1px solid var(--Gray-Modern-200, #E8EBF0)"
                         bgColor="grayModern.50"
                         variant="unstyled"
-                        placeholder={t("channelsFormPlaceholder.name")}
+                        placeholder={t('channelsFormPlaceholder.name')}
                         color="var(--light-general-on-surface, var(--Gray-Modern-900, #111824))"
                         fontFamily="PingFang SC"
                         fontSize="12px"
@@ -591,14 +591,14 @@ export const UpdateChannelModal = function ({
                         lineHeight="16px"
                         letterSpacing="0.048px"
                         _placeholder={{
-                          color: "grayModern.500",
-                          fontFamily: "PingFang SC",
-                          fontSize: "12px",
+                          color: 'grayModern.500',
+                          fontFamily: 'PingFang SC',
+                          fontSize: '12px',
                           fontWeight: 400,
-                          lineHeight: "16px",
-                          letterSpacing: "0.048px",
+                          lineHeight: '16px',
+                          letterSpacing: '0.048px',
                         }}
-                        {...register("name")}
+                        {...register('name')}
                       />
                       {errors.name && <FormErrorMessage>{errors.name.message}</FormErrorMessage>}
                     </VStack>
@@ -630,8 +630,8 @@ export const UpdateChannelModal = function ({
                                 if (channelType) {
                                   const numericChannel = Number(channelType);
                                   field.onChange(numericChannel);
-                                  setValue("models", []);
-                                  setValue("model_mapping", {});
+                                  setValue('models', []);
+                                  setValue('model_mapping', {});
                                 }
                               }
                             }}
@@ -649,7 +649,7 @@ export const UpdateChannelModal = function ({
                       name="models"
                       control={control}
                       render={({ field }) => {
-                        const channelType = String(watch("type")) as ChannelType;
+                        const channelType = String(watch('type')) as ChannelType;
 
                         const builtInModes =
                           builtInSupportModels[channelType]?.map((mode) => mode.model) || [];
@@ -688,9 +688,9 @@ export const UpdateChannelModal = function ({
                       name="model_mapping"
                       control={control}
                       render={({ field }) => {
-                        const channelType = String(watch("type")) as ChannelType;
+                        const channelType = String(watch('type')) as ChannelType;
 
-                        const selectedModels = watch("models");
+                        const selectedModels = watch('models');
                         const defaultModes = defaultEnabledModels.models[channelType] || [];
 
                         const covertedSelectedModels: Model[] = selectedModels.map((modeName) => ({
@@ -729,7 +729,7 @@ export const UpdateChannelModal = function ({
                         justifyContent="flex-start"
                         m={0}
                       >
-                        {t("channelsForm.key")}
+                        {t('channelsForm.key')}
                       </FormLabel>
 
                       <Input
@@ -742,7 +742,7 @@ export const UpdateChannelModal = function ({
                         border="1px solid var(--Gray-Modern-200, #E8EBF0)"
                         bgColor="grayModern.50"
                         variant="unstyled"
-                        placeholder={t("channelsFormPlaceholder.key")}
+                        placeholder={t('channelsFormPlaceholder.key')}
                         color="var(--light-general-on-surface, var(--Gray-Modern-900, #111824))"
                         fontFamily="PingFang SC"
                         fontSize="12px"
@@ -750,14 +750,14 @@ export const UpdateChannelModal = function ({
                         lineHeight="16px"
                         letterSpacing="0.048px"
                         _placeholder={{
-                          color: "grayModern.500",
-                          fontFamily: "PingFang SC",
-                          fontSize: "12px",
+                          color: 'grayModern.500',
+                          fontFamily: 'PingFang SC',
+                          fontSize: '12px',
                           fontWeight: 400,
-                          lineHeight: "16px",
-                          letterSpacing: "0.048px",
+                          lineHeight: '16px',
+                          letterSpacing: '0.048px',
                         }}
-                        {...register("key")}
+                        {...register('key')}
                       />
                       {errors.key && <FormErrorMessage>{errors.key.message}</FormErrorMessage>}
                     </VStack>
@@ -779,7 +779,7 @@ export const UpdateChannelModal = function ({
                         justifyContent="flex-start"
                         m={0}
                       >
-                        {t("channelsForm.base_url")}
+                        {t('channelsForm.base_url')}
                       </FormLabel>
 
                       <Input
@@ -792,7 +792,7 @@ export const UpdateChannelModal = function ({
                         border="1px solid var(--Gray-Modern-200, #E8EBF0)"
                         bgColor="grayModern.50"
                         variant="unstyled"
-                        placeholder={t("channelsFormPlaceholder.base_url")}
+                        placeholder={t('channelsFormPlaceholder.base_url')}
                         color="var(--light-general-on-surface, var(--Gray-Modern-900, #111824))"
                         fontFamily="PingFang SC"
                         fontSize="12px"
@@ -800,14 +800,14 @@ export const UpdateChannelModal = function ({
                         lineHeight="16px"
                         letterSpacing="0.048px"
                         _placeholder={{
-                          color: "grayModern.500",
-                          fontFamily: "PingFang SC",
-                          fontSize: "12px",
+                          color: 'grayModern.500',
+                          fontFamily: 'PingFang SC',
+                          fontSize: '12px',
                           fontWeight: 400,
-                          lineHeight: "16px",
-                          letterSpacing: "0.048px",
+                          lineHeight: '16px',
+                          letterSpacing: '0.048px',
                         }}
-                        {...register("base_url")}
+                        {...register('base_url')}
                       />
                       {errors.base_url && (
                         <FormErrorMessage>{errors.base_url.message}</FormErrorMessage>
@@ -837,12 +837,12 @@ export const UpdateChannelModal = function ({
                   borderRadius="6px"
                   background="grayModern.900"
                   boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-                  _hover={{ background: "var(--Gray-Modern-800, #1F2937)" }}
+                  _hover={{ background: 'var(--Gray-Modern-800, #1F2937)' }}
                   onClick={onSubmit}
                   isDisabled={createChannelMutation.isLoading || updateChannelMutation.isLoading}
                   isLoading={createChannelMutation.isLoading || updateChannelMutation.isLoading}
                 >
-                  {t("confirm")}
+                  {t('confirm')}
                 </Button>
               </ModalFooter>
             </ModalContent>

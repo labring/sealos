@@ -8,8 +8,8 @@ import {
   Th,
   Thead,
   Tr,
-} from "@chakra-ui/react";
-import { flexRender, Table as ReactTable } from "@tanstack/react-table";
+} from '@chakra-ui/react';
+import { flexRender, Table as ReactTable } from '@tanstack/react-table';
 
 export function BaseTable<T extends unknown>({
   table,
@@ -31,10 +31,10 @@ export function BaseTable<T extends unknown>({
                       color="grayModern.600"
                       border="none"
                       textTransform="none"
-                      borderTopLeftRadius={i === 0 ? "6px" : "0"}
-                      borderBottomLeftRadius={i === 0 ? "6px" : "0"}
-                      borderTopRightRadius={i === headers.headers.length - 1 ? "6px" : "0"}
-                      borderBottomRightRadius={i === headers.headers.length - 1 ? "6px" : "0"}
+                      borderTopLeftRadius={i === 0 ? '6px' : '0'}
+                      borderBottomLeftRadius={i === 0 ? '6px' : '0'}
+                      borderTopRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}
+                      borderBottomRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Th>

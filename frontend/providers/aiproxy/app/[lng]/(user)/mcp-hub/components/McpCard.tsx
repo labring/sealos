@@ -1,12 +1,12 @@
-"use client";
-import { Badge, Box, Flex, Icon, Text } from "@chakra-ui/react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+'use client';
+import { Badge, Box, Flex, Icon, Text } from '@chakra-ui/react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { Mcp } from "@/types/mcp";
-import { getMcpIcon } from "@/ui/icons/mcp-icons";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { Mcp } from '@/types/mcp';
+import { getMcpIcon } from '@/ui/icons/mcp-icons';
 
 export interface McpCardProps {
   mcp: Mcp;
@@ -14,11 +14,11 @@ export interface McpCardProps {
 
 export default function McpCard({ mcp }: McpCardProps) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const router = useRouter();
 
-  const mcpName = lng === "zh" ? mcp.name_cn || mcp.name : mcp.name;
-  const mcpDescription = lng === "zh" ? mcp.description_cn || mcp.description : mcp.description;
+  const mcpName = lng === 'zh' ? mcp.name_cn || mcp.name : mcp.name;
+  const mcpDescription = lng === 'zh' ? mcp.description_cn || mcp.description : mcp.description;
 
   const handleCardClick = () => {
     router.push(`/${lng}/mcp-hub/${mcp.id}`);
@@ -34,9 +34,9 @@ export default function McpCard({ mcp }: McpCardProps) {
       cursor="pointer"
       transition="all 0.2s ease"
       _hover={{
-        borderColor: "brightBlue.300",
-        transform: "translateY(-2px)",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+        borderColor: 'brightBlue.300',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       }}
       onClick={handleCardClick}
     >
@@ -77,7 +77,7 @@ export default function McpCard({ mcp }: McpCardProps) {
                   fontSize="12px"
                   fontWeight={500}
                 >
-                  {t("mcpHub.hosted")}
+                  {t('mcpHub.hosted')}
                 </Badge>
               ) : (
                 <Badge
@@ -90,7 +90,7 @@ export default function McpCard({ mcp }: McpCardProps) {
                   fontSize="12px"
                   fontWeight={500}
                 >
-                  {t("mcpHub.local")}
+                  {t('mcpHub.local')}
                 </Badge>
               )}
             </Flex>
@@ -112,7 +112,7 @@ export default function McpCard({ mcp }: McpCardProps) {
         <Flex justifyContent="flex-end">
           <Flex alignItems="center" gap="4px" color="brightBlue.500">
             <Text fontSize="12px" fontWeight={500}>
-              {t("logs.detail")}
+              {t('logs.detail')}
             </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"

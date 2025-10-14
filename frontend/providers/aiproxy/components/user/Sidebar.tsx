@@ -1,22 +1,22 @@
-"use client";
-import { Button, Flex, Text } from "@chakra-ui/react";
-import Image, { StaticImageData } from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+'use client';
+import { Button, Flex, Text } from '@chakra-ui/react';
+import Image, { StaticImageData } from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import homeIcon from "@/ui/svg/icons/sidebar/home.svg";
-import homeIcon_a from "@/ui/svg/icons/sidebar/home_a.svg";
-import keysIcon from "@/ui/svg/icons/sidebar/key.svg";
-import keysIcon_a from "@/ui/svg/icons/sidebar/key_a.svg";
-import logsIcon from "@/ui/svg/icons/sidebar/logs.svg";
-import logsIcon_a from "@/ui/svg/icons/sidebar/logs_a.svg";
-import mcpIcon from "@/ui/svg/icons/sidebar/mcp.svg";
-import mcpIcon_a from "@/ui/svg/icons/sidebar/mcp_a.svg";
-import priceIcon from "@/ui/svg/icons/sidebar/price.svg";
-import priceIcon_a from "@/ui/svg/icons/sidebar/price_a.svg";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import homeIcon from '@/ui/svg/icons/sidebar/home.svg';
+import homeIcon_a from '@/ui/svg/icons/sidebar/home_a.svg';
+import keysIcon from '@/ui/svg/icons/sidebar/key.svg';
+import keysIcon_a from '@/ui/svg/icons/sidebar/key_a.svg';
+import logsIcon from '@/ui/svg/icons/sidebar/logs.svg';
+import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg';
+import mcpIcon from '@/ui/svg/icons/sidebar/mcp.svg';
+import mcpIcon_a from '@/ui/svg/icons/sidebar/mcp_a.svg';
+import priceIcon from '@/ui/svg/icons/sidebar/price.svg';
+import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg';
 
 type Menu = {
   id: string;
@@ -30,47 +30,47 @@ type Menu = {
 const SideBar = (): JSX.Element => {
   const pathname = usePathname();
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
   const { invitationUrl, docUrl } = useBackendStore();
 
   const menus: Menu[] = [
     {
-      id: "keys",
-      url: "/key",
-      value: t("Sidebar.Keys"),
+      id: 'keys',
+      url: '/key',
+      value: t('Sidebar.Keys'),
       icon: keysIcon,
       activeIcon: keysIcon_a,
       display: true,
     },
     {
-      id: "home",
-      url: "/home",
-      value: t("Sidebar.Home"),
+      id: 'home',
+      url: '/home',
+      value: t('Sidebar.Home'),
       icon: homeIcon,
       activeIcon: homeIcon_a,
       display: true,
     },
     {
-      id: "logs",
-      url: "/log",
-      value: t("Sidebar.Logs"),
+      id: 'logs',
+      url: '/log',
+      value: t('Sidebar.Logs'),
       icon: logsIcon,
       activeIcon: logsIcon_a,
       display: true,
     },
     {
-      id: "price",
-      url: "/price",
-      value: t("Sidebar.Price"),
+      id: 'price',
+      url: '/price',
+      value: t('Sidebar.Price'),
       icon: priceIcon,
       activeIcon: priceIcon_a,
       display: true,
     },
     {
-      id: "mcp-hub",
-      url: "/mcp-hub",
-      value: t("Sidebar.McpHub"),
+      id: 'mcp-hub',
+      url: '/mcp-hub',
+      value: t('Sidebar.McpHub'),
       icon: mcpIcon,
       activeIcon: mcpIcon_a,
       display: true,
@@ -93,10 +93,10 @@ const SideBar = (): JSX.Element => {
           .filter((menu) => menu.display)
           .map((menu) => {
             const fullUrl = `/${lng}${menu.url}`;
-            const isActive = pathname === fullUrl || pathname.startsWith(fullUrl + "/");
+            const isActive = pathname === fullUrl || pathname.startsWith(fullUrl + '/');
 
             return (
-              <Link href={fullUrl} key={menu.id} style={{ textDecoration: "none" }}>
+              <Link href={fullUrl} key={menu.id} style={{ textDecoration: 'none' }}>
                 <Flex
                   display="flex"
                   w="64px"
@@ -109,8 +109,8 @@ const SideBar = (): JSX.Element => {
                   borderRadius="8px"
                   cursor="pointer"
                   role="group"
-                  backgroundColor={isActive ? "#9699B426" : "transparent"}
-                  _hover={{ backgroundColor: "#9699B426" }}
+                  backgroundColor={isActive ? '#9699B426' : 'transparent'}
+                  _hover={{ backgroundColor: '#9699B426' }}
                 >
                   <Image
                     src={isActive ? menu.activeIcon : menu.icon}
@@ -119,7 +119,7 @@ const SideBar = (): JSX.Element => {
                     height={24}
                   />
                   <Text
-                    color={isActive ? "grayModern.900" : "grayModern.500"}
+                    color={isActive ? 'grayModern.900' : 'grayModern.500'}
                     fontFamily="PingFang SC"
                     fontSize="11px"
                     fontWeight={500}
@@ -152,9 +152,9 @@ const SideBar = (): JSX.Element => {
           gap="4px"
           borderRadius="6px"
           bg="rgba(150, 153, 180, 0.10)"
-          _hover={{ bg: "rgba(150, 153, 180, 0.15)" }}
+          _hover={{ bg: 'rgba(150, 153, 180, 0.15)' }}
           onClick={() => {
-            window.open(docUrl, "_blank");
+            window.open(docUrl, '_blank');
           }}
         >
           <Text
@@ -166,7 +166,7 @@ const SideBar = (): JSX.Element => {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("dashboard.doc")}
+            {t('dashboard.doc')}
           </Text>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -193,9 +193,9 @@ const SideBar = (): JSX.Element => {
             gap="4px"
             borderRadius="6px"
             bg="rgba(150, 153, 180, 0.10)"
-            _hover={{ bg: "rgba(150, 153, 180, 0.15)" }}
+            _hover={{ bg: 'rgba(150, 153, 180, 0.15)' }}
             onClick={() => {
-              window.open(invitationUrl, "_blank");
+              window.open(invitationUrl, '_blank');
             }}
           >
             <Text
@@ -207,7 +207,7 @@ const SideBar = (): JSX.Element => {
               lineHeight="16px"
               letterSpacing="0.5px"
             >
-              {t("dashboard.invite")}
+              {t('dashboard.invite')}
             </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"

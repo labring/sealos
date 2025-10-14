@@ -1,13 +1,13 @@
-"use client";
-import { useEffect, useState } from "react";
-import { Button, Flex, HStack, Input, InputGroup, InputLeftElement, Text } from "@chakra-ui/react";
+'use client';
+import { useEffect, useState } from 'react';
+import { Button, Flex, HStack, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export interface SearchFilterProps {
   searchTerm: string;
-  serviceType: "hosted" | "local" | "";
+  serviceType: 'hosted' | 'local' | '';
   onSearchChange: (value: string) => void;
   onServiceTypeChange: (value: string) => void;
 }
@@ -19,14 +19,14 @@ export default function SearchFilter({
   onServiceTypeChange,
 }: SearchFilterProps) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
   // 本地输入状态
   const [inputValue, setInputValue] = useState(searchTerm);
 
   // 本地多选状态管理 - 完全独立的视觉状态
-  const [selectedTypes, setSelectedTypes] = useState<Set<"hosted" | "local">>(() => {
-    return new Set<"hosted" | "local">(); // 默认都不选
+  const [selectedTypes, setSelectedTypes] = useState<Set<'hosted' | 'local'>>(() => {
+    return new Set<'hosted' | 'local'>(); // 默认都不选
   });
 
   // 当外部searchTerm变化时，同步到本地状态
@@ -35,7 +35,7 @@ export default function SearchFilter({
   }, [searchTerm]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       onSearchChange(inputValue);
     }
   };
@@ -47,7 +47,7 @@ export default function SearchFilter({
     }
   };
 
-  const handleServiceTypeToggle = (type: "hosted" | "local") => {
+  const handleServiceTypeToggle = (type: 'hosted' | 'local') => {
     const newSelectedTypes = new Set(selectedTypes);
 
     if (newSelectedTypes.has(type)) {
@@ -63,11 +63,11 @@ export default function SearchFilter({
     // 根据选择状态决定传递给父组件的值
     if (newSelectedTypes.size === 0 || newSelectedTypes.size === 2) {
       // 没有选择任何类型或选择了所有类型，都表示显示全部
-      onServiceTypeChange("");
-    } else if (newSelectedTypes.has("hosted")) {
-      onServiceTypeChange("hosted");
-    } else if (newSelectedTypes.has("local")) {
-      onServiceTypeChange("local");
+      onServiceTypeChange('');
+    } else if (newSelectedTypes.has('hosted')) {
+      onServiceTypeChange('hosted');
+    } else if (newSelectedTypes.has('local')) {
+      onServiceTypeChange('local');
     }
   };
 
@@ -101,7 +101,7 @@ export default function SearchFilter({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
           onBlur={handleInputBlur}
-          placeholder={t("mcpHub.searchPlaceholder")}
+          placeholder={t('mcpHub.searchPlaceholder')}
           bg="white"
           border="1px solid"
           borderColor="grayModern.200"
@@ -110,17 +110,17 @@ export default function SearchFilter({
           h="36px"
           fontWeight={400}
           lineHeight="20px"
-          _placeholder={{ color: "grayModern.500" }}
+          _placeholder={{ color: 'grayModern.500' }}
           _focus={{
-            borderColor: "brightBlue.500",
-            boxShadow: "0 0 0 1px var(--chakra-colors-brightBlue-500)",
+            borderColor: 'brightBlue.500',
+            boxShadow: '0 0 0 1px var(--chakra-colors-brightBlue-500)',
           }}
         />
       </InputGroup>
 
       <HStack spacing="16px" alignItems="center">
         <Text color="grayModern.700" fontSize="14px" fontWeight={500}>
-          {t("mcpHub.serviceType")}:
+          {t('mcpHub.serviceType')}:
         </Text>
 
         <HStack spacing="12px">
@@ -135,13 +135,13 @@ export default function SearchFilter({
             alignItems="center"
             gap="6px"
             borderRadius="8px"
-            color={selectedTypes.has("hosted") ? "#0884DD" : "grayModern.600"}
+            color={selectedTypes.has('hosted') ? '#0884DD' : 'grayModern.600'}
             fontSize="14px"
             fontWeight="400"
-            bg={selectedTypes.has("hosted") ? "#EEF2FF" : "#F8FAFC"}
+            bg={selectedTypes.has('hosted') ? '#EEF2FF' : '#F8FAFC'}
             _hover={{
-              bg: "#EEF2FF",
-              color: "#0884DD",
+              bg: '#EEF2FF',
+              color: '#0884DD',
             }}
             leftIcon={
               <svg
@@ -158,9 +158,9 @@ export default function SearchFilter({
                 ></path>
               </svg>
             }
-            onClick={() => handleServiceTypeToggle("hosted")}
+            onClick={() => handleServiceTypeToggle('hosted')}
           >
-            {t("mcpHub.hosted")}
+            {t('mcpHub.hosted')}
           </Button>
 
           <Button
@@ -174,13 +174,13 @@ export default function SearchFilter({
             alignItems="center"
             gap="6px"
             borderRadius="8px"
-            color={selectedTypes.has("local") ? "#0884DD" : "grayModern.600"}
+            color={selectedTypes.has('local') ? '#0884DD' : 'grayModern.600'}
             fontSize="14px"
             fontWeight="400"
-            bg={selectedTypes.has("local") ? "#EEF2FF" : "#F8FAFC"}
+            bg={selectedTypes.has('local') ? '#EEF2FF' : '#F8FAFC'}
             _hover={{
-              bg: "#EEF2FF",
-              color: "#0884DD",
+              bg: '#EEF2FF',
+              color: '#0884DD',
             }}
             leftIcon={
               <svg
@@ -205,9 +205,9 @@ export default function SearchFilter({
                 <rect x="4" y="10" width="4" height="1" rx="0.5" fill="currentColor" />
               </svg>
             }
-            onClick={() => handleServiceTypeToggle("local")}
+            onClick={() => handleServiceTypeToggle('local')}
           >
-            {t("mcpHub.local")}
+            {t('mcpHub.local')}
           </Button>
         </HStack>
       </HStack>

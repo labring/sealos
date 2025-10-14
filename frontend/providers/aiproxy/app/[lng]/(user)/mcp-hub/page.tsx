@@ -1,23 +1,23 @@
-"use client";
-import { useState } from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
+'use client';
+import { useState } from 'react';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 
-import { getMcpList } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import SwitchPage from "@/components/common/SwitchPage";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { QueryKey } from "@/types/query-key";
+import { getMcpList } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import SwitchPage from '@/components/common/SwitchPage';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { QueryKey } from '@/types/query-key';
 
-import McpList from "./components/McpList";
-import SearchFilter from "./components/SearchFilter";
+import McpList from './components/McpList';
+import SearchFilter from './components/SearchFilter';
 
 export default function McpHubPage() {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [serviceType, setServiceType] = useState<"hosted" | "local" | "">("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [serviceType, setServiceType] = useState<'hosted' | 'local' | ''>('');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(28); // 固定每页28个
 
@@ -53,7 +53,7 @@ export default function McpHubPage() {
               lineHeight="26px"
               letterSpacing="0.15px"
             >
-              {t("mcpHub.title")}
+              {t('mcpHub.title')}
             </Text>
           </Flex>
 
@@ -66,7 +66,7 @@ export default function McpHubPage() {
               setPage(1); // 搜索时重置到第一页
             }}
             onServiceTypeChange={(type) => {
-              setServiceType(type as "hosted" | "local" | "");
+              setServiceType(type as 'hosted' | 'local' | '');
               setPage(1); // 筛选类型时重置到第一页
             }}
           />
@@ -78,11 +78,11 @@ export default function McpHubPage() {
             pb="12px"
             pt="8px"
             sx={{
-              "&::-webkit-scrollbar": {
-                display: "none",
+              '&::-webkit-scrollbar': {
+                display: 'none',
               },
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
             }}
           >
             <McpList mcps={mcps} isLoading={isLoading} />

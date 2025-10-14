@@ -1,5 +1,5 @@
-"use client";
-import React from "react";
+'use client';
+import React from 'react';
 import {
   Badge,
   Box,
@@ -11,16 +11,16 @@ import {
   DrawerOverlay,
   Flex,
   Text,
-} from "@chakra-ui/react";
-import { useMessage } from "@sealos/ui";
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { ModelConfig } from "@/types/models/model";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { ModelConfig } from '@/types/models/model';
 
-import CodeBlock from "./CodeHight";
-import { ModelComponent } from "./Model";
+import CodeBlock from './CodeHight';
+import { ModelComponent } from './Model';
 
 interface ApiDocContent {
   title: string;
@@ -53,10 +53,10 @@ const getApiDocContent = (
   switch (modelConfig.type) {
     case 1:
       return {
-        title: t("modeType.1"),
-        endpoint: "/chat/completions",
-        method: "POST",
-        responseFormat: "json",
+        title: t('modeType.1'),
+        endpoint: '/chat/completions',
+        method: 'POST',
+        responseFormat: 'json',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/chat/completions \\
 --header "Authorization: Bearer $token" \\
@@ -96,10 +96,10 @@ const getApiDocContent = (
       };
     case 3:
       return {
-        title: t("modeType.3"),
-        endpoint: "/embeddings",
-        method: "POST",
-        responseFormat: "json",
+        title: t('modeType.3'),
+        endpoint: '/embeddings',
+        method: 'POST',
+        responseFormat: 'json',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/embeddings \\
 --header "Authorization: Bearer $token" \\
@@ -132,10 +132,10 @@ const getApiDocContent = (
       };
     case 5:
       return {
-        title: t("modeType.5"),
-        endpoint: "/images/generations",
-        method: "POST",
-        responseFormat: "json",
+        title: t('modeType.5'),
+        endpoint: '/images/generations',
+        method: 'POST',
+        responseFormat: 'json',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/embeddings \\
 --header "Authorization: Bearer $token" \\
@@ -165,10 +165,10 @@ const getApiDocContent = (
       };
     case 7:
       return {
-        title: t("modeType.7"),
-        endpoint: "/audio/speech",
-        method: "POST",
-        responseFormat: "binary",
+        title: t('modeType.7'),
+        endpoint: '/audio/speech',
+        method: 'POST',
+        responseFormat: 'binary',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/audio/speech \\
 --header "Authorization: Bearer $token" \\
@@ -179,15 +179,15 @@ const getApiDocContent = (
 ${
   modelConfig?.config?.support_voices?.length
     ? `  "voice": "${modelConfig.config.support_voices[0]}",\n`
-    : ""
+    : ''
 }${
           modelConfig?.config?.support_formats?.length
             ? `  "response_format": "${modelConfig.config.support_formats[0]}",\n`
-            : ""
+            : ''
         }  "stream": true,
   "speed": 1
 }' > audio.mp3`,
-        responseExample: "Binary audio data",
+        responseExample: 'Binary audio data',
         requestAdditionalInfo: {
           voices: modelConfig?.config?.support_voices,
           formats: modelConfig?.config?.support_formats,
@@ -195,10 +195,10 @@ ${
       };
     case 8:
       return {
-        title: t("modeType.8"),
-        endpoint: "/audio/transcriptions",
-        method: "POST",
-        responseFormat: "json",
+        title: t('modeType.8'),
+        endpoint: '/audio/transcriptions',
+        method: 'POST',
+        responseFormat: 'json',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/audio/transcriptions \\
 --header "Authorization: Bearer $token" \\
@@ -211,10 +211,10 @@ ${
       };
     case 10:
       return {
-        title: t("modeType.10"),
-        endpoint: "/rerank",
-        method: "POST",
-        responseFormat: "json",
+        title: t('modeType.10'),
+        endpoint: '/rerank',
+        method: 'POST',
+        responseFormat: 'json',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/rerank \\
 --header "Authorization: Bearer $token" \\
@@ -261,10 +261,10 @@ ${
       };
     case 11:
       return {
-        title: t("modeType.11"),
-        endpoint: "/parse/pdf",
-        method: "POST",
-        responseFormat: "json",
+        title: t('modeType.11'),
+        endpoint: '/parse/pdf',
+        method: 'POST',
+        responseFormat: 'json',
         requestExample: `curl --request POST \\
 --url ${apiEndpoint}/v1/parse/pdf \\
 --header "Authorization: Bearer $token" \\
@@ -278,30 +278,30 @@ ${
       };
     default:
       return {
-        title: t("modeType.0"),
-        endpoint: "",
-        method: "",
-        responseFormat: "json",
-        requestExample: "unknown",
-        responseExample: "unknown",
+        title: t('modeType.0'),
+        endpoint: '',
+        method: '',
+        responseFormat: 'json',
+        requestExample: 'unknown',
+        responseExample: 'unknown',
       };
   }
 };
 
 const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfig }) => {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend);
   const { docUrl } = useBackendStore();
   const apiDoc = getApiDocContent(modelConfig, aiproxyBackend, t);
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   return (
@@ -363,7 +363,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
               <ModelComponent modelConfig={modelConfig} displayType={true} />
               <Button
                 onClick={() => {
-                  window.open(docUrl, "_blank");
+                  window.open(docUrl, '_blank');
                 }}
                 variant="unstyled"
                 position="absolute"
@@ -381,10 +381,10 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                 lineHeight="16px"
                 letterSpacing="0.5px"
                 _hover={{
-                  color: "brightBlue.600",
+                  color: 'brightBlue.600',
                 }}
               >
-                <Text>{t("drawer.doc")}</Text>
+                <Text>{t('drawer.doc')}</Text>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="14"
@@ -437,7 +437,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
 
               <Flex gap="4px" alignItems="center" justifyContent="flex-start">
                 {apiDoc.endpoint
-                  .split("/")
+                  .split('/')
                   .filter(Boolean)
                   .map((segment, index, array) => (
                     <React.Fragment key={index}>
@@ -483,7 +483,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("drawer.requestExample")}
+                  {t('drawer.requestExample')}
                 </Text>
 
                 {/* code */}
@@ -512,7 +512,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       lineHeight="16px"
                       letterSpacing="0.5px"
                     >
-                      {"bash"}
+                      {'bash'}
                     </Text>
 
                     <Button
@@ -520,20 +520,20 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                         navigator.clipboard.writeText(apiDoc.requestExample).then(
                           () => {
                             message({
-                              status: "success",
-                              title: t("copySuccess"),
+                              status: 'success',
+                              title: t('copySuccess'),
                               isClosable: true,
                               duration: 2000,
-                              position: "top",
+                              position: 'top',
                             });
                           },
                           (err) => {
                             message({
-                              status: "warning",
-                              title: t("copyFailed"),
-                              description: err?.message || t("copyFailed"),
+                              status: 'warning',
+                              title: t('copyFailed'),
+                              description: err?.message || t('copyFailed'),
                               isClosable: true,
-                              position: "top",
+                              position: 'top',
                             });
                           }
                         );
@@ -549,7 +549,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       borderRadius="4px"
                       bg="transparent"
                       _hover={{
-                        bg: "rgba(255, 255, 255, 0.1)",
+                        bg: 'rgba(255, 255, 255, 0.1)',
                       }}
                     >
                       <svg
@@ -599,7 +599,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           lineHeight="16px"
                           letterSpacing="0.5px"
                         >
-                          {"voice"}
+                          {'voice'}
                         </Text>
                         <Flex gap="4px">
                           <Badge
@@ -621,7 +621,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               letterSpacing="0.5px"
                               textTransform="none"
                             >
-                              {"enum<string>"}
+                              {'enum<string>'}
                             </Text>
                           </Badge>
                           <Badge
@@ -643,7 +643,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               textTransform="none"
                               letterSpacing="0.5px"
                             >
-                              {t("drawer.voice")}
+                              {t('drawer.voice')}
                             </Text>
                           </Badge>
                         </Flex>
@@ -665,7 +665,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           lineHeight="16px"
                           letterSpacing="0.5px"
                         >
-                          {t("drawer.voiceValues")}
+                          {t('drawer.voiceValues')}
                         </Text>
 
                         <Flex flexWrap="wrap" gap="8px">
@@ -722,7 +722,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           lineHeight="16px"
                           letterSpacing="0.5px"
                         >
-                          {"response_format"}
+                          {'response_format'}
                         </Text>
                         <Flex gap="4px">
                           <Badge
@@ -744,7 +744,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               letterSpacing="0.5px"
                               textTransform="none"
                             >
-                              {"enum<string>"}
+                              {'enum<string>'}
                             </Text>
                           </Badge>
                           <Badge
@@ -766,7 +766,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               letterSpacing="0.5px"
                               textTransform="none"
                             >
-                              {"default:mp3"}
+                              {'default:mp3'}
                             </Text>
                           </Badge>
                         </Flex>
@@ -788,7 +788,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           lineHeight="16px"
                           letterSpacing="0.5px"
                         >
-                          {t("drawer.responseFormatValues")}
+                          {t('drawer.responseFormatValues')}
                         </Text>
 
                         <Flex flexWrap="wrap" gap="8px">
@@ -834,7 +834,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("drawer.responseExample")}
+                  {t('drawer.responseExample')}
                 </Text>
 
                 {/* code */}
@@ -871,20 +871,20 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                         navigator.clipboard.writeText(apiDoc.responseExample).then(
                           () => {
                             message({
-                              status: "success",
-                              title: t("copySuccess"),
+                              status: 'success',
+                              title: t('copySuccess'),
                               isClosable: true,
                               duration: 2000,
-                              position: "top",
+                              position: 'top',
                             });
                           },
                           (err) => {
                             message({
-                              status: "warning",
-                              title: t("copyFailed"),
-                              description: err?.message || t("copyFailed"),
+                              status: 'warning',
+                              title: t('copyFailed'),
+                              description: err?.message || t('copyFailed'),
                               isClosable: true,
-                              position: "top",
+                              position: 'top',
                             });
                           }
                         );
@@ -900,7 +900,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       borderRadius="4px"
                       bg="transparent"
                       _hover={{
-                        bg: "rgba(255, 255, 255, 0.1)",
+                        bg: 'rgba(255, 255, 255, 0.1)',
                       }}
                     >
                       <svg

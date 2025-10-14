@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
 
-import type { AppConfigType } from "@/types/app-config"
+import type { AppConfigType } from '@/types/app-config'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 
 function getAdminNamespaces(): string[] {
-  return process.env.ADMIN_NAMESPACES?.split(",") || []
+  return process.env.ADMIN_NAMESPACES?.split(',') || []
 }
 
 function getAppConfig(appConfig: AppConfigType): AppConfigType {
@@ -25,7 +25,7 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
     appConfig.adminNameSpace = getAdminNamespaces()
   }
   if (process.env.CURRENCY_SYMBOL) {
-    appConfig.currencySymbol = process.env.CURRENCY_SYMBOL as "shellCoin" | "cny" | "usd"
+    appConfig.currencySymbol = process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd'
   }
   if (process.env.ACCOUNT_SERVER) {
     appConfig.backend.accountServer = process.env.ACCOUNT_SERVER
@@ -37,7 +37,7 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
     appConfig.common.docUrl = process.env.DOC_URL
   }
   if (process.env.IS_INVITATION_ACTIVE) {
-    appConfig.common.isInvitationActive = process.env.IS_INVITATION_ACTIVE === "true"
+    appConfig.common.isInvitationActive = process.env.IS_INVITATION_ACTIVE === 'true'
   }
   if (process.env.INVITATION_URL) {
     appConfig.common.invitationUrl = process.env.INVITATION_URL
@@ -50,29 +50,29 @@ function initAppConfig(): AppConfigType {
   // default config
   const DefaultAppConfig: AppConfigType = {
     common: {
-      docUrl: "",
+      docUrl: '',
       isInvitationActive: false,
-      invitationUrl: "",
+      invitationUrl: '',
     },
     auth: {
-      appTokenJwtKey: "",
-      aiProxyBackendKey: "",
-      accountServerTokenJwtKey: "",
+      appTokenJwtKey: '',
+      aiProxyBackendKey: '',
+      accountServerTokenJwtKey: '',
     },
     backend: {
-      aiproxy: "",
-      aiproxyInternal: "",
-      accountServer: "",
+      aiproxy: '',
+      aiproxyInternal: '',
+      accountServer: '',
     },
     adminNameSpace: [],
-    currencySymbol: "shellCoin",
+    currencySymbol: 'shellCoin',
   }
 
   if (!global.AppConfig) {
     try {
       global.AppConfig = getAppConfig(DefaultAppConfig)
     } catch (error) {
-      console.error("init-app-config: Config initialization error:", error)
+      console.error('init-app-config: Config initialization error:', error)
       global.AppConfig = DefaultAppConfig
     }
   }
@@ -86,7 +86,7 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({
       code: 200,
-      message: "Success",
+      message: 'Success',
       data: {
         aiproxyBackend: config.backend.aiproxy,
         currencySymbol: config.currencySymbol,
@@ -96,13 +96,13 @@ export async function GET(): Promise<NextResponse> {
       },
     })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
-    console.error("Config API error:", errorMessage)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('Config API error:', errorMessage)
 
     return NextResponse.json(
       {
         code: 500,
-        message: "Failed to load configuration",
+        message: 'Failed to load configuration',
         error: errorMessage,
       },
       { status: 500 }

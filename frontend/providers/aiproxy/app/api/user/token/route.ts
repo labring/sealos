@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ApiProxyBackendResp, ApiResp } from "@/types/api"
-import { TokenInfo } from "@/types/user/token"
-import { checkSealosUserIsRealName, kcOrAppTokenAuth, parseJwtToken } from "@/utils/backend/auth"
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { TokenInfo } from '@/types/user/token'
+import { checkSealosUserIsRealName, kcOrAppTokenAuth, parseJwtToken } from '@/utils/backend/auth'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 
 type ApiProxyBackendTokenSearchResponse = ApiProxyBackendResp<{
   tokens: TokenInfo[]
@@ -23,11 +23,11 @@ export interface GetTokensQueryParams {
 
 function validateParams(queryParams: GetTokensQueryParams): string | null {
   if (queryParams.page < 1) {
-    return "Page number must be greater than 0"
+    return 'Page number must be greater than 0'
   }
 
   if (queryParams.perPage < 1 || queryParams.perPage > 100) {
-    return "Per page must be between 1 and 100"
+    return 'Per page must be between 1 and 100'
   }
 
   return null
@@ -42,18 +42,18 @@ async function fetchTokens(
       `/api/token/${group}/search`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
-    url.searchParams.append("p", queryParams.page.toString())
-    url.searchParams.append("per_page", queryParams.perPage.toString())
+    url.searchParams.append('p', queryParams.page.toString())
+    url.searchParams.append('per_page', queryParams.perPage.toString())
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -63,7 +63,7 @@ async function fetchTokens(
     const result: ApiProxyBackendTokenSearchResponse = await response.json()
 
     if (!result.success) {
-      throw new Error(result.message || "API request failed")
+      throw new Error(result.message || 'API request failed')
     }
 
     return {
@@ -71,7 +71,7 @@ async function fetchTokens(
       total: result?.data?.total || 0,
     }
   } catch (error) {
-    console.error("Error fetching tokens:", error)
+    console.error('Error fetching tokens:', error)
     return {
       tokens: [],
       total: 0,
@@ -269,8 +269,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetTokensR
 
     const searchParams = request.nextUrl.searchParams
     const queryParams: GetTokensQueryParams = {
-      page: parseInt(searchParams.get("page") || "1", 10),
-      perPage: parseInt(searchParams.get("perPage") || "10", 10),
+      page: parseInt(searchParams.get('page') || '1', 10),
+      perPage: parseInt(searchParams.get('perPage') || '10', 10),
     }
 
     const validationError = validateParams(queryParams)
@@ -296,13 +296,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetTokensR
       },
     } satisfies GetTokensResponse)
   } catch (error) {
-    console.error("Token search error:", error)
+    console.error('Token search error:', error)
 
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "Internal server error",
-        error: error instanceof Error ? error.message : "Internal server error",
+        message: error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     )
@@ -317,7 +317,7 @@ interface CreateTokenRequest {
 
 function validateCreateParams(body: CreateTokenRequest): string | null {
   if (!body.name) {
-    return "Name parameter is required"
+    return 'Name parameter is required'
   }
   return null
 }
@@ -330,12 +330,12 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
     )
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
       body: JSON.stringify({
         name,
       }),
@@ -347,12 +347,12 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
 
     const result: ApiProxyBackendResp<TokenInfo> = await response.json()
     if (!result.success) {
-      throw new Error(result.message || "Failed to create token")
+      throw new Error(result.message || 'Failed to create token')
     }
 
     return result?.data
   } catch (error) {
-    console.error("Error creating token:", error)
+    console.error('Error creating token:', error)
     throw error
   }
 }
@@ -553,8 +553,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
       return NextResponse.json(
         {
           code: 400,
-          message: "key.userNotRealName",
-          error: "key.userNotRealName",
+          message: 'key.userNotRealName',
+          error: 'key.userNotRealName',
         },
         { status: 400 }
       )
@@ -565,15 +565,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
     return NextResponse.json({
       code: 200,
       data: newToken,
-      message: "Token created successfully",
+      message: 'Token created successfully',
     } satisfies ApiResp<TokenInfo>)
   } catch (error) {
-    console.error("Token creation error:", error)
+    console.error('Token creation error:', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "Internal server error",
-        error: error instanceof Error ? error.message : "Internal server error",
+        message: error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       } satisfies ApiResp<TokenInfo>,
       { status: 500 }
     )

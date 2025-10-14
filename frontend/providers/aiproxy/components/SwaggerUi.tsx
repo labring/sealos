@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { memo } from "react";
-import SwaggerUI from "swagger-ui-react";
+import { memo } from 'react';
+import SwaggerUI from 'swagger-ui-react';
 
-import "swagger-ui-react/swagger-ui.css";
+import 'swagger-ui-react/swagger-ui.css';
 
 interface ReactSwaggerProps {
   spec: object | string;
@@ -31,18 +31,18 @@ const ReactSwagger = memo(({ spec }: ReactSwaggerProps) => {
         persistAuthorization={true}
         withCredentials={false}
         // 支持的请求方法
-        supportedSubmitMethods={["get", "post", "put", "delete", "patch"]}
+        supportedSubmitMethods={['get', 'post', 'put', 'delete', 'patch']}
         // 代码片段配置
         requestSnippetsEnabled={true}
         requestSnippets={{
           generators: {
             curl_bash: {
-              title: "cURL (bash)",
-              syntax: "bash",
+              title: 'cURL (bash)',
+              syntax: 'bash',
             },
             curl_powershell: {
-              title: "cURL (PowerShell)",
-              syntax: "powershell",
+              title: 'cURL (PowerShell)',
+              syntax: 'powershell',
             },
           },
           defaultExpanded: true,
@@ -53,6 +53,6 @@ const ReactSwagger = memo(({ spec }: ReactSwaggerProps) => {
   );
 });
 
-ReactSwagger.displayName = "ReactSwagger";
+ReactSwagger.displayName = 'ReactSwagger';
 
 export default ReactSwagger;

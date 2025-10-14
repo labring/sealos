@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ApiProxyBackendResp, ApiResp } from "@/types/api"
-import { TokenInfo } from "@/types/user/token"
-import { getNamespaceFromKubeConfigString, verifyK8sConfigString } from "@/utils/backend/check-kc"
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { TokenInfo } from '@/types/user/token'
+import { getNamespaceFromKubeConfigString, verifyK8sConfigString } from '@/utils/backend/check-kc'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 
 // create token
 
@@ -15,10 +15,10 @@ interface CreateTokenRequest {
 
 function validateCreateParams(body: CreateTokenRequest): string | null {
   if (!body.name) {
-    return "Name parameter is required"
+    return 'Name parameter is required'
   }
   if (!body.kc) {
-    return "Kc parameter is required"
+    return 'Kc parameter is required'
   }
   return null
 }
@@ -31,12 +31,12 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
     )
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
       body: JSON.stringify({
         name,
       }),
@@ -48,12 +48,12 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
 
     const result: ApiProxyBackendResp<TokenInfo> = await response.json()
     if (!result.success) {
-      throw new Error(result.message || "Failed to create token")
+      throw new Error(result.message || 'Failed to create token')
     }
 
     return result?.data
   } catch (error) {
-    console.error("Error creating token:", error)
+    console.error('Error creating token:', error)
     throw error
   }
 }
@@ -79,8 +79,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
       return NextResponse.json(
         {
           code: 401,
-          message: "Invalid K8s config",
-          error: "Invalid K8s config",
+          message: 'Invalid K8s config',
+          error: 'Invalid K8s config',
         },
         { status: 401 }
       )
@@ -93,15 +93,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
     return NextResponse.json({
       code: 200,
       data: newToken,
-      message: "Token created successfully",
+      message: 'Token created successfully',
     } satisfies ApiResp<TokenInfo>)
   } catch (error) {
-    console.error("Token creation error:", error)
+    console.error('Token creation error:', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "Internal server error",
-        error: error instanceof Error ? error.message : "Internal server error",
+        message: error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       } satisfies ApiResp<TokenInfo>,
       { status: 500 }
     )

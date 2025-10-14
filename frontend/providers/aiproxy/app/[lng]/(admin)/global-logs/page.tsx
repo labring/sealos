@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { Box, Button, Flex, Icon, Input, Text } from "@chakra-ui/react";
-import { CurrencySymbol, MyTooltip } from "@sealos/ui";
-import { useQuery } from "@tanstack/react-query";
-import { ColumnDef, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { useMemo, useState } from 'react';
+import { Box, Button, Flex, Icon, Input, Text } from '@chakra-ui/react';
+import { CurrencySymbol, MyTooltip } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
+import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
-import { getEnabledMode, getGlobalLogs } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import SelectDateRange from "@/components/common/SelectDateRange";
-import { SingleSelectComboboxUnstyle } from "@/components/common/SingleSelectComboboxUnStyle";
-import SwitchPage from "@/components/common/SwitchPage";
-import { BaseTable } from "@/components/table/BaseTable";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { QueryKey } from "@/types/query-key";
-import { GlobalLogItem } from "@/types/user/logs";
+import { getEnabledMode, getGlobalLogs } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import SelectDateRange from '@/components/common/SelectDateRange';
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle';
+import SwitchPage from '@/components/common/SwitchPage';
+import { BaseTable } from '@/components/table/BaseTable';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { GlobalLogItem } from '@/types/user/logs';
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { currencySymbol } = useBackendStore();
 
   const [startTime, setStartTime] = useState(() => {
@@ -28,9 +28,9 @@ export default function Home(): React.JSX.Element {
     return currentDate;
   });
   const [endTime, setEndTime] = useState(new Date());
-  const [groupId, setGroupId] = useState("");
-  const [name, setName] = useState("");
-  const [modelName, setModelName] = useState<string>("");
+  const [groupId, setGroupId] = useState('');
+  const [name, setName] = useState('');
+  const [modelName, setModelName] = useState<string>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [logData, setLogData] = useState<GlobalLogItem[]>([]);
@@ -66,41 +66,41 @@ export default function Home(): React.JSX.Element {
   const columns = useMemo<ColumnDef<GlobalLogItem>[]>(() => {
     return [
       {
-        header: t("GlobalLogs.groupId"),
-        accessorKey: "group",
+        header: t('GlobalLogs.groupId'),
+        accessorKey: 'group',
       },
       {
-        header: t("GlobalLogs.tokenName"),
-        accessorKey: "token_name",
+        header: t('GlobalLogs.tokenName'),
+        accessorKey: 'token_name',
       },
       {
-        header: t("logs.model"),
-        accessorKey: "model",
+        header: t('logs.model'),
+        accessorKey: 'model',
       },
       {
-        header: t("GlobalLogs.channel"),
-        accessorKey: "channel",
+        header: t('GlobalLogs.channel'),
+        accessorKey: 'channel',
       },
       {
-        header: t("logs.prompt_tokens"),
-        accessorKey: "prompt_tokens",
+        header: t('logs.prompt_tokens'),
+        accessorKey: 'prompt_tokens',
       },
       {
-        header: t("logs.completion_tokens"),
-        accessorKey: "completion_tokens",
+        header: t('logs.completion_tokens'),
+        accessorKey: 'completion_tokens',
       },
 
       {
-        header: t("logs.status"),
-        accessorFn: (row) => (row.code === 200 ? t("logs.success") : t("logs.failed")),
+        header: t('logs.status'),
+        accessorFn: (row) => (row.code === 200 ? t('logs.success') : t('logs.failed')),
         cell: ({ getValue }) => {
           const value = getValue() as string;
           return (
             <Text
               color={
-                value === t("logs.success")
-                  ? "var(--Green-600, #039855)"
-                  : "var(--Red-600, #D92D20)"
+                value === t('logs.success')
+                  ? 'var(--Green-600, #039855)'
+                  : 'var(--Red-600, #D92D20)'
               }
               fontFamily="PingFang SC"
               fontSize="12px"
@@ -112,21 +112,21 @@ export default function Home(): React.JSX.Element {
             </Text>
           );
         },
-        id: "status",
+        id: 'status',
       },
       {
-        header: t("logs.time"),
+        header: t('logs.time'),
         accessorFn: (row) => new Date(row.created_at).toLocaleString(),
-        id: "created_at",
+        id: 'created_at',
       },
       {
-        accessorKey: "used_amount",
-        id: "used_amount",
+        accessorKey: 'used_amount',
+        id: 'used_amount',
         header: () => {
           return (
-            <Box position={"relative"}>
-              <MyTooltip placement="bottom-end" label={t("logs.total_price_tip")}>
-                <Flex alignItems={"center"} gap={"4px"}>
+            <Box position={'relative'}>
+              <MyTooltip placement="bottom-end" label={t('logs.total_price_tip')}>
+                <Flex alignItems={'center'} gap={'4px'}>
                   <Text
                     noOfLines={1}
                     color="grayModern.600"
@@ -136,7 +136,7 @@ export default function Home(): React.JSX.Element {
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   >
-                    {t("logs.total_price")}
+                    {t('logs.total_price')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} />
                 </Flex>
@@ -194,23 +194,23 @@ export default function Home(): React.JSX.Element {
               lineHeight="26px"
               letterSpacing="0.15px"
             >
-              {t("logs.call_log")}
+              {t('logs.call_log')}
             </Text>
             <Button
               variant="outline"
               _hover={{
-                transform: "scale(1.05)",
-                transition: "transform 0.2s ease",
+                transform: 'scale(1.05)',
+                transition: 'transform 0.2s ease',
               }}
               _active={{
-                transform: "scale(0.92)",
-                animation: "pulse 0.3s ease",
+                transform: 'scale(0.92)',
+                animation: 'pulse 0.3s ease',
               }}
               sx={{
-                "@keyframes pulse": {
-                  "0%": { transform: "scale(0.92)" },
-                  "50%": { transform: "scale(0.96)" },
-                  "100%": { transform: "scale(0.92)" },
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(0.92)' },
+                  '50%': { transform: 'scale(0.96)' },
+                  '100%': { transform: 'scale(0.92)' },
                 },
               }}
               display="flex"
@@ -223,8 +223,8 @@ export default function Home(): React.JSX.Element {
               bg="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               onClick={() => {
-                setName("");
-                setModelName("");
+                setName('');
+                setModelName('');
               }}
             >
               <Icon
@@ -247,10 +247,10 @@ export default function Home(): React.JSX.Element {
               alignItems="flex-start"
               justifyContent="space-between"
               sx={{
-                transition: "gap 0.3s ease",
-                "@media screen and (min-width: 1300px)": {
-                  gap: "160px",
-                  flexWrap: "nowrap",
+                transition: 'gap 0.3s ease',
+                '@media screen and (min-width: 1300px)': {
+                  gap: '160px',
+                  flexWrap: 'nowrap',
                 },
               }}
               gap="16px"
@@ -268,7 +268,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("GlobalLogs.keyName")}
+                  {t('GlobalLogs.keyName')}
                 </Text>
                 <Input
                   w="500px"
@@ -279,18 +279,18 @@ export default function Home(): React.JSX.Element {
                   border="1px solid"
                   borderColor="grayModern.200"
                   bgColor="grayModern.50"
-                  _hover={{ borderColor: "grayModern.300" }}
-                  _focus={{ borderColor: "grayModern.300" }}
-                  _focusVisible={{ borderColor: "grayModern.300" }}
-                  _active={{ borderColor: "grayModern.300" }}
-                  placeholder={t("GlobalLogs.select_token_name")}
+                  _hover={{ borderColor: 'grayModern.300' }}
+                  _focus={{ borderColor: 'grayModern.300' }}
+                  _focusVisible={{ borderColor: 'grayModern.300' }}
+                  _active={{ borderColor: 'grayModern.300' }}
+                  placeholder={t('GlobalLogs.select_token_name')}
                   _placeholder={{
-                    color: "grayModern.500",
-                    fontFamily: "PingFang SC",
-                    fontSize: "12px",
+                    color: 'grayModern.500',
+                    fontFamily: 'PingFang SC',
+                    fontSize: '12px',
                     fontWeight: 400,
-                    lineHeight: "16px",
-                    letterSpacing: "0.048px",
+                    lineHeight: '16px',
+                    letterSpacing: '0.048px',
                   }}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -308,14 +308,14 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("logs.modal")}
+                  {t('logs.modal')}
                 </Text>
 
                 <SingleSelectComboboxUnstyle<string>
-                  dropdownItems={["all", ...models.map((item) => item.model)]}
+                  dropdownItems={['all', ...models.map((item) => item.model)]}
                   setSelectedItem={(value) => {
-                    if (value === "all") {
-                      setModelName("");
+                    if (value === 'all') {
+                      setModelName('');
                     } else {
                       setModelName(value);
                     }
@@ -341,8 +341,8 @@ export default function Home(): React.JSX.Element {
                       </Text>
                     );
                   }}
-                  flexProps={{ w: "500px" }}
-                  placeholder={t("GlobalLogs.selectModel")}
+                  flexProps={{ w: '500px' }}
+                  placeholder={t('GlobalLogs.selectModel')}
                 />
               </Flex>
             </Flex>
@@ -354,10 +354,10 @@ export default function Home(): React.JSX.Element {
               alignItems="flex-start"
               justifyContent="space-between"
               sx={{
-                transition: "gap 0.3s ease",
-                "@media screen and (min-width: 1300px)": {
-                  gap: "160px",
-                  flexWrap: "nowrap",
+                transition: 'gap 0.3s ease',
+                '@media screen and (min-width: 1300px)': {
+                  gap: '160px',
+                  flexWrap: 'nowrap',
                 },
               }}
               gap="16px"
@@ -375,7 +375,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("GlobalLogs.groupId")}
+                  {t('GlobalLogs.groupId')}
                 </Text>
                 <Input
                   w="500px"
@@ -386,18 +386,18 @@ export default function Home(): React.JSX.Element {
                   border="1px solid"
                   borderColor="grayModern.200"
                   bgColor="grayModern.50"
-                  _hover={{ borderColor: "grayModern.300" }}
-                  _focus={{ borderColor: "grayModern.300" }}
-                  _focusVisible={{ borderColor: "grayModern.300" }}
-                  _active={{ borderColor: "grayModern.300" }}
-                  placeholder={t("GlobalLogs.selectGroupId")}
+                  _hover={{ borderColor: 'grayModern.300' }}
+                  _focus={{ borderColor: 'grayModern.300' }}
+                  _focusVisible={{ borderColor: 'grayModern.300' }}
+                  _active={{ borderColor: 'grayModern.300' }}
+                  placeholder={t('GlobalLogs.selectGroupId')}
                   _placeholder={{
-                    color: "grayModern.500",
-                    fontFamily: "PingFang SC",
-                    fontSize: "12px",
+                    color: 'grayModern.500',
+                    fontFamily: 'PingFang SC',
+                    fontSize: '12px',
                     fontWeight: 400,
-                    lineHeight: "16px",
-                    letterSpacing: "0.048px",
+                    lineHeight: '16px',
+                    letterSpacing: '0.048px',
                   }}
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
@@ -415,7 +415,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("logs.time")}
+                  {t('logs.time')}
                 </Text>
                 <SelectDateRange
                   w="500px"
@@ -436,7 +436,7 @@ export default function Home(): React.JSX.Element {
           <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             m="0"
-            justifyContent={"end"}
+            justifyContent={'end'}
             currentPage={page}
             totalPage={Math.ceil(total / pageSize)}
             totalItem={total}

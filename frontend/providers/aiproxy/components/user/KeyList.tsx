@@ -1,5 +1,5 @@
-"use client";
-import React, { useMemo, useState } from "react";
+'use client';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -28,32 +28,32 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from "@chakra-ui/react";
-import { CurrencySymbol } from "@sealos/ui";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Column,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from "@tanstack/react-table";
-import { TFunction } from "i18next";
+} from '@tanstack/react-table';
+import { TFunction } from 'i18next';
 
-import { createToken, deleteToken, getTokens, updateToken } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { MyTooltip } from "@/components/common/MyTooltip";
-import SwitchPage from "@/components/common/SwitchPage";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { QueryKey } from "@/types/query-key";
-import { TokenInfo } from "@/types/user/token";
-import { ChainIcon } from "@/ui/icons/index";
+import { createToken, deleteToken, getTokens, updateToken } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import SwitchPage from '@/components/common/SwitchPage';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { TokenInfo } from '@/types/user/token';
+import { ChainIcon } from '@/ui/icons/index';
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
@@ -69,7 +69,7 @@ export function KeyList(): JSX.Element {
           lineHeight="26px"
           letterSpacing="0.15px"
         >
-          {t("keyList.title")}
+          {t('keyList.title')}
         </Text>
       </Flex>
 
@@ -82,14 +82,14 @@ export function KeyList(): JSX.Element {
 }
 
 export enum TableHeaderId {
-  NAME = "key.name",
-  KEY = "key.key",
-  CREATED_AT = "key.createdAt",
-  LAST_USED_AT = "key.lastUsedAt",
-  STATUS = "key.status",
-  ACTIONS = "key.actions",
-  REQUEST_COUNT = "key.requestCount",
-  USED_AMOUNT = "key.usedAmount",
+  NAME = 'key.name',
+  KEY = 'key.key',
+  CREATED_AT = 'key.createdAt',
+  LAST_USED_AT = 'key.lastUsedAt',
+  STATUS = 'key.status',
+  ACTIONS = 'key.actions',
+  REQUEST_COUNT = 'key.requestCount',
+  USED_AMOUNT = 'key.usedAmount',
 }
 
 enum KeyStatus {
@@ -103,7 +103,7 @@ const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }
   const { currencySymbol } = useBackendStore();
   if (column.id === TableHeaderId.USED_AMOUNT) {
     return (
-      <Flex alignItems={"center"} gap={"4px"}>
+      <Flex alignItems={'center'} gap={'4px'}>
         <Text
           color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
           fontFamily="PingFang SC"
@@ -140,12 +140,12 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
   const queryClient = useQueryClient();
 
@@ -162,20 +162,20 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
     onSuccess() {
       queryClient.invalidateQueries([QueryKey.GetTokens]);
       message({
-        status: "success",
-        title: t("key.deleteSuccess"),
+        status: 'success',
+        title: t('key.deleteSuccess'),
         isClosable: true,
         duration: 2000,
-        position: "top",
+        position: 'top',
       });
     },
     onError(err: any) {
       message({
-        status: "warning",
-        title: t("key.deleteFailed"),
-        description: err?.message || t("key.deleteFailed"),
+        status: 'warning',
+        title: t('key.deleteFailed'),
+        description: err?.message || t('key.deleteFailed'),
         isClosable: true,
-        position: "top",
+        position: 'top',
       });
     },
   });
@@ -186,20 +186,20 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       onSuccess() {
         queryClient.invalidateQueries([QueryKey.GetTokens]);
         message({
-          status: "success",
-          title: t("key.updateSuccess"),
+          status: 'success',
+          title: t('key.updateSuccess'),
           isClosable: true,
           duration: 2000,
-          position: "top",
+          position: 'top',
         });
       },
       onError(err: any) {
         message({
-          status: "warning",
-          title: t("key.updateFailed"),
-          description: err?.message ? t(err.message) : t("key.updateFailed"),
+          status: 'warning',
+          title: t('key.updateFailed'),
+          description: err?.message ? t(err.message) : t('key.updateFailed'),
           isClosable: true,
-          position: "top",
+          position: 'top',
         });
       },
     }
@@ -247,31 +247,31 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           letterSpacing="0.5px"
           cursor="pointer"
           onClick={() => {
-            const key = "sk-" + info.getValue();
+            const key = 'sk-' + info.getValue();
             navigator.clipboard.writeText(key).then(
               () => {
                 message({
-                  status: "success",
-                  title: t("copySuccess"),
+                  status: 'success',
+                  title: t('copySuccess'),
                   isClosable: true,
                   duration: 2000,
-                  position: "top",
+                  position: 'top',
                 });
               },
               (err) => {
                 message({
-                  status: "warning",
-                  title: t("copyFailed"),
-                  description: err?.message || t("copyFailed"),
+                  status: 'warning',
+                  title: t('copyFailed'),
+                  description: err?.message || t('copyFailed'),
                   isClosable: true,
-                  position: "top",
+                  position: 'top',
                 });
               }
             );
           }}
         >
-          <MyTooltip label={t("copy")}>
-            {"sk-" + info.getValue().substring(0, 8) + "*".repeat(3)}
+          <MyTooltip label={t('copy')}>
+            {'sk-' + info.getValue().substring(0, 8) + '*'.repeat(3)}
           </MyTooltip>
         </Text>
       ),
@@ -308,7 +308,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               lineHeight="16px"
               letterSpacing="0.5px"
             >
-              {t("key.unused")}
+              {t('key.unused')}
             </Text>
           );
         }
@@ -332,29 +332,29 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => {
         const status = info.getValue();
-        let statusText = "";
-        let statusColor = "";
+        let statusText = '';
+        let statusColor = '';
 
         switch (status) {
           case KeyStatus.ENABLED:
-            statusText = t("keystatus.enabled");
-            statusColor = "green.600";
+            statusText = t('keystatus.enabled');
+            statusColor = 'green.600';
             break;
           case KeyStatus.DISABLED:
-            statusText = t("keystatus.disabled");
-            statusColor = "red.600";
+            statusText = t('keystatus.disabled');
+            statusColor = 'red.600';
             break;
           case KeyStatus.EXPIRED:
-            statusText = t("keystatus.expired");
-            statusColor = "orange.500";
+            statusText = t('keystatus.expired');
+            statusColor = 'orange.500';
             break;
           case KeyStatus.EXHAUSTED:
-            statusText = t("keystatus.exhausted");
-            statusColor = "gray.500";
+            statusText = t('keystatus.exhausted');
+            statusColor = 'gray.500';
             break;
           default:
-            statusText = t("keystatus.unknown");
-            statusColor = "gray.500";
+            statusText = t('keystatus.unknown');
+            statusColor = 'gray.500';
         }
 
         return (
@@ -395,7 +395,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       cell: (info) => {
         const value = Number(info.getValue());
         // 获取小数部分的长度
-        const decimalLength = value.toString().split(".")[1]?.length || 0;
+        const decimalLength = value.toString().split('.')[1]?.length || 0;
         // 如果小数位超过6位则保留6位，否则保持原样
         const formattedValue = decimalLength > 6 ? value.toFixed(6) : value;
 
@@ -432,7 +432,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               alignItems="center"
               gap="6px"
               borderRadius="6px"
-              _hover={{ bg: "gray.100" }}
+              _hover={{ bg: 'gray.100' }}
               onClick={() => setOpenPopoverId(info.row.original.id)}
             >
               <svg
@@ -481,8 +481,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     background="transparent"
                     color="grayModern.600"
                     _hover={{
-                      background: "rgba(17, 24, 36, 0.05)",
-                      color: "brightBlue.600",
+                      background: 'rgba(17, 24, 36, 0.05)',
+                      color: 'brightBlue.600',
                     }}
                     onClick={() => {
                       handleStatusUpdate(info.row.original.id, info.row.original.status);
@@ -511,7 +511,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       lineHeight="16px"
                       letterSpacing="0.5px"
                     >
-                      {t("enable")}
+                      {t('enable')}
                     </Text>
                   </Button>
                 ) : (
@@ -528,8 +528,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     background="transparent"
                     color="grayModern.600"
                     _hover={{
-                      background: "rgba(17, 24, 36, 0.05)",
-                      color: "brightBlue.600",
+                      background: 'rgba(17, 24, 36, 0.05)',
+                      color: 'brightBlue.600',
                     }}
                     onClick={() => {
                       setOpenPopoverId(null);
@@ -558,7 +558,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       lineHeight="16px"
                       letterSpacing="0.5px"
                     >
-                      {t("disable")}
+                      {t('disable')}
                     </Text>
                   </Button>
                 )}
@@ -575,8 +575,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   background="transparent"
                   color="grayModern.600"
                   _hover={{
-                    background: "rgba(17, 24, 36, 0.05)",
-                    color: "#D92D20",
+                    background: 'rgba(17, 24, 36, 0.05)',
+                    color: '#D92D20',
                   }}
                   onClick={() => {
                     handleDelete(info.row.original.id);
@@ -605,7 +605,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   >
-                    {t("delete")}
+                    {t('delete')}
                   </Text>
                 </Button>
               </Flex>
@@ -701,7 +701,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   lineHeight="20px"
                   letterSpacing="0.1px"
                 >
-                  {t("noData")}
+                  {t('noData')}
                 </Text>
               </Flex>
 
@@ -716,7 +716,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                 borderRadius="6px"
                 background="grayModern.900"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-                _hover={{ background: "grayModern.800" }}
+                _hover={{ background: 'grayModern.800' }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -732,7 +732,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     fill="white"
                   />
                 </svg>
-                {t("createKey2")}
+                {t('createKey2')}
               </Button>
             </Flex>
           </Center>
@@ -754,7 +754,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               >
                 API Endpoint:
               </Text>
-              <MyTooltip label={t("copy")}>
+              <MyTooltip label={t('copy')}>
                 <Text
                   color="var(--light-sealos-secondary-text, var(--Bright-Blue-600, #0884DD))"
                   fontFamily="PingFang SC"
@@ -763,7 +763,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   lineHeight="20px"
                   letterSpacing="0.1px"
                   textDecoration="none"
-                  _hover={{ textDecoration: "underline" }}
+                  _hover={{ textDecoration: 'underline' }}
                   cursor="pointer"
                   whiteSpace="nowrap"
                   onClick={() => {
@@ -771,20 +771,20 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                     navigator.clipboard.writeText(endpoint).then(
                       () => {
                         message({
-                          status: "success",
-                          title: t("copySuccess"),
+                          status: 'success',
+                          title: t('copySuccess'),
                           isClosable: true,
                           duration: 2000,
-                          position: "top",
+                          position: 'top',
                         });
                       },
                       (err) => {
                         message({
-                          status: "warning",
-                          title: t("copyFailed"),
-                          description: err?.message || t("copyFailed"),
+                          status: 'warning',
+                          title: t('copyFailed'),
+                          description: err?.message || t('copyFailed'),
                           isClosable: true,
-                          position: "top",
+                          position: 'top',
                         });
                       }
                     );
@@ -804,7 +804,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               bg="grayModern.900"
               color="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-              _hover={{ bg: "grayModern.800" }}
+              _hover={{ bg: 'grayModern.800' }}
               onClick={onOpen}
             >
               <svg
@@ -821,7 +821,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                   fill="white"
                 />
               </svg>
-              {t("createKey")}
+              {t('createKey')}
             </Button>
           </Flex>
           {/* header end */}
@@ -843,16 +843,16 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                           return (
                             <Th
                               key={header.id}
-                              border={"none"}
+                              border={'none'}
                               // the first th
-                              borderTopLeftRadius={i === 0 ? "6px" : "0"}
-                              borderBottomLeftRadius={i === 0 ? "6px" : "0"}
+                              borderTopLeftRadius={i === 0 ? '6px' : '0'}
+                              borderBottomLeftRadius={i === 0 ? '6px' : '0'}
                               // the last th
                               borderTopRightRadius={
-                                i === headerGroup.headers.length - 1 ? "6px" : "0"
+                                i === headerGroup.headers.length - 1 ? '6px' : '0'
                               }
                               borderBottomRightRadius={
-                                i === headerGroup.headers.length - 1 ? "6px" : "0"
+                                i === headerGroup.headers.length - 1 ? '6px' : '0'
                               }
                             >
                               {flexRender(header.column.columnDef.header, header.getContext())}
@@ -888,7 +888,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             </TableContainer>
             <SwitchPage
               m="0"
-              justifyContent={"end"}
+              justifyContent={'end'}
               currentPage={page}
               totalPage={Math.ceil(total / pageSize)}
               totalItem={total}
@@ -913,54 +913,54 @@ function CreateKeyModal({
   t: TFunction;
 }) {
   const initialRef = React.useRef(null);
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
   const queryClient = useQueryClient();
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
 
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const createKeyMutation = useMutation((name: string) => createToken(name), {
     onSuccess(data) {
       createKeyMutation.reset();
-      setName("");
+      setName('');
       queryClient.invalidateQueries([QueryKey.GetTokens]);
       message({
-        status: "success",
-        title: t("key.createSuccess"),
+        status: 'success',
+        title: t('key.createSuccess'),
         isClosable: true,
         duration: 2000,
-        position: "top",
+        position: 'top',
       });
       onClose();
     },
     onError(err) {
       console.error(err);
       message({
-        status: "warning",
-        title: t("key.createFailed"),
-        description: err instanceof Error ? t(err.message as any) : t("key.createFailed"),
+        status: 'warning',
+        title: t('key.createFailed'),
+        description: err instanceof Error ? t(err.message as any) : t('key.createFailed'),
         isClosable: true,
-        position: "top",
+        position: 'top',
       });
     },
   });
 
   const validateName = (value: string) => {
     if (!value) {
-      setError(t("key.nameRequired"));
+      setError(t('key.nameRequired'));
     } else if (value.length >= 32) {
-      setError(t("key.nameMaxLength"));
+      setError(t('key.nameMaxLength'));
     } else if (!/^[A-Za-z0-9-]+$/.test(value)) {
-      setError(t("key.nameOnlyLettersAndNumbers"));
+      setError(t('key.nameOnlyLettersAndNumbers'));
     } else {
-      setError("");
+      setError('');
     }
   };
 
@@ -971,7 +971,7 @@ function CreateKeyModal({
   };
 
   const handleConfirm = () => {
-    if (error === "" && name !== "") {
+    if (error === '' && name !== '') {
       createKeyMutation.mutate(name);
       return;
     }
@@ -1003,7 +1003,7 @@ function CreateKeyModal({
         >
           <Flex w="360px" justifyContent="space-between" alignItems="center">
             <Flex alignItems="center" gap="10px" flexShrink={0}>
-              {t("Key.create")}
+              {t('Key.create')}
             </Flex>
             <Flex
               as={ModalCloseButton}
@@ -1046,7 +1046,7 @@ function CreateKeyModal({
                 lineHeight="20px"
                 letterSpacing="0.1px"
               >
-                {t("key.createName")}
+                {t('key.createName')}
               </Text>
               <FormControl isInvalid={!!error}>
                 <Input
@@ -1054,7 +1054,7 @@ function CreateKeyModal({
                   type="text"
                   value={name}
                   onChange={handleNameChange}
-                  placeholder={t("key.namePlaceholder")}
+                  placeholder={t('key.namePlaceholder')}
                   w="full"
                   height="32px"
                   padding="8px 12px"
@@ -1062,7 +1062,7 @@ function CreateKeyModal({
                   border="1px solid grayModern.200"
                   background="grayModern.50"
                   _placeholder={{
-                    color: "grayModern.400",
+                    color: 'grayModern.400',
                   }}
                   isDisabled={createKeyMutation.isLoading}
                 />
@@ -1086,12 +1086,12 @@ function CreateKeyModal({
                 borderRadius="6px"
                 background="grayModern.900"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-                _hover={{ background: "var(--Gray-Modern-800, #1F2937)" }}
+                _hover={{ background: 'var(--Gray-Modern-800, #1F2937)' }}
                 onClick={handleConfirm}
                 isDisabled={!!error}
                 isLoading={createKeyMutation.isLoading}
               >
-                {t("confirm")}
+                {t('confirm')}
               </Button>
             </Flex>
           </Flex>

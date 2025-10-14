@@ -1,11 +1,11 @@
-import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios"
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
-import { ApiResp } from "@/types/api"
+import { ApiResp } from '@/types/api'
 
-import { getAppToken } from "./user"
+import { getAppToken } from './user'
 
 const request = axios.create({
-  baseURL: "/",
+  baseURL: '/',
   withCredentials: true,
   timeout: 60000,
 })
@@ -14,7 +14,7 @@ const request = axios.create({
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // auto append service prefix
-    if (config.url && !config.url.startsWith("/api/")) {
+    if (config.url && !config.url.startsWith('/api/')) {
       config.url = `/api${config.url}`
     }
 
@@ -24,26 +24,26 @@ request.interceptors.request.use(
     // append user session to Authorization header
     const appToken = getAppToken()
     if (appToken) {
-      config.headers["Authorization"] = appToken
+      config.headers['Authorization'] = appToken
     }
 
     // set default Content-Type
-    if (!config.headers["Content-Type"]) {
-      config.headers["Content-Type"] = "application/json"
+    if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json'
     }
 
     // 如果是 FormData，删除 Content-Type，让浏览器自动设置
     if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"]
+      delete config.headers['Content-Type']
     }
 
     return config
   },
   (error: any) => {
     // handle request interceptor error
-    console.error("Request Interceptor Error:", error)
+    console.error('Request Interceptor Error:', error)
     error.data = {
-      msg: "An error occurred while making the request. Please try again later.",
+      msg: 'An error occurred while making the request. Please try again later.',
     }
     return Promise.reject(error) // use reject to catch error in subsequent process
   }
@@ -64,7 +64,7 @@ request.interceptors.response.use(
     if (apiResponse?.error || apiResponse?.message) {
       error.message = apiResponse.error || apiResponse.message
     } else {
-      error.message = "An unknown error occurred. Please try again later."
+      error.message = 'An unknown error occurred. Please try again later.'
     }
 
     return Promise.reject(error)

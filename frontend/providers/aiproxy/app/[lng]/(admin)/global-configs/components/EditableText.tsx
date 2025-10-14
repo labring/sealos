@@ -1,6 +1,6 @@
-"use client";
-import React, { useState } from "react";
-import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
+'use client';
+import React, { useState } from 'react';
+import { CheckIcon, CloseIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
   Text,
   useDisclosure,
-} from "@chakra-ui/react";
+} from '@chakra-ui/react';
 
 interface EditableTextProps {
   value: string | number;
@@ -116,10 +116,10 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                 borderRadius="6px"
                 border="1px solid var(--Gray-Modern-200, #E8EBF0)"
                 bgColor="white"
-                _hover={{ borderColor: "grayModern.300" }}
-                _focus={{ borderColor: "grayModern.300" }}
-                _focusVisible={{ borderColor: "grayModern.300" }}
-                _active={{ borderColor: "grayModern.300" }}
+                _hover={{ borderColor: 'grayModern.300' }}
+                _focus={{ borderColor: 'grayModern.300' }}
+                _focusVisible={{ borderColor: 'grayModern.300' }}
+                _active={{ borderColor: 'grayModern.300' }}
                 autoFocus
               />
               <HStack justifyContent="flex-end" spacing="6px">
@@ -134,18 +134,18 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                   color="white"
                   transition="all 0.2s ease"
                   _hover={{
-                    transform: "scale(1.05)",
-                    transition: "transform 0.2s ease",
+                    transform: 'scale(1.05)',
+                    transition: 'transform 0.2s ease',
                   }}
                   _active={{
-                    transform: "scale(0.92)",
-                    animation: "pulse 0.3s ease",
+                    transform: 'scale(0.92)',
+                    animation: 'pulse 0.3s ease',
                   }}
                   sx={{
-                    "@keyframes pulse": {
-                      "0%": { transform: "scale(0.92)" },
-                      "50%": { transform: "scale(0.96)" },
-                      "100%": { transform: "scale(0.92)" },
+                    '@keyframes pulse': {
+                      '0%': { transform: 'scale(0.92)' },
+                      '50%': { transform: 'scale(0.96)' },
+                      '100%': { transform: 'scale(0.92)' },
                     },
                   }}
                   onClick={handleCancel}
@@ -163,18 +163,18 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                   color="white"
                   transition="all 0.2s ease"
                   _hover={{
-                    transform: "scale(1.05)",
-                    transition: "transform 0.2s ease",
+                    transform: 'scale(1.05)',
+                    transition: 'transform 0.2s ease',
                   }}
                   _active={{
-                    transform: "scale(0.92)",
-                    animation: "pulse 0.3s ease",
+                    transform: 'scale(0.92)',
+                    animation: 'pulse 0.3s ease',
                   }}
                   sx={{
-                    "@keyframes pulse": {
-                      "0%": { transform: "scale(0.92)" },
-                      "50%": { transform: "scale(0.96)" },
-                      "100%": { transform: "scale(0.92)" },
+                    '@keyframes pulse': {
+                      '0%': { transform: 'scale(0.92)' },
+                      '50%': { transform: 'scale(0.96)' },
+                      '100%': { transform: 'scale(0.92)' },
                     },
                   }}
                   onClick={handleSubmit}

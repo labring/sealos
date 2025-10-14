@@ -1,6 +1,6 @@
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex } from '@chakra-ui/react';
 
-import SideBar from "@/components/admin/Sidebar";
+import SideBar from '@/components/admin/Sidebar';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   return (

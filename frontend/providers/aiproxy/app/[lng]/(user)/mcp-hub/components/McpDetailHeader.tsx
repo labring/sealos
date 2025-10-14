@@ -1,11 +1,11 @@
-"use client";
-import { Badge, Box, Flex, IconButton, Text } from "@chakra-ui/react";
-import Image from "next/image";
+'use client';
+import { Badge, Box, Flex, IconButton, Text } from '@chakra-ui/react';
+import Image from 'next/image';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { McpDetail } from "@/types/mcp";
-import { getMcpIcon } from "@/ui/icons/mcp-icons";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { McpDetail } from '@/types/mcp';
+import { getMcpIcon } from '@/ui/icons/mcp-icons';
 
 export interface McpDetailHeaderProps {
   mcpDetail: McpDetail;
@@ -13,11 +13,11 @@ export interface McpDetailHeaderProps {
 
 export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const mcpName = lng === "zh" ? mcpDetail.name_cn || mcpDetail.name : mcpDetail.name;
+  const mcpName = lng === 'zh' ? mcpDetail.name_cn || mcpDetail.name : mcpDetail.name;
   const mcpDescription =
-    lng === "zh" ? mcpDetail.description_cn || mcpDetail.description : mcpDetail.description;
+    lng === 'zh' ? mcpDetail.description_cn || mcpDetail.description : mcpDetail.description;
 
   const iconSrc = getMcpIcon(mcpDetail.id);
 
@@ -53,7 +53,7 @@ export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
                 fontSize="14px"
                 fontWeight={500}
               >
-                {t("mcpHub.hosted")}
+                {t('mcpHub.hosted')}
               </Badge>
             ) : (
               <Badge
@@ -66,7 +66,7 @@ export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
                 fontSize="14px"
                 fontWeight={500}
               >
-                {t("mcpHub.local")}
+                {t('mcpHub.local')}
               </Badge>
             )}
             {mcpDetail.github_url && (
@@ -89,8 +89,8 @@ export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
                 size="sm"
                 variant="ghost"
                 color="grayModern.600"
-                _hover={{ color: "grayModern.900" }}
-                onClick={() => window.open(mcpDetail.github_url, "_blank")}
+                _hover={{ color: 'grayModern.900' }}
+                onClick={() => window.open(mcpDetail.github_url, '_blank')}
               />
             )}
           </Flex>

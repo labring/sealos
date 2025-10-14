@@ -1,65 +1,65 @@
-"use client";
-import { Badge, Flex, Text } from "@chakra-ui/react";
-import { useMessage } from "@sealos/ui";
-import Image, { StaticImageData } from "next/image";
+'use client';
+import { Badge, Flex, Text } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import Image, { StaticImageData } from 'next/image';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { MyTooltip } from "@/components/common/MyTooltip";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { ModelConfig } from "@/types/models/model";
-import { modelIcons } from "@/ui/icons/mode-icons";
-import { getTranslationWithFallback } from "@/utils/common";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ModelConfig } from '@/types/models/model';
+import { modelIcons } from '@/ui/icons/mode-icons';
+import { getTranslationWithFallback } from '@/utils/common';
 
 export const getModelIcon = (modelOwner: string): StaticImageData => {
-  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons["default"];
+  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default'];
   return icon;
 };
 
 // 在组件外部定义样式配置
 const MODEL_TYPE_STYLES = {
   1: {
-    background: "#F0FBFF",
-    color: "#0884DD",
+    background: '#F0FBFF',
+    color: '#0884DD',
   },
   2: {
-    background: "#F4F4F7",
-    color: "#383F50",
+    background: '#F4F4F7',
+    color: '#383F50',
   },
   3: {
-    background: "#EBFAF8",
-    color: "#007E7C",
+    background: '#EBFAF8',
+    color: '#007E7C',
   },
   4: {
-    background: "#FEF3F2",
-    color: "#F04438",
+    background: '#FEF3F2',
+    color: '#F04438',
   },
   5: {
-    background: "#F0EEFF",
-    color: "#6F5DD7",
+    background: '#F0EEFF',
+    color: '#6F5DD7',
   },
   6: {
-    background: "#FFFAEB",
-    color: "#DC6803",
+    background: '#FFFAEB',
+    color: '#DC6803',
   },
   7: {
-    background: "#FAF1FF",
-    color: "#9E53C1",
+    background: '#FAF1FF',
+    color: '#9E53C1',
   },
   8: {
-    background: "#FFF1F6",
-    color: "#E82F72",
+    background: '#FFF1F6',
+    color: '#E82F72',
   },
   9: {
-    background: "#F0F4FF",
-    color: "#3370FF",
+    background: '#F0F4FF',
+    color: '#3370FF',
   },
   10: {
-    background: "#EDFAFF",
-    color: "#0077A9",
+    background: '#EDFAFF',
+    color: '#0077A9',
   },
   default: {
-    background: "#F4F4F7",
-    color: "#383F50",
+    background: '#F4F4F7',
+    color: '#383F50',
   },
 } as const;
 
@@ -76,14 +76,14 @@ export const ModelComponent = ({
   displayType?: boolean;
 }) => {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const iconSrc = getModelIcon(modelConfig.owner);
@@ -93,7 +93,7 @@ export const ModelComponent = ({
       <MyTooltip
         label={getTranslationWithFallback(
           `modeOwner.${String(modelConfig.owner)}`,
-          "modeOwner.unknown",
+          'modeOwner.unknown',
           t as any
         )}
         width="auto"
@@ -115,20 +115,20 @@ export const ModelComponent = ({
             navigator.clipboard.writeText(modelConfig.model).then(
               () => {
                 message({
-                  status: "success",
-                  title: t("copySuccess"),
+                  status: 'success',
+                  title: t('copySuccess'),
                   isClosable: true,
                   duration: 2000,
-                  position: "top",
+                  position: 'top',
                 });
               },
               (err) => {
                 message({
-                  status: "warning",
-                  title: t("copyFailed"),
-                  description: err?.message || t("copyFailed"),
+                  status: 'warning',
+                  title: t('copyFailed'),
+                  description: err?.message || t('copyFailed'),
                   isClosable: true,
-                  position: "top",
+                  position: 'top',
                 });
               }
             )
@@ -157,7 +157,7 @@ export const ModelComponent = ({
               >
                 {getTranslationWithFallback(
                   `modeType.${String(modelConfig.type)}`,
-                  "modeType.0",
+                  'modeType.0',
                   t as any
                 )}
               </Text>
@@ -173,7 +173,7 @@ export const ModelComponent = ({
                   fontWeight={400}
                   lineHeight="150%"
                 >
-                  {t("price.modelVisionLabel")}
+                  {t('price.modelVisionLabel')}
                 </Text>
               }
               width="auto"
@@ -209,7 +209,7 @@ export const ModelComponent = ({
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("price.modelVision")}
+                  {t('price.modelVision')}
                 </Text>
               </Badge>
             </MyTooltip>
@@ -251,7 +251,7 @@ export const ModelComponent = ({
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("price.modelToolChoice")}
+                {t('price.modelToolChoice')}
               </Text>
             </Badge>
           )}
@@ -335,7 +335,7 @@ export const ModelComponent = ({
                 letterSpacing="0.5px"
               >
                 {`${Math.ceil(modelConfig.config.max_output_tokens / 1024)}K ${t(
-                  "price.response"
+                  'price.response'
                 )}`}
               </Text>
             </Badge>

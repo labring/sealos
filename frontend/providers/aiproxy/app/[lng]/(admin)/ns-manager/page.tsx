@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -12,43 +12,43 @@ import {
   MenuItem,
   MenuList,
   Text,
-} from "@chakra-ui/react";
-import { CurrencySymbol } from "@sealos/ui";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ColumnDef,
   createColumnHelper,
   getCoreRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
-import { deleteGroup, getGroups, updateGroupQpm, updateGroupStatus } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { EditableTextNoLable } from "@/components/common/EditableTextNoLable";
-import SwitchPage from "@/components/common/SwitchPage";
-import { BaseTable } from "@/components/table/BaseTable";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { GroupInfo, GroupStatus } from "@/types/admin/group";
-import { QueryKey } from "@/types/query-key";
+import { deleteGroup, getGroups, updateGroupQpm, updateGroupStatus } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { EditableTextNoLable } from '@/components/common/EditableTextNoLable';
+import SwitchPage from '@/components/common/SwitchPage';
+import { BaseTable } from '@/components/table/BaseTable';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { GroupInfo, GroupStatus } from '@/types/admin/group';
+import { QueryKey } from '@/types/query-key';
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { currencySymbol } = useBackendStore();
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const queryClient = useQueryClient();
 
-  const [groupId, setGroupId] = useState("");
+  const [groupId, setGroupId] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [groupData, setGroupData] = useState<GroupInfo[]>([]);
@@ -78,21 +78,21 @@ export default function Home(): React.JSX.Element {
   const deleteGroupMutation = useMutation(({ id }: { id: string }) => deleteGroup(id), {
     onSuccess() {
       message({
-        status: "success",
-        title: t("nsManager.deleteGroupSuccess"),
+        status: 'success',
+        title: t('nsManager.deleteGroupSuccess'),
         isClosable: true,
         duration: 2000,
-        position: "top",
+        position: 'top',
       });
       queryClient.invalidateQueries([QueryKey.GetGroups]);
     },
     onError(err: any) {
       message({
-        status: "warning",
-        title: t("nsManager.deleteGroupFailed"),
-        description: err?.message || t("nsManager.deleteGroupFailed"),
+        status: 'warning',
+        title: t('nsManager.deleteGroupFailed'),
+        description: err?.message || t('nsManager.deleteGroupFailed'),
         isClosable: true,
-        position: "top",
+        position: 'top',
       });
     },
   });
@@ -102,21 +102,21 @@ export default function Home(): React.JSX.Element {
     {
       onSuccess() {
         message({
-          status: "success",
-          title: t("nsManager.updateGroupStatusSuccess"),
+          status: 'success',
+          title: t('nsManager.updateGroupStatusSuccess'),
           isClosable: true,
           duration: 2000,
-          position: "top",
+          position: 'top',
         });
         queryClient.invalidateQueries([QueryKey.GetGroups]);
       },
       onError(err: any) {
         message({
-          status: "warning",
-          title: t("nsManager.updateGroupStatusFailed"),
-          description: err?.message || t("nsManager.updateGroupStatusFailed"),
+          status: 'warning',
+          title: t('nsManager.updateGroupStatusFailed'),
+          description: err?.message || t('nsManager.updateGroupStatusFailed'),
           isClosable: true,
-          position: "top",
+          position: 'top',
         });
       },
     }
@@ -127,21 +127,21 @@ export default function Home(): React.JSX.Element {
     {
       onSuccess() {
         message({
-          status: "success",
-          title: t("nsManager.updateGroupQpmSuccess"),
+          status: 'success',
+          title: t('nsManager.updateGroupQpmSuccess'),
           isClosable: true,
           duration: 2000,
-          position: "top",
+          position: 'top',
         });
         queryClient.invalidateQueries([QueryKey.GetGroups]);
       },
       onError(err: any) {
         message({
-          status: "warning",
-          title: t("nsManager.updateGroupQpmFailed"),
-          description: err?.message || t("nsManager.updateGroupQpmFailed"),
+          status: 'warning',
+          title: t('nsManager.updateGroupQpmFailed'),
+          description: err?.message || t('nsManager.updateGroupQpmFailed'),
           isClosable: true,
-          position: "top",
+          position: 'top',
         });
       },
     }
@@ -158,16 +158,16 @@ export default function Home(): React.JSX.Element {
   const columns = useMemo<ColumnDef<GroupInfo>[]>(() => {
     return [
       {
-        header: t("nsManager.groupId"),
-        accessorKey: "id",
+        header: t('nsManager.groupId'),
+        accessorKey: 'id',
       },
       {
-        header: t("nsManager.qpm"),
-        id: "qpm",
+        header: t('nsManager.qpm'),
+        id: 'qpm',
         cell: (info) => (
           <EditableTextNoLable
             value={info.row.original.qpm}
-            flexProps={{ gap: "2px" }}
+            flexProps={{ gap: '2px' }}
             onSubmit={(value) =>
               updateGroupQpmMutation.mutate({
                 id: info.row.original.id,
@@ -178,37 +178,37 @@ export default function Home(): React.JSX.Element {
         ),
       },
       {
-        header: t("nsManager.created_at"),
+        header: t('nsManager.created_at'),
         accessorFn: (row) => new Date(row.created_at).toLocaleString(),
-        id: "created_at",
+        id: 'created_at',
       },
       {
-        header: t("nsManager.accessed_at"),
+        header: t('nsManager.accessed_at'),
         accessorFn: (row) => {
           if (row.accessed_at && row.accessed_at < 0) {
-            return t("key.unused");
+            return t('key.unused');
           }
 
           return new Date(row.accessed_at).toLocaleString();
         },
-        id: "accessed_at",
+        id: 'accessed_at',
       },
       {
-        header: t("nsManager.request_count"),
-        accessorKey: "request_count",
+        header: t('nsManager.request_count'),
+        accessorKey: 'request_count',
       },
       {
-        header: t("nsManager.status"),
+        header: t('nsManager.status'),
         accessorFn: (row) =>
-          row.status === GroupStatus.ENABLED ? t("nsManager.enabled") : t("nsManager.disabled"),
+          row.status === GroupStatus.ENABLED ? t('nsManager.enabled') : t('nsManager.disabled'),
         cell: ({ getValue }) => {
           const value = getValue() as string;
           return (
             <Text
               color={
-                value === t("nsManager.enabled")
-                  ? "var(--Green-600, #039855)"
-                  : "var(--Red-600, #D92D20)"
+                value === t('nsManager.enabled')
+                  ? 'var(--Green-600, #039855)'
+                  : 'var(--Red-600, #D92D20)'
               }
               fontFamily="PingFang SC"
               fontSize="12px"
@@ -220,15 +220,15 @@ export default function Home(): React.JSX.Element {
             </Text>
           );
         },
-        id: "status",
+        id: 'status',
       },
       {
-        accessorKey: "used_amount",
-        id: "used_amount",
+        accessorKey: 'used_amount',
+        id: 'used_amount',
         header: () => {
           return (
-            <Box position={"relative"}>
-              <Flex alignItems={"center"} gap={"4px"}>
+            <Box position={'relative'}>
+              <Flex alignItems={'center'} gap={'4px'}>
                 <Text
                   noOfLines={1}
                   color="grayModern.600"
@@ -238,7 +238,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("nsManager.used_amount")}
+                  {t('nsManager.used_amount')}
                 </Text>
                 <CurrencySymbol type={currencySymbol} />
               </Flex>
@@ -247,7 +247,7 @@ export default function Home(): React.JSX.Element {
         },
       },
       columnHelper.display({
-        id: "actions",
+        id: 'actions',
         header: () => (
           <Text
             color="grayModern.600"
@@ -257,7 +257,7 @@ export default function Home(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("nsManager.actions")}
+            {t('nsManager.actions')}
           </Text>
         ),
         cell: (info) => (
@@ -269,7 +269,7 @@ export default function Home(): React.JSX.Element {
               gap="6px"
               borderRadius="6px"
               transition="all 0.2s"
-              _hover={{ bg: "gray.100" }}
+              _hover={{ bg: 'gray.100' }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -305,8 +305,8 @@ export default function Home(): React.JSX.Element {
                 borderRadius="4px"
                 color="grayModern.600"
                 _hover={{
-                  bg: "rgba(17, 24, 36, 0.05)",
-                  color: info.row.original.status === 1 ? "#D92D20" : "brightBlue.600",
+                  bg: 'rgba(17, 24, 36, 0.05)',
+                  color: info.row.original.status === 1 ? '#D92D20' : 'brightBlue.600',
                 }}
                 onClick={() => handleStatusUpdate(info.row.original.id, info.row.original.status)}
               >
@@ -334,7 +334,7 @@ export default function Home(): React.JSX.Element {
                       lineHeight="16px"
                       letterSpacing="0.5px"
                     >
-                      {t("channels.disable")}
+                      {t('channels.disable')}
                     </Text>
                   </>
                 ) : (
@@ -361,7 +361,7 @@ export default function Home(): React.JSX.Element {
                       lineHeight="16px"
                       letterSpacing="0.5px"
                     >
-                      {t("channels.enable")}
+                      {t('channels.enable')}
                     </Text>
                   </>
                 )}
@@ -375,8 +375,8 @@ export default function Home(): React.JSX.Element {
                 borderRadius="4px"
                 color="grayModern.600"
                 _hover={{
-                  bg: "rgba(17, 24, 36, 0.05)",
-                  color: "#D92D20",
+                  bg: 'rgba(17, 24, 36, 0.05)',
+                  color: '#D92D20',
                 }}
                 onClick={() => deleteGroupMutation.mutate({ id: String(info.row.original.id) })}
               >
@@ -402,7 +402,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("channels.delete")}
+                  {t('channels.delete')}
                 </Text>
               </MenuItem>
             </MenuList>
@@ -458,23 +458,23 @@ export default function Home(): React.JSX.Element {
               lineHeight="26px"
               letterSpacing="0.15px"
             >
-              {t("nsManager.ns_manager")}
+              {t('nsManager.ns_manager')}
             </Text>
             <Button
               variant="outline"
               _hover={{
-                transform: "scale(1.05)",
-                transition: "transform 0.2s ease",
+                transform: 'scale(1.05)',
+                transition: 'transform 0.2s ease',
               }}
               _active={{
-                transform: "scale(0.92)",
-                animation: "pulse 0.3s ease",
+                transform: 'scale(0.92)',
+                animation: 'pulse 0.3s ease',
               }}
               sx={{
-                "@keyframes pulse": {
-                  "0%": { transform: "scale(0.92)" },
-                  "50%": { transform: "scale(0.96)" },
-                  "100%": { transform: "scale(0.92)" },
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(0.92)' },
+                  '50%': { transform: 'scale(0.96)' },
+                  '100%': { transform: 'scale(0.92)' },
                 },
               }}
               display="flex"
@@ -487,7 +487,7 @@ export default function Home(): React.JSX.Element {
               bg="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               onClick={() => {
-                setGroupId("");
+                setGroupId('');
               }}
             >
               <Icon
@@ -523,7 +523,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("nsManager.groupId")}
+                  {t('nsManager.groupId')}
                 </Text>
                 <Input
                   w="276px"
@@ -534,18 +534,18 @@ export default function Home(): React.JSX.Element {
                   border="1px solid"
                   borderColor="grayModern.200"
                   bgColor="grayModern.50"
-                  _hover={{ borderColor: "grayModern.300" }}
-                  _focus={{ borderColor: "grayModern.300" }}
-                  _focusVisible={{ borderColor: "grayModern.300" }}
-                  _active={{ borderColor: "grayModern.300" }}
-                  placeholder={t("nsManager.select_group_id")}
+                  _hover={{ borderColor: 'grayModern.300' }}
+                  _focus={{ borderColor: 'grayModern.300' }}
+                  _focusVisible={{ borderColor: 'grayModern.300' }}
+                  _active={{ borderColor: 'grayModern.300' }}
+                  placeholder={t('nsManager.select_group_id')}
                   _placeholder={{
-                    color: "grayModern.500",
-                    fontFamily: "PingFang SC",
-                    fontSize: "12px",
+                    color: 'grayModern.500',
+                    fontFamily: 'PingFang SC',
+                    fontSize: '12px',
                     fontWeight: 400,
-                    lineHeight: "16px",
-                    letterSpacing: "0.048px",
+                    lineHeight: '16px',
+                    letterSpacing: '0.048px',
                   }}
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
@@ -563,7 +563,7 @@ export default function Home(): React.JSX.Element {
           <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             m="0"
-            justifyContent={"end"}
+            justifyContent={'end'}
             currentPage={page}
             totalPage={Math.ceil(total / pageSize)}
             totalItem={total}

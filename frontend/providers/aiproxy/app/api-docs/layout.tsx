@@ -1,10 +1,10 @@
-import { Metadata } from "next";
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "AI Proxy API Doc",
-  description: "AI Proxy API Documentation",
+  title: 'AI Proxy API Doc',
+  description: 'AI Proxy API Documentation',
   robots: {
-    index: process.env.NODE_ENV === "development",
+    index: process.env.NODE_ENV === 'development',
     follow: false,
   },
 };

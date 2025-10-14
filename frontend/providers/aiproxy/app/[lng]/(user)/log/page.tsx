@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -11,34 +11,34 @@ import {
   InputRightElement,
   Text,
   useDisclosure,
-} from "@chakra-ui/react";
-import { CurrencySymbol, MySelect, MyTooltip } from "@sealos/ui";
-import { useQuery } from "@tanstack/react-query";
-import { createColumnHelper, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import dynamic from "next/dynamic";
+} from '@chakra-ui/react';
+import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
+import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import dynamic from 'next/dynamic';
 
-import { getEnabledMode, getTokens, getUserLogs } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import SelectDateRange from "@/components/common/SelectDateRange";
-import { SingleSelectComboboxUnstyle } from "@/components/common/SingleSelectComboboxUnStyle";
-import SwitchPage from "@/components/common/SwitchPage";
-import { BaseTable } from "@/components/table/BaseTable";
-import { useDebounce } from "@/hooks/useDebounce";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { QueryKey } from "@/types/query-key";
-import { LogItem } from "@/types/user/logs";
+import { getEnabledMode, getTokens, getUserLogs } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import SelectDateRange from '@/components/common/SelectDateRange';
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle';
+import SwitchPage from '@/components/common/SwitchPage';
+import { BaseTable } from '@/components/table/BaseTable';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { LogItem } from '@/types/user/logs';
 
-import { getTimeDiff } from "./tools/handleTime";
+import { getTimeDiff } from './tools/handleTime';
 
 const LogDetailModal = dynamic(
-  () => import("./components/LogDetailModal"),
+  () => import('./components/LogDetailModal'),
   { ssr: false } // 禁用服务端渲染
 );
 
 export default function Logs(): React.JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { currencySymbol } = useBackendStore();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedRow, setSelectedRow] = useState<LogItem | null>(null);
@@ -49,12 +49,12 @@ export default function Logs(): React.JSX.Element {
     return currentDate;
   });
   const [endTime, setEndTime] = useState(new Date());
-  const [keyName, setKeyName] = useState("");
-  const [codeType, setCodeType] = useState("all");
-  const [modelName, setModelName] = useState("");
+  const [keyName, setKeyName] = useState('');
+  const [codeType, setCodeType] = useState('all');
+  const [modelName, setModelName] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [inputKeyword, setInputKeyword] = useState("");
+  const [inputKeyword, setInputKeyword] = useState('');
   const debouncedKeyword = useDebounce(inputKeyword, 500); // 500ms 延迟 0.5s
 
   const { data: logData, isLoading } = useQuery(
@@ -76,7 +76,7 @@ export default function Logs(): React.JSX.Element {
         token_name: keyName,
         model_name: modelName,
         keyword: debouncedKeyword,
-        code_type: codeType as "all" | "success" | "error",
+        code_type: codeType as 'all' | 'success' | 'error',
         start_timestamp: startTime.getTime().toString(),
         end_timestamp: endTime.getTime().toString(),
       })
@@ -86,7 +86,7 @@ export default function Logs(): React.JSX.Element {
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor("token_name", {
+      columnHelper.accessor('token_name', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -96,12 +96,12 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.name")}
+            {t('logs.name')}
           </Text>
         ),
-        id: "token_name",
+        id: 'token_name',
       }),
-      columnHelper.accessor("model", {
+      columnHelper.accessor('model', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -111,12 +111,12 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.model")}
+            {t('logs.model')}
           </Text>
         ),
-        id: "model",
+        id: 'model',
       }),
-      columnHelper.accessor("usage.input_tokens", {
+      columnHelper.accessor('usage.input_tokens', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -126,12 +126,12 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.prompt_tokens")}
+            {t('logs.prompt_tokens')}
           </Text>
         ),
-        id: "prompt_tokens",
+        id: 'prompt_tokens',
       }),
-      columnHelper.accessor("usage.output_tokens", {
+      columnHelper.accessor('usage.output_tokens', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -141,10 +141,10 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.completion_tokens")}
+            {t('logs.completion_tokens')}
           </Text>
         ),
-        id: "completion_tokens",
+        id: 'completion_tokens',
       }),
 
       columnHelper.display({
@@ -157,7 +157,7 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.totalTime")}
+            {t('logs.totalTime')}
           </Text>
         ),
         cell: ({ row }) => (
@@ -172,10 +172,10 @@ export default function Logs(): React.JSX.Element {
             {getTimeDiff(row.original.created_at, row.original.request_at)}
           </Text>
         ),
-        id: "total_time",
+        id: 'total_time',
       }),
 
-      columnHelper.accessor("code", {
+      columnHelper.accessor('code', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -185,7 +185,7 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.status")}
+            {t('logs.status')}
           </Text>
         ),
         cell: ({ getValue, row }) => {
@@ -193,14 +193,14 @@ export default function Logs(): React.JSX.Element {
           return (
             <Flex alignItems="center" gap="4px" w="fit-content">
               <Text
-                color={code === 200 ? "var(--Green-600, #039855)" : "var(--Red-600, #D92D20)"}
+                color={code === 200 ? 'var(--Green-600, #039855)' : 'var(--Red-600, #D92D20)'}
                 fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={400}
                 lineHeight="16px"
                 letterSpacing="0.048px"
               >
-                {code !== 200 ? `${t("logs.failed")} (${row.original.code})` : code}
+                {code !== 200 ? `${t('logs.failed')} (${row.original.code})` : code}
               </Text>
               {code !== 200 && (
                 <MyTooltip placement="bottom-end" label={row.original.content}>
@@ -223,24 +223,24 @@ export default function Logs(): React.JSX.Element {
             </Flex>
           );
         },
-        id: "status",
+        id: 'status',
       }),
 
-      columnHelper.accessor("created_at", {
+      columnHelper.accessor('created_at', {
         header: () => (
           <Text color="grayModern.600" fontSize="12px" fontWeight={500}>
-            {t("logs.time")}
+            {t('logs.time')}
           </Text>
         ),
         cell: ({ row }) => new Date(row.original.created_at).toLocaleString(),
-        id: "created_at",
+        id: 'created_at',
       }),
-      columnHelper.accessor("used_amount", {
+      columnHelper.accessor('used_amount', {
         header: () => {
           return (
-            <Box position={"relative"}>
-              <MyTooltip placement="bottom-end" label={t("logs.total_price_tip")}>
-                <Flex alignItems={"center"} gap={"4px"}>
+            <Box position={'relative'}>
+              <MyTooltip placement="bottom-end" label={t('logs.total_price_tip')}>
+                <Flex alignItems={'center'} gap={'4px'}>
                   <Text
                     noOfLines={1}
                     color="grayModern.900"
@@ -250,7 +250,7 @@ export default function Logs(): React.JSX.Element {
                     lineHeight="16px"
                     letterSpacing="0.048px"
                   >
-                    {t("logs.total_price")}
+                    {t('logs.total_price')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} />
                 </Flex>
@@ -258,7 +258,7 @@ export default function Logs(): React.JSX.Element {
             </Box>
           );
         },
-        id: "used_amount",
+        id: 'used_amount',
       }),
 
       columnHelper.display({
@@ -271,7 +271,7 @@ export default function Logs(): React.JSX.Element {
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("logs.actions")}
+            {t('logs.actions')}
           </Text>
         ),
         cell: ({ row }) => (
@@ -292,18 +292,18 @@ export default function Logs(): React.JSX.Element {
             whiteSpace="nowrap"
             transition="all 0.2s ease"
             _hover={{
-              transform: "scale(1.05)",
-              transition: "transform 0.2s ease",
+              transform: 'scale(1.05)',
+              transition: 'transform 0.2s ease',
             }}
             _active={{
-              transform: "scale(0.92)",
-              animation: "pulse 0.3s ease",
+              transform: 'scale(0.92)',
+              animation: 'pulse 0.3s ease',
             }}
             sx={{
-              "@keyframes pulse": {
-                "0%": { transform: "scale(0.92)" },
-                "50%": { transform: "scale(0.96)" },
-                "100%": { transform: "scale(0.92)" },
+              '@keyframes pulse': {
+                '0%': { transform: 'scale(0.92)' },
+                '50%': { transform: 'scale(0.96)' },
+                '100%': { transform: 'scale(0.92)' },
               },
             }}
           >
@@ -330,11 +330,11 @@ export default function Logs(): React.JSX.Element {
               lineHeight="16px"
               letterSpacing="0.5px"
             >
-              {t("logs.detail")}
+              {t('logs.detail')}
             </Text>
           </Button>
         ),
-        id: "detail",
+        id: 'detail',
       }),
     ],
     [t, currencySymbol]
@@ -386,7 +386,7 @@ export default function Logs(): React.JSX.Element {
               lineHeight="26px"
               letterSpacing="0.15px"
             >
-              {t("logs.call_log")}
+              {t('logs.call_log')}
             </Text>
             <Flex alignItems="center" gap="24px">
               <InputGroup w="290px">
@@ -399,18 +399,18 @@ export default function Logs(): React.JSX.Element {
                   border="1px solid"
                   borderColor="grayModern.200"
                   bgColor="grayModern.50"
-                  _hover={{ borderColor: "grayModern.300" }}
-                  _focus={{ borderColor: "grayModern.300" }}
-                  _focusVisible={{ borderColor: "grayModern.300" }}
-                  _active={{ borderColor: "grayModern.300" }}
-                  placeholder={t("logs.searchByContent")}
+                  _hover={{ borderColor: 'grayModern.300' }}
+                  _focus={{ borderColor: 'grayModern.300' }}
+                  _focusVisible={{ borderColor: 'grayModern.300' }}
+                  _active={{ borderColor: 'grayModern.300' }}
+                  placeholder={t('logs.searchByContent')}
                   _placeholder={{
-                    color: "grayModern.500",
-                    fontFamily: "PingFang SC",
-                    fontSize: "12px",
+                    color: 'grayModern.500',
+                    fontFamily: 'PingFang SC',
+                    fontSize: '12px',
                     fontWeight: 400,
-                    lineHeight: "16px",
-                    letterSpacing: "0.048px",
+                    lineHeight: '16px',
+                    letterSpacing: '0.048px',
                   }}
                   value={inputKeyword}
                   onChange={(e) => {
@@ -448,18 +448,18 @@ export default function Logs(): React.JSX.Element {
               <Button
                 variant="outline"
                 _hover={{
-                  transform: "scale(1.05)",
-                  transition: "transform 0.2s ease",
+                  transform: 'scale(1.05)',
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
-                  transform: "scale(0.92)",
-                  animation: "pulse 0.3s ease",
+                  transform: 'scale(0.92)',
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
-                  "@keyframes pulse": {
-                    "0%": { transform: "scale(0.92)" },
-                    "50%": { transform: "scale(0.96)" },
-                    "100%": { transform: "scale(0.92)" },
+                  '@keyframes pulse': {
+                    '0%': { transform: 'scale(0.92)' },
+                    '50%': { transform: 'scale(0.96)' },
+                    '100%': { transform: 'scale(0.92)' },
                   },
                 }}
                 display="flex"
@@ -472,9 +472,9 @@ export default function Logs(): React.JSX.Element {
                 bg="white"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
                 onClick={() => {
-                  setKeyName("");
-                  setModelName("");
-                  setCodeType("all");
+                  setKeyName('');
+                  setModelName('');
+                  setCodeType('all');
                 }}
               >
                 <Icon
@@ -500,10 +500,10 @@ export default function Logs(): React.JSX.Element {
               alignSelf="stretch"
               flexWrap="wrap"
               sx={{
-                transition: "gap 0.3s ease",
-                gap: "16px",
-                "@media screen and (min-width: 1318px)": {
-                  gap: "24px",
+                transition: 'gap 0.3s ease',
+                gap: '16px',
+                '@media screen and (min-width: 1318px)': {
+                  gap: '24px',
                 },
               }}
             >
@@ -518,13 +518,13 @@ export default function Logs(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("logs.name")}
+                  {t('logs.name')}
                 </Text>
                 <SingleSelectComboboxUnstyle<string>
-                  dropdownItems={["all", ...(logData?.token_names || [])]}
+                  dropdownItems={['all', ...(logData?.token_names || [])]}
                   setSelectedItem={(value) => {
-                    if (value === "all") {
-                      setKeyName("");
+                    if (value === 'all') {
+                      setKeyName('');
                     } else {
                       setKeyName(value);
                     }
@@ -550,8 +550,8 @@ export default function Logs(): React.JSX.Element {
                       </Text>
                     );
                   }}
-                  flexProps={{ w: "280px" }}
-                  placeholder={t("logs.select_token_name")}
+                  flexProps={{ w: '280px' }}
+                  placeholder={t('logs.select_token_name')}
                 />
               </Flex>
 
@@ -566,13 +566,13 @@ export default function Logs(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("logs.modal")}
+                  {t('logs.modal')}
                 </Text>
                 <SingleSelectComboboxUnstyle<string>
-                  dropdownItems={["all", ...(logData?.models || [])]}
+                  dropdownItems={['all', ...(logData?.models || [])]}
                   setSelectedItem={(value) => {
-                    if (value === "all") {
-                      setModelName("");
+                    if (value === 'all') {
+                      setModelName('');
                     } else {
                       setModelName(value);
                     }
@@ -598,8 +598,8 @@ export default function Logs(): React.JSX.Element {
                       </Text>
                     );
                   }}
-                  flexProps={{ w: "280px" }}
-                  placeholder={t("logs.select_modal")}
+                  flexProps={{ w: '280px' }}
+                  placeholder={t('logs.select_modal')}
                 />
               </Flex>
 
@@ -614,28 +614,28 @@ export default function Logs(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("logs.status")}
+                  {t('logs.status')}
                 </Text>
                 <MySelect
                   boxStyle={{
-                    w: "100%",
+                    w: '100%',
                   }}
-                  maxW={"120px"}
-                  w={"100%"}
+                  maxW={'120px'}
+                  w={'100%'}
                   height="32px"
                   value={codeType}
                   list={[
                     {
-                      value: "all",
-                      label: t("logs.statusOptions.all"),
+                      value: 'all',
+                      label: t('logs.statusOptions.all'),
                     },
                     {
-                      value: "success",
-                      label: t("logs.statusOptions.success"),
+                      value: 'success',
+                      label: t('logs.statusOptions.success'),
                     },
                     {
-                      value: "error",
-                      label: t("logs.statusOptions.error"),
+                      value: 'error',
+                      label: t('logs.statusOptions.error'),
                     },
                   ]}
                   onchange={(val: string) => {
@@ -655,7 +655,7 @@ export default function Logs(): React.JSX.Element {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("logs.time")}
+                  {t('logs.time')}
                 </Text>
                 <SelectDateRange
                   w="280px"
@@ -676,7 +676,7 @@ export default function Logs(): React.JSX.Element {
           <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             m="0"
-            justifyContent={"end"}
+            justifyContent={'end'}
             currentPage={page}
             totalPage={Math.ceil((logData?.total || 0) / pageSize)}
             totalItem={logData?.total || 0}

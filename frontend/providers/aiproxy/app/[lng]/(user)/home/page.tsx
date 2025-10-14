@@ -1,29 +1,29 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Box, Button, Center, Flex, Text } from "@chakra-ui/react";
-import { CurrencySymbol, MySelect } from "@sealos/ui";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useState } from 'react';
+import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
+import { CurrencySymbol, MySelect } from '@sealos/ui';
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
 
-import { getDashboardData } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { QueryKey } from "@/types/query-key";
-import { DashboardResponse } from "@/types/user/dashboard";
+import { getDashboardData } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { DashboardResponse } from '@/types/user/dashboard';
 
-import RequestDataChart from "./components/RequestDataChart";
+import RequestDataChart from './components/RequestDataChart';
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { currencySymbol } = useBackendStore();
 
-  const [tokenName, setTokenName] = useState<string>("");
-  const [model, setModel] = useState<string>("");
-  const [type, setType] = useState<"week" | "day" | "two_week" | "month">("week"); // default is week
+  const [tokenName, setTokenName] = useState<string>('');
+  const [model, setModel] = useState<string>('');
+  const [type, setType] = useState<'week' | 'day' | 'two_week' | 'month'>('week'); // default is week
 
-  const { data: dashboardData, isLoading }: UseQueryResult<DashboardResponse["data"]> = useQuery(
+  const { data: dashboardData, isLoading }: UseQueryResult<DashboardResponse['data']> = useQuery(
     [QueryKey.GetDashboardData, type, tokenName, model],
     () =>
       getDashboardData({
@@ -75,30 +75,30 @@ export default function Home(): React.JSX.Element {
               letterSpacing="0.15px"
               whiteSpace="nowrap"
             >
-              {t("dataDashboard.title")}
+              {t('dataDashboard.title')}
             </Text>
             <Flex gap="12px" alignItems="center">
               <MySelect
                 w="200px"
                 boxStyle={{
-                  w: "100%",
+                  w: '100%',
                 }}
                 height="36px"
                 value={tokenName}
                 list={[
                   {
-                    value: "all",
-                    label: "all",
+                    value: 'all',
+                    label: 'all',
                   },
                   ...(dashboardData?.token_names?.map((token) => ({
                     value: token,
                     label: token,
                   })) || []),
                 ]}
-                placeholder={t("dataDashboard.selectToken")}
+                placeholder={t('dataDashboard.selectToken')}
                 onchange={(token: string) => {
-                  if (token === "all") {
-                    setTokenName("");
+                  if (token === 'all') {
+                    setTokenName('');
                   } else {
                     setTokenName(token);
                   }
@@ -107,16 +107,16 @@ export default function Home(): React.JSX.Element {
 
               <MySelect
                 boxStyle={{
-                  w: "100%",
+                  w: '100%',
                 }}
                 w="200px"
                 height="36px"
-                placeholder={t("dataDashboard.selectModel")}
+                placeholder={t('dataDashboard.selectModel')}
                 value={model}
                 list={[
                   {
-                    value: "all",
-                    label: "all",
+                    value: 'all',
+                    label: 'all',
                   },
                   ...(dashboardData?.models?.map((model) => ({
                     value: model,
@@ -124,8 +124,8 @@ export default function Home(): React.JSX.Element {
                   })) || []),
                 ]}
                 onchange={(model: string) => {
-                  if (model === "all") {
-                    setModel("");
+                  if (model === 'all') {
+                    setModel('');
                   } else {
                     setModel(model);
                   }
@@ -142,10 +142,10 @@ export default function Home(): React.JSX.Element {
             borderRadius="6px"
           >
             {[
-              { label: t("dataDashboard.day"), value: "day" },
-              { label: t("dataDashboard.week"), value: "week" },
-              { label: t("dataDashboard.twoWeek"), value: "two_week" },
-              { label: t("dataDashboard.month"), value: "month" },
+              { label: t('dataDashboard.day'), value: 'day' },
+              { label: t('dataDashboard.week'), value: 'week' },
+              { label: t('dataDashboard.twoWeek'), value: 'two_week' },
+              { label: t('dataDashboard.month'), value: 'month' },
             ].map((item) => (
               <Button
                 key={item.value}
@@ -158,20 +158,20 @@ export default function Home(): React.JSX.Element {
                 alignItems="center"
                 gap="6px"
                 borderRadius="4px"
-                color={type === item.value ? "#0884DD" : "grayModern.500"}
+                color={type === item.value ? '#0884DD' : 'grayModern.500'}
                 fontFamily="PingFang SC"
                 fontSize="14px"
                 fontWeight="500"
                 lineHeight="20px"
                 fontStyle="normal"
                 letterSpacing="0.1px"
-                bg={type === item.value ? "white" : "transparent"}
+                bg={type === item.value ? 'white' : 'transparent'}
                 onClick={() => setType(item.value as typeof type)}
                 _hover={{
-                  bg: "white",
-                  color: "#0884DD",
+                  bg: 'white',
+                  color: '#0884DD',
                   boxShadow:
-                    "0px 1px 2px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.15)",
+                    '0px 1px 2px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.15)',
                 }}
               >
                 {item.label}
@@ -191,11 +191,11 @@ export default function Home(): React.JSX.Element {
           overflowY="auto"
           overflowX="hidden"
           sx={{
-            "&::-webkit-scrollbar": {
-              display: "none",
+            '&::-webkit-scrollbar': {
+              display: 'none',
             },
-            msOverflowStyle: "none",
-            scrollbarWidth: "none",
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
           }}
         >
           {/* chart 1 */}
@@ -206,11 +206,11 @@ export default function Home(): React.JSX.Element {
             overflowY="hidden"
             overflowX="auto"
             sx={{
-              "&::-webkit-scrollbar": {
-                display: "none",
+              '&::-webkit-scrollbar': {
+                display: 'none',
               },
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
             }}
           >
             <Flex
@@ -266,7 +266,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="20px"
                   letterSpacing="0.25px"
                 >
-                  {t("dataDashboard.callCount")}
+                  {t('dataDashboard.callCount')}
                 </Text>
                 <Text
                   color="grayModern.900"
@@ -328,7 +328,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="20px"
                   letterSpacing="0.25px"
                 >
-                  {t("dataDashboard.exceptionCount")}
+                  {t('dataDashboard.exceptionCount')}
                 </Text>
                 <Text
                   color="grayModern.900"
@@ -386,7 +386,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="20px"
                   letterSpacing="0.25px"
                 >
-                  {t("dataDashboard.rpm")}
+                  {t('dataDashboard.rpm')}
                 </Text>
                 <Text
                   color="grayModern.900"
@@ -448,7 +448,7 @@ export default function Home(): React.JSX.Element {
                   lineHeight="20px"
                   letterSpacing="0.25px"
                 >
-                  {t("dataDashboard.tpm")}
+                  {t('dataDashboard.tpm')}
                 </Text>
                 <Text
                   color="grayModern.900"
@@ -511,9 +511,9 @@ export default function Home(): React.JSX.Element {
                     lineHeight="20px"
                     letterSpacing="0.25px"
                   >
-                    {t("dataDashboard.cost")}
+                    {t('dataDashboard.cost')}
                   </Text>
-                  {currencySymbol === "shellCoin" ? (
+                  {currencySymbol === 'shellCoin' ? (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="15"
@@ -689,7 +689,7 @@ export default function Home(): React.JSX.Element {
                         </linearGradient>
                       </defs>
                     </svg>
-                  ) : currencySymbol === "cny" ? (
+                  ) : currencySymbol === 'cny' ? (
                     <Text
                       color="grayModern.600"
                       fontFamily="PingFang SC"

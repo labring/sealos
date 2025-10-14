@@ -1,5 +1,5 @@
-"use client";
-import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from "react";
+'use client';
+import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -11,11 +11,11 @@ import {
   ListItem,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { useCombobox, useMultipleSelection } from "downshift";
+} from '@chakra-ui/react';
+import { useCombobox, useMultipleSelection } from 'downshift';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export const MultiSelectCombobox = function <T>({
   dropdownItems,
@@ -40,10 +40,10 @@ export const MultiSelectCombobox = function <T>({
   ) => void;
 }): JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const [inputValue, setInputValue] = useState<string>("");
-  const [customSelectedItemName, setCustomSelectedItemName] = useState("");
+  const [inputValue, setInputValue] = useState<string>('');
+  const [customSelectedItemName, setCustomSelectedItemName] = useState('');
 
   // Dropdown list excludes already selected options and includes those matching the input.
   const items = useMemo(
@@ -105,12 +105,12 @@ export const MultiSelectCombobox = function <T>({
         case useCombobox.stateChangeTypes.InputBlur:
           if (newSelectedItem) {
             setSelectedItems([...selectedItems, newSelectedItem]);
-            setInputValue("");
+            setInputValue('');
           }
           break;
 
         case useCombobox.stateChangeTypes.InputChange:
-          setInputValue(newInputValue ?? "");
+          setInputValue(newInputValue ?? '');
 
           break;
         default:
@@ -126,7 +126,7 @@ export const MultiSelectCombobox = function <T>({
           display="flex"
           m={0}
           w="full"
-          h={handleSetCustomSelectedItem ? "28px" : "20px"}
+          h={handleSetCustomSelectedItem ? '28px' : '20px'}
           justifyContent="space-between"
           alignItems="center"
           {...getLabelProps()}
@@ -142,7 +142,7 @@ export const MultiSelectCombobox = function <T>({
               lineHeight="20px"
               letterSpacing="0.1px"
             >
-              {t("channelsForm.models")}
+              {t('channelsForm.models')}
             </Text>
             <Text
               color="red.600"
@@ -177,20 +177,20 @@ export const MultiSelectCombobox = function <T>({
                 border="1px solid"
                 borderColor="grayModern.200"
                 bgColor="grayModern.50"
-                _hover={{ borderColor: "grayModern.300" }}
-                _focus={{ borderColor: "grayModern.300" }}
-                _focusVisible={{ borderColor: "grayModern.300" }}
-                _active={{ borderColor: "grayModern.300" }}
+                _hover={{ borderColor: 'grayModern.300' }}
+                _focus={{ borderColor: 'grayModern.300' }}
+                _focusVisible={{ borderColor: 'grayModern.300' }}
+                _active={{ borderColor: 'grayModern.300' }}
                 // _invalid={{ borderColor: 'red.500' }}
                 // _disabled={{ borderColor: 'grayModern.200' }}
-                placeholder={t("channelsFormPlaceholder.modelInput")}
+                placeholder={t('channelsFormPlaceholder.modelInput')}
                 _placeholder={{
-                  color: "grayModern.500",
-                  fontFamily: "PingFang SC",
-                  fontSize: "12px",
+                  color: 'grayModern.500',
+                  fontFamily: 'PingFang SC',
+                  fontSize: '12px',
                   fontWeight: 400,
-                  lineHeight: "16px",
-                  letterSpacing: "0.048px",
+                  lineHeight: '16px',
+                  letterSpacing: '0.048px',
                 }}
                 value={customSelectedItemName}
                 onChange={(e) => setCustomSelectedItemName(e.target.value)}
@@ -218,18 +218,18 @@ export const MultiSelectCombobox = function <T>({
                   );
                 }}
                 _hover={{
-                  transform: "scale(1.05)",
-                  transition: "transform 0.2s ease",
+                  transform: 'scale(1.05)',
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
-                  transform: "scale(0.92)",
-                  animation: "pulse 0.3s ease",
+                  transform: 'scale(0.92)',
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
-                  "@keyframes pulse": {
-                    "0%": { transform: "scale(0.92)" },
-                    "50%": { transform: "scale(0.96)" },
-                    "100%": { transform: "scale(0.92)" },
+                  '@keyframes pulse': {
+                    '0%': { transform: 'scale(0.92)' },
+                    '50%': { transform: 'scale(0.96)' },
+                    '100%': { transform: 'scale(0.92)' },
                   },
                 }}
               >
@@ -243,7 +243,7 @@ export const MultiSelectCombobox = function <T>({
                   lineHeight="16px"
                   letterSpacing="0.5px"
                 >
-                  {t("common.add")}
+                  {t('common.add')}
                 </Text>
               </Button>
             </InputGroup>
@@ -266,7 +266,7 @@ export const MultiSelectCombobox = function <T>({
                 borderRadius="6px"
                 px="6px"
                 py="4px"
-                _focus={{ bg: "red.100" }}
+                _focus={{ bg: 'red.100' }}
                 {...getSelectedItemProps({
                   selectedItem: selectedItemForRender,
                   index: index,
@@ -311,17 +311,17 @@ export const MultiSelectCombobox = function <T>({
                 fontSize="12px"
                 color="grayModern.900"
                 fontFamily="PingFang SC"
-                placeholder={t("channelsFormPlaceholder.model")}
+                placeholder={t('channelsFormPlaceholder.model')}
                 fontWeight={400}
                 lineHeight="16px"
                 letterSpacing="0.048px"
                 _placeholder={{
-                  color: "grayModern.500",
-                  fontFamily: "PingFang SC",
-                  fontSize: "12px",
+                  color: 'grayModern.500',
+                  fontFamily: 'PingFang SC',
+                  fontSize: '12px',
                   fontWeight: 400,
-                  lineHeight: "16px",
-                  letterSpacing: "0.048px",
+                  lineHeight: '16px',
+                  letterSpacing: '0.048px',
                 }}
                 {...getInputProps(getDropdownProps({ preventKeyAction: isOpen }))}
               />
@@ -387,7 +387,7 @@ export const MultiSelectCombobox = function <T>({
         overflowY="auto"
         zIndex="10"
         borderRadius="6px"
-        display={isOpen && items.length ? "block" : "none"}
+        display={isOpen && items.length ? 'block' : 'none'}
         {...getMenuProps()}
       >
         {isOpen &&
@@ -400,8 +400,8 @@ export const MultiSelectCombobox = function <T>({
               gap="8px"
               alignSelf="stretch"
               borderRadius="4px"
-              bg={highlightedIndex === index ? "rgba(17, 24, 36, 0.05)" : "transparent"}
-              fontWeight={selectedItem === item ? "bold" : "normal"}
+              bg={highlightedIndex === index ? 'rgba(17, 24, 36, 0.05)' : 'transparent'}
+              fontWeight={selectedItem === item ? 'bold' : 'normal'}
               cursor="pointer"
               color="grayModern.900"
               fontFamily="PingFang SC"
@@ -409,7 +409,7 @@ export const MultiSelectCombobox = function <T>({
               fontStyle="normal"
               lineHeight="16px"
               letterSpacing="0.5px"
-              _hover={{ bg: "rgba(17, 24, 36, 0.05)" }}
+              _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
               {...getItemProps({ item, index })}
             >
               {handleDropdownItemDisplay(item)}

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ChannelTypeMapName } from "@/types/admin/channels/channelInfo"
-import { ApiProxyBackendResp, ApiResp } from "@/types/api"
-import { parseJwtToken } from "@/utils/backend/auth"
-import { isAdmin } from "@/utils/backend/isAdmin"
+import { ChannelTypeMapName } from '@/types/admin/channels/channelInfo'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic'
 
 type ApiProxyBackendChannelTypeMapNameResponse = ApiProxyBackendResp<ChannelTypeMapName>
 
@@ -19,24 +19,24 @@ async function fetchChannelTypeNames(): Promise<ChannelTypeMapName | undefined> 
     )
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `${token}`,
       },
-      cache: "no-store",
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
     }
     const result: ApiProxyBackendChannelTypeMapNameResponse = await response.json()
     if (!result.success) {
-      throw new Error(result.message || "admin channels api:ai proxy backend error")
+      throw new Error(result.message || 'admin channels api:ai proxy backend error')
     }
     return result.data
   } catch (error) {
     console.error(
-      "admin channels api: fetch channel type names from ai proxy backend error:",
+      'admin channels api: fetch channel type names from ai proxy backend error:',
       error
     )
     throw error
@@ -57,12 +57,12 @@ export async function GET(
       data: channelTypeNames,
     } satisfies GetChannelTypeNamesResponse)
   } catch (error) {
-    console.error("admin channels api: get channel type names error:", error)
+    console.error('admin channels api: get channel type names error:', error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : "server error",
-        error: error instanceof Error ? error.message : "server error",
+        message: error instanceof Error ? error.message : 'server error',
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetChannelTypeNamesResponse,
       { status: 500 }
     )

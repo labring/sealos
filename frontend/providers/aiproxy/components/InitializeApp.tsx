@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { EVENT_NAME } from "sealos-desktop-sdk";
-import { createSealosApp, sealosApp } from "sealos-desktop-sdk/app";
+import { useCallback, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
-import { initAppConfig } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { useSessionStore } from "@/store/session";
+import { initAppConfig } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { useSessionStore } from '@/store/session';
 
 export default function InitializeApp() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function InitializeApp() {
 
       if (currentLng !== newLng) {
         const currentPath = window.location.pathname;
-        const pathWithoutLang = currentPath.split("/").slice(2).join("/");
+        const pathWithoutLang = currentPath.split('/').slice(2).join('/');
         router.push(`/${newLng}/${pathWithoutLang}`);
       }
     },
@@ -56,17 +56,17 @@ export default function InitializeApp() {
           handleI18nChange
         );
       } catch (error) {
-        console.error("aiproxy: init app error:", error);
+        console.error('aiproxy: init app error:', error);
       }
     };
 
     initApp();
 
     return () => {
-      if (cleanupEventListener && typeof cleanupEventListener === "function") {
+      if (cleanupEventListener && typeof cleanupEventListener === 'function') {
         cleanupEventListener();
       }
-      if (cleanupApp && typeof cleanupApp === "function") {
+      if (cleanupApp && typeof cleanupApp === 'function') {
         cleanupApp();
       }
     };
@@ -75,21 +75,21 @@ export default function InitializeApp() {
 
   // init language
   const initLanguage = async () => {
-    const pathLng = pathname.split("/")[1];
+    const pathLng = pathname.split('/')[1];
     try {
       const lang = await sealosApp.getLanguage();
       if (pathLng !== lang.lng) {
-        const pathParts = pathname.split("/");
+        const pathParts = pathname.split('/');
         pathParts[1] = lang.lng;
-        router.push(pathParts.join("/"));
+        router.push(pathParts.join('/'));
         router.refresh();
       }
-      console.info("aiproxy: init language success");
+      console.info('aiproxy: init language success');
     } catch (error) {
       if (error instanceof Error) {
-        console.debug("aiproxy: init language error:", error.message);
+        console.debug('aiproxy: init language error:', error.message);
       } else {
-        console.debug("aiproxy: unknown init language error:", error);
+        console.debug('aiproxy: unknown init language error:', error);
       }
     }
   };
@@ -106,9 +106,9 @@ export default function InitializeApp() {
         setSession(newSession);
         window.location.reload();
       }
-      console.info("aiproxy: init session success");
+      console.info('aiproxy: init session success');
     } catch (err) {
-      console.info("aiproxy: app is not running in desktop");
+      console.info('aiproxy: app is not running in desktop');
       if (!process.env.NEXT_PUBLIC_MOCK_USER) {
         setSession(null);
       }
@@ -125,9 +125,9 @@ export default function InitializeApp() {
       setDocUrl(docUrl);
       setIsInvitationActive(isInvitationActive);
       setInvitationUrl(invitationUrl);
-      console.info("aiproxy: init config success");
+      console.info('aiproxy: init config success');
     } catch (error) {
-      console.error("aiproxy: init config error:", error);
+      console.error('aiproxy: init config error:', error);
     }
   };
 

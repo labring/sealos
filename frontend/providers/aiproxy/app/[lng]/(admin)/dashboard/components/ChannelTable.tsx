@@ -1,5 +1,5 @@
-"use client";
-import { useEffect, useMemo, useState } from "react";
+'use client';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Checkbox,
@@ -18,31 +18,31 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from "@chakra-ui/react";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Column,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
 import {
   deleteChannel,
   getChannels,
   getChannelTypeNames,
   updateChannelStatus,
-} from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import SwitchPage from "@/components/common/SwitchPage";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { ChannelInfo, ChannelStatus, ChannelType } from "@/types/admin/channels/channelInfo";
-import { QueryKey } from "@/types/query-key";
-import { downloadJson } from "@/utils/common";
+} from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import SwitchPage from '@/components/common/SwitchPage';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo';
+import { QueryKey } from '@/types/query-key';
+import { downloadJson } from '@/utils/common';
 
-import UpdateChannelModal from "./UpdateChannelModal";
+import UpdateChannelModal from './UpdateChannelModal';
 
 export default function ChannelTable({
   exportData,
@@ -51,8 +51,8 @@ export default function ChannelTable({
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
-  const [operationType, setOperationType] = useState<"create" | "update">("update");
+  const { t } = useTranslationClientSide(lng, 'common');
+  const [operationType, setOperationType] = useState<'create' | 'update'>('update');
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | undefined>(undefined);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -65,12 +65,12 @@ export default function ChannelTable({
   }, [selectedChannels]);
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const queryClient = useQueryClient();
@@ -94,22 +94,22 @@ export default function ChannelTable({
     {
       onSuccess() {
         message({
-          status: "success",
-          title: t("channel.updateSuccess"),
+          status: 'success',
+          title: t('channel.updateSuccess'),
           isClosable: true,
           duration: 2000,
-          position: "top",
+          position: 'top',
         });
         queryClient.invalidateQueries([QueryKey.GetChannels]);
         queryClient.invalidateQueries([QueryKey.GetChannelTypeNames]);
       },
       onError(err: any) {
         message({
-          status: "warning",
-          title: t("channel.updateFailed"),
-          description: err?.message || t("channel.updateFailed"),
+          status: 'warning',
+          title: t('channel.updateFailed'),
+          description: err?.message || t('channel.updateFailed'),
           isClosable: true,
-          position: "top",
+          position: 'top',
         });
       },
     }
@@ -117,22 +117,22 @@ export default function ChannelTable({
   const deleteChannelMutation = useMutation(({ id }: { id: string }) => deleteChannel(id), {
     onSuccess() {
       message({
-        status: "success",
-        title: t("channel.deleteSuccess"),
+        status: 'success',
+        title: t('channel.deleteSuccess'),
         isClosable: true,
         duration: 2000,
-        position: "top",
+        position: 'top',
       });
       queryClient.invalidateQueries([QueryKey.GetChannels]);
       queryClient.invalidateQueries([QueryKey.GetChannelTypeNames]);
     },
     onError(err: any) {
       message({
-        status: "warning",
-        title: t("channel.deleteFailed"),
-        description: err?.message || t("channel.deleteFailed"),
+        status: 'warning',
+        title: t('channel.deleteFailed'),
+        description: err?.message || t('channel.deleteFailed'),
         isClosable: true,
-        position: "top",
+        position: 'top',
       });
     },
   });
@@ -172,7 +172,7 @@ export default function ChannelTable({
 
   const columns = [
     columnHelper.accessor((row) => row.id, {
-      id: "id",
+      id: 'id',
       header: () => (
         <Flex display="inline-flex" alignItems="center" gap="16px">
           <Checkbox
@@ -187,16 +187,16 @@ export default function ChannelTable({
             }
             onChange={(e) => handleHeaderCheckboxChange(e.target.checked)}
             sx={{
-              ".chakra-checkbox__control": {
-                width: "16px",
-                height: "16px",
-                border: "1px solid",
-                borderColor: "grayModern.300",
-                background: "grayModern.100",
-                transition: "all 0.2s ease",
+              '.chakra-checkbox__control': {
+                width: '16px',
+                height: '16px',
+                border: '1px solid',
+                borderColor: 'grayModern.300',
+                background: 'grayModern.100',
+                transition: 'all 0.2s ease',
                 _checked: {
-                  background: "grayModern.500",
-                  borderColor: "grayModern.500",
+                  background: 'grayModern.500',
+                  borderColor: 'grayModern.500',
                 },
               },
             }}
@@ -209,7 +209,7 @@ export default function ChannelTable({
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("channels.id")}
+            {t('channels.id')}
           </Text>
         </Flex>
       ),
@@ -223,15 +223,15 @@ export default function ChannelTable({
             isChecked={selectedChannels.some((c) => c.id === info.getValue())}
             onChange={(e) => handleRowCheckboxChange(info.row.original, e.target.checked)}
             sx={{
-              ".chakra-checkbox__control": {
-                width: "16px",
-                height: "16px",
-                border: "1px solid",
-                borderColor: "grayModern.300",
-                background: "white",
+              '.chakra-checkbox__control': {
+                width: '16px',
+                height: '16px',
+                border: '1px solid',
+                borderColor: 'grayModern.300',
+                background: 'white',
                 _checked: {
-                  background: "grayModern.500",
-                  borderColor: "grayModern.500",
+                  background: 'grayModern.500',
+                  borderColor: 'grayModern.500',
                 },
               },
             }}
@@ -250,7 +250,7 @@ export default function ChannelTable({
       ),
     }),
     columnHelper.accessor((row) => row.name, {
-      id: "name",
+      id: 'name',
       header: () => (
         <Text
           color="grayModern.600"
@@ -260,7 +260,7 @@ export default function ChannelTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("channels.name")}
+          {t('channels.name')}
         </Text>
       ),
       cell: (info) => (
@@ -277,7 +277,7 @@ export default function ChannelTable({
       ),
     }),
     columnHelper.accessor((row) => row.type, {
-      id: "type",
+      id: 'type',
       header: () => (
         <Text
           color="grayModern.600"
@@ -287,7 +287,7 @@ export default function ChannelTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("channels.type")}
+          {t('channels.type')}
         </Text>
       ),
       cell: (info) => (
@@ -304,7 +304,7 @@ export default function ChannelTable({
       ),
     }),
     columnHelper.accessor((row) => row.request_count, {
-      id: "request_count",
+      id: 'request_count',
       header: () => (
         <Text
           color="grayModern.600"
@@ -314,7 +314,7 @@ export default function ChannelTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("channels.requestCount")}
+          {t('channels.requestCount')}
         </Text>
       ),
       cell: (info) => (
@@ -331,7 +331,7 @@ export default function ChannelTable({
       ),
     }),
     columnHelper.accessor((row) => row.status, {
-      id: "status",
+      id: 'status',
       header: () => (
         <Text
           color="grayModern.600"
@@ -341,30 +341,30 @@ export default function ChannelTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("channels.status")}
+          {t('channels.status')}
         </Text>
       ),
       cell: (info) => {
         const status = info.getValue();
-        let statusText = "";
-        let statusColor = "";
+        let statusText = '';
+        let statusColor = '';
 
         switch (status) {
           case ChannelStatus.ChannelStatusEnabled:
-            statusText = t("keystatus.enabled");
-            statusColor = "green.600";
+            statusText = t('keystatus.enabled');
+            statusColor = 'green.600';
             break;
           case ChannelStatus.ChannelStatusDisabled:
-            statusText = t("keystatus.disabled");
-            statusColor = "red.600";
+            statusText = t('keystatus.disabled');
+            statusColor = 'red.600';
             break;
           case ChannelStatus.ChannelStatusAutoDisabled:
-            statusText = t("channelStatus.autoDisabled");
-            statusColor = "orange.500";
+            statusText = t('channelStatus.autoDisabled');
+            statusColor = 'orange.500';
             break;
           default:
-            statusText = t("keystatus.unknown");
-            statusColor = "gray.500";
+            statusText = t('keystatus.unknown');
+            statusColor = 'gray.500';
         }
 
         return (
@@ -383,7 +383,7 @@ export default function ChannelTable({
     }),
 
     columnHelper.display({
-      id: "actions",
+      id: 'actions',
       header: () => (
         <Text
           color="grayModern.600"
@@ -393,7 +393,7 @@ export default function ChannelTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("channels.action")}
+          {t('channels.action')}
         </Text>
       ),
       cell: (info) => (
@@ -405,7 +405,7 @@ export default function ChannelTable({
             gap="6px"
             borderRadius="6px"
             transition="all 0.2s"
-            _hover={{ bg: "gray.100" }}
+            _hover={{ bg: 'gray.100' }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -491,11 +491,11 @@ export default function ChannelTable({
               borderRadius="4px"
               color="grayModern.600"
               _hover={{
-                bg: "rgba(17, 24, 36, 0.05)",
+                bg: 'rgba(17, 24, 36, 0.05)',
                 color:
                   info.row.original.status === ChannelStatus.ChannelStatusEnabled
-                    ? "#D92D20"
-                    : "brightBlue.600",
+                    ? '#D92D20'
+                    : 'brightBlue.600',
               }}
               onClick={() =>
                 handleStatusUpdate(String(info.row.original.id), info.row.original.status)
@@ -525,7 +525,7 @@ export default function ChannelTable({
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   >
-                    {t("channels.disable")}
+                    {t('channels.disable')}
                   </Text>
                 </>
               ) : (
@@ -552,7 +552,7 @@ export default function ChannelTable({
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   >
-                    {t("channels.enable")}
+                    {t('channels.enable')}
                   </Text>
                 </>
               )}
@@ -566,11 +566,11 @@ export default function ChannelTable({
               borderRadius="4px"
               color="grayModern.600"
               _hover={{
-                bg: "rgba(17, 24, 36, 0.05)",
-                color: "brightBlue.600",
+                bg: 'rgba(17, 24, 36, 0.05)',
+                color: 'brightBlue.600',
               }}
               onClick={() => {
-                setOperationType("update");
+                setOperationType('update');
                 setChannelInfo(info.row.original);
                 onOpen();
               }}
@@ -603,7 +603,7 @@ export default function ChannelTable({
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("channels.edit")}
+                {t('channels.edit')}
               </Text>
             </MenuItem>
             <MenuItem
@@ -615,8 +615,8 @@ export default function ChannelTable({
               borderRadius="4px"
               color="grayModern.600"
               _hover={{
-                bg: "rgba(17, 24, 36, 0.05)",
-                color: "brightBlue.600",
+                bg: 'rgba(17, 24, 36, 0.05)',
+                color: 'brightBlue.600',
               }}
               onClick={() => handleExportRow(info.row.original)}
             >
@@ -642,7 +642,7 @@ export default function ChannelTable({
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("channels.export")}
+                {t('channels.export')}
               </Text>
             </MenuItem>
 
@@ -655,8 +655,8 @@ export default function ChannelTable({
               borderRadius="4px"
               color="grayModern.600"
               _hover={{
-                bg: "rgba(17, 24, 36, 0.05)",
-                color: "#D92D20",
+                bg: 'rgba(17, 24, 36, 0.05)',
+                color: '#D92D20',
               }}
               onClick={() => deleteChannelMutation.mutate({ id: String(info.row.original.id) })}
             >
@@ -682,7 +682,7 @@ export default function ChannelTable({
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("channels.delete")}
+                {t('channels.delete')}
               </Text>
             </MenuItem>
           </MenuList>
@@ -717,13 +717,13 @@ export default function ChannelTable({
                 {headerGroup.headers.map((header, i) => (
                   <Th
                     key={header.id}
-                    border={"none"}
+                    border={'none'}
                     // the first th
-                    borderTopLeftRadius={i === 0 ? "6px" : "0"}
-                    borderBottomLeftRadius={i === 0 ? "6px" : "0"}
+                    borderTopLeftRadius={i === 0 ? '6px' : '0'}
+                    borderBottomLeftRadius={i === 0 ? '6px' : '0'}
                     // the last th
-                    borderTopRightRadius={i === headerGroup.headers.length - 1 ? "6px" : "0"}
-                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? "6px" : "0"}
+                    borderTopRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
+                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </Th>
@@ -766,7 +766,7 @@ export default function ChannelTable({
       </TableContainer>
       <SwitchPage
         m="0"
-        justifyContent={"flex-end"}
+        justifyContent={'flex-end'}
         currentPage={page}
         totalPage={Math.ceil(total / pageSize)}
         totalItem={total}

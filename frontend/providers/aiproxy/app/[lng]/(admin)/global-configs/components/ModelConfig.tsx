@@ -1,41 +1,41 @@
-"use client";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { Controller, FieldError, FieldErrors, FieldErrorsImpl, useForm } from "react-hook-form";
-import { Button, Flex, FormControl, Skeleton, Text, VStack } from "@chakra-ui/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+'use client';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Controller, FieldError, FieldErrors, FieldErrorsImpl, useForm } from 'react-hook-form';
+import { Button, Flex, FormControl, Skeleton, Text, VStack } from '@chakra-ui/react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import {
   batchOption,
   getChannelBuiltInSupportModels,
   getChannelTypeNames,
   getOption,
-} from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import ConstructMappingComponent from "@/components/common/ConstructMappingComponent";
-import { MultiSelectCombobox } from "@/components/common/MultiSelectCombobox";
-import { SingleSelectCombobox } from "@/components/common/SingleSelectCombobox";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { ChannelType } from "@/types/admin/channels/channelInfo";
-import { DefaultChannelModel, DefaultChannelModelMapping } from "@/types/admin/option";
-import { BatchOptionData } from "@/types/admin/option";
-import { QueryKey } from "@/types/query-key";
+} from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import ConstructMappingComponent from '@/components/common/ConstructMappingComponent';
+import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox';
+import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ChannelType } from '@/types/admin/channels/channelInfo';
+import { DefaultChannelModel, DefaultChannelModelMapping } from '@/types/admin/option';
+import { BatchOptionData } from '@/types/admin/option';
+import { QueryKey } from '@/types/query-key';
 
 const ModelConfig = () => {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const queryClient = useQueryClient();
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
 
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   const [allSupportChannel, setAllSupportChannel] = useState<string[]>([]);
@@ -108,7 +108,7 @@ const ModelConfig = () => {
       .record(z.string(), z.string())
       .refine((mapping) => {
         // 检查所有值不能为空字符串
-        return Object.values(mapping).every((value) => value.trim() !== "");
+        return Object.values(mapping).every((value) => value.trim() !== '');
       })
       .default({}),
   });
@@ -129,8 +129,8 @@ const ModelConfig = () => {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: [],
-    mode: "onChange",
-    reValidateMode: "onChange",
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   useEffect(() => {
@@ -176,8 +176,8 @@ const ModelConfig = () => {
     mutationFn: batchOption,
     onSuccess: () => {
       message({
-        title: t("globalConfigs.saveDefaultModelSuccess"),
-        status: "success",
+        title: t('globalConfigs.saveDefaultModelSuccess'),
+        status: 'success',
       });
     },
   });
@@ -228,9 +228,9 @@ const ModelConfig = () => {
       if (!fieldError) continue;
 
       // Check if error is an object
-      if (typeof fieldError === "object") {
+      if (typeof fieldError === 'object') {
         // If it has a direct message property
-        if ("message" in fieldError && fieldError.message) {
+        if ('message' in fieldError && fieldError.message) {
           return `Item ${Number(index) + 1}: ${fieldError.message}`;
         }
 
@@ -238,13 +238,13 @@ const ModelConfig = () => {
         const errorKeys = Object.keys(fieldError) as Array<keyof typeof fieldError>;
         for (const fieldName of errorKeys) {
           const nestedError = fieldError[fieldName];
-          if (nestedError && typeof nestedError === "object" && "message" in nestedError) {
+          if (nestedError && typeof nestedError === 'object' && 'message' in nestedError) {
             // Map field names to their display labels
             const fieldLabel =
               {
-                type: "Type",
-                defaultMode: "Default Mode",
-                defaultModeMapping: "Model Mapping",
+                type: 'Type',
+                defaultMode: 'Default Mode',
+                defaultModeMapping: 'Model Mapping',
               }[fieldName as string] || fieldName;
 
             return `Item ${Number(index) + 1} ${fieldLabel}: ${nestedError.message}`;
@@ -252,7 +252,7 @@ const ModelConfig = () => {
         }
       }
     }
-    return "Form validation failed";
+    return 'Form validation failed';
   };
 
   const onValidate = async (data: FormData) => {
@@ -266,27 +266,27 @@ const ModelConfig = () => {
       resetForm();
     } catch (error) {
       message({
-        title: t("globalConfigs.saveDefaultModelFailed"),
-        status: "error",
-        position: "top",
+        title: t('globalConfigs.saveDefaultModelFailed'),
+        status: 'error',
+        position: 'top',
         duration: 2000,
         isClosable: true,
         description:
-          error instanceof Error ? error.message : t("globalConfigs.saveDefaultModelFailed"),
+          error instanceof Error ? error.message : t('globalConfigs.saveDefaultModelFailed'),
       });
       console.error(error);
     }
   };
 
   const onInvalid = (errors: FieldErrors<FormData>): void => {
-    console.error("errors", errors);
+    console.error('errors', errors);
 
     const errorMessage = getFirstErrorMessage(errors);
 
     message({
       title: errorMessage,
-      status: "error",
-      position: "top",
+      status: 'error',
+      position: 'top',
       duration: 2000,
       isClosable: true,
     });
@@ -313,7 +313,7 @@ const ModelConfig = () => {
           lineHeight="24px"
           letterSpacing="0.15px"
         >
-          {t("globalConfigs.model_config")}
+          {t('globalConfigs.model_config')}
         </Text>
       </Flex>
       {/* -- title end */}
@@ -332,7 +332,7 @@ const ModelConfig = () => {
             lineHeight="20px"
             letterSpacing="0.1px"
           >
-            {t("globalConfigs.defaultModel")}
+            {t('globalConfigs.defaultModel')}
           </Text>
           <Flex justifyContent="flex-end" alignItems="center" gap="15px" minW="0">
             <Button
@@ -373,7 +373,7 @@ const ModelConfig = () => {
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("globalConfigs.addDefaultModel")}
+                {t('globalConfigs.addDefaultModel')}
               </Text>
             </Button>
             <Button
@@ -416,7 +416,7 @@ const ModelConfig = () => {
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("globalConfigs.saveDefaultModel")}
+                {t('globalConfigs.saveDefaultModel')}
               </Text>
             </Button>
           </Flex>
@@ -467,8 +467,8 @@ const ModelConfig = () => {
                     borderRadius="4px"
                     variant="ghost"
                     _hover={{
-                      bg: "rgba(17, 24, 36, 0.05)",
-                      color: "#D92D20",
+                      bg: 'rgba(17, 24, 36, 0.05)',
+                      color: '#D92D20',
                     }}
                     onClick={() => {
                       const currentValues = watch();
@@ -605,7 +605,7 @@ const ModelConfig = () => {
 
                               if (!exists) {
                                 field.onChange([...field.value, customModeName.trim()]);
-                                setCustomModeName("");
+                                setCustomModeName('');
                               }
                             }
                           };

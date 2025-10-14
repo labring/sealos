@@ -1,5 +1,5 @@
-"use client";
-import { useMemo, useState } from "react";
+'use client';
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -9,30 +9,30 @@ import {
   InputGroup,
   InputRightElement,
   Text,
-} from "@chakra-ui/react";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import Image from "next/image";
+} from '@chakra-ui/react';
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import Image from 'next/image';
 
-import { getEnabledMode } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { SingleSelectComboboxUnstyle } from "@/components/common/SingleSelectComboboxUnStyle";
-import { useDebounce } from "@/hooks/useDebounce";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { ModelConfig } from "@/types/models/model";
-import { QueryKey } from "@/types/query-key";
-import { getTranslationWithFallback } from "@/utils/common";
+import { getEnabledMode } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { ModelConfig } from '@/types/models/model';
+import { QueryKey } from '@/types/query-key';
+import { getTranslationWithFallback } from '@/utils/common';
 
-import { getModelIcon } from "./component/Model";
-import { PriceTable } from "./component/PriceTable";
+import { getModelIcon } from './component/Model';
+import { PriceTable } from './component/PriceTable';
 
 export default function Price() {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const [modelOwner, setModelOwner] = useState<string>("");
-  const [modelType, setModelType] = useState<string>("");
+  const [modelOwner, setModelOwner] = useState<string>('');
+  const [modelType, setModelType] = useState<string>('');
 
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebounce(searchInput, 500);
 
   interface FilterParams {
@@ -45,17 +45,17 @@ export default function Price() {
     return modelConfigs.filter((config) => {
       const ownerMatch =
         !filterParams.owner ||
-        filterParams.owner === t("price.all") ||
+        filterParams.owner === t('price.all') ||
         getTranslationWithFallback(
           `modeOwner.${String(config.owner)}`,
-          "modeOwner.unknown",
+          'modeOwner.unknown',
           t as any
         ) === filterParams.owner;
 
       const typeMatch =
         !filterParams.type ||
-        filterParams.type === t("price.all") ||
-        getTranslationWithFallback(`modeType.${String(config.type)}`, "modeType.0", t as any) ===
+        filterParams.type === t('price.all') ||
+        getTranslationWithFallback(`modeType.${String(config.type)}`, 'modeType.0', t as any) ===
           filterParams.type;
 
       const nameMatch =
@@ -100,23 +100,23 @@ export default function Price() {
                 lineHeight="26px"
                 letterSpacing="0.15px"
               >
-                {t("price.title")}
+                {t('price.title')}
               </Text>
               <Button
                 variant="outline"
                 _hover={{
-                  transform: "scale(1.05)",
-                  transition: "transform 0.2s ease",
+                  transform: 'scale(1.05)',
+                  transition: 'transform 0.2s ease',
                 }}
                 _active={{
-                  transform: "scale(0.92)",
-                  animation: "pulse 0.3s ease",
+                  transform: 'scale(0.92)',
+                  animation: 'pulse 0.3s ease',
                 }}
                 sx={{
-                  "@keyframes pulse": {
-                    "0%": { transform: "scale(0.92)" },
-                    "50%": { transform: "scale(0.96)" },
-                    "100%": { transform: "scale(0.92)" },
+                  '@keyframes pulse': {
+                    '0%': { transform: 'scale(0.92)' },
+                    '50%': { transform: 'scale(0.96)' },
+                    '100%': { transform: 'scale(0.92)' },
                   },
                 }}
                 display="flex"
@@ -167,11 +167,11 @@ export default function Price() {
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   >
-                    {t("price.modelOwner")}
+                    {t('price.modelOwner')}
                   </Text>
                   <SingleSelectComboboxUnstyle<{ icon: string; name: string }>
                     dropdownItems={[
-                      { icon: "", name: t("price.all") },
+                      { icon: '', name: t('price.all') },
                       ...Array.from(
                         new Map(
                           modelConfigs.map((config) => [
@@ -180,7 +180,7 @@ export default function Price() {
                               icon: config.owner,
                               name: getTranslationWithFallback(
                                 `modeOwner.${String(config.owner)}`,
-                                "modeOwner.unknown",
+                                'modeOwner.unknown',
                                 t as any
                               ),
                             },
@@ -199,7 +199,7 @@ export default function Price() {
                     }}
                     handleDropdownItemDisplay={(dropdownItem) => {
                       const iconSrc = getModelIcon(dropdownItem.icon);
-                      if (dropdownItem.name === t("price.all")) {
+                      if (dropdownItem.name === t('price.all')) {
                         return (
                           <Flex alignItems="center" gap="8px">
                             <Image src={iconSrc} alt="default" width={20} height={20} />
@@ -234,8 +234,8 @@ export default function Price() {
                         </Flex>
                       );
                     }}
-                    flexProps={{ w: "240px" }}
-                    initSelectedItem={{ icon: "", name: t("price.all") }}
+                    flexProps={{ w: '240px' }}
+                    initSelectedItem={{ icon: '', name: t('price.all') }}
                     handleInputDisplay={(dropdownItem) => dropdownItem.name}
                   />
                 </Flex>
@@ -250,16 +250,16 @@ export default function Price() {
                     lineHeight="16px"
                     letterSpacing="0.5px"
                   >
-                    {t("price.modelType")}
+                    {t('price.modelType')}
                   </Text>
                   <SingleSelectComboboxUnstyle<string>
                     dropdownItems={[
-                      t("price.all"),
+                      t('price.all'),
                       ...new Set(
                         modelConfigs.map((config) =>
                           getTranslationWithFallback(
                             `modeType.${String(config.type)}`,
-                            "modeType.0",
+                            'modeType.0',
                             t as any
                           )
                         )
@@ -289,8 +289,8 @@ export default function Price() {
                         </Text>
                       );
                     }}
-                    flexProps={{ w: "240px" }}
-                    initSelectedItem={t("price.all")}
+                    flexProps={{ w: '240px' }}
+                    initSelectedItem={t('price.all')}
                   />
                 </Flex>
               </Flex>
@@ -305,18 +305,18 @@ export default function Price() {
                     border="1px solid"
                     borderColor="grayModern.200"
                     bgColor="grayModern.50"
-                    _hover={{ borderColor: "grayModern.300" }}
-                    _focus={{ borderColor: "grayModern.300" }}
-                    _focusVisible={{ borderColor: "grayModern.300" }}
-                    _active={{ borderColor: "grayModern.300" }}
-                    placeholder={t("price.modelName")}
+                    _hover={{ borderColor: 'grayModern.300' }}
+                    _focus={{ borderColor: 'grayModern.300' }}
+                    _focusVisible={{ borderColor: 'grayModern.300' }}
+                    _active={{ borderColor: 'grayModern.300' }}
+                    placeholder={t('price.modelName')}
                     _placeholder={{
-                      color: "grayModern.500",
-                      fontFamily: "PingFang SC",
-                      fontSize: "12px",
+                      color: 'grayModern.500',
+                      fontFamily: 'PingFang SC',
+                      fontSize: '12px',
                       fontWeight: 400,
-                      lineHeight: "16px",
-                      letterSpacing: "0.048px",
+                      lineHeight: '16px',
+                      letterSpacing: '0.048px',
                     }}
                     value={searchInput}
                     onChange={(e) => {

@@ -1,5 +1,5 @@
-"use client";
-import { useMemo, useState } from "react";
+'use client';
+import { useMemo, useState } from 'react';
 import {
   Badge,
   Box,
@@ -16,27 +16,27 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from "@chakra-ui/react";
-import { CurrencySymbol } from "@sealos/ui";
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { MyTooltip } from "@/components/common/MyTooltip";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { ModelConfig } from "@/types/models/model";
-import { getTranslationWithFallback } from "@/utils/common";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { ModelConfig } from '@/types/models/model';
+import { getTranslationWithFallback } from '@/utils/common';
 
-import ApiDocDrawer from "./ApiDoc";
-import { ModelComponent } from "./Model";
-import { getTypeStyle } from "./Model";
+import ApiDocDrawer from './ApiDoc';
+import { ModelComponent } from './Model';
+import { getTypeStyle } from './Model';
 
-type SortDirection = "asc" | "desc" | false;
+type SortDirection = 'asc' | 'desc' | false;
 
 export function PriceTable({
   modelConfigs,
@@ -46,7 +46,7 @@ export function PriceTable({
   isLoading: boolean;
 }) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -60,7 +60,7 @@ export function PriceTable({
   const columnHelper = createColumnHelper<ModelConfig>();
   const columns = [
     columnHelper.accessor((row) => row.model, {
-      id: "model",
+      id: 'model',
       header: () => (
         <Text
           color="grayModern.600"
@@ -70,13 +70,13 @@ export function PriceTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("key.name")}
+          {t('key.name')}
         </Text>
       ),
       cell: (info) => <ModelComponent modelConfig={info.row.original} />,
     }),
     columnHelper.accessor((row) => row.type, {
-      id: "type",
+      id: 'type',
       header: () => (
         <Text
           color="grayModern.600"
@@ -86,7 +86,7 @@ export function PriceTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("key.modelType")}
+          {t('key.modelType')}
         </Text>
       ),
       cell: (info) => (
@@ -108,7 +108,7 @@ export function PriceTable({
           >
             {getTranslationWithFallback(
               `modeType.${String(info.getValue())}`,
-              "modeType.0",
+              'modeType.0',
               t as any
             )}
           </Text>
@@ -116,7 +116,7 @@ export function PriceTable({
       ),
     }),
     columnHelper.accessor((row) => row.rpm, {
-      id: "rpm",
+      id: 'rpm',
       header: () => (
         <Flex alignItems="center" gap="4px" w="fit-content">
           <Text
@@ -127,7 +127,7 @@ export function PriceTable({
             lineHeight="16px"
             letterSpacing="0.5px"
           >
-            {t("price.modelRpm")}
+            {t('price.modelRpm')}
           </Text>
           <MyTooltip
             placement="bottom-end"
@@ -143,7 +143,7 @@ export function PriceTable({
                 lineHeight="16px"
                 letterSpacing="0.5px"
               >
-                {t("price.modelRpmTooltip")}
+                {t('price.modelRpmTooltip')}
               </Text>
             }
           >
@@ -178,7 +178,7 @@ export function PriceTable({
       ),
     }),
     columnHelper.accessor((row) => row.price ?? 0, {
-      id: "input_price",
+      id: 'input_price',
       header: () => (
         <Text
           color="grayModern.600"
@@ -186,10 +186,10 @@ export function PriceTable({
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          mr={"4px"}
+          mr={'4px'}
           letterSpacing="0.5px"
         >
-          {t("pricing")}
+          {t('pricing')}
         </Text>
       ),
       cell: (info) => {
@@ -205,7 +205,7 @@ export function PriceTable({
                 letterSpacing="0.5px"
                 mr="4px"
               >
-                {t("price.fixedPrice")}: {info.row.original.price.per_request_price}
+                {t('price.fixedPrice')}: {info.row.original.price.per_request_price}
               </Text>
               <CurrencySymbol
                 type={currencySymbol}
@@ -232,7 +232,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   mr="4px"
                 >
-                  {t("key.inputPrice")}: {info.row.original.price.input_price}
+                  {t('key.inputPrice')}: {info.row.original.price.input_price}
                 </Text>
                 <CurrencySymbol
                   type={currencySymbol}
@@ -252,7 +252,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   textTransform="lowercase"
                 >
-                  /{t("price.per1kTokens").toLowerCase()}
+                  /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>
             )}
@@ -267,7 +267,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   mr="4px"
                 >
-                  {t("key.outputPrice")}: {info.row.original.price.output_price}
+                  {t('key.outputPrice')}: {info.row.original.price.output_price}
                 </Text>
                 <CurrencySymbol
                   type={currencySymbol}
@@ -287,7 +287,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   textTransform="lowercase"
                 >
-                  /{t("price.per1kTokens").toLowerCase()}
+                  /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>
             )}
@@ -302,7 +302,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   mr="4px"
                 >
-                  {t("price.imageInputPrice")}: {info.row.original.price.image_input_price}
+                  {t('price.imageInputPrice')}: {info.row.original.price.image_input_price}
                 </Text>
                 <CurrencySymbol
                   type={currencySymbol}
@@ -322,7 +322,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   textTransform="lowercase"
                 >
-                  /{t("price.per1kTokens").toLowerCase()}
+                  /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>
             )}
@@ -337,7 +337,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   mr="4px"
                 >
-                  {t("price.thinkingModeOutputPrice")}:{" "}
+                  {t('price.thinkingModeOutputPrice')}:{' '}
                   {info.row.original.price.thinking_mode_output_price}
                 </Text>
                 <CurrencySymbol
@@ -358,7 +358,7 @@ export function PriceTable({
                   letterSpacing="0.5px"
                   textTransform="lowercase"
                 >
-                  /{t("price.per1kTokens").toLowerCase()}
+                  /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>
             )}
@@ -376,7 +376,7 @@ export function PriceTable({
           lineHeight="16px"
           letterSpacing="0.5px"
         >
-          {t("logs.actions")}
+          {t('logs.actions')}
         </Text>
       ),
       cell: ({ row }) => {
@@ -396,18 +396,18 @@ export function PriceTable({
             whiteSpace="nowrap"
             transition="all 0.2s ease"
             _hover={{
-              transform: "scale(1.05)",
-              transition: "transform 0.2s ease",
+              transform: 'scale(1.05)',
+              transition: 'transform 0.2s ease',
             }}
             _active={{
-              transform: "scale(0.92)",
-              animation: "pulse 0.3s ease",
+              transform: 'scale(0.92)',
+              animation: 'pulse 0.3s ease',
             }}
             sx={{
-              "@keyframes pulse": {
-                "0%": { transform: "scale(0.92)" },
-                "50%": { transform: "scale(0.96)" },
-                "100%": { transform: "scale(0.92)" },
+              '@keyframes pulse': {
+                '0%': { transform: 'scale(0.92)' },
+                '50%': { transform: 'scale(0.96)' },
+                '100%': { transform: 'scale(0.92)' },
               },
             }}
           >
@@ -434,12 +434,12 @@ export function PriceTable({
               lineHeight="16px"
               letterSpacing="0.5px"
             >
-              {t("logs.detail")}
+              {t('logs.detail')}
             </Text>
           </Button>
         );
       },
-      id: "detail",
+      id: 'detail',
     }),
   ];
 
@@ -463,11 +463,11 @@ export function PriceTable({
                 {headerGroup.headers.map((header, i) => (
                   <Th
                     key={header.id}
-                    border={"none"}
-                    borderTopLeftRadius={i === 0 ? "6px" : "0"}
-                    borderBottomLeftRadius={i === 0 ? "6px" : "0"}
-                    borderTopRightRadius={i === headerGroup.headers.length - 1 ? "6px" : "0"}
-                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? "6px" : "0"}
+                    border={'none'}
+                    borderTopLeftRadius={i === 0 ? '6px' : '0'}
+                    borderBottomLeftRadius={i === 0 ? '6px' : '0'}
+                    borderTopRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
+                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </Th>

@@ -1,10 +1,10 @@
-"use client";
-import { ReactNode } from "react";
-import { Box, List, ListItem, Text } from "@chakra-ui/react";
-import { useSelect } from "downshift";
+'use client';
+import { ReactNode } from 'react';
+import { Box, List, ListItem, Text } from '@chakra-ui/react';
+import { useSelect } from 'downshift';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export const CustomSelect = function <T>({
   listItems,
@@ -22,7 +22,7 @@ export const CustomSelect = function <T>({
   initSelectedItem?: T;
 }) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const items = [placeholder, ...listItems];
 
   const {
@@ -56,7 +56,7 @@ export const CustomSelect = function <T>({
         display="flex"
         alignItems="center"
         {...getToggleButtonProps()}
-        _hover={{ borderColor: "grayModern.300" }}
+        _hover={{ borderColor: 'grayModern.300' }}
         px="12px"
       >
         {selectedItem ? (
@@ -69,7 +69,7 @@ export const CustomSelect = function <T>({
             fontWeight={400}
             lineHeight="16px"
             letterSpacing="0.048px"
-            color={selectedItem ? "grayModern.900" : "grayModern.500"}
+            color={selectedItem ? 'grayModern.900' : 'grayModern.500'}
           >
             {placeholder}
           </Text>
@@ -81,12 +81,12 @@ export const CustomSelect = function <T>({
             fontWeight={400}
             lineHeight="16px"
             letterSpacing="0.048px"
-            color={selectedItem ? "grayModern.900" : "grayModern.500"}
+            color={selectedItem ? 'grayModern.900' : 'grayModern.500'}
           >
             Select
           </Text>
         )}
-        <Box ml="auto" transform={isOpen ? "rotate(180deg)" : undefined}>
+        <Box ml="auto" transform={isOpen ? 'rotate(180deg)' : undefined}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path
               d="M2.5 4.5L6 8L9.5 4.5"
@@ -114,7 +114,7 @@ export const CustomSelect = function <T>({
         overflowY="auto"
         zIndex="10"
         borderRadius="6px"
-        display={isOpen && items.length ? "block" : "none"}
+        display={isOpen && items.length ? 'block' : 'none'}
       >
         {isOpen &&
           items.map((item, index) => (
@@ -127,8 +127,8 @@ export const CustomSelect = function <T>({
               gap="8px"
               alignSelf="stretch"
               borderRadius="4px"
-              bg={highlightedIndex === index ? "rgba(17, 24, 36, 0.05)" : "transparent"}
-              fontWeight={selectedItem === item ? "bold" : "normal"}
+              bg={highlightedIndex === index ? 'rgba(17, 24, 36, 0.05)' : 'transparent'}
+              fontWeight={selectedItem === item ? 'bold' : 'normal'}
               cursor="pointer"
               color="grayModern.900"
               fontFamily="PingFang SC"
@@ -136,7 +136,7 @@ export const CustomSelect = function <T>({
               fontStyle="normal"
               lineHeight="16px"
               letterSpacing="0.5px"
-              _hover={{ bg: "rgba(17, 24, 36, 0.05)" }}
+              _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
             >
               {handleDropdownItemDisplay(item as T)}
             </ListItem>

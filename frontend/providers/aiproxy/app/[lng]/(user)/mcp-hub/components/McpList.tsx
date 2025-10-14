@@ -1,11 +1,11 @@
-"use client";
-import { Box, Center, Grid, Skeleton, SkeletonText, Text } from "@chakra-ui/react";
+'use client';
+import { Box, Center, Grid, Skeleton, SkeletonText, Text } from '@chakra-ui/react';
 
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { Mcp } from "@/types/mcp";
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { Mcp } from '@/types/mcp';
 
-import McpCard from "./McpCard";
+import McpCard from './McpCard';
 
 export interface McpListProps {
   mcps: Mcp[];
@@ -44,16 +44,16 @@ function McpCardSkeleton() {
 
 export default function McpList({ mcps, isLoading }: McpListProps) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
 
   if (isLoading) {
     return (
       <Grid
         templateColumns={{
-          base: "1fr",
-          md: "repeat(2, 1fr)",
-          lg: "repeat(3, 1fr)",
-          xl: "repeat(4, 1fr)",
+          base: '1fr',
+          md: 'repeat(2, 1fr)',
+          lg: 'repeat(3, 1fr)',
+          xl: 'repeat(4, 1fr)',
         }}
         gap="20px"
       >
@@ -69,7 +69,7 @@ export default function McpList({ mcps, isLoading }: McpListProps) {
       <Center h="400px">
         <Box textAlign="center">
           <Text color="grayModern.500" fontSize="16px" fontWeight={500} lineHeight="22px">
-            {t("mcpHub.noResults")}
+            {t('mcpHub.noResults')}
           </Text>
         </Box>
       </Center>
@@ -79,10 +79,10 @@ export default function McpList({ mcps, isLoading }: McpListProps) {
   return (
     <Grid
       templateColumns={{
-        base: "1fr",
-        md: "repeat(2, 1fr)",
-        lg: "repeat(3, 1fr)",
-        xl: "repeat(4, 1fr)",
+        base: '1fr',
+        md: 'repeat(2, 1fr)',
+        lg: 'repeat(3, 1fr)',
+        xl: 'repeat(4, 1fr)',
       }}
       gap="20px"
     >

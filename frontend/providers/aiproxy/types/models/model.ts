@@ -1,4 +1,4 @@
-import { ChannelType } from "@/types/admin/channels/channelInfo"
+import { ChannelType } from '@/types/admin/channels/channelInfo'
 
 export interface ModelConfig {
   config?: ModelConfigDetail

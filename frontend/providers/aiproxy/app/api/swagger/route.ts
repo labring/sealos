@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
 
-import { getApiDocs } from "@/lib/swagger"
+import { getApiDocs } from '@/lib/swagger'
 
 /**
  * @swagger
@@ -23,7 +23,7 @@ export async function GET() {
 
   return NextResponse.json(spec, {
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
   })
 }

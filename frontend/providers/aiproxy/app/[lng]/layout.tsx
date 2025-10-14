@@ -1,16 +1,16 @@
-import { dir } from "i18next";
-import type { Metadata } from "next";
-import Script from "next/script";
+import { dir } from 'i18next';
+import type { Metadata } from 'next';
+import Script from 'next/script';
 
-import { useTranslationServerSide } from "@/app/i18n/server";
-import { fallbackLng, languages } from "@/app/i18n/settings";
-import InitializeApp from "@/components/InitializeApp";
-import ChakraProviders from "@/providers/chakra/providers";
-import { I18nProvider } from "@/providers/i18n/i18nContext";
-import QueryProvider from "@/providers/tanstack-query/QueryProvider";
+import { useTranslationServerSide } from '@/app/i18n/server';
+import { fallbackLng, languages } from '@/app/i18n/settings';
+import InitializeApp from '@/components/InitializeApp';
+import ChakraProviders from '@/providers/chakra/providers';
+import { I18nProvider } from '@/providers/i18n/i18nContext';
+import QueryProvider from '@/providers/tanstack-query/QueryProvider';
 
-import "./globals.css";
-import "react-day-picker/dist/style.css";
+import './globals.css';
+import 'react-day-picker/dist/style.css';
 
 export async function generateStaticParams(): Promise<{ lng: string }[]> {
   return languages.map((lng) => ({ lng }));
@@ -26,13 +26,13 @@ export async function generateMetadata({
   let { lng } = await params;
   if (languages.indexOf(lng) < 0) lng = fallbackLng;
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { t } = await useTranslationServerSide(lng, "common");
+  const { t } = await useTranslationServerSide(lng, 'common');
   return {
     icons: {
-      icon: "/favicon.svg",
+      icon: '/favicon.svg',
     },
-    title: t("title"),
-    description: t("description"),
+    title: t('title'),
+    description: t('description'),
   };
 }
 
@@ -45,7 +45,7 @@ export default async function RootLayout({
 }>): Promise<React.JSX.Element> {
   const lng = (await params).lng;
   const scripts: { [key: string]: string }[] = JSON.parse(
-    process.env.NEXT_PUBLIC_CUSTOM_SCRIPTS ?? "[]"
+    process.env.NEXT_PUBLIC_CUSTOM_SCRIPTS ?? '[]'
   );
   return (
     <html lang={lng} dir={dir(lng)}>

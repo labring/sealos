@@ -1,6 +1,6 @@
-export const fallbackLng = "zh"
-export const languages = [fallbackLng, "en"]
-export const defaultNS = "common"
+export const fallbackLng = 'zh'
+export const languages = [fallbackLng, 'en']
+export const defaultNS = 'common'
 
 interface I18nextOptions {
   supportedLngs: string[]

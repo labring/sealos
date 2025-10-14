@@ -1,5 +1,5 @@
-"use client";
-import { Dispatch, SetStateAction, useState } from "react";
+'use client';
+import { Dispatch, SetStateAction, useState } from 'react';
 import {
   Badge,
   Box,
@@ -11,20 +11,20 @@ import {
   Input,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { useMessage } from "@sealos/ui";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { updateMcpParams } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { McpDetail } from "@/types/mcp";
-import { QueryKey } from "@/types/query-key";
+import { updateMcpParams } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { McpDetail } from '@/types/mcp';
+import { QueryKey } from '@/types/query-key';
 
 export interface McpParamsFormProps {
   mcpDetail: McpDetail;
   showBackButton?: boolean;
-  setViewMode?: Dispatch<SetStateAction<"info" | "config">>;
+  setViewMode?: Dispatch<SetStateAction<'info' | 'config'>>;
 }
 
 export default function McpParamsForm({
@@ -33,7 +33,7 @@ export default function McpParamsForm({
   setViewMode,
 }: McpParamsFormProps) {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { message } = useMessage();
   const queryClient = useQueryClient();
 
@@ -41,7 +41,7 @@ export default function McpParamsForm({
   const [formData, setFormData] = useState<Record<string, string>>(() => {
     const initialData: Record<string, string> = {};
     Object.keys(mcpDetail.reusing || {}).forEach((key) => {
-      initialData[key] = mcpDetail.params?.[key] || "";
+      initialData[key] = mcpDetail.params?.[key] || '';
     });
     return initialData;
   });
@@ -53,18 +53,18 @@ export default function McpParamsForm({
     {
       onSuccess: () => {
         message({
-          status: "success",
-          title: t("mcpHub.paramsSaved"),
+          status: 'success',
+          title: t('mcpHub.paramsSaved'),
           duration: 2000,
         });
         queryClient.invalidateQueries([QueryKey.mcpDetail, mcpDetail.id]);
-        setViewMode?.("info");
+        setViewMode?.('info');
       },
       onError: (error: any) => {
         message({
-          status: "error",
-          title: t("mcpHub.paramsSaveFailed"),
-          description: error?.message || t("mcpHub.paramsSaveFailed"),
+          status: 'error',
+          title: t('mcpHub.paramsSaveFailed'),
+          description: error?.message || t('mcpHub.paramsSaveFailed'),
           duration: 3000,
         });
       },
@@ -75,7 +75,7 @@ export default function McpParamsForm({
     setFormData((prev) => ({ ...prev, [key]: value }));
     // 清除错误
     if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: "" }));
+      setErrors((prev) => ({ ...prev, [key]: '' }));
     }
   };
 
@@ -84,7 +84,7 @@ export default function McpParamsForm({
 
     Object.entries(mcpDetail.reusing || {}).forEach(([key, config]) => {
       if (config.required && !formData[key]?.trim()) {
-        newErrors[key] = t("mcpHub.required");
+        newErrors[key] = t('mcpHub.required');
       }
     });
 
@@ -123,27 +123,27 @@ export default function McpParamsForm({
                   </Text>
                   <Badge
                     fontSize="10px"
-                    colorScheme={config.required ? "red" : "gray"}
+                    colorScheme={config.required ? 'red' : 'gray'}
                     variant="subtle"
                   >
-                    {config.required ? t("mcpHub.required") : t("mcpHub.optional")}
+                    {config.required ? t('mcpHub.required') : t('mcpHub.optional')}
                   </Badge>
                 </Flex>
               </FormLabel>
               <Input
-                value={formData[key] || ""}
+                value={formData[key] || ''}
                 onChange={(e) => handleInputChange(key, e.target.value)}
-                placeholder={`${t("common.add")} ${config.name}`}
+                placeholder={`${t('common.add')} ${config.name}`}
                 size="sm"
                 bg="white"
                 border="1px solid"
                 borderColor="grayModern.200"
                 borderRadius="6px"
                 fontSize="14px"
-                _placeholder={{ color: "grayModern.400", fontSize: "14px" }}
+                _placeholder={{ color: 'grayModern.400', fontSize: '14px' }}
                 _focus={{
-                  borderColor: "brightBlue.500",
-                  boxShadow: "0 0 0 1px var(--chakra-colors-brightBlue-500)",
+                  borderColor: 'brightBlue.500',
+                  boxShadow: '0 0 0 1px var(--chakra-colors-brightBlue-500)',
                 }}
               />
               {config.description && (
@@ -160,8 +160,8 @@ export default function McpParamsForm({
       {/* Buttons */}
       <Flex gap="12px" mt="16px">
         {showBackButton && (
-          <Button variant="outline" size="sm" onClick={() => setViewMode?.("info")} flex="1">
-            {t("mcpHub.backToInfo")}
+          <Button variant="outline" size="sm" onClick={() => setViewMode?.('info')} flex="1">
+            {t('mcpHub.backToInfo')}
           </Button>
         )}
         <Button
@@ -170,7 +170,7 @@ export default function McpParamsForm({
           isLoading={updateParamsMutation.isLoading}
           flex="1"
         >
-          {t("mcpHub.saveParams")}
+          {t('mcpHub.saveParams')}
         </Button>
       </Flex>
     </Flex>

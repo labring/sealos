@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import ReactJson, { OnCopyProps } from "react-json-view";
+import ReactJson, { OnCopyProps } from 'react-json-view';
 import {
   Box,
   Center,
@@ -14,21 +14,21 @@ import {
   ModalOverlay,
   Spinner,
   Text,
-} from "@chakra-ui/react";
-import { CurrencySymbol } from "@sealos/ui";
-import { useMessage } from "@sealos/ui";
-import { useQuery } from "@tanstack/react-query";
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
 
-import { getUserLogDetail } from "@/api/platform";
-import { useTranslationClientSide } from "@/app/i18n/client";
-import { MyTooltip } from "@/components/common/MyTooltip";
-import { useI18n } from "@/providers/i18n/i18nContext";
-import { useBackendStore } from "@/store/backend";
-import { QueryKey } from "@/types/query-key";
-import { LogItem } from "@/types/user/logs";
-import { getTranslationWithFallback } from "@/utils/common";
+import { getUserLogDetail } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { QueryKey } from '@/types/query-key';
+import { LogItem } from '@/types/user/logs';
+import { getTranslationWithFallback } from '@/utils/common';
 
-import { getTimeDiff } from "../tools/handleTime";
+import { getTimeDiff } from '../tools/handleTime';
 
 export default function LogDetailModal({
   isOpen,
@@ -40,13 +40,13 @@ export default function LogDetailModal({
   rowData: LogItem | null;
 }): React.JSX.Element {
   const { lng } = useI18n();
-  const { t } = useTranslationClientSide(lng, "common");
+  const { t } = useTranslationClientSide(lng, 'common');
   const { currencySymbol } = useBackendStore();
 
   const { data: logDetail, isLoading } = useQuery({
     queryKey: [QueryKey.GetUserLogDetail, rowData?.request_detail?.log_id],
     queryFn: () => {
-      if (!rowData?.request_detail?.log_id) throw new Error("No log ID");
+      if (!rowData?.request_detail?.log_id) throw new Error('No log ID');
       return getUserLogDetail(rowData.request_detail.log_id);
     },
     enabled: !!rowData?.request_detail?.log_id,
@@ -55,19 +55,19 @@ export default function LogDetailModal({
   const isDetailLoading = !!rowData?.request_detail?.log_id && isLoading;
 
   const { message } = useMessage({
-    warningBoxBg: "#FFFAEB",
-    warningIconBg: "#F79009",
-    warningIconFill: "white",
-    successBoxBg: "#EDFBF3",
-    successIconBg: "#039855",
-    successIconFill: "white",
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
+    warningIconFill: 'white',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
+    successIconFill: 'white',
   });
 
   // 定义默认的网格配置
   const gridConfig = {
-    labelWidth: "153px",
-    rowHeight: "48px",
-    jsonContentHeight: "122px",
+    labelWidth: '153px',
+    rowHeight: '48px',
+    jsonContentHeight: '122px',
   };
 
   const renderDetailRow = (
@@ -85,7 +85,7 @@ export default function LogDetailModal({
     // 辅助函数：渲染标签
     const renderLabel = (label: string | React.ReactNode | null) => {
       if (label === null) return null;
-      if (typeof label === "string") {
+      if (typeof label === 'string') {
         return (
           <Text
             color="grayModern.800"
@@ -103,7 +103,7 @@ export default function LogDetailModal({
 
     // 辅助函数：渲染值
     const renderValue = (value: string | number | React.ReactNode | undefined) => {
-      if (typeof value === "string" || typeof value === "number") {
+      if (typeof value === 'string' || typeof value === 'number') {
         return (
           <Text
             color="grayModern.600"
@@ -125,7 +125,7 @@ export default function LogDetailModal({
     const showRightSection = rightLabel !== null && rightLabel !== undefined;
 
     // 根据显示的列数设置模板
-    const gridTemplateColumns = showLeftSection && showRightSection ? "1fr 1fr" : "1fr";
+    const gridTemplateColumns = showLeftSection && showRightSection ? '1fr 1fr' : '1fr';
 
     return (
       <Grid
@@ -134,26 +134,26 @@ export default function LogDetailModal({
         borderLeft="1px solid #E8EBF0"
         borderRight="1px solid #E8EBF0"
         borderTop="1px solid #E8EBF0"
-        borderBottom={options?.isLast ? "1px solid #E8EBF0" : "none"}
+        borderBottom={options?.isLast ? '1px solid #E8EBF0' : 'none'}
         borderRadius={
           options?.isFirst && options?.isLast
-            ? "8px"
+            ? '8px'
             : options?.isFirst
-            ? "8px 8px 0 0"
+            ? '8px 8px 0 0'
             : options?.isLast
-            ? "0 0 8px 8px"
-            : "0"
+            ? '0 0 8px 8px'
+            : '0'
         }
         overflow="hidden"
       >
         {showLeftSection && (
-          <Grid templateColumns={`${options?.labelWidth || "153px"} 1fr`} gap="0 0">
+          <Grid templateColumns={`${options?.labelWidth || '153px'} 1fr`} gap="0 0">
             <Box
               bg="grayModern.25"
               px="18px"
               py="15px"
               borderRight="1px solid var(--Gray-Modern-200, #E8EBF0)"
-              h={options?.rowHeight || "48px"}
+              h={options?.rowHeight || '48px'}
               display="flex"
               alignItems="center"
             >
@@ -163,16 +163,16 @@ export default function LogDetailModal({
               bg="white"
               p="12px"
               maxW="100%"
-              h={options?.rowHeight || "48px"}
+              h={options?.rowHeight || '48px'}
               display="flex"
               alignItems="center"
               overflowX="auto"
               sx={{
-                "&::-webkit-scrollbar": {
-                  display: "none",
+                '&::-webkit-scrollbar': {
+                  display: 'none',
                 },
-                msOverflowStyle: "none",
-                scrollbarWidth: "none",
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none',
               }}
             >
               {renderValue(leftValue)}
@@ -181,14 +181,14 @@ export default function LogDetailModal({
         )}
 
         {showRightSection && (
-          <Grid templateColumns={`${options?.labelWidth || "153px"} 1fr`}>
+          <Grid templateColumns={`${options?.labelWidth || '153px'} 1fr`}>
             <Box
               bg="grayModern.25"
               px="18px"
               py="15px"
               borderRight="1px solid #E8EBF0"
               borderLeft="1px solid #E8EBF0"
-              h={options?.rowHeight || "48px"}
+              h={options?.rowHeight || '48px'}
               display="flex"
               alignItems="center"
             >
@@ -197,7 +197,7 @@ export default function LogDetailModal({
             <Box
               bg="white"
               p="12px"
-              h={options?.rowHeight || "48px"}
+              h={options?.rowHeight || '48px'}
               display="flex"
               alignItems="center"
             >
@@ -221,10 +221,10 @@ export default function LogDetailModal({
   ) => {
     if (!content) return null;
     const handleCopy = (copy: OnCopyProps) => {
-      if (typeof window === "undefined") return;
+      if (typeof window === 'undefined') return;
 
       const copyText =
-        typeof copy.src === "object" ? JSON.stringify(copy.src, null, 2) : String(copy.src);
+        typeof copy.src === 'object' ? JSON.stringify(copy.src, null, 2) : String(copy.src);
 
       navigator.clipboard.writeText(copyText);
     };
@@ -238,20 +238,20 @@ export default function LogDetailModal({
     }
     return (
       <Grid
-        templateColumns={`${options?.labelWidth || "153px"} 1fr`}
+        templateColumns={`${options?.labelWidth || '153px'} 1fr`}
         borderRadius={
           options?.isFirst && options?.isLast
-            ? "8px"
+            ? '8px'
             : options?.isFirst
-            ? "8px 8px 0 0"
+            ? '8px 8px 0 0'
             : options?.isLast
-            ? "0 0 8px 8px"
-            : "0"
+            ? '0 0 8px 8px'
+            : '0'
         }
         borderLeft="1px solid #E8EBF0"
         borderRight="1px solid #E8EBF0"
         borderTop="1px solid #E8EBF0"
-        borderBottom={options?.isLast ? "1px solid #E8EBF0" : "none"}
+        borderBottom={options?.isLast ? '1px solid #E8EBF0' : 'none'}
         overflow="hidden"
       >
         <Box
@@ -262,8 +262,8 @@ export default function LogDetailModal({
           display="flex"
           alignItems="center"
           h="100%"
-          borderTopLeftRadius={options?.isFirst ? "8px" : "0"}
-          borderBottomLeftRadius={options?.isLast ? "8px" : "0"}
+          borderTopLeftRadius={options?.isFirst ? '8px' : '0'}
+          borderBottomLeftRadius={options?.isLast ? '8px' : '0'}
         >
           <Text
             color="grayModern.800"
@@ -278,30 +278,30 @@ export default function LogDetailModal({
         <Box
           bg="white"
           p="12px"
-          maxH={options?.contentHeight || "122px"}
-          minH={options?.contentHeight || "122px"}
+          maxH={options?.contentHeight || '122px'}
+          minH={options?.contentHeight || '122px'}
           overflowY="auto"
-          borderTopRightRadius={options?.isFirst ? "8px" : "0"}
-          borderBottomRightRadius={options?.isLast ? "8px" : "0"}
+          borderTopRightRadius={options?.isFirst ? '8px' : '0'}
+          borderBottomRightRadius={options?.isLast ? '8px' : '0'}
           sx={{
-            "&::-webkit-scrollbar": {
-              width: "4px",
-              height: "4px",
+            '&::-webkit-scrollbar': {
+              width: '4px',
+              height: '4px',
             },
-            "&::-webkit-scrollbar-track": {
-              background: "grayModern.100",
-              borderRadius: "2px",
+            '&::-webkit-scrollbar-track': {
+              background: 'grayModern.100',
+              borderRadius: '2px',
             },
-            "&::-webkit-scrollbar-thumb": {
-              background: "grayModern.200",
-              borderRadius: "2px",
+            '&::-webkit-scrollbar-thumb': {
+              background: 'grayModern.200',
+              borderRadius: '2px',
             },
-            "&::-webkit-scrollbar-thumb:hover": {
-              background: "grayModern.300",
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: 'grayModern.300',
             },
           }}
         >
-          {typeof parsed === "object" ? (
+          {typeof parsed === 'object' ? (
             <ReactJson
               src={parsed}
               theme="rjv-default"
@@ -310,11 +310,11 @@ export default function LogDetailModal({
               enableClipboard={handleCopy}
               collapsed={2}
               style={{
-                fontSize: "14px",
-                fontFamily: "Monaco, monospace",
-                backgroundColor: "transparent",
-                width: "100%",
-                height: "100%",
+                fontSize: '14px',
+                fontFamily: 'Monaco, monospace',
+                backgroundColor: 'transparent',
+                width: '100%',
+                height: '100%',
               }}
               iconStyle="circle"
             />
@@ -352,7 +352,7 @@ export default function LogDetailModal({
               lineHeight="24px"
               letterSpacing="0.15px"
             >
-              {t("logs.logDetail")}
+              {t('logs.logDetail')}
             </Text>
           </Flex>
         </ModalHeader>
@@ -397,7 +397,7 @@ export default function LogDetailModal({
               lineHeight="24px"
               letterSpacing="0.15px"
             >
-              {t("logs.logDetail")}
+              {t('logs.logDetail')}
             </Text>
           </Flex>
         </ModalHeader>
@@ -416,20 +416,20 @@ export default function LogDetailModal({
           px="20px"
           overflowY="auto"
           sx={{
-            "&::-webkit-scrollbar": {
-              display: "none",
+            '&::-webkit-scrollbar': {
+              display: 'none',
             },
-            msOverflowStyle: "none",
-            scrollbarWidth: "none",
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
           }}
         >
           <Flex direction="column" gap="0">
             {renderDetailRow(
-              t("logs.requestId"),
+              t('logs.requestId'),
               rowData?.request_id,
-              t("logs.status"),
+              t('logs.status'),
               <Text
-                color={rowData?.code === 200 ? "#039855" : "#D92D20"}
+                color={rowData?.code === 200 ? '#039855' : '#D92D20'}
                 fontFamily="PingFang SC"
                 fontSize="14px"
                 fontWeight={500}
@@ -437,8 +437,8 @@ export default function LogDetailModal({
                 letterSpacing="0.5px"
               >
                 {rowData?.code === 200
-                  ? t("logs.success")
-                  : `${t("logs.failed")} (${rowData?.code})`}
+                  ? t('logs.success')
+                  : `${t('logs.failed')} (${rowData?.code})`}
               </Text>,
               {
                 labelWidth: gridConfig.labelWidth,
@@ -447,12 +447,12 @@ export default function LogDetailModal({
               }
             )}
             {renderDetailRow(
-              rowData?.endpoint ? "Endpoint" : undefined,
+              rowData?.endpoint ? 'Endpoint' : undefined,
               rowData?.endpoint ? rowData?.endpoint : undefined,
-              t("logs.mode"),
+              t('logs.mode'),
               getTranslationWithFallback(
                 `modeType.${String(rowData?.mode)}`,
-                "modeType.0",
+                'modeType.0',
                 t as any
               ),
               {
@@ -463,9 +463,9 @@ export default function LogDetailModal({
             )}
 
             {renderDetailRow(
-              t("logs.requestTime"),
+              t('logs.requestTime'),
               new Date(rowData?.request_at || 0).toLocaleString(),
-              t("logs.totalTime"),
+              t('logs.totalTime'),
               getTimeDiff(rowData?.created_at || 0, rowData?.request_at || 0),
               {
                 labelWidth: gridConfig.labelWidth,
@@ -474,9 +474,9 @@ export default function LogDetailModal({
               }
             )}
             {renderDetailRow(
-              t("logs.tokenName"),
+              t('logs.tokenName'),
               rowData?.token_name,
-              t("logs.tokenId"),
+              t('logs.tokenId'),
               rowData?.token_id,
               {
                 labelWidth: gridConfig.labelWidth,
@@ -484,7 +484,7 @@ export default function LogDetailModal({
                 isFirst: false,
               }
             )}
-            {renderDetailRow(t("logs.model"), rowData?.model, undefined, undefined, {
+            {renderDetailRow(t('logs.model'), rowData?.model, undefined, undefined, {
               labelWidth: gridConfig.labelWidth,
               rowHeight: gridConfig.rowHeight,
               isFirst: false,
@@ -492,16 +492,16 @@ export default function LogDetailModal({
 
             {rowData?.content &&
               renderDetailRow(
-                t("logs.info"),
+                t('logs.info'),
                 <Flex
                   w="100%"
                   overflowX="auto"
                   sx={{
-                    "&::-webkit-scrollbar": {
-                      display: "none",
+                    '&::-webkit-scrollbar': {
+                      display: 'none',
                     },
-                    msOverflowStyle: "none",
-                    scrollbarWidth: "none",
+                    msOverflowStyle: 'none',
+                    scrollbarWidth: 'none',
                   }}
                 >
                   <Text
@@ -514,23 +514,23 @@ export default function LogDetailModal({
                     whiteSpace="nowrap"
                     cursor="pointer"
                     onClick={() => {
-                      navigator.clipboard.writeText(rowData.content || "").then(
+                      navigator.clipboard.writeText(rowData.content || '').then(
                         () => {
                           message({
-                            status: "success",
-                            title: t("copySuccess"),
+                            status: 'success',
+                            title: t('copySuccess'),
                             isClosable: true,
                             duration: 2000,
-                            position: "top",
+                            position: 'top',
                           });
                         },
                         (err) => {
                           message({
-                            status: "warning",
-                            title: t("copyFailed"),
-                            description: err?.message || t("copyFailed"),
+                            status: 'warning',
+                            title: t('copyFailed'),
+                            description: err?.message || t('copyFailed'),
                             isClosable: true,
-                            position: "top",
+                            position: 'top',
                           });
                         }
                       );
@@ -549,13 +549,13 @@ export default function LogDetailModal({
               )}
 
             {logDetail?.request_body &&
-              renderJsonContent(t("logs.requestBody"), logDetail.request_body, {
+              renderJsonContent(t('logs.requestBody'), logDetail.request_body, {
                 labelWidth: gridConfig.labelWidth,
                 contentHeight: gridConfig.jsonContentHeight,
                 isFirst: false,
               })}
             {logDetail?.response_body &&
-              renderJsonContent(t("logs.responseBody"), logDetail.response_body, {
+              renderJsonContent(t('logs.responseBody'), logDetail.response_body, {
                 labelWidth: gridConfig.labelWidth,
                 contentHeight: gridConfig.jsonContentHeight,
                 isLast: false,
@@ -570,11 +570,11 @@ export default function LogDetailModal({
                       fontSize="14px"
                       fontWeight={500}
                       lineHeight="20px"
-                      mr={"4px"}
+                      mr={'4px'}
                       letterSpacing="0.5px"
                       whiteSpace="nowrap"
                     >
-                      {t("price.fixedPrice")}
+                      {t('price.fixedPrice')}
                     </Text>
                     <CurrencySymbol type={currencySymbol} />
                   </Flex>,
@@ -595,11 +595,11 @@ export default function LogDetailModal({
                       fontSize="14px"
                       fontWeight={500}
                       lineHeight="20px"
-                      mr={"4px"}
+                      mr={'4px'}
                       letterSpacing="0.5px"
                       whiteSpace="nowrap"
                     >
-                      {t("key.inputPrice")}
+                      {t('key.inputPrice')}
                     </Text>
                     <CurrencySymbol type={currencySymbol} />
                     <Text
@@ -612,7 +612,7 @@ export default function LogDetailModal({
                       textTransform="lowercase"
                       whiteSpace="nowrap"
                     >
-                      /{t("price.per1kTokens").toLowerCase()}
+                      /{t('price.per1kTokens').toLowerCase()}
                     </Text>
                   </Flex>,
                   rowData?.price?.input_price || 0,
@@ -627,7 +627,7 @@ export default function LogDetailModal({
                       letterSpacing="0.5px"
                       whiteSpace="nowrap"
                     >
-                      {t("key.outputPrice")}
+                      {t('key.outputPrice')}
                     </Text>
                     <CurrencySymbol type={currencySymbol} />
                     <Text
@@ -640,7 +640,7 @@ export default function LogDetailModal({
                       textTransform="lowercase"
                       whiteSpace="nowrap"
                     >
-                      /{t("price.per1kTokens").toLowerCase()}
+                      /{t('price.per1kTokens').toLowerCase()}
                     </Text>
                   </Flex>,
                   rowData?.price?.output_price || 0,
@@ -660,11 +660,11 @@ export default function LogDetailModal({
                     fontSize="14px"
                     fontWeight={500}
                     lineHeight="20px"
-                    mr={"4px"}
+                    mr={'4px'}
                     letterSpacing="0.5px"
                     whiteSpace="nowrap"
                   >
-                    {t("price.imageInputPrice")}
+                    {t('price.imageInputPrice')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} />
                   <Text
@@ -677,7 +677,7 @@ export default function LogDetailModal({
                     textTransform="lowercase"
                     whiteSpace="nowrap"
                   >
-                    /{t("price.per1kTokens").toLowerCase()}
+                    /{t('price.per1kTokens').toLowerCase()}
                   </Text>
                 </Flex>,
                 rowData?.price?.image_input_price || 0,
@@ -699,11 +699,11 @@ export default function LogDetailModal({
                     fontSize="14px"
                     fontWeight={500}
                     lineHeight="20px"
-                    mr={"4px"}
+                    mr={'4px'}
                     letterSpacing="0.5px"
                     whiteSpace="nowrap"
                   >
-                    {t("price.thinkingModeOutputPrice")}
+                    {t('price.thinkingModeOutputPrice')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} />
                   <Text
@@ -716,7 +716,7 @@ export default function LogDetailModal({
                     textTransform="lowercase"
                     whiteSpace="nowrap"
                   >
-                    /{t("price.per1kTokens").toLowerCase()}
+                    /{t('price.per1kTokens').toLowerCase()}
                   </Text>
                 </Flex>,
                 rowData?.price?.thinking_mode_output_price || 0,
@@ -730,9 +730,9 @@ export default function LogDetailModal({
               )}
 
             {renderDetailRow(
-              t("logs.inputTokens"),
+              t('logs.inputTokens'),
               rowData?.usage?.input_tokens || 0,
-              t("logs.outputTokens"),
+              t('logs.outputTokens'),
               rowData?.usage?.output_tokens || 0,
               {
                 labelWidth: gridConfig.labelWidth,
@@ -742,8 +742,8 @@ export default function LogDetailModal({
             )}
 
             {renderDetailRow(
-              <MyTooltip placement="bottom-end" label={t("logs.total_price_tip")}>
-                <Flex alignItems={"center"} gap={"4px"}>
+              <MyTooltip placement="bottom-end" label={t('logs.total_price_tip')}>
+                <Flex alignItems={'center'} gap={'4px'}>
                   <Text
                     noOfLines={1}
                     color="grayModern.800"
@@ -753,7 +753,7 @@ export default function LogDetailModal({
                     lineHeight="20px"
                     letterSpacing="0.5px"
                   >
-                    {t("logs.total_price")}
+                    {t('logs.total_price')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} />
                 </Flex>

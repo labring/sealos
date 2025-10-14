@@ -1,7 +1,7 @@
-"use client";
-import { createContext, useContext } from "react";
+'use client';
+import { createContext, useContext } from 'react';
 
-const I18nContext = createContext<{ lng: string }>({ lng: "en" });
+const I18nContext = createContext<{ lng: string }>({ lng: 'en' });
 
 export const useI18n = (): { lng: string } => useContext(I18nContext);
 

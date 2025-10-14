@@ -1,4 +1,4 @@
-import { ApiResp } from "../api"
+import { ApiResp } from '../api'
 
 export interface ChartDataItem {
   timestamp: number
