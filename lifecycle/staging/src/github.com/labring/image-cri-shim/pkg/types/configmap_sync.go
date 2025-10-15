@@ -26,6 +26,8 @@ const (
 	shimConfigMapDataKey   = "registries.yaml"
 )
 
+var kubeClientFactory = buildKubeClient
+
 type registryConfigSpec struct {
 	Version        string          `yaml:"version"`
 	Sealos         sealedConfig    `yaml:"sealos"`
@@ -58,7 +60,7 @@ func SyncConfigFromConfigMap(ctx context.Context, configPath string) {
 	if strings.TrimSpace(configPath) == "" {
 		return
 	}
-	client, err := buildKubeClient()
+	client, err := kubeClientFactory()
 	if err != nil {
 		logger.Debug("skip syncing image-cri-shim config; unable to create kube client: %v", err)
 		logger.Warn("you can ignore this if you are not running inside a kubernetes cluster")
@@ -83,7 +85,7 @@ func SyncConfigFromConfigMap(ctx context.Context, configPath string) {
 	logger.Info("syncing image-cri-shim config from ConfigMap completed")
 }
 
-func buildKubeClient() (*kubernetes.Clientset, error) {
+func buildKubeClient() (kubernetes.Interface, error) {
 	if cfg, err := rest.InClusterConfig(); err == nil {
 		return kubernetes.NewForConfig(cfg)
 	}

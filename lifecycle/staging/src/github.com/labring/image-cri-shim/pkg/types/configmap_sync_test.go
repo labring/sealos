@@ -1,9 +1,16 @@
 package types
 
 import (
+	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/yaml"
 )
 
@@ -64,5 +71,71 @@ func TestMergeShimConfigKeepsDefaults(t *testing.T) {
 	}
 	if cfg.Timeout.Duration <= 0 {
 		t.Fatalf("expected default timeout, got %s", cfg.Timeout.Duration)
+	}
+}
+
+func TestSyncConfigFromConfigMapWritesFile(t *testing.T) {
+	cfg := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: shimConfigMapName, Namespace: shimConfigMapNamespace},
+		Data:       map[string]string{shimConfigMapDataKey: sampleConfigMapData},
+	}
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "image-cri-shim.yaml")
+	initial := []byte("shim: /var/run/image-cri-shim.sock\ncri: /run/containerd/containerd.sock\n")
+	if err := os.WriteFile(configPath, initial, 0o600); err != nil {
+		t.Fatalf("failed to seed config file: %v", err)
+	}
+
+	originalFactory := kubeClientFactory
+	kubeClientFactory = func() (kubernetes.Interface, error) {
+		return fake.NewSimpleClientset(cfg), nil
+	}
+	t.Cleanup(func() { kubeClientFactory = originalFactory })
+
+	SyncConfigFromConfigMap(context.Background(), configPath)
+
+	merged, err := Unmarshal(configPath)
+	if err != nil {
+		t.Fatalf("failed to read merged config: %v", err)
+	}
+	if merged.Address != "http://sealos.hub.local:5000" {
+		t.Fatalf("unexpected address: %s", merged.Address)
+	}
+	if merged.Auth != "1:2" {
+		t.Fatalf("unexpected auth: %s", merged.Auth)
+	}
+	if len(merged.Registries) != 1 || merged.Registries[0].Address != "https://registry-1.docker.io" {
+		t.Fatalf("unexpected registries: %+v", merged.Registries)
+	}
+	if merged.ReloadInterval.Duration != 5*time.Second {
+		t.Fatalf("unexpected reload interval: %s", merged.ReloadInterval.Duration)
+	}
+	if merged.Timeout.Duration != 15*time.Minute {
+		t.Fatalf("unexpected timeout: %s", merged.Timeout.Duration)
+	}
+}
+
+func TestSyncConfigFromConfigMapMissingData(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "image-cri-shim.yaml")
+	initial := []byte("shim: /var/run/image-cri-shim.sock\n")
+	if err := os.WriteFile(configPath, initial, 0o600); err != nil {
+		t.Fatalf("failed to seed config file: %v", err)
+	}
+
+	originalFactory := kubeClientFactory
+	kubeClientFactory = func() (kubernetes.Interface, error) {
+		return fake.NewSimpleClientset(), nil
+	}
+	t.Cleanup(func() { kubeClientFactory = originalFactory })
+
+	SyncConfigFromConfigMap(context.Background(), configPath)
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("failed to read config file: %v", err)
+	}
+	if string(data) != string(initial) {
+		t.Fatalf("expected config file to remain unchanged")
 	}
 }
