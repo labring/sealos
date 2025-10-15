@@ -6,7 +6,9 @@ env:
   DEFAULT_OWNER: "labring"
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - "*"
 
 jobs:
   releaser:
@@ -47,27 +49,14 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-
   cloud-release:
-    runs-on: ubuntu-24.04
+    uses: ./.github/workflows/cloud-release.yml
     needs:
       - releaser
     permissions:
       contents: read
       packages: write
-      actions: write
-    steps:
-      - name: Trigger Cloud Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'cloud-release.yml',
-              ref: "refs/tags/${{ github.ref_name }}",
-              inputs: {
-                  tag: "${{ github.ref_name }}",
-                  build_offline_tar_only: false
-              }
-            })
+    secrets: inherit
+    with:
+      tag: ${{ github.ref_name }}
+      build_offline_tar_only: false

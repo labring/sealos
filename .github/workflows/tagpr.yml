@@ -92,14 +92,3 @@ jobs:
           git tag ${{ steps.tagpr.outputs.version }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git push -f origin ${{ steps.tagpr.outputs.version }}
-      - name: Trigger Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'release.yml',
-              ref: "refs/tags/${{ steps.tagpr.outputs.version }}",
-            })
