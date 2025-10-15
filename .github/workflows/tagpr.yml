@@ -38,6 +38,12 @@ jobs:
               "pre-version": "${PRE_VERSION}"
           }
           EOF
+        env:
+          VERSION: "${{ inputs.version }}"
+          PRE_VERSION: "${{ inputs.pre-version }}"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Add and parse .tagpr.json
+      - run: |
           # check if .tagpr.json exists
           if [ ! -f .tagpr.json ]; then
             echo "No .tagpr.json file found."
