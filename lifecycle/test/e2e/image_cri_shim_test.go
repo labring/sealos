@@ -243,11 +243,6 @@ COPY image-cri-shim cri`
 				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
 			}()
 
-			defer func() {
-				_, err := fakeClient.CmdInterface.Exec("kubectl", "-n", "kube-system", "delete", "configmap", "image-cri-shim", "--ignore-not-found=true")
-				utils.CheckErr(err, "failed to cleanup image-cri-shim ConfigMap")
-			}()
-
 			_, _ = fakeClient.CmdInterface.Exec("kubectl", "-n", "kube-system", "delete", "configmap", "image-cri-shim", "--ignore-not-found=true")
 
 			configMapManifest := fmt.Sprintf(`apiVersion: v1
@@ -314,6 +309,7 @@ data:
 			)
 
 			shimConfigRaw := utils.GetFileDataLocally(DefaultImageCRIShimConfig)
+			logger.Warn(shimConfigRaw)
 			cfg, err := shimType.UnmarshalData([]byte(shimConfigRaw))
 			utils.CheckErr(err, "failed to unmarshal original shim config")
 
