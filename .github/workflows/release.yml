@@ -6,6 +6,7 @@ env:
   DEFAULT_OWNER: "labring"
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "*"
