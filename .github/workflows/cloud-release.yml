@@ -42,21 +42,21 @@ jobs:
     uses: ./.github/workflows/controllers.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.ref_name }}
+      push_image_tag: ${{ inputs.tag }}
     secrets: inherit
   release-frontends:
     if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/frontends.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.ref_name }}
+      push_image_tag: ${{ inputs.tag }}
     secrets: inherit
   release-service:
     if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/services.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.ref_name }}
+      push_image_tag: ${{ inputs.tag }}
     secrets: inherit
 
   release-webhook:
@@ -64,7 +64,7 @@ jobs:
     uses: ./.github/workflows/webhooks.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.ref_name }}
+      push_image_tag: ${{ inputs.tag }}
     secrets: inherit
   release-cloud:
     if: ${{ inputs.build_offline_tar_only == false }}
@@ -75,6 +75,6 @@ jobs:
     uses: ./.github/workflows/cloud.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.ref_name }}
-      build_from: ${{ github.ref_name }}
+      push_image_tag: ${{ inputs.tag }}
+      build_from: ${{ inputs.tag }}
     secrets: inherit
