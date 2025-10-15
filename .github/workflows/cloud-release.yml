@@ -39,77 +39,33 @@ permissions:
 jobs:
   release-controllers:
     if: ${{ inputs.build_offline_tar_only == false }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Trigger Cloud Controller Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'controllers.yml',
-              ref: "refs/tags/${{ github.ref_name }}",
-              inputs: {
-                  push_image_tag: "${{ github.ref_name }}",
-                  push_image: true
-              }
-            })
+    uses: ./.github/workflows/controllers.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.ref_name }}
+    secrets: inherit
   release-frontends:
     if: ${{ inputs.build_offline_tar_only == false }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Trigger Cloud Frontends Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'frontends.yml',
-              ref: "refs/tags/${{ github.ref_name }}",
-              inputs: {
-                  push_image_tag: "${{ github.ref_name }}",
-                  push_image: true
-              }
-            })
-
+    uses: ./.github/workflows/frontends.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.ref_name }}
+    secrets: inherit
   release-service:
     if: ${{ inputs.build_offline_tar_only == false }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Trigger Cloud Services Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'services.yml',
-              ref: "refs/tags/${{ github.ref_name }}",
-              inputs: {
-                  push_image_tag: "${{ github.ref_name }}",
-                  push_image: true
-              }
-            })
+    uses: ./.github/workflows/services.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.ref_name }}
+    secrets: inherit
+
   release-webhook:
     if: ${{ inputs.build_offline_tar_only == false }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Trigger Cloud Services Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'webhooks.yml',
-              ref: "refs/tags/${{ github.ref_name }}",
-              inputs: {
-                  push_image_tag: "${{ github.ref_name }}",
-                  push_image: true
-              }
-            })
+    uses: ./.github/workflows/webhooks.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.ref_name }}
+    secrets: inherit
   release-cloud:
     if: ${{ inputs.build_offline_tar_only == false }}
     needs:
@@ -119,6 +75,6 @@ jobs:
     uses: ./.github/workflows/cloud.yml
     with:
       push_image: true
-      push_image_tag: ${{ inputs.tag }}
-      build_from: ${{ inputs.tag }}
+      push_image_tag: ${{ github.ref_name }}
+      build_from: ${{ github.ref_name }}
     secrets: inherit
