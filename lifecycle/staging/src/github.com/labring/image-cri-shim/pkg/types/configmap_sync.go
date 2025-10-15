@@ -82,17 +82,14 @@ func SyncConfigFromConfigMap(ctx context.Context, configPath string) {
 	}
 	cm, err := client.CoreV1().ConfigMaps(shimConfigMapNamespace).Get(ctx, shimConfigMapName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		logger.Warn("skip syncing image-cri-shim config; configmap not found")
 		logger.Debug("configmap %s/%s not found; skip syncing", shimConfigMapNamespace, shimConfigMapName)
 		return
 	}
 	if err != nil {
-		logger.Error("skip syncing image-cri-shim config: %v", err)
 		logger.Debug("failed to read ConfigMap %s/%s: %v", shimConfigMapNamespace, shimConfigMapName, err)
 		return
 	}
 	if !applyConfigMapToFile(configPath, cm) {
-		logger.Warn("no updates applied to image-cri-shim config")
 		logger.Debug("ConfigMap %s/%s produced no updates", shimConfigMapNamespace, shimConfigMapName)
 		return
 	}
@@ -179,7 +176,7 @@ func mergeShimConfig(cfg *Config, spec *registryConfigSpec) {
 	if username != "" || password != "" {
 		cfg.Auth = buildAuth(username, password)
 	}
-	registries := make([]Registry, 0, len(spec.Registries))
+	registries := make([]Registry, 0)
 	for _, item := range spec.Registries {
 		addr := strings.TrimSpace(item.Address)
 		if addr == "" {
@@ -193,9 +190,7 @@ func mergeShimConfig(cfg *Config, spec *registryConfigSpec) {
 		}
 		registries = append(registries, reg)
 	}
-	if len(registries) > 0 {
-		cfg.Registries = registries
-	}
+	cfg.Registries = registries
 	if spec.Force != nil {
 		cfg.Force = *spec.Force
 	}
@@ -215,6 +210,8 @@ func mergeShimConfig(cfg *Config, spec *registryConfigSpec) {
 		} else {
 			cfg.ReloadInterval.Duration = dur
 		}
+	} else {
+		cfg.ReloadInterval.Duration = DefaultReloadInterval
 	}
 	if cfg.Timeout.Duration <= 0 {
 		cfg.Timeout.Duration, _ = time.ParseDuration("15m")
