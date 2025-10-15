@@ -127,15 +127,9 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interv
 
 	lastHash := ""
 	if data, err := os.ReadFile(path); err == nil {
-		if cfg, err := types.UnmarshalData(data); err == nil {
-			cfg.RegistryDir = types.NormalizeRegistryDir(cfg.RegistryDir)
-			digest, err := types.RegistryDirDigest(cfg.RegistryDir)
-			if err != nil {
-				logger.Warn("failed to fingerprint registry.d %s: %v", cfg.RegistryDir, err)
-			} else {
-				sum := sha256.Sum256(append(data, digest...))
-				lastHash = hex.EncodeToString(sum[:])
-			}
+		if _, err := types.UnmarshalData(data); err == nil {
+			sum := sha256.Sum256(data)
+			lastHash = hex.EncodeToString(sum[:])
 		} else {
 			logger.Warn("failed to parse shim config %s: %v", path, err)
 		}
@@ -161,13 +155,7 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interv
 				logger.Warn("failed to parse shim config %s: %v", path, err)
 				continue
 			}
-			cfg.RegistryDir = types.NormalizeRegistryDir(cfg.RegistryDir)
-			digest, err := types.RegistryDirDigest(cfg.RegistryDir)
-			if err != nil {
-				logger.Warn("failed to fingerprint registry.d %s: %v", cfg.RegistryDir, err)
-				continue
-			}
-			sum := sha256.Sum256(append(data, digest...))
+			sum := sha256.Sum256(data)
 			hash := hex.EncodeToString(sum[:])
 			if hash == lastHash {
 				continue
