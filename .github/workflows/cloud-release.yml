@@ -1,6 +1,18 @@
 name: Release Cloud
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag for manual release"
+        required: false
+        default: ""
+        type: string
+      build_offline_tar_only:
+        description: "Build offline tar only"
+        required: false
+        default: false
+        type: boolean
   workflow_dispatch:
     inputs:
       tag:
