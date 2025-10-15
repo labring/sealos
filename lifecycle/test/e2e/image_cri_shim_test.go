@@ -17,11 +17,9 @@ package e2e
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -32,7 +30,6 @@ import (
 
 	"github.com/labring/image-cri-shim/pkg/server"
 	shimType "github.com/labring/image-cri-shim/pkg/types"
-	registry2 "github.com/labring/sreg/pkg/registry/crane"
 	"github.com/onsi/ginkgo/v2"
 	k8sv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -237,7 +234,6 @@ COPY image-cri-shim cri`
 				sourceImage    = "nginx:latest"
 				rewrittenImage = "docker.m.daocloud.io/library/nginx:latest"
 				mirrorAddress  = "https://docker.m.daocloud.io"
-				aliasDomain    = "daocloud"
 			)
 
 			shimConfigRaw := utils.GetFileDataLocally(DefaultImageCRIShimConfig)
@@ -246,7 +242,7 @@ COPY image-cri-shim cri`
 
 			cfgCopy := *cfg
 			cfgCopy.ReloadInterval = metav1.Duration{Duration: time.Second}
-			cfgCopy.RegistryDir = shimType.DefaultRegistryDir
+			cfgCopy.Registries = append(cfgCopy.Registries, shimType.Registry{Address: mirrorAddress})
 			payload, err := yaml.Marshal(cfgCopy)
 			utils.CheckErr(err, "failed to marshal shim config with mirror")
 
@@ -256,35 +252,9 @@ COPY image-cri-shim cri`
 				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
 			}(shimConfigRaw)
 
-			registryDir := shimType.NormalizeRegistryDir(cfgCopy.RegistryDir)
-			normalizedAlias := registry2.NormalizeRegistry(aliasDomain)
-			registryFile := filepath.Join(registryDir, fmt.Sprintf("%s.yaml", normalizedAlias))
-			_ = file.WriteFile(registryFile, []byte(fmt.Sprintf("address: %s", mirrorAddress)))
-			existingRegistry, regReadErr := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", registryFile))
-			defer func() {
-				if regReadErr != nil {
-					exec.RunSimpleCmd(fmt.Sprintf("sudo rm -f %s", registryFile))
-				} else {
-					writeRegistryConfig(registryFile, existingRegistry)
-				}
-			}()
-
-			mirrorConfig := shimType.Registry{Address: mirrorAddress}
-			mirrorPayload, err := yaml.Marshal(mirrorConfig)
-			utils.CheckErr(err, "failed to marshal mirror registry config")
-			writeRegistryConfig(registryFile, string(mirrorPayload))
-
 			since := time.Now()
 			writeShimConfig(payload)
 			waitForShimLog("reloaded shim auth configuration", since, 60*time.Second)
-
-			gomega.Eventually(func() error {
-				_, err := exec.RunSimpleCmd(fmt.Sprintf("sudo test -f %s", registryFile))
-				return err
-			}, 30*time.Second, 2*time.Second).Should(gomega.Succeed(), fmt.Sprintf("expected registry config %s to exist", registryFile))
-
-			registryData := utils.GetFileDataLocally(registryFile)
-			gomega.Expect(registryData).To(gomega.ContainSubstring(mirrorAddress))
 
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
@@ -307,12 +277,6 @@ func writeShimConfig(data []byte) {
 	cmd := fmt.Sprintf("cat <<'EOF' | sudo tee %s >/dev/null\n%s\nEOF", DefaultImageCRIShimConfig, string(data))
 	_, err := exec.RunSimpleCmd(cmd)
 	utils.CheckErr(err, "failed to write shim config")
-}
-
-func writeRegistryConfig(path string, content string) {
-	cmd := fmt.Sprintf("cat <<'EOF' | sudo tee %s >/dev/null\n%s\nEOF", path, content)
-	_, err := exec.RunSimpleCmd(cmd)
-	utils.CheckErr(err, fmt.Sprintf("failed to write registry config %s", path))
 }
 
 func waitForShimLog(fragment string, since time.Time, timeout time.Duration) {
