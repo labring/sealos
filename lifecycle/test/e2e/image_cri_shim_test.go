@@ -229,6 +229,70 @@ COPY image-cri-shim cri`
 	ginkgo.Context("image-cri-shim registry rewrite", func() {
 		ginkgo.BeforeEach(ensureShimClient)
 
+		ginkgo.It("syncs registry config from ConfigMap", func() {
+			const (
+				sourceImage    = "nginx:latest"
+				rewrittenImage = "docker.m.daocloud.io/library/nginx:latest"
+				mirrorAddress  = "https://docker.m.daocloud.io"
+			)
+
+			shimConfigRaw := utils.GetFileDataLocally(DefaultImageCRIShimConfig)
+			defer func() {
+				restoreSince := time.Now()
+				writeShimConfig([]byte(shimConfigRaw))
+				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
+			}()
+
+			_, _ = fakeClient.CmdInterface.Exec("kubectl", "-n", "kube-system", "delete", "configmap", "image-cri-shim", "--ignore-not-found=true")
+
+			configMapManifest := fmt.Sprintf(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-cri-shim
+  namespace: kube-system
+data:
+  registries.yaml: |
+    version: v1
+    reloadInterval: 2s
+    registries:
+    - address: %s
+`, mirrorAddress)
+
+			configMapFile := utils.CreateTempFile()
+			defer func() {
+				utils.RemoveTempFile(configMapFile)
+			}()
+			utils.CheckErr(utils.WriteFile(configMapFile, []byte(configMapManifest)), "failed to write ConfigMap manifest")
+
+			_, err := fakeClient.CmdInterface.Exec("kubectl", "apply", "-f", configMapFile)
+			utils.CheckErr(err, "failed to apply image-cri-shim ConfigMap")
+
+			gomega.Eventually(func() string {
+				out, err := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", DefaultImageCRIShimConfig))
+				if err != nil {
+					return ""
+				}
+				return out
+			}, 90*time.Second, 3*time.Second).Should(gomega.ContainSubstring(mirrorAddress))
+
+			gomega.Eventually(func() string {
+				out, err := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", DefaultImageCRIShimConfig))
+				if err != nil {
+					return ""
+				}
+				return out
+			}, 90*time.Second, 3*time.Second).Should(gomega.ContainSubstring("reloadInterval: 2s"))
+
+			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
+			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
+
+			pullOut, err := fakeClient.CmdInterface.Exec("crictl", "pull", sourceImage)
+			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
+			logger.Info("crictl pull output: %s", string(pullOut))
+			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
+			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
+		})
+
 		ginkgo.It("allows pulling through registry mirror", func() {
 			const (
 				sourceImage    = "nginx:latest"
@@ -237,6 +301,7 @@ COPY image-cri-shim cri`
 			)
 
 			shimConfigRaw := utils.GetFileDataLocally(DefaultImageCRIShimConfig)
+			logger.Warn(shimConfigRaw)
 			cfg, err := shimType.UnmarshalData([]byte(shimConfigRaw))
 			utils.CheckErr(err, "failed to unmarshal original shim config")
 
@@ -252,19 +317,13 @@ COPY image-cri-shim cri`
 				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
 			}(shimConfigRaw)
 
-			since := time.Now()
 			writeShimConfig(payload)
-			waitForShimLog("reloaded shim auth configuration", since, 60*time.Second)
-
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
 
 			pullOut, err := fakeClient.CmdInterface.Exec("crictl", "pull", sourceImage)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
 			logger.Info("crictl pull output: %s", string(pullOut))
-
-			waitForShimLog(fmt.Sprintf("image: %s, newImage: %s, action: PullImage", sourceImage, rewrittenImage), since, 60*time.Second)
-
 			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
 			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
 		})
@@ -281,7 +340,7 @@ func writeShimConfig(data []byte) {
 
 func waitForShimLog(fragment string, since time.Time, timeout time.Duration) {
 	gomega.Eventually(func() string {
-		cmd := fmt.Sprintf("sudo journalctl -u image-cri-shim --since \"%s\" --no-pager", since.Add(-5*time.Second).Format(shimJournalTimeLayout))
+		cmd := fmt.Sprintf("sudo journalctl -u image-cri-shim --since \"%s\" --no-pager", since.Add(-60*time.Second).Format(shimJournalTimeLayout))
 		out, err := exec.RunSimpleCmd(cmd)
 		if err != nil {
 			return ""

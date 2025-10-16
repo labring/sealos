@@ -50,6 +50,7 @@ var rootCmd = &cobra.Command{
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
+		types.SyncConfigFromConfigMap(cmd.Context(), cfgFile)
 		cfg, err = types.Unmarshal(cfgFile)
 		if err != nil {
 			return fmt.Errorf("image shim config load error: %w", err)
@@ -126,6 +127,7 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interv
 	}
 
 	lastHash := ""
+	types.SyncConfigFromConfigMap(ctx, path)
 	if data, err := os.ReadFile(path); err == nil {
 		if _, err := types.UnmarshalData(data); err == nil {
 			sum := sha256.Sum256(data)
@@ -145,6 +147,7 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interv
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
+			types.SyncConfigFromConfigMap(ctx, path)
 			data, err := os.ReadFile(path)
 			if err != nil {
 				logger.Warn("failed to read shim config %s: %v", path, err)
