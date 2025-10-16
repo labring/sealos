@@ -27,6 +27,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
 import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Table,
@@ -58,6 +59,7 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 const Release = () => {
   const t = useTranslations();
+  const { getErrorMessage } = useErrorMessage();
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
 
@@ -201,12 +203,12 @@ const Release = () => {
         };
         retry();
       } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('delete_failed'));
+        toast.error(getErrorMessage(error, 'delete_failed'));
         console.error(error);
       }
       setIsLoading(false);
     },
-    [setIsLoading, t, refetch]
+    [setIsLoading, t, refetch, getErrorMessage]
   );
 
   const handleConvertToRuntime = useCallback(

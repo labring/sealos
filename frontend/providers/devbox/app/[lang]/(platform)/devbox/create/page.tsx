@@ -23,6 +23,7 @@ import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -36,6 +37,7 @@ const DevboxCreatePage = () => {
   const router = useRouter();
   const t = useTranslations();
   const searchParams = useSearchParams();
+  const { getErrorMessage } = useErrorMessage();
 
   const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
@@ -264,12 +266,15 @@ const DevboxCreatePage = () => {
       }
       setStartedTemplate(undefined);
       router.push(`/devbox/detail/${formData.name}`);
-    } catch (error) {
+    } catch (error: any) {
       if (typeof error === 'string' && error.includes('402')) {
-        toast.warning(applyError, {
+        toast.warning(t(applyError), {
           description: t('outstanding_tips')
         });
-      } else toast.warning(applyError, { description: JSON.stringify(error) });
+      } else {
+        const errorMsg = getErrorMessage(error, isEdit ? 'update_failed' : 'create_failed');
+        toast.warning(t(applyError), { description: errorMsg });
+      }
     }
     setIsLoading(false);
   };

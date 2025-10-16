@@ -6,6 +6,7 @@ import { Loader2, TriangleAlert } from 'lucide-react';
 import { delDevbox } from '@/api/devbox';
 import { useIDEStore } from '@/stores/ide';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Dialog,
@@ -33,6 +34,7 @@ const DeleteDevboxDialog = ({
 }: DeleteDevboxDialogProps) => {
   const t = useTranslations();
   const { removeDevboxIDE } = useIDEStore();
+  const { getErrorMessage } = useErrorMessage();
 
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -64,11 +66,11 @@ const DeleteDevboxDialog = ({
       };
       retry();
     } catch (error: any) {
-      toast.error(typeof error === 'string' ? error : error.message || t('delete_failed'));
+      toast.error(getErrorMessage(error, 'delete_failed'));
       console.error(error);
     }
     setLoading(false);
-  }, [devbox.name, removeDevboxIDE, t, onSuccess, onClose, refetchDevboxList]);
+  }, [devbox.name, removeDevboxIDE, t, onSuccess, onClose, refetchDevboxList, getErrorMessage]);
 
   // TODO：refactor this component to alert dialog
   return (

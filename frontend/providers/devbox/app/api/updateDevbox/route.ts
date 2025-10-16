@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return jsonRes({
-      code: 500,
+      code: err?.statusCode || err?.response?.statusCode || 500,
       error: err
     });
   }
