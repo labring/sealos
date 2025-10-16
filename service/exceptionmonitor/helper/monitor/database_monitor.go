@@ -282,7 +282,7 @@ func getClusterDatabaseInfo(cluster metav1unstructured.Unstructured, notificatio
 	notificationInfo.DatabaseClusterUID = databaseClusterUID
 	notificationInfo.ExceptionStatus, notificationInfo.ExceptionStatusTime = getClusterDatabaseStatus(cluster, notificationInfo)
 	if notificationInfo.ExceptionStatusTime == "0001-01-01 08:00:00" {
-		notificationInfo.ExceptionStatusTime = time.Now().String()
+		notificationInfo.ExceptionStatusTime = time.Now().Format("2006-01-02 15:04:05")
 	}
 }
 
