@@ -9,8 +9,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@/components/ui/drawer';
-import { Button } from '@/components/ui/button';
+} from '@sealos/shadcn-ui/drawer';
+import { Button } from '@sealos/shadcn-ui/button';
 import TemplateDropdown from '@/components/template/TemplateDropdown';
 
 import { Tag } from '@/prisma/generated/client';

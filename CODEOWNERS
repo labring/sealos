@@ -1,0 +1,22 @@
+# Sealos CODEOWNERS
+
+*       @labring/sealos-general-reviewer
+
+/extensions/ @labring/sealos-frontend-reviewer
+/frontend/ @labring/sealos-frontend-reviewer
+
+/controllers/ @labring/sealos-backend-reviewer
+/deploy/ @labring/sealos-ci-reviewer
+/service/ @labring/sealos-backend-reviewer
+/webhooks/ @labring/sealos-backend-reviewer
+
+/lifecycle/ @labring/sealos-lifecycle-reviewer
+
+/.chglog/ @labring/sealos-ci-reviewer
+/.github/ @labring/sealos-ci-reviewer
+.tagpr.json @labring/sealos-ci-reviewer
+lychee.toml @labring/sealos-ci-reviewer
+/scripts/ @labring/sealos-ci-reviewer
+
+CONTRIBUTOR_LICENSE_AGREEMENT.md @labring/sealos-policy-reviewer
+LICENSE.md @labring/sealos-policy-reviewer

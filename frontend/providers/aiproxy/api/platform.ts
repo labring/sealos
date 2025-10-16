@@ -1,24 +1,26 @@
-import { GET, POST, DELETE, PUT } from '@/utils/frontend/request'
+import { GetAllChannelResponse } from '@/app/api/admin/channel/all/route'
 import { ChannelQueryParams, GetChannelsResponse } from '@/app/api/admin/channel/route'
-import { ChannelStatus, CreateChannelRequest } from '@/types/admin/channels/channelInfo'
-import { ApiResp } from '@/types/api'
-import { GetOptionResponse } from '@/app/api/admin/option/route'
-import { BatchOptionData } from '@/types/admin/option'
-import { GetEnabledModelsResponse } from '@/app/api/models/enabled/route'
-import { GetTokensQueryParams, GetTokensResponse } from '@/app/api/user/token/route'
-import { TokenInfo } from '@/types/user/token'
-import { UserLogSearchResponse } from '@/app/api/user/log/route'
-import { UserLogQueryParams } from '@/app/api/user/log/route'
+import { GetChannelTypeNamesResponse } from '@/app/api/admin/channel/type-name/route'
+import { GroupSearchResponse } from '@/app/api/admin/group/route'
 import { GlobalLogQueryParams, GlobalLogSearchResponse } from '@/app/api/admin/log/route'
+import { GetOptionResponse } from '@/app/api/admin/option/route'
+import { GetMcpListQueryParams, GetMcpListResponse } from '@/app/api/mcp/route'
 import { GetAllChannelEnabledModelsResponse } from '@/app/api/models/builtin/channel/route'
 import { GetDefaultModelAndModeMappingResponse } from '@/app/api/models/default/route'
-import { GetChannelTypeNamesResponse } from '@/app/api/admin/channel/type-name/route'
-import { GroupQueryParams, GroupStatus } from '@/types/admin/group'
-import { GroupSearchResponse } from '@/app/api/admin/group/route'
-import { GetAllChannelResponse } from '@/app/api/admin/channel/all/route'
+import { GetEnabledModelsResponse } from '@/app/api/models/enabled/route'
 import { DashboardQueryParams } from '@/app/api/user/dashboard/route'
-import { DashboardResponse } from '@/types/user/dashboard'
 import { UserLogDetailResponse } from '@/app/api/user/log/detail/[log_id]/route'
+import { UserLogSearchResponse } from '@/app/api/user/log/route'
+import { UserLogQueryParams } from '@/app/api/user/log/route'
+import { GetTokensQueryParams, GetTokensResponse } from '@/app/api/user/token/route'
+import { ChannelStatus, CreateChannelRequest } from '@/types/admin/channels/channelInfo'
+import { GroupQueryParams, GroupStatus } from '@/types/admin/group'
+import { BatchOptionData } from '@/types/admin/option'
+import { ApiResp } from '@/types/api'
+import { McpDetail } from '@/types/mcp'
+import { DashboardResponse } from '@/types/user/dashboard'
+import { TokenInfo } from '@/types/user/token'
+import { DELETE, GET, POST, PUT } from '@/utils/frontend/request'
 
 export const initAppConfig = () =>
   GET<{
@@ -54,6 +56,16 @@ export const updateToken = (id: number, status: number) =>
 // dashboard
 export const getDashboardData = (params: DashboardQueryParams) =>
   GET<DashboardResponse['data']>('/api/user/dashboard', params)
+
+// mcp hub
+export const getMcpList = (params: GetMcpListQueryParams) =>
+  GET<GetMcpListResponse['data']>('/api/mcp', params)
+
+export const getMcpDetail = (id: string) => GET<McpDetail>(`/api/mcp/${id}`)
+
+export const updateMcpParams = (id: string, params: Record<string, string>) =>
+  POST<ApiResp>(`/api/mcp/${id}`, params)
+
 // ------------------------------------------------------------
 // <admin>
 
@@ -81,7 +93,7 @@ export const uploadChannels = (formData: FormData) =>
   POST<ApiResp>('/api/admin/channel/upload', formData, {
     headers: {
       // Don't set Content-Type header here, it will be automatically set with the correct boundary
-    }
+    },
   })
 
 // channel built-in support models and default model default mode mapping
@@ -104,7 +116,7 @@ export const uploadOptions = (formData: FormData) =>
   POST<ApiResp>('/api/admin/option/upload', formData, {
     headers: {
       // Don't set Content-Type header here, it will be automatically set with the correct boundary
-    }
+    },
   })
 
 // log

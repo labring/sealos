@@ -1,0 +1,137 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: {{ template "cstor.fullname" . }}-csi-controller
+  {{- with .Values.csiController.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "cstor.csiController.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "cstor.csiController.matchLabels" . | nindent 6 }}
+  serviceName: "openebs-csi"
+  replicas: {{ .Values.csiController.replicas }}
+  template:
+    metadata:
+      labels:
+        {{- include "cstor.csiController.labels" . | nindent 8 }}
+        {{- if .Values.csiController.podLabels }}
+        {{ toYaml .Values.csiController.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      priorityClassName: {{ template "cstor.csiController.priorityClassName" . }}
+      serviceAccountName: {{ .Values.serviceAccount.csiController.name }}
+      containers:
+        - name: {{ .Values.csiController.resizer.name }}
+          image: "{{ .Values.csiController.resizer.image.registry }}{{ .Values.csiController.resizer.image.repository }}:{{ .Values.csiController.resizer.image.tag }}"
+          resources:
+{{ toYaml .Values.csiController.resources | indent 12 }}
+          args:
+            - "--v={{ .Values.csiController.resizer.logLevel | default .Values.csiController.logLevel }}"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: {{ .Values.csiController.resizer.image.pullPolicy }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.csiController.snapshotter.name }}
+          image: "{{ .Values.csiController.snapshotter.image.registry }}{{ .Values.csiController.snapshotter.image.repository }}:{{ .Values.csiController.snapshotter.image.tag }}"
+          args:
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: {{ .Values.csiController.snapshotter.image.pullPolicy }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.csiController.snapshotController.name }}
+          image: "{{ .Values.csiController.snapshotController.image.registry }}{{ .Values.csiController.snapshotController.image.repository }}:{{ .Values.csiController.snapshotController.image.tag }}"
+          args:
+            - "--v={{ .Values.csiController.snapshotController.logLevel | default .Values.csiController.logLevel }}"
+            - "--leader-election=false"
+          imagePullPolicy: {{ .Values.csiController.snapshotController.image.pullPolicy }}
+        - name: {{ .Values.csiController.provisioner.name }}
+          image: "{{ .Values.csiController.provisioner.image.registry }}{{ .Values.csiController.provisioner.image.repository }}:{{ .Values.csiController.provisioner.image.tag }}"
+          imagePullPolicy: {{ .Values.csiController.provisioner.image.pullPolicy }}
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--v={{ .Values.csiController.provisioner.logLevel | default .Values.csiController.logLevel }}"
+            - "--feature-gates=Topology=true"
+            - "--extra-create-metadata=true"
+            - "--metrics-address=:22011"
+            - "--timeout=250s"
+            - "--default-fstype=ext4"
+          env:
+            - name: MY_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.csiController.attacher.name }}
+          image: "{{ .Values.csiController.attacher.image.registry }}{{ .Values.csiController.attacher.image.repository }}:{{ .Values.csiController.attacher.image.tag }}"
+          imagePullPolicy: {{ .Values.csiController.attacher.image.pullPolicy }}
+          args:
+            - "--v={{ .Values.csiController.attacher.logLevel | default .Values.csiController.logLevel }}"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: {{ .Values.cstorCSIPlugin.name }}
+          image: "{{ .Values.cstorCSIPlugin.image.registry }}{{ .Values.cstorCSIPlugin.image.repository }}:{{ .Values.cstorCSIPlugin.image.tag }}"
+          imagePullPolicy: {{ .Values.cstorCSIPlugin.image.pullPolicy }}
+          env:
+            - name: OPENEBS_CONTROLLER_DRIVER
+              value: controller
+            - name: OPENEBS_CSI_ENDPOINT
+              value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: OPENEBS_CSI_API_URL
+              value: https://openebs.io
+              # OpenEBS namespace where the openebs cstor operator components
+              # has been installed
+            - name: OPENEBS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPENEBS_IO_INSTALLER_TYPE
+              value: "cstor-helm"
+            - name: OPENEBS_IO_ENABLE_ANALYTICS
+              value: "{{ .Values.analytics.enabled }}"
+          args :
+            - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
+            - "--url=$(OPENEBS_CSI_API_URL)"
+            - "--plugin=$(OPENEBS_CONTROLLER_DRIVER)"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+{{- end }}
+{{- if .Values.csiController.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.csiController.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.csiController.securityContext }}
+      securityContext:
+{{ toYaml .Values.csiController.securityContext | indent 8 }}
+{{- end }}
+{{- if .Values.csiController.tolerations }}
+      tolerations:
+{{ toYaml .Values.csiController.tolerations | indent 8 }}
+{{- end }}

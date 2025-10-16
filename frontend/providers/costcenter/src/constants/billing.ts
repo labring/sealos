@@ -28,6 +28,7 @@ export enum TableHeaderID {
   'APPName' = 'APP Name',
   'OrderNumber' = 'Order Number',
   'TransactionTime' = 'Transaction Time',
+  'Gift' = 'Bonus Amount',
   'APPType' = 'APP Type',
   'CPU' = 'CPU',
   'CPUAmount' = 'CPU Amount',

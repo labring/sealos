@@ -1,0 +1,12 @@
+The OpenEBS Dynamic LocalPV Provisioner has been installed.
+Check its status by running:
+$ kubectl get pods -n {{ .Release.Namespace }}
+
+Use `kubectl get bd -n {{ .Release.Namespace }}` to list the 
+blockdevices attached to the Kubernetes cluster nodes.
+
+Get started with the Dynamic LocalPV Provisioner Quickstart guide at:
+https://github.com/openebs/dynamic-localpv-provisioner/blob/develop/docs/quickstart.md
+
+For more information, visit our Slack at https://openebs.io/community or view 
+the OpenEBS documentation online at https://openebs.io/docs

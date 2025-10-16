@@ -586,7 +586,7 @@ export default function FileManager({ ...styles }: FlexProps) {
           }}
           position={'relative'}
         >
-          <Table variant="simple">
+          <Table variant="simple" position="relative" zIndex={1}>
             <Thead>
               {table.getHeaderGroups().map((group) => {
                 return (

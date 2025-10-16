@@ -13,6 +13,7 @@ import { useGuideStore } from '@/store/guide';
 import { Info, X } from 'lucide-react';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
+import { track } from '@sealos/gtm';
 
 const Header = ({
   dbName,
@@ -121,6 +122,13 @@ const Header = ({
                   cursor={'pointer'}
                   ml={'auto'}
                   onClick={() => {
+                    track('guide_exit', {
+                      module: 'guide',
+                      guide_name: 'database',
+                      duration_seconds:
+                        (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                      progress_step: 3
+                    });
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >

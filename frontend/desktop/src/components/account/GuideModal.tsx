@@ -355,28 +355,12 @@ const GuideModal = () => {
 
                     switch (cur.key) {
                       case 'system-applaunchpad':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'applaunchpad'
-                        });
                         return startDriver(appLaunchpadDriverObj(openDesktopApp, t));
                       case 'system-template':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'appstore'
-                        });
                         return startDriver(templateDriverObj(openDesktopApp, t));
                       case 'system-dbprovider':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'database'
-                        });
                         return startDriver(databaseDriverObj(openDesktopApp, t));
                       case 'system-devbox':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'devbox'
-                        });
                         return startDriver(devboxDriverObj(openDesktopApp, t));
                       default:
                         return;
@@ -387,7 +371,7 @@ const GuideModal = () => {
                 </Button>
               </Flex>
 
-              <Box overflowY="auto" pt={'20px'} pr={2} px={'40px'}>
+              <Box overflowY="auto" pt={'20px'} pb={'40px'} pr={2} px={'40px'}>
                 {guideLinks[selectedGuide].steps.map((step, index) => (
                   <StepCard
                     key={index}
@@ -398,48 +382,6 @@ const GuideModal = () => {
                   />
                 ))}
               </Box>
-              {/* <Center gap={2} mt={'12px'} mb={2}>
-                <Flex
-                  w="40px"
-                  h="40px"
-                  borderRadius={'8px'}
-                  border="1px solid"
-                  borderColor="#E4E4E7"
-                  align="center"
-                  justify="center"
-                  cursor={selectedGuide > 0 ? 'pointer' : 'not-allowed'}
-                  opacity={selectedGuide > 0 ? 1 : 0.4}
-                  _hover={{ bg: selectedGuide > 0 ? 'gray.50' : 'initial' }}
-                  onClick={() => {
-                    if (selectedGuide > 0) {
-                      setSelectedGuide(selectedGuide - 1);
-                      setActiveStep(0);
-                    }
-                  }}
-                >
-                  <ChevronLeft size={18} color="#737373" />
-                </Flex>
-                <Flex
-                  w="40px"
-                  h="40px"
-                  borderRadius={'8px'}
-                  border="1px solid"
-                  borderColor="gray.200"
-                  align="center"
-                  justify="center"
-                  cursor={selectedGuide < guideLinks.length - 1 ? 'pointer' : 'not-allowed'}
-                  opacity={selectedGuide < guideLinks.length - 1 ? 1 : 0.4}
-                  _hover={{ bg: selectedGuide < guideLinks.length - 1 ? 'gray.50' : 'initial' }}
-                  onClick={() => {
-                    if (selectedGuide < guideLinks.length - 1) {
-                      setSelectedGuide(selectedGuide + 1);
-                      setActiveStep(0);
-                    }
-                  }}
-                >
-                  <ChevronRight size={18} color="#737373" />
-                </Flex>
-              </Center> */}
             </Box>
           ) : (
             <Box px={'40px'} position={'relative'}>
@@ -486,7 +428,12 @@ const GuideModal = () => {
                   .map((item, index) => (
                     <Flex
                       key={index}
-                      onClick={() => setSelectedGuide(index)}
+                      onClick={() =>
+                        setSelectedGuide(
+                          // Guide index will shift if some apps were missing
+                          guideLinks.findIndex((guide) => guide.title === item.title)
+                        )
+                      }
                       p={'20px'}
                       borderRadius="16px"
                       border={'1px solid #E4E4E7'}

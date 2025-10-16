@@ -1,4 +1,4 @@
-import EmailCheckComponent from '@/components/v2/EmailCheck';
+import { EmailCheckForm } from '@/components/v2/EmailCheckForm';
 import SignLayout from '@/components/v2/SignLayout';
 import { compareFirstLanguages } from '@/utils/tools';
 import { dehydrate, QueryClient } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 export default function PersonalInfoPage() {
   return (
     <SignLayout>
-      <EmailCheckComponent />
+      <EmailCheckForm />
     </SignLayout>
   );
 }

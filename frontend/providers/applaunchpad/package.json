@@ -19,7 +19,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
-    "@next/font": "13.1.6",
+    "@scalar/api-reference-react": "^0.6.24",
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/ui": "workspace:^",
@@ -45,7 +45,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.476.0",
     "nanoid": "^4.0.2",
-    "next": "13.1.6",
+    "next": "13.5.9",
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "prettier": "^2.8.8",
@@ -59,6 +59,8 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
+    "zod": "^3.23.8",
+    "zod-openapi": "^4.2.4",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
@@ -74,7 +76,7 @@
     "@types/react-dom": "18.0.10",
     "@types/react-syntax-highlighter": "^15.5.7",
     "eslint": "8.33.0",
-    "eslint-config-next": "13.1.6",
+    "eslint-config-next": "13.5.9",
     "svg-inline-loader": "^0.8.2",
     "webpack-bundle-analyzer": "^4.9.1"
   }

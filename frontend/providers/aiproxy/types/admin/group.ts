@@ -16,5 +16,5 @@ export interface GroupQueryParams {
 
 export enum GroupStatus {
   ENABLED = 1,
-  DISABLED = 2
+  DISABLED = 2,
 }

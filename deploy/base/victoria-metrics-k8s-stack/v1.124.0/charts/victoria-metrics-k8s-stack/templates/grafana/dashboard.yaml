@@ -1,0 +1,93 @@
+{{- if .Values.defaultDashboards.enabled }}
+
+{{- /*
+Create custom template context
+*/}}
+{{- $ctx := dict "helm" . -}}
+
+{{- /*
+Loop through all dashboard files, that were crafted with hack/sync_grafana_dashboards.py
+*/}}
+{{- range $dashboardFile, $_ := .Files.Glob  "files/dashboards/**.yaml" -}}
+
+{{- /*
+Get dashboard name
+*/}}
+{{- $dashboardBase := base $dashboardFile }}
+{{- $dashboardName := (trimSuffix (ext $dashboardBase) $dashboardBase) -}}
+
+{{- /*
+Get dashboard data from file
+*/}}
+{{- $dashboardData := fromYaml (tpl ($.Files.Get $dashboardFile) $) -}}
+
+{{- /*
+Save condition for a dashboard from file
+*/}}
+{{- $dashboardCondition := $dashboardData.condition }}
+{{- if hasKey (index ((($.Values).defaultDashboards).dashboards) $dashboardName) "enabled" }}
+  {{- $dashboardCondition = index $.Values.defaultDashboards.dashboards $dashboardName "enabled" }}
+{{- end }}
+
+{{- /*
+Delete condition from dashboard
+*/}}
+{{- $_ := unset $dashboardData "condition" -}}
+
+{{- if and $.Values.grafana.sidecar.dashboards.enabled $.Values.grafana.dashboards -}}
+{{ fail `It is not possible to use both "grafana.sidecar.dashboards.enabled: true" and "grafana.dashboards" at the same time.
+Disable either sidecar or dashboards configuration. See more details at https://docs.victoriametrics.com/helm/victoriametrics-k8s-stack/#adding-external-dashboards` }}
+{{- end -}}
+
+{{- /*
+Check if dashboard is enabled
+*/}}
+{{- if $dashboardCondition }}
+
+{{- $dashboardResult := toRawJson $dashboardData -}}
+{{- $app := ((printf "%s-grafana" (include "vm.name" $)) | trunc 63 | trimSuffix "-") }}
+{{- $_ := set $ctx "extraLabels" (dict "app" $app) }}
+{{- if $.Values.defaultDashboards.grafanaOperator.enabled }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  namespace: {{ include "vm.namespace" $ }}
+  name: {{ printf "%s-%s" (include "vm.fullname" $ctx) $dashboardName | replace "_" "" }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- with $.Values.defaultDashboards.annotations }}
+  annotations:
+    {{- range $key, $val := . }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  json: | {{ $dashboardResult | nindent 4 }}
+  {{- toYaml $.Values.defaultDashboards.grafanaOperator.spec | nindent 2 }}
+{{- else }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ include "vm.namespace" $ }}
+  name: {{ printf "%s-%s" (include "vm.fullname" $) $dashboardName }}
+  labels:
+    {{- if $.Values.grafana.sidecar.dashboards.label }}
+    {{ $.Values.grafana.sidecar.dashboards.label }}: "1"
+    {{- end }}
+    {{- range $key, $val := $.Values.defaultDashboards.labels }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+    {{- include "vm.labels" $ctx | nindent 4 }}
+  {{- with $.Values.defaultDashboards.annotations }}
+  annotations:
+    {{- range $key, $val := . }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+  {{- end }}
+data:
+  {{ $dashboardName }}.json: | {{ $dashboardResult | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

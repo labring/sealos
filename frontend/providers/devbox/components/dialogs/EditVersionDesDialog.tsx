@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+} from '@sealos/shadcn-ui/dialog';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Textarea } from '@sealos/shadcn-ui/textarea';
 
 import { editDevboxVersion } from '@/api/devbox';
 import { DevboxVersionListItemType } from '@/types/devbox';
@@ -52,7 +52,7 @@ const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersion
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-w-[450px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('edit_version_description')}</DialogTitle>
         </DialogHeader>

@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	dockertype "github.com/docker/docker/api/types/registry"
 	"google.golang.org/grpc"
 	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -42,9 +41,8 @@ type Options struct {
 	Group int
 	// Mode is the permission mode bits for our gRPC socket.
 	Mode os.FileMode
-	//CRIConfigs is cri config for auth
-	CRIConfigs        map[string]dockertype.AuthConfig
-	OfflineCRIConfigs map[string]dockertype.AuthConfig
+	// AuthStore keeps registry credentials shared with the CRI handlers.
+	AuthStore *AuthStore
 }
 
 type Server interface {
@@ -79,9 +77,8 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 	}
 
 	k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
-		imageClient:       s.imageV1Client,
-		CRIConfigs:        s.options.CRIConfigs,
-		OfflineCRIConfigs: s.options.OfflineCRIConfigs,
+		imageClient: s.imageV1Client,
+		authStore:   s.options.AuthStore,
 	})
 
 	return nil

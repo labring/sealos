@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 kubectl apply -f manifests/deploy.yaml -f manifests/rbac.yaml -f manifests/ingress.yaml
 cm_exists=$(kubectl get cm desktop-frontend-config -n sealos --ignore-not-found=true)
 if [[ -n "$cm_exists" ]]; then

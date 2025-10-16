@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
-const { i18n } = require('./next-i18next.config')
-const path = require('path')
+const { i18n } = require('./next-i18next.config');
+const path = require('path');
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true'
-})
+});
 
 const nextConfig = {
   i18n,
@@ -18,13 +18,14 @@ const nextConfig = {
         issuer: /\.[jt]sx?$/,
         use: ['@svgr/webpack']
       }
-    ])
-    config.plugins = [...config.plugins]
-    return config
+    ]);
+    config.plugins = [...config.plugins];
+    return config;
   },
   experimental: {
     // this includes files from the monorepo base two directories up
-    outputFileTracingRoot: path.join(__dirname, '../../')
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+    instrumentationHook: true
   },
   images: {
     remotePatterns: [
@@ -35,6 +36,6 @@ const nextConfig = {
     ]
   },
   transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver']
-}
+};
 
-module.exports = withBundleAnalyzer(nextConfig)
+module.exports = withBundleAnalyzer(nextConfig);

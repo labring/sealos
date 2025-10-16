@@ -50,38 +50,43 @@ export const smsReq = async (phoneNumbers: string) => {
 
   const client = new Dysmsapi(config);
   const runtime = new $Util.RuntimeOptions({});
-  await retrySerially(async () => {
-    try {
-      const _result = await client.sendSmsWithOptions(sendSmsRequest, runtime);
+  try {
+    await retrySerially(async () => {
+      try {
+        const _result = await client.sendSmsWithOptions(sendSmsRequest, runtime);
 
-      if (!_result) {
-        throw new Error('sms result is null');
-      }
-      if (_result.statusCode !== 200) {
-        throw new Error(`sms result status code is ${_result.statusCode}
+        if (!_result) {
+          throw new Error('sms result is null');
+        }
+        if (_result.statusCode !== 200) {
+          throw new Error(`sms result status code is ${_result.statusCode}
 				${_result.body}
 				${phoneNumbers},
 				${new Date()}
 				`);
-      }
-      if (_result.body.code !== 'OK') {
-        throw new Error(`
+        }
+        if (_result.body.code !== 'OK') {
+          throw new Error(`
 				${_result.body.message}
 				${phoneNumbers},
 				${new Date()}`);
+        }
+        return _result;
+      } catch (error) {
+        return Promise.reject(error);
       }
-      return _result;
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }, 3);
+    }, 3);
+  } catch (error) {
+    console.error('SMS sending failed:', error);
+    throw error;
+  }
   return code;
 };
 
 export const captchaReq = async ({ captchaVerifyParam }: { captchaVerifyParam?: string }) => {
   // for dev
   const captchaConfig = global.AppConfig.desktop.auth.captcha;
-  if (!captchaConfig?.enabled) throw Error('config error');
+  if (!captchaConfig?.ali?.enabled) throw Error('config error');
   const aliConfig = global.AppConfig.desktop.auth.captcha?.ali;
   if (!aliConfig) throw Error('config error');
   const { sceneId, accessKeyID: accessKeyId, accessKeySecret = '', endpoint } = aliConfig;
@@ -209,15 +214,20 @@ export const emailSmsReq = async (email: string) => {
     })
   } as const;
 
-  await retrySerially(
-    () =>
-      transporter.sendMail({
-        from: emailConfig.user,
-        to: email,
-        subject: subjectMap[language],
-        html: htmlMap[language]
-      }),
-    3
-  );
+  try {
+    await retrySerially(
+      () =>
+        transporter.sendMail({
+          from: emailConfig.user,
+          to: email,
+          subject: subjectMap[language],
+          html: htmlMap[language]
+        }),
+      3
+    );
+  } catch (error) {
+    console.error('Email sending failed:', error);
+    throw error;
+  }
   return code;
 };

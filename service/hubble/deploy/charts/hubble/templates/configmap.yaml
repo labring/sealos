@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hubble.fullname" . }}
+  labels:
+    {{- include "hubble.labels" . | nindent 4 }}
+data:
+  config.yml: |
+    auth:
+      whiteList: "{{.Values.cloud.whiteList}}"
+    http:
+      port: ":{{.Values.service.port}}"
+    hubble:
+      addr: "{{.Values.hubble.addr}}"
+    redis: {{ toYaml .Values.redis | nindent 6 }}

@@ -31,6 +31,8 @@ spec:
         env:
           - name: PASSWORD_SALT
             value: {{ .PASSWORD_SALT }}
+          - name: ADMIN_PASSWORD
+            value: {{ .ADMIN_PASSWORD }}
         envFrom:
         - configMapRef:
             name: account-manager-env

@@ -1,0 +1,19 @@
+{{- if .Values.zfsController.priorityClass.create }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ template "zfslocalpv.zfsController.priorityClassName" . }}
+value: 900000000
+globalDefault: false
+description: "This priority class should be used for the CStor CSI driver controller deployment only."
+{{- end }}
+---
+{{- if .Values.zfsNode.priorityClass.create }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ template "zfslocalpv.zfsNode.priorityClassName" . }}
+value: 900001000
+globalDefault: false
+description: "This priority class should be used for the CStor CSI driver node deployment only."
+{{- end }}

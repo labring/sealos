@@ -1,0 +1,82 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ true }}'
+name: node-exporter.rules
+rules:
+- condition: '{{ true }}'
+  expr: |-
+    count without (cpu, mode) (
+      node_cpu_seconds_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}",mode="idle"}
+    )
+  record: instance:node_num_cpu:sum
+- condition: '{{ true }}'
+  expr: |-
+    1 - avg without (cpu) (
+      sum without (mode) (rate(node_cpu_seconds_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", mode=~"idle|iowait|steal"}[5m]))
+    )
+  record: instance:node_cpu_utilisation:rate5m
+- condition: '{{ true }}'
+  expr: |-
+    (
+      node_load1{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+    /
+      instance:node_num_cpu:sum{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+    )
+  record: instance:node_load1_per_cpu:ratio
+- condition: '{{ true }}'
+  expr: |-
+    1 - (
+      (
+        node_memory_MemAvailable_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+        or
+        (
+          node_memory_Buffers_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+          +
+          node_memory_Cached_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+          +
+          node_memory_MemFree_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+          +
+          node_memory_Slab_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+        )
+      )
+    /
+      node_memory_MemTotal_bytes{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}
+    )
+  record: instance:node_memory_utilisation:ratio
+- condition: '{{ true }}'
+  expr: rate(node_vmstat_pgmajfault{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}"}[5m])
+  record: instance:node_vmstat_pgmajfault:rate5m
+- condition: '{{ true }}'
+  expr: rate(node_disk_io_time_seconds_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", device=~"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)"}[5m])
+  record: instance_device:node_disk_io_time_seconds:rate5m
+- condition: '{{ true }}'
+  expr: rate(node_disk_io_time_weighted_seconds_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", device=~"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)"}[5m])
+  record: instance_device:node_disk_io_time_weighted_seconds:rate5m
+- condition: '{{ true }}'
+  expr: |-
+    sum without (device) (
+      rate(node_network_receive_bytes_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", device!="lo"}[5m])
+    )
+  record: instance:node_network_receive_bytes_excluding_lo:rate5m
+- condition: '{{ true }}'
+  expr: |-
+    sum without (device) (
+      rate(node_network_transmit_bytes_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", device!="lo"}[5m])
+    )
+  record: instance:node_network_transmit_bytes_excluding_lo:rate5m
+- condition: '{{ true }}'
+  expr: |-
+    sum without (device) (
+      rate(node_network_receive_drop_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", device!="lo"}[5m])
+    )
+  record: instance:node_network_receive_drop_excluding_lo:rate5m
+- condition: '{{ true }}'
+  expr: |-
+    sum without (device) (
+      rate(node_network_transmit_drop_total{job="{{ include "vm-k8s-stack.nodeExporter.name" . }}", device!="lo"}[5m])
+    )
+  record: instance:node_network_transmit_drop_excluding_lo:rate5m

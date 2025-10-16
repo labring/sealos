@@ -26,10 +26,10 @@ export const useBackendStore = create<BackendState>()(
       setCurrencySymbol: (symbol) => set({ currencySymbol: symbol }),
       setDocUrl: (url) => set({ docUrl: url }),
       setIsInvitationActive: (active) => set({ isInvitationActive: active }),
-      setInvitationUrl: (url) => set({ invitationUrl: url })
+      setInvitationUrl: (url) => set({ invitationUrl: url }),
     }),
     {
-      name: 'aiproxy-backend-storage'
+      name: 'aiproxy-backend-storage',
     }
   )
 )

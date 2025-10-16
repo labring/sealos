@@ -14,10 +14,11 @@ export interface SourcePrice {
 export interface Env {
   documentUrlZH: string;
   documentUrlEN: string;
+  privacyUrlZH: string;
+  privacyUrlEN: string;
   sealosDomain: string;
   ingressSecret: string;
   registryAddr: string;
-  privacyUrl: string;
   devboxAffinityEnable: string;
   squashEnable: string;
   namespace: string;

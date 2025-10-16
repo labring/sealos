@@ -1,0 +1,96 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ include "gateway.name" . }}-hcm-options
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4}}
+spec:
+  configPatches:
+    - applyTo: NETWORK_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: MERGE
+        value:
+          name: envoy.filters.network.http_connection_manager
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+            max_request_headers_kb: 8192
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ include "gateway.name" . }}-global-route-config
+  namespace: {{ .Release.Namespace }}
+spec:
+  configPatches:
+    - applyTo: ROUTE_CONFIGURATION
+      match:
+        context: GATEWAY
+      patch:
+        operation: MERGE
+        value:
+          request_headers_to_add:
+            - append: false
+              header:
+                key: x-real-ip
+                value: '%REQ(X-ENVOY-EXTERNAL-ADDRESS)%'
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ include "gateway.name" . }}-tailscale-options
+  namespace: {{ .Release.Namespace }}
+spec:
+  configPatches:
+    - applyTo: NETWORK_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: MERGE
+        value:
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+            upgrade_configs:
+              - upgrade_type: tailscale-control-protocol
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ include "gateway.name" . }}-tls-optimize
+  namespace: {{ .Release.Namespace }}
+spec:
+  configPatches:
+    - applyTo: FILTER_CHAIN
+      match:
+        listener:
+          # https://github.com/higress-group/istio/blob/ad7d051f38d7bf3f820306a42d8df7edfa5e764b/pilot/pkg/networking/core/v1alpha3/gateway.go#L451
+          name: 0.0.0.0_443
+          filterChain:
+            filter:
+              name: "envoy.transport_sockets.tls"
+      patch:
+        operation: MERGE
+        value:
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/tls.proto
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_params:
+                  # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto
+                  tls_maximum_protocol_version: TLSv1_3
+                  tls_minimum_protocol_version: TLSv1_2
+                  # tls_minimum_protocol_version: TLSv1_3
+                  # ecdh_curves:
+                  # - "CECPQ2"

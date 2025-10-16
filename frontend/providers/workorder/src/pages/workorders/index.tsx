@@ -16,8 +16,10 @@ import List from './components/List';
 import useSessionStore from '@/store/session';
 import useStore from '@/hooks/useStore';
 import { useRouter } from 'next/router';
+import { useToast } from '@/hooks/useToast';
 
 function Home() {
+  const { toast } = useToast();
   const { Loading } = useLoading();
   const { t } = useTranslation();
   const [initialized, setInitialized] = useState(false);
@@ -86,7 +88,12 @@ function Home() {
             w="156px"
             h="42px"
             leftIcon={<MyIcon name={'plus'} w={'12px'} />}
-            onClick={() => router.push('/workorder/create')}
+            onClick={() => {
+              toast({
+                title: t('old_workorder_tips'),
+                status: 'success'
+              });
+            }}
           >
             {t('New Order')}
           </Button>

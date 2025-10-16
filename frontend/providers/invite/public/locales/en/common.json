@@ -23,6 +23,7 @@
   "export_excel": "Export Excel",
   "friend_certification_text": "After friends complete <strong style='color: #2563EB;'>real-name certification</strong>, both parties will receive <strong style='color: #2563EB;'>{{amount}}</strong> yuan balance reward. ",
   "in_progress": "In Progress",
+  "number": "number",
   "invitation_code": "Invitation Code",
   "invite_example": "Example: A invites user B. User B recharged 10,000 yuan in the first year and 5k in the second year, then user A's account balance is 1,000, and only the first year recharge is recharged.",
   "invite_friends_title": "Invite friends to get Sealos balance",

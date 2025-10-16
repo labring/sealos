@@ -1,0 +1,225 @@
+# Default values for jiva-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+release:
+  version: "3.6.0"
+
+
+# If false, openebs localpv sub-chart will not be installed
+openebsLocalpv:
+  enabled: true
+
+rbac:
+  # rbac.create: `true` if rbac resources should be created
+  create: true
+  # rbac.pspEnabled: `true` if PodSecurityPolicy resources should be created
+  pspEnabled: false
+
+imagePullSecrets:
+# - name: "image-pull-secret"
+
+jivaOperator:
+  componentName: "jiva-operator"
+  controller:
+    image:
+      registry:
+      repository: openebs/jiva
+      tag: 3.6.0
+  replica:
+    image:
+      registry:
+      repository: openebs/jiva
+      tag: 3.6.0
+  exporter:
+    image:
+      registry:
+      repository: openebs/m-exporter
+      tag: 3.6.0
+  image:
+    # Make sure that registry name end with a '/'.
+    # For example : quay.io/ is a correct value here and quay.io is incorrect
+    registry:
+    repository: openebs/jiva-operator
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 3.6.0
+  annotations: {}
+  resyncInterval: "30"
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  resources: {}
+  securityContext: {}
+
+
+csiController:
+  priorityClass:
+    create: true
+    name: jiva-csi-controller-critical
+    value: 900000000
+  componentName: "openebs-jiva-csi-controller"
+  logLevel: "5"
+  attacher:
+    name: "csi-attacher"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : quay.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-attacher
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v4.3.0
+  livenessprobe:
+    name: "liveness-probe"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : quay.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/livenessprobe
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v2.10.0
+  provisioner:
+    name: "csi-provisioner"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : quay.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-provisioner
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v3.5.0
+  resizer:
+    name: "csi-resizer"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : quay.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-resizer
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v1.8.0
+  annotations: {}
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  resources: {}
+  securityContext: {}
+
+jivaCSIPlugin:
+  name: jiva-csi-plugin
+  image:
+    # Make sure that registry name end with a '/'.
+    # For example : quay.io/ is a correct value here and quay.io is incorrect
+    registry:
+    repository: openebs/jiva-csi
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: 3.6.0
+  remount: "true"
+
+csiNode:
+  priorityClass:
+    create: true
+    name: jiva-csi-node-critical
+    value: 900001000
+  componentName: "openebs-jiva-csi-node"
+  logLevel: "5"
+  driverRegistrar:
+    name: "csi-node-driver-registrar"
+    image:
+      registry: registry.k8s.io/
+      repository: sig-storage/csi-node-driver-registrar
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v2.8.0
+  livenessprobe:
+    name: "liveness-probe"
+    image:
+      # Make sure that registry name end with a '/'.
+      # For example : quay.io/ is a correct value here and quay.io is incorrect
+      registry: registry.k8s.io/
+      repository: sig-storage/livenessprobe
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: v2.10.0
+  updateStrategy:
+    type: RollingUpdate
+  annotations: {}
+  podAnnotations: {}
+  resources: {}
+  # limits:
+  #   cpu: 10m
+  #   memory: 32Mi
+  # requests:
+  #   cpu: 10m
+  #   memory: 32Mi
+  ## Labels to be added to openebs-jiva-csi-node pods
+  podLabels: {}
+  # kubeletDir path can be configured to run on various different k8s distributions like
+  # microk8s where kubelet root dir is not (/var/lib/kubelet/). For example microk8s,
+  # we need to change the kubelet directory to `/var/snap/microk8s/common/var/lib/kubelet/`
+  kubeletDir: "/var/lib/kubelet/"
+  nodeSelector: {}
+  tolerations: []
+  securityContext: {}
+
+csiDriver:
+  create: true
+  podInfoOnMount: true
+  attachRequired: false
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {}
+  jivaOperator:
+    create: true
+    name: openebs-jiva-operator
+  csiController:
+    # Specifies whether a service account should be created
+    create: true
+    name: openebs-jiva-csi-controller-sa
+  csiNode:
+    # Specifies whether a service account should be created
+    create: true
+    name: openebs-jiva-csi-node-sa
+
+storageClass:
+  # Name of the default StorageClass
+  name: openebs-jiva-csi-default
+  # If true, enables creation of the openebs-jiva-csi-default StorageClass
+  enabled: true
+  # Available reclaim policies: Delete/Retain, defaults: Delete.
+  reclaimPolicy: Delete
+  # If true, sets the openebs-jiva-csi-default StorageClass as the
+  # default kubernetes StorageClass for the cluster
+  isDefaultClass: false
+  # If true, allows resize of the volumes
+  allowVolumeExpansion: true
+
+defaultPolicy:
+  # Name of the default default JivaVolumePolicy
+  name: openebs-jiva-default-policy
+  # If true, enables creation of the openebs-jiva-default-policy JivaVolumePolicy
+  enabled: true
+  # replicaSC represents the storage class used for creating
+  # the pvc for the replica sts provisioned by localpv provisioner
+  replicaSC: openebs-hostpath
+  # replicas represent the desired replication factor for the jiva volume
+  replicas: 3
+
+analytics:
+  enabled: true
+  # Specify in hours the duration after which a ping event needs to be sent.
+  pingInterval: "24h"
+
+localpv-provisioner:
+  # Disable installation of node-disk-manager components by default
+  openebsNDM:
+    enabled: false
+  # Disable openebs-device deviceClass by default.
+  deviceClass:
+    enabled: false

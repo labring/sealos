@@ -2,10 +2,10 @@ import React from 'react';
 import { CircleHelp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/devbox';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 interface StatusTagProps {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType;
@@ -18,14 +18,14 @@ const StatusTag = ({ status, isShutdown = false, className }: StatusTagProps) =>
   const t = useTranslations();
 
   return (
-    <div className={cn('flex flex-shrink-0 items-center', className)}>
+    <div className="flex flex-shrink-0 items-center">
       <div className={'guide-status-tag flex h-5 items-center gap-2'}>
         <div
           className="aspect-square h-2 w-2 rounded-xs"
           style={{ backgroundColor: status.dotColor }}
         />
         <div className="flex flex-col">
-          <span className={'text-sm/5 font-medium text-zinc-900'}>{t(label)}</span>
+          <span className={cn('text-sm/5 font-medium text-zinc-900', className)}>{t(label)}</span>
           {isShutdown && (
             <Tooltip>
               <TooltipTrigger asChild>

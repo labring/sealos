@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { ChannelTypeMapName } from '@/types/admin/channels/channelInfo'
-import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
 import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
@@ -21,9 +22,9 @@ async function fetchChannelTypeNames(): Promise<ChannelTypeMapName | undefined> 
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
@@ -53,7 +54,7 @@ export async function GET(
 
     return NextResponse.json({
       code: 200,
-      data: channelTypeNames
+      data: channelTypeNames,
     } satisfies GetChannelTypeNamesResponse)
   } catch (error) {
     console.error('admin channels api: get channel type names error:', error)
@@ -61,7 +62,7 @@ export async function GET(
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetChannelTypeNamesResponse,
       { status: 500 }
     )

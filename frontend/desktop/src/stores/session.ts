@@ -8,6 +8,7 @@ type StatePayload = {
   action: OauthAction;
 };
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
+
 type SessionState = {
   session?: Session;
   token: string;

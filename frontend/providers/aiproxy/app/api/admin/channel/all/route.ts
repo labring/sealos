@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { ChannelInfo } from '@/types/admin/channels/channelInfo'
-import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
 import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
@@ -21,9 +22,9 @@ async function fetchChannels(): Promise<ChannelInfo[]> {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetAllChan
     const channels = await fetchChannels()
     return NextResponse.json({
       code: 200,
-      data: channels
+      data: channels,
     } satisfies GetAllChannelResponse)
   } catch (error) {
     console.error('admin channels api: get all channels error:', error)
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetAllChan
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetAllChannelResponse,
       { status: 500 }
     )

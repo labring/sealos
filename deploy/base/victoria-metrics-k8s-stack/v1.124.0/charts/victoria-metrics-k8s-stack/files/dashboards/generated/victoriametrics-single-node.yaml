@@ -1,0 +1,5258 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $multicluster := ((($Values.grafana).sidecar).dashboards).multicluster | default false }}
+{{- $defaultDatasource := "prometheus" -}}
+{{- range (((($Values.grafana).sidecar).datasources).victoriametrics | default list) }}
+  {{- if and .isDefault .type }}{{ $defaultDatasource = .type }}{{- end }}
+{{- end }}
+annotations:
+  list:
+  - builtIn: 1
+    datasource:
+      type: datasource
+      uid: grafana
+    enable: true
+    hide: true
+    iconColor: rgba(0, 211, 255, 1)
+    name: Annotations & Alerts
+    target:
+      limit: 100
+      matchAny: false
+      tags: []
+      type: dashboard
+    type: dashboard
+  - datasource:
+      type: prometheus
+      uid: $ds
+    enable: false
+    expr: sum(ALERTS{job=~"$job", instance=~"$instance", alertgroup="vmsingle",alertstate="firing",show_at="dashboard"}) by(alertname)
+    hide: false
+    iconColor: red
+    name: alerts
+    titleFormat: '{{`{{`}}alertname{{`}}`}}'
+  - datasource:
+      type: prometheus
+      uid: $ds
+    enable: true
+    expr: sum(vm_app_version{job=~"$job", instance=~"$instance"}) by(version) unless (sum(vm_app_version{job=~"$job", instance=~"$instance"} offset $__interval) by(version))
+    hide: true
+    iconColor: dark-blue
+    name: version
+    textFormat: '{{`{{`}}version{{`}}`}}'
+    titleFormat: Version change
+condition: {{ ($Values.vmsingle).enabled }}
+description: Overview for single-node VictoriaMetrics v1.117.0 or higher
+editable: false
+fiscalYearStartMonth: 0
+graphTooltip: 1
+id: 1
+links:
+- icon: doc
+  tags: []
+  targetBlank: true
+  title: Single server Wiki
+  type: link
+  url: https://docs.victoriametrics.com/
+- icon: external link
+  tags: []
+  targetBlank: true
+  title: Found a bug?
+  type: link
+  url: https://github.com/VictoriaMetrics/VictoriaMetrics/issues
+- icon: external link
+  tags: []
+  targetBlank: true
+  title: New releases
+  tooltip: ''
+  type: link
+  url: https://github.com/VictoriaMetrics/VictoriaMetrics/releases
+panels:
+- collapsed: false
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 0
+  id: 6
+  panels: []
+  title: Stats
+  type: row
+- description: ''
+  fieldConfig:
+    defaults: {}
+    overrides: []
+  gridPos:
+    h: 2
+    w: 4
+    x: 0
+    'y': 1
+  id: 85
+  options:
+    code:
+      language: plaintext
+      showLineNumbers: false
+      showMiniMap: false
+    content: '<div style="text-align: center;">$version</div>'
+    mode: markdown
+  pluginVersion: 11.5.0
+  title: Version
+  type: text
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: How many datapoints are in storage
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: short
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 4
+    'y': 1
+  id: 26
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(vm_rows{job=~"$job", instance=~"$instance", type!~"indexdb.*"})
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Total datapoints
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Shows the datapoints ingestion rate.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: short
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 9
+    'y': 1
+  id: 107
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(rate(vm_rows_inserted_total{job=~"$job", instance=~"$instance"}[$__rate_interval]))
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Ingestion rate
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Shows the rate of HTTP read requests.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: short
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 14
+    'y': 1
+  id: 108
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(rate(vm_http_requests_total{job=~"$job", instance=~"$instance", path!~".*(/write|/metrics)"}[$__rate_interval]))
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Read requests
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Total number of available CPUs for VM process
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+      unit: short
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 19
+    'y': 1
+  id: 77
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    exemplar: false
+    expr: sum(vm_available_cpu_cores{job=~"$job", instance=~"$instance"})
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Available CPU
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: red
+          value: null
+        - color: green
+          value: 1800
+      unit: s
+    overrides: []
+  gridPos:
+    h: 2
+    w: 4
+    x: 0
+    'y': 3
+  id: 87
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: auto
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: min(vm_app_uptime_seconds{job=~"$job", instance=~"$instance"})
+    instant: true
+    interval: ''
+    legendFormat: ''
+    refId: A
+  title: Uptime
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Shows the number of [active time series](https://docs.victoriametrics.com/victoriametrics/faq/#what-is-an-active-time-series) with new data points inserted during the last hour. High value may result in ingestion slowdown.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: short
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 4
+    'y': 3
+  id: 38
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(vm_cache_entries{job=~"$job", instance=~"$instance", type="storage/hour_metric_ids"})
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Active series
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Total amount of used disk space
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: bytes
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 9
+    'y': 3
+  id: 81
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(vm_data_size_bytes{job=~"$job", instance=~"$instance"})
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Disk space usage
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Average disk usage per datapoint.
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: bytes
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 14
+    'y': 3
+  id: 82
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: max(sum(vm_data_size_bytes{job=~"$job", instance=~"$instance"}) / sum(vm_rows{job=~"$job", instance=~"$instance"}))
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Bytes per point
+  type: stat
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Total size of available memory for VM process
+  fieldConfig:
+    defaults:
+      color:
+        mode: thresholds
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+      unit: bytes
+    overrides: []
+  gridPos:
+    h: 2
+    w: 5
+    x: 19
+    'y': 3
+  id: 78
+  maxDataPoints: 100
+  options:
+    colorMode: value
+    graphMode: area
+    justifyMode: auto
+    orientation: horizontal
+    percentChangeColorMode: standard
+    reduceOptions:
+      calcs:
+      - lastNotNull
+      fields: ''
+      values: false
+    showPercentChange: false
+    text: {}
+    textMode: auto
+    wideLayout: true
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      uid: $ds
+    exemplar: false
+    expr: sum(vm_available_memory_bytes{job=~"$job", instance=~"$instance"})
+    format: time_series
+    instant: true
+    interval: ''
+    intervalFactor: 1
+    legendFormat: ''
+    refId: A
+  title: Available memory
+  type: stat
+- collapsed: false
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 5
+  id: 24
+  panels: []
+  title: Overview
+  type: row
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: How many datapoints are inserted into storage per second
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        barWidthFactor: 0.6
+        drawStyle: line
+        fillOpacity: 10
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: never
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      links: []
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+      unit: short
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 0
+    'y': 6
+  id: 106
+  options:
+    legend:
+      calcs:
+      - mean
+      - lastNotNull
+      displayMode: table
+      placement: bottom
+      showLegend: true
+      sortBy: Last *
+      sortDesc: true
+    tooltip:
+      hideZeros: false
+      mode: multi
+      sort: desc
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      uid: $ds
+    editorMode: code
+    expr: sum(rate(vm_rows_inserted_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (type, instance) > 0
+    format: time_series
+    hide: false
+    intervalFactor: 1
+    legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+    range: true
+    refId: A
+  title: Datapoints ingestion rate
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: '* `*` - unsupported query path
+
+    * `/write` - insert into VM
+
+    * `/metrics` - query VM system metrics
+
+    * `/query` - query instant values
+
+    * `/query_range` - query over a range of time
+
+    * `/series` - match a certain label set
+
+    * `/label/{}/values` - query a list of label values (variables mostly)'
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        barWidthFactor: 0.6
+        drawStyle: line
+        fillOpacity: 0
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: never
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      links: []
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+      unit: short
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 12
+    'y': 6
+  id: 12
+  options:
+    legend:
+      calcs:
+      - mean
+      - lastNotNull
+      - max
+      displayMode: table
+      placement: bottom
+      showLegend: true
+      sortBy: Last *
+      sortDesc: true
+    tooltip:
+      hideZeros: false
+      mode: multi
+      sort: desc
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(rate(vm_http_requests_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (path, instance) > 0
+    format: time_series
+    interval: ''
+    intervalFactor: 1
+    legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}path{{`}}`}}'
+    range: true
+    refId: A
+  title: Requests rate
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: "Shows the number of [active time series](https://docs.victoriametrics.com/victoriametrics/faq/#what-is-an-active-time-series) with new data points inserted during the last hour. High value may result in ingestion slowdown. \n\nSee following link for details:"
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        barWidthFactor: 0.6
+        drawStyle: line
+        fillOpacity: 10
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: never
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      links: []
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+      unit: short
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 0
+    'y': 14
+  id: 51
+  links:
+  - targetBlank: true
+    title: troubleshooting
+    url: https://docs.victoriametrics.com/victoriametrics/troubleshooting/
+  options:
+    legend:
+      calcs:
+      - mean
+      - lastNotNull
+      - max
+      displayMode: table
+      placement: bottom
+      showLegend: true
+    tooltip:
+      hideZeros: false
+      mode: multi
+      sort: none
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: vm_cache_entries{job=~"$job", instance=~"$instance", type="storage/hour_metric_ids"}
+    format: time_series
+    intervalFactor: 1
+    legendFormat: '{{`{{`}}instance{{`}}`}}'
+    range: true
+    refId: A
+  title: Active time series
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: 'The less time it takes is better.
+
+    * `*` - unsupported query path
+
+    * `/write` - insert into VM
+
+    * `/metrics` - query VM system metrics
+
+    * `/query` - query instant values
+
+    * `/query_range` - query over a range of time
+
+    * `/series` - match a certain label set
+
+    * `/label/{}/values` - query a list of label values (variables mostly)'
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        barWidthFactor: 0.6
+        drawStyle: line
+        fillOpacity: 10
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: never
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      links: []
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+      unit: s
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 12
+    'y': 14
+  id: 22
+  options:
+    legend:
+      calcs:
+      - mean
+      - lastNotNull
+      - max
+      displayMode: table
+      placement: bottom
+      showLegend: true
+      sortBy: Last *
+      sortDesc: true
+    tooltip:
+      hideZeros: false
+      mode: multi
+      sort: desc
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: max(vm_request_duration_seconds{job=~"$job", instance=~"$instance", quantile="0.99"}) by (instance, path) > 0
+    format: time_series
+    intervalFactor: 1
+    legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}path{{`}}`}}'
+    range: true
+    refId: A
+  title: Query duration 0.99 quantile
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: '* `*` - unsupported query path
+
+    * `/write` - insert into VM
+
+    * `/metrics` - query VM system metrics
+
+    * `/query` - query instant values
+
+    * `/query_range` - query over a range of time
+
+    * `/series` - match a certain label set
+
+    * `/label/{}/values` - query a list of label values (variables mostly)'
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        barWidthFactor: 0.6
+        drawStyle: line
+        fillOpacity: 10
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: never
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      links: []
+      mappings: []
+      min: 0
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+      unit: short
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 0
+    'y': 22
+  id: 35
+  options:
+    legend:
+      calcs:
+      - mean
+      - lastNotNull
+      displayMode: table
+      placement: bottom
+      showLegend: true
+    tooltip:
+      hideZeros: false
+      mode: multi
+      sort: desc
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    exemplar: false
+    expr: sum(rate(vm_http_request_errors_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance, path) > 0
+    format: time_series
+    interval: ''
+    intervalFactor: 1
+    legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}path{{`}}`}}'
+    range: true
+    refId: A
+  title: Requests error rate
+  type: timeseries
+- datasource:
+    type: {{ $defaultDatasource }}
+    uid: $ds
+  description: Shows the rate of logging the messages by their level. Unexpected spike in rate is a good reason to check logs.
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        barWidthFactor: 0.6
+        drawStyle: bars
+        fillOpacity: 100
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: auto
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: null
+        - color: red
+          value: 80
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 12
+    'y': 22
+  id: 110
+  options:
+    legend:
+      calcs:
+      - lastNotNull
+      - mean
+      - max
+      displayMode: table
+      placement: bottom
+      showLegend: true
+      sortBy: Last *
+      sortDesc: true
+    tooltip:
+      hideZeros: false
+      mode: single
+      sort: none
+  pluginVersion: 11.5.0
+  targets:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    editorMode: code
+    expr: sum(rate(vm_log_messages_total{job=~"$job", instance=~"$instance", level!="info"}[$__rate_interval])) by (instance, level, location) > 0
+    interval: 5m
+    legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}level{{`}}`}}: {{`{{`}}location{{`}}`}}'
+    range: true
+    refId: A
+  title: Logging rate
+  type: timeseries
+- collapsed: true
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 30
+  id: 46
+  panels:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Percentage of used RSS memory (resident).
+
+      The RSS memory shows the amount of memory recently accessed by the application. It includes anonymous memory and data from recently accessed files (aka page cache).
+
+      The application''s performance will significantly degrade when memory usage is close to 100%.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 95
+    id: 112
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: |-
+        max(
+            max_over_time(process_resident_memory_bytes{job=~"$job", instance=~"$instance"}[$__rate_interval])
+            /
+            vm_available_memory_bytes{job=~"$job", instance=~"$instance"}
+        ) by(instance)
+      interval: ''
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: RSS memory % usage
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 95
+    id: 114
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: |-
+        max(
+            rate(process_cpu_seconds_total{job=~"$job", instance=~"$instance"}[$__rate_interval])
+            /
+            process_cpu_cores_available{job=~"$job", instance=~"$instance"}
+        ) by(instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: CPU % usage
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Share for memory allocated by the process itself. When memory usage reaches 100% it will be likely OOM-killed.
+
+      Safe memory usage % considered to be below 80%'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 103
+    id: 123
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: |-
+        max(
+            max_over_time(process_resident_memory_anon_bytes{job=~"$job", instance=~"$instance"}[$__rate_interval])
+            /
+            vm_available_memory_bytes{job=~"$job", instance=~"$instance"}
+        ) by(instance)
+      interval: ''
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: RSS anonymous memory % usage
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: CPU cores used by instance
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: short
+      overrides:
+      - matcher:
+          id: byName
+          options: Limit
+        properties:
+        - id: color
+          value:
+            fixedColor: '#F2495C'
+            mode: fixed
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 103
+    id: 57
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: rate(process_cpu_seconds_total{job=~"$job", instance=~"$instance"}[$__rate_interval])
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: min(process_cpu_cores_available{job=~"$job", instance=~"$instance"})
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: Limit
+      range: true
+      refId: B
+    title: CPU
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: ''
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: bytes
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 111
+    id: 44
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(go_memstats_sys_bytes{job=~"$job", instance=~"$instance"}) by (instance) + sum(vm_cache_size_bytes{job=~"$job", instance=~"$instance"}) by (instance)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - requested from system'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(go_memstats_heap_inuse_bytes{job=~"$job", instance=~"$instance"}) by (instance) + sum(vm_cache_size_bytes{job=~"$job", instance=~"$instance"}) by (instance)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - heap inuse'
+      range: true
+      refId: B
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(go_memstats_stack_inuse_bytes{job=~"$job", instance=~"$instance"}) by (instance)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - stack inuse'
+      range: true
+      refId: C
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(process_resident_memory_bytes{job=~"$job", instance=~"$instance"}) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - resident'
+      range: true
+      refId: D
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: sum(process_resident_memory_anon_bytes{job=~"$job", instance=~"$instance"}) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - resident anonymous'
+      range: true
+      refId: E
+    title: Memory usage
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows CPU pressure based on [Pressure Stall Information](https://docs.kernel.org/accounting/psi.html).
+
+
+      The lower the better.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: line
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 111
+    id: 134
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_pressure_cpu_waiting_seconds_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}} - waiting'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_pressure_cpu_stalled_seconds_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}} - stalled'
+      range: true
+      refId: B
+    title: CPU pressure
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows memory pressure based on [Pressure Stall Information](https://docs.kernel.org/accounting/psi.html).
+
+
+      The lower the better.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: line
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 119
+    id: 135
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_pressure_memory_waiting_seconds_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}} - waiting'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_pressure_memory_stalled_seconds_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}} - stalled'
+      range: true
+      refId: B
+    title: Memory pressure
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows the number of bytes read/write from the storage layer.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: bytes
+      overrides:
+      - matcher:
+          id: byRegexp
+          options: /.*read/
+        properties:
+        - id: custom.transform
+          value: negative-Y
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 119
+    id: 76
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_io_storage_read_bytes_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - read'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_io_storage_written_bytes_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - write'
+      range: true
+      refId: B
+    title: Disk writes/reads
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 127
+    id: 47
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(go_goroutines{job=~"$job", instance=~"$instance"}) by(instance)
+      format: time_series
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Goroutines
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows the number of read/write syscalls such as read, pread, write, pwrite.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: short
+      overrides:
+      - matcher:
+          id: byRegexp
+          options: /.*read.*/
+        properties:
+        - id: custom.transform
+          value: negative-Y
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 127
+    id: 124
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_io_read_syscalls_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - read calls'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_io_write_syscalls_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - write calls'
+      range: true
+      refId: B
+    title: Disk write/read calls
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 135
+    id: 48
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(process_num_threads{job=~"$job", instance=~"$instance"}) by(instance)
+      format: time_series
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Threads
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows IO pressure based on [Pressure Stall Information](https://docs.kernel.org/accounting/psi.html).
+
+
+      The lower the better.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: line
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 135
+    id: 136
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_pressure_io_waiting_seconds_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}} - waiting'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(process_pressure_io_stalled_seconds_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}} - stalled'
+      range: true
+      refId: B
+    title: IO pressure
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: ''
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 143
+    id: 49
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_tcplistener_accepts_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by(instance)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: TCP connections rate
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: ''
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 143
+    id: 37
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_tcplistener_conns{job=~"$job", instance=~"$instance"}) by(instance)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: TCP connections
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows the percentage of open file descriptors compared to the limit set in the OS.
+
+      Reaching the limit of open files can cause various issues and must be prevented.
+
+
+      See how to change limits here https://medium.com/@muhammadtriwibowo/set-permanently-ulimit-n-open-files-in-ubuntu-4d61064429a'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 2
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides:
+      - matcher:
+          id: byName
+          options: max
+        properties:
+        - id: color
+          value:
+            fixedColor: '#C4162A'
+            mode: fixed
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 151
+    id: 75
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: |-
+        max_over_time(process_open_fds{job=~"$job", instance=~"$instance"}[$__rate_interval])
+        /
+        process_max_fds{job=~"$job", instance=~"$instance"}
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 2
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Open FDs
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows the percent of CPU spent on garbage collection.
+
+
+      If % is high, then CPU usage can be decreased by changing GOGC to higher values. Increasing GOGC value will increase memory usage, and decrease CPU usage.
+
+
+      Try searching for keyword `GOGC` at https://docs.victoriametrics.com/victoriametrics/troubleshooting/ '
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 151
+    id: 125
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: "max(\n  rate(go_gc_cpu_seconds_total{job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]) \n / rate(process_cpu_seconds_total{job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n ) by(instance)"
+      format: time_series
+      interval: ''
+      intervalFactor: 2
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: CPU spent on GC
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows network usage by VM:
+
+      * Writes show traffic sent to clients
+
+      * Reads show traffic received from clients'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 80
+        unit: decbits
+      overrides:
+      - matcher:
+          id: byRegexp
+          options: /read.*/
+        properties:
+        - id: custom.transform
+          value: negative-Y
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 159
+    id: 127
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_tcplistener_read_bytes_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by(name) * 8 > 0
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: read via {{`{{`}}name{{`}}`}}
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_tcplistener_written_bytes_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by(name) * 8 > 0
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: write via {{`{{`}}name{{`}}`}}
+      range: true
+      refId: B
+    title: Network usage
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows the rate of allocations in memory. Sudden increase in allocations would mean increased pressure on Go Garbage Collector and can saturate CPU resources of the application.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: line
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+        unit: bytes
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 159
+    id: 133
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(go_memstats_alloc_bytes_total{job=~"$job"}[$__rate_interval])) by (job, instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 2
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Memory allocations rate
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: "Shows the time goroutines have spent in runnable state before actually running. The lower is better.\n\nHigh values or values exceeding the threshold is usually a sign of            insufficient CPU resources or CPU throttling. \n\nVerify that service has enough CPU resources. Otherwise, the service could work unreliably with delays in processing."
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: line
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+            value: null
+          - color: red
+            value: 0.1
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 167
+    id: 128
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: histogram_quantile(0.99, sum(rate(go_sched_latencies_seconds_bucket{job=~"$job"}[$__rate_interval])) by (job, instance, le))
+      format: time_series
+      interval: ''
+      intervalFactor: 2
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Go scheduling latency
+    type: timeseries
+  title: Resource usage
+  type: row
+- collapsed: true
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 31
+  id: 71
+  panels:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows the rate and total number of new series created over last 24h.
+
+
+      High [churn rate](https://docs.victoriametrics.com/victoriametrics/faq/#what-is-high-churn-rate) tightly connected with database performance and may result in unexpected OOM''s or slow queries. It is recommended to always keep an eye on this metric to avoid unexpected [cardinality](https://docs.victoriametrics.com/victoriametrics/keyconcepts/#cardinality) "explosions".
+
+
+      The higher churn rate is, the more resources required to handle it. Consider to keep the churn rate as low as possible.
+
+
+      Good references to read:
+
+      * https://www.robustperception.io/cardinality-is-key
+
+      * https://www.robustperception.io/using-tsdb-analyze-to-investigate-churn-and-cardinality'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 593
+    id: 66
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_new_timeseries_created_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance)
+      interval: ''
+      legendFormat: '{{`{{`}}instance{{`}}`}} - churn rate'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(increase(vm_new_timeseries_created_total{job=~"$job", instance=~"$instance"}[24h])) by (instance)
+      interval: ''
+      legendFormat: '{{`{{`}}instance{{`}}`}} - new series over 24h'
+      range: true
+      refId: B
+    title: Churn rate
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: "The percentage of [slow inserts](https://docs.victoriametrics.com/victoriametrics/faq/#what-is-a-slow-insert) compared to the total ingestion rate. \n\nThe lower the better. \n\nIn short, slow insert is a cache miss. There are following reasons for slow inserts to go up: \n* Ingestion of completely new, not seen before time series;\n* Not enough memory to maintain big enough caches for the current workload.\n\nIf percentage remains high (>10%) during extended periods of time, then it is likely more RAM is needed for optimal handling of the current number of [active time series](https://docs.victoriametrics.com/victoriametrics/faq/#what-is-an-active-time-series). \n\nSee [this issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3976#issuecomment-1476883183) for details."
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: line+area
+        decimals: 2
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: transparent
+          - color: red
+            value: 0.1
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 593
+    id: 68
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: "max(\n    rate(vm_slow_row_inserts_total{job=~\"$job\"}[$__rate_interval]) \n    / rate(vm_rows_added_to_storage_total{job=~\"$job\"}[$__rate_interval])\n) by (instance)"
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Slow inserts %
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Merge assist happens when storage can't keep up with merging parts. This is usually a sign of overload for storage.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: bars
+          fillOpacity: 100
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 601
+    id: 116
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: sum(increase(vm_assisted_merges_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by(instance, type) > 0
+      format: time_series
+      interval: 5m
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Assisted merges
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Slow queries rate according to `search.logSlowQueryDuration` flag, which is `5s` by default.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 601
+    id: 60
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_slow_queries_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Slow queries rate
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: "Shows the percentage of used cache size from the allowed size by type. \nValues close to 100% show the maximum potential utilization.\nValues close to 0% show that cache is underutilized."
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 9
+      w: 12
+      x: 0
+      'y': 609
+    id: 90
+    options:
+      legend:
+        calcs:
+        - lastNotNull
+        - mean
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: vm_cache_size_bytes{job=~"$job", instance=~"$instance"} / vm_cache_size_max_bytes{job=~"$job", instance=~"$instance"}
+      interval: ''
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Cache usage % by type
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows cache miss ratio. Lower is better.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        max: 1
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: percentunit
+      overrides: []
+    gridPos:
+      h: 9
+      w: 12
+      x: 12
+      'y': 609
+    id: 118
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: |-
+        (
+            rate(vm_cache_misses_total{job=~"$job", instance=~"$instance"}[$__rate_interval])
+            /
+            rate(vm_cache_requests_total{job=~"$job", instance=~"$instance"}[$__rate_interval])
+        ) > 0
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Cache miss ratio
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows how many samples were ignored or dropped on insertion due to various reasons:
+
+      * timestamp out of retention period or timestamp in future;
+
+      * invalid metric name;
+
+      * exceeding limit for labels length or number;
+
+      * dropped by [relabeling configuration](https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/#relabeling).'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 618
+    id: 131
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: true
+      expr: sum(increase(vm_rows_ignored_total{job=~"$job", instance=~"$instance"}[1h])) by (instance, reason)
+      hide: false
+      interval: ''
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}reason{{`}}`}}'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(increase(vm_relabel_metrics_dropped_total{job=~"$job", instance=~"$instance"}[1h])) by(instance)
+      hide: false
+      instant: false
+      legendFormat: '{{`{{`}}instance{{`}}`}} - relabeling'
+      range: true
+      refId: B
+    title: Samples dropped for last 1h
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows rate of deduplicated samples during [deduplication](https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/#deduplication) or [downsampling](https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/#downsampling), according to the configured `-dedup.minScrapeInterval` or `-downsampling.period`.
+
+
+      Should be empty if `-dedup.minScrapeInterval` and `-downsampling.period` isn''t set.
+
+
+      Deduplication happens in two places:
+
+      * `type="merge"` - during [background merges](https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/#storage). Deduplication during merges is permanent.
+
+      * `type="select"` - during [read queries](https://docs.victoriametrics.com/victoriametrics/keyconcepts/#query-data). Deduplication happens in-flight and has no permanent effect.
+
+
+      The more samples need to be deduplicated, the higher will be resource usage.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 618
+    id: 132
+    links:
+    - targetBlank: true
+      title: Readonly mode
+      url: https://docs.victoriametrics.com/victoriametrics/cluster-victoriametrics/#readonly-mode
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: true
+      expr: sum(rate(vm_deduplicated_samples_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by(instance, type) > 0
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: __auto
+      range: true
+      refId: A
+    title: Deduplication rate
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Flags explicitly set to non-default values
+    fieldConfig:
+      defaults:
+        color:
+          mode: thresholds
+        custom:
+          align: auto
+          cellOptions:
+            type: auto
+          inspect: false
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+      overrides:
+      - matcher:
+          id: byName
+          options: Time
+        properties:
+        - id: custom.hidden
+          value: true
+      - matcher:
+          id: byName
+          options: Value
+        properties:
+        - id: custom.hidden
+          value: true
+      - matcher:
+          id: byName
+          options: job
+        properties:
+        - id: custom.hidden
+          value: true
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 626
+    id: 126
+    options:
+      cellHeight: sm
+      footer:
+        countRows: false
+        fields: ''
+        reducer:
+        - sum
+        show: false
+      showHeader: true
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: sum(flag{is_set="true", job=~"$job", instance=~"$instance"}) by(job, instance, name, value)
+      format: table
+      instant: true
+      legendFormat: __auto
+      range: false
+      refId: A
+    title: Non-default flags
+    type: table
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows the number of restarts per job. The chart can be useful to identify periodic process restarts and correlate them with potential issues or anomalies. Normally, processes shouldn''t restart unless restart was inited by user. The reason of restarts should be figured out by checking the logs of each specific service. '
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          axisSoftMin: 0
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: stepAfter
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: none
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 626
+    id: 129
+    options:
+      legend:
+        calcs:
+        - lastNotNull
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(changes(vm_app_start_timestamp{job=~"$job", instance=~"$instance"}[$__rate_interval]) > 0) by(job)
+      format: time_series
+      instant: false
+      legendFormat: '{{`{{`}}job{{`}}`}}'
+      refId: A
+    title: Restarts ($job)
+    type: timeseries
+  title: Troubleshooting
+  type: row
+- collapsed: true
+  gridPos:
+    h: 1
+    w: 24
+    x: 0
+    'y': 32
+  id: 14
+  panels:
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows the approx time needed to reach 100% of disk capacity based on the following params:
+
+      * free disk space (after -storage.minFreeDiskSpaceBytes);
+
+      * row ingestion rate;
+
+      * compression.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: s
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 163
+    id: 73
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - min
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: "(vm_free_disk_space_bytes{job=~\"$job\", instance=~\"$instance\"}-vm_free_disk_space_limit_bytes{job=~\"$job\", instance=~\"$instance\"}) \n/ \nignoring(path) (\n    (rate(vm_rows_added_to_storage_total{job=~\"$job\", instance=~\"$instance\"}[1d]) - \n        sum(rate(vm_deduplicated_samples_total{job=~\"$job\", instance=~\"$instance\"}[1d])) without (type)) * \n    (\n        sum(vm_data_size_bytes{job=~\"$job\", instance=~\"$instance\", type!~\"indexdb.*\"}) without(type) /\n        sum(vm_rows{job=~\"$job\", instance=~\"$instance\", type!~\"indexdb.*\"}) without(type)\n    )\n    +\n    rate(vm_new_timeseries_created_total{job=~\"$job\", instance=~\"$instance\"}[1d]) * \n    (\n        sum(vm_data_size_bytes{job=~\"$job\", instance=~\"$instance\", type=\"indexdb/file\"}) /\n        sum(vm_rows{job=~\"$job\", instance=~\"$instance\", type=\"indexdb/file\"})\n    )\n) > 0"
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Storage full ETA
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: How many datapoints are inserted into storage per second
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 185
+    id: 10
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_rows_inserted_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance, type) > 0
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Datapoints ingestion rate
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: How many data points are in RAM queue waiting to be written into storage. The number of pending data points should be in the range from 0 to `5*<ingestion_rate>`, since VictoriaMetrics pushes pending data to persistent storage every 5 seconds. The index datapoints value in general is much lower
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides:
+      - matcher:
+          id: byName
+          options: pending index entries
+        properties:
+        - id: unit
+          value: none
+        - id: decimals
+          value: 3
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 185
+    id: 34
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      expr: vm_pending_rows{job=~"$job", instance=~"$instance", type="storage"}
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - pending datapoints'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      expr: vm_pending_rows{job=~"$job", instance=~"$instance", type="indexdb"}
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - pending index entries'
+      range: true
+      refId: B
+    title: Pending datapoints
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows amount of on-disk space occupied by data points and the remaining disk space at `-storageDataPath`. Calculation accounts for -storage.minFreeDiskSpaceBytes
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: bytes
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 193
+    id: 53
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_data_size_bytes{job=~"$job", instance=~"$instance", type!~"indexdb.*"}) by (instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - Used (datapoints)'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      expr: vm_free_disk_space_bytes{job=~"$job", instance=~"$instance"} - vm_free_disk_space_limit_bytes{job=~"$job", instance=~"$instance"}
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - Free'
+      range: true
+      refId: B
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_data_size_bytes{job=~"$job", instance=~"$instance", type=~"indexdb.*"}) by (instance)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - Used (index)'
+      range: true
+      refId: C
+    title: Disk space usage - datapoints
+    type: timeseries
+  - datasource:
+      uid: $ds
+    description: 'The max number of data parts of LSM tree across all storage nodes in the last [partition](https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/#storage).
+
+      Increase in number of parts (the hard limit is 512) is an evidence of slow merge performance - check the resource utilization.
+
+      * `indexdb` - inverted index
+
+      * `storage/small` - recently added parts of data ingested into storage (hot data)
+
+      * `storage/big` -  small parts gradually merged into bigger parts (cold data)'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 193
+    id: 36
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_parts{job=~"$job", instance=~"$instance", type=~"indexdb.*"}) by (instance, type)
+      format: time_series
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: max(vm_last_partition_parts{job=~"$job", instance=~"$instance"}) by(instance, type)
+      format: time_series
+      hide: false
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: B
+    title: LSM parts max by type
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows how many datapoints are in the storage and what is average disk usage per datapoint.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides:
+      - matcher:
+          id: byName
+          options: bytes-per-datapoint
+        properties:
+        - id: unit
+          value: bytes
+        - id: decimals
+          value: 2
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 201
+    id: 30
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_rows{job=~"$job", instance=~"$instance", type!~"indexdb.*"}) by (instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - total datapoints'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: |-
+        sum(vm_data_size_bytes{job=~"$job", instance=~"$instance"}) by (instance)
+        / sum(vm_rows{job=~"$job", instance=~"$instance", type!~"indexdb.*"}) by (instance)
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - bytes-per-datapoint'
+      range: true
+      refId: B
+    title: Datapoints
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: The number of on-going merges in storage nodes.  It is expected to have high numbers for `storage/small` metric.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 201
+    id: 62
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_active_merges{job=~"$job", instance=~"$instance"}) by(instance, type)
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Active merges
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: Shows how many rows were ignored on insertion due to corrupted or out of retention timestamps and how many series were ignored on insertion or during scrape due to too long label names, values and excessive labels count.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 10
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 209
+    id: 58
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: false
+      expr: sum(increase(vm_rows_ignored_total{job=~"$job", instance=~"$instance"}[1h])) by (instance, reason)
+      format: time_series
+      hide: false
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}reason{{`}}`}}'
+      range: true
+      refId: A
+    title: Rows ignored for last 1h
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: The number of rows merged per second by storage nodes.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 209
+    id: 64
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: none
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(rate(vm_rows_merged_total{job=~"$job", instance=~"$instance"}[$__rate_interval])) by(instance, type)
+      legendFormat: '{{`{{`}}instance{{`}}`}} - {{`{{`}}type{{`}}`}}'
+      range: true
+      refId: A
+    title: Merge speed
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: "Shows how many ongoing insertions (not API /write calls) on disk are taking place, where:\n* `max` - equal to number of CPUs;\n* `current` - current number of goroutines busy with inserting rows into underlying storage.\n\nEvery successful API /write call results into flush on disk. However, these two actions are separated and controlled via different concurrency limiters. The `max` on this panel can't be changed and always equal to number of CPUs. \n\nWhen `current` hits `max` constantly, it means storage is overloaded and requires more CPU.\n\n"
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 0
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides:
+      - matcher:
+          id: byName
+          options: max
+        properties:
+        - id: color
+          value:
+            fixedColor: '#C4162A'
+            mode: fixed
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 217
+    id: 59
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        displayMode: table
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: max_over_time(vm_concurrent_insert_capacity{job=~"$job", instance=~"$instance"}[$__rate_interval])
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - max'
+      range: true
+      refId: A
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: sum(vm_concurrent_insert_current{job=~"$job", instance=~"$instance"}) by (instance)
+      format: time_series
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}} - current'
+      range: true
+      refId: B
+    title: Concurrent flushes on disk
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 99th percentile of number of [data samples](https://docs.victoriametrics.com/victoriametrics/keyconcepts/#raw-samples) read per queried series.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 2
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 217
+    id: 103
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: histogram_quantile(0.99, sum(rate(vm_rows_read_per_series_bucket{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance, vmrange))
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Datapoints read per series
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 99th percentile of number of series read per query.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 2
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 225
+    id: 99
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: histogram_quantile(0.99, sum(rate(vm_series_read_per_query_bucket{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance, vmrange))
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Series read per query
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: '99th percentile of number of [data samples](https://docs.victoriametrics.com/victoriametrics/keyconcepts/#raw-samples) scanner per query.
+
+
+      This number can exceed number of RowsReadPerQuery if `step` query arg passed to [/api/v1/query_range](https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries) is smaller than the lookbehind window set in square brackets of [rollup function](https://docs.victoriametrics.com/victoriametrics/metricsql/#rollup-functions). For example, if `increase(some_metric[1h])` is executed with the `step=5m`, then the same [data samples](https://docs.victoriametrics.com/victoriametrics/keyconcepts/#raw-samples) on a hour time range are scanned `1h/5m=12` times. See [this article](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986) for details.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 2
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 225
+    id: 105
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: histogram_quantile(0.99, sum(rate(vm_rows_scanned_per_query_bucket{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance, vmrange))
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Datapoints scanned per query
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 99th percentile of number of [data samples](https://docs.victoriametrics.com/victoriametrics/keyconcepts/#raw-samples) read per query.
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        decimals: 2
+        links: []
+        mappings: []
+        min: 0
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 0
+      'y': 233
+    id: 122
+    options:
+      legend:
+        calcs:
+        - mean
+        - lastNotNull
+        - max
+        displayMode: table
+        placement: bottom
+        showLegend: true
+        sortBy: Last *
+        sortDesc: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      expr: histogram_quantile(0.99, sum(rate(vm_rows_read_per_query_bucket{job=~"$job", instance=~"$instance"}[$__rate_interval])) by (instance, vmrange))
+      format: time_series
+      interval: ''
+      intervalFactor: 1
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Datapoints read per query
+    type: timeseries
+  - datasource:
+      type: {{ $defaultDatasource }}
+      uid: $ds
+    description: 'Shows number of existing [snapshots](https://docs.victoriametrics.com/victoriametrics/single-server-victoriametrics/#how-to-work-with-snapshots).
+
+
+      Recently made snapshots do not occupy disk space. But with time, as snapshots become older, they start to occupy more and more disk space.
+
+
+      It is recommended deleting old snapshots when they are no longer needed to free up disk space.'
+    fieldConfig:
+      defaults:
+        color:
+          mode: palette-classic
+        custom:
+          axisBorderShow: false
+          axisCenteredZero: false
+          axisColorMode: text
+          axisLabel: ''
+          axisPlacement: auto
+          barAlignment: 0
+          barWidthFactor: 0.6
+          drawStyle: line
+          fillOpacity: 0
+          gradientMode: none
+          hideFrom:
+            legend: false
+            tooltip: false
+            viz: false
+          insertNulls: false
+          lineInterpolation: linear
+          lineWidth: 1
+          pointSize: 5
+          scaleDistribution:
+            type: linear
+          showPoints: never
+          spanNulls: false
+          stacking:
+            group: A
+            mode: none
+          thresholdsStyle:
+            mode: 'off'
+        mappings: []
+        thresholds:
+          mode: absolute
+          steps:
+          - color: green
+          - color: red
+            value: 80
+        unit: short
+      overrides: []
+    gridPos:
+      h: 8
+      w: 12
+      x: 12
+      'y': 233
+    id: 130
+    options:
+      legend:
+        calcs: []
+        displayMode: list
+        placement: bottom
+        showLegend: true
+      tooltip:
+        hideZeros: false
+        mode: multi
+        sort: desc
+    pluginVersion: 11.5.0
+    targets:
+    - datasource:
+        type: {{ $defaultDatasource }}
+        uid: $ds
+      editorMode: code
+      exemplar: true
+      expr: vm_snapshots{job=~"$job", instance=~"$instance"}
+      interval: ''
+      legendFormat: '{{`{{`}}instance{{`}}`}}'
+      range: true
+      refId: A
+    title: Number of snapshots
+    type: timeseries
+  title: Storage
+  type: row
+preload: false
+refresh: ''
+schemaVersion: 40
+tags:
+- victoriametrics
+- vm-k8s-stack
+templating:
+  list:
+  - current:
+      text: VictoriaMetrics
+      value: P4169E866C3094E38
+    includeAll: false
+    name: ds
+    options: []
+    query: {{ $defaultDatasource }}
+    refresh: 1
+    regex: ''
+    type: datasource
+  - current: {}
+    datasource:
+      type: prometheus
+      uid: $ds
+    definition: label_values(vm_app_version{version=~"victoria-metrics-.*"}, job)
+    includeAll: false
+    name: job
+    options: []
+    query:
+      query: label_values(vm_app_version{version=~"victoria-metrics-.*"}, job)
+      refId: VictoriaMetrics-job-Variable-Query
+    refresh: 1
+    regex: ''
+    type: query
+  - current: {}
+    datasource:
+      type: prometheus
+      uid: $ds
+    definition: label_values(vm_app_version{job=~"$job", instance=~"$instance"},  version)
+    hide: 2
+    includeAll: false
+    name: version
+    options: []
+    query:
+      query: label_values(vm_app_version{job=~"$job", instance=~"$instance"},  version)
+      refId: VictoriaMetrics-version-Variable-Query
+    refresh: 1
+    regex: /.*-(?:tags|heads)-(.*)-(?:0|dirty)-.*/
+    sort: 2
+    type: query
+  - allValue: .*
+    current: {}
+    datasource:
+      type: prometheus
+      uid: $ds
+    definition: label_values(vm_app_version{job=~"$job"}, instance)
+    includeAll: true
+    multi: true
+    name: instance
+    options: []
+    query:
+      query: label_values(vm_app_version{job=~"$job"}, instance)
+      refId: VictoriaMetrics-instance-Variable-Query
+    refresh: 1
+    regex: ''
+    type: query
+  - baseFilters: []
+    datasource:
+      type: prometheus
+      uid: $ds
+    filters: []
+    name: adhoc
+    type: adhoc
+time:
+  from: now-3h
+  to: now
+timepicker:
+  refresh_intervals:
+  - 10s
+  - 30s
+  - 1m
+  - 5m
+  - 15m
+  - 30m
+  - 1h
+  - 2h
+  - 1d
+timezone: {{ default "utc" ($Values.defaultDashboards).defaultTimezone }}
+title: VictoriaMetrics - single-node
+uid: wNf0q_kZk
+version: 1
+weekStart: ''

@@ -13,6 +13,7 @@ interface GuideState {
   guideRelease: boolean;
   currentGuideApp: string;
   isGuideEnabled: boolean;
+  startTimeMs: number | null;
   setGuide2: (completed: boolean) => void;
   setGuide3: (completed: boolean) => void;
   setguideConfigDevbox: (completed: boolean) => void;
@@ -39,6 +40,7 @@ export const useGuideStore = create<GuideState>()(
       guideRelease: true,
       currentGuideApp: '',
       isGuideEnabled: true,
+      startTimeMs: null,
 
       setGuide2: (completed: boolean) => set({ guide2: completed }),
       setGuide3: (completed: boolean) => set({ guide3: completed }),

@@ -12,34 +12,48 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-REPO=$1
-TAG=$2
+TAG=$1
+PRE_VERSION=$2
 
-if [ -z "$REPO" ]; then
-   REPO="$GITHUB_REPOSITORY"
+if [ -z "${TAG}" ]; then
+    echo "Usage: $0 <tag> <previous_version>"
+    echo "Example: $0 v1.0.0 v0.9.0"
+    exit 1
 fi
 
-if [ -z "$TAG" ]; then
-   TAG=$(git describe --abbrev=0 --tags)
-fi
-set -ex
-# Fetch the release data using the GitHub API
-release_data=$(curl -s https://api.github.com/repos/"${REPO}"/releases/tags/"${TAG}")
-
-# Extract the release notes using jq
-release_notes=$(echo "$release_data" | jq -r '.body')
-
-if [ "$release_notes" == 'null' ]; then
-   echo "No release notes found for tag $TAG"
-   exit 1
+if [ ! -d CHANGELOG ]; then
+    mkdir CHANGELOG
 fi
 
-echo "$release_notes" > CHANGELOG/CHANGELOG-"${TAG#v}".md
+if command -v git-chglog &> /dev/null; then
+    echo "git-chglog is installed, proceeding with changelog generation."
+else
+    echo "git-chglog is not installed. Will install it first."
+    wget -q https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz
+    tar -zxvf git-chglog_0.15.4_linux_amd64.tar.gz git-chglog &> /dev/null
+    sudo mv git-chglog /usr/local/bin/
+    git-chglog --version
+    rm -rf git-chglog_0.15.4_linux_amd64.tar.gz
+fi
+
+git-chglog --repository-url https://github.com/labring/sealos --output CHANGELOG/CHANGELOG-"${TAG#v}".md --next-tag ${TAG} ${TAG}
 
 echo "# Changelog" > CHANGELOG/CHANGELOG.md
 echo -e "\nAll notable changes to this project will be documented in this file.\n" >> CHANGELOG/CHANGELOG.md
 
 for file in $(ls CHANGELOG |grep -v '^CHANGELOG.md$' | sort -V -r); do
     version=$(echo $file | sed -E 's/CHANGELOG-(.*)\.md/\1/')
+    if [ "$version" = "latest" ]; then
+        continue
+    fi
     echo -e "- [CHANGELOG-${version}.md](./CHANGELOG-${version}.md)" >> CHANGELOG/CHANGELOG.md
 done
+
+## check version is release version
+if [[ ${TAG} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "!!!!! is release version, will update docs"
+    sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/install-v2.sh
+    sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/build-offline-tar.sh
+fi
+
+cp CHANGELOG/CHANGELOG-"${TAG#v}".md CHANGELOG/CHANGELOG-latest.md

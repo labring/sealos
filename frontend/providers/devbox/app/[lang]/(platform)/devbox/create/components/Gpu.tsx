@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { usePriceStore } from '@/stores/price';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { GpuAmountMarkList } from '@/constants/devbox';
@@ -15,9 +15,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from '@sealos/shadcn-ui/select';
+import { FormControl, FormField, FormItem, FormLabel } from '@sealos/shadcn-ui/form';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 // NOTE: this component style is not tested yet,because we do not use it normally
 export default function Gpu({

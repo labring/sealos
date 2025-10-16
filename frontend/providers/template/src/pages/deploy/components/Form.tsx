@@ -1,20 +1,9 @@
 import MyIcon from '@/components/Icon';
 import MySelect from '@/components/Select';
-import type { QueryType, EnvResponse } from '@/types';
+import type { EnvResponse } from '@/types';
 import { FormSourceInput, TemplateSourceType } from '@/types/app';
-import {
-  Box,
-  Flex,
-  FormControl,
-  Input,
-  Text,
-  Checkbox,
-  NumberInput,
-  NumberInputField,
-  useTheme
-} from '@chakra-ui/react';
+import { Box, Flex, FormControl, Input, Text, Checkbox, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
 import { useMemo, useCallback, useState, memo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { evaluateExpression } from '@/utils/json-yaml';
@@ -23,18 +12,15 @@ import debounce from 'lodash/debounce';
 
 const Form = ({
   formHook,
-  pxVal,
   formSource,
   platformEnvs
 }: {
   formHook: UseFormReturn;
-  pxVal: number;
   formSource: TemplateSourceType;
   platformEnvs: EnvResponse;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-  const theme = useTheme();
   const [_, setForceUpdate] = useState(false);
 
   const isShowContent = useMemo(

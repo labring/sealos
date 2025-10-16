@@ -9,9 +9,50 @@ import {
 } from '@/constants/app';
 import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
-import { pathFormat, mountPathToConfigMapKey, str2Num, strToBase64 } from '@/utils/tools';
+import { str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
+import { customAlphabet, customRandom } from 'nanoid';
+import crypto from 'crypto';
+
+// Create deterministic nanoid based on seed
+const createDeterministicNanoid = (seed: string): string => {
+  const deterministicNanoid = customRandom('abcdefghijklmnopqrstuvwxyz', 12, (size) => {
+    const hash = crypto.createHash('sha256').update(seed).digest();
+    const result = new Uint8Array(size);
+    for (let i = 0; i < size; i++) {
+      result[i] = hash[i % hash.length];
+    }
+    return result;
+  });
+  return deterministicNanoid();
+};
+
+// Unified service name generation function
+const getServiceName = (data: AppEditType, forNodePort: boolean = false): string => {
+  const existingServiceName = data.networks.find((network) => {
+    return network.openNodePort === forNodePort && network.serviceName;
+  })?.serviceName;
+
+  if (existingServiceName) {
+    return existingServiceName;
+  }
+
+  const portsOfType = data.networks.filter((n) => n.openNodePort === forNodePort);
+  const ports = portsOfType.map((n) => n.port).sort();
+  const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${ports.join(',')}`;
+  const deterministicId = createDeterministicNanoid(seed);
+  const suffix = forNodePort ? '-nodeport' : '';
+
+  return `${data.appName}${suffix}-${deterministicId}`;
+};
+
+export const yamlString2Objects = (yamlString: string): object[] => {
+  if (!yamlString.trim()) return [];
+
+  const documents = yamlString.split(/\n---\n/);
+  return documents.filter((doc) => doc.trim()).map((doc) => yaml.load(doc.trim()) as object);
+};
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
@@ -197,7 +238,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
           }
         },
         minReadySeconds: 10,
-        serviceName: data.appName,
+        serviceName: getServiceName(data, false),
         template: {
           metadata: templateMetadata,
           spec: {
@@ -252,11 +293,13 @@ export const json2Service = (data: AppEditType) => {
     }
   });
 
+  const serviceName = getServiceName(data, false);
+
   const template = {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: data.appName,
+      name: serviceName,
       labels: {
         [appDeployKey]: data.appName
       }
@@ -269,11 +312,13 @@ export const json2Service = (data: AppEditType) => {
     }
   };
 
+  const serviceNameNodePort = getServiceName(data, true);
+
   const templateNodePort = {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: `${data.appName}-nodeport`,
+      name: serviceNameNodePort,
       labels: {
         [appDeployKey]: data.appName
       }
@@ -330,6 +375,8 @@ export const json2Ingress = (data: AppEditType) => {
         ? network.networkName
         : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
           'wildcard-cert';
+      // Ingress only uses ClusterIP services, not NodePort
+      const serviceName = getServiceName(data, false);
 
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',
@@ -357,7 +404,7 @@ export const json2Ingress = (data: AppEditType) => {
                     path: '/',
                     backend: {
                       service: {
-                        name: data.appName,
+                        name: serviceName,
                         port: {
                           number: network.port
                         }
@@ -432,6 +479,14 @@ export const json2Ingress = (data: AppEditType) => {
     });
 
   return result.join('\n---\n');
+};
+
+export const json2ServiceObjects = (data: AppEditType): object[] => {
+  return yamlString2Objects(json2Service(data));
+};
+
+export const json2IngressObjects = (data: AppEditType): object[] => {
+  return yamlString2Objects(json2Ingress(data));
 };
 
 export const json2ConfigMap = (data: AppEditType) => {

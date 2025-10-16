@@ -97,6 +97,11 @@ export default function RechargeTabPanel() {
           return format(date, 'MM-dd HH:mm');
         }
       }),
+      columnHelper.accessor((row) => row.Gift, {
+        id: TableHeaderID.Gift,
+        header: customTh(true),
+        cell: customCell(true)
+      }),
       columnHelper.accessor((row) => row.Amount, {
         id: TableHeaderID.TotalAmount,
         header: customTh(true),

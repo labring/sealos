@@ -38,11 +38,12 @@ const (
 	// SealosShimSock is the CRI socket the shim listens on.
 	SealosShimSock            = "/var/run/image-cri-shim.sock"
 	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
+	DefaultReloadInterval     = 15 * time.Second
 )
 
 type Registry struct {
-	Address string `json:"address"`
-	Auth    string `json:"auth"`
+	Address string `json:"address" yaml:"address"`
+	Auth    string `json:"auth" yaml:"auth,omitempty"`
 }
 
 type Config struct {
@@ -52,13 +53,20 @@ type Config struct {
 	Force           bool            `json:"force"`
 	Debug           bool            `json:"debug"`
 	Timeout         metav1.Duration `json:"timeout"`
+	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
-	Registries      []Registry      `json:"registries"`
+	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
 }
 
 type ShimAuthConfig struct {
-	CRIConfigs        map[string]types2.AuthConfig `json:"-"`
-	OfflineCRIConfigs map[string]types2.AuthConfig `json:"-"`
+	CRIConfigs          map[string]types2.AuthConfig `json:"-"`
+	OfflineCRIConfigs   map[string]types2.AuthConfig `json:"-"`
+	SkipLoginRegistries map[string]bool              `json:"-"`
+}
+
+func registryMatchDomain(reg Registry) string {
+	domain := registry2.GetRegistryDomain(reg.Address)
+	return registry2.NormalizeRegistry(domain)
 }
 
 func (c *Config) PreProcess() (*ShimAuthConfig, error) {
@@ -78,12 +86,16 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		c.Timeout = metav1.Duration{}
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
 	}
+	if c.ReloadInterval.Duration <= 0 {
+		c.ReloadInterval = metav1.Duration{Duration: DefaultReloadInterval}
+	}
 
 	logger.Info("RegistryDomain: %v", domain)
 	logger.Info("Force: %v", c.Force)
 	logger.Info("Debug: %v", c.Debug)
 	logger.CfgConsoleLogger(c.Debug, false)
 	logger.Info("Timeout: %v", c.Timeout)
+	logger.Info("ReloadInterval: %v", c.ReloadInterval)
 	shimAuth := new(ShimAuthConfig)
 
 	splitNameAndPasswd := func(auth string) (string, string) {
@@ -99,23 +111,33 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	}
 
 	{
-		//cri registry auth
+		// cri registry auth
 		criAuth := make(map[string]types2.AuthConfig)
+		skipLogin := make(map[string]bool)
 		for _, registry := range c.Registries {
 			if registry.Address == "" {
 				continue
 			}
-			name, passwd := splitNameAndPasswd(registry.Auth)
-			domain = registry2.GetRegistryDomain(registry.Address)
-			domain = registry2.NormalizeRegistry(domain)
-
-			criAuth[domain] = types2.AuthConfig{
-				Username:      name,
-				Password:      passwd,
-				ServerAddress: registry.Address,
+			localDomain := registryMatchDomain(registry)
+			if localDomain == "" {
+				logger.Warn("skip registry entry %q: unable to determine domain", registry.Address)
+				continue
 			}
+
+			authValue := strings.TrimSpace(registry.Auth)
+			cfg := types2.AuthConfig{ServerAddress: registry.Address}
+			if authValue == "" {
+				skipLogin[localDomain] = true
+			} else {
+				name, passwd := splitNameAndPasswd(authValue)
+				cfg.Username = name
+				cfg.Password = passwd
+			}
+
+			criAuth[localDomain] = cfg
 		}
 		shimAuth.CRIConfigs = criAuth
+		shimAuth.SkipLoginRegistries = skipLogin
 		logger.Info("criRegistryAuth: %+v", shimAuth.CRIConfigs)
 	}
 
@@ -153,9 +175,13 @@ func Unmarshal(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	return UnmarshalData(metadata)
+}
+
+func UnmarshalData(metadata []byte) (*Config, error) {
 	cfg := &Config{}
-	if err = yaml.Unmarshal(metadata, cfg); err != nil {
+	if err := yaml.Unmarshal(metadata, cfg); err != nil {
 		return nil, err
 	}
-	return cfg, err
+	return cfg, nil
 }

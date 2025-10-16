@@ -80,13 +80,17 @@ export default async function handler(req: any, res: NextApiResponse) {
       });
     }
 
-    const { applyYamlList, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
-    const { files } = await upload.doUpload(req, res);
+    const kubeconfig = await authSession(req);
+
+    const k8sResult = await getK8s({ kubeconfig });
+
+    const { namespace } = k8sResult;
+
+    const uploadResult = await upload.doUpload(req, res);
+    const files = uploadResult.files || [];
+
     const bucketName = process.env?.MINIO_BUCKET_NAME || 'database-test';
 
-    const startTime = performance.now();
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
         const fileName = `${namespace}-${Date.now()}-${file.filename}`;
@@ -94,18 +98,20 @@ export default async function handler(req: any, res: NextApiResponse) {
         return fileName;
       })
     );
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-    console.log(upLoadResults);
-    console.log(`file:${files} time:${duration}`);
 
     jsonRes(res, {
       data: upLoadResults
     });
   } catch (error) {
+    console.error('Upload handler error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error?.constructor?.name
+    });
+
     jsonRes(res, {
       code: 500,
-      error
+      error: error instanceof Error ? error.message : error
     });
   }
 }

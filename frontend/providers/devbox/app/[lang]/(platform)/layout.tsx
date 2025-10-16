@@ -17,7 +17,7 @@ import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@sealos/shadcn-ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {

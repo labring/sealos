@@ -20,6 +20,9 @@ import {
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
+
+import { YamlKindEnum } from '@/utils/adapt';
+import yaml from 'js-yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -110,7 +113,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
+  // For identifying existing stores and quota calculation
+  const [existingStores, setExistingStores] = useState<AppEditType['storeList']>([]);
   const [defaultGpuSource, setDefaultGpuSource] = useState<AppEditType['gpu']>({
     type: '',
     amount: 0,
@@ -255,6 +259,30 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     });
   }, [formHook.formState.errors, t, toast]);
 
+  const handleDomainVerified = useCallback(
+    ({ index, customDomain }: { index: number; customDomain: string }) => {
+      try {
+        const data = formHook.getValues();
+        if (!data?.appName) return;
+        if (data.networks?.[index]) {
+          data.networks[index].customDomain = customDomain;
+        }
+        const ingressYaml = json2Ingress(data);
+        setIsLoading(true);
+        postDeployApp([ingressYaml], 'replace')
+          .then(() => {
+            toast({ status: 'success', title: t('Deployment Successful') });
+            formOldYamls.current = formData2Yamls(data);
+          })
+          .catch((err) => {
+            toast({ status: 'error', title: getErrText(err) });
+          })
+          .finally(() => setIsLoading(false));
+      } catch (error) {}
+    },
+    [formHook, setIsLoading, toast, t]
+  );
+
   useQuery(
     ['initLaunchpadApp'],
     () => {
@@ -289,7 +317,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         formOldYamls.current = formData2Yamls(res);
         crOldYamls.current = res.crYamlList;
 
-        setDefaultStorePathList(res.storeList.map((item) => item.path));
+        setExistingStores(res.storeList);
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
@@ -444,8 +472,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                              ? 'GPU'
-                              : 'RAM',
+                                ? 'GPU'
+                                : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined
@@ -462,11 +490,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             <Form
               formHook={formHook}
               already={already}
-              defaultStorePathList={defaultStorePathList}
+              existingStores={existingStores}
               countGpuInventory={countGpuInventory}
               pxVal={pxVal}
               refresh={forceUpdate}
               isAdvancedOpen={isAdvancedOpen}
+              onDomainVerified={handleDomainVerified}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />

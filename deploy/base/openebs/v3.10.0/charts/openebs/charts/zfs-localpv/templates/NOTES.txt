@@ -1,0 +1,5 @@
+The OpenEBS ZFS LocalPV has been installed. Check its status by running:
+$ kubectl get pods -n {{ .Release.Namespace }} -l role=openebs-zfs
+
+For more information, visit our Slack at https://openebs.io/community or view 
+the documentation online at http://docs.openebs.io/.

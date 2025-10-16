@@ -42,18 +42,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     )) as any;
 
     body.items.forEach((item: any) => {
-      const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
+      const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
+
+      let db: `${DBTypeEnum}` | undefined;
+
+      if (clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql') {
+        db = DBTypeEnum.mysql;
+      } else {
+        db = clusterDefinitionRef as `${DBTypeEnum}`;
+      }
+
       if (
+        db &&
         DBVersionMap[db] &&
         item?.metadata?.name &&
-        !DBVersionMap[db].find((db) => db.id === item.metadata.name)
+        !DBVersionMap[db].find((version) => version.id === item.metadata.name)
       ) {
+        // Filter out mysql-8.0.33 version
+        if (db === DBTypeEnum.mysql && item.metadata.name === 'mysql-8.0.33') {
+          return;
+        }
+
         DBVersionMap[db].unshift({
           id: item.metadata.name,
           label: item.metadata.name
         });
       }
     });
+
+    // Sort MySQL versions to ensure mysql-5.7.42 appears last
+    if (DBVersionMap[DBTypeEnum.mysql].length > 0) {
+      DBVersionMap[DBTypeEnum.mysql].sort((a, b) => {
+        // Move mysql-5.7.42 to the end
+        if (a.id === 'mysql-5.7.42') return 1;
+        if (b.id === 'mysql-5.7.42') return -1;
+        // Keep other versions in their original order
+        return 0;
+      });
+    }
 
     jsonRes(res, {
       data: DBVersionMap

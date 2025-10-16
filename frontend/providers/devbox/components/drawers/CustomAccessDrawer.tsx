@@ -8,11 +8,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+} from '@sealos/shadcn-ui/drawer';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
 
-import { postAuthCname } from '@/api/platform';
+import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';
 
 export type CustomAccessDrawerParams = {
@@ -29,17 +29,34 @@ const CustomAccessDrawer = ({
   const ref = useRef<HTMLInputElement>(null);
   const t = useTranslations();
 
-  const { mutate: authCNAME, isLoading } = useRequest({
+  const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async () => {
       const val = ref.current?.value || '';
       if (!val) {
-        return onSuccess('');
+        return '';
       }
-      await postAuthCname({
-        publicDomain: publicDomain,
-        customDomain: val
-      });
-      return val;
+
+      try {
+        await postAuthCname({
+          publicDomain: publicDomain,
+          customDomain: val
+        });
+        return val;
+      } catch (cnameError) {
+        try {
+          const challengeResult = await postAuthDomainChallenge({
+            customDomain: val
+          });
+
+          if (challengeResult?.verified) {
+            return val;
+          } else {
+            throw cnameError;
+          }
+        } catch (challengeError) {
+          throw cnameError;
+        }
+      }
     },
     onSuccess,
     errorToast: 'Custom Domain Error'
@@ -71,7 +88,7 @@ const CustomAccessDrawer = ({
           </div>
         </div>
         <DrawerFooter>
-          <Button className="w-20" disabled={isLoading} onClick={() => authCNAME()}>
+          <Button className="w-20" disabled={isLoading} onClick={() => authDomain()}>
             {t('confirm')}
           </Button>
         </DrawerFooter>

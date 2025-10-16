@@ -1,40 +1,42 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { VStack, Flex, FormLabel, Input, Button, Text, Box } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { CustomSelect } from './Select'
-type MapKeyValuePair = { key: string; value: string }
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Button, Flex, FormLabel, Input, Text, VStack } from '@chakra-ui/react';
+
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+
+import { CustomSelect } from './Select';
+type MapKeyValuePair = { key: string; value: string };
 
 // mapKeys determines the available selection options
 export const ConstructMappingComponent = function ({
   mapKeys,
   mapData,
-  setMapData
+  setMapData,
 }: {
-  mapKeys: string[]
-  mapData: Record<string, string>
-  setMapData: (mapping: Record<string, string>) => void
+  mapKeys: string[];
+  mapData: Record<string, string>;
+  setMapData: (mapping: Record<string, string>) => void;
 }) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([])
+  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([]);
 
   // 组件初步渲染时，isInternalUpdate 为 false，可以保证每次重新渲染时，mapData 变化时，mapKeyValuePairs 重新初始化
-  const [isInternalUpdate, setIsInternalUpdate] = useState(false)
+  const [isInternalUpdate, setIsInternalUpdate] = useState(false);
 
   // 初始化并在 mapData 变化时更新 mapKeyValuePairs
   useEffect(() => {
     if (!isInternalUpdate) {
-      const entries = Object.entries(mapData)
+      const entries = Object.entries(mapData);
       setMapkeyValuePairs(
         entries.length > 0
           ? entries.map(([key, value]) => ({ key, value }))
           : [{ key: '', value: '' }]
-      )
+      );
     }
-    setIsInternalUpdate(false)
-  }, [mapData])
+    setIsInternalUpdate(false);
+  }, [mapData]);
 
   const handleDropdownItemDisplay = (dropdownItem: string) => {
     if (dropdownItem === t('channelsFormPlaceholder.modelMappingInput')) {
@@ -46,10 +48,11 @@ export const ConstructMappingComponent = function ({
           fontStyle="normal"
           fontWeight={400}
           lineHeight="16px"
-          letterSpacing="0.048px">
+          letterSpacing="0.048px"
+        >
           {t('channelsFormPlaceholder.modelMappingInput')}
         </Text>
-      )
+      );
     }
     return (
       <Text
@@ -59,11 +62,12 @@ export const ConstructMappingComponent = function ({
         fontStyle="normal"
         fontWeight={400}
         lineHeight="16px"
-        letterSpacing="0.048px">
+        letterSpacing="0.048px"
+      >
         {dropdownItem}
       </Text>
-    )
-  }
+    );
+  };
 
   const handleSeletedItemDisplay = (selectedItem: string) => {
     if (selectedItem === t('channelsFormPlaceholder.modelMappingInput')) {
@@ -75,10 +79,11 @@ export const ConstructMappingComponent = function ({
           fontStyle="normal"
           fontWeight={400}
           lineHeight="16px"
-          letterSpacing="0.048px">
+          letterSpacing="0.048px"
+        >
           {t('channelsFormPlaceholder.modelMappingInput')}
         </Text>
-      )
+      );
     }
     return (
       <Box
@@ -88,8 +93,9 @@ export const ConstructMappingComponent = function ({
         css={{
           '&::-webkit-scrollbar': { display: 'none' },
           msOverflowStyle: 'none',
-          scrollbarWidth: 'none'
-        }}>
+          scrollbarWidth: 'none',
+        }}
+      >
         <Text
           color="grayModern.900"
           fontFamily="PingFang SC"
@@ -97,105 +103,106 @@ export const ConstructMappingComponent = function ({
           fontStyle="normal"
           fontWeight={400}
           lineHeight="16px"
-          letterSpacing="0.048px">
+          letterSpacing="0.048px"
+        >
           {selectedItem}
         </Text>
       </Box>
-    )
-  }
+    );
+  };
 
   // Handling mapData and mapKeyValuePairs cleanup when map keys change.
   useEffect(() => {
     // 1. Handle mapData cleanup
-    const removedKeysFromMapData = Object.keys(mapData).filter((key) => !mapKeys.includes(key))
+    const removedKeysFromMapData = Object.keys(mapData).filter((key) => !mapKeys.includes(key));
     if (removedKeysFromMapData.length > 0) {
-      const newMapData = { ...mapData }
+      const newMapData = { ...mapData };
       removedKeysFromMapData.forEach((key) => {
-        delete newMapData[key]
-      })
-      setIsInternalUpdate(true)
-      setMapData(newMapData)
+        delete newMapData[key];
+      });
+      setIsInternalUpdate(true);
+      setMapData(newMapData);
     }
 
     // 2. Handle mapKeyValuePairs cleanup
-    const removedPairs = mapKeyValuePairs.filter((pair) => pair.key && !mapKeys.includes(pair.key))
+    const removedPairs = mapKeyValuePairs.filter((pair) => pair.key && !mapKeys.includes(pair.key));
     if (removedPairs.length > 0) {
       const newMapKeyValuePairs = mapKeyValuePairs.filter(
         (pair) => !pair.key || mapKeys.includes(pair.key)
-      )
-      setMapkeyValuePairs(newMapKeyValuePairs)
+      );
+      setMapkeyValuePairs(newMapKeyValuePairs);
     }
-  }, [mapKeys])
+  }, [mapKeys]);
 
   // Get the keys that have been selected
   const getSelectedMapKeys = (currentIndex: number) => {
-    const selected = new Set<string>()
+    const selected = new Set<string>();
     mapKeyValuePairs.forEach((mapKeyValuePair, idx) => {
       if (idx !== currentIndex && mapKeyValuePair.key) {
-        selected.add(mapKeyValuePair.key)
+        selected.add(mapKeyValuePair.key);
       }
-    })
-    return selected
-  }
+    });
+    return selected;
+  };
 
   // Handling adding a new row
   const handleAddNewMapKeyPair = () => {
-    setMapkeyValuePairs([...mapKeyValuePairs, { key: '', value: '' }])
-  }
+    setMapkeyValuePairs([...mapKeyValuePairs, { key: '', value: '' }]);
+  };
 
   // Handling deleting a row
   const handleRemoveMapKeyPair = (index: number) => {
-    const mapKeyValuePair = mapKeyValuePairs[index]
-    const newMapData = { ...mapData }
+    const mapKeyValuePair = mapKeyValuePairs[index];
+    const newMapData = { ...mapData };
     if (mapKeyValuePair.key) {
-      delete newMapData[mapKeyValuePair.key]
+      delete newMapData[mapKeyValuePair.key];
     }
-    setIsInternalUpdate(true)
-    setMapData(newMapData)
+    setIsInternalUpdate(true);
+    setMapData(newMapData);
 
-    const newMapKeyValuePairs = mapKeyValuePairs.filter((_, idx) => idx !== index)
-    setMapkeyValuePairs(newMapKeyValuePairs)
-  }
+    const newMapKeyValuePairs = mapKeyValuePairs.filter((_, idx) => idx !== index);
+    setMapkeyValuePairs(newMapKeyValuePairs);
+  };
 
   // Handling selection/input changes
   const handleInputChange = (index: number, field: 'key' | 'value', value: string) => {
-    const newMapKeyValuePairs = [...mapKeyValuePairs]
-    const oldValue = newMapKeyValuePairs[index][field]
-    newMapKeyValuePairs[index][field] = value
+    const newMapKeyValuePairs = [...mapKeyValuePairs];
+    const oldValue = newMapKeyValuePairs[index][field];
+    newMapKeyValuePairs[index][field] = value;
 
     // Update the mapping relationship
-    const newMapData = { ...mapData }
+    const newMapData = { ...mapData };
     if (field === 'key') {
-      if (oldValue) delete newMapData[oldValue]
+      if (oldValue) delete newMapData[oldValue];
 
       if (!value) {
-        newMapKeyValuePairs[index].value = ''
+        newMapKeyValuePairs[index].value = '';
       }
 
       if (value && newMapKeyValuePairs[index].value) {
-        newMapData[value] = newMapKeyValuePairs[index].value
+        newMapData[value] = newMapKeyValuePairs[index].value;
       }
     } else {
       if (newMapKeyValuePairs[index].key) {
-        newMapData[newMapKeyValuePairs[index].key] = value
+        newMapData[newMapKeyValuePairs[index].key] = value;
       }
     }
 
-    setMapkeyValuePairs(newMapKeyValuePairs)
-    setIsInternalUpdate(true)
-    setMapData(newMapData)
-  }
+    setMapkeyValuePairs(newMapKeyValuePairs);
+    setIsInternalUpdate(true);
+    setMapData(newMapData);
+  };
 
   // Check if there are still keys that can be selected
   const hasAvailableKeys = useMemo(() => {
     const usedKeys = new Set(
       mapKeyValuePairs.map((mapKeyValuePair) => mapKeyValuePair.key).filter(Boolean)
-    )
+    );
     // Ensure mapKeyValuePairs length does not exceed mapKeys length
     return (
       mapKeyValuePairs.length < mapKeys.length && mapKeys.some((mapKey) => !usedKeys.has(mapKey))
-    )
-  }, [mapKeys, mapKeyValuePairs])
+    );
+  }, [mapKeys, mapKeyValuePairs]);
 
   return (
     <VStack w="full" align="stretch" alignItems="flex-start" spacing="8px">
@@ -211,7 +218,8 @@ export const ConstructMappingComponent = function ({
         alignItems="center"
         justifyContent="center"
         h="20px"
-        m={0}>
+        m={0}
+      >
         {t('channelsForm.model_mapping')}
       </FormLabel>
 
@@ -248,8 +256,8 @@ export const ConstructMappingComponent = function ({
                 fontStyle: 'normal',
                 fontWeight: 400,
                 lineHeight: '16px',
-                letterSpacing: '0.048px'
-              }
+                letterSpacing: '0.048px',
+              },
             }}
           />
 
@@ -265,14 +273,16 @@ export const ConstructMappingComponent = function ({
             borderRadius="6px"
             _hover={{
               bg: 'rgba(17, 24, 36, 0.05)',
-              color: '#D92D20'
-            }}>
+              color: '#D92D20',
+            }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="19"
               height="18"
               viewBox="0 0 19 18"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -299,13 +309,15 @@ export const ConstructMappingComponent = function ({
           borderRadius="6px"
           border="1px solid var(--Gray-Modern-250, #DFE2EA)"
           bg="white"
-          boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)">
+          boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="17"
             height="16"
             viewBox="0 0 17 16"
-            fill="none">
+            fill="none"
+          >
             <path
               fillRule="evenodd"
               clipRule="evenodd"
@@ -320,12 +332,13 @@ export const ConstructMappingComponent = function ({
             fontStyle="normal"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {t('channelsForm.add')}
           </Text>
         </Button>
       )}
     </VStack>
-  )
-}
-export default ConstructMappingComponent
+  );
+};
+export default ConstructMappingComponent;

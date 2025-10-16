@@ -1,0 +1,20 @@
+{{- if and .Values.rbac.create .Values.rbac.useClusterRole -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "kube-state-metrics.labels" . | indent 4 }}
+  name: {{ template "kube-state-metrics.fullname" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+{{- if .Values.rbac.useExistingRole }}
+  name: {{ .Values.rbac.useExistingRole }}
+{{- else }}
+  name: {{ template "kube-state-metrics.fullname" . }}
+{{- end }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "kube-state-metrics.serviceAccountName" . }}
+  namespace: {{ template "kube-state-metrics.namespace" . }}
+{{- end -}}

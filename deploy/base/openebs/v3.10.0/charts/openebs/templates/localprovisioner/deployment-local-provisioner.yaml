@@ -1,0 +1,128 @@
+{{- if not .Values.mayastor.enabled -}}
+{{- if .Values.localprovisioner.enabled }}
+{{- $localpvprovisionerValues := index .Values "localpv-provisioner" }}
+{{- if not $localpvprovisionerValues.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "openebs.fullname" . }}-localpv-provisioner
+  labels:
+    app: {{ template "openebs.name" . }}
+    chart: {{ template "openebs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: localpv-provisioner
+    openebs.io/component-name: openebs-localpv-provisioner
+    openebs.io/version: {{ .Values.release.version }}
+spec:
+  replicas: {{ .Values.localprovisioner.replicas }}
+  strategy:
+    type: "Recreate"
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      app: {{ template "openebs.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "openebs.name" . }}
+        release: {{ .Release.Name }}
+        component: localpv-provisioner
+        name: openebs-localpv-provisioner
+        openebs.io/component-name: openebs-localpv-provisioner
+        openebs.io/version: {{ .Values.release.version }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "openebs.serviceAccountName" . }}
+      containers:
+      - name: {{ template "openebs.name" . }}-localpv-provisioner
+        image: "{{ .Values.image.repository }}{{ .Values.localprovisioner.image }}:{{ .Values.localprovisioner.imageTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.localprovisioner.resources }}
+        resources:
+{{ toYaml .Values.localprovisioner.resources | trimSuffix "\n" | indent 10 }}
+{{- end }}
+        args:
+          - "--bd-time-out=$(BDC_BD_BIND_RETRIES)"
+        env:
+        # OPENEBS_IO_K8S_MASTER enables openebs provisioner to connect to K8s
+        # based on this address. This is ignored if empty.
+        # This is supported for openebs provisioner version 0.5.2 onwards
+        #- name: OPENEBS_IO_K8S_MASTER
+        #  value: "http://10.128.0.12:8080"
+        # OPENEBS_IO_KUBE_CONFIG enables openebs provisioner to connect to K8s
+        # based on this config. This is ignored if empty.
+        # This is supported for openebs provisioner version 0.5.2 onwards
+        #- name: OPENEBS_IO_KUBE_CONFIG
+        #  value: "/home/ubuntu/.kube/config"
+        # This sets the number of times the provisioner should try
+        # with a polling interval of 5 seconds, to get the Blockdevice
+        # Name from a BlockDeviceClaim, before the BlockDeviceClaim
+        # is deleted. E.g. 12 * 5 seconds = 60 seconds timeout
+        - name: BDC_BD_BIND_RETRIES
+          value: "{{ .Values.localprovisioner.waitForBDBindTimeoutRetryCount }}"
+        # OPENEBS_NAMESPACE is the namespace that this provisioner will
+        # lookup to find maya api service
+        - name: OPENEBS_NAMESPACE
+          value: "{{ .Release.Namespace }}"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        # OPENEBS_SERVICE_ACCOUNT provides the service account of this pod as
+        # environment variable
+        - name: OPENEBS_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        # OPENEBS_IO_BASE_PATH is the environment variable that provides the
+        # default base path on the node where host-path PVs will be provisioned.
+        - name: OPENEBS_IO_ENABLE_ANALYTICS
+          value: "{{ .Values.analytics.enabled }}"
+        - name: OPENEBS_IO_BASE_PATH
+          value: "{{ .Values.localprovisioner.basePath }}"
+        - name: OPENEBS_IO_HELPER_IMAGE
+          value: "{{ .Values.image.repository }}{{ .Values.helper.image }}:{{ .Values.helper.imageTag }}"
+        - name: OPENEBS_IO_INSTALLER_TYPE
+          value: "charts-helm"
+        # LEADER_ELECTION_ENABLED is used to enable/disable leader election. By default
+        # leader election is enabled.
+        - name: LEADER_ELECTION_ENABLED
+          value: "{{ .Values.localprovisioner.enableLeaderElection }}"
+{{- if .Values.imagePullSecrets }}
+        - name: OPENEBS_IO_IMAGE_PULL_SECRETS
+          value: "{{- range $.Values.imagePullSecrets }}{{ .name }},{{- end }}"
+{{- end }}
+        # Process name used for matching is limited to the 15 characters
+        # present in the pgrep output.
+        # So fullname can't be used here with pgrep (>15 chars).A regular expression
+        # that matches the entire command name has to specified.
+        # Anchor `^` : matches any string that starts with `provisioner-loc`
+        # `.*`: matches any string that has `provisioner-loc` followed by zero or more char
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test `pgrep -c "^provisioner-loc.*"` = 1
+          initialDelaySeconds: {{ .Values.localprovisioner.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.localprovisioner.healthCheck.periodSeconds }}
+{{- if .Values.localprovisioner.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.localprovisioner.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.localprovisioner.tolerations }}
+      tolerations:
+{{ toYaml .Values.localprovisioner.tolerations | indent 8 }}
+{{- end }}
+{{- if .Values.localprovisioner.affinity }}
+      affinity:
+{{ toYaml .Values.localprovisioner.affinity | indent 8 }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}

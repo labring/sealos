@@ -52,6 +52,7 @@ func GetQuery(query *api.VMRequest) (string, error) {
 	}
 	podName := getPodName(query.LaunchPadName)
 	result = strings.ReplaceAll(strings.ReplaceAll(result, "$namespace", query.NS), "$pod", podName)
+	result = strings.ReplaceAll(result, "@persistentvolumeclaim", query.PvcName)
 	return result, nil
 }
 

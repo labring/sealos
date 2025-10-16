@@ -1,7 +1,7 @@
 import vector from '@/assert/Vector.svg';
 import stripe_icon from '@/assert/bi_stripe.svg';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
-import alipay_icon from '@/assert/ic_baseline-alipay.svg'
+import alipay_icon from '@/assert/ic_baseline-alipay.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import OuterLink from '@/components/outerLink';
 import { useCustomToast } from '@/hooks/useCustomToast';
@@ -127,53 +127,53 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
 function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: string }) {
   const { t } = useTranslation();
   return (
+    <Flex
+      flexDirection="column"
+      px="37px"
+      justify={'center'}
+      align={'center'}
+      m={'auto'}
+      display={'flex'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      position={'relative'}
+    >
       <Flex
-          flexDirection="column"
-          px="37px"
-          justify={'center'}
-          align={'center'}
-          m={'auto'}
-          display={'flex'}
-          justifyContent={'center'}
-          alignItems={'center'}
-          position={'relative'}
+        width={'267px'}
+        height={'295px'}
+        direction={'column'}
+        align="center"
+        justify={'space-between'}
       >
-        <Flex
-            width={'267px'}
-            height={'295px'}
-            direction={'column'}
-            align="center"
-            justify={'space-between'}
-        >
-          <Text color="#7B838B" mb="8px" textAlign="center">
-            {t('Scan with Alipay')}
+        <Text color="#7B838B" mb="8px" textAlign="center">
+          {t('Scan with Alipay')}
+        </Text>
+        {props.complete === 2 && !!props.codeURL ? (
+          <QRCodeSVG
+            size={185}
+            value={props.codeURL}
+            style={{ margin: '0 auto' }}
+            imageSettings={{
+              // 二维码中间的logo图片
+              src: alipay_icon.src,
+              height: 40,
+              width: 40,
+              excavate: true // 中间图片所在的位置是否镂空
+            }}
+          />
+        ) : (
+          <Box>waiting...</Box>
+        )}
+        <Box mt="8px">
+          <Text color="#717D8A" fontSize="12px" fontWeight="normal">
+            {t('Order Number')}： {props.tradeNO || ''}
           </Text>
-          {props.complete === 2 && !!props.codeURL ? (
-              <QRCodeSVG
-                  size={185}
-                  value={props.codeURL}
-                  style={{ margin: '0 auto' }}
-                  imageSettings={{
-                    // 二维码中间的logo图片
-                    src: alipay_icon.src,
-                    height: 40,
-                    width: 40,
-                    excavate: true // 中间图片所在的位置是否镂空
-                  }}
-              />
-          ) : (
-              <Box>waiting...</Box>
-          )}
-          <Box mt="8px">
-            <Text color="#717D8A" fontSize="12px" fontWeight="normal">
-              {t('Order Number')}： {props.tradeNO || ''}
-            </Text>
-            <Text color="#717D8A" fontSize="12px">
-              {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
-            </Text>
-          </Box>
-        </Flex>
+          <Text color="#717D8A" fontSize="12px">
+            {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
+          </Text>
+        </Box>
       </Flex>
+    </Flex>
   );
 }
 const BonusBox = (props: {
@@ -212,67 +212,67 @@ const BonusBox = (props: {
       }}
     >
       {props.bouns === props.amount ? (
-          <Flex
-              position={'absolute'}
-              minW={'max-content'}
-              right={'-6px'}
-              top="-18px"
-              color={'royalBlue.700'}
-              background="royalBlue.100"
-              alignItems={'center'}
-              borderRadius="2px"
-              zIndex={'99'}
-              fontStyle="normal"
-              fontWeight="500"
-              fontSize="12px"
-              _before={{
-                position: 'absolute',
-                inset: 'auto',
-                borderRadius: '2px',
-                width: '50px',
-                height: '50px',
-                content: '""',
-                transform: 'rotate(45deg)',
-                zIndex: '-1',
-                bgColor: 'royalBlue.100'
-              }}
-              w="50px"
-              h="50px"
-              align={'center'}
-              justify={'center'}
-          >
-            <Flex flexDirection={'column'} align={'center'}>
-              <Text>{t('Double')}!</Text>
-              <Flex align={'center'}>
-                +
-                <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
-                <Text>{props.bouns}</Text>
-              </Flex>
+        <Flex
+          position={'absolute'}
+          minW={'max-content'}
+          right={'-6px'}
+          top="-18px"
+          color={'royalBlue.700'}
+          background="royalBlue.100"
+          alignItems={'center'}
+          borderRadius="2px"
+          zIndex={'99'}
+          fontStyle="normal"
+          fontWeight="500"
+          fontSize="12px"
+          _before={{
+            position: 'absolute',
+            inset: 'auto',
+            borderRadius: '2px',
+            width: '50px',
+            height: '50px',
+            content: '""',
+            transform: 'rotate(45deg)',
+            zIndex: '-1',
+            bgColor: 'royalBlue.100'
+          }}
+          w="50px"
+          h="50px"
+          align={'center'}
+          justify={'center'}
+        >
+          <Flex flexDirection={'column'} align={'center'}>
+            <Text>{t('Double')}!</Text>
+            <Flex align={'center'}>
+              +
+              <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
+              <Text>{props.bouns}</Text>
             </Flex>
           </Flex>
+        </Flex>
       ) : props.bouns !== 0 ? (
-          <Flex
-              position={'absolute'}
-              minW={'max-content'}
-              left="78px"
-              top="4px"
-              px={'9.5px'}
-              py={'2.5px'}
-              color={'purple.600'}
-              background="purple.100"
-              alignItems={'center'}
-              borderRadius="10px 10px 10px 0px"
-              zIndex={'99'}
-              fontStyle="normal"
-              fontWeight="500"
-              fontSize="12px"
-          >
-            <Text mr="4px">+</Text>
-            <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
-            <Text>{props.bouns}</Text>
-          </Flex>
+        <Flex
+          position={'absolute'}
+          minW={'max-content'}
+          left="78px"
+          top="4px"
+          px={'9.5px'}
+          py={'2.5px'}
+          color={'purple.600'}
+          background="purple.100"
+          alignItems={'center'}
+          borderRadius="10px 10px 10px 0px"
+          zIndex={'99'}
+          fontStyle="normal"
+          fontWeight="500"
+          fontSize="12px"
+        >
+          <Text mr="4px">+</Text>
+          <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
+          <Text>{props.bouns}</Text>
+        </Flex>
       ) : (
-          <></>
+        <></>
       )}
       <Flex align={'center'} fontSize="24px">
         <CurrencySymbol boxSize="20px" type={currency} />
@@ -364,7 +364,7 @@ const RechargeModal = forwardRef(
       ratios.unshift(...temp.map(() => 0));
       return [defaultSteps, ratios, steps, specialBonus];
     }, [bonuses?.data?.discount.defaultSteps, bonuses?.data?.discount.firstRechargeDiscount]);
-    const [amount, setAmount] = useState(() => 0);
+    const [amount, setAmount] = useState(() => 16);
     const getBonus = (amount: number) => {
       let ratio = 0;
       let specialIdx = specialBonus.findIndex(([k]) => +k === amount);
@@ -736,11 +736,11 @@ const RechargeModal = forwardRef(
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
                   />
                 ) : payType === 'alipay' ? (
-                    <AlipayPayment
-                        complete={complete}
-                        codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
-                        tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
-                    />
+                  <AlipayPayment
+                    complete={complete}
+                    codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
+                    tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
+                  />
                 ) : (
                   <StripeForm
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}

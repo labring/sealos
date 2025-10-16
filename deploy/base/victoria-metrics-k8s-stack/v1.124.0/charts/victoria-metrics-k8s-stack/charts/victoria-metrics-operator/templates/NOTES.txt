@@ -1,0 +1,5 @@
+{{ include "vm.name" . }} has been installed. Check its status by running:
+  kubectl --namespace {{ include "vm.namespace" . }} get pods -l "app.kubernetes.io/instance={{ $.Release.Name }}"
+
+Get more information on https://github.com/VictoriaMetrics/helm-charts/tree/master/charts/victoria-metrics-operator.
+See "Getting started guide for VM Operator" on https://docs.victoriametrics.com/guides/getting-started-with-vm-operator

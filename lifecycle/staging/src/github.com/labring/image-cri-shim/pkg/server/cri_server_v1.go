@@ -29,9 +29,20 @@ import (
 )
 
 type v1ImageService struct {
-	imageClient       api.ImageServiceClient
-	CRIConfigs        map[string]rtype.AuthConfig
-	OfflineCRIConfigs map[string]rtype.AuthConfig
+	imageClient api.ImageServiceClient
+	authStore   *AuthStore
+}
+
+func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtype.AuthConfig) {
+	newImage, ok, auth := replaceImage(image, action, s.authStore.GetOfflineConfigs())
+	if ok {
+		return newImage, true, auth
+	}
+	registries := s.authStore.GetCRIConfigs()
+	if len(registries) == 0 {
+		return image, false, nil
+	}
+	return replaceImage(image, action, registries)
 }
 
 func ToV1AuthConfig(c *rtype.AuthConfig) *api.AuthConfig {
@@ -64,7 +75,9 @@ func (s *v1ImageService) ImageStatus(ctx context.Context,
 		if id, _ := s.GetImageRefByID(ctx, req.Image.Image); id != "" {
 			req.Image.Image = id
 		} else {
-			req.Image.Image, _, _ = replaceImage(req.Image.Image, "ImageStatus", s.OfflineCRIConfigs)
+			if newImage, ok, _ := s.rewriteImage(req.Image.Image, "ImageStatus"); ok {
+				req.Image.Image = newImage
+			}
 		}
 	}
 	rsp, err := s.imageClient.ImageStatus(ctx, req)
@@ -80,15 +93,18 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 	req *api.PullImageRequest) (*api.PullImageResponse, error) {
 	logger.Debug("PullImage begin: %+v", req)
 	if req.Image != nil {
-		imageName, ok, auth := replaceImage(req.Image.Image, "PullImage", s.OfflineCRIConfigs)
-		if ok {
-			req.Auth = ToV1AuthConfig(auth)
-		} else {
-			if req.Auth == nil {
-				ref, _ := name.ParseReference(imageName)
-				if v, ok := s.CRIConfigs[ref.Context().RegistryStr()]; ok {
-					req.Auth = ToV1AuthConfig(&v)
-				}
+		imageName := req.Image.Image
+		if newImage, ok, auth := s.rewriteImage(req.Image.Image, "PullImage"); ok {
+			imageName = newImage
+			if auth != nil {
+				req.Auth = ToV1AuthConfig(auth)
+			}
+		}
+		if req.Auth == nil {
+			ref, _ := name.ParseReference(imageName)
+			registry := ref.Context().RegistryStr()
+			if cfg, ok := s.authStore.GetCRIConfig(registry); ok {
+				req.Auth = ToV1AuthConfig(&cfg)
 			}
 		}
 		req.Image.Image = imageName
@@ -109,7 +125,9 @@ func (s *v1ImageService) RemoveImage(ctx context.Context,
 		if id, _ := s.GetImageRefByID(ctx, req.Image.Image); id != "" {
 			req.Image.Image = id
 		} else {
-			req.Image.Image, _, _ = replaceImage(req.Image.Image, "RemoveImage", s.OfflineCRIConfigs)
+			if newImage, ok, _ := s.rewriteImage(req.Image.Image, "RemoveImage"); ok {
+				req.Image.Image = newImage
+			}
 		}
 	}
 	rsp, err := s.imageClient.RemoveImage(ctx, req)

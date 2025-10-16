@@ -42,6 +42,8 @@ type Shim interface {
 	Start() error
 	// Stop stops the shim.
 	Stop()
+	// UpdateAuth refreshes registry credentials without restarting the shim.
+	UpdateAuth(*types.ShimAuthConfig)
 }
 
 // shim is the implementation of Shim.
@@ -50,6 +52,7 @@ type shim struct {
 	cfg        *types.Config // shim options
 	client     server.Client // shim CRI client
 	server     server.Server // shim CRI server
+	authStore  *server.AuthStore
 }
 
 // NewShim creates a new shim instance.
@@ -68,14 +71,15 @@ func NewShim(cfg *types.Config, auth *types.ShimAuthConfig) (Shim, error) {
 	}
 	r.client = clt
 
+	r.authStore = server.NewAuthStore(auth)
+
 	srvopts := server.Options{
-		Timeout:           cfg.Timeout.Duration,
-		Socket:            cfg.ImageShimSocket,
-		User:              -1,
-		Group:             -1,
-		Mode:              0660,
-		CRIConfigs:        auth.CRIConfigs,
-		OfflineCRIConfigs: auth.OfflineCRIConfigs,
+		Timeout:   cfg.Timeout.Duration,
+		Socket:    cfg.ImageShimSocket,
+		User:      -1,
+		Group:     -1,
+		Mode:      0660,
+		AuthStore: r.authStore,
 	}
 	srv, err := server.NewServer(srvopts)
 	if err != nil {
@@ -114,6 +118,13 @@ func (r *shim) Start() error {
 func (r *shim) Stop() {
 	r.client.Close()
 	r.server.Stop()
+}
+
+func (r *shim) UpdateAuth(auth *types.ShimAuthConfig) {
+	if r.authStore == nil {
+		return
+	}
+	r.authStore.Update(auth)
 }
 
 func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {

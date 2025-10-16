@@ -24,6 +24,19 @@ import { RequiredByKeys } from '@/utils/tools';
 
 export const getMyDBList = () => GET<DBListItemType[]>('/api/getDBList');
 
+// Database Alerts
+export type DatabaseAlertItem = {
+  name: string;
+  status: string;
+  reason: string;
+  details: string;
+};
+
+export const getDatabaseAlerts = (namespace: string) =>
+  GET<DatabaseAlertItem[]>(`/api/proxy/get_db_alerts`, {
+    namespace
+  });
+
 export const getDBByName = ({
   name,
   mock = false,
@@ -136,3 +149,6 @@ export const getTables = (payload: { dbName: string; dbType: DBType; databaseNam
   POST<Array<string>>(`/api/db/getTables`, payload);
 
 export const editPassword = (payload: EditPasswordReq) => POST('/api/db/editPassword', payload);
+
+export const setDBRemark = (payload: { dbName: string; remark: string }) =>
+  POST('/api/remark', payload);

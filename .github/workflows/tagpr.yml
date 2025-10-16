@@ -1,0 +1,111 @@
+name: 🚀 Tagpr for GitHub Actions
+on:
+  workflow_dispatch:
+    inputs:
+      pre-version:
+        description: 'Pre Version to release. Has v prefix'
+        required: true
+        default: 'v5.0.1'
+      version:
+        description: 'Version to release. Has v prefix'
+        required: true
+        default: 'v5.1.0'
+  push:
+    branches: [ "**" ]
+    paths:
+      - "CHANGELOG/CHANGELOG.md"
+jobs:
+  tagpr:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          if [[ -z "$VERSION" || -z "$PRE_VERSION" ]]; then
+            echo "Error: VERSION and PRE_VERSION inputs are required."
+            exit 1
+          fi
+          cat << EOF > .tagpr.json
+          {
+              "name": "sealos",
+              "version": "${VERSION}",
+              "command": "bash scripts/changelog.sh ${VERSION} ${PRE_VERSION}",
+              "pre-version": "${PRE_VERSION}"
+          }
+          EOF
+        env:
+          VERSION: "${{ inputs.version }}"
+          PRE_VERSION: "${{ inputs.pre-version }}"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Add and parse .tagpr.json
+      - run: |
+          # check if .tagpr.json exists
+          if [ ! -f .tagpr.json ]; then
+            echo "No .tagpr.json file found."
+            exit 1
+          else
+            echo ".tagpr.json file already exists."
+          fi
+          version=$(cat .tagpr.json | jq -r '.version')
+          command=$(cat .tagpr.json | jq -r '.command')
+          name=$(cat .tagpr.json | jq -r '.name')
+          echo name=${name} >> $GITHUB_OUTPUT
+          echo version=${version} >> $GITHUB_OUTPUT
+          echo command=${command} >> $GITHUB_OUTPUT
+        id: tagpr
+        env:
+          VERSION: "${{ inputs.version }}"
+          PRE_VERSION: "${{ inputs.pre-version }}"
+        name: Print git-chglog tag
+      - name: Use command to generate version
+        if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}
+        run: |
+          echo "Running command: ${{ steps.tagpr.outputs.command }}"
+          eval "${{ steps.tagpr.outputs.command }}"
+      - uses: peter-evans/create-pull-request@v5
+        if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}
+        with:
+          title: 'Release ${{ steps.tagpr.outputs.name }} note and fix version for ${{ steps.tagpr.outputs.version }}'
+          body: |
+            
+            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          commit-message: |
+            🤖 Release ${{ steps.tagpr.outputs.name }} for ${{ steps.tagpr.outputs.name }} using github-actions.
+          branch: tagpr-${{ steps.tagpr.outputs.version }}
+          draft: true
+          signoff: true
+          labels: |
+            bot
+          delete-branch: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+      - name: Auto tag and push changes
+        if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
+        run: |
+          echo "Running new version: ${{ steps.tagpr.outputs.version }}"
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $branch"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull 
+          git fetch --tags
+          git tag ${{ steps.tagpr.outputs.version }}
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push -f origin ${{ steps.tagpr.outputs.version }}
+      - name: Trigger Release Workflow(only when tagged)
+        uses: actions/github-script@v6
+        if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: "refs/tags/${{ steps.tagpr.outputs.version }}",
+            })
