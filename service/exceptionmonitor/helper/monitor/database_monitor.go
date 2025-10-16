@@ -39,6 +39,8 @@ var (
 		"milvus":         "milvus",
 		"mongodb":        "mongodb",
 	}
+	namespaceCheck bool
+	namespaceInfo  = api.Info{}
 )
 
 func DatabaseExceptionMonitor() {
@@ -97,42 +99,50 @@ func checkDatabasesInNamespace(namespace string) error {
 		return err
 	}
 	for _, cluster := range clusters.Items {
-		processCluster(cluster)
+		notificationInfo := api.Info{}
+		notificationInfo.Send = true
+		ProcessCluster(cluster, &notificationInfo)
 	}
 	return nil
 }
 
-func processCluster(cluster metav1unstructured.Unstructured) {
+func ProcessCluster(cluster metav1unstructured.Unstructured, notificationInfo *api.Info) {
 	// todo 获取数据库信息抽成一个函数，封装在notificationInfo中
-	notificationInfo := api.Info{}
-	getClusterDatabaseInfo(cluster, &notificationInfo)
+	//notificationInfo := api.Info{}
+	getClusterDatabaseInfo(cluster, notificationInfo)
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusRunning, api.StatusStopped:
-		if value, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
-			recoveryNotificationInfo := value
-			recoveryNotificationInfo.RecoveryStatus, recoveryNotificationInfo.RecoveryTime = getClusterDatabaseStatus(cluster, recoveryNotificationInfo)
-			handleClusterRecovery(recoveryNotificationInfo)
+		if notificationInfo.Send {
+			if value, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+				recoveryNotificationInfo := value
+				recoveryNotificationInfo.RecoveryStatus, recoveryNotificationInfo.RecoveryTime = getClusterDatabaseStatus(cluster, recoveryNotificationInfo)
+				handleClusterRecovery(recoveryNotificationInfo)
+			}
 		}
 	case api.StatusDeleting, api.StatusStopping:
 		// nothing to do
 		break
 	case api.StatusUnknown:
 		if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
-			api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID] = &notificationInfo
+			api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 			//api.LastDatabaseClusterStatus[notificationInfo.DatabaseClusterUID] = notificationInfo.ExceptionStatus
 			//api.DatabaseNamespaceMap[notificationInfo.DatabaseClusterUID] = notificationInfo.Namespace + "-" + notificationInfo.DatabaseClusterName
 			//api.ExceptionDatabaseMap[notificationInfo.DatabaseClusterUID] = true
 			notificationInfo.Events = "status is empty"
 			notificationInfo.DebtLevel = ""
-			alertMessage := prepareAlertMessage(&notificationInfo, 0)
-			if err := sendAlert(alertMessage, &notificationInfo); err != nil {
-				log.Printf("Failed to send feishu %s in ns %s: %v", notificationInfo.DatabaseClusterName, notificationInfo.Namespace, err)
+			if notificationInfo.Send {
+				alertMessage := prepareAlertMessage(notificationInfo, 0)
+				if err := sendAlert(alertMessage, notificationInfo); err != nil {
+					log.Printf("Failed to send feishu %s in ns %s: %v", notificationInfo.DatabaseClusterName, notificationInfo.Namespace, err)
+				}
 			}
+		} else if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+			notificationInfo = api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
 		}
 	default:
 		//Updating、Creating、Failed、Abnormal
 		//notificationInfo.DatabaseClusterUID, databaseClusterName, namespace, databaseType, status
-		handleClusterException(&notificationInfo)
+		handleClusterException(notificationInfo)
 	}
 }
 
@@ -166,7 +176,10 @@ func handleClusterException(notificationInfo *api.Info) {
 		if err := processClusterException(notificationInfo); err != nil {
 			log.Printf("Failed to process cluster %s exception in ns %s: %v", notificationInfo.DatabaseClusterName, notificationInfo.Namespace, err)
 		}
+	} else if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		notificationInfo = api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
 	}
+
 }
 
 func processClusterException(notificationInfo *api.Info) error {
@@ -267,6 +280,9 @@ func getClusterDatabaseInfo(cluster metav1unstructured.Unstructured, notificatio
 	notificationInfo.DatabaseClusterName = databaseClusterName
 	notificationInfo.DatabaseClusterUID = databaseClusterUID
 	notificationInfo.ExceptionStatus, notificationInfo.ExceptionStatusTime = getClusterDatabaseStatus(cluster, notificationInfo)
+	if notificationInfo.ExceptionStatusTime == "0001-01-01 08:00:00" {
+		notificationInfo.ExceptionStatusTime = time.Now().String()
+	}
 }
 
 func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificationInfo *api.Info) (string, string) {

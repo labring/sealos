@@ -43,24 +43,29 @@ type Info struct {
 	FeishuWebHook       string
 	//struct
 	FeishuInfo []map[string]interface{}
+	Send       bool
 }
 
 type NameSpaceQuota struct {
-	NameSpace             string
-	CPULimit              string
-	MemLimit              string
-	GPULimit              string
-	EphemeralStorageLimit string
-	ObjectStorageLimit    string
-	NodePortLimit         string
-	StorageLimit          string
-	CPUUsage              string
-	MemUsage              string
-	GPUUsage              string
-	EphemeralStorageUsage string
-	ObjectStorageUsage    string
-	NodePortUsage         string
-	StorageUsage          string
+	NameSpace                string
+	CPULimit                 string
+	MemLimit                 string
+	GPULimit                 string
+	EphemeralStorageLimit    string
+	ObjectStorageSizeLimit   string
+	ObjectStorageBucketLimit string
+	NodePortLimit            string
+	StorageLimit             string
+	PodsLimit                string
+	CPUUsage                 string
+	MemUsage                 string
+	GPUUsage                 string
+	PodsUsage                string
+	EphemeralStorageUsage    string
+	ObjectStorageSizeUsage   string
+	ObjectStorageBucketUsage string
+	NodePortUsage            string
+	StorageUsage             string
 }
 
 const (

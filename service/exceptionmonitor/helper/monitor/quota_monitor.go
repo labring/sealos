@@ -106,14 +106,20 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *api.NameSpaceQuota) 
 				nsQuota.EphemeralStorageLimit = hardQuantity.String()
 				nsQuota.EphemeralStorageUsage = fmt.Sprintf("%.2f%%", utilization)
 			case "objectstorage/size":
-				nsQuota.ObjectStorageLimit = hardQuantity.String()
-				nsQuota.ObjectStorageUsage = fmt.Sprintf("%.2f%%", utilization)
+				nsQuota.ObjectStorageSizeLimit = hardQuantity.String()
+				nsQuota.ObjectStorageSizeUsage = fmt.Sprintf("%.2f%%", utilization)
+			case "objectstorage/bucket":
+				nsQuota.ObjectStorageBucketLimit = hardQuantity.String()
+				nsQuota.ObjectStorageBucketUsage = fmt.Sprintf("%.2f%%", utilization)
 			case "services.nodeports":
 				nsQuota.NodePortLimit = hardQuantity.String()
 				nsQuota.NodePortUsage = fmt.Sprintf("%.2f%%", utilization)
 			case "requests.storage":
 				nsQuota.StorageLimit = hardQuantity.String()
 				nsQuota.StorageUsage = fmt.Sprintf("%.2f%%", utilization)
+			case "pods":
+				nsQuota.PodsLimit = hardQuantity.String()
+				nsQuota.PodsUsage = fmt.Sprintf("%.2f%%", utilization)
 			}
 		}
 	}
