@@ -196,16 +196,16 @@ func Init(ctx context.Context) error {
 	}
 
 	notifyConfigStr := os.Getenv(helper.EnvNotifyConfig)
-	if notifyConfigStr == "" {
-		return fmt.Errorf("empty notify config, please check env: notify_config")
+	if notifyConfigStr != "" {
+		notifyConfig, err := usernotify.ParseConfigsWithJSON(notifyConfigStr)
+		if err != nil {
+			return fmt.Errorf("parse notify config error: %v", err)
+		}
+		UserContactProvider = usernotify.NewMemoryContactProvider()
+		UserNotificationService = usernotify.NewEventNotificationService(notifyConfig, UserContactProvider)
+	} else {
+		logrus.Errorf("empty notify config env: %s, user notification service disabled", helper.EnvNotifyConfig)
 	}
-
-	notifyConfig, err := usernotify.ParseConfigsWithJSON(notifyConfigStr)
-	if err != nil {
-		return fmt.Errorf("parse notify config error: %v", err)
-	}
-	UserContactProvider = usernotify.NewMemoryContactProvider()
-	UserNotificationService = usernotify.NewEventNotificationService(notifyConfig, UserContactProvider)
 
 	EmailTmplMap = map[string]string{
 		utils.EnvPaySuccessEmailTmpl: os.Getenv(utils.EnvPaySuccessEmailTmpl),

@@ -522,11 +522,13 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(ct
 
 	// 查询已到期且支付方式为余额的订阅
 	err := dao.DBClient.GetGlobalDB().WithContext(ctx).Model(&types.WorkspaceSubscription{}).
-		Where("current_period_end_at <= ? AND pay_method = ? AND status = ? AND region_domain = ?",
+		Where("current_period_end_at <= ? AND pay_method = ? AND status = ? AND region_domain = ? AND pay_status NOT IN (?, ?)",
 			now.Add(20*time.Minute),
 			types.PaymentMethodBalance,
 			types.SubscriptionStatusNormal,
-			dao.DBClient.GetLocalRegion().Domain).
+			dao.DBClient.GetLocalRegion().Domain,
+			types.SubscriptionPayStatusCanceled,
+			types.SubscriptionPayStatusNoNeed).
 		Find(&expiredSubscriptions).Error
 	if err != nil {
 		return 0, fmt.Errorf("failed to query expired balance subscriptions: %w", err)
@@ -622,7 +624,7 @@ func (wsp *WorkspaceSubscriptionProcessor) handleInsufficientBalance(ctx context
 		OldPlanName:   sub.PlanName,
 		NewPlanName:   sub.PlanName,
 		OldPlanStatus: types.SubscriptionStatusNormal,
-		Operator:      types.SubscriptionTransactionTypeRenewFailed,
+		Operator:      types.SubscriptionTransactionTypeRenewed,
 		StartAt:       now,
 		CreatedAt:     now,
 		UpdatedAt:     now,
