@@ -13,6 +13,11 @@ on:
         default: "latest"
         required: false
         type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
   workflow_dispatch:
     inputs:
       push_image:
@@ -25,6 +30,11 @@ on:
         default: "latest"
         required: false
         type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
   push:
     branches: ["main"]
     paths:
@@ -61,7 +71,7 @@ jobs:
         run: bash scripts/resolve-modules.sh ./service
 
   golangci-lint:
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request') }}
     needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
