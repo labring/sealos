@@ -257,24 +257,20 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxSecret)
 	if err == nil {
 		// Secret already exists, no need to create
-
+		// update controller reference
+		if err := controllerutil.SetControllerReference(devbox, devboxSecret, r.Scheme); err != nil {
+			return fmt.Errorf("failed to update owner reference: %w", err)
+		}
 		// TODO: delete this code after we have a way to sync secret to devbox
 		// check if SEALOS_DEVBOX_JWT_SECRET is exist, if not exist, create it
 		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"]; !ok {
 			devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"] = []byte(rand.String(32))
-			if err := r.Update(ctx, devboxSecret); err != nil {
-				return fmt.Errorf("failed to update secret: %w", err)
-			}
 		}
-
+		// check if SEALOS_DEVBOX_AUTHORIZED_KEYS is exist, if not exist, set it to SEALOS_DEVBOX_PUBLIC_KEY
 		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
 			devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = devboxSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
-			if err := r.Update(ctx, devboxSecret); err != nil {
-				return fmt.Errorf("failed to update secret: %w", err)
-			}
 		}
-
-		return nil
+		return r.Update(ctx, devboxSecret)
 	}
 	if client.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
