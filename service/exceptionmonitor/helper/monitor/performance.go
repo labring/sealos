@@ -67,7 +67,7 @@ func checkPerformance(notificationInfo *api.Info, checkType string) (float64, er
 
 func getKubeConfig(namespace string) (string, error) {
 	if !strings.Contains(namespace, "ns-") {
-		return "", fmt.Errorf("invalid user format for %s", namespace)
+		return "", fmt.Errorf("invalid namespace format for %s", namespace)
 	}
 	userName := strings.Split(namespace, "-")[1]
 
