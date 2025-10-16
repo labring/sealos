@@ -17,15 +17,8 @@ limitations under the License.
 package types
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"errors"
-	"fmt"
-	"io/fs"
 	"net/url"
-	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -45,7 +38,6 @@ const (
 	// SealosShimSock is the CRI socket the shim listens on.
 	SealosShimSock            = "/var/run/image-cri-shim.sock"
 	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
-	DefaultRegistryDir        = "/etc/image-cri-shim.d"
 	DefaultReloadInterval     = 15 * time.Second
 )
 
@@ -63,7 +55,6 @@ type Config struct {
 	Timeout         metav1.Duration `json:"timeout"`
 	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
-	RegistryDir     string          `json:"registry.d"`
 	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
 }
 
@@ -79,15 +70,6 @@ func registryMatchDomain(reg Registry) string {
 }
 
 func (c *Config) PreProcess() (*ShimAuthConfig, error) {
-	c.RegistryDir = NormalizeRegistryDir(c.RegistryDir)
-	if err := syncRegistriesToDir(c.RegistryDir, c.Registries); err != nil {
-		return nil, err
-	}
-	registries, err := loadRegistriesFromDir(c.RegistryDir)
-	if err != nil {
-		return nil, err
-	}
-
 	if c.ImageShimSocket == "" {
 		c.ImageShimSocket = SealosShimSock
 	}
@@ -95,7 +77,6 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	logger.Info("cri-socket: %s", c.RuntimeSocket)
 	logger.Info("hub-address: %s", c.Address)
 	logger.Info("auth: %s", c.Auth)
-	logger.Info("registry.d: %s", c.RegistryDir)
 	rawURL, err := url.Parse(c.Address)
 	if err != nil {
 		logger.Warn("url parse error: %+v", err)
@@ -133,7 +114,7 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		// cri registry auth
 		criAuth := make(map[string]types2.AuthConfig)
 		skipLogin := make(map[string]bool)
-		for _, registry := range registries {
+		for _, registry := range c.Registries {
 			if registry.Address == "" {
 				continue
 			}
@@ -203,154 +184,4 @@ func UnmarshalData(metadata []byte) (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
-}
-
-// NormalizeRegistryDir ensures the registry directory falls back to the default path when empty.
-func NormalizeRegistryDir(dir string) string {
-	if strings.TrimSpace(dir) == "" {
-		return DefaultRegistryDir
-	}
-	return dir
-}
-
-func syncRegistriesToDir(dir string, registries []Registry) error {
-	if len(registries) == 0 {
-		return nil
-	}
-
-	dir = NormalizeRegistryDir(dir)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("ensure registry.d %s: %w", dir, err)
-	}
-
-	for _, reg := range registries {
-		address := strings.TrimSpace(reg.Address)
-		if address == "" {
-			continue
-		}
-
-		host := registryFileName(address)
-		if host == "" {
-			logger.Warn("skip registry entry %q: unable to determine filename", address)
-			continue
-		}
-
-		data, err := yaml.Marshal(reg)
-		if err != nil {
-			return fmt.Errorf("marshal registry %s: %w", host, err)
-		}
-
-		path := filepath.Join(dir, fmt.Sprintf("%s.yaml", host))
-		if existing, err := os.ReadFile(path); err == nil {
-			if bytes.Equal(bytes.TrimSpace(existing), bytes.TrimSpace(data)) {
-				continue
-			}
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("read registry config %s: %w", path, err)
-		}
-
-		if err := os.WriteFile(path, data, 0o644); err != nil {
-			return fmt.Errorf("write registry config %s: %w", path, err)
-		}
-		logger.Debug("synced registry config to %s", path)
-	}
-
-	return nil
-}
-
-func registryFileName(address string) string {
-	if address == "" {
-		return ""
-	}
-
-	raw := strings.TrimSpace(address)
-	if raw == "" {
-		return ""
-	}
-
-	if u, err := url.Parse(raw); err == nil {
-		host := u.Host
-		if host != "" {
-			return host
-		}
-		// Some registry addresses might be provided without scheme, causing Parse to treat them as paths.
-	}
-
-	trimmed := strings.TrimPrefix(raw, "http://")
-	trimmed = strings.TrimPrefix(trimmed, "https://")
-	if idx := strings.Index(trimmed, "/"); idx != -1 {
-		trimmed = trimmed[:idx]
-	}
-	return strings.TrimSpace(trimmed)
-}
-
-func loadRegistriesFromDir(dir string) ([]Registry, error) {
-	files, err := listRegistryConfigFiles(dir)
-	if err != nil {
-		return nil, err
-	}
-	registries := make([]Registry, 0, len(files))
-	for _, file := range files {
-		data, err := os.ReadFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("read registry config %s: %w", file, err)
-		}
-		var reg Registry
-		if err := yaml.Unmarshal(data, &reg); err != nil {
-			return nil, fmt.Errorf("parse registry config %s: %w", file, err)
-		}
-		if strings.TrimSpace(reg.Address) == "" {
-			logger.Warn("skip registry config %s: address is empty", file)
-			continue
-		}
-		registries = append(registries, reg)
-	}
-	return registries, nil
-}
-
-func listRegistryConfigFiles(dir string) ([]string, error) {
-	dir = NormalizeRegistryDir(dir)
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("list registry.d %s: %w", dir, err)
-	}
-
-	files := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext != ".yaml" && ext != ".yml" {
-			continue
-		}
-		files = append(files, filepath.Join(dir, entry.Name()))
-	}
-	sort.Strings(files)
-	return files, nil
-}
-
-// RegistryDirDigest returns a deterministic digest for the registry.d directory contents.
-func RegistryDirDigest(dir string) ([]byte, error) {
-	files, err := listRegistryConfigFiles(dir)
-	if err != nil {
-		return nil, err
-	}
-	if len(files) == 0 {
-		return nil, nil
-	}
-
-	hasher := sha256.New()
-	for _, file := range files {
-		data, err := os.ReadFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("read registry config %s: %w", file, err)
-		}
-		_, _ = hasher.Write([]byte(filepath.Base(file)))
-		_, _ = hasher.Write(data)
-	}
-	return hasher.Sum(nil), nil
 }

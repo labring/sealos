@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -51,28 +50,18 @@ func (f *fakeShim) UpdateAuth(auth *types.ShimAuthConfig) {
 func TestWatchAuthConfigReloads(t *testing.T) {
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, "shim-config.yaml")
-	registryDir := filepath.Join(dir, "registry.d")
 
-	if err := os.MkdirAll(registryDir, 0o755); err != nil {
-		t.Fatalf("failed to create registry.d directory: %v", err)
-	}
-
-	mirrorPath := filepath.Join(registryDir, "mirror.yaml")
-	if err := os.WriteFile(mirrorPath, []byte("address: \"https://mirror.example.com\"\nauth: \"user:pass\"\n"), 0o644); err != nil {
-		t.Fatalf("failed to write mirror registry config: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(registryDir, "public.yaml"), []byte("address: \"https://public.example.com\"\n"), 0o644); err != nil {
-		t.Fatalf("failed to write public registry config: %v", err)
-	}
-
-	initialConfig := []byte(fmt.Sprintf(`shim: "/tmp/test.sock"
+	initialConfig := []byte(`shim: "/tmp/test.sock"
 cri: "/var/run/containerd/containerd.sock"
 address: "https://example.com"
 force: true
 auth: "offline:initial"
 reloadInterval: 10ms
-registry.d: %q
-`, registryDir))
+registries:
+- address: "https://mirror.example.com"
+  auth: "user:pass"
+- address: "https://public.example.com"
+`)
 
 	if err := os.WriteFile(cfgPath, initialConfig, 0o644); err != nil {
 		t.Fatalf("failed to write initial config: %v", err)
@@ -89,14 +78,17 @@ registry.d: %q
 
 	time.Sleep(20 * time.Millisecond)
 
-	updatedConfig := []byte(fmt.Sprintf(`shim: "/tmp/test.sock"
+	updatedConfig := []byte(`shim: "/tmp/test.sock"
 cri: "/var/run/containerd/containerd.sock"
 address: "https://example.com"
 force: true
 auth: "offline:updated"
 reloadInterval: 10ms
-registry.d: %q
-`, registryDir))
+registries:
+- address: "https://mirror.example.com"
+  auth: "user:pass"
+- address: "https://public.example.com"
+`)
 
 	if err := os.WriteFile(cfgPath, updatedConfig, 0o644); err != nil {
 		t.Fatalf("failed to write updated config: %v", err)
@@ -122,24 +114,34 @@ registry.d: %q
 		t.Fatalf("expected registry credentials for mirror.example.com, got %#v", auth.CRIConfigs)
 	}
 	if mirror.Password != "pass" {
-		t.Fatalf("expected initial password from registry.d, got %q", mirror.Password)
+		t.Fatalf("expected initial mirror password, got %q", mirror.Password)
 	}
 
 	if !auth.SkipLoginRegistries["public.example.com"] {
 		t.Fatalf("expected public.example.com to skip login, got %#v", auth.SkipLoginRegistries)
 	}
-	if cfg, ok := auth.CRIConfigs["public.example.com"]; !ok || cfg.Username != "" || cfg.Password != "" {
-		t.Fatalf("expected public.example.com to use anonymous credentials, got %#v", cfg)
-	}
 
-	if err := os.WriteFile(mirrorPath, []byte("address: \"https://mirror.example.com\"\nauth: \"user:changed\"\n"), 0o644); err != nil {
-		t.Fatalf("failed to write updated mirror registry config: %v", err)
+	// update mirror credentials via config file
+	mirrorUpdated := []byte(`shim: "/tmp/test.sock"
+cri: "/var/run/containerd/containerd.sock"
+address: "https://example.com"
+force: true
+auth: "offline:updated"
+reloadInterval: 10ms
+registries:
+- address: "https://mirror.example.com"
+  auth: "user:changed"
+- address: "https://public.example.com"
+`)
+
+	if err := os.WriteFile(cfgPath, mirrorUpdated, 0o644); err != nil {
+		t.Fatalf("failed to write mirror update: %v", err)
 	}
 
 	select {
 	case auth = <-shim.updates:
 	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for registry.d auth update")
+		t.Fatal("timed out waiting for mirror auth update")
 	}
 
 	mirror, ok = auth.CRIConfigs["mirror.example.com"]
@@ -147,7 +149,7 @@ registry.d: %q
 		t.Fatalf("expected registry credentials for mirror.example.com after update, got %#v", auth.CRIConfigs)
 	}
 	if mirror.Password != "changed" {
-		t.Fatalf("expected updated password from registry.d, got %q", mirror.Password)
+		t.Fatalf("expected updated mirror password, got %q", mirror.Password)
 	}
 
 	cancel()

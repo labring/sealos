@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { OptionData } from '@/types/admin/option'
-import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
 import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
@@ -21,9 +22,9 @@ async function fetchOptions(): Promise<OptionData | undefined> {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetOptionR
 
     return NextResponse.json({
       code: 200,
-      data: optionData
+      data: optionData,
     } satisfies GetOptionResponse)
   } catch (error) {
     console.error('admin options api: get options error:', error)
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetOptionR
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetOptionResponse,
       { status: 500 }
     )
@@ -79,10 +80,10 @@ async function updateOption(key: string, value: string): Promise<string> {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
       body: JSON.stringify({ key, value }),
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -112,7 +113,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<GetOptionR
         {
           code: 400,
           message: 'Invalid request body: key is required and must be a string',
-          error: 'Invalid request parameters'
+          error: 'Invalid request parameters',
         } satisfies GetOptionResponse,
         { status: 400 }
       )
@@ -123,7 +124,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<GetOptionR
         {
           code: 400,
           message: 'Invalid request body: value is required and must be a string',
-          error: 'Invalid request parameters'
+          error: 'Invalid request parameters',
         } satisfies GetOptionResponse,
         { status: 400 }
       )
@@ -133,7 +134,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<GetOptionR
 
     return NextResponse.json({
       code: 200,
-      message: 'Option updated successfully'
+      message: 'Option updated successfully',
     } satisfies GetOptionResponse)
   } catch (error) {
     console.error('admin options api: put option error:', error)
@@ -141,7 +142,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<GetOptionR
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetOptionResponse,
       { status: 500 }
     )

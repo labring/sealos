@@ -1,11 +1,13 @@
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+
 import { ApiResp } from '@/types/api'
-import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosRequestConfig } from 'axios'
+
 import { getAppToken } from './user'
 
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 60000
+  timeout: 60000,
 })
 
 // request interceptor
@@ -41,7 +43,7 @@ request.interceptors.request.use(
     // handle request interceptor error
     console.error('Request Interceptor Error:', error)
     error.data = {
-      msg: 'An error occurred while making the request. Please try again later.'
+      msg: 'An error occurred while making the request. Please try again later.',
     }
     return Promise.reject(error) // use reject to catch error in subsequent process
   }
@@ -83,7 +85,7 @@ export function GET<T = any>(
 ): Promise<T> {
   return request.get(url, {
     params: data,
-    ...config
+    ...config,
   })
 }
 
@@ -116,7 +118,7 @@ export function DELETE<T = any>(
 ): Promise<T> {
   return request.delete(url, {
     params: data,
-    ...config
+    ...config,
   })
 }
 

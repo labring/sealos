@@ -16,53 +16,16 @@ limitations under the License.
 
 package types
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
-
-	"sigs.k8s.io/yaml"
-)
+import "testing"
 
 func TestUnmarshal(t *testing.T) {
 	cfg, err := Unmarshal("testdata/image-cri-shim.yaml")
 	if err != nil {
-		t.Error(err)
-		return
-	}
-	auth, err := cfg.PreProcess()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if _, ok := auth.CRIConfigs["192.168.64.1:5000"]; !ok {
-		t.Fatalf("expected registry credentials loaded from registry.d, got %#v", auth.CRIConfigs)
-	}
-}
-
-func TestRegistriesLoadedFromDir(t *testing.T) {
-	dir := t.TempDir()
-	cfg := &Config{
-		ImageShimSocket: "/var/run/image-cri-shim.sock",
-		RuntimeSocket:   "/run/containerd/containerd.sock",
-		Address:         "http://sealos.hub:5000",
-		Force:           true,
-		Auth:            "offline:user",
-		RegistryDir:     dir,
+		t.Fatalf("unmarshal failed: %v", err)
 	}
 
-	entries := map[string]Registry{
-		"192.168.64.1:5000.yaml":  {Address: "http://192.168.64.1:5000", Auth: "admin:passw0rd"},
-		"public.example.com.yaml": {Address: "https://public.example.com"},
-	}
-	for name, reg := range entries {
-		data, err := yaml.Marshal(reg)
-		if err != nil {
-			t.Fatalf("failed to marshal registry %s: %v", name, err)
-		}
-		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
-			t.Fatalf("failed to write registry file %s: %v", name, err)
-		}
+	if len(cfg.Registries) == 0 {
+		t.Fatalf("expected registries from config, got %#v", cfg.Registries)
 	}
 
 	auth, err := cfg.PreProcess()
@@ -70,62 +33,48 @@ func TestRegistriesLoadedFromDir(t *testing.T) {
 		t.Fatalf("preprocess failed: %v", err)
 	}
 
+	mirror, ok := auth.CRIConfigs["mirror.example.com"]
+	if !ok {
+		t.Fatalf("expected registry credentials for mirror.example.com, got %#v", auth.CRIConfigs)
+	}
+	if mirror.Username != "admin" || mirror.Password != "passw0rd" {
+		t.Fatalf("unexpected credentials for mirror.example.com, got %#v", mirror)
+	}
+
 	if !auth.SkipLoginRegistries["public.example.com"] {
 		t.Fatalf("expected public.example.com to skip login, got %#v", auth.SkipLoginRegistries)
 	}
-	if authCfg, ok := auth.CRIConfigs["192.168.64.1:5000"]; !ok || authCfg.Username != "admin" || authCfg.Password != "passw0rd" {
-		t.Fatalf("expected credentials for 192.168.64.1:5000, got %#v", auth.CRIConfigs["192.168.64.1:5000"])
-	}
 }
 
-func TestRegistriesFieldSyncedToDir(t *testing.T) {
-	dir := t.TempDir()
-	registries := []Registry{
-		{Address: "https://hub.192.168.64.4.nip.io", Auth: "admin:syncpass"},
-		{Address: "http://192.168.64.1:5000"},
-	}
-
+func TestInlineRegistriesPreProcess(t *testing.T) {
 	cfg := &Config{
 		ImageShimSocket: "/var/run/image-cri-shim.sock",
 		RuntimeSocket:   "/run/containerd/containerd.sock",
 		Address:         "https://registry.internal",
 		Force:           true,
-		Auth:            "sync:user",
-		RegistryDir:     dir,
-		Registries:      registries,
+		Auth:            "offline:user",
+		Registries: []Registry{
+			{Address: "https://mirror.internal", Auth: "admin:syncpass"},
+			{Address: "https://public.example.com"},
+		},
 	}
 
 	auth, err := cfg.PreProcess()
 	if err != nil {
-		t.Fatalf("preprocess with inline registries failed: %v", err)
+		t.Fatalf("preprocess failed: %v", err)
 	}
 
-	expectedFiles := map[string]Registry{
-		"hub.192.168.64.4.nip.io.yaml": registries[0],
-		"192.168.64.1:5000.yaml":       registries[1],
+	mirrorDomain := registryMatchDomain(cfg.Registries[0])
+	mirror, ok := auth.CRIConfigs[mirrorDomain]
+	if !ok {
+		t.Fatalf("expected registry credentials for %s, got %#v", mirrorDomain, auth.CRIConfigs)
 	}
-	for name, want := range expectedFiles {
-		path := filepath.Join(dir, name)
-		data, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatalf("expected registry file %s to be written: %v", path, err)
-		}
-		var got Registry
-		if err := yaml.Unmarshal(data, &got); err != nil {
-			t.Fatalf("failed to parse registry file %s: %v", path, err)
-		}
-		if got != want {
-			t.Fatalf("registry file %s content mismatch: got %#v, want %#v", path, got, want)
-		}
+	if mirror.Username != "admin" || mirror.Password != "syncpass" {
+		t.Fatalf("unexpected credentials for %s, got %#v", mirrorDomain, mirror)
 	}
 
-	firstDomain := registryMatchDomain(registries[0])
-	if authCfg, ok := auth.CRIConfigs[firstDomain]; !ok || authCfg.Username != "admin" || authCfg.Password != "syncpass" {
-		t.Fatalf("expected credentials for %s, got %#v", firstDomain, auth.CRIConfigs[firstDomain])
-	}
-
-	secondDomain := registryMatchDomain(registries[1])
-	if !auth.SkipLoginRegistries[secondDomain] {
-		t.Fatalf("expected %s to skip login, got %#v", secondDomain, auth.SkipLoginRegistries)
+	publicDomain := registryMatchDomain(cfg.Registries[1])
+	if !auth.SkipLoginRegistries[publicDomain] {
+		t.Fatalf("expected %s to skip login, got %#v", publicDomain, auth.SkipLoginRegistries)
 	}
 }

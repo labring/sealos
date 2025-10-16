@@ -21,4 +21,7 @@ image: /var/lib/image-cri-shim
 timeout: 15m
 reloadInterval: 15s
 auth: admin:passw0rd
-registry.d: testdata/registries
+registries:
+  - address: https://mirror.example.com
+    auth: admin:passw0rd
+  - address: https://public.example.com

@@ -52,20 +52,20 @@ function initAppConfig(): AppConfigType {
     common: {
       docUrl: '',
       isInvitationActive: false,
-      invitationUrl: ''
+      invitationUrl: '',
     },
     auth: {
       appTokenJwtKey: '',
       aiProxyBackendKey: '',
-      accountServerTokenJwtKey: ''
+      accountServerTokenJwtKey: '',
     },
     backend: {
       aiproxy: '',
       aiproxyInternal: '',
-      accountServer: ''
+      accountServer: '',
     },
     adminNameSpace: [],
-    currencySymbol: 'shellCoin'
+    currencySymbol: 'shellCoin',
   }
 
   if (!global.AppConfig) {
@@ -92,8 +92,8 @@ export async function GET(): Promise<NextResponse> {
         currencySymbol: config.currencySymbol,
         docUrl: config.common.docUrl,
         isInvitationActive: config.common.isInvitationActive,
-        invitationUrl: config.common.invitationUrl
-      }
+        invitationUrl: config.common.invitationUrl,
+      },
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
@@ -103,7 +103,7 @@ export async function GET(): Promise<NextResponse> {
       {
         code: 500,
         message: 'Failed to load configuration',
-        error: errorMessage
+        error: errorMessage,
       },
       { status: 500 }
     )

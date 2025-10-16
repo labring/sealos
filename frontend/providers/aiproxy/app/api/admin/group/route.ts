@@ -1,8 +1,9 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+import { GroupInfo } from '@/types/admin/group'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { NextRequest, NextResponse } from 'next/server'
-import { GroupInfo } from '@/types/admin/group'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,9 +55,9 @@ async function fetchGroups(
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -70,7 +71,7 @@ async function fetchGroups(
 
     return {
       groups: result.data?.groups || [],
-      total: result.data?.total || 0
+      total: result.data?.total || 0,
     }
   } catch (error) {
     console.error('Error fetching groups:', error)
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
     const queryParams: GroupQueryParams = {
       page: parseInt(searchParams.get('page') || '1', 10),
       perPage: parseInt(searchParams.get('perPage') || '10', 10),
-      keyword: searchParams.get('keyword') || undefined
+      keyword: searchParams.get('keyword') || undefined,
     }
 
     const validationError = validateParams(queryParams)
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
         {
           code: 400,
           message: validationError,
-          error: validationError
+          error: validationError,
         },
         { status: 400 }
       )
@@ -108,8 +109,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
       code: 200,
       data: {
         groups,
-        total
-      }
+        total,
+      },
     } satisfies GroupSearchResponse)
   } catch (error) {
     console.error('Groups search error:', error)
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
       {
         code: 500,
         message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     )

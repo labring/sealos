@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TokenInfo } from '@/types/user/token'
 
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { TokenInfo } from '@/types/user/token'
 import { getNamespaceFromKubeConfigString, verifyK8sConfigString } from '@/utils/backend/check-kc'
 
 export const dynamic = 'force-dynamic'
@@ -34,12 +34,12 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
       cache: 'no-store',
       body: JSON.stringify({
-        name
-      })
+        name,
+      }),
     })
 
     if (!response.ok) {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
         {
           code: 400,
           message: validationError,
-          error: validationError
+          error: validationError,
         } satisfies ApiResp<TokenInfo>,
         { status: 400 }
       )
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
         {
           code: 401,
           message: 'Invalid K8s config',
-          error: 'Invalid K8s config'
+          error: 'Invalid K8s config',
         },
         { status: 401 }
       )
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
     return NextResponse.json({
       code: 200,
       data: newToken,
-      message: 'Token created successfully'
+      message: 'Token created successfully',
     } satisfies ApiResp<TokenInfo>)
   } catch (error) {
     console.error('Token creation error:', error)
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
       {
         code: 500,
         message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       } satisfies ApiResp<TokenInfo>,
       { status: 500 }
     )
