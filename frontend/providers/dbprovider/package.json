@@ -29,7 +29,7 @@
     "@tanstack/react-table": "^8.10.7",
     "@tanstack/react-virtual": "^3.10.8",
     "ansi_up": "^5.2.1",
-    "axios": "^1.5.1",
+    "axios": "^1.12.0",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
