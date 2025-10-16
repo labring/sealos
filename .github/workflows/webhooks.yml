@@ -89,7 +89,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          echo ${{ github.event_name }}
           sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Linter
