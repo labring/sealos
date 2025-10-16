@@ -256,7 +256,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 }
 
 func (r *PaymentReconciler) expiredOvertimePayment(payment *accountv1.Payment) error {
-	if payment.CreationTimestamp.Time.Add(10 * time.Minute).After(time.Now()) {
+	if payment.CreationTimestamp.Time.Add(12 * time.Minute).After(time.Now()) {
 		return nil
 	}
 	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
@@ -274,7 +274,7 @@ func (r *PaymentReconciler) expiredOvertimePayment(payment *accountv1.Payment) e
 			return nil
 		}
 		if err = payHandler.ExpireSession(payment.Status.TradeNO); err != nil {
-			r.Logger.Error(err, "cancel payment failed")
+			return fmt.Errorf("expire session failed: %w", err)
 		}
 	}
 	if err = r.Delete(context.Background(), payment); err != nil {
