@@ -55,7 +55,7 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 	if vr.Pwd == "" {
 		return nil, api.ErrEmptyKubeconfig
 	}
-
+	//fmt.Printf("VR Password: %q\n", vr.Pwd)
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}
