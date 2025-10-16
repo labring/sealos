@@ -126,7 +126,6 @@ export default function WorkspaceToggle() {
               );
             })}
           </VStack>
-
           <Flex
             alignItems={'center'}
             gap={'8px'}
@@ -144,7 +143,6 @@ export default function WorkspaceToggle() {
             </Text>
           </Flex>
           <Divider my={'4px'} borderColor={'#F4F4F5'} />
-
           {/* TeamCenter */}
           <HStack
             fontSize={'14px'}
