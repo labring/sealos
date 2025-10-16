@@ -29,9 +29,10 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"sigs.k8s.io/yaml"
+
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"sigs.k8s.io/yaml"
 )
 
 const (
