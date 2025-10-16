@@ -262,6 +262,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const handleDomainVerified = useCallback(
     ({ index, customDomain }: { index: number; customDomain: string }) => {
       try {
+        if (!appName) return;
         const data = formHook.getValues();
         if (!data?.appName) return;
         if (data.networks?.[index]) {
