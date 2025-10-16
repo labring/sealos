@@ -37,9 +37,9 @@ func main() {
 	// 创建 informer
 	factory := informers.NewSharedInformerFactory(clientset, 0)
 	podInformer := factory.Core().V1().Pods().Informer()
-	podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    onPodAddOrUpdate,
-		UpdateFunc: func(_, new any) { onPodAddOrUpdate(new) },
+		UpdateFunc: func(_, obj any) { onPodAddOrUpdate(obj) },
 		DeleteFunc: onPodDelete,
 	})
 
@@ -49,6 +49,7 @@ func main() {
 	go podInformer.Run(ctx.Done())
 
 	if !cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced) {
+		//nolint:gocritic
 		log.Fatalf("Timed out waiting for caches to sync")
 	}
 

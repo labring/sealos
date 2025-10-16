@@ -6,6 +6,7 @@ import (
 
 // 定义Prometheus指标
 var (
+	//nolint:promlinter
 	imagePullFailureGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "k8s_pod_image_pull_failure_total",
@@ -14,6 +15,7 @@ var (
 		[]string{"exported_namespace", "exported_pod", "node", "registry", "image", "reason"},
 	)
 	// 改为 Gauge 类型,可以进行 Inc 和 Dec 操作
+	//nolint:promlinter
 	imagePullSlowAlertGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "k8s_pod_image_pull_slow_total",
