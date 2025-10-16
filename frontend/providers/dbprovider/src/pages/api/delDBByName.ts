@@ -8,6 +8,8 @@ import { delBackupByName } from './backup/delBackup';
 import { getMigrateList } from './migrate/list';
 import { delMigrateByName } from './migrate/delete';
 import { DeleteJobByName, GetJobByName } from './migrate/delJobByName';
+import { getCluster } from './getDBByName';
+import { adaptDBDetail } from '@/utils/adapt';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -54,10 +56,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     // del role
     await Promise.all([
-      k8sAuth.deleteNamespacedRole(name, namespace),
-      k8sAuth.deleteNamespacedRoleBinding(name, namespace),
-      k8sCore.deleteNamespacedServiceAccount(name, namespace)
-    ]).catch((err) => console.log(err, 'delete role err'));
+      k8sAuth.deleteNamespacedRole(name, namespace).catch((err) => {
+        if (err?.response?.statusCode !== 404) {
+          console.log('Error deleting role:', name, err);
+        }
+      }),
+      k8sAuth.deleteNamespacedRoleBinding(name, namespace).catch((err) => {
+        if (err?.response?.statusCode !== 404) {
+          console.log('Error deleting role binding:', name, err);
+        }
+      }),
+      k8sCore.deleteNamespacedServiceAccount(name, namespace).catch((err) => {
+        if (err?.response?.statusCode !== 404) {
+          console.log('Error deleting service account:', name, err);
+        }
+      })
+    ]);
+
+    const body = await getCluster(req, name);
+    const dbDetail = adaptDBDetail(body);
+    const configName = `${name}-${
+      dbDetail.dbType === 'apecloud-mysql' ? 'mysql' : dbDetail.dbType
+    }`;
+
+    await k8sCustomObjects
+      .deleteNamespacedCustomObject(
+        'apps.kubeblocks.io',
+        'v1alpha1',
+        namespace,
+        'configurations',
+        configName
+      )
+      .catch((err) => {
+        // Ignore 404 errors for configurations that don't exist
+        if (err?.response?.statusCode !== 404) {
+          console.log('Error deleting configuration:', configName, err);
+        }
+      });
 
     // delete cluster
     const result = await k8sCustomObjects.deleteNamespacedCustomObject(

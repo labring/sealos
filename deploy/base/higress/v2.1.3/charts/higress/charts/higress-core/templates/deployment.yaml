@@ -1,0 +1,47 @@
+{{- if eq .Values.gateway.kind "Deployment" -}}
+{{- if eq .Values.gateway.unprivilegedPortSupported nil -}}
+  {{- $unprivilegedPortSupported := true }}
+  {{- range $index, $node := (lookup "v1" "Node" "default" "").items }}
+    {{- $kernelVersion := $node.status.nodeInfo.kernelVersion }}
+    {{- if $kernelVersion }}
+      {{- $kernelVersion = regexFind "^(\\d+\\.\\d+\\.\\d+)" $kernelVersion }}
+      {{- if and $kernelVersion (semverCompare "<4.11.0" $kernelVersion) }}
+      {{- $unprivilegedPortSupported = false }}
+      {{- end }}
+    {{- end }}
+  {{- end -}}
+  {{- $_ := set .Values.gateway "unprivilegedPortSupported" $unprivilegedPortSupported -}}
+{{- end -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gateway.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4}}
+  annotations:
+    {{- .Values.gateway.annotations | toYaml | nindent 4 }}
+spec:
+  {{- if not .Values.gateway.autoscaling.enabled }}
+  {{- if not (or .Values.global.local .Values.global.kind) }}
+  replicas: {{ .Values.gateway.replicas }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gateway.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: {{ .Values.gateway.rollingMaxSurge }}
+      {{- if or .Values.global.local .Values.global.kind }}
+      maxUnavailable: 100%
+      {{- else }}
+      maxUnavailable: {{ .Values.gateway.rollingMaxUnavailable }}
+      {{- end }}
+
+  {{- include "gateway.podTemplate" $ | nindent 2 -}}
+
+{{- end }}

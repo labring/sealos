@@ -1,0 +1,91 @@
+{{- if .Values.prometheus.podMonitor.enabled }}
+apiVersion: {{ .Values.prometheus.podMonitor.apiVersion | default "monitoring.coreos.com/v1" }}
+kind: PodMonitor
+metadata:
+  name: {{ include "prometheus-node-exporter.fullname" . }}
+  namespace: {{ include "prometheus-node-exporter.podmonitor-namespace" . }}
+  labels:
+    {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
+    {{- with .Values.prometheus.podMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  jobLabel: {{ default "app.kubernetes.io/name" .Values.prometheus.podMonitor.jobLabel }}
+  {{- include "podmonitor.scrapeLimits" .Values.prometheus.podMonitor | nindent 2 }}
+  selector:
+    matchLabels:
+    {{- with .Values.prometheus.podMonitor.selectorOverride }}
+      {{- toYaml . | nindent 6 }}
+    {{- else }}
+      {{- include "prometheus-node-exporter.selectorLabels" . | nindent 6 }}
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "prometheus-node-exporter.namespace" . }}
+  {{- with .Values.prometheus.podMonitor.attachMetadata }}
+  attachMetadata:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.prometheus.podMonitor.podTargetLabels }}
+  podTargetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  podMetricsEndpoints:
+    - port: {{ .Values.service.portName }}
+      {{- with .Values.prometheus.podMonitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.path }}
+      path: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.basicAuth }}
+      basicAuth:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.bearerTokenSecret }}
+      bearerTokenSecret:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.tlsConfig }}
+      tlsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.authorization }}
+      authorization:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.oauth2 }}
+      oauth2:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.proxyUrl }}
+      proxyUrl: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.honorTimestamps }}
+      honorTimestamps: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.honorLabels }}
+      honorLabels: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.podMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      enableHttp2: {{ default false .Values.prometheus.podMonitor.enableHttp2 }}
+      filterRunning: {{ default true .Values.prometheus.podMonitor.filterRunning }}
+      followRedirects: {{ default false .Values.prometheus.podMonitor.followRedirects }}
+      {{- with .Values.prometheus.podMonitor.params }}
+      params:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

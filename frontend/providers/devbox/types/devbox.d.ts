@@ -139,6 +139,7 @@ export interface NetworkType {
 export interface DevboxListItemType {
   id: string;
   name: string;
+  remark?: string;
   runtimeType: string;
   runtimeVersion: string;
   status: DevboxStatusMapType;
@@ -153,6 +154,7 @@ export interface DevboxListItemType {
 export interface DevboxListItemTypeV2 {
   id: string;
   name: string;
+  remark?: string;
   // templateRepository: object
   template: {
     templateRepository: {

@@ -16,12 +16,17 @@ import {
   TableHead,
   TableRow,
   TableCell
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Loading } from '@/components/ui/loading';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+} from '@sealos/shadcn-ui/table';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
+import { Loading } from '@sealos/shadcn-ui/loading';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -86,7 +91,8 @@ export default function DeployDevboxDrawer({
         formData: tempFormDataStr
       }
     });
-  }, [deployData]);
+    onSuccess();
+  }, [deployData, onSuccess]);
 
   const handleUpdate = useCallback(
     (item: AppListItemType) => {

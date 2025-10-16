@@ -2,6 +2,7 @@ import { useGuideStore } from '@/store/guide';
 import { Flex, Text, Box, Center, Image } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
+import { track } from '@sealos/gtm';
 import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -14,16 +15,26 @@ export function startDriver(config: Config) {
     currentDriver = null;
   }
 
+  if (!useGuideStore.getState().startTimeMs) {
+    useGuideStore.setState({
+      startTimeMs: Date.now()
+    });
+  }
+
   const driverObj = driver(config);
-
   currentDriver = driverObj;
-
   driverObj.drive();
 
   return driverObj;
 }
 
 export const applistDriverObj = (t: TFunction, nextStep?: () => void): Config => ({
+  onPopoverRender() {
+    useGuideStore.setState({
+      startTimeMs: Date.now()
+    });
+  },
+
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -50,6 +61,14 @@ export const applistDriverObj = (t: TFunction, nextStep?: () => void): Config =>
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'database',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 2
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -156,6 +175,13 @@ export const detailDriverObj = (t: TFunction): Config => ({
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'database',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 4
+                  });
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -183,6 +209,13 @@ export const detailDriverObj = (t: TFunction): Config => ({
                 h={'32px'}
                 p={'8px'}
                 onClick={() => {
+                  track('guide_complete', {
+                    module: 'guide',
+                    guide_name: 'database',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >

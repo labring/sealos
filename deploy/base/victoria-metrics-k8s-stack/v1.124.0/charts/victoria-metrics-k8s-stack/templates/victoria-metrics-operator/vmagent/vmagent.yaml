@@ -1,0 +1,20 @@
+{{- $app := .Values.vmagent }}
+{{- if $app.enabled }}
+{{- $ctx := dict "helm" . "appKey" (list "vmagent" "spec") }}
+{{- $fullname := include "vm.cr.fullname" $ctx }}
+{{- $ns := include "vm.namespace" $ctx }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  {{- with $app.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end  }}
+  name: {{ $fullname }}
+  namespace: {{ $ns }}
+  {{- $_ := set $ctx "style" "managed" }}
+  {{- $_ := set $ctx "extraLabels" ($app.labels | default dict) }}
+  labels: {{ include "vm.labels" $ctx | nindent 4 }}
+  {{- $_ := unset $ctx "extraLabels" }}
+spec: {{ include "vm.agent.spec" $ctx | nindent 2 }}
+{{- end }}

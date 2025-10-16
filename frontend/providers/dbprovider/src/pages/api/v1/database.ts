@@ -1,12 +1,7 @@
-import { BackupSupportedDBTypeList } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
-import { KbPgClusterType } from '@/types/cluster';
-import { convertBackupFormToSpec } from '@/utils/adapt';
-import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { updateBackupPolicyApi } from '../backup/updatePolicy';
 import { createDatabaseSchemas } from '@/types/apis';
 import { ResponseCode, ResponseMessages } from '@/types/response';
 import { createDatabase } from '@/services/backend/apis/create-database';
@@ -20,7 +15,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const k8s = await getK8s({ kubeconfig }).catch(() => null);
+  const k8s = await getK8s({ kubeconfig }).catch((error) => {
+    return null;
+  });
+
   if (!k8s) {
     return jsonRes(res, {
       code: ResponseCode.UNAUTHORIZED,
@@ -39,16 +37,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      await createDatabase(k8s, {
+      // 创建数据库
+      const result = await createDatabase(k8s, {
         body: bodyParseResult.data
       });
 
-      jsonRes(res, {
-        data: 'success create db'
+      // 增强返回数据，确保包含必要的连接信息
+      const responseData = {
+        ...result,
+        message: 'Database created successfully',
+        // 确保返回的数据包含状态信息
+        status: result.status || 'Creating',
+        // 添加创建时间戳
+        createdAt: new Date().toISOString()
+      };
+
+      return jsonRes(res, {
+        code: 200,
+        message: 'success create db',
+        data: responseData
       });
     } catch (err: any) {
-      console.log('error create db', err);
-      jsonRes(res, handleK8sError(err));
+      let errorResponse;
+
+      if (err.response || err.body) {
+        errorResponse = handleK8sError(err);
+      } else {
+        errorResponse = {
+          code: 500,
+          message: err.message || 'Internal server error',
+          error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        };
+      }
+
+      return jsonRes(res, errorResponse);
+    }
+  }
+
+  if (req.method === 'GET') {
+    try {
+      const { dbName } = req.query;
+
+      if (dbName) {
+        const { body } = await k8s.k8sCustomObjects.getNamespacedCustomObject(
+          'apps.kubeblocks.io',
+          'v1alpha1',
+          k8s.namespace,
+          'clusters',
+          dbName as string
+        );
+
+        return jsonRes(res, {
+          code: 200,
+          data: body
+        });
+      } else {
+        const { body } = await k8s.k8sCustomObjects.listNamespacedCustomObject(
+          'apps.kubeblocks.io',
+          'v1alpha1',
+          k8s.namespace,
+          'clusters'
+        );
+
+        return jsonRes(res, {
+          code: 200,
+          data: body
+        });
+      }
+    } catch (err: any) {
+      const errorResponse = handleK8sError(err);
+      return jsonRes(res, errorResponse);
     }
   }
 

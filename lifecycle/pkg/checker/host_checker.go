@@ -83,9 +83,9 @@ func checkTimeSync(s exec.Interface, ipList []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to reverse timestamp %s, %v", timestamp, err)
 		}
-		timeDiff := time.Since(time.Unix(int64(ts), 0)).Minutes()
-		if timeDiff < -1 || timeDiff > 1 {
-			return fmt.Errorf("the time of %s node is not synchronized", ip)
+		timeDiff := time.Since(time.Unix(int64(ts), 0)).Seconds()
+		if timeDiff <= -5 || timeDiff >= 5 {
+			return fmt.Errorf("the time of %s node is not synchronized, the time difference is %.2f seconds", ip, timeDiff)
 		}
 	}
 	return nil

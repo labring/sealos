@@ -1,7 +1,8 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { GetAppByAppName } from '../getAppByAppName';
+import { getAppByName } from '@/services/backend/appService';
+import { createK8sContext } from '@/services/backend';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -10,16 +11,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('appName is empty');
     }
 
-    const response = await GetAppByAppName({ appName, req });
+    const k8s = await createK8sContext(req);
+    const response = await getAppByName(appName, k8s);
 
     // Check for errors other than 404
     const responseData = response
-      .map((item) => {
+      .map((item: any) => {
         if (item.status === 'fulfilled') return item.value.body;
         if (+item.reason?.body?.code === 404) return '';
         throw new Error('Get APP Deployment Error');
       })
-      .filter((item) => item)
+      .filter((item: any) => item)
       .flat();
 
     jsonRes(res, {

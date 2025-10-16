@@ -34,23 +34,19 @@ spec:
       labels:
         app: devbox-frontend
     spec:
-      initContainers:
-        - name: devbox-frontend-init
-          image: ghcr.io/labring/sealos-devbox-frontend:latest
-          imagePullPolicy: Always
-          env:
-            - name: REGION_UID
-              value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
-            - name: DATABASE_URL
-              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
-          command: ['/bin/bash', '-c', '/app/providers/devbox/init-database.sh']
       containers:
         - name: devbox-frontend
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "{{ default "1" .tlsRejectUnauthorized }}"
             - name: DOCUMENT_URL_ZH
               value: https://sealos.run/docs/overview/intro
             - name: DOCUMENT_URL_EN
               value: https://sealos.io/docs/overview/intro
+            - name: PRIVACY_URL_ZH
+              value: https://sealos.run/docs/msa/privacy-policy
+            - name: PRIVACY_URL_EN
+              value: https://sealos.io/docs/msa/privacy-policy
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: INGRESS_SECRET

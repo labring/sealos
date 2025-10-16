@@ -1,8 +1,6 @@
 name: Build Services image
 
 on:
-  create:
-    tags:
   workflow_call:
     inputs:
       push_image:
@@ -63,6 +61,7 @@ jobs:
         run: bash scripts/resolve-modules.sh ./service
 
   golangci-lint:
+    if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
     needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
@@ -102,6 +101,7 @@ jobs:
             exceptionmonitor,
             devbox,
             vlogs,
+            hubble,
           ]
     steps:
       - name: Checkout
@@ -125,6 +125,12 @@ jobs:
           GOARCH=amd64 make build
           mv bin/manager bin/service-${MODULE}-amd64
           chmod +x bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64 | grep -q 'x86-64'
+          if [ $? -ne 0 ]; then
+              echo "amd64 platform build failed"
+              exit 1
+          fi
 
       - name: Build ${{ matrix.module }} arm64
         working-directory: service/${{ matrix.module }}
@@ -134,6 +140,12 @@ jobs:
           GOARCH=arm64 make build
           mv bin/manager bin/service-${MODULE}-arm64
           chmod +x bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64 | grep -q 'aarch64'
+          if [ $? -ne 0 ]; then
+              echo "arm64 platform build failed"
+              exit 1
+          fi
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
@@ -213,15 +225,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-services
   build-cluster-image:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
     needs:
       - image-build
-      - save-sealos
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -239,6 +246,7 @@ jobs:
             exceptionmonitor,
             devbox,
             vlogs,
+            hubble,
           ]
     steps:
       - name: Checkout
@@ -276,16 +284,9 @@ jobs:
             echo "aliyun_cluster_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-$MODULE-service" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-services
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
 
       - name: Sealos login to ghcr.io
         # if push to master, then login to ghcr.io
@@ -312,7 +313,14 @@ jobs:
         run: |
           OLD_DOCKER_IMAGE_NAME="${OLD_DOCKER_REPO}:latest"
           NEW_DOCKER_IMAGE_NAME="${NEW_DOCKER_REPO}:${TAG_NAME}"
-          sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+          if [[ -d manifests ]]; then
+             echo "Found manifests"
+             sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+          fi
+          if [[ -f charts/${{ matrix.module }}/values.yaml ]]; then
+             echo "Found charts charts/${{ matrix.module }}/values.yaml"
+             sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" charts/${{ matrix.module }}/values.yaml
+          fi
 
       - name: Build ${{ matrix.module }}-service cluster image
         working-directory: service/${{ matrix.module }}/deploy
@@ -370,32 +378,3 @@ jobs:
             bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE_NAME"
             bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE_NAME_LATEST"
           fi
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${{ steps.prepare.outputs.tag_name }}"
-      - name: Renew issue and Sync Images for latest
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:latest"

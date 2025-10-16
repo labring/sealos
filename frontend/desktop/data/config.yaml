@@ -28,6 +28,7 @@ desktop:
     title: "Sealos Cloud"
     logo: "/logo.png"
     backgroundImage: "/images/bg-blue.svg"
+    discordInviteLink: "https://discord.gg/"
     meta:
       title: "Sealos Cloud"
       description: "Sealos Cloud"

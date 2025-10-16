@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/backend/auth'
+
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { ModelConfig } from '@/types/models/model'
+import { kcOrAppTokenAuth, parseJwtToken } from '@/utils/backend/auth'
 
 type ApiProxyBackendEnabledModelsResponse = ApiProxyBackendResp<ModelConfig[]>
 export type GetEnabledModelsResponse = ApiResp<ModelConfig[]>
@@ -19,9 +20,9 @@ async function fetchEnabledModels(namespace: string): Promise<ModelConfig[]> {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${global.AppConfig?.auth.aiProxyBackendKey}`
+        Authorization: `${global.AppConfig?.auth.aiProxyBackendKey}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -42,11 +43,11 @@ async function fetchEnabledModels(namespace: string): Promise<ModelConfig[]> {
 
 export async function GET(request: NextRequest): Promise<NextResponse<GetEnabledModelsResponse>> {
   try {
-    const group = await parseJwtToken(request.headers)
+    const group = await kcOrAppTokenAuth(request.headers)
 
     return NextResponse.json({
       code: 200,
-      data: await fetchEnabledModels(group)
+      data: await fetchEnabledModels(group),
     } satisfies GetEnabledModelsResponse)
   } catch (error) {
     console.error('enabled models api: get enabled models error:', error)
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetEnabled
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       },
       { status: 500 }
     )

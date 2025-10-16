@@ -6,8 +6,8 @@ import { useFormContext } from 'react-hook-form';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { MemorySlideMarkList } from '@/constants/devbox';
 
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Slider } from '@sealos/shadcn-ui/slider';
 
 export default function Memory() {
   const t = useTranslations();

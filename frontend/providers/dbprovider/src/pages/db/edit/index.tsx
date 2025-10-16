@@ -12,7 +12,7 @@ import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
@@ -25,14 +25,19 @@ import { FieldErrors, useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import yaml from 'js-yaml';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
-
+import { getDBSecret } from '@/api/db';
+import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
+import type { DBType, BackupItemType } from '@/types/db';
+import { getBackups, deleteBackup } from '@/api/backup';
+import StopBackupModal from '../detail/components/StopBackupModal';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
   ...defaultDBEditValue,
-  dbVersion: DBVersionMap.postgresql[0]?.id
+  dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0'
 };
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
@@ -48,6 +53,14 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { loadDBDetail, dbDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
   const { checkQuotaAllow } = useUserStore();
+
+  // Stop backup modal state
+  const {
+    isOpen: isStopBackupOpen,
+    onOpen: onStopBackupOpen,
+    onClose: onStopBackupClose
+  } = useDisclosure();
+  const [pendingFormData, setPendingFormData] = useState<DBEditType | null>(null);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -70,6 +83,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     defaultValues: defaultEdit
   });
 
+  useEffect(() => {
+    if (!dbName) {
+      const hour = Math.floor(Math.random() * 10) + 14;
+      formHook.setValue('autoBackup.hour', hour.toString().padStart(2, '0'));
+    }
+  }, []);
+
   const generateYamlList = (data: DBEditType) => {
     return [
       ...(isEdit
@@ -86,6 +106,31 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     ];
   };
+
+  function getCpuCores(yamlString: string): number {
+    try {
+      const doc = yaml.load(yamlString) as any;
+      const cpuStr: string | undefined = doc?.spec?.componentSpecs?.[0]?.resources?.limits?.cpu;
+      if (!cpuStr) return 0;
+
+      if (cpuStr.endsWith('m')) {
+        const milli = parseInt(cpuStr.slice(0, -1), 10);
+        return milli / 1000;
+      }
+
+      return parseFloat(cpuStr);
+    } catch (err) {
+      console.error(err);
+      return 0;
+    }
+  }
+  const cpu = useMemo(() => {
+    const clusterYaml = yamlList.find((item) => item.filename === 'cluster.yaml');
+    if (clusterYaml) {
+      return getCpuCores(clusterYaml.value);
+    }
+    return 0;
+  }, [yamlList]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
@@ -107,6 +152,16 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   const { createCompleted } = useGuideStore();
 
+  const supportConnect = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(
+    formHook.getValues('dbType')
+  );
+
+  const { data: secret } = useQuery(
+    ['secret', dbName],
+    () => (dbName ? getDBSecret({ dbName, dbType: formHook.getValues('dbType') }) : null),
+    { enabled: !!dbName && supportConnect }
+  );
+
   const submitSuccess = async (formData: DBEditType) => {
     if (!createCompleted) {
       return router.push('/db/detail?name=hello-db&guide=true');
@@ -120,18 +175,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }));
     } catch (err) {}
     try {
-      // quote check
-      // const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
-      // if (quoteCheckRes) {
-      //   setIsLoading(false);
-      //   return toast({
-      //     status: 'warning',
-      //     title: t(quoteCheckRes),
-      //     duration: 5000,
-      //     isClosable: true
-      //   });
-      // }
-
       await createDB({ dbForm: formData, isEdit });
 
       track({
@@ -193,6 +236,32 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     }
     setIsLoading(false);
+  };
+
+  const handleBackupCheck = async (formData: DBEditType) => {
+    try {
+      if (isEdit) {
+        const result = await getBackups();
+        const allBackups = result || [];
+        const backups = allBackups.filter(
+          (backup: BackupItemType) => backup.dbName === formData.dbName
+        );
+        const inProgressBackups = backups.filter(
+          (backup: BackupItemType) => backup.status.value === 'Running'
+        );
+
+        if (inProgressBackups.length > 0) {
+          setPendingFormData(formData);
+          onStopBackupOpen();
+          return;
+        }
+      }
+
+      await submitSuccess(formData);
+    } catch (error) {
+      console.error(error);
+      toast({ title: t('backups.stop_backup_error'), status: 'error' });
+    }
   };
 
   const submitError = (err: FieldErrors<DBEditType>) => {
@@ -267,7 +336,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit(
-              (data) => openConfirm(() => submitSuccess(data))(),
+              (data) => handleBackupCheck(data),
               (err) => submitError(err)
             )()
           }
@@ -275,7 +344,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} allocatedStorage={allocatedStorage} pxVal={pxVal} />
+            <Form
+              formHook={formHook}
+              allocatedStorage={allocatedStorage}
+              pxVal={pxVal}
+              cpuCores={cpu}
+            />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}
@@ -291,6 +365,45 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           onClose={() => setErrorMessage('')}
         />
       )}
+      <StopBackupModal
+        isOpen={isStopBackupOpen}
+        onClose={onStopBackupClose}
+        onConfirm={async () => {
+          if (pendingFormData) {
+            onStopBackupClose();
+            setIsLoading(true);
+            try {
+              const result = await getBackups();
+              const allBackups = result || [];
+              const backups = allBackups.filter(
+                (backup: BackupItemType) => backup.dbName === pendingFormData.dbName
+              );
+              const inProgressBackups = backups.filter(
+                (backup: BackupItemType) => backup.status.value === 'Running'
+              );
+
+              if (inProgressBackups.length > 0) {
+                await Promise.all(
+                  inProgressBackups.map(async (backup: BackupItemType) => {
+                    await deleteBackup(backup.name);
+                  })
+                );
+                toast({ title: t('backups.stop_backup_success'), status: 'success' });
+              }
+
+              // Proceed with submission after stopping backups
+              await submitSuccess(pendingFormData);
+            } catch (error) {
+              console.error(error);
+              toast({ title: t('backups.stop_backup_error'), status: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        }}
+        onCancel={onStopBackupClose}
+        dbName={pendingFormData?.dbName || ''}
+      />
     </>
   );
 };

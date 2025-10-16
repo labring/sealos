@@ -4,7 +4,6 @@ import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useCachedStore } from '@/store/cached';
-import { useGlobalStore } from '@/store/global';
 import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
@@ -21,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
-import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
+import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
@@ -58,7 +57,6 @@ export default function EditApp({
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
-  const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
@@ -96,40 +94,12 @@ export default function EditApp({
     content: 'Do you want to jump to the app details page'
   });
 
-  const pxVal = useMemo(() => {
-    const val = Math.floor((screenWidth - 1050) / 2);
-    if (val < 20) {
-      return 20;
-    }
-    return val;
-  }, [screenWidth]);
-
-  const generateYamlData = useCallback(
-    (templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
-      if (!templateSource) return [];
-      const app_name = templateSource?.source?.defaults?.app_name?.value;
-      const { defaults, defaultInputs } = getTemplateValues(templateSource);
-      const data = {
-        ...platformEnvs,
-        ...templateSource?.source,
-        inputs: {
-          ...defaultInputs,
-          ...inputs
-        },
-        defaults: defaults
-      };
-      const generateStr = parseTemplateString(templateSource.appYaml, data);
-      return generateYamlList(generateStr, app_name);
-    },
-    [platformEnvs]
-  );
-
   const debouncedFnRef = useRef<any>(null);
   useEffect(() => {
     debouncedFnRef.current = debounce((inputValues: Record<string, string>) => {
       try {
         if (!templateSource) return;
-        const list = generateYamlData(templateSource, inputValues);
+        const list = generateYamlData(templateSource, inputValues, platformEnvs);
         setYamlList(list);
       } catch (error) {
         console.log(error);
@@ -138,7 +108,7 @@ export default function EditApp({
     return () => {
       debouncedFnRef.current = null;
     };
-  }, [templateSource, generateYamlData]);
+  }, [templateSource, platformEnvs]);
 
   const formOnchangeDebounce = useCallback((inputs: Record<string, string>) => {
     if (debouncedFnRef.current) {
@@ -411,13 +381,7 @@ export default function EditApp({
           />
           <Flex w="100%" mt="32px" flexDirection="column">
             {/* <QuotaBox /> */}
-            <Form
-              formHook={formHook}
-              pxVal={pxVal}
-              formSource={templateSource!}
-              platformEnvs={platformEnvs!}
-            />
-            {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
+            <Form formHook={formHook} formSource={templateSource!} platformEnvs={platformEnvs!} />
             <ReadMe
               key={templateSource?.readUrl || 'readme_url'}
               readUrl={templateSource?.readUrl || ''}
@@ -455,11 +419,18 @@ export async function getServerSideProps(content: any) {
   );
 
   try {
-    const { data: templateSource } = await (
-      await fetch(
-        `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
-      )
-    ).json();
+    const response = await fetch(
+      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
+    );
+    if (!response.ok) {
+      throw new Error(`API request failed with status`);
+    }
+    const result = await response.json();
+    const templateSource = result?.data;
+
+    if (!templateSource || typeof templateSource !== 'object') {
+      throw new Error('Invalid template source data');
+    }
 
     const templateDetail = templateSource?.templateYaml;
     const metaData = {

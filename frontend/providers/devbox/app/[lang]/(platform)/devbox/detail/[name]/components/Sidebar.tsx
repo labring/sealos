@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { FileClock, LayoutDashboard, LineChart } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 
 export type TabValue = 'overview' | 'monitor' | 'logs';
 

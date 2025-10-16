@@ -1,4 +1,5 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
+import { DB_REMARK_KEY } from '@/constants/db';
 import {
   DBBackupMethodNameMap,
   DBNameLabel,
@@ -36,8 +37,15 @@ import {
 } from '@/utils/tools';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { has } from 'lodash';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
+import z from 'zod';
+import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
 
 export const getDBSource = (
   db: KbPgClusterType
@@ -99,7 +107,9 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
 }
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
-  const dbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  const rawDbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  // Convert mysql to apecloud-mysql for frontend display
+  const dbType = (rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType;
   // compute store amount
   return {
     id: db.metadata?.uid || ``,
@@ -109,25 +119,34 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: dayjs(db.metadata?.creationTimestamp)
+      .tz('Asia/Shanghai')
+      .format('YYYY/MM/DD HH:mm'),
     ...calcTotalResource(db.spec.componentSpecs),
     replicas: db.spec?.componentSpecs.find((comp) => comp.name === dbType)?.replicas || 1,
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
-    source: getDBSource(db)
+    source: getDBSource(db),
+    remark: db.metadata?.annotations?.[DB_REMARK_KEY] || ''
   };
 };
 
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
+  const rawDbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  // Convert mysql to apecloud-mysql for frontend display
+  const dbType = (rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType;
+
   return {
     id: db.metadata?.uid || ``,
-    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: dayjs(db.metadata?.creationTimestamp)
+      .tz('Asia/Shanghai')
+      .format('YYYY/MM/DD HH:mm'),
     status:
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
+    dbType: dbType,
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
     replicas: db.spec?.componentSpecs?.[0]?.replicas || 1,
@@ -197,7 +216,8 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     storage: 1,
     labels: 1,
     autoBackup: 1,
-    terminationPolicy: 1
+    terminationPolicy: 1,
+    parameterConfig: 1
   };
   const form: any = {};
 

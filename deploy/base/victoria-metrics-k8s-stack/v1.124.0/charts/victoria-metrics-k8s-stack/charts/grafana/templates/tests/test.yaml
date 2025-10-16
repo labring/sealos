@@ -1,0 +1,57 @@
+{{- if .Values.testFramework.enabled }}
+{{- $root := . }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "grafana.fullname" . }}-test
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": {{ .Values.testFramework.hookType | default "test" }}
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+  namespace: {{ include "grafana.namespace" . }}
+spec:
+  serviceAccountName: {{ include "grafana.serviceAccountNameTest" . }}
+  {{- with .Values.testFramework.securityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if or .Values.image.pullSecrets .Values.global.imagePullSecrets }}
+  imagePullSecrets:
+    {{- include "grafana.imagePullSecrets" (dict "root" $root "imagePullSecrets" .Values.image.pullSecrets) | nindent 4 }}
+  {{- end }}
+  {{- with .Values.nodeSelector }}
+  nodeSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.affinity }}
+  affinity:
+    {{- tpl (toYaml .) $root | nindent 4 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: {{ .Release.Name }}-test
+      image: "{{ .Values.global.imageRegistry | default .Values.testFramework.image.registry }}/{{ .Values.testFramework.image.repository }}:{{ .Values.testFramework.image.tag }}"
+      imagePullPolicy: "{{ .Values.testFramework.imagePullPolicy}}"
+      command: ["/opt/bats/bin/bats", "-t", "/tests/run.sh"]
+      {{- with .Values.testFramework.containerSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumeMounts:
+        - mountPath: /tests
+          name: tests
+          readOnly: true
+      {{- with .Values.testFramework.resources }}
+      resources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumes:
+    - name: tests
+      configMap:
+        name: {{ include "grafana.fullname" . }}-test
+  restartPolicy: Never
+{{- end }}

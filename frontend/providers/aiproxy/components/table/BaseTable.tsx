@@ -7,13 +7,13 @@ import {
   Td,
   Th,
   Thead,
-  Tr
-} from '@chakra-ui/react'
-import { Table as ReactTable, flexRender } from '@tanstack/react-table'
+  Tr,
+} from '@chakra-ui/react';
+import { flexRender, Table as ReactTable } from '@tanstack/react-table';
 
 export function BaseTable<T extends unknown>({
   table,
-  isLoading
+  isLoading,
 }: { table: ReactTable<T>; isLoading: boolean } & TableContainerProps) {
   return (
     <TableContainer w="full" h="full" overflowY="auto" flex="1 0 0" minHeight="0">
@@ -34,13 +34,14 @@ export function BaseTable<T extends unknown>({
                       borderTopLeftRadius={i === 0 ? '6px' : '0'}
                       borderBottomLeftRadius={i === 0 ? '6px' : '0'}
                       borderTopRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}
-                      borderBottomRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}>
+                      borderBottomRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}
+                    >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Th>
-                  )
+                  );
                 })}
               </Tr>
-            )
+            );
           })}
         </Thead>
         <Tbody>
@@ -51,7 +52,8 @@ export function BaseTable<T extends unknown>({
                 colSpan={table.getAllColumns().length}
                 textAlign="center"
                 py={4}
-                border="none">
+                border="none"
+              >
                 <Spinner size="xl" />
               </Td>
             </Tr>
@@ -63,20 +65,21 @@ export function BaseTable<T extends unknown>({
                   alignSelf="stretch"
                   borderBottom="1px solid"
                   borderColor="grayModern.150"
-                  fontSize="12px">
+                  fontSize="12px"
+                >
                   {item.getAllCells().map((cell, i) => {
                     return (
                       <Td py="10px" key={cell.id} px="24px">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Td>
-                    )
+                    );
                   })}
                 </Tr>
-              )
+              );
             })
           )}
         </Tbody>
       </Table>
     </TableContainer>
-  )
+  );
 }

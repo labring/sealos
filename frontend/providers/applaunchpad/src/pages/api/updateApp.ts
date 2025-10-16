@@ -3,7 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
-import type { V1StatefulSet } from '@kubernetes/client-node';
+import type { CustomObjectsApi, V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
@@ -15,6 +15,76 @@ export type Props = {
   stateFulSetYaml?: string;
   appName: string;
 };
+
+async function updateAppCRUrl(
+  k8sCustomObjects: CustomObjectsApi,
+  namespace: string,
+  appName: string,
+  patch: AppPatchPropsType
+) {
+  try {
+    const existingAppCr = (await k8sCustomObjects
+      .getNamespacedCustomObject('app.sealos.io', 'v1', namespace, 'apps', appName)
+      .catch((error) => {
+        if (error.body.code !== 404) {
+          throw new Error('Unexpected error when getting AppCR: ' + error.body.message);
+        }
+        return null;
+      })) as {
+      body: any;
+    };
+
+    if (!existingAppCr) {
+      return;
+    }
+
+    const plainUrlRe = new RegExp(/^https?:\/\/[^\/]+\/?$/);
+    if (!plainUrlRe.test(existingAppCr.body.spec.data.url)) {
+      return;
+    }
+
+    const targetIngressPatch = patch.find(
+      (item) =>
+        item.kind === 'Ingress' &&
+        item.type === 'patch' &&
+        (item.value.spec.rules[0]?.http.paths[0]?.path === '/' ||
+          item.value.spec.rules[0]?.http.paths[0]?.path === '/()(.*)') &&
+        item.value.spec.rules[0]?.http.paths[0]?.pathType === 'Prefix'
+    );
+
+    if (!targetIngressPatch) {
+      return;
+    }
+
+    const host = (targetIngressPatch as any).value.spec.rules[0]?.host;
+    if (!host) {
+      return;
+    }
+
+    const appCrUrlPatch = {
+      op: 'replace',
+      path: '/spec/data/url',
+      value: `https://${host}`
+    };
+
+    await k8sCustomObjects.patchNamespacedCustomObject(
+      'app.sealos.io',
+      'v1',
+      namespace,
+      'apps',
+      appName,
+      [appCrUrlPatch],
+      undefined,
+      undefined,
+      undefined,
+      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
+    );
+
+    infoLog('Successfully updated AppCR URL', { newUrl: `https://${host}` });
+  } catch (error) {
+    errLog('Failed to update AppCR URL', error);
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const { patch, stateFulSetYaml, appName }: Props = req.body;
@@ -308,9 +378,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     );
 
-    jsonRes(res);
+    // Update AppCR URL in background (non-blocking)
+    updateAppCRUrl(k8sCustomObjects, namespace, appName, patch).catch((error) => {
+      errLog('AppCR URL update failed', error);
+    });
+
+    return jsonRes(res);
   } catch (err: any) {
-    jsonRes(res, {
+    return jsonRes(res, {
       code: 500,
       error: err?.body
     });

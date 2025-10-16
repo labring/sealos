@@ -8,7 +8,7 @@ import { useFormContext } from 'react-hook-form';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { nanoid } from '@/utils/tools';
 import { useEnvStore } from '@/stores/env';
@@ -24,9 +24,9 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { FormItem, FormLabel } from '@/components/ui/form';
+} from '@sealos/shadcn-ui/select';
+import { Button } from '@sealos/shadcn-ui/button';
+import { FormItem, FormLabel } from '@sealos/shadcn-ui/form';
 
 interface RuntimeProps {
   isEdit?: boolean;
@@ -134,6 +134,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     } else if (startedTemplate && !templateRepositoryUid) {
       // Only set templateRepositoryUid if it's not already set
       setValue('templateRepositoryUid', startedTemplate.uid);
+      // Also set the templateUid if it exists in startedTemplate
     }
     // do not add dependency
   }, [
@@ -144,7 +145,8 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     templateRepositoryQuery.isSuccess,
     searchParams,
     templateRepositoryQuery.data?.templateRepositoryList,
-    templateRepositoryUid
+    templateRepositoryUid,
+    setStartedTemplate
   ]);
 
   useEffect(() => {
@@ -153,7 +155,20 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
 
     const curTemplate = templateList.find((t) => t.uid === templateUid);
     const isExist = !!curTemplate;
+
     if (!isExist) {
+      if (startedTemplate?.templateUid) {
+        const startedTemplateVersion = templateList.find(
+          (t) => t.uid === startedTemplate.templateUid
+        );
+        if (startedTemplateVersion) {
+          setValue('templateUid', startedTemplate.templateUid);
+          afterUpdateTemplate(startedTemplate.templateUid);
+          resetNetwork();
+          return;
+        }
+      }
+
       const defaultTemplate = templateList[0];
       setValue('templateUid', defaultTemplate.uid);
       afterUpdateTemplate(defaultTemplate.uid);
@@ -166,7 +181,8 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     templateUid,
     afterUpdateTemplate,
     resetNetwork,
-    setValue
+    setValue,
+    startedTemplate?.templateUid
   ]);
 
   if (!startedTemplate && !isEdit) return null;

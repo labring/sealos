@@ -7,7 +7,8 @@ import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
 import { track } from '@sealos/gtm';
 
-export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
+export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
+  POST('/api/applyApp', { yamlList, mode });
 
 export const putApp = (data: {
   patch: AppPatchPropsType;
@@ -88,6 +89,7 @@ export const getAppMonitorData = (payload: {
   step: string;
   start?: number;
   end?: number;
+  pvcName?: string;
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
 
 export const getAppLogs = (payload: LogQueryPayload) => POST<string>('/api/log/queryLogs', payload);

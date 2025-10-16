@@ -1,0 +1,18 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: aiproxy
+  namespace: app-system
+spec:
+  data:
+    desc: Sealos AI Proxy
+    url: https://{{ include "aiproxy.fullname" . }}.{{.Values.cloudDomain}}{{.Values.suffix}}
+  displayType: more
+  i18n:
+    zh:
+      name: AI Proxy
+    zh-Hans:
+      name: AI Proxy
+  icon: https://objectstorageapi.hzh.sealos.run/cyhipdvv-logos/aiproxy.svg
+  name: AI Proxy
+  type: iframe

@@ -9,6 +9,9 @@ kind: ClusterRole
 metadata:
   name: cluster-version-reader
 rules:
+  - apiGroups: [ 'extensions.kubeblocks.io' ]
+    resources: [ 'addons' ]
+    verbs: [ 'get', 'watch', 'list' ]
   - apiGroups: ['apps.kubeblocks.io']
     resources: ['clusterversions']
     verbs: ['get', 'watch', 'list']

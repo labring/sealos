@@ -38,6 +38,8 @@ export enum DBTypeEnum {
   clickhouse = 'clickhouse'
 }
 
+export const DB_REMARK_KEY = 'cloud.sealos.io/remark';
+
 export enum DBStatusEnum {
   Creating = 'Creating',
   Starting = 'Starting',
@@ -290,12 +292,18 @@ export const defaultDBEditValue: DBEditType = {
     start: true,
     type: 'day',
     week: [],
-    hour: '23',
+    hour: '12',
     minute: '00',
-    saveTime: 7,
+    saveTime: 100,
     saveType: 'd'
   },
-  terminationPolicy: 'Delete'
+  terminationPolicy: 'Delete',
+  parameterConfig: {
+    maxConnections: undefined,
+    timeZone: 'UTC',
+    lowerCaseTableNames: '0',
+    isMaxConnectionsCustomized: false
+  }
 };
 
 export const RedisHAConfig = (ha = true) => {

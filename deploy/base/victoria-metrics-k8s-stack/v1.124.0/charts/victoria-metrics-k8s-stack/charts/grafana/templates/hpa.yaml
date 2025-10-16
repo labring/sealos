@@ -1,0 +1,51 @@
+{{- $sts := list "sts" "StatefulSet" "statefulset" -}}
+{{- if .Values.autoscaling.enabled }}
+apiVersion: {{ include "grafana.hpa.apiVersion" . }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "grafana.fullname" . }}
+  namespace: {{ include "grafana.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "grafana.name" . }}
+    helm.sh/chart: {{ include "grafana.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    {{- if (or (.Values.useStatefulSet) (and .Values.persistence.enabled (not .Values.persistence.existingClaim) (has .Values.persistence.type $sts)))}}
+    kind: StatefulSet
+    {{- else }}
+    kind: Deployment
+    {{- end }}
+    name: {{ include "grafana.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.targetMemory }}
+    - type: Resource
+      resource:
+        name: memory
+        {{- if eq (include "grafana.hpa.apiVersion" .) "autoscaling/v2beta1" }}
+        targetAverageUtilization: {{ .Values.autoscaling.targetMemory }}
+        {{- else }}
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemory }}
+        {{- end }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetCPU }}
+    - type: Resource
+      resource:
+        name: cpu
+        {{- if eq (include "grafana.hpa.apiVersion" .) "autoscaling/v2beta1" }}
+        targetAverageUtilization: {{ .Values.autoscaling.targetCPU }}
+        {{- else }}
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPU }}
+        {{- end }}
+    {{- end }}
+  {{- if .Values.autoscaling.behavior }}
+  behavior: {{ toYaml .Values.autoscaling.behavior | nindent 4 }}
+  {{- end }}
+{{- end }}

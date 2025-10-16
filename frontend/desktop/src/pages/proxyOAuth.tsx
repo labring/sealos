@@ -30,6 +30,7 @@ export default function Callback({ appConfig }: { appConfig: AppClientConfigType
     let oauthClientId = router.query.oauthProxyClientID;
     if (!isString(oauthProxyState) || !isString(oauthProvider) || !isString(oauthClientId)) return;
 
+    const additionalParams = router.query.additionalParams;
     (async () => {
       try {
         if (isProxying) return;
@@ -45,12 +46,17 @@ export default function Callback({ appConfig }: { appConfig: AppClientConfigType
         if (oauthProvider === 'GITHUB') {
           await oauthLogin({
             provider: 'GITHUB',
-            url: `https://github.com/login/oauth/authorize?client_id=${oauthClientId}&redirect_uri=${callback_url}&scope=user:email%20read:user&state=${state}`
+            url:
+              `https://github.com/login/oauth/authorize?client_id=${oauthClientId}&redirect_uri=${callback_url}&scope=user:email%20read:user&state=${state}` +
+              (additionalParams ? '&' + additionalParams : '')
           });
         } else if (oauthProvider === 'WECHAT') {
           await oauthLogin({
             provider: 'WECHAT',
-            url: `https://open.weixin.qq.com/connect/qrconnect?appid=${oauthClientId}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=snsapi_login&#wechat_redirect`
+            url:
+              `https://open.weixin.qq.com/connect/qrconnect?appid=${oauthClientId}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=snsapi_login` +
+              (additionalParams ? '&' + additionalParams : '') +
+              '&#wechat_redirect'
           });
         } else if (oauthProvider === 'GOOGLE') {
           const scope = encodeURIComponent(
@@ -58,7 +64,9 @@ export default function Callback({ appConfig }: { appConfig: AppClientConfigType
           );
           oauthLogin({
             provider: 'GOOGLE',
-            url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${oauthClientId}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=${scope}&include_granted_scopes=true`
+            url:
+              `https://accounts.google.com/o/oauth2/v2/auth?client_id=${oauthClientId}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=${scope}&include_granted_scopes=true` +
+              (additionalParams ? '&' + additionalParams : '')
           });
         }
       } catch (err) {

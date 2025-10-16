@@ -39,8 +39,8 @@ var (
 		"milvus":         "milvus",
 		"mongodb":        "mongodb",
 	}
-	namespaceCheck bool
-	namespaceInfo  = api.Info{}
+	//namespaceCheck bool
+	//namespaceInfo = api.Info{}
 )
 
 func DatabaseExceptionMonitor() {
@@ -138,6 +138,7 @@ func ProcessCluster(cluster metav1unstructured.Unstructured, notificationInfo *a
 			}
 		} else if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 			notificationInfo = api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
+			fmt.Println(notificationInfo)
 		}
 	default:
 		//Updating、Creating、Failed、Abnormal
@@ -178,8 +179,8 @@ func handleClusterException(notificationInfo *api.Info) {
 		}
 	} else if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 		notificationInfo = api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
+		fmt.Println(notificationInfo)
 	}
-
 }
 
 func processClusterException(notificationInfo *api.Info) error {

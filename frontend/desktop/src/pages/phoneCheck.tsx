@@ -1,4 +1,4 @@
-import PhoneCheckComponent from '@/components/v2/PhoneCheck';
+import { PhoneCheckForm } from '@/components/v2/PhoneCheckForm';
 import SignLayout from '@/components/v2/SignLayout';
 import { compareFirstLanguages } from '@/utils/tools';
 import { dehydrate, QueryClient } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 export default function PersonalInfoPage() {
   return (
     <SignLayout>
-      <PhoneCheckComponent />
+      <PhoneCheckForm />
     </SignLayout>
   );
 }

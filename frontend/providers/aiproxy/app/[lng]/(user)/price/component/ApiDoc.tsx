@@ -1,46 +1,48 @@
-'use client'
-import React from 'react'
+'use client';
+import React from 'react';
 import {
+  Badge,
+  Box,
+  Button,
+  Code,
   Drawer,
   DrawerBody,
   DrawerContent,
   DrawerOverlay,
-  Box,
-  Text,
-  Code,
   Flex,
-  Button,
-  Badge
-} from '@chakra-ui/react'
-import { ModelConfig } from '@/types/models/model'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { ModelComponent } from './Model'
-import { useBackendStore } from '@/store/backend'
-import CodeBlock from './CodeHight'
-import { useMessage } from '@sealos/ui'
+  Text,
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { ModelConfig } from '@/types/models/model';
+
+import CodeBlock from './CodeHight';
+import { ModelComponent } from './Model';
 
 interface ApiDocContent {
-  title: string
-  endpoint: string
-  method: string
-  requestExample: string
-  responseExample: string
-  responseFormat: string
+  title: string;
+  endpoint: string;
+  method: string;
+  requestExample: string;
+  responseExample: string;
+  responseFormat: string;
   requestAdditionalInfo?: {
-    voices?: string[]
-    formats?: string[]
-  }
+    voices?: string[];
+    formats?: string[];
+  };
   responseAdditionalInfo?: {
-    voices?: string[]
-    formats?: string[]
-  }
+    voices?: string[];
+    formats?: string[];
+  };
 }
 
 interface ApiDocDrawerProps {
-  isOpen: boolean
-  onClose: () => void
-  modelConfig: ModelConfig
+  isOpen: boolean;
+  onClose: () => void;
+  modelConfig: ModelConfig;
 }
 
 const getApiDocContent = (
@@ -90,8 +92,8 @@ const getApiDocContent = (
     "completion_tokens": 52,
     "total_tokens": 70
   }
-}`
-      }
+}`,
+      };
     case 3:
       return {
         title: t('modeType.3'),
@@ -126,8 +128,41 @@ const getApiDocContent = (
     "completion_tokens": 0,
     "total_tokens": 4
   }
-}`
-      }
+}`,
+      };
+    case 5:
+      return {
+        title: t('modeType.5'),
+        endpoint: '/images/generations',
+        method: 'POST',
+        responseFormat: 'json',
+        requestExample: `curl --request POST \\
+--url ${apiEndpoint}/v1/embeddings \\
+--header "Authorization: Bearer $token" \\
+--header 'Content-Type: application/json' \\
+--data '{
+  "model": "${modelConfig.model}",
+  "prompt": "What is Sealos",
+  "size": "1024x1024"
+}'`,
+        responseExample: `{
+  "created": 1729672480,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgo...UhEUMQmCC
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "output_tokens": 1056,
+    "total_tokens": 1066,
+    "input_tokens_details": {
+      "text_tokens": 10,
+      "image_tokens": 1056
+    }
+  }
+}`,
+      };
     case 7:
       return {
         title: t('modeType.7'),
@@ -155,9 +190,9 @@ ${
         responseExample: 'Binary audio data',
         requestAdditionalInfo: {
           voices: modelConfig?.config?.support_voices,
-          formats: modelConfig?.config?.support_formats
-        }
-      }
+          formats: modelConfig?.config?.support_formats,
+        },
+      };
     case 8:
       return {
         title: t('modeType.8'),
@@ -172,8 +207,8 @@ ${
 --form 'file=@"audio.mp3"'`,
         responseExample: `{
   "text": "<string>"
-}`
-      }
+}`,
+      };
     case 10:
       return {
         title: t('modeType.10'),
@@ -222,8 +257,8 @@ ${
       "input_tokens": 28
     }
   }
-}`
-      }
+}`,
+      };
     case 11:
       return {
         title: t('modeType.11'),
@@ -239,8 +274,8 @@ ${
         responseExample: `{
   "pages": 1,
   "markdown": "sf ad fda daf da \\\\( f \\\\) ds f sd fs d afdas fsd asfad f\\n\\n\\n\\n![img](data:image/jpeg;base64,/9...)\\n\\n| sadsa |  |  |\\n| --- | --- | --- |\\n|  | sadasdsa | sad |\\n|  |  | dsadsadsa |\\n|  |  |  |\\n\\n\\n\\na fda"
-}`
-      }
+}`,
+      };
     default:
       return {
         title: t('modeType.0'),
@@ -248,17 +283,17 @@ ${
         method: '',
         responseFormat: 'json',
         requestExample: 'unknown',
-        responseExample: 'unknown'
-      }
+        responseExample: 'unknown',
+      };
   }
-}
+};
 
 const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfig }) => {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend)
-  const { docUrl } = useBackendStore()
-  const apiDoc = getApiDocContent(modelConfig, aiproxyBackend, t)
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend);
+  const { docUrl } = useBackendStore();
+  const apiDoc = getApiDocContent(modelConfig, aiproxyBackend, t);
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -266,8 +301,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
     warningIconFill: 'white',
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
-  })
+    successIconFill: 'white',
+  });
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="full">
@@ -282,7 +317,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
         boxShadow="lg"
         border="1px solid"
         borderColor="grayModern.200"
-        overflow="hidden">
+        overflow="hidden"
+      >
         <Box
           display="flex"
           height="48px"
@@ -291,7 +327,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
           alignItems="center"
           alignSelf="stretch"
           borderBottom="1px solid"
-          borderColor="grayModern.100">
+          borderColor="grayModern.100"
+        >
           <Button
             onClick={onClose}
             variant="unstyled"
@@ -300,13 +337,15 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
             padding="4px"
             justifyContent="center"
             alignItems="center"
-            borderRadius="4px">
+            borderRadius="4px"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
               height="20"
               viewBox="0 0 20 20"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -324,7 +363,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
               <ModelComponent modelConfig={modelConfig} displayType={true} />
               <Button
                 onClick={() => {
-                  window.open(docUrl, '_blank')
+                  window.open(docUrl, '_blank');
                 }}
                 variant="unstyled"
                 position="absolute"
@@ -342,15 +381,17 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                 lineHeight="16px"
                 letterSpacing="0.5px"
                 _hover={{
-                  color: 'brightBlue.600'
-                }}>
+                  color: 'brightBlue.600',
+                }}
+              >
                 <Text>{t('drawer.doc')}</Text>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="14"
                   height="14"
                   viewBox="0 0 14 14"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -370,7 +411,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                 alignItems="center"
                 gap="2px"
                 borderRadius="4px"
-                background="brightBlue.100">
+                background="brightBlue.100"
+              >
                 <Text
                   color="brightBlue.600"
                   fontFamily="PingFang SC"
@@ -378,7 +420,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   fontStyle="normal"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
+                  letterSpacing="0.5px"
+                >
                   {apiDoc.method}
                 </Text>
               </Badge>
@@ -387,7 +430,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                 width="2"
                 height="18"
                 viewBox="0 0 2 18"
-                fill="none">
+                fill="none"
+              >
                 <path d="M1 1L1 17" stroke="#F0F1F6" strokeLinecap="round" />
               </svg>
 
@@ -402,7 +446,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                         width="5"
                         height="12"
                         viewBox="0 0 5 12"
-                        fill="none">
+                        fill="none"
+                      >
                         <path
                           d="M4.42017 1.30151L0.999965 10.6984"
                           stroke="#C4CBD7"
@@ -416,7 +461,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                         fontStyle="normal"
                         fontWeight={500}
                         lineHeight="16px"
-                        letterSpacing="0.5px">
+                        letterSpacing="0.5px"
+                      >
                         {segment}
                       </Text>
                     </React.Fragment>
@@ -435,7 +481,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   fontStyle="normal"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
+                  letterSpacing="0.5px"
+                >
                   {t('drawer.requestExample')}
                 </Text>
 
@@ -446,14 +493,16 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   justifyContent="center"
                   alignSelf="stretch"
                   rounded="md"
-                  overflow="hidden">
+                  overflow="hidden"
+                >
                   <Box
                     display="flex"
                     alignSelf="stretch"
                     padding="9px 12px"
                     justifyContent="space-between"
                     alignItems="center"
-                    background="#232833">
+                    background="#232833"
+                  >
                     <Text
                       color="white"
                       fontFamily="PingFang SC"
@@ -461,7 +510,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       fontStyle="normal"
                       fontWeight={500}
                       lineHeight="16px"
-                      letterSpacing="0.5px">
+                      letterSpacing="0.5px"
+                    >
                       {'bash'}
                     </Text>
 
@@ -474,8 +524,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               title: t('copySuccess'),
                               isClosable: true,
                               duration: 2000,
-                              position: 'top'
-                            })
+                              position: 'top',
+                            });
                           },
                           (err) => {
                             message({
@@ -483,10 +533,10 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               title: t('copyFailed'),
                               description: err?.message || t('copyFailed'),
                               isClosable: true,
-                              position: 'top'
-                            })
+                              position: 'top',
+                            });
                           }
-                        )
+                        );
                       }}
                       variant="unstyled"
                       display="inline-flex"
@@ -499,14 +549,16 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       borderRadius="4px"
                       bg="transparent"
                       _hover={{
-                        bg: 'rgba(255, 255, 255, 0.1)'
-                      }}>
+                        bg: 'rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
                         height="14"
                         viewBox="0 0 14 14"
-                        fill="none">
+                        fill="none"
+                      >
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
@@ -535,7 +587,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       alignItems="flex-start"
                       rounded="md"
                       border="1px solid"
-                      borderColor="grayModern.200">
+                      borderColor="grayModern.200"
+                    >
                       <Flex gap="8px">
                         <Text
                           color="brightBlue.600"
@@ -544,7 +597,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           fontStyle="normal"
                           fontWeight={500}
                           lineHeight="16px"
-                          letterSpacing="0.5px">
+                          letterSpacing="0.5px"
+                        >
                           {'voice'}
                         </Text>
                         <Flex gap="4px">
@@ -555,7 +609,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                             alignItems="center"
                             gap="2px"
                             borderRadius="4px"
-                            background="grayModern.100">
+                            background="grayModern.100"
+                          >
                             <Text
                               color="grayModern.500"
                               fontFamily="PingFang SC"
@@ -564,7 +619,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               fontWeight={500}
                               lineHeight="16px"
                               letterSpacing="0.5px"
-                              textTransform="none">
+                              textTransform="none"
+                            >
                               {'enum<string>'}
                             </Text>
                           </Badge>
@@ -575,7 +631,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                             alignItems="center"
                             borderRadius="4px"
                             gap="2px"
-                            background="adora.50">
+                            background="adora.50"
+                          >
                             <Text
                               color="adora.600"
                               fontFamily="PingFang SC"
@@ -584,7 +641,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               fontWeight={500}
                               lineHeight="16px"
                               textTransform="none"
-                              letterSpacing="0.5px">
+                              letterSpacing="0.5px"
+                            >
                               {t('drawer.voice')}
                             </Text>
                           </Badge>
@@ -596,7 +654,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                         flexDirection="column"
                         gap="4px"
                         alignItems="flex-start"
-                        alignSelf="stretch">
+                        alignSelf="stretch"
+                      >
                         <Text
                           color="grayModern.500"
                           fontFamily="PingFang SC"
@@ -604,7 +663,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           fontStyle="normal"
                           fontWeight={500}
                           lineHeight="16px"
-                          letterSpacing="0.5px">
+                          letterSpacing="0.5px"
+                        >
                           {t('drawer.voiceValues')}
                         </Text>
 
@@ -618,7 +678,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               alignItems="center"
                               gap="2px"
                               borderRadius="4px"
-                              background="grayModern.100">
+                              background="grayModern.100"
+                            >
                               <Text
                                 color="grayModern.900"
                                 fontFamily="PingFang SC"
@@ -627,7 +688,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                                 fontWeight={500}
                                 lineHeight="16px"
                                 letterSpacing="0.5px"
-                                textTransform="none">
+                                textTransform="none"
+                              >
                                 {voice}
                               </Text>
                             </Badge>
@@ -648,7 +710,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       alignItems="flex-start"
                       rounded="md"
                       border="1px solid"
-                      borderColor="grayModern.200">
+                      borderColor="grayModern.200"
+                    >
                       <Flex gap="8px">
                         <Text
                           color="brightBlue.600"
@@ -657,7 +720,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           fontStyle="normal"
                           fontWeight={500}
                           lineHeight="16px"
-                          letterSpacing="0.5px">
+                          letterSpacing="0.5px"
+                        >
                           {'response_format'}
                         </Text>
                         <Flex gap="4px">
@@ -668,7 +732,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                             alignItems="center"
                             gap="2px"
                             borderRadius="4px"
-                            background="grayModern.100">
+                            background="grayModern.100"
+                          >
                             <Text
                               color="grayModern.500"
                               fontFamily="PingFang SC"
@@ -677,7 +742,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               fontWeight={500}
                               lineHeight="16px"
                               letterSpacing="0.5px"
-                              textTransform="none">
+                              textTransform="none"
+                            >
                               {'enum<string>'}
                             </Text>
                           </Badge>
@@ -688,7 +754,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                             alignItems="center"
                             borderRadius="4px"
                             gap="2px"
-                            background="grayModern.100">
+                            background="grayModern.100"
+                          >
                             <Text
                               color="grayModern.500"
                               fontFamily="PingFang SC"
@@ -697,7 +764,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               fontWeight={500}
                               lineHeight="16px"
                               letterSpacing="0.5px"
-                              textTransform="none">
+                              textTransform="none"
+                            >
                               {'default:mp3'}
                             </Text>
                           </Badge>
@@ -709,7 +777,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                         flexDirection="column"
                         gap="4px"
                         alignItems="flex-start"
-                        alignSelf="stretch">
+                        alignSelf="stretch"
+                      >
                         <Text
                           color="grayModern.500"
                           fontFamily="PingFang SC"
@@ -717,7 +786,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                           fontStyle="normal"
                           fontWeight={500}
                           lineHeight="16px"
-                          letterSpacing="0.5px">
+                          letterSpacing="0.5px"
+                        >
                           {t('drawer.responseFormatValues')}
                         </Text>
 
@@ -731,7 +801,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               alignItems="center"
                               gap="2px"
                               borderRadius="4px"
-                              background="grayModern.100">
+                              background="grayModern.100"
+                            >
                               <Text
                                 color="grayModern.900"
                                 fontFamily="PingFang SC"
@@ -740,7 +811,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                                 fontWeight={500}
                                 lineHeight="16px"
                                 letterSpacing="0.5px"
-                                textTransform="none">
+                                textTransform="none"
+                              >
                                 {format}
                               </Text>
                             </Badge>
@@ -760,7 +832,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   fontStyle="normal"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
+                  letterSpacing="0.5px"
+                >
                   {t('drawer.responseExample')}
                 </Text>
 
@@ -771,14 +844,16 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   justifyContent="center"
                   alignSelf="stretch"
                   rounded="md"
-                  overflow="hidden">
+                  overflow="hidden"
+                >
                   <Box
                     display="flex"
                     alignSelf="stretch"
                     padding="9px 12px"
                     justifyContent="space-between"
                     alignItems="center"
-                    background="#232833">
+                    background="#232833"
+                  >
                     <Text
                       color="white"
                       fontFamily="PingFang SC"
@@ -786,7 +861,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       fontStyle="normal"
                       fontWeight={500}
                       lineHeight="16px"
-                      letterSpacing="0.5px">
+                      letterSpacing="0.5px"
+                    >
                       {apiDoc.responseFormat}
                     </Text>
 
@@ -799,8 +875,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               title: t('copySuccess'),
                               isClosable: true,
                               duration: 2000,
-                              position: 'top'
-                            })
+                              position: 'top',
+                            });
                           },
                           (err) => {
                             message({
@@ -808,10 +884,10 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               title: t('copyFailed'),
                               description: err?.message || t('copyFailed'),
                               isClosable: true,
-                              position: 'top'
-                            })
+                              position: 'top',
+                            });
                           }
-                        )
+                        );
                       }}
                       variant="unstyled"
                       display="inline-flex"
@@ -824,14 +900,16 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                       borderRadius="4px"
                       bg="transparent"
                       _hover={{
-                        bg: 'rgba(255, 255, 255, 0.1)'
-                      }}>
+                        bg: 'rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="14"
                         height="14"
                         viewBox="0 0 14 14"
-                        fill="none">
+                        fill="none"
+                      >
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
@@ -853,7 +931,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
         </DrawerBody>
       </DrawerContent>
     </Drawer>
-  )
-}
+  );
+};
 
-export default ApiDocDrawer
+export default ApiDocDrawer;

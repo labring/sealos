@@ -22,6 +22,7 @@ import { CurrencySymbol } from '@sealos/ui';
 import { formatMoney } from '@/utils/format';
 import useSessionStore from '@/stores/session';
 import { MoreHorizontal } from 'lucide-react';
+import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
 
 const baseItemStyle = {
   minW: '36px',
@@ -148,6 +149,27 @@ export default function SecondaryLinks() {
             {t('v2:support')}
           </Center>
         )}
+
+        {layoutConfig?.version === 'en' && (
+          <JoinDiscordPrompt>
+            <Center
+              cursor={'pointer'}
+              minW="36px"
+              h="40px"
+              fontSize="14px"
+              fontWeight="500"
+              color="primary"
+              _hover={{
+                background: 'secondary'
+              }}
+              px={'8px'}
+              borderRadius={'8px'}
+              border={'1px solid transparent'}
+            >
+              {t('v2:support')}
+            </Center>
+          </JoinDiscordPrompt>
+        )}
       </Flex>
     );
   }
@@ -232,6 +254,22 @@ export default function SecondaryLinks() {
           >
             {t('v2:support')}
           </MenuItem>
+        )}
+
+        {layoutConfig?.version === 'en' && (
+          <JoinDiscordPrompt>
+            <MenuItem
+              py="8px"
+              px="12px"
+              borderRadius="8px"
+              _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+              onClick={openWorkOrderApp}
+              fontSize="14px"
+              fontWeight="500"
+            >
+              {t('v2:support')}
+            </MenuItem>
+          </JoinDiscordPrompt>
         )}
       </MenuList>
     </Menu>

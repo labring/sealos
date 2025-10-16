@@ -56,6 +56,13 @@ export async function POST(req: NextRequest) {
       where: {
         uid: devboxForm.templateUid,
         isDeleted: false
+      },
+      include: {
+        templateRepository: {
+          select: {
+            uid: true
+          }
+        }
       }
     });
 
@@ -71,6 +78,24 @@ export async function POST(req: NextRequest) {
     const service = json2Service(devboxForm);
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
     await applyYamlList([devbox, service, ingress], 'create');
+
+    // Increment template repository usage count after successful devbox creation
+    try {
+      await devboxDB.templateRepository.update({
+        where: {
+          uid: template.templateRepository.uid,
+          isDeleted: false
+        },
+        data: {
+          usageCount: {
+            increment: 1
+          }
+        }
+      });
+    } catch (usageError) {
+      // Log the error but don't fail the devbox creation
+      console.error('Failed to increment template usage count:', usageError);
+    }
 
     return jsonRes({
       data: 'success create devbox'

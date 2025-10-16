@@ -19,8 +19,9 @@ force: true
 debug: true
 image: /var/lib/image-cri-shim
 timeout: 15m
+reloadInterval: 15s
 auth: admin:passw0rd
-
 registries:
-- address: http://192.168.64.1:5000
-  auth: admin:passw0rd
+  - address: https://mirror.example.com
+    auth: admin:passw0rd
+  - address: https://public.example.com

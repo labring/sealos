@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "cstor.fullname" . }}-admission-server
+  {{- with .Values.admissionServer.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "cstor.admissionServer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.admissionServer.replicas }}
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  selector:
+    matchLabels:
+      {{- include "cstor.admissionServer.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "cstor.admissionServer.labels" . | nindent 8 }}
+        {{- if .Values.admissionServer.podLabels }}
+        {{ toYaml .Values.admissionServer.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.cstorOperator.name }}
+      containers:
+        - name: {{ template "cstor.fullname" . }}-admission-webhook
+          image: "{{ .Values.admissionServer.image.registry }}{{ .Values.admissionServer.image.repository }}:{{ .Values.admissionServer.image.tag }}"
+          imagePullPolicy: {{ .Values.admissionServer.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.admissionServer.resources | indent 12 }}
+          args:
+            - -alsologtostderr
+            - -v=2
+            - 2>&1
+          env:
+            - name: OPENEBS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ADMISSION_WEBHOOK_FAILURE_POLICY
+              value: {{ .Values.admissionServer.failurePolicy }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+{{- end }}
+{{- if .Values.admissionServer.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.admissionServer.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.admissionServer.securityContext }}
+      securityContext:
+{{ toYaml .Values.admissionServer.securityContext | indent 8 }}
+{{- end }}
+{{- if .Values.admissionServer.tolerations }}
+      tolerations:
+{{ toYaml .Values.admissionServer.tolerations | indent 8 }}
+{{- end }}

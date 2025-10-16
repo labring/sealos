@@ -7,7 +7,7 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useDateTimeStore } from '@/stores/date';
 import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 
@@ -17,11 +17,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from '@sealos/shadcn-ui/select';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
 
 interface DatePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   isDisabled?: boolean;
@@ -50,6 +50,14 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
 
   const recentDateList = useMemo(
     () => [
+      {
+        label: `${t('all_time')}`,
+        value: {
+          from: new Date('1970-01-01T00:00:00Z'),
+          to: new Date()
+        },
+        compareValue: 'all'
+      },
       {
         label: `${t('recently')} 5 ${t('minute')}`,
         value: getDateRange('5m'),
@@ -107,9 +115,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
   const defaultRecentDate = useMemo(() => {
     const currentTimeRange = formatTimeRange(startDateTime, endDateTime);
     return (
-      recentDateList.find((item) => item.compareValue === currentTimeRange) ||
-      recentDateList.find((item) => item.compareValue === '30m') ||
-      recentDateList[0]
+      recentDateList.find((item) => item.compareValue === currentTimeRange) || recentDateList[0]
     );
   }, [startDateTime, endDateTime, recentDateList]);
 
@@ -422,17 +428,13 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
-                className="h-8 w-8 p-2.5"
+                className="h-8"
                 onClick={() => {
-                  setRecentDate(defaultRecentDate);
-                  handleRecentDateClick(defaultRecentDate);
+                  setRecentDate(recentDateList[0]);
+                  handleRecentDateClick(recentDateList[0]);
                 }}
               >
-                <RefreshCw className="h-4 w-4 text-neutral-500" />
-              </Button>
-              <Button variant="outline" className="h-8" onClick={handleClose}>
-                {t('cancel')}
+                {t('reset')}
               </Button>
               <Button className="h-8" onClick={onSubmit}>
                 {t('confirm')}

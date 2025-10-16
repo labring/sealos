@@ -6,6 +6,7 @@ interface GuideState {
   detailCompleted: boolean;
   listCompleted: boolean;
   appName: string;
+  startTimeMs: number | null;
   setCreateCompleted: (completed: boolean) => void;
   setDetailCompleted: (completed: boolean) => void;
   setListCompleted: (completed: boolean) => void;
@@ -21,6 +22,7 @@ export const useGuideStore = create<GuideState>()(
       createCompleted: true,
       detailCompleted: true,
       appName: '',
+      startTimeMs: null,
       setCreateCompleted: (completed) => set({ createCompleted: completed }),
       setDetailCompleted: (completed) => set({ detailCompleted: completed }),
       setListCompleted: (completed) => set({ listCompleted: completed }),

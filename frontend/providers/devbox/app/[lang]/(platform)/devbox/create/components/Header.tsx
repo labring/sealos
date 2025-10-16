@@ -5,15 +5,16 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft, Info, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { downLoadBlob } from '@/utils/tools';
 import { useGuideStore } from '@/stores/guide';
 import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
+import { track } from '@sealos/gtm';
 
 interface HeaderProps {
   yamlList: YamlItemType[];
@@ -94,6 +95,13 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
                 <div
                   className="ml-auto cursor-pointer"
                   onClick={() => {
+                    track('guide_exit', {
+                      module: 'guide',
+                      guide_name: 'devbox',
+                      duration_seconds:
+                        (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                      progress_step: 4
+                    });
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >

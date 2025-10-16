@@ -1,0 +1,15 @@
+{{- if and .Values.sidecar.dashboards.enabled .Values.sidecar.dashboards.SCProvider }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "grafana.fullname" . }}-config-dashboards
+  namespace: {{ include "grafana.namespace" . }}
+data:
+  {{- include "grafana.configDashboardProviderData" . | nindent 2 }}
+{{- end }}

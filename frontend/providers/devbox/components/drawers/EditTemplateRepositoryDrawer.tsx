@@ -19,10 +19,10 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@/components/ui/drawer';
-import { Form } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+} from '@sealos/shadcn-ui/drawer';
+import { Form } from '@sealos/shadcn-ui/form';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
 
 const tagSchema = z.object({
   value: z.string().min(1)

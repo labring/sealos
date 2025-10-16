@@ -1,0 +1,209 @@
+{{- $o11y := merge (dict) .Values.o11y .Values.global.o11y  }}
+{{- if $o11y.enabled }}
+{{- $appName := (include "higress-console-prometheus.name" .) }}
+{{- $config := $o11y.prometheus }}
+{{- $port := $config.port }}
+{{- $storageClassName := $config.pvc.storageClassName }}
+{{- $existedPvc := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace $appName) }}
+{{- if $existedPvc }}
+  {{- if $existedPvc.spec }}
+    {{- if $existedPvc.spec.storageClassName }}
+      {{- $storageClassName = $existedPvc.spec.storageClassName }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- $pvc := merge (dict) .Values.pvc .Values.global.pvc}}
+{{- $existedDeployment := (lookup "apps/v1" "Deployment" .Release.Namespace $appName) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s 
+      evaluation_interval: 15s
+    scrape_configs:
+      - job_name: 'prometheus'
+        metrics_path: {{ include "higress-console-prometheus.path" . }}/metrics
+        static_configs:
+        - targets: ['localhost:{{ $port }}']
+      - job_name: 'k8s_nodes'
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+        - role: node
+        relabel_configs:
+        - action: labelmap
+          regex: __meta_kubernetes_node_label_(.+)
+        - replacement: kubernetes.default.svc:443
+          target_label: __address__
+        - regex: (.+)
+          replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+          source_labels:
+          - __meta_kubernetes_node_name
+          target_label: __metrics_path__
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+      - job_name: 'k8s_pods'
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: {{ .Release.Namespace }}
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          regex: higress-gateway
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+  {{- if or (or .Values.global.local .Values.global.kind) (not $pvc.rwxSupported) }}
+  - ReadWriteOnce
+  {{- else }}
+  - ReadWriteMany
+  {{- end }}
+  storageClassName: {{ $storageClassName }}
+  resources:
+    requests:
+      storage: {{ $config.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ $appName }}
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ $config.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $appName }}
+    spec:
+      containers:
+      - image: {{ $config.image.repository }}:{{ $config.image.tag }}
+        name: prometheus
+        command:
+        - "/bin/prometheus"
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--web.external-url={{ include "higress-console-prometheus.path" . }}"
+        - "--storage.tsdb.path=/prometheus"
+        - "--storage.tsdb.retention=6h"
+        ports:
+        - containerPort: {{ $port }}
+          name: http-prometheus
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/prometheus"
+          name: data
+        - mountPath: "/etc/prometheus"
+          name: config
+        resources:
+          limits:
+            cpu: {{ $config.resources.limits.cpu }}
+            memory: {{ $config.resources.limits.memory }}
+      restartPolicy: Always
+      serviceAccountName: {{ $appName }}
+      securityContext:
+      {{- if $config.securityContext }}
+        {{- toYaml $config.securityContext | nindent 8 }}
+      {{- else if and ($existedDeployment) ($existedDeployment.spec.template.spec.securityContext) }}
+        {{- toYaml $existedDeployment.spec.template.spec.securityContext | nindent 8 }}
+      {{- else }}
+        runAsUser: 0
+      {{- end }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ $appName }}
+      - name: config
+        configMap:
+          name: {{ $appName }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: {{ $appName }}
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ $port }}
+    protocol: TCP
+    targetPort: http-prometheus
+  selector:
+    app: {{ $appName }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $appName }}-{{ .Release.Namespace }}
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $appName }}-{{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $appName }}-{{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ $appName }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}

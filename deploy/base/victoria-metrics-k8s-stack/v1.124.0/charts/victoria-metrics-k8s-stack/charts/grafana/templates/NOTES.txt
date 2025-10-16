@@ -1,0 +1,55 @@
+1. Get your '{{ .Values.adminUser }}' user password by running:
+
+   kubectl get secret --namespace {{ include "grafana.namespace" . }} {{ .Values.admin.existingSecret | default (include "grafana.fullname" .) }} -o jsonpath="{.data.{{ .Values.admin.passwordKey | default "admin-password" }}}" | base64 --decode ; echo
+
+
+2. The Grafana server can be accessed via port {{ .Values.service.port }} on the following DNS name from within your cluster:
+
+   {{ include "grafana.fullname" . }}.{{ include "grafana.namespace" . }}.svc.cluster.local
+{{ if .Values.ingress.enabled }}
+   If you bind grafana to 80, please update values in values.yaml and reinstall:
+   ```
+   securityContext:
+     runAsUser: 0
+     runAsGroup: 0
+     fsGroup: 0
+
+   command:
+   - "setcap"
+   - "'cap_net_bind_service=+ep'"
+   - "/usr/sbin/grafana-server &&"
+   - "sh"
+   - "/run.sh"
+   ```
+   Details refer to https://grafana.com/docs/installation/configuration/#http-port.
+   Or grafana would always crash.
+
+   From outside the cluster, the server URL(s) are:
+     {{- range .Values.ingress.hosts }}
+     http://{{ . }}
+     {{- end }}
+{{- else }}
+   Get the Grafana URL to visit by running these commands in the same shell:
+   {{- if contains "NodePort" .Values.service.type }}
+     export NODE_PORT=$(kubectl get --namespace {{ include "grafana.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "grafana.fullname" . }})
+     export NODE_IP=$(kubectl get nodes --namespace {{ include "grafana.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")
+     echo http://$NODE_IP:$NODE_PORT
+   {{- else if contains "LoadBalancer" .Values.service.type }}
+   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get svc --namespace {{ include "grafana.namespace" . }} -w {{ include "grafana.fullname" . }}'
+     export SERVICE_IP=$(kubectl get svc --namespace {{ include "grafana.namespace" . }} {{ include "grafana.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+     http://$SERVICE_IP:{{ .Values.service.port -}}
+   {{- else if contains "ClusterIP"  .Values.service.type }}
+     export POD_NAME=$(kubectl get pods --namespace {{ include "grafana.namespace" . }} -l "app.kubernetes.io/name={{ include "grafana.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+     kubectl --namespace {{ include "grafana.namespace" . }} port-forward $POD_NAME 3000
+   {{- end }}
+{{- end }}
+
+3. Login with the password from step 1 and the username: {{ .Values.adminUser }}
+
+{{- if and (not .Values.persistence.enabled) (not .Values.persistence.disableWarning) }}
+#################################################################################
+######   WARNING: Persistence is disabled!!! You will lose your data when   #####
+######            the Grafana pod is terminated.                            #####
+#################################################################################
+{{- end }}

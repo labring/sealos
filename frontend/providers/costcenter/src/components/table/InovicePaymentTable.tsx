@@ -32,16 +32,6 @@ export function InvoicePaymentTable({
     Object.fromEntries(selectbillings.map((v) => [v.ID, true]))
   );
 
-  useEffect(() => {
-    const billings = Object.keys(rowSelection).flatMap((id) => {
-      const rows = table.getRowModel().rowsById[id];
-      if (!rows) return [];
-      if (!rows.getIsSelected()) return [];
-      return [rows.original];
-    });
-    setSelectBillings?.(billings);
-  }, [rowSelection]);
-
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<RechargeBillingItem>();
     const customTh = (needCurrency?: boolean) =>
@@ -108,12 +98,12 @@ export function InvoicePaymentTable({
         enablePinning: true
       })
     ];
-  }, [t, currency, needSelect, selectbillings]);
+  }, [t, currency, needSelect]);
 
   const table = useReactTable({
     data,
     getRowId: (row) => row.ID,
-    onRowSelectionChange: setRowSelection, //hoist up the row selection state to your own scope
+    onRowSelectionChange: setRowSelection,
     state: {
       columnPinning: {
         left: [TableHeaderID.APPName],
@@ -124,5 +114,16 @@ export function InvoicePaymentTable({
     columns,
     getCoreRowModel: getCoreRowModel()
   });
+
+  useEffect(() => {
+    const billings = Object.keys(rowSelection).flatMap((id) => {
+      const rows = table.getRowModel().rowsById[id];
+      if (!rows) return [];
+      if (!rows.getIsSelected()) return [];
+      return [rows.original];
+    });
+    setSelectBillings?.(billings);
+  }, [rowSelection, table, setSelectBillings]);
+
   return <BaseTable table={table}></BaseTable>;
 }

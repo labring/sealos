@@ -21,6 +21,7 @@ import (
 
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"golang.org/x/sync/errgroup"
@@ -76,7 +77,7 @@ func (k *KubeadmRuntime) copyKubeadmConfigToNode(node string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
 	}
-	joinConfigPath := path.Join(k.pathResolver.TmpPath(), defaultJoinNodeKubeadmFileName)
+	joinConfigPath := path.Join(k.pathResolver.TmpPath(), iputils.GetHostIP(node), defaultJoinNodeKubeadmFileName)
 	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {

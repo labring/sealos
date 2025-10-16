@@ -1,0 +1,17 @@
+{{- if .Values.storageClass.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.name }}
+  annotations:
+{{- if .Values.storageClass.isDefaultClass }}
+    storageclass.kubernetes.io/is-default-class: "true"
+{{- end }}
+provisioner: jiva.csi.openebs.io
+volumeBindingMode: Immediate
+allowVolumeExpansion: {{ .Values.storageClass.allowVolumeExpansion }}
+reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+parameters:
+  cas-type: "jiva"
+  policy: {{ .Values.defaultPolicy.name }}
+{{- end }}

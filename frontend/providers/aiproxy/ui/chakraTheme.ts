@@ -11,8 +11,8 @@ export const theme = extendTheme(SealosTheme, {
         height: '100%',
         overflowY: 'auto',
         fontWeight: 400,
-        minWidth: '700px'
-      }
-    }
-  }
+        minWidth: '700px',
+      },
+    },
+  },
 })

@@ -46,6 +46,7 @@ export type AppConfigType = {
       domainRegQueryLink: string;
       domainBindingDocumentationLink: string | null;
     };
+    domainChallengeSecret?: string;
     meta: {
       title: string;
       description: string;
@@ -103,4 +104,5 @@ export type EnvResponse = {
   DESKTOP_DOMAIN: string;
   PVC_STORAGE_MAX: number;
   GPU_ENABLED: boolean;
+  LOG_ENABLED: boolean;
 };

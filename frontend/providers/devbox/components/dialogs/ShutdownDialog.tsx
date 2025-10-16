@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { shutdownDevbox } from '@/api/devbox';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2, ShutdownModeType } from '@/types/devbox';
 
@@ -13,10 +13,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from '@sealos/shadcn-ui/dialog';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Button } from '@sealos/shadcn-ui/button';
+import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
 import { track } from '@sealos/gtm';
 
 interface ShutdownDialogPros {
@@ -78,14 +78,6 @@ const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros
               <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
               <span className="text-xs/4 text-zinc-500">
                 {t.rich('normal_shutdown_mode_desc', {
-                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
-                })}
-              </span>
-            </div>
-            <div className="flex w-full items-start gap-1.5 pl-5">
-              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
-              <span className="text-xs/4 text-zinc-500">
-                {t.rich('normal_shutdown_mode_desc_2', {
                   black: (chunks) => <span className="text-zinc-900">{chunks}</span>
                 })}
               </span>

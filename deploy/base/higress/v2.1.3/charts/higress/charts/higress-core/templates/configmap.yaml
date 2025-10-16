@@ -1,0 +1,164 @@
+{{- define "mesh" }}
+    # The trust domain corresponds to the trust root of a system.
+    # Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
+    trustDomain: "cluster.local"
+    accessLogEncoding: TEXT
+    {{- if .Values.global.o11y.enabled }}
+    accessLogFile: "/var/log/proxy/access.log"
+    {{- else }}
+    accessLogFile: "/dev/stdout"
+    {{- end }}
+    ingressControllerMode: "OFF"
+    accessLogFormat: '{"ai_log":"%FILTER_STATE(wasm.ai_log:PLAIN)%","authority":"%REQ(X-ENVOY-ORIGINAL-HOST?:AUTHORITY)%","bytes_received":"%BYTES_RECEIVED%","bytes_sent":"%BYTES_SENT%","downstream_local_address":"%DOWNSTREAM_LOCAL_ADDRESS%","downstream_remote_address":"%DOWNSTREAM_REMOTE_ADDRESS%","duration":"%DURATION%","istio_policy_status":"%DYNAMIC_METADATA(istio.mixer:status)%","method":"%REQ(:METHOD)%","path":"%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%","protocol":"%PROTOCOL%","request_id":"%REQ(X-REQUEST-ID)%","requested_server_name":"%REQUESTED_SERVER_NAME%","response_code":"%RESPONSE_CODE%","response_flags":"%RESPONSE_FLAGS%","route_name":"%ROUTE_NAME%","start_time":"%START_TIME%","trace_id":"%REQ(X-B3-TRACEID)%","upstream_cluster":"%UPSTREAM_CLUSTER%","upstream_host":"%UPSTREAM_HOST%","upstream_local_address":"%UPSTREAM_LOCAL_ADDRESS%","upstream_service_time":"%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%","upstream_transport_failure_reason":"%UPSTREAM_TRANSPORT_FAILURE_REASON%","user_agent":"%REQ(USER-AGENT)%","x_forwarded_for":"%REQ(X-FORWARDED-FOR)%","response_code_details":"%RESPONSE_CODE_DETAILS%"}
+
+    '
+    dnsRefreshRate: 200s
+    enableAutoMtls: false
+    enablePrometheusMerge: false
+    protocolDetectionTimeout: 100ms
+    # The namespace to treat as the administrative root namespace for Istio configuration.
+    # When processing a leaf namespace Istio will search for declarations in that namespace first
+    # and if none are found it will search in the root namespace. Any matching declaration found in the root namespace
+    # is processed as if it were declared in the leaf namespace.
+    rootNamespace: {{ .Release.Namespace }}
+
+    configSources:
+      - address: "xds://127.0.0.1:15051"
+    {{- if or .Values.global.enableIstioAPI .Values.global.enableGatewayAPI }}
+      - address: "k8s://"
+    {{- end }}
+
+    mseIngressGlobalConfig:
+      enableH3: {{ .Values.global.enableH3 }}
+      enableProxyProtocol: {{ .Values.global.enableProxyProtocol }}
+
+    defaultConfig:
+      {{- if .Values.global.disableAlpnH2 }}
+      disableAlpnH2: true
+      {{- end }}
+      {{- if .Values.global.meshID }}
+      meshId: {{ .Values.global.meshID }}
+      {{- end }}
+      tracing:
+      {{- if eq .Values.global.proxy.tracer "lightstep" }}
+        lightstep:
+          # Address of the LightStep Satellite pool
+          address: {{ .Values.global.tracer.lightstep.address }}
+          # Access Token used to communicate with the Satellite pool
+          accessToken: {{ .Values.global.tracer.lightstep.accessToken }}
+      {{- else if eq .Values.global.proxy.tracer "datadog" }}
+        datadog:
+          # Address of the Datadog Agent
+          address: {{ .Values.global.tracer.datadog.address | default "$(HOST_IP):8126" }}
+      {{- else if eq .Values.global.proxy.tracer "stackdriver" }}
+        stackdriver:
+          # enables trace output to stdout.
+        {{- if $.Values.global.tracer.stackdriver.debug }}
+          debug: {{ $.Values.global.tracer.stackdriver.debug }}
+        {{- end }}
+        {{- if $.Values.global.tracer.stackdriver.maxNumberOfAttributes }}
+          # The global default max number of attributes per span.
+          maxNumberOfAttributes: {{ $.Values.global.tracer.stackdriver.maxNumberOfAttributes | default "200" }}
+        {{- end }}
+        {{- if $.Values.global.tracer.stackdriver.maxNumberOfAnnotations }}
+          # The global default max number of annotation events per span.
+          maxNumberOfAnnotations: {{ $.Values.global.tracer.stackdriver.maxNumberOfAnnotations | default "200" }}
+        {{- end }}
+        {{- if $.Values.global.tracer.stackdriver.maxNumberOfMessageEvents }}
+          # The global default max number of message events per span.
+          maxNumberOfMessageEvents: {{ $.Values.global.tracer.stackdriver.maxNumberOfMessageEvents | default "200" }}
+        {{- end }}
+      {{- else if eq .Values.global.proxy.tracer "openCensusAgent" }}
+      {{/* Fill in openCensusAgent configuration from meshConfig so it isn't overwritten below */}}
+{{ toYaml $.Values.meshConfig.defaultConfig.tracing | indent 8 }}
+      {{- else }}
+        {}
+      {{- end }}
+      {{- if .Values.global.remotePilotAddress }}
+      {{- if not .Values.global.externalIstiod }}
+      discoveryAddress: {{ printf "istiod-remote.%s.svc" .Release.Namespace }}:15012
+      {{- else }}
+      discoveryAddress: {{ printf "istiod.%s.svc" .Release.Namespace }}:15012
+      {{- end }}
+      {{- else }}
+      discoveryAddress: {{ include "controller.name" . }}.{{.Release.Namespace}}.svc:15012
+      {{- end }}
+      proxyStatsMatcher:
+        inclusionRegexps:
+{{ toYaml .Values.global.proxy.proxyStatsMatcher.inclusionRegexps | indent 8 }}
+{{- end }}
+
+{{/* We take the mesh config above, defined with individual values.yaml, and merge with .Values.meshConfig */}}
+{{/* The intent here is that meshConfig.foo becomes the API, rather than re-inventing the API in values.yaml */}}
+{{- $originalMesh := include "mesh" . | fromYaml }}
+{{- $mesh := mergeOverwrite $originalMesh .Values.meshConfig }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: higress-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}    
+data:
+  higress: |-
+    {{- $existingConfig := lookup "v1" "ConfigMap" .Release.Namespace "higress-config" }}
+    {{- $existingData := dict }}
+    {{- if $existingConfig }}
+    {{- $existingData = index $existingConfig.data "higress" | default "{}" | fromYaml }}
+    {{- end }}
+    {{- $newData := dict }}
+    {{- if hasKey .Values "upstream" }}
+    {{- $_ := set $newData "upstream" .Values.upstream }}
+    {{- end }}
+    {{- if hasKey .Values "downstream" }}
+    {{- $_ := set $newData "downstream" .Values.downstream }}
+    {{- end }}
+    {{- if and (hasKey .Values "tracing") .Values.tracing.enable }}
+    {{- $_ := set $newData "tracing" .Values.tracing }}
+    {{- end }}
+    {{- toYaml (merge $existingData $newData) | nindent 4 }}
+  # Configuration file for the mesh networks to be used by the Split Horizon EDS.
+  meshNetworks: |-
+  {{- if .Values.global.meshNetworks }}
+    networks:
+{{ toYaml .Values.global.meshNetworks | trim | indent 6 }}
+  {{- else }}
+    networks: {}
+  {{- end }}
+  
+  mesh: |-
+{{- if .Values.meshConfig }}
+{{ $mesh | toYaml | indent 4 }}
+{{- else }}
+{{- include "mesh" . }}
+{{- end }}
+---
+{{- if include "skywalking.enabled" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: higress-custom-bootstrap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+data:
+  custom_bootstrap.json: |-
+    {
+      "stats_sinks": [
+        {
+          "name": "envoy.metrics_service",
+          "typed_config": {
+            "@type": "type.googleapis.com/envoy.config.metrics.v3.MetricsServiceConfig",
+            "transport_api_version": "V3",
+            "grpc_service": {
+              "envoy_grpc": {
+                "cluster_name": "outbound|{{ .Values.tracing.skywalking.port }}||{{ .Values.tracing.skywalking.service }}"
+              }
+            }
+          }
+        }
+      ]
+    }
+---
+{{- end }}

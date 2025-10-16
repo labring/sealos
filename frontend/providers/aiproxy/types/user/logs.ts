@@ -19,6 +19,8 @@ export interface LogItem {
   price: {
     input_price: number
     output_price: number
+    image_input_price: number
+    thinking_mode_output_price: number
     per_request_price: number
   }
   token_id: number

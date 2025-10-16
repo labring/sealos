@@ -5,6 +5,7 @@ import { Config } from '@sealos/driver/src/config';
 import { TFunction } from 'i18next';
 import { CircleCheckBig, X } from 'lucide-react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { track } from '@sealos/gtm';
 
 let currentDriver: any = null;
 
@@ -13,6 +14,13 @@ export function startDriver(config: Config, openDesktopApp?: any) {
     currentDriver.destroy();
     currentDriver = null;
   }
+
+  if (!useGuideStore.getState().startTimeMs) {
+    useGuideStore.setState({
+      startTimeMs: Date.now()
+    });
+  }
+
   const driverObj = driver(config);
   currentDriver = driverObj;
   driverObj.drive();
@@ -45,6 +53,14 @@ export const detailDriverObj = (t: TFunction, nextStep?: () => void): Config => 
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'appstore',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 4
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -72,6 +88,13 @@ export const detailDriverObj = (t: TFunction, nextStep?: () => void): Config => 
                 h={'32px'}
                 p={'8px'}
                 onClick={() => {
+                  track('guide_complete', {
+                    module: 'guide',
+                    guide_name: 'appstore',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000
+                  });
+
                   currentDriver.destroy();
                   currentDriver = null;
                   nextStep && nextStep();

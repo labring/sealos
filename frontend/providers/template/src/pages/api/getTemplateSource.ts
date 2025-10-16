@@ -14,6 +14,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
+import { getResourceUsage, ResourceUsage } from '@/utils/usage';
+import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -56,17 +58,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code, message });
     }
 
+    if (!appYaml || !templateName || !templateYaml || !TemplateEnvs) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'Invalid template request!'
+      });
+    }
+
+    const templateSource = {
+      source: {
+        ...dataSource,
+        ...TemplateEnvs
+      },
+      appYaml,
+      templateYaml,
+      readmeContent,
+      readUrl
+    };
+
+    let requirements: ResourceUsage | null = null;
+    try {
+      const platformEnvs = getTemplateEnvs(user_namespace);
+      const renderedYaml = generateYamlData(
+        templateSource,
+        getTemplateDefaultValues(templateSource),
+        platformEnvs
+      );
+      requirements = getResourceUsage(renderedYaml.map((item) => item.value));
+    } catch (error) {
+      console.error(`Error getting default resource requirements for template '${templateName}'`);
+    }
+
     jsonRes(res, {
       code: 200,
       data: {
-        source: {
-          ...dataSource,
-          ...TemplateEnvs
-        },
-        appYaml,
-        templateYaml,
-        readmeContent,
-        readUrl
+        ...templateSource,
+        requirements
       }
     });
   } catch (err: any) {

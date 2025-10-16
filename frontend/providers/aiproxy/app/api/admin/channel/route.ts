@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { ChannelInfo } from '@/types/admin/channels/channelInfo'
-import { parseJwtToken } from '@/utils/backend/auth'
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
 import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,9 +48,9 @@ async function fetchChannels(
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
@@ -60,7 +61,7 @@ async function fetchChannels(
     }
     return {
       channels: result?.data?.channels || [],
-      total: result?.data?.total || 0
+      total: result?.data?.total || 0,
     }
   } catch (error) {
     console.error('admin channels api: fetch channels from ai proxy backend error:', error)
@@ -79,10 +80,10 @@ async function createChannel(channelData: CreateChannelRequest): Promise<void> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
       body: JSON.stringify(channelData),
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetChannel
 
     const queryParams: ChannelQueryParams = {
       page: parseInt(searchParams.get('page') || '1', 10),
-      perPage: parseInt(searchParams.get('perPage') || '10', 10)
+      perPage: parseInt(searchParams.get('perPage') || '10', 10),
     }
 
     const validationError = validateParams(queryParams)
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetChannel
         {
           code: 400,
           message: validationError,
-          error: validationError
+          error: validationError,
         },
         { status: 400 }
       )
@@ -128,8 +129,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetChannel
       code: 200,
       data: {
         channels: channels,
-        total: total
-      }
+        total: total,
+      },
     } satisfies GetChannelsResponse)
   } catch (error) {
     console.error('admin channels api: get channels error:', error)
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetChannel
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies GetChannelsResponse,
       { status: 500 }
     )
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp>>
 
     return NextResponse.json({
       code: 200,
-      message: 'Channel created successfully'
+      message: 'Channel created successfully',
     } satisfies ApiResp)
   } catch (error) {
     console.error('admin channels api: create channel error:', error)
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp>>
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       } satisfies ApiResp,
       { status: 500 }
     )

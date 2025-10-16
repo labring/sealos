@@ -24,6 +24,7 @@
   "friend_certification_text": "好友完成 <strong style='color: #2563EB;'>实名认证</strong> 后，双方各得 <strong style='color: #2563EB;' >{{amount}}</strong> 元余额奖励。",
   "in_progress": "进行中",
   "invitation_code": "邀请码",
+  "number": "个",
   "invite_example": "例：A 邀请 B 用户，B 用户第 1 年充值了 10000 元，第 2 年充了 5k，则 A               用户账户余额+1000，仅第一年充值返还。",
   "invite_friends_title": "邀请好友领 Sealos 余额",
   "invite_more_reward_more": "邀请多人另有活动补贴，",

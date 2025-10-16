@@ -1,4 +1,4 @@
-exclude_path = ["./CHANGELOG", "./docs"]
+exclude_path = ["./CHANGELOG", "./docs", "./deploy/base"]
 verbose = "info"
 insecure = true
 no_progress = true

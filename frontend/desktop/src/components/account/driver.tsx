@@ -4,6 +4,7 @@ import { Config } from '@sealos/driver/src/config';
 import { X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { track } from '@sealos/gtm';
 
 export let currentDriver: any = null;
 
@@ -27,6 +28,13 @@ export function startDriver(config: Config) {
 }
 
 export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
+  onPopoverRender() {
+    track('guide_start', {
+      module: 'guide',
+      guide_name: 'devbox'
+    });
+  },
+
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -54,6 +62,11 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'devbox'
+                  });
+
                   currentDriver.destroy();
                   currentDriver = null;
                   startDriver(quitGuideDriverObj(t));
@@ -124,6 +137,13 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
 });
 
 export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
+  onPopoverRender() {
+    track('guide_start', {
+      module: 'guide',
+      guide_name: 'applaunchpad'
+    });
+  },
+
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -152,6 +172,11 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'applaunchpad'
+                  });
+
                   currentDriver.destroy();
                   currentDriver = null;
                   startDriver(quitGuideDriverObj(t));
@@ -222,6 +247,13 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
 });
 
 export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
+  onPopoverRender() {
+    track('guide_start', {
+      module: 'guide',
+      guide_name: 'appstore'
+    });
+  },
+
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -249,6 +281,11 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'appstore'
+                  });
+
                   currentDriver.destroy();
                   currentDriver = null;
                   startDriver(quitGuideDriverObj(t));
@@ -319,6 +356,13 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
 });
 
 export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
+  onPopoverRender() {
+    track('guide_start', {
+      module: 'guide',
+      guide_name: 'database'
+    });
+  },
+
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -346,6 +390,11 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'database'
+                  });
+
                   currentDriver.destroy();
                   currentDriver = null;
                   startDriver(quitGuideDriverObj(t));

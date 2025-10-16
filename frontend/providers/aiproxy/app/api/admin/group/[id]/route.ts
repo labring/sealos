@@ -1,7 +1,8 @@
+import { NextRequest, NextResponse } from 'next/server'
+
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { NextRequest, NextResponse } from 'next/server'
 
 // delete
 async function deleteGroup(id: string): Promise<void> {
@@ -17,9 +18,9 @@ async function deleteGroup(id: string): Promise<void> {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -50,7 +51,7 @@ export async function DELETE(
         {
           code: 400,
           message: 'Group id is required',
-          error: 'Bad Request'
+          error: 'Bad Request',
         },
         { status: 400 }
       )
@@ -60,7 +61,7 @@ export async function DELETE(
 
     return NextResponse.json({
       code: 200,
-      message: 'Group deleted successfully'
+      message: 'Group deleted successfully',
     } satisfies ApiResp)
   } catch (error) {
     console.error('Groups search error:', error)
@@ -68,7 +69,7 @@ export async function DELETE(
       {
         code: 500,
         message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     )

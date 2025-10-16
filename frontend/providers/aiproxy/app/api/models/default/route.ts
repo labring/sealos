@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/backend/auth'
+
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
 import { ChannelWithDefaultModelAndDefaultModeMapping } from '@/types/models/model'
+import { parseJwtToken } from '@/utils/backend/auth'
+import { isAdmin } from '@/utils/backend/isAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,9 +24,9 @@ async function fetchDefaultModeAndModeMapping(): Promise<
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${global.AppConfig?.auth.aiProxyBackendKey}`
+        Authorization: `${global.AppConfig?.auth.aiProxyBackendKey}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
@@ -52,7 +53,7 @@ export async function GET(
 
     return NextResponse.json({
       code: 200,
-      data: await fetchDefaultModeAndModeMapping()
+      data: await fetchDefaultModeAndModeMapping(),
     })
   } catch (error) {
     console.error('default enabled models api: get enabled models error:', error)
@@ -60,7 +61,7 @@ export async function GET(
       {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        error: error instanceof Error ? error.message : 'server error',
       },
       { status: 500 }
     )
