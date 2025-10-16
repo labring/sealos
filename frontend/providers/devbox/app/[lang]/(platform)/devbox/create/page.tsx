@@ -27,7 +27,7 @@ import { useDevboxStore } from '@/stores/devbox';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import Header from './components/Header';
-import { Loading } from '@/components/ui/loading';
+import { Loading } from '@sealos/shadcn-ui/loading';
 import { track } from '@sealos/gtm';
 import { listTemplate } from '@/api/template';
 import { z } from 'zod';

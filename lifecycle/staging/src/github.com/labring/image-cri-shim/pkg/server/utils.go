@@ -24,74 +24,70 @@ import (
 	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	name "github.com/google/go-containerregistry/pkg/name"
 )
 
-// ListImages gets all images currently on the machine.
-//func (m *kubeGenericRuntimeManager) ListImages() ([]kubecontainer.Image, error) {
-//	var images []kubecontainer.Image
-//
-//	allImages, err := m.imageService.ListImages(nil)
-//	if err != nil {
-//		klog.ErrorS(err, "Failed to list images")
-//		return nil, err
-//	}
-//
-//	for _, img := range allImages {
-//		images = append(images, kubecontainer.Image{
-//			ID:          img.Id,
-//			Size:        int64(img.Size_),
-//			RepoTags:    img.RepoTags,
-//			RepoDigests: img.RepoDigests,
-//			Spec:        toKubeContainerImageSpec(img),
-//		})
-//	}
-//
-//	return images, nil
-//}
-//for _, image := range images {
-//		klog.V(5).InfoS("Adding image ID to currentImages", "imageID", image.ID)
-//		currentImages.Insert(image.ID)
-//
-//		// New image, set it as detected now.
-//		if _, ok := im.imageRecords[image.ID]; !ok {
-//			klog.V(5).InfoS("Image ID is new", "imageID", image.ID)
-//			im.imageRecords[image.ID] = &imageRecord{
-//				firstDetected: detectTime,
-//			}
-//		}
-//
-//		// Set last used time to now if the image is being used.
-//		if isImageUsed(image.ID, imagesInUse) {
-//			klog.V(5).InfoS("Setting Image ID lastUsed", "imageID", image.ID, "lastUsed", now)
-//			im.imageRecords[image.ID].lastUsed = now
-//		}
-//
-//		klog.V(5).InfoS("Image ID has size", "imageID", image.ID, "size", image.Size)
-//		im.imageRecords[image.ID].size = image.Size
-//
-//		klog.V(5).InfoS("Image ID is pinned", "imageID", image.ID, "pinned", image.Pinned)
-//		im.imageRecords[image.ID].pinned = image.Pinned
-//	}
-
 // replaceImage replaces the image name to a new valid image name with the private registry.
-func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
-	// TODO we can change the image name of req, and make the cri pull the image we need.
-	// for example:
-	// req.Image.Image = "sealos.hub:5000/library/nginx:1.1.1"
-	// and the cri will pull "sealos.hub:5000/library/nginx:1.1.1", and save it as "sealos.hub:5000/library/nginx:1.1.1"
-	// note:
-	// but kubelet sometimes will invoke imageService.RemoveImage() or something else. The req.Image.Image will the original name.
-	// so we'd better tag "sealos.hub:5000/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
-	//for image id] this is mistake, we should replace the image name, not the image id.
-	newImage, _, cfg, err := crane.GetImageManifestFromAuth(image, authConfig)
+func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
+	isReplace bool, cfg *registry.AuthConfig) {
+	if len(authConfig) == 0 {
+		return image, false, nil
+	}
+
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		logger.Warn("failed to parse image reference %s: %v", image, err)
+		return image, false, nil
+	}
+
+	repo := ref.Context().RepositoryStr()
+	if repo == "" {
+		logger.Debug("image %s missing repository segment, skipping replacement", image)
+		return image, false, nil
+	}
+
+	newImage, _, cfg, err = crane.GetImageManifestFromAuth(image, authConfig)
 	if err != nil {
 		if strings.Contains(image, "@") {
 			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
 		}
 		logger.Warn("get image %s manifest error %s", newImage, err.Error())
 		logger.Debug("image %s not found in registry, skipping", image)
-		return image, false, nil
+		return image, false, cfg
 	}
 	logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
 	return newImage, true, cfg
+}
+
+func registryFromImage(image string) string {
+	parts := strings.SplitN(image, "/", 2)
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[0]
+}
+
+func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]bool) bool {
+	if skip != nil && skip[domain] {
+		return true
+	}
+	if cfg == nil {
+		return true
+	}
+	return cfg.Username == "" && cfg.Password == "" && cfg.Auth == "" && cfg.IdentityToken == "" && cfg.RegistryToken == ""
+}
+
+func referenceSuffix(ref name.Reference) string {
+	switch v := ref.(type) {
+	case name.Tag:
+		return ":" + v.TagStr()
+	case name.Digest:
+		return "@" + v.DigestStr()
+	default:
+		if id := ref.Identifier(); id != "" {
+			return ":" + id
+		}
+	}
+	return ""
 }

@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import Logs from './components/Logs';
 import Basic from './components/Basic';
 import Header from './components/Header';
 import Monitor from './components/Monitor';
@@ -12,7 +11,7 @@ import Sidebar from './components/Sidebar';
 import Release from './components/Release';
 import IDEButton from '@/components/IDEButton';
 import { TabValue } from './components/Sidebar';
-import { Loading } from '@/components/ui/loading';
+import { Loading } from '@sealos/shadcn-ui/loading';
 import LiveMonitoring from './components/LiveMonitoring';
 
 import { useEnvStore } from '@/stores/env';

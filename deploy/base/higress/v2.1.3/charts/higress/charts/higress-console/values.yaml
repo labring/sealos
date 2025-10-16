@@ -1,0 +1,131 @@
+global:
+  local: false # When deploying to a local cluster (e.g.: kind cluster), set this to true.
+  kind: false # Deprecated. Please use "global.local" instead. Will be removed later.
+  ingressClass: "higress"
+  watchNamespace: ""
+
+  proxy:
+    # -- CAUTION: It is important to ensure that all Istio helm charts specify the same clusterDomain value
+    # cluster domain. Default value is "cluster.local".
+    clusterDomain: "cluster.local"
+
+  # Observability (o11y) configurations
+  o11y:
+    enabled: false
+    grafana:
+      replicas: 1
+      image:
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/grafana
+        tag: 9.3.6
+      port: 3000
+      storage: 1Gi
+      pvc:
+        storageClassName: ""
+      securityContext: {}
+    prometheus:
+      replicas: 1
+      image:
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/prometheus
+        tag: v2.40.7
+      port: 9090
+      storage: 1Gi
+      pvc:
+        storageClassName: ""
+      resources:
+        limits:
+          cpu: 500m
+          memory: 2Gi
+      securityContext: {}
+    loki:
+      replicas: 1
+      image:
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/loki
+        tag: 2.9.4
+      ports:
+        http: 3100
+        grpc: 9095
+      storage: 1Gi
+      pvc:
+        storageClassName: ""
+      securityContext: {}
+
+  pvc:
+    rwxSupported: true
+
+enabled: true
+
+replicaCount: 1
+
+image:
+  repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/console
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+name: ""
+
+podEnvs: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+dnsPolicy: ClusterFirst
+restartPolicy: Always
+schedulerName: default-scheduler
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  domain: console.higress.io
+  tlsSecretName: ""
+  annotations: {}
+  paths:
+    - path: /
+      pathType: Prefix
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+nodeSelector: {}
+affinity: {}
+tolerations: {}
+
+web:
+  login:
+    prompt: "" # If set, a prompt message will be displayed on the login page.
+
+swagger:
+  enabled: false
+
+admin:
+  username: admin
+  displayName: Admin
+  password: "" # If set, the value will be used as the admin password for login.
+
+chat:
+  enabled: false
+  endpoint: ""
+
+controller:
+  serviceName: higress-controller
+
+certmanager:
+  enabled: false
+  replicas: 1
+  image:
+    repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
+    tag: v1.11.0
+
+o11y:
+  __placeholder__: true
+
+pvc:
+  __placeholder__: true

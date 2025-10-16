@@ -1,7 +1,7 @@
 import { GET, POST } from '@/services/request';
 import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
-import { AuthCnamePrams } from './params';
+import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
@@ -14,6 +14,18 @@ export const getUserQuota = () =>
   }>('/api/platform/getQuota');
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
+
+export const postAuthDomainChallenge = (data: AuthDomainChallengeParams) =>
+  POST<{
+    verified: boolean;
+    domain: string;
+    challengeUrl: string;
+    proxy: {
+      isProxy: boolean;
+      proxyType?: string;
+      details?: any;
+    };
+  }>('/api/platform/authDomainChallenge', data);
 
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {

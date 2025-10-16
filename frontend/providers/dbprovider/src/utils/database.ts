@@ -106,25 +106,23 @@ export async function fetchDBSecret(
     throw Error('secret is empty');
   }
 
-  const username = Buffer.from(
-    secret.body.data[dbTypeMap[dbType].usernameKey] || '',
-    'base64'
-  ).toString('utf-8');
+  const username = Buffer.from(secret.body.data[dbTypeMap[dbType].usernameKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
 
-  const password = Buffer.from(
-    secret.body.data[dbTypeMap[dbType].passwordKey] || '',
-    'base64'
-  ).toString('utf-8');
+  const password = Buffer.from(secret.body.data[dbTypeMap[dbType].passwordKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
 
-  const hostKey = Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey] || '', 'base64').toString(
-    'utf-8'
-  );
+  const hostKey = Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
 
   const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
 
-  const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64').toString(
-    'utf-8'
-  );
+  const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64')
+    .toString('utf-8')
+    .trim();
 
   return {
     username,
@@ -204,8 +202,18 @@ export function distributeResources(data: {
     case DBTypeEnum.postgresql:
     case DBTypeEnum.mongodb:
     case DBTypeEnum.mysql:
+      const dbComponents = DBComponentNameMap[dbType];
+      if (!dbComponents || dbComponents.length === 0) {
+        console.warn(`Unknown database type: ${dbType}, falling back to default configuration`);
+        return {
+          [dbType]: {
+            cpuMemory: getPercentResource(1),
+            storage: data.storage
+          }
+        };
+      }
       return {
-        [DBComponentNameMap[dbType][0]]: {
+        [dbComponents[0]]: {
           cpuMemory: getPercentResource(1),
           storage: data.storage
         }
@@ -227,9 +235,15 @@ export function distributeResources(data: {
         }
       };
     case DBTypeEnum.kafka:
+      const kafkaComponents = DBComponentNameMap[dbType] || [
+        'kafka-server',
+        'kafka-broker',
+        'controller',
+        'kafka-exporter'
+      ];
       const quarterResource = {
         cpuMemory: getPercentResource(0.25),
-        storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+        storage: Math.max(Math.round(data.storage / kafkaComponents.length), 1)
       };
       return {
         'kafka-server': quarterResource,
@@ -253,11 +267,21 @@ export function distributeResources(data: {
         }
       };
     default:
-      const resource = getPercentResource(DBComponentNameMap[dbType].length);
-      return DBComponentNameMap[dbType].reduce((acc: resourcesDistributeMap, cur) => {
+      const components = DBComponentNameMap[dbType];
+      if (!components || components.length === 0) {
+        console.warn(`Unknown database type: ${dbType}, falling back to default configuration`);
+        return {
+          [dbType]: {
+            cpuMemory: getPercentResource(1),
+            storage: data.storage
+          }
+        };
+      }
+      const resource = getPercentResource(components.length);
+      return components.reduce((acc: resourcesDistributeMap, cur) => {
         acc[cur] = {
           cpuMemory: resource,
-          storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+          storage: Math.max(Math.round(data.storage / components.length), 1)
         };
         return acc;
       }, {});

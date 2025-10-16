@@ -1,0 +1,31 @@
+{{- if .Values.rbac.kyvernoEnabled }}
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: allow-host-ports
+  annotations:
+    policies.kyverno.io/category: Pod Security Standards (Privileged)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Access to host ports allows potential snooping of network traffic and should be
+      allowed, or at minimum restricted to a known list.      
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+    - name: host-ports
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: >-
+          Use of host ports is allowed. The fields spec.containers[*].ports[*].hostPort
+          should contain value in range [1,65535).          
+        pattern:
+          spec:
+            containers:
+            - =(ports):
+              - =(hostPort): ">0 & <65535"
+{{- end }}

@@ -483,6 +483,7 @@ function UserStatBox({
   icon: React.ReactNode;
   iconBoxProps?: FlexProps;
 }) {
+  const { t } = useTranslation();
   return (
     <Box p={'24px'} border="1px solid #E4E4E7" borderRadius="16px" bg={'#FFF'}>
       <Text color="#71717A" mb={'8px'}>
@@ -490,7 +491,7 @@ function UserStatBox({
       </Text>
       <Flex justifyContent="space-between" alignItems="center" h={'30px'}>
         <Text fontSize="30px" fontWeight="600">
-          {count} {title.includes('invitees') ? '' : '个'}
+          {count} {title.includes('invitees') ? '' : t('number')}
         </Text>
         <Flex
           w="40px"

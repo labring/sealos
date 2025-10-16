@@ -1,0 +1,23 @@
+{{- if .Values.gateway.rbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "gateway.serviceAccountName" . }}-{{ .Release.Namespace }}
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "gateway.serviceAccountName" . }}-{{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "gateway.serviceAccountName" . }}-{{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "gateway.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}

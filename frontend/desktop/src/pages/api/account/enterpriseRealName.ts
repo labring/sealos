@@ -76,6 +76,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   switch (req.method) {
     case 'GET':
+      if (req.query.type === 'banks') {
+        return handleGetBanks(req, res, payload);
+      }
       return handleGet(req, res, payload.userUid);
     case 'POST':
       return handlePost(req, res, payload.userUid, payload);
@@ -199,7 +202,7 @@ async function handlePost(
       regionUid: payload.regionUid
     });
 
-    const response = await fetch(enterpriseRealNameAuthApi, {
+    const response = await fetch(`${enterpriseRealNameAuthApi}/v1/enterprise-auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -319,5 +322,57 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, userUid: s
   } catch (error) {
     console.error('Error updating payment status:', error);
     return jsonRes(res, { code: 500, message: 'Internal server error' });
+  }
+}
+
+async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload: AccessTokenPayload) {
+  try {
+    const realNameAuthProvider: RealNameAuthProvider | null =
+      await globalPrisma.realNameAuthProvider.findFirst({
+        where: {
+          backend: 'UNIONPAY',
+          authType: '3060'
+        }
+      });
+
+    if (!realNameAuthProvider) {
+      throw new Error('enterpriseRealNameAuth: Real name authentication provider not found');
+    }
+
+    const config: UnionPay3060Config = realNameAuthProvider.config as UnionPay3060Config;
+    const enterpriseRealNameAuthApi = config.api;
+
+    const globalToken = generateAuthenticationToken({
+      userUid: payload.userUid,
+      userId: payload.userId,
+      regionUid: payload.regionUid
+    });
+
+    const fullApiUrl = `${enterpriseRealNameAuthApi}/v1/banks`;
+    
+    
+    const response = await fetch(fullApiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${globalToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch banks: ${response.status}`);
+    }
+
+    const banksResponse = await response.json();
+    
+    const banksData = banksResponse?.data || {};
+
+    return jsonRes(res, {
+      code: 200,
+      data: banksData
+    });
+  } catch (error) {
+    console.error('Error fetching banks list:', error);
+    return jsonRes(res, { code: 500, message: 'Failed to fetch banks list' });
   }
 }

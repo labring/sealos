@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { useEnvStore } from '@/stores/env';
 import { useCopyData } from '@/utils/tools';
@@ -18,10 +18,15 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from '@sealos/shadcn-ui/table';
+import { Button } from '@sealos/shadcn-ui/button';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+
+
+export const ProtocolList = [
+  { value: 'HTTP', label: 'https://', inline: 'http://' },
+];
 
 const Network = () => {
   const locale = useLocale();
@@ -100,19 +105,22 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const prefix = item.openPublicDomain ? protocolMap[item.protocol] : 'https://';
+        const protocolPrefix = ProtocolList.find(p => p.value === item.protocol)?.inline || 'http://';
+        const prefix = item.openPublicDomain ? protocolPrefix : 'http://';
         const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div
-                className="flex cursor-pointer break-all hover:underline"
+              <span
+                className="inline-block cursor-pointer break-all hover:underline"
                 onClick={() => copyData(address)}
               >
                 {address.replace('.svc.cluster.local', '')}
-              </div>
+              </span>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{t('copy')}</TooltipContent>
+            <TooltipContent side="top" align="center">
+              <p className="text-sm">{t('copy')}</p>
+            </TooltipContent>
           </Tooltip>
         );
       },

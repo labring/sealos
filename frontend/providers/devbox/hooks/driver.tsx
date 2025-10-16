@@ -1,10 +1,11 @@
 import { driver } from '@sealos/driver';
 import { X, CircleCheckBig } from 'lucide-react';
 import { Config } from '@sealos/driver/src/config';
+import { track } from '@sealos/gtm';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import { useGuideStore } from '@/stores/guide';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 
 let currentDriver: any = null;
 
@@ -21,10 +22,14 @@ export function startDriver(config: Config, openDesktopApp?: any) {
     currentDriver = null;
   }
 
+  if (!useGuideStore.getState().startTimeMs) {
+    useGuideStore.setState({
+      startTimeMs: Date.now()
+    });
+  }
+
   const driverObj = driver(config);
-
   currentDriver = driverObj;
-
   driverObj.drive();
   driverObj.refresh();
 
@@ -32,6 +37,12 @@ export function startDriver(config: Config, openDesktopApp?: any) {
 }
 
 export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
+  onPopoverRender() {
+    useGuideStore.setState({
+      startTimeMs: Date.now()
+    });
+  },
+
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -53,6 +64,14 @@ export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
               <div
                 className="cursor-pointer rounded-lg p-1"
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'devbox',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 2
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -132,6 +151,14 @@ export const startGuide3 = (t: any, nextStep?: () => void): Config => ({
               <div
                 className="cursor-pointer rounded-lg p-1"
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'devbox',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 3
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -142,7 +169,7 @@ export const startGuide3 = (t: any, nextStep?: () => void): Config => ({
               {t('driver.select_runtime_tip')}
             </div>
             <div className="mt-4 flex items-center justify-between">
-              <div className="text-xs font-medium">2/5</div>
+              <div className="text-xs font-medium">3/5</div>
               <Button
                 className="h-8 w-auto border-none bg-white/20 text-white hover:bg-white/10 hover:text-white"
                 variant="outline"
@@ -213,6 +240,14 @@ export const startConnectIDE = (t: any, nextStep?: () => void): Config => ({
               <div
                 className="cursor-pointer rounded-lg p-1"
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'devbox',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 5
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -369,6 +404,13 @@ export const startGuideRelease = (t: any, nextStep?: () => void): Config => ({
               <div
                 className="ml-auto cursor-pointer"
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'devbox',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 5
+                  });
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
@@ -385,6 +427,13 @@ export const startGuideRelease = (t: any, nextStep?: () => void): Config => ({
                 className="h-8 w-auto border-none bg-white/20 text-white hover:bg-white/10 hover:text-white"
                 variant="outline"
                 onClick={() => {
+                  track('guide_complete', {
+                    module: 'guide',
+                    guide_name: 'devbox',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >

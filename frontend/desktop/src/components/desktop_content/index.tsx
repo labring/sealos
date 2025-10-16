@@ -31,6 +31,7 @@ import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import { useGuideModalStore } from '@/stores/guideModal';
 import GuideModal from '../account/GuideModal';
+import AppsRunningPrompt from './AppsRunningPrompt';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -381,6 +382,9 @@ export default function Desktop(props: any) {
       })}
       {/* modal */}
       <NeedToMerge />
+
+      {/* AppsRunningPrompt is disabled as it conflicts with Stripe payment. */}
+      {/* <AppsRunningPrompt /> */}
     </Box>
   );
 }

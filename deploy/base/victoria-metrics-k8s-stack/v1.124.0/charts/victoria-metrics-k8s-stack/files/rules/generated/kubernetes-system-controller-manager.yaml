@@ -1,0 +1,19 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ ($Values.kubeControllerManager).enabled }}'
+name: kubernetes-system-controller-manager
+rules:
+- alert: KubeControllerManagerDown
+  annotations:
+    description: 'KubeControllerManager has disappeared from Prometheus target discovery.'
+    runbook_url: '{{ $runbookUrl }}/kubernetes/kubecontrollermanagerdown'
+    summary: 'Target disappeared from Prometheus target discovery.'
+  condition: '{{ ($Values.kubeControllerManager).enabled }}'
+  expr: absent(up{job="kube-controller-manager"} == 1)
+  for: 15m
+  labels:
+    severity: critical

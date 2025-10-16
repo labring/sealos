@@ -50,6 +50,10 @@ on:
       - "!**/*.md"
       - "!**/*.yaml"
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   # Common versions
   GO_VERSION: "1.20"
@@ -58,17 +62,26 @@ env:
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-cloud
-
   build-cluster-image:
     if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
-    needs:
-      - save-sealos
     runs-on: ubuntu-24.04
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: BRAINSia/free-disk-space@v2
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          mandb: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -98,16 +111,9 @@ jobs:
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "aliyun_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud" >> $GITHUB_OUTPUT
           fi
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-cloud
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
 
       # todo: mutate image tag in images/shim and scripts or change scripts to use changeable tags
 
@@ -193,18 +199,3 @@ jobs:
           fi
 
       # todo: build multi-arch images
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud:${{ steps.prepare.outputs.tag_name }}"

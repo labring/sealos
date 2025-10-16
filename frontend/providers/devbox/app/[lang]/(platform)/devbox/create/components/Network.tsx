@@ -16,11 +16,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+} from '@sealos/shadcn-ui/select';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Switch } from '@sealos/shadcn-ui/switch';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
 
 export type CustomAccessModalParams = {
   publicDomain: string;

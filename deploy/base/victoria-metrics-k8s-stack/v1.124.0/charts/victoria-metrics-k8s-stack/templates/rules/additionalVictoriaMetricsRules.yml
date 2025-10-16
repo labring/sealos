@@ -1,0 +1,27 @@
+{{- $prefix := (include "vm.name" .) }}
+{{- if .Values.additionalVictoriaMetricsMap }}
+{{- $app := .Values.vmalert }}
+{{- $ctx := dict "helm" . "appKey" (list "vmalert" "spec") }}
+{{- $ns := include "vm.namespace" $ctx }}
+apiVersion: v1
+kind: List
+metadata:
+  name: {{ include "vm.fullname" . }}-additional-victoria-metrics-rules
+  namespace: {{ $ns }}
+items:
+{{- range $VMRuleName, $VMRule := .Values.additionalVictoriaMetricsMap }}
+  - apiVersion: operator.victoriametrics.com/v1beta1
+    kind: VMRule
+    metadata:
+      {{- $name := (printf "%s-%s" $prefix $VMRuleName) }}
+      name: {{ $name }}
+      namespace: {{ include "vm.namespace" $ }}
+      {{- $extraLabels := (deepCopy ($VMRule.additionalLabels | default dict)) -}}
+      {{- $_ := set $extraLabels "app" $prefix }}
+      {{- $_ := set $ctx "extraLabels" $extraLabels }}
+      labels: {{ include "vm.labels" $ctx | nindent 8 }}
+      {{- $_ := unset $ctx "extraLabels" }}
+    spec:
+      groups: {{ toYaml $VMRule.groups | nindent 8 }}
+{{- end }}
+{{- end }}

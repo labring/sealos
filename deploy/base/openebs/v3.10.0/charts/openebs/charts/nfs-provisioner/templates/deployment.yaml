@@ -1,0 +1,155 @@
+{{- if .Values.nfsProvisioner.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nfsProvisioner.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.nfsProvisioner.annotations }}
+  annotations: {{- with .Values.nfsProvisioner.annotations }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  labels:
+  {{- include "nfsProvisioner.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "nfsProvisioner.selectorLabels" . | nindent 8 }}
+  replicas: 1
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  template:
+    metadata:
+      labels:
+        {{- include "nfsProvisioner.labels" . | nindent 8  }}
+        {{- with .Values.nfsProvisioner.podLabels -}}
+        {{ toYaml . | nindent 8  }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nfsProvisioner.serviceAccountName" . }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+          {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "nfsProvisioner.fullname" . }}
+          imagePullPolicy: {{ .Values.nfsProvisioner.image.pullPolicy }}
+          image: "{{ .Values.nfsProvisioner.image.registry }}{{ .Values.nfsProvisioner.image.repository }}:{{ default .Chart.AppVersion .Values.nfsProvisioner.image.tag }}"
+          {{- if .Values.nfsProvisioner.resources  }}
+          resources:
+          {{- toYaml .Values.nfsProvisioner.resources | nindent 12 }}
+          {{ end }}
+          env:
+            # OPENEBS_IO_K8S_MASTER enables openebs provisioner to connect to K8s
+            # based on this address. This is ignored if empty.
+            # This is supported for openebs provisioner version 0.5.2 onwards
+            #- name: OPENEBS_IO_K8S_MASTER
+            #  value: "http://10.128.0.12:8080"
+            # OPENEBS_IO_KUBE_CONFIG enables openebs provisioner to connect to K8s
+            # based on this config. This is ignored if empty.
+            # This is supported for openebs provisioner version 0.5.2 onwards
+            #- name: OPENEBS_IO_KUBE_CONFIG
+            #  value: "/home/ubuntu/.kube/config"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OPENEBS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # OPENEBS_SERVICE_ACCOUNT provides the service account of this pod as
+            # environment variable
+            - name: OPENEBS_SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
+            - name: OPENEBS_IO_ENABLE_ANALYTICS
+              value: "{{ .Values.analytics.enabled }}"
+            - name: OPENEBS_IO_NFS_SERVER_USE_CLUSTERIP
+              value: "{{ .Values.nfsServer.useClusterIP }}"
+            - name: OPENEBS_IO_INSTALLER_TYPE
+              value: "nfs-helm"
+            # OPENEBS_IO_NFS_SERVER_IMG defines the nfs-server-alpine image name to be used
+            # while creating nfs volume
+            - name: OPENEBS_IO_NFS_SERVER_IMG
+              value: "{{ .Values.nfsProvisioner.nfsServerAlpineImage.registry }}{{ .Values.nfsProvisioner.nfsServerAlpineImage.repository }}:{{ default .Chart.AppVersion .Values.nfsProvisioner.nfsServerAlpineImage.tag }}"
+            # LEADER_ELECTION_ENABLED is used to enable/disable leader election. By default
+            # leader election is enabled.
+            - name: LEADER_ELECTION_ENABLED
+              value: "{{ .Values.nfsProvisioner.enableLeaderElection }}"
+            {{- if .Values.nfsProvisioner.nfsServerNamespace }}
+            - name: OPENEBS_IO_NFS_SERVER_NS
+              value: {{ .Values.nfsProvisioner.nfsServerNamespace }}
+            {{- end }}
+            {{- if .Values.nfsServer.imagePullSecret }}
+            - name: OPENEBS_IO_NFS_SERVER_IMAGE_PULL_SECRET
+              value: {{ .Values.nfsServer.imagePullSecret }}
+            {{- end }}
+            # OPENEBS_IO_NFS_SERVER_NODE_AFFINITY defines the node affinity rules to place NFS Server
+            # instance. It accepts affinity rules in multiple ways:
+            # - If NFS Server needs to be placed on storage nodes as well as only in
+            #   zone-1 & zone-2 then value can be:
+            #   value:  "kubernetes.io/zone:[zone-1,zone-2],kubernetes.io/storage-node".
+            # - If NFS Server needs to be placed only on storage nodes & nfs nodes then
+            #   value can be:
+            #   value:  "kubernetes.io/storage-node,kubernetes.io/nfs-node"
+            {{- if .Values.nfsProvisioner.nfsServerNodeAffinity }}
+            - name: OPENEBS_IO_NFS_SERVER_NODE_AFFINITY
+              value: "{{ .Values.nfsProvisioner.nfsServerNodeAffinity }}"
+            {{- end }}
+            # Provide a switch to turn off the function of clearing stale pvc to avoid
+            # garbage collecting an NFS backend PVC if the NFS PVC is deleted.
+            {{- if .Values.nfsProvisioner.enableGarbageCollection }}
+            - name: OPENEBS_IO_NFS_SERVER_GARBAGE_COLLECTION_ENABLED
+              value: {{ quote .Values.nfsProvisioner.enableGarbageCollection }}
+            {{- end }}
+            {{- if .Values.nfsProvisioner.nfsBackendPvcTimeout }}
+            - name: OPENEBS_IO_NFS_SERVER_BACKEND_PVC_TIMEOUT
+              value: "{{ .Values.nfsProvisioner.nfsBackendPvcTimeout }}"
+            {{- end }}
+          # Process name used for matching is limited to the 15 characters
+          # present in the pgrep output.
+          # So fullname can't be used here with pgrep (>15 chars).A regular expression
+          # that matches the entire command name has to specified.
+          # Anchor `^` : matches any string that starts with `provisioner-nfs`
+          # `.*`: matches any string that has `provisioner-loc` followed by zero or more char
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - test `pgrep "^provisioner-nfs.*"` = 1
+            initialDelaySeconds: {{ .Values.nfsProvisioner.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.nfsProvisioner.healthCheck.periodSeconds }}
+          volumeMounts:
+            # Mounting hook-config volume into nfs-provisioner config directory
+            {{- if .Values.nfsProvisioner.nfsHookConfigMap }}
+            - name: hook-config
+              mountPath: /etc/nfs-provisioner
+            {{- end }}
+      volumes:
+        # hook-config volume uses ConfigMap 'hook-config' to load hook configuration
+        {{- if .Values.nfsProvisioner.nfsHookConfigMap }}
+        - name: hook-config
+          configMap:
+            name: {{ .Values.nfsProvisioner.nfsHookConfigMap }}
+        {{- end }}
+{{- if .Values.nfsProvisioner.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nfsProvisioner.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.nfsProvisioner.tolerations }}
+      tolerations:
+{{ toYaml .Values.nfsProvisioner.tolerations | indent 8 }}
+{{- end }}
+{{- if .Values.nfsProvisioner.affinity }}
+      affinity:
+{{ toYaml .Values.nfsProvisioner.affinity | indent 8 }}
+{{- end }}
+{{- end }}

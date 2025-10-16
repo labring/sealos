@@ -1,0 +1,9 @@
+Thank you for installing {{ .Chart.Name }} 😀
+
+Your release is named {{ .Release.Name }} and it's installed to namespace: {{ .Release.Namespace }}.
+
+The OpenEBS NFSPV Provisioner has been installed check its status by running:
+$ kubectl get pods -n {{ .Release.Namespace }}
+
+For more information, visit our Slack at https://openebs.io/community or view
+the documentation online at https://github.com/openebs/dynamic-nfs-provisioner/.

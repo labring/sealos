@@ -1,9 +1,10 @@
-'use client'
-import { Box, Text, ListItem, List } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { ReactNode } from 'react'
-import { useSelect } from 'downshift'
+'use client';
+import { ReactNode } from 'react';
+import { Box, List, ListItem, Text } from '@chakra-ui/react';
+import { useSelect } from 'downshift';
+
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
 
 export const CustomSelect = function <T>({
   listItems,
@@ -11,18 +12,18 @@ export const CustomSelect = function <T>({
   handleDropdownItemDisplay,
   handleSelectedItemDisplay,
   placeholder,
-  initSelectedItem
+  initSelectedItem,
 }: {
-  listItems: T[]
-  handleSelectedItemChange: (selectedItem: T) => void
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
-  handleSelectedItemDisplay: (selectedItem: T) => ReactNode
-  placeholder?: string
-  initSelectedItem?: T
+  listItems: T[];
+  handleSelectedItemChange: (selectedItem: T) => void;
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
+  handleSelectedItemDisplay: (selectedItem: T) => ReactNode;
+  placeholder?: string;
+  initSelectedItem?: T;
 }) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const items = [placeholder, ...listItems]
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const items = [placeholder, ...listItems];
 
   const {
     isOpen,
@@ -30,18 +31,18 @@ export const CustomSelect = function <T>({
     getToggleButtonProps,
     getMenuProps,
     getItemProps,
-    highlightedIndex
+    highlightedIndex,
   } = useSelect({
     items: items,
     initialSelectedItem: initSelectedItem,
     onSelectedItemChange: ({ selectedItem: newSelectedItem }) => {
       if (newSelectedItem === placeholder) {
-        handleSelectedItemChange(undefined as T)
+        handleSelectedItemChange(undefined as T);
       } else {
-        handleSelectedItemChange(newSelectedItem as T)
+        handleSelectedItemChange(newSelectedItem as T);
       }
-    }
-  })
+    },
+  });
 
   return (
     <Box w="full" position="relative" flex={1}>
@@ -56,7 +57,8 @@ export const CustomSelect = function <T>({
         alignItems="center"
         {...getToggleButtonProps()}
         _hover={{ borderColor: 'grayModern.300' }}
-        px="12px">
+        px="12px"
+      >
         {selectedItem ? (
           handleSelectedItemDisplay(selectedItem as T)
         ) : placeholder ? (
@@ -67,7 +69,8 @@ export const CustomSelect = function <T>({
             fontWeight={400}
             lineHeight="16px"
             letterSpacing="0.048px"
-            color={selectedItem ? 'grayModern.900' : 'grayModern.500'}>
+            color={selectedItem ? 'grayModern.900' : 'grayModern.500'}
+          >
             {placeholder}
           </Text>
         ) : (
@@ -78,7 +81,8 @@ export const CustomSelect = function <T>({
             fontWeight={400}
             lineHeight="16px"
             letterSpacing="0.048px"
-            color={selectedItem ? 'grayModern.900' : 'grayModern.500'}>
+            color={selectedItem ? 'grayModern.900' : 'grayModern.500'}
+          >
             Select
           </Text>
         )}
@@ -110,7 +114,8 @@ export const CustomSelect = function <T>({
         overflowY="auto"
         zIndex="10"
         borderRadius="6px"
-        display={isOpen && items.length ? 'block' : 'none'}>
+        display={isOpen && items.length ? 'block' : 'none'}
+      >
         {isOpen &&
           items.map((item, index) => (
             <ListItem
@@ -131,11 +136,12 @@ export const CustomSelect = function <T>({
               fontStyle="normal"
               lineHeight="16px"
               letterSpacing="0.5px"
-              _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}>
+              _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
+            >
               {handleDropdownItemDisplay(item as T)}
             </ListItem>
           ))}
       </List>
     </Box>
-  )
-}
+  );
+};

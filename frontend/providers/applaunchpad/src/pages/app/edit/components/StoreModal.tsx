@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -22,7 +22,6 @@ import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { MyTooltip } from '@sealos/ui';
-import { PVC_STORAGE_MAX } from '@/store/static';
 
 export type StoreType = {
   id?: string;
@@ -37,12 +36,16 @@ const StoreModal = ({
     path: '',
     value: 1
   },
+  minValue,
+  maxValue,
   listNames,
   isEditStore,
   successCb,
   closeCb
 }: {
   defaultValue?: StoreType;
+  minValue: number;
+  maxValue: number;
   listNames: string[];
   isEditStore: boolean;
   successCb: (e: StoreType) => void;
@@ -50,10 +53,7 @@ const StoreModal = ({
 }) => {
   const { t } = useTranslation();
   const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
-  const minVal = useMemo(
-    () => (isEditStore ? defaultValue.value : 1),
-    [defaultValue.value, isEditStore]
-  );
+
   const {
     register,
     setValue,
@@ -71,6 +71,13 @@ const StoreModal = ({
     }
   };
 
+  const clampValue = useCallback(
+    (value: number) => {
+      return Number.isSafeInteger(value) ? Math.min(maxValue, Math.max(value, minValue)) : minValue;
+    },
+    [minValue, maxValue]
+  );
+
   return (
     <>
       <Modal isOpen onClose={closeCb} lockFocusAcrossFrames={false}>
@@ -83,8 +90,35 @@ const StoreModal = ({
               <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
                 {t('capacity')}
               </Box>
-              <MyTooltip label={`${t('Storage Range')}: ${minVal}~${PVC_STORAGE_MAX} Gi`}>
-                <NumberInput max={PVC_STORAGE_MAX} min={minVal} step={1} position={'relative'}>
+              <MyTooltip
+                label={
+                  maxValue === 0
+                    ? t('Storage limit reached')
+                    : `${t('Storage Range')}: ${minValue}~${maxValue} Gi`
+                }
+              >
+                <NumberInput
+                  step={1}
+                  position={'relative'}
+                  isDisabled={maxValue === 0}
+                  {...register('value', {
+                    required: t('Storage Value can not empty') || 'Storage Value can not empty',
+                    min: {
+                      value: minValue,
+                      message: `${t('Min Storage Value')} ${minValue} Gi`
+                    },
+                    max: {
+                      value: maxValue,
+                      message: `${t('Max Storage Value')} ${maxValue} Gi`
+                    },
+                    valueAsNumber: true
+                  })}
+                  min={minValue}
+                  max={maxValue}
+                  onChange={(e) => {
+                    setValue('value', Number(e));
+                  }}
+                >
                   <Box
                     position={'absolute'}
                     right={10}
@@ -105,19 +139,6 @@ const StoreModal = ({
                       bg: '#FFF',
                       color: '#111824'
                     }}
-                    {...register('value', {
-                      required: t('Storage Value can not empty') || 'Storage Value can not empty',
-                      min: {
-                        value: minVal,
-                        message: `${t('Min Storage Value')} ${minVal} Gi`
-                      },
-                      max: {
-                        value: PVC_STORAGE_MAX,
-                        message: `${t('Max Storage Value')} ${PVC_STORAGE_MAX} Gi`
-                      },
-                      valueAsNumber: true
-                    })}
-                    max={PVC_STORAGE_MAX}
                   />
                   <NumberInputStepper>
                     <NumberIncrementStepper />
@@ -160,7 +181,17 @@ const StoreModal = ({
           </ModalBody>
 
           <ModalFooter>
-            <Button w={'88px'} onClick={handleSubmit(successCb)}>
+            <Button
+              w={'88px'}
+              onClick={handleSubmit((e) => {
+                successCb({
+                  id: e.id,
+                  name: e.name,
+                  path: e.path,
+                  value: clampValue(e.value)
+                });
+              })}
+            >
               {t('Confirm')}
             </Button>
           </ModalFooter>

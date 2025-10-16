@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
+import useSigninPageStore from '@/stores/signinPageStore';
 import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
@@ -20,6 +21,7 @@ export default function Callback() {
   const setToken = useSessionStore((s) => s.setToken);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
+  const { setSigninPageAction } = useSigninPageStore();
   const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
   useEffect(() => {
     if (!router.isReady) return;
@@ -67,9 +69,30 @@ export default function Callback() {
               inviterId: getInviterId() ?? undefined,
               semData: getUserSemData() ?? undefined,
               adClickData: getAdClickData() ?? undefined
-            });
+            }).catch((e) => e);
+            if (data instanceof Error) {
+              throw data;
+            }
             setProvider();
-            if (data.code === 200 && data.data?.token) {
+            // Consider unknown error if no data returned.
+            if (!data) {
+              return;
+            }
+
+            // GitHub email conflicts with another user.
+            if (
+              data.data &&
+              'error' in data.data &&
+              data.data.error === 'OAUTH_PROVIDER_CONFLICT'
+            ) {
+              setSigninPageAction('PROMPT_REAUTH_GITHUB');
+              await router.push({
+                pathname: '/signin'
+              });
+              return;
+            }
+
+            if (data.data && data.code === 200 && !('error' in data.data)) {
               const token = data.data?.token;
               setToken(token);
               const needInit = data.data.needInit;

@@ -1,0 +1,139 @@
+{{- $Values := (.helm).Values | default .Values }}
+{{- $runbookUrl := ($Values.defaultRules).runbookUrl | default "https://runbooks.prometheus-operator.dev/runbooks" }}
+{{- $clusterLabel := ($Values.global).clusterLabel | default "cluster" }}
+{{- $additionalGroupByLabels := append $Values.defaultRules.additionalGroupByLabels $clusterLabel }}
+{{- $groupLabels := join "," $additionalGroupByLabels }}
+{{- $grafanaHost := ternary (index (($Values.grafana).ingress).hosts 0) (($Values.external).grafana).host ($Values.grafana).enabled }}
+condition: '{{ ($Values.alertmanager).enabled }}'
+name: alertmanager.rules
+rules:
+- alert: AlertmanagerFailedReload
+  annotations:
+    description: 'Configuration has failed to load for {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerfailedreload'
+    summary: 'Reloading an Alertmanager configuration has failed.'
+  condition: '{{ true }}'
+  expr: |-
+    # Without max_over_time, failed scrapes could create false negatives, see
+    # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+    max_over_time(alertmanager_config_last_reload_successful{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[5m]) == 0
+  for: 10m
+  labels:
+    severity: critical
+- alert: AlertmanagerMembersInconsistent
+  annotations:
+    description: 'Alertmanager {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}} has only found {{`{{`}} $value {{`}}`}} members of the {{`{{`}}$labels.job{{`}}`}} cluster.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagermembersinconsistent'
+    summary: 'A member of an Alertmanager cluster has not found all other cluster members.'
+  condition: '{{ true }}'
+  expr: |-
+    # Without max_over_time, failed scrapes could create false negatives, see
+    # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+      max_over_time(alertmanager_cluster_members{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[5m])
+    < on (namespace,service,{{ $groupLabels }}) group_left
+      count by (namespace,service,{{ $groupLabels }}) (max_over_time(alertmanager_cluster_members{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[5m]))
+  for: 15m
+  labels:
+    severity: critical
+- alert: AlertmanagerFailedToSendAlerts
+  annotations:
+    description: 'Alertmanager {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}} failed to send {{`{{`}} $value | humanizePercentage {{`}}`}} of notifications to {{`{{`}} $labels.integration {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerfailedtosendalerts'
+    summary: 'An Alertmanager instance failed to send notifications.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      rate(alertmanager_notifications_failed_total{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[15m])
+    /
+      ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[15m])
+    )
+    > 0.01
+  for: 5m
+  labels:
+    severity: warning
+- alert: AlertmanagerClusterFailedToSendAlerts
+  annotations:
+    description: 'The minimum notification failure rate to {{`{{`}} $labels.integration {{`}}`}} sent from any instance in the {{`{{`}}$labels.job{{`}}`}} cluster is {{`{{`}} $value | humanizePercentage {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts'
+    summary: 'All Alertmanager instances in a cluster failed to send notifications to a critical integration.'
+  condition: '{{ true }}'
+  expr: |-
+    min by (namespace,service,integration,{{ $groupLabels }}) (
+      rate(alertmanager_notifications_failed_total{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}", integration=~`.*`}[15m])
+    /
+      ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}", integration=~`.*`}[15m])
+    )
+    > 0.01
+  for: 5m
+  labels:
+    severity: critical
+- alert: AlertmanagerClusterFailedToSendAlerts
+  annotations:
+    description: 'The minimum notification failure rate to {{`{{`}} $labels.integration {{`}}`}} sent from any instance in the {{`{{`}}$labels.job{{`}}`}} cluster is {{`{{`}} $value | humanizePercentage {{`}}`}}.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts'
+    summary: 'All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.'
+  condition: '{{ true }}'
+  expr: |-
+    min by (namespace,service,integration,{{ $groupLabels }}) (
+      rate(alertmanager_notifications_failed_total{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}", integration!~`.*`}[15m])
+    /
+      ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}", integration!~`.*`}[15m])
+    )
+    > 0.01
+  for: 5m
+  labels:
+    severity: warning
+- alert: AlertmanagerConfigInconsistent
+  annotations:
+    description: 'Alertmanager instances within the {{`{{`}}$labels.job{{`}}`}} cluster have different configurations.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerconfiginconsistent'
+    summary: 'Alertmanager instances within the same cluster have different configurations.'
+  condition: '{{ true }}'
+  expr: |-
+    count by (namespace,service,{{ $groupLabels }}) (
+      count_values by (namespace,service,{{ $groupLabels }}) ("config_hash", alertmanager_config_hash{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"})
+    )
+    != 1
+  for: 20m
+  labels:
+    severity: critical
+- alert: AlertmanagerClusterDown
+  annotations:
+    description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of Alertmanager instances within the {{`{{`}}$labels.job{{`}}`}} cluster have been up for less than half of the last 5m.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerclusterdown'
+    summary: 'Half or more of the Alertmanager instances within the same cluster are down.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      count by (namespace,service,{{ $groupLabels }}) (
+        avg_over_time(up{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[5m]) < 0.5
+      )
+    /
+      count by (namespace,service,{{ $groupLabels }}) (
+        up{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}
+      )
+    )
+    >= 0.5
+  for: 5m
+  labels:
+    severity: critical
+- alert: AlertmanagerClusterCrashlooping
+  annotations:
+    description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of Alertmanager instances within the {{`{{`}}$labels.job{{`}}`}} cluster have restarted at least 5 times in the last 10m.'
+    runbook_url: '{{ $runbookUrl }}/alertmanager/alertmanagerclustercrashlooping'
+    summary: 'Half or more of the Alertmanager instances within the same cluster are crashlooping.'
+  condition: '{{ true }}'
+  expr: |-
+    (
+      count by (namespace,service,{{ $groupLabels }}) (
+        changes(process_start_time_seconds{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}[10m]) > 4
+      )
+    /
+      count by (namespace,service,{{ $groupLabels }}) (
+        up{job="{{ include "vm-k8s-stack.alertmanager.name" . }}",namespace="{{ include "vm.namespace" . }}"}
+      )
+    )
+    >= 0.5
+  for: 5m
+  labels:
+    severity: critical

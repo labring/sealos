@@ -35,6 +35,7 @@ import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
 import { track } from '@sealos/gtm';
+import { throttle } from 'lodash';
 
 const AppItem = ({
   app,
@@ -213,14 +214,13 @@ const AppGridPagingContainer = ({
 
   // Calculate items per page and scroll position on initial render and on screen size changes
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout;
-
-    const handleResize = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
+    const handleResize = throttle(
+      () => {
         setItemsPerPage(calculateItemsPerPage());
-      }, 200);
-    };
+      },
+      200,
+      { leading: true, trailing: false }
+    );
 
     handleResize();
 
@@ -228,27 +228,24 @@ const AppGridPagingContainer = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(debounceTimer);
     };
   }, [columns, calculateItemsPerPage]);
 
   // Calculate grid width on screen size changes
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout;
-
-    const handleResize = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
+    const handleResize = throttle(
+      () => {
         setPageWidth(calculatePageWidth());
-      }, 50);
-    };
+      },
+      50,
+      { leading: true, trailing: false }
+    );
 
     handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(debounceTimer);
     };
   }, [calculatePageWidth]);
 
@@ -521,6 +518,9 @@ export default function Apps() {
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
+  // For hiding the flickers when opening the folder
+  const [isModalContentVisible, setIsModalContentVisible] = useState(false);
+
   // [TODO] Guide is currently not compatible with narrow screen.
   const isNarrowScreen =
     useBreakpointValue({
@@ -541,6 +541,7 @@ export default function Apps() {
       sm: 3,
       lg: 5
     }) ?? 2;
+
   const gridGap = 10;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
@@ -749,6 +750,18 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
+  // Fade in Modal content on open to mask layout calculation flicker
+  useEffect(() => {
+    if (isFolderOpen) {
+      setIsModalContentVisible(false);
+      const raf = requestAnimationFrame(() => {
+        setIsModalContentVisible(true);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    setIsModalContentVisible(false);
+  }, [isFolderOpen]);
+
   const gradientIconStyle = {
     '.gradient-icon': {
       svg: {
@@ -861,7 +874,7 @@ export default function Apps() {
               <AppGrid
                 key={pageIndex}
                 gridGap={gridGap}
-                rows={itemsPerPageInGrid / columns}
+                rows={Math.ceil(itemsPerPageInGrid / columns)}
                 appHeight={appHeight}
                 columns={columns}
               >
@@ -908,7 +921,11 @@ export default function Apps() {
             color="#18181B"
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <ModalBody p="0" maxH={'full'}>
+          <ModalBody
+            p="0"
+            maxH={'full'}
+            style={{ opacity: isModalContentVisible ? 1 : 0, transition: 'opacity 0.25s ease' }}
+          >
             <AppGridPagingContainer
               dragContainerProps={{
                 pt: {
@@ -945,7 +962,7 @@ export default function Apps() {
                 <AppGrid
                   key={pageIndex}
                   gridGap={gridGap}
-                  rows={itemsPerPageInFolder / columns}
+                  rows={Math.ceil(itemsPerPageInFolder / columns)}
                   appHeight={appHeight}
                   columns={columns}
                   gridProps={{

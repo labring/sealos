@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
-import { Input } from '@/components/ui/input';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@sealos/shadcn-ui/input';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@sealos/shadcn-ui/form';
 
 interface VersionFieldProps {
   form: UseFormReturn<any>;

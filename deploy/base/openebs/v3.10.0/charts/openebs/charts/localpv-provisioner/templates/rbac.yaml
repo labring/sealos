@@ -1,0 +1,102 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "localpv.serviceAccountName" . }}
+  labels:
+    {{- include "localpv.labels" . | nindent 4 }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "localpv.fullname" . }}
+  {{- with .Values.localpv.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "localpv.labels" . | nindent 4 }}
+rules:
+- apiGroups: ["*"]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["*"]
+  resources: ["namespaces", "pods", "events", "endpoints"]
+  verbs: ["*"]
+- apiGroups: ["*"]
+  resources: ["resourcequotas", "limitranges"]
+  verbs: ["list", "watch"]
+- apiGroups: ["*"]
+  resources: ["storageclasses", "persistentvolumeclaims", "persistentvolumes"]
+  verbs: ["*"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: [ "get", "list", "create", "update", "delete", "patch"]
+- apiGroups: ["openebs.io"]
+  resources: [ "*"]
+  verbs: ["*" ]
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "create", "update"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "localpv.fullname" . }}
+  {{- with .Values.localpv.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "localpv.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "localpv.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "localpv.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- if .Values.rbac.pspEnabled }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "localpv.fullname" . }}-psp
+  {{- with .Values.localpv.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "localpv.labels" . | nindent 4 }}
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - {{ template "localpv.fullname" . }}-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "localpv.fullname" . }}-psp
+  {{- with .Values.localpv.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "localpv.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "localpv.fullname" . }}-psp
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "localpv.serviceAccountName" . }}
+    namespace: {{ $.Release.Namespace }}
+{{- end }}
+{{- end }}

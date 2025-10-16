@@ -4,12 +4,18 @@ import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
 import { BackupItemType, DBEditType } from '@/types/db';
-import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
+import {
+  json2Account,
+  json2ResourceOps,
+  json2CreateCluster,
+  json2ParameterConfig
+} from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
+import { getScore } from '@/utils/tools';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -18,6 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       isEdit: boolean;
       backupInfo?: BackupItemType;
     };
+    console.log('api createDB dbForm', dbForm);
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
@@ -50,6 +57,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       if (dbForm.storage > storage) {
         const volumeExpansionYaml = json2ResourceOps(dbForm, 'VolumeExpansion');
         opsRequests.push(volumeExpansionYaml);
+      }
+
+      // Handle parameter configuration updates
+      if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+        if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+          try {
+            const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            const configYaml = json2ParameterConfig(
+              dbForm.dbName,
+              dbForm.dbType,
+              dbForm.dbVersion,
+              dbForm.parameterConfig,
+              dynamicMaxConnections
+            );
+            console.log('api createDB configYaml', configYaml);
+            await applyYamlList([configYaml], 'replace');
+          } catch (err) {
+            console.log('Failed to update parameter configuration:', err);
+          }
+        }
       }
 
       if (opsRequests.length > 0) {
@@ -90,7 +117,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       storageClassName: process.env.STORAGE_CLASSNAME
     });
 
-    await applyYamlList([account, cluster], 'create');
+    const yamlList = [account, cluster];
+
+    if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+      // MySQL 5.7.42 version should not apply parameter config
+      if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+        const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+
+        const config = json2ParameterConfig(
+          dbForm.dbName,
+          dbForm.dbType,
+          dbForm.dbVersion,
+          dbForm.parameterConfig,
+          dynamicMaxConnections
+        );
+        yamlList.unshift(config);
+      }
+    }
+
+    await applyYamlList(yamlList, 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',
       'v1alpha1',

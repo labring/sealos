@@ -1,0 +1,616 @@
+# Default values for prometheus-node-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  registry: quay.io
+  repository: prometheus/node-exporter
+  # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
+  tag: ""
+  pullPolicy: IfNotPresent
+  digest: ""
+
+imagePullSecrets: []
+# - name: "image-pull-secret"
+nameOverride: ""
+fullnameOverride: ""
+
+# Number of old history to retain to allow rollback
+# Default Kubernetes value is set to 10
+revisionHistoryLimit: 10
+
+global:
+  # To help compatibility with other charts which use global.imagePullSecrets.
+  # Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+  # global:
+  #   imagePullSecrets:
+  #   - name: pullSecret1
+  #   - name: pullSecret2
+  # or
+  # global:
+  #   imagePullSecrets:
+  #   - pullSecret1
+  #   - pullSecret2
+  imagePullSecrets: []
+  #
+  # Allow parent charts to override registry hostname
+  imageRegistry: ""
+
+# Configure kube-rbac-proxy. When enabled, creates a kube-rbac-proxy to protect the node-exporter http endpoint.
+# The requests are served through the same service but requests are HTTPS.
+kubeRBACProxy:
+  enabled: false
+  ## Set environment variables as name/value pairs
+  env: {}
+    # VARIABLE: value
+  image:
+    registry: quay.io
+    repository: brancz/kube-rbac-proxy
+    tag: v0.19.1
+    sha: ""
+    pullPolicy: IfNotPresent
+
+  # List of additional cli arguments to configure kube-rbac-proxy
+  # for example: --tls-cipher-suites, --log-file, etc.
+  # all the possible args can be found here: https://github.com/brancz/kube-rbac-proxy#usage
+  extraArgs: []
+
+  ## Specify security settings for a Container
+  ## Allows overrides and additional options compared to (Pod) securityContext
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext: {}
+
+  # Specify the port used for the Node exporter container (upstream port)
+  port: 8100
+  # Specify the name of the container port
+  portName: http
+  # Configure a hostPort. If true, hostPort will be enabled in the container and set to service.port.
+  enableHostPort: false
+
+  # Configure Proxy Endpoints Port
+  # This is the port being probed for readiness
+  proxyEndpointsPort: 8888
+  # Configure a hostPort. If true, hostPort will be enabled in the container and set to proxyEndpointsPort.
+  enableProxyEndpointsHostPort: false
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 64Mi
+    # requests:
+    #  cpu: 10m
+    #  memory: 32Mi
+
+  ## Additional volume mounts in the kube-rbac-proxy container
+  ## See extraVolumes below
+  extraVolumeMounts: []
+    # - name: extra-volume
+    #   mountPath: /extra
+    #   readOnly: true
+
+  ## tls enables using TLS resources from a volume on secret referred to in tlsSecret below.
+  ## When enabling tlsClientAuth, client CA certificate must be set in tlsSecret.caItem.
+  ## Ref. https://github.com/brancz/kube-rbac-proxy/issues/187
+  tls:
+    enabled: false
+    tlsClientAuth: false
+
+## tlsSecret refers to an existing secret holding TLS items: client CA certificate, private key and certificate.
+## secretName and volumeName can be templated.
+## If enabled, volume volumeName gets created on secret secretName.
+## The volume's resources will be used by kube-rbac-proxy if kubeRBACProxy.tls.enabled is set.
+tlsSecret:
+  enabled: false
+  ## Key with client CA certificate (optional)
+  caItem: ""
+  ## Key with certificate
+  certItem: tls.crt
+  ## Key with private key
+  keyItem: tls.key
+  ## Name of an existing secret
+  secretName: prometheus-node-exporter-tls
+  ## Name of the volume to be created
+  volumeName: prometheus-node-exporter-tls
+
+## Service configuration
+service:
+  ## Creating a service is enabled by default
+  enabled: true
+
+  ## Service type
+  type: ClusterIP
+  ## IP address for type ClusterIP
+  clusterIP: ""
+  ## Default service port. Sets the port of the exposed container as well (NE or kubeRBACProxy).
+  ## Use "servicePort" below if changing the service port only is desired.
+  port: 9100
+  ## Service port. Use this field if you wish to set a different service port
+  ## without changing the container port ("port" above).
+  servicePort: ""
+  ## Targeted port in the pod. Must refer to an open container port ("port" or "portName").
+  ## (IntOrString)
+  targetPort: 9100
+  ## Name of the service port. Sets the port name of the main container (NE) as well.
+  portName: metrics
+  ## Port number for service type NodePort
+  nodePort: null
+
+  ## If true, node exporter will listen on all interfaces
+  listenOnAllInterfaces: true
+
+  ## Additional annotations and labels for the service
+  annotations:
+    prometheus.io/scrape: "true"
+  labels: {}
+
+  ## Dual stack settings for the service
+  ## https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
+
+  ## External/Internal traffic policy setting (Cluster, Local)
+  ## https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-policies
+  externalTrafficPolicy: ""
+  internalTrafficPolicy: ""
+
+# Set a NetworkPolicy with:
+# ingress only on service.port or custom policy
+# no egress permitted
+networkPolicy:
+  enabled: false
+
+  # ingress:
+  # - {}
+
+# Additional environment variables that will be passed to the daemonset
+env: {}
+##  env:
+##    VARIABLE: value
+
+prometheus:
+  monitor:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+
+    jobLabel: ""
+
+    # List of pod labels to add to node exporter metrics
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
+    podTargetLabels: []
+
+    # List of target labels to add to node exporter metrics
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
+    targetLabels: []
+
+    scheme: http
+    basicAuth: {}
+    bearerTokenFile:
+    tlsConfig: {}
+
+    ## proxyUrl: URL of a proxy that should be used for scraping.
+    ##
+    proxyUrl: ""
+
+    ## Override serviceMonitor selector
+    ##
+    selectorOverride: {}
+
+    ## Attach node metadata to discovered targets. Requires Prometheus v2.35.0 and above.
+    ##
+    attachMetadata:
+      node: false
+
+    relabelings: []
+    metricRelabelings: []
+    interval: ""
+    scrapeTimeout: 10s
+    ## prometheus.monitor.apiVersion ApiVersion for the serviceMonitor Resource(defaults to "monitoring.coreos.com/v1")
+    apiVersion: ""
+
+    ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+    ##
+    sampleLimit: 0
+
+    ## TargetLimit defines a limit on the number of scraped targets that will be accepted.
+    ##
+    targetLimit: 0
+
+    ## Per-scrape limit on number of labels that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    ##
+    labelLimit: 0
+
+    ## Per-scrape limit on length of labels name that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    ##
+    labelNameLengthLimit: 0
+
+    ## Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    ##
+    labelValueLengthLimit: 0
+
+  # PodMonitor defines monitoring for a set of pods.
+  # ref. https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor
+  # Using a PodMonitor may be preferred in some environments where there is very large number
+  # of Node Exporter endpoints (1000+) behind a single service.
+  # The PodMonitor is disabled by default. When switching from ServiceMonitor to PodMonitor,
+  # the time series resulting from the configuration through PodMonitor may have different labels.
+  # For instance, there will not be the service label any longer which might
+  # affect PromQL queries selecting that label.
+  podMonitor:
+    enabled: false
+    # Namespace in which to deploy the pod monitor. Defaults to the release namespace.
+    namespace: ""
+    # Additional labels, e.g. setting a label for pod monitor selector as set in prometheus
+    additionalLabels: {}
+    #  release: kube-prometheus-stack
+    # PodTargetLabels transfers labels of the Kubernetes Pod onto the target.
+    podTargetLabels: []
+    # apiVersion defaults to monitoring.coreos.com/v1.
+    apiVersion: ""
+    # Override pod selector to select pod objects.
+    selectorOverride: {}
+    # Attach node metadata to discovered targets. Requires Prometheus v2.35.0 and above.
+    attachMetadata:
+      node: false
+    # The label to use to retrieve the job name from. Defaults to label app.kubernetes.io/name.
+    jobLabel: ""
+
+    # Scheme/protocol to use for scraping.
+    scheme: "http"
+    # Path to scrape metrics at.
+    path: "/metrics"
+
+    # BasicAuth allow an endpoint to authenticate over basic authentication.
+    # More info: https://prometheus.io/docs/operating/configuration/#endpoint
+    basicAuth: {}
+    # Secret to mount to read bearer token for scraping targets.
+    # The secret needs to be in the same namespace as the pod monitor and accessible by the Prometheus Operator.
+    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core
+    bearerTokenSecret: {}
+    # TLS configuration to use when scraping the endpoint.
+    tlsConfig: {}
+    # Authorization section for this endpoint.
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#safeauthorization
+    authorization: {}
+    # OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#oauth2
+    oauth2: {}
+
+    # ProxyURL eg http://proxyserver:2195. Directs scrapes through proxy to this endpoint.
+    proxyUrl: ""
+    # Interval at which endpoints should be scraped. If not specified Prometheus' global scrape interval is used.
+    interval: ""
+    # Timeout after which the scrape is ended. If not specified, the Prometheus global scrape interval is used.
+    scrapeTimeout: ""
+    # HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.
+    honorTimestamps: true
+    # HonorLabels chooses the metric's labels on collisions with target labels.
+    honorLabels: true
+    # Whether to enable HTTP2. Default false.
+    enableHttp2: ""
+    # Drop pods that are not running. (Failed, Succeeded).
+    # Enabled by default. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
+    filterRunning: ""
+    # FollowRedirects configures whether scrape requests follow HTTP 3xx redirects. Default false.
+    followRedirects: ""
+    # Optional HTTP URL parameters
+    params: {}
+
+    # RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds
+    # relabelings for a few standard Kubernetes fields. The original scrape job's name
+    # is available via the __tmp_prometheus_job_name label.
+    # More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+    relabelings: []
+    # MetricRelabelConfigs to apply to samples before ingestion.
+    metricRelabelings: []
+
+    # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+    sampleLimit: 0
+    # TargetLimit defines a limit on the number of scraped targets that will be accepted.
+    targetLimit: 0
+    # Per-scrape limit on number of labels that will be accepted for a sample.
+    # Only valid in Prometheus versions 2.27.0 and newer.
+    labelLimit: 0
+    # Per-scrape limit on length of labels name that will be accepted for a sample.
+    # Only valid in Prometheus versions 2.27.0 and newer.
+    labelNameLengthLimit: 0
+    # Per-scrape limit on length of labels value that will be accepted for a sample.
+    # Only valid in Prometheus versions 2.27.0 and newer.
+    labelValueLengthLimit: 0
+
+## Customize the updateStrategy if set
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 200m
+  #   memory: 50Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 30Mi
+
+# Specify the container restart policy passed to the Node Export container
+# Possible Values: Always (default)|OnFailure|Never
+restartPolicy: null
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  annotations: {}
+  imagePullSecrets: []
+  automountServiceAccountToken: false
+
+securityContext:
+  fsGroup: 65534
+  runAsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  # capabilities:
+  #   add:
+  #   - SYS_TIME
+
+rbac:
+  ## If true, create & use RBAC resources
+  ##
+  create: true
+
+# for deployments that have node_exporter deployed outside of the cluster, list
+# their addresses here
+endpoints: []
+
+# Expose the service to the host network
+hostNetwork: true
+
+# Share the host process ID namespace
+hostPID: true
+
+# Share the host ipc namespace
+hostIPC: false
+
+# Mount the node's root file system (/) at /host/root in the container
+hostRootFsMount:
+  enabled: true
+  # Defines how new mounts in existing mounts on the node or in the container
+  # are propagated to the container or node, respectively. Possible values are
+  # None, HostToContainer, and Bidirectional. If this field is omitted, then
+  # None is used. More information on:
+  # https://kubernetes.io/docs/concepts/storage/volumes/#mount-propagation
+  mountPropagation: HostToContainer
+
+# Mount the node's proc file system (/proc) at /host/proc in the container
+hostProcFsMount:
+  # Possible values are None, HostToContainer, and Bidirectional
+  mountPropagation: ""
+
+# Mount the node's sys file system (/sys) at /host/sys in the container
+hostSysFsMount:
+  # Possible values are None, HostToContainer, and Bidirectional
+  mountPropagation: ""
+
+## Assign a group of affinity scheduling rules
+## The default nodeAffinity excludes Fargate nodes and virtual kubelets from scheduling
+## unless overriden by hard node affinity set in the field.
+affinity: {}
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#         - matchFields:
+#             - key: metadata.name
+#               operator: In
+#               values:
+#                 - target-host-name
+
+# Annotations to be added to node exporter pods
+podAnnotations:
+  # Fix for very slow GKE cluster upgrades
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+# Extra labels to add to node exporter pods (can be templated)
+podLabels: {}
+
+## Extra labels to attach to all resources (can be templated)
+commonLabels: {}
+
+# Annotations to be added to node exporter daemonset
+daemonsetAnnotations: {}
+
+## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
+releaseLabel: false
+
+# Custom DNS configuration to be added to prometheus-node-exporter pods
+dnsConfig: {}
+# nameservers:
+#   - 1.2.3.4
+# searches:
+#   - ns1.svc.cluster-domain.example
+#   - my.dns.search.suffix
+# options:
+#   - name: ndots
+#     value: "2"
+#   - name: edns0
+
+## Assign a nodeSelector if operating a hybrid cluster
+##
+nodeSelector:
+  kubernetes.io/os: linux
+  #  kubernetes.io/arch: amd64
+
+# Specify grace period for graceful termination of pods. Defaults to 30 if null or not specified
+terminationGracePeriodSeconds: null
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+
+# Enable or disable container termination message settings
+# https://kubernetes.io/docs/tasks/debug/debug-application/determine-reason-pod-failure/
+terminationMessageParams:
+  enabled: false
+  # If enabled, specify the path for termination messages
+  terminationMessagePath: /dev/termination-log
+  # If enabled, specify the policy for termination messages
+  terminationMessagePolicy: File
+
+
+## Assign a PriorityClassName to pods if set
+# priorityClassName: ""
+
+## Additional container arguments
+##
+extraArgs: []
+#   - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
+#   - --collector.textfile.directory=/run/prometheus
+
+## Additional mounts from the host to node-exporter container
+##
+extraHostVolumeMounts: []
+#  - name: <mountName>
+#    hostPath: <hostPath>
+#    https://kubernetes.io/docs/concepts/storage/volumes/#hostpath-volume-types
+#    type: "" (Default)|DirectoryOrCreate|Directory|FileOrCreate|File|Socket|CharDevice|BlockDevice
+#    mountPath: <mountPath>
+#    readOnly: true|false
+#    mountPropagation: None|HostToContainer|Bidirectional
+
+## Additional configmaps to be mounted.
+##
+configmaps: []
+# - name: <configMapName>
+#   mountPath: <mountPath>
+
+secrets: []
+# - name: <secretName>
+#   mountPath: <mountPatch>
+
+## Override the deployment namespace
+##
+namespaceOverride: ""
+
+## Additional containers for export metrics to text file; fields image,imagePullPolicy,securityContext take default value from main container
+##
+sidecars: []
+#  - name: nvidia-dcgm-exporter
+#    image: nvidia/dcgm-exporter:1.4.3
+#    volumeMounts:
+#     - name: tmp
+#       mountPath: /tmp
+
+## Volume for sidecar containers
+##
+sidecarVolumeMount: []
+#  - name: collector-textfiles
+#    mountPath: /run/prometheus
+#    readOnly: false
+
+## Additional mounts from the host to sidecar containers
+##
+sidecarHostVolumeMounts: []
+#  - name: <mountName>
+#    hostPath: <hostPath>
+#    mountPath: <mountPath>
+#    readOnly: true|false
+#    mountPropagation: None|HostToContainer|Bidirectional
+
+## Additional InitContainers to initialize the pod
+##
+extraInitContainers: []
+
+## Liveness probe
+##
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    httpHeaders: []
+    scheme: http
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+## Readiness probe
+##
+readinessProbe:
+  failureThreshold: 3
+  httpGet:
+    httpHeaders: []
+    scheme: http
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+# Enable vertical pod autoscaler support for prometheus-node-exporter
+verticalPodAutoscaler:
+  enabled: false
+
+  # Recommender responsible for generating recommendation for the object.
+  # List should be empty (then the default recommender will generate the recommendation)
+  # or contain exactly one recommender.
+  # recommenders:
+  # - name: custom-recommender-performance
+
+  # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+  controlledResources: []
+  # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+  # controlledValues: RequestsAndLimits
+
+  # Define the max allowed resources for the pod
+  maxAllowed: {}
+  # cpu: 200m
+  # memory: 100Mi
+  # Define the min allowed resources for the pod
+  minAllowed: {}
+  # cpu: 200m
+  # memory: 100Mi
+
+  # updatePolicy:
+    # Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
+    # minReplicas: 1
+    # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
+    # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
+    # updateMode: Auto
+
+# Extra manifests to deploy as an array
+extraManifests: []
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"
+
+## Extra volumes to become available in the pod
+extraVolumes: []
+  # - name: extra-volume
+  #   secret:
+  #     defaultMode: 420
+  #     optional: false
+  #     secretName: node-exporter-secret
+
+## Extra volume mounts in the node-exporter container
+extraVolumeMounts: []
+  # - name: extra-volume
+  #   mountPath: /extra
+  #   readOnly: true
+
+# Override version of app, required if image.tag is defined and does not follow semver
+version: ""

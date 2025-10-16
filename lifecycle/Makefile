@@ -132,11 +132,6 @@ clean:
 	@echo "===========> Cleaning all build output"
 	@-rm -vrf $(OUTPUT_DIR) $(BIN_DIR)
 
-## update-contrib: Update list of contributors.
-.PHONY: update-contrib
-update-contrib:
-	@git log --format='%aN <%aE>' | sort -uf > CONTRIBUTORS
-
 ## help: Show this help info.
 .PHONY: help
 help: Makefile

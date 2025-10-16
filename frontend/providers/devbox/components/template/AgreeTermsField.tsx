@@ -1,10 +1,10 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
 import { useEnvStore } from '@/stores/env';
 
-import { Checkbox } from '@/components/ui/checkbox';
-import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { FormControl, FormField, FormItem, FormMessage } from '@sealos/shadcn-ui/form';
 
 interface AgreeTermsFieldProps {
   form: UseFormReturn<any>;
@@ -13,6 +13,15 @@ interface AgreeTermsFieldProps {
 const AgreeTermsField = ({ form }: AgreeTermsFieldProps) => {
   const t = useTranslations();
   const { env } = useEnvStore();
+  const locale = useLocale();
+
+  const handleGotoPrivacyDocs = () => {
+    if (locale === 'zh') {
+      window.open(env.privacyUrlZH, '_blank');
+    } else {
+      window.open(env.privacyUrlEN, '_blank');
+    }
+  };
 
   return (
     <FormField
@@ -28,8 +37,8 @@ const AgreeTermsField = ({ form }: AgreeTermsFieldProps) => {
               <span className="text-sm font-medium text-zinc-900">
                 {t('have_read_and_agree_to_the ')}
                 <a
-                  className="underline"
-                  href={env.privacyUrl}
+                  className="cursor-pointer underline"
+                  onClick={handleGotoPrivacyDocs}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

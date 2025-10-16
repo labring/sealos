@@ -281,32 +281,10 @@ jobs:
             echo "aliyun_latest_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend:latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos-frontend
-          path: /tmp/
-
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
 
-      - name: Sealos login to ghcr.io
-        env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
-
-      - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        env:
-          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
-          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
-        run: |
-          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
         working-directory: frontend/${{ inputs.module }}/deploy
@@ -320,8 +298,14 @@ jobs:
           ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
           ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
         run: |
-          sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
-
+          if [[ -d manifests ]]; then
+             echo "Found manifests"
+             sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+          fi
+          if [[ -f charts/${{ env.MODULE_NAME }}/values.yaml ]]; then
+             echo "Found charts charts/${{ env.MODULE_NAME }}/values.yaml"
+             sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" charts/${{ env.MODULE_NAME }}/values.yaml
+          fi
           # Build for GHCR
           sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
           sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
@@ -340,6 +324,21 @@ jobs:
             sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
           fi
 
+      - name: Sealos login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
+
       - name: Manifest Cluster Images
         env:
           OWNER: ${{ github.repository_owner }}
@@ -356,33 +355,3 @@ jobs:
             bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE"
             bash scripts/manifest-cluster-images.sh "$ALIYUN_LATEST_CLUSTER_IMAGE"
           fi
-
-      - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.cluster_image }}
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.cluster_image }}"
-
-      - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.latest_cluster_image }}
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}"

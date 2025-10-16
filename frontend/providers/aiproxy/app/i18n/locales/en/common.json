@@ -9,7 +9,8 @@
     "GlobalLogs": "Logs",
     "GlobalConfigs": "Config",
     "NsManager": "NS Manage",
-    "Keys": "API Keys"
+    "Keys": "API Keys",
+    "McpHub": "MCP Hub"
   },
   "keyList": {
     "title": "API Keys",
@@ -107,7 +108,7 @@
   "copySuccess": "Copied",
   "copyFailed": "Copy failed",
   "pricing": "Pricing",
-  "noData": "You don’t have an API Key yet",
+  "noData": "You don't have an API Key yet",
   "price": {
     "all": "All",
     "title": "Models",
@@ -124,7 +125,38 @@
     "modelToolChoice": "Tool Chocice",
     "response": "Output",
     "fixedPrice": "Fixed price",
+    "imageInputPrice": "Image input price",
+    "thinkingModeOutputPrice": "Thinking model output price",
+    "thinkingMode": "Deep thinking",
     "perRequest": "/request"
+  },
+  "mcpHub": {
+    "title": "MCP Hub",
+    "config": "Configuration",
+    "search": "Search MCP Services",
+    "searchPlaceholder": "Enter service name to search",
+    "serviceType": "Service Type",
+    "allTypes": "All Types",
+    "hosted": "Hosted",
+    "local": "Local",
+    "noResults": "No services found",
+    "connectService": "Connect via SSE URL",
+    "sseUrlTitle": "Connect via SSE URL",
+    "sseUrlTip": "The SSE URL of Hosted MCP service is a dedicated connection address assigned to you. It's sensitive information, please do not leak it!",
+    "httpStreamTitle": "Connect via HTTP Stream",
+    "httpStreamTip": "The HTTP Stream URL of Hosted MCP service is a dedicated connection address assigned to you. It's sensitive information, please do not leak it!",
+    "configParams": "Configure MCP Parameters",
+    "saveParams": "Save Parameters",
+    "backToInfo": "Back",
+    "paramsSaved": "Parameters saved successfully",
+    "paramsSaveFailed": "Failed to save parameters",
+    "required": "Required",
+    "optional": "Optional",
+    "configTitle": "Configuration",
+    "sse": "SSE",
+    "httpStream": "HTTP Stream",
+    "tabSSE": "SSE",
+    "tabHTTP": "HTTP Stream"
   },
   "createKey2": "Create Key",
   "dashboard": {

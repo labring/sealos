@@ -25,10 +25,9 @@ export const _getRegionToken = (request: AxiosInstance) => () =>
   );
 
 export const getRegionToken = _getRegionToken(request);
-export const _passwordExistRequest = (request: AxiosInstance) => (data: { user: string }) =>
-  request.post<any, ApiResp<TUserExist>>('/api/auth/password/exist', data);
+
 export const _passwordLoginRequest =
-  (request: AxiosInstance, switchAuth: (token: string) => void) =>
+  (request: AxiosInstance) =>
   (
     data:
       | {
@@ -43,20 +42,12 @@ export const _passwordLoginRequest =
           password: string;
         }
   ) =>
-    request.post<any, ApiResp<{ token: string }>>('/api/auth/password', data).then(
-      ({ data }) => {
-        if (data) {
-          switchAuth(data.token);
-          return _getRegionToken(request)();
-        } else {
-          return null;
-        }
-      },
-      (err) => Promise.resolve(null)
-    );
+    request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/password', data);
+
 export const _passwordModifyRequest =
   (request: AxiosInstance) => (data: { oldPassword: string; newPassword: string }) =>
     request.post<any, ApiResp<{ message: string }>>('/api/auth/password/modify', data);
+
 export const _UserInfo = (request: AxiosInstance) => () =>
   request.post<
     any,
@@ -126,13 +117,16 @@ export const _oauthProviderSignIn =
   (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
     request.post<
       typeof data,
-      ApiResp<{
-        token: string;
-        realUser: {
-          realUserUid: string;
-        };
-        needInit: boolean;
-      }>
+      ApiResp<
+        | {
+            token: string;
+            realUser: {
+              realUserUid: string;
+            };
+            needInit: boolean;
+          }
+        | { error: string }
+      >
     >(`/api/auth/oauth/${provider.toLocaleLowerCase()}`, data);
 export const _oauthProviderBind =
   (request: AxiosInstance) =>
@@ -215,6 +209,9 @@ export const _enterpriseRealNameAuthCancelRequest = (request: AxiosInstance) => 
   );
 };
 
+export const _getBanksListRequest = (request: AxiosInstance) => () =>
+  request<never, ApiResp<Record<string, string>>>('/api/account/enterpriseRealName?type=banks');
+
 export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
 export const _verifyToken = (request: AxiosInstance) => () =>
@@ -239,10 +236,7 @@ export const EmailSignUp = _EmailSignUp(request);
 export const EmailSignUpCheck = _EmailSignUpCheck(request);
 export const initRegionToken = _initRegionToken(request);
 
-export const passwordExistRequest = _passwordExistRequest(request);
-export const passwordLoginRequest = _passwordLoginRequest(request, (token) => {
-  useSessionStore.setState({ token });
-});
+export const passwordLoginRequest = _passwordLoginRequest(request);
 
 export const passwordModifyRequest = _passwordModifyRequest(request);
 export const UserInfo = _UserInfo(request);
@@ -271,5 +265,6 @@ export const enterpriseRealNameAuthCancelRequest = _enterpriseRealNameAuthCancel
 
 export const faceAuthGenerateQRcodeUriRequest = _faceAuthGenerateQRcodeUriRequest(request);
 export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
+export const getBanksListRequest = _getBanksListRequest(request);
 
 export const getAmount = _getAmount(request);

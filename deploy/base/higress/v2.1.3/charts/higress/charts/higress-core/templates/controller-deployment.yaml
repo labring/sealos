@@ -1,0 +1,325 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "controller.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.controller.autoscaling.enabled }}
+  replicas: {{ .Values.controller.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.controller.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- with .Values.controller.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- include "controller.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.controller.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "controller.serviceAccountName" . }}
+      {{- if .Values.global.priorityClassName }}
+      priorityClassName: "{{ .Values.global.priorityClassName }}"
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.controller.securityContext | nindent 12 }}
+          image: "{{ .Values.controller.hub | default .Values.global.hub }}/{{ .Values.controller.image | default "higress" }}:{{ .Values.controller.tag | default .Chart.AppVersion }}"
+          args:
+          - "serve"
+          - --gatewaySelectorKey=higress
+          - --gatewaySelectorValue={{ .Release.Namespace }}-{{ include "gateway.name" . }}
+          - --gatewayHttpPort={{ .Values.gateway.httpPort }}
+          - --gatewayHttpsPort={{ .Values.gateway.httpsPort }}
+          {{- if not .Values.global.enableStatus }}
+          - --enableStatus={{ .Values.global.enableStatus }}
+          {{- end }}
+          - --ingressClass={{ .Values.global.ingressClass }}
+          {{- if .Values.global.watchNamespace }}
+          - --watchNamespace={{ .Values.global.watchNamespace }}
+          {{- end }}
+          - --enableAutomaticHttps={{ .Values.controller.automaticHttps.enabled }}
+          - --automaticHttpsEmail={{ .Values.controller.automaticHttps.email }}
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: SERVICE_ACCOUNT
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.serviceAccountName
+          - name: DOMAIN_SUFFIX
+            value: {{ .Values.global.proxy.clusterDomain }}
+          - name: GATEWAY_NAME
+            value: {{ include "gateway.name" . }}
+          - name: PILOT_ENABLE_GATEWAY_API
+            value: "{{ .Values.global.enableGatewayAPI }}"
+          - name: PILOT_ENABLE_ALPHA_GATEWAY_API
+            value: "{{ .Values.global.enableGatewayAPI }}"
+          {{- if .Values.controller.env }}
+          {{- range $key, $val := .Values.controller.env }}
+          - name: {{ $key }}
+            value: "{{ $val }}"
+          {{- end }}
+          {{- end }}
+          ports:
+            {{- range $idx, $port := .Values.controller.ports }}
+            - name: {{ $port.name }}
+              containerPort: {{ $port.port }}
+              protocol: {{ $port.protocol }}
+            {{- end }}
+          readinessProbe:
+            {{- toYaml .Values.controller.probe | nindent 12 }}
+          {{- if not (or .Values.global.local .Values.global.kind) }}
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          - name: log
+            mountPath: /var/log
+        - name: discovery
+          image: "{{ .Values.pilot.hub | default .Values.global.hub }}/{{ .Values.pilot.image | default "pilot" }}:{{ .Values.pilot.tag | default .Chart.AppVersion }}"
+{{- if .Values.global.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+{{- end }}
+          args:
+          - "discovery"
+          - --monitoringAddr=:15014
+{{- if .Values.global.logging.level }}
+          - --log_output_level={{ .Values.global.logging.level }}
+{{- end}}
+{{- if .Values.global.logAsJson }}
+          - --log_as_json
+{{- end }}
+          - --domain
+          - {{ .Values.global.proxy.clusterDomain }}
+{{- if .Values.global.oneNamespace }}
+          - "-a"
+          - {{ .Release.Namespace }}
+{{- end }}
+{{- if .Values.pilot.plugins }}
+          - --plugins={{ .Values.pilot.plugins }}
+{{- end }}
+          - --keepaliveMaxServerConnectionAge
+          - "{{ .Values.pilot.keepaliveMaxServerConnectionAge }}"
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 15010
+            protocol: TCP
+          - containerPort: 15017
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 3
+            timeoutSeconds: 5
+          env:
+          {{- if .Values.global.watchNamespace }}
+          - name: ISTIO_WATCH_NAMESPACE
+            value: "{{ .Values.global.watchNamespace }}"
+          {{- end }}
+          - name: ENABLE_PUSH_ALL_MCP_CLUSTERS
+            value: "{{ .Values.global.enablePushAllMCPClusters }}"
+          - name: PILOT_ENABLE_LDS_CACHE
+            value: "{{ .Values.global.enableLDSCache }}"
+          - name: PILOT_ENABLE_QUIC_LISTENERS
+            value: "true"
+          - name: VALIDATION_WEBHOOK_CONFIG_NAME
+            value: ""
+          - name: ISTIO_DUAL_STACK
+            value: "{{ .Values.global.enableIPv6 }}"
+          - name: PILOT_ENABLE_HEADLESS_SERVICE_POD_LISTENERS
+            value: "false"
+          - name: PILOT_ENABLE_ALPN_FILTER
+            value: "false"
+          - name: ENABLE_OPTIMIZED_CONFIG_REBUILD
+            value: "false"
+          - name: PILOT_ENABLE_K8S_SELECT_WORKLOAD_ENTRIES
+            value: "false"
+          - name: HIGRESS_SYSTEM_NS
+            value: "{{ .Release.Namespace }}"
+          - name: DEFAULT_UPSTREAM_CONCURRENCY_THRESHOLD
+            value: "{{ .Values.global.defaultUpstreamConcurrencyThreshold }}"
+          - name: ISTIO_GPRC_MAXRECVMSGSIZE
+            value: "{{ .Values.global.xdsMaxRecvMsgSize }}"
+          - name: ENBALE_SCOPED_RDS
+            value: "{{ .Values.global.enableSRDS }}"
+          - name: ON_DEMAND_RDS
+            value: "{{ .Values.global.onDemandRDS }}"
+          - name: HOST_RDS_MERGE_SUBSET
+            value: "{{ .Values.global.hostRDSMergeSubset }}"
+          - name: PILOT_FILTER_GATEWAY_CLUSTER_CONFIG
+            value: "{{ .Values.global.onlyPushRouteCluster }}"
+          - name: HIGRESS_CONTROLLER_SVC
+            value: "127.0.0.1"
+          - name: HIGRESS_CONTROLLER_PORT
+            value: "15051"
+          - name: REVISION
+            value: "{{ .Values.revision | default `default` }}"
+          - name: JWT_POLICY
+            value: {{ include "controller.jwtPolicy" . }}
+          - name: PILOT_CERT_PROVIDER
+            value: "istiod"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: SERVICE_ACCOUNT
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.serviceAccountName
+          - name: KUBECONFIG
+            value: /var/run/secrets/remote/config
+          - name: PRIORITIZED_LEADER_ELECTION
+            value: "false"
+          - name: INJECT_ENABLED
+            value: "false"
+          {{- if .Values.pilot.env }}
+          {{- range $key, $val := .Values.pilot.env }}
+          - name: {{ $key }}
+            value: "{{ $val }}"
+          {{- end }}
+          {{- end }}
+{{- if .Values.pilot.traceSampling }}
+          - name: PILOT_TRACE_SAMPLING
+            value: "{{ .Values.pilot.traceSampling }}"
+{{- end }}
+          - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_OUTBOUND
+            value: "{{ .Values.pilot.enableProtocolSniffingForOutbound }}"
+          - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_INBOUND
+            value: "{{ .Values.pilot.enableProtocolSniffingForInbound }}"
+          - name: ISTIOD_ADDR
+            value: istiod{{- if not (eq .Values.revision "") }}-{{ .Values.revision }}{{- end }}.{{ .Release.Namespace }}.svc:15012
+          - name: PILOT_ENABLE_ANALYSIS
+            value: "{{ .Values.global.istiod.enableAnalysis }}"
+          - name: CLUSTER_ID
+            value: "{{ $.Values.global.multiCluster.clusterName | default `Kubernetes` }}"
+          # HIGRESS_ENABLE_ISTIO_API is only used to restart the controller pod after the config change
+          {{- if .Values.global.enableIstioAPI }}
+          - name: HIGRESS_ENABLE_ISTIO_API
+            value: "true"
+          {{- end }}
+          - name: PILOT_ENABLE_GATEWAY_API
+            value: "false"
+          - name: PILOT_ENABLE_ALPHA_GATEWAY_API
+            value: "false"
+          - name: PILOT_ENABLE_GATEWAY_API_STATUS
+            value: "false"
+          - name: PILOT_ENABLE_GATEWAY_API_DEPLOYMENT_CONTROLLER
+            value: "false"
+          - name: CUSTOM_CA_CERT_NAME
+            value: "higress-ca-root-cert"
+          {{- if not (or .Values.global.local .Values.global.kind) }}
+          resources:
+{{- if .Values.pilot.resources }}
+{{ toYaml .Values.pilot.resources | trim | indent 12 }}
+{{- else }}
+{{ toYaml .Values.global.defaultResources | trim | indent 12 }}
+{{- end }}
+          {{- end }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 1337
+            runAsGroup: 1337
+            runAsNonRoot: true
+            capabilities:
+              drop:
+              - ALL
+          volumeMounts:
+          - name: config
+            mountPath: /etc/istio/config
+          {{- if eq (include "controller.jwtPolicy" .) "third-party-jwt" }}
+          - name: istio-token
+            mountPath: /var/run/secrets/tokens
+            readOnly: true
+          {{- end }}
+          - name: local-certs
+            mountPath: /var/run/secrets/istio-dns
+          - name: cacerts
+            mountPath: /etc/cacerts
+            readOnly: true
+          - name: istio-kubeconfig
+            mountPath: /var/run/secrets/remote
+            readOnly: true
+          {{- if .Values.pilot.jwksResolverExtraRootCA }}
+          - name: extracacerts
+            mountPath: /cacerts
+          {{- end }}
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: log
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: higress-config
+      # Technically not needed on this pod - but it helps debugging/testing SDS
+      # Should be removed after everything works.
+      - emptyDir:
+          medium: Memory
+        name: local-certs
+      {{- if eq (include "controller.jwtPolicy" .) "third-party-jwt" }}
+      - name: istio-token
+        projected:
+          sources:
+            - serviceAccountToken:
+                audience: {{ .Values.global.sds.token.aud }}
+                expirationSeconds: 43200
+                path: istio-token
+      {{- end }}
+      # Optional: user-generated root
+      - name: cacerts
+        secret:
+          secretName: cacerts
+          optional: true
+      - name: istio-kubeconfig
+        secret:
+          secretName: istio-kubeconfig
+          optional: true
+  {{- if .Values.pilot.jwksResolverExtraRootCA }}
+      - name: extracacerts
+        configMap:
+          name: pilot-jwks-extra-cacerts{{- if not (eq .Values.revision "") }}-{{ .Values.revision }}{{- end }}
+  {{- end }}

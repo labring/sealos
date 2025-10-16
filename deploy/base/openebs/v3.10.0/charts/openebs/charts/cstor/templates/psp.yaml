@@ -1,0 +1,24 @@
+{{- if .Values.rbac.pspEnabled }}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: openebs-cstor-csi-node-psp
+  labels:
+    {{- include "cstor.csiNode.labels" . | nindent 4 }}
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities: ['*']
+  volumes: ['*']
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+{{- end }}

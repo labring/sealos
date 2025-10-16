@@ -5,7 +5,7 @@ import { APPLICATION_PROTOCOLS, defaultSliderKey, ProtocolList } from '@/constan
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { PVC_STORAGE_MAX, SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -45,6 +45,7 @@ import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
+import { useQuery } from '@tanstack/react-query';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -58,19 +59,22 @@ const labelWidth = 120;
 const Form = ({
   formHook,
   already,
-  defaultStorePathList,
+  existingStores,
   countGpuInventory,
   pxVal,
   refresh,
-  isAdvancedOpen
+  isAdvancedOpen,
+
+  onDomainVerified
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
-  defaultStorePathList: string[];
+  existingStores: AppEditType['storeList'];
   countGpuInventory: (type?: string) => number;
   pxVal: number;
   refresh: boolean;
   isAdvancedOpen: boolean;
+  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -82,6 +86,7 @@ const Form = ({
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
+
   const {
     register,
     control,
@@ -163,6 +168,21 @@ const Form = ({
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
+
+  // For quota calculation in fields
+  const { userQuota, loadUserQuota } = useUserStore();
+  useQuery(['getUserQuota'], loadUserQuota);
+
+  const storageQuotaLeft = useMemo(() => {
+    const storageQuota = userQuota?.find((item) => item.type === 'storage');
+    if (!storageQuota) return 0;
+
+    const newlyUsedStorage =
+      storeList.reduce((sum, item) => sum + item.value, 0) -
+      existingStores.reduce((sum, item) => sum + item.value, 0);
+
+    return storageQuota.limit - storageQuota.used - newlyUsedStorage;
+  }, [userQuota, existingStores, storeList]);
 
   // listen scroll and set activeNav
   useEffect(() => {
@@ -289,14 +309,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -821,7 +841,8 @@ const Form = ({
                   _notLast={{ pb: 6, borderBottom: theme.borders.base }}
                   _notFirst={{ pt: 6 }}
                 >
-                  <Box>
+                  {/* Container Port Column - Fixed Width */}
+                  <Box w={'140px'}>
                     <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                       {t('Container Port')}
                     </Box>
@@ -845,7 +866,7 @@ const Form = ({
                         }
                       })}
                     />
-                    {i === networks.length - 1 && (
+                    {i === networks.length - 1 && networks.length + 1 <= 15 && (
                       <Box mt={3}>
                         <Button
                           w={'100px'}
@@ -872,7 +893,9 @@ const Form = ({
                       </Box>
                     )}
                   </Box>
-                  <Box mx={7}>
+
+                  {/* Enable Internet Access Column - Fixed Width */}
+                  <Box w={'200px'} mx={7}>
                     <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                       {t('Open Public Access')}
                     </Box>
@@ -916,11 +939,13 @@ const Form = ({
                       ></Switch>
                     </Flex>
                   </Box>
-                  {(network.openPublicDomain || network.openNodePort) && (
-                    <>
-                      <Box flex={'1 0 0'}>
-                        <Box mb={'8px'} h={'20px'}></Box>
-                        <Flex alignItems={'center'} h={'35px'}>
+
+                  {/* Protocol and Domain Column - Fixed Width */}
+                  <Box w={'500px'}>
+                    <Box mb={'8px'} h={'20px'}></Box>
+                    <Flex alignItems={'center'} h={'35px'}>
+                      {network.openPublicDomain || network.openNodePort ? (
+                        <>
                           <MySelect
                             width={'120px'}
                             height={'32px'}
@@ -930,8 +955,8 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                ? network.protocol
-                                : 'HTTP'
+                                  ? network.protocol
+                                  : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
@@ -981,14 +1006,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                  ? network?.nodePort
-                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                        network.nodePort
-                                      }`
-                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                        'pending_to_allocated'
-                                      )}`
-                                  : `${network.publicDomain}.${network.domain}`}
+                                    ? network?.nodePort
+                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                          network.nodePort
+                                        }`
+                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                          'pending_to_allocated'
+                                        )}`
+                                    : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1009,12 +1034,16 @@ const Form = ({
                               </Box>
                             )}
                           </Flex>
-                        </Flex>
-                      </Box>
-                    </>
-                  )}
+                        </>
+                      ) : (
+                        <Box w={'470px'} h={'32px'}></Box>
+                      )}
+                    </Flex>
+                  </Box>
+
+                  {/* Delete Button Column - Fixed Width */}
                   {networks.length > 1 && (
-                    <Box ml={3}>
+                    <Box w={'50px'} ml={3}>
                       <Box mb={'8px'} h={'20px'}></Box>
                       <IconButton
                         height={'32px'}
@@ -1125,8 +1154,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1339,6 +1368,7 @@ const Form = ({
               ...networks[i],
               customDomain: e
             });
+            onDomainVerified?.({ index: i, customDomain: e });
           }}
         />
       )}
@@ -1379,7 +1409,14 @@ const Form = ({
       {storeEdit && (
         <StoreModal
           defaultValue={storeEdit}
-          isEditStore={defaultStorePathList.includes(storeEdit.path)}
+          isEditStore={!!existingStores.find((item) => storeEdit.path === item.path)}
+          minValue={existingStores.find((item) => storeEdit.path === item.path)?.value ?? 1}
+          maxValue={Math.min(
+            // left quota - this one
+            storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
+            // But not exceed the size cap
+            PVC_STORAGE_MAX
+          )}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)
             .map((item) => item.path.toLocaleLowerCase())}

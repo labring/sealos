@@ -72,6 +72,7 @@ export type LayoutConfigType = {
   backgroundImage: string;
   meta: MetaConfigType;
   customerServiceURL?: string;
+  discordInviteLink?: string;
   forcedLanguage?: string;
   currencySymbol?: 'shellCoin' | 'cny' | 'usd';
   protocol?: ProtocolConfigType;
@@ -165,7 +166,6 @@ export type AuthConfigType = {
     };
   };
   captcha?: {
-    enabled: boolean;
     ali?: {
       enabled: boolean;
       sceneId: string;
@@ -174,10 +174,8 @@ export type AuthConfigType = {
       accessKeyID: string;
       accessKeySecret?: string;
     };
-  };
-  turnstile?: {
-    enabled: boolean;
-    cloudflare?: {
+    turnstile?: {
+      enabled: boolean;
       siteKey: string;
       secretKey: string;
     };
@@ -221,7 +219,7 @@ export type AuthClientConfigType = {
       'captcha.ali.accessKeySecret',
       'captcha.ali.endpoint',
       // turnstile
-      'turnstile.cloudflare.secretKey'
+      'captcha.turnstile.secretKey'
     ]
   >
 >;
@@ -327,12 +325,6 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
   invite: {
     enabled: false
   },
-  turnstile: {
-    enabled: false,
-    cloudflare: {
-      siteKey: ''
-    }
-  },
   callbackURL: 'https://cloud.sealos.io/callback',
   idp: {
     password: {
@@ -374,11 +366,14 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
   },
   billingToken: '',
   captcha: {
-    enabled: false,
     ali: {
       enabled: false,
       sceneId: '',
       prefix: ''
+    },
+    turnstile: {
+      enabled: false,
+      siteKey: ''
     }
   }
 };
