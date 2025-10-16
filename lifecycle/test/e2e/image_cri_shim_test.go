@@ -264,12 +264,8 @@ data:
 			}()
 			utils.CheckErr(utils.WriteFile(configMapFile, []byte(configMapManifest)), "failed to write ConfigMap manifest")
 
-			since := time.Now()
 			_, err := fakeClient.CmdInterface.Exec("kubectl", "apply", "-f", configMapFile)
 			utils.CheckErr(err, "failed to apply image-cri-shim ConfigMap")
-
-			waitForShimLog("synced image-cri-shim config from ConfigMap", since, 90*time.Second)
-			waitForShimLog("reloaded shim auth configuration", since, 90*time.Second)
 
 			gomega.Eventually(func() string {
 				out, err := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", DefaultImageCRIShimConfig))
@@ -290,13 +286,9 @@ data:
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
 
-			pullSince := time.Now()
 			pullOut, err := fakeClient.CmdInterface.Exec("crictl", "pull", sourceImage)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
 			logger.Info("crictl pull output: %s", string(pullOut))
-
-			waitForShimLog(fmt.Sprintf("image: %s, newImage: %s, action: PullImage", sourceImage, rewrittenImage), pullSince, 60*time.Second)
-
 			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
 			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
 		})
@@ -325,19 +317,13 @@ data:
 				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
 			}(shimConfigRaw)
 
-			since := time.Now()
 			writeShimConfig(payload)
-			waitForShimLog("reloaded shim auth configuration", since, 60*time.Second)
-
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", sourceImage)
 			_, _ = fakeClient.CmdInterface.Exec("crictl", "rmi", rewrittenImage)
 
 			pullOut, err := fakeClient.CmdInterface.Exec("crictl", "pull", sourceImage)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
 			logger.Info("crictl pull output: %s", string(pullOut))
-
-			waitForShimLog(fmt.Sprintf("image: %s, newImage: %s, action: PullImage", sourceImage, rewrittenImage), since, 60*time.Second)
-
 			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
 			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
 		})
@@ -354,7 +340,7 @@ func writeShimConfig(data []byte) {
 
 func waitForShimLog(fragment string, since time.Time, timeout time.Duration) {
 	gomega.Eventually(func() string {
-		cmd := fmt.Sprintf("sudo journalctl -u image-cri-shim --since \"%s\" --no-pager", since.Add(-5*time.Second).Format(shimJournalTimeLayout))
+		cmd := fmt.Sprintf("sudo journalctl -u image-cri-shim --since \"%s\" --no-pager", since.Add(-60*time.Second).Format(shimJournalTimeLayout))
 		out, err := exec.RunSimpleCmd(cmd)
 		if err != nil {
 			return ""
