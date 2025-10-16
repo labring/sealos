@@ -7,10 +7,12 @@ import { useUserStore } from '@/stores/user';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 import { track } from '@sealos/gtm';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
+  const { getErrorMessage } = useErrorMessage();
 
   const refetchThreeTimes = useCallback(() => {
     refetchDevboxData();
@@ -38,12 +40,12 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         });
         toast.success(t('restart_success'));
       } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('restart_error'));
+        toast.error(getErrorMessage(error, 'restart_error'));
         console.error(error);
       }
       refetchThreeTimes();
     },
-    [refetchThreeTimes, t, isOutStandingPayment]
+    [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
   );
 
   const handleStartDevbox = useCallback(
@@ -61,12 +63,12 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           context: 'app'
         });
       } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('start_error'));
+        toast.error(getErrorMessage(error, 'start_error'));
         console.error(error);
       }
       refetchThreeTimes();
     },
-    [refetchThreeTimes, t, isOutStandingPayment]
+    [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
   );
 
   const handleGoToTerminal = useCallback(
@@ -87,11 +89,11 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           context: 'app'
         });
       } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('jump_terminal_error'));
+        toast.error(getErrorMessage(error, 'jump_terminal_error'));
         console.error(error);
       }
     },
-    [t]
+    [getErrorMessage]
   );
 
   return {

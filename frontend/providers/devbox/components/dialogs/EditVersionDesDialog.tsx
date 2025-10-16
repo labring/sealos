@@ -16,6 +16,7 @@ import { Textarea } from '@sealos/shadcn-ui/textarea';
 
 import { editDevboxVersion } from '@/api/devbox';
 import { DevboxVersionListItemType } from '@/types/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 interface EditVersionDesDialogProps {
   version: DevboxVersionListItemType;
@@ -26,6 +27,7 @@ interface EditVersionDesDialogProps {
 
 const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersionDesDialogProps) => {
   const t = useTranslations();
+  const { getErrorMessage } = useErrorMessage();
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState(version.description);
 
@@ -44,11 +46,11 @@ const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersion
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error(typeof error === 'string' ? error : error.message || t('edit_failed'));
+      toast.error(getErrorMessage(error, 'edit_failed'));
       console.error(error);
     }
     setLoading(false);
-  }, [version.name, inputValue, t, onSuccess, onClose]);
+  }, [version.name, inputValue, t, onSuccess, onClose, getErrorMessage]);
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>

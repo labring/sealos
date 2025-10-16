@@ -107,8 +107,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.log('error', err);
     return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
+      code: err?.statusCode || err?.response?.statusCode || 500,
       error: err
     });
   }

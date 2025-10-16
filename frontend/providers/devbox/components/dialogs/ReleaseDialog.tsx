@@ -8,6 +8,7 @@ import { useEnvStore } from '@/stores/env';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
 import { DevboxListItemTypeV2, DevboxVersionListItemType } from '@/types/devbox';
 import { releaseDevbox, shutdownDevbox, startDevbox, getDevboxVersionList } from '@/api/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Dialog,
@@ -34,6 +35,7 @@ interface ReleaseDialogProps {
 const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps) => {
   const t = useTranslations();
   const locale = useLocale();
+  const { getErrorMessage } = useErrorMessage();
 
   const { env } = useEnvStore();
 
@@ -116,9 +118,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
         onSuccess();
         onClose();
       } catch (error: any) {
-        toast.error(
-          typeof error === 'string' ? error : error.message || t('submit_release_failed')
-        );
+        toast.error(getErrorMessage(error, 'submit_release_failed'));
         console.error(error);
       }
       setLoading(false);
@@ -132,7 +132,8 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       t,
       onSuccess,
       onClose,
-      versionList.length
+      versionList.length,
+      getErrorMessage
     ]
   );
 
