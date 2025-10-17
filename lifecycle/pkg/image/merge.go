@@ -22,10 +22,9 @@ import (
 	"strings"
 	"text/template"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/maps"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func escapeDollarSign(s string, cmd bool) string {
@@ -33,7 +32,7 @@ func escapeDollarSign(s string, cmd bool) string {
 		return strings.ReplaceAll(s, "$", "\\$")
 	}
 	var buffer bytes.Buffer
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '$' {
 			if i+1 < len(s) && s[i+1] == '(' {
 				buffer.WriteByte(s[i])
@@ -60,7 +59,9 @@ func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, erro
 			labels = maps.Merge(labels, val.Config.Labels)
 
 			if val.Config.Labels != nil {
-				if key := maps.GetFromKeys(val.Config.Labels, v1beta1.ImageTypeKeys...); key == string(v1beta1.RootfsImage) {
+				if key := maps.GetFromKeys(val.Config.Labels, v1beta1.ImageTypeKeys...); key == string(
+					v1beta1.RootfsImage,
+				) {
 					isRootfs = true
 				}
 			}

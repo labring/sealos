@@ -23,7 +23,11 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-func FormalizeWorkingCommand(clusterName string, imageName string, t v1beta1.ImageType, cmd string) string {
+func FormalizeWorkingCommand(
+	clusterName, imageName string,
+	t v1beta1.ImageType,
+	cmd string,
+) string {
 	if cmd == "" {
 		return ""
 	}
@@ -31,7 +35,11 @@ func FormalizeWorkingCommand(clusterName string, imageName string, t v1beta1.Ima
 	case v1beta1.RootfsImage, v1beta1.PatchImage:
 		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(clusterName), cmd)
 	case v1beta1.AppImage, "":
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(clusterName, imageName), cmd)
+		return fmt.Sprintf(
+			constants.CdAndExecCmd,
+			constants.GetAppWorkDir(clusterName, imageName),
+			cmd,
+		)
 	}
 	return ""
 }

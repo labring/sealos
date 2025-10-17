@@ -18,12 +18,11 @@ import (
 	"reflect"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-
 	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 )
 
 func Test_NewClusterFile(t *testing.T) {
@@ -64,7 +63,11 @@ func Test_NewClusterFile(t *testing.T) {
 						},
 						Hosts: []v2.Host{
 							{
-								IPS:   []string{"10.74.16.27:22", "10.74.16.140:22", "10.74.16.101:22"},
+								IPS: []string{
+									"10.74.16.27:22",
+									"10.74.16.140:22",
+									"10.74.16.101:22",
+								},
 								Roles: []string{v2.MASTER, string(v2.AMD64)},
 							},
 						},
@@ -107,7 +110,11 @@ func Test_NewClusterFile(t *testing.T) {
 			err := cf.Process()
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"newClusterfile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 			equal := reflect.DeepEqual(cf.GetCluster(), tt.args.cluster)
 			if !equal {
@@ -148,7 +155,11 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 			cf := NewClusterFile("")
 			err := cf.Process()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"newClusterfile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 
 			if cf.GetCluster() != nil {
@@ -204,7 +215,11 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 						},
 						Hosts: []v2.Host{
 							{
-								IPS:   []string{"10.74.16.27:22", "10.74.16.140:22", "10.74.16.101:22"},
+								IPS: []string{
+									"10.74.16.27:22",
+									"10.74.16.140:22",
+									"10.74.16.101:22",
+								},
 								Roles: []string{v2.MASTER, string(v2.AMD64)},
 							},
 						},
@@ -260,7 +275,11 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 			)
 			err := cf.Process()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"newClusterfile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 
 			equal := reflect.DeepEqual(cf.GetCluster(), tt.args.cluster)

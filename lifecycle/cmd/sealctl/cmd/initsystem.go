@@ -20,17 +20,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/utils/initsystem"
+	"github.com/spf13/cobra"
 )
 
-var (
-	initsystemInterface initsystem.InitSystem
-)
+var initsystemInterface initsystem.InitSystem
 
 func newInitSystemCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
+	initsystemCmd := &cobra.Command{
 		Use:   "initsystem",
 		Short: "init system management",
 	}
@@ -65,9 +62,9 @@ func newInitSystemCmd() *cobra.Command {
 func createInitSystemSubCommand(verb string, runE func(string) error) *cobra.Command {
 	var short string
 	if strings.HasPrefix(verb, "is-") {
-		short = fmt.Sprintf("check if the initsystem service is %s", strings.TrimPrefix(verb, "is-"))
+		short = "check if the initsystem service is " + strings.TrimPrefix(verb, "is-")
 	} else {
-		short = fmt.Sprintf("%s the initsystem service", verb)
+		short = verb + " the initsystem service"
 	}
 	return &cobra.Command{
 		Use:   verb,

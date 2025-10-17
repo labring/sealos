@@ -19,9 +19,8 @@ package checkers
 import (
 	"fmt"
 
-	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
-
 	"github.com/labring/sealos/test/e2e/testhelper/kube"
+	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 )
 
 var _ FakeInterface = &fakeSingleTaintsClient{}

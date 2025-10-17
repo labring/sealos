@@ -26,19 +26,19 @@ import (
 func (k *KubeadmRuntime) InitKubeadmConfigToMaster0() error {
 	data, err := k.generateInitConfigs()
 	if err != nil {
-		return fmt.Errorf("generate init config error: %v", err)
+		return fmt.Errorf("generate init config error: %w", err)
 	}
 	initConfigPath := path.Join(k.pathResolver.TmpPath(), defaultInitKubeadmFileName)
 	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("failed to write tmp init kubeadm config: %v", err)
+		return fmt.Errorf("failed to write tmp init kubeadm config: %w", err)
 	}
 
 	logger.Info("Copying kubeadm config to master0")
 	err = k.sshCopy(k.getMaster0IPAndPort(), initConfigPath, outConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to copy init kubeadm config: %v", err)
+		return fmt.Errorf("failed to copy init kubeadm config: %w", err)
 	}
 	return nil
 }
@@ -47,7 +47,7 @@ func (k *KubeadmRuntime) GenerateCert() error {
 	logger.Info("start to generate and copy certs to masters...")
 	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {
-		return fmt.Errorf("get hostname failed %v", err)
+		return fmt.Errorf("get hostname failed %w", err)
 	}
 
 	logger.Debug("GenerateCert param:", k.pathResolver.PkiPath(),
@@ -72,7 +72,7 @@ func (k *KubeadmRuntime) CreateKubeConfigFiles() error {
 	logger.Info("start to create kubeconfig...")
 	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {
-		return fmt.Errorf("get hostname failed %v", err)
+		return fmt.Errorf("get hostname failed %w", err)
 	}
 	certConfig := cert.Config{
 		Path:     k.pathResolver.PkiPath(),
@@ -82,7 +82,7 @@ func (k *KubeadmRuntime) CreateKubeConfigFiles() error {
 	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.pathResolver.EtcPath(),
 		certConfig, hostName, k.getClusterAPIServer(), "kubernetes")
 	if err != nil {
-		return fmt.Errorf("failed to generate kubeconfig: %v", err)
+		return fmt.Errorf("failed to generate kubeconfig: %w", err)
 	}
 	return nil
 }

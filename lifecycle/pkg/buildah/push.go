@@ -32,12 +32,11 @@ import (
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/storage"
+	iutil "github.com/labring/sealos/pkg/buildah/internal/util"
+	"github.com/labring/sealos/pkg/utils/logger"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	iutil "github.com/labring/sealos/pkg/buildah/internal/util"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type pushOptions struct {
@@ -75,25 +74,119 @@ func newDefaultPushOptions() *pushOptions {
 func (opts *pushOptions) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.SetInterspersed(false)
 	fs.BoolVar(&opts.all, "all", opts.all, "push all of the images referenced by the manifest list")
-	fs.StringVar(&opts.authfile, "authfile", opts.authfile, "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
-	fs.StringVar(&opts.blobCache, "blob-cache", opts.blobCache, "assume image blobs in the specified directory will be available for pushing")
-	fs.StringVar(&opts.certDir, "cert-dir", opts.certDir, "use certificates at the specified path to access the registry")
-	fs.StringVar(&opts.creds, "creds", opts.creds, "use `[username[:password]]` for accessing the registry")
-	fs.StringVar(&opts.digestfile, "digestfile", opts.digestfile, "after copying the image, write the digest of the resulting image to the file")
-	fs.BoolVarP(&opts.disableCompression, "disable-compression", "D", false, "don't compress layers")
-	fs.StringVarP(&opts.format, "format", "f", opts.format, "manifest type (oci, v2s1, or v2s2) to use in the destination (default is manifest type of source, with fallbacks)")
-	fs.StringVar(&opts.compressionFormat, "compression-format", opts.compressionFormat, "compression format to use")
-	fs.IntVar(&opts.compressionLevel, "compression-level", opts.compressionLevel, "compression level to use")
-	fs.BoolVarP(&opts.quiet, "quiet", "q", opts.quiet, "don't output progress information when pushing images")
-	fs.IntVar(&opts.retry, "retry", opts.retry, "number of times to retry in case of failure when performing push/pull")
-	fs.DurationVar(&opts.retryDelay, "retry-delay", opts.retryDelay, "delay between retries in case of push/pull failures")
+	fs.StringVar(
+		&opts.authfile,
+		"authfile",
+		opts.authfile,
+		"path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override",
+	)
+	fs.StringVar(
+		&opts.blobCache,
+		"blob-cache",
+		opts.blobCache,
+		"assume image blobs in the specified directory will be available for pushing",
+	)
+	fs.StringVar(
+		&opts.certDir,
+		"cert-dir",
+		opts.certDir,
+		"use certificates at the specified path to access the registry",
+	)
+	fs.StringVar(
+		&opts.creds,
+		"creds",
+		opts.creds,
+		"use `[username[:password]]` for accessing the registry",
+	)
+	fs.StringVar(
+		&opts.digestfile,
+		"digestfile",
+		opts.digestfile,
+		"after copying the image, write the digest of the resulting image to the file",
+	)
+	fs.BoolVarP(
+		&opts.disableCompression,
+		"disable-compression",
+		"D",
+		false,
+		"don't compress layers",
+	)
+	fs.StringVarP(
+		&opts.format,
+		"format",
+		"f",
+		opts.format,
+		"manifest type (oci, v2s1, or v2s2) to use in the destination (default is manifest type of source, with fallbacks)",
+	)
+	fs.StringVar(
+		&opts.compressionFormat,
+		"compression-format",
+		opts.compressionFormat,
+		"compression format to use",
+	)
+	fs.IntVar(
+		&opts.compressionLevel,
+		"compression-level",
+		opts.compressionLevel,
+		"compression level to use",
+	)
+	fs.BoolVarP(
+		&opts.quiet,
+		"quiet",
+		"q",
+		opts.quiet,
+		"don't output progress information when pushing images",
+	)
+	fs.IntVar(
+		&opts.retry,
+		"retry",
+		opts.retry,
+		"number of times to retry in case of failure when performing push/pull",
+	)
+	fs.DurationVar(
+		&opts.retryDelay,
+		"retry-delay",
+		opts.retryDelay,
+		"delay between retries in case of push/pull failures",
+	)
 	fs.BoolVar(&opts.rm, "rm", opts.rm, "remove the manifest list if push succeeds")
-	fs.BoolVarP(&opts.removeSignatures, "remove-signatures", "", opts.removeSignatures, "don't copy signatures when pushing image")
-	fs.StringVar(&opts.signBy, "sign-by", opts.signBy, "sign the image using a GPG key with the specified `FINGERPRINT`")
-	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
-	fs.StringSliceVar(&opts.encryptionKeys, "encryption-key", opts.encryptionKeys, "key with the encryption protocol to use needed to encrypt the image (e.g. jwe:/path/to/key.pem)")
-	fs.IntSliceVar(&opts.encryptLayers, "encrypt-layer", opts.encryptLayers, "layers to encrypt, 0-indexed layer indices with support for negative indexing (e.g. 0 is the first layer, -1 is the last layer). If not defined, will encrypt all layers if encryption-key flag is specified")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVarP(
+		&opts.removeSignatures,
+		"remove-signatures",
+		"",
+		opts.removeSignatures,
+		"don't copy signatures when pushing image",
+	)
+	fs.StringVar(
+		&opts.signBy,
+		"sign-by",
+		opts.signBy,
+		"sign the image using a GPG key with the specified `FINGERPRINT`",
+	)
+	fs.StringVar(
+		&opts.signaturePolicy,
+		"signature-policy",
+		opts.signaturePolicy,
+		"`pathname` of signature policy file (not usually used)",
+	)
+	fs.StringSliceVar(
+		&opts.encryptionKeys,
+		"encryption-key",
+		opts.encryptionKeys,
+		"key with the encryption protocol to use needed to encrypt the image (e.g. jwe:/path/to/key.pem)",
+	)
+	fs.IntSliceVar(
+		&opts.encryptLayers,
+		"encrypt-layer",
+		opts.encryptLayers,
+		"layers to encrypt, 0-indexed layer indices with support for negative indexing (e.g. 0 is the first layer, -1 is the last layer). If not defined, will encrypt all layers if encryption-key flag is specified",
+	)
+	fs.BoolVar(
+		&opts.tlsVerify,
+		"tls-verify",
+		opts.tlsVerify,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
 
 	return markFlagsHidden(fs, []string{"signature-policy", "blob-cache", "tls-verify"}...)
 }
@@ -144,7 +237,10 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 	case 1:
 		src = args[0]
 		destSpec = src
-		logger.Debug("Destination argument not specified, assuming the same as the source: %s", destSpec)
+		logger.Debug(
+			"Destination argument not specified, assuming the same as the source: %s",
+			destSpec,
+		)
 	case 2:
 		src = args[0]
 		destSpec = args[1]
@@ -203,7 +299,10 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 		case "v2s2", "docker":
 			manifestType = manifest.DockerV2Schema2MediaType
 		default:
-			return fmt.Errorf("unknown format %q. Choose on of the supported formats: 'oci', 'v2s1', or 'v2s2'", iopts.format)
+			return fmt.Errorf(
+				"unknown format %q. Choose on of the supported formats: 'oci', 'v2s1', or 'v2s2'",
+				iopts.format,
+			)
 		}
 	}
 
@@ -248,7 +347,10 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 				return nil
 			}
 		}
-		return util.GetFailureCause(err, fmt.Errorf("pushing image %q to %q: %w", src, destSpec, err))
+		return util.GetFailureCause(
+			err,
+			fmt.Errorf("pushing image %q to %q: %w", src, destSpec, err),
+		)
 	}
 	if ref != nil {
 		logger.Debug("pushed image %q with digest %s", ref, digest.String())
@@ -256,11 +358,18 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 		logger.Debug("pushed image with digest %s", digest.String())
 	}
 
-	logger.Debug("Successfully pushed %s with digest %s", transports.ImageName(dest), digest.String())
+	logger.Debug(
+		"Successfully pushed %s with digest %s",
+		transports.ImageName(dest),
+		digest.String(),
+	)
 
 	if iopts.digestfile != "" {
-		if err = os.WriteFile(iopts.digestfile, []byte(digest.String()), 0644); err != nil {
-			return util.GetFailureCause(err, fmt.Errorf("failed to write digest to file %q: %w", iopts.digestfile, err))
+		if err = os.WriteFile(iopts.digestfile, []byte(digest.String()), 0o644); err != nil {
+			return util.GetFailureCause(
+				err,
+				fmt.Errorf("failed to write digest to file %q: %w", iopts.digestfile, err),
+			)
 		}
 	}
 

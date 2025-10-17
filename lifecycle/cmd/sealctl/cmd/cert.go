@@ -17,11 +17,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/cert"
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func newCertCmd() *cobra.Command {
@@ -42,20 +41,31 @@ func newCertCmd() *cobra.Command {
 		Long:  `you can specify expire time`,
 		Run: func(cmd *cobra.Command, args []string) {
 			flags.PrintFlags(cmd.Flags())
-			err := cert.GenerateCert(flag.CertPath, flag.CertEtcdPath, flag.AltNames, flag.NodeIP, flag.NodeName, flag.ServiceCIDR, flag.DNSDomain)
+			err := cert.GenerateCert(
+				flag.CertPath,
+				flag.CertEtcdPath,
+				flag.AltNames,
+				flag.NodeIP,
+				flag.NodeName,
+				flag.ServiceCIDR,
+				flag.DNSDomain,
+			)
 			if err != nil {
 				logger.Error(err)
 				os.Exit(1)
 			}
 		},
 	}
-	certCmd.Flags().StringSliceVar(&flag.AltNames, "alt-names", []string{}, "like sealos.io or 10.103.97.2")
+	certCmd.Flags().
+		StringSliceVar(&flag.AltNames, "alt-names", []string{}, "like sealos.io or 10.103.97.2")
 	certCmd.Flags().StringVar(&flag.NodeName, "node-name", "", "like master0")
 	certCmd.Flags().StringVar(&flag.ServiceCIDR, "service-cidr", "", "like 10.103.97.2/24")
 	certCmd.Flags().StringVar(&flag.NodeIP, "node-ip", "", "like 10.103.97.2")
 	certCmd.Flags().StringVar(&flag.DNSDomain, "dns-domain", "cluster.local", "cluster dns domain")
-	certCmd.Flags().StringVar(&flag.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
-	certCmd.Flags().StringVar(&flag.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
+	certCmd.Flags().
+		StringVar(&flag.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
+	certCmd.Flags().
+		StringVar(&flag.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
 
 	return certCmd
 }

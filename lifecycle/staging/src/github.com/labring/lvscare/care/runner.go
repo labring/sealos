@@ -20,10 +20,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var LVS = &runner{
@@ -71,7 +70,7 @@ func (r *runner) Run() (err error) {
 		if r.ruler != nil {
 			r.cleanupFuncs = append(r.cleanupFuncs, r.ruler.Cleanup)
 		}
-		return
+		return err
 	}
 	errCh := make(chan error, 1)
 	ctx := signals.SetupSignalHandler()
@@ -125,7 +124,7 @@ func (r *runner) cleanup() error {
 }
 
 func (r *runner) RegisterCommandFlags(cmd *cobra.Command) {
-	for _, iter := range []interface{}{r.options, r.prober} {
+	for _, iter := range []any{r.options, r.prober} {
 		if registerer, ok := iter.(flagRegisterer); ok {
 			registerer.RegisterFlags(cmd.Flags())
 		}
@@ -138,14 +137,19 @@ func (r *runner) RegisterCommandFlags(cmd *cobra.Command) {
 }
 
 func (r *runner) ValidateAndSetDefaults() error {
-	for _, iter := range []interface{}{r.options, r.prober} {
+	for _, iter := range []any{r.options, r.prober} {
 		if validator, ok := iter.(flagValidator); ok {
 			if err := validator.ValidateAndSetDefaults(); err != nil {
 				return err
 			}
 		}
 	}
-	r.proxier = NewProxier(r.options.scheduler, time.Duration(r.options.Interval), r.prober, r.periodicRun)
+	r.proxier = NewProxier(
+		r.options.scheduler,
+		time.Duration(r.options.Interval),
+		r.prober,
+		r.periodicRun,
+	)
 	virtualIP, _, err := splitHostPort(r.options.VirtualServer)
 	if err != nil {
 		return err
@@ -160,7 +164,11 @@ func (r *runner) ValidateAndSetDefaults() error {
 		}
 		ruler, err = newRouteImpl(virtualIP, r.options.TargetIP.String())
 	case linkMode:
-		ruler, err = newIptablesImpl(r.options.IfaceName, r.options.MasqueradeBit, r.options.VirtualServer)
+		ruler, err = newIptablesImpl(
+			r.options.IfaceName,
+			r.options.MasqueradeBit,
+			r.options.VirtualServer,
+		)
 	case "":
 		// do nothing, disable ruler
 	default:

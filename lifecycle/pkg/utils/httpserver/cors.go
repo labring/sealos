@@ -24,7 +24,8 @@ func Cors(wsContainer *restful.Container) {
 		AllowedHeaders: []string{"Content-Type", "Accept", "Authorization"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		CookiesAllowed: true,
-		Container:      wsContainer}
+		Container:      wsContainer,
+	}
 	wsContainer.Filter(cors.Filter)
 	// Add container filter to respond to OPTIONS
 	wsContainer.Filter(wsContainer.OPTIONSFilter)

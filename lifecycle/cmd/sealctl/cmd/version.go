@@ -18,15 +18,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/version"
+	"github.com/spf13/cobra"
 )
 
 var shortPrint bool
 
 func newVersionCmd() *cobra.Command {
-	var versionCmd = &cobra.Command{
+	versionCmd := &cobra.Command{
 		Use:     "version",
 		Short:   "version",
 		Args:    cobra.NoArgs,
@@ -44,7 +43,8 @@ func newVersionCmd() *cobra.Command {
 			return nil
 		},
 	}
-	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
+	versionCmd.Flags().
+		BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
 	return versionCmd
 }
 

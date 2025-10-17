@@ -28,5 +28,5 @@ type Mounter interface {
 }
 
 type RegistrySyncer interface {
-	Sync(context.Context, ...string) error
+	Sync(ctx context.Context, hosts ...string) error
 }

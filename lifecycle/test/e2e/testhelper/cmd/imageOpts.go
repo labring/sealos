@@ -40,33 +40,33 @@ type MergeOptions struct {
 	ImageRefs    []string
 	AuthFile     string
 	AllPlatforms bool
-	//BuildArg           []string
-	//BuildContext       []string
-	//CertDir            string
-	//Compress           bool
-	//Creds              string
-	//DisableCompression bool
-	//Dns                []string
-	//DnsOption          []string
-	//DnsSearch          []string
-	//Env                []string
-	//File               []string
-	//ForceRm            bool
-	//Format             string
-	//From               string
-	//GroupAdd           []string
-	//HttpProxy          bool
-	//IgnoreFile         string
-	//Jobs               int
-	//Label              []string
-	//Manifest           string
-	//MaxPullProcs       int
-	//Platform           string
-	//Pull               string
-	//Retry              int
-	//RetryDelay         time.Duration
-	//Rm                 bool
-	//ShmSize            string
+	// BuildArg           []string
+	// BuildContext       []string
+	// CertDir            string
+	// Compress           bool
+	// Creds              string
+	// DisableCompression bool
+	// Dns                []string
+	// DnsOption          []string
+	// DnsSearch          []string
+	// Env                []string
+	// File               []string
+	// ForceRm            bool
+	// Format             string
+	// From               string
+	// GroupAdd           []string
+	// HttpProxy          bool
+	// IgnoreFile         string
+	// Jobs               int
+	// Label              []string
+	// Manifest           string
+	// MaxPullProcs       int
+	// Platform           string
+	// Pull               string
+	// Retry              int
+	// RetryDelay         time.Duration
+	// Rm                 bool
+	// ShmSize            string
 }
 
 func (po *PullOptions) Args() []string {

@@ -18,22 +18,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
-
-	"github.com/labring/sealos/test/e2e/terraform"
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
-
 	"github.com/labring/sealos/pkg/utils/logger"
-
+	"github.com/labring/sealos/test/e2e/terraform"
+	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 	. "github.com/onsi/ginkgo/v2"
 )
 
 var _ = Describe("E2E_sealos_multi_node_test", func() {
 	Context("start apply", func() {
-
-		var tf = &terraform.Terraform{
+		tf := &terraform.Terraform{
 			AccessKey: os.Getenv("ALIYUN_ACCESS_KEY_ID"),
 			SecretKey: os.Getenv("ALIYUN_ACCESS_KEY_SECRET"),
 		}
@@ -81,53 +76,65 @@ var _ = Describe("E2E_sealos_multi_node_test", func() {
 			})
 
 			applier.FetchRemoteKubeConfig()
-			//check result
+			// check result
 			applier.CheckNodeNum(2)
 			By("add nodes test", func() {
 				// add ip3, ip4
 				addOpts := &cmd2.AddOptions{
 					Cluster: applier.ClusterName,
-					Nodes:   []string{infraDetail.Nodes[2].PrivateIP, infraDetail.Nodes[3].PrivateIP},
+					Nodes: []string{
+						infraDetail.Nodes[2].PrivateIP,
+						infraDetail.Nodes[3].PrivateIP,
+					},
 				}
 				logger.Info("addOpts: %#+v", addOpts)
 				utils.CheckErr(applier.RemoteSealosCmd.Add(addOpts))
-				//check result
+				// check result
 				applier.CheckNodeNum(4)
 			})
 			By("delete nodes test", func() {
 				// delete ip2, ip3
 				deleteOpts := &cmd2.DeleteOptions{
 					Cluster: applier.ClusterName,
-					Nodes:   []string{infraDetail.Nodes[1].PrivateIP, infraDetail.Nodes[2].PrivateIP},
-					Force:   true,
+					Nodes: []string{
+						infraDetail.Nodes[1].PrivateIP,
+						infraDetail.Nodes[2].PrivateIP,
+					},
+					Force: true,
 				}
 				logger.Info("deleteOpts: %#+v", deleteOpts.Args())
 				utils.CheckErr(applier.RemoteSealosCmd.Delete(deleteOpts))
-				//check result
+				// check result
 				applier.CheckNodeNum(2)
 			})
 			By("add masters test", func() {
 				// add ip2, ip3
 				addOpts := &cmd2.AddOptions{
 					Cluster: applier.ClusterName,
-					Masters: []string{infraDetail.Nodes[1].PrivateIP, infraDetail.Nodes[2].PrivateIP},
+					Masters: []string{
+						infraDetail.Nodes[1].PrivateIP,
+						infraDetail.Nodes[2].PrivateIP,
+					},
 				}
 				logger.Info("addOpts: %#+v", addOpts.Args())
 				utils.CheckErr(applier.RemoteSealosCmd.Add(addOpts))
-				//check result
+				// check result
 				applier.CheckNodeNum(4)
 			})
 			By("delete masters test", func() {
 				// delete ip2, ip3
 				deleteOpts := &cmd2.DeleteOptions{
 					Cluster: applier.ClusterName,
-					Masters: []string{infraDetail.Nodes[1].PrivateIP, infraDetail.Nodes[2].PrivateIP},
-					Force:   true,
+					Masters: []string{
+						infraDetail.Nodes[1].PrivateIP,
+						infraDetail.Nodes[2].PrivateIP,
+					},
+					Force: true,
 				}
 				logger.Info("deleteOpts: %#+v", deleteOpts.Args())
 				utils.CheckErr(applier.RemoteSealosCmd.Delete(deleteOpts))
-				//check result 1master will cause etcd down, skip check
-				//testApplier.CheckNodeNum(2)
+				// check result 1master will cause etcd down, skip check
+				// testApplier.CheckNodeNum(2)
 			})
 			By("reset test", func() {
 				resetOpts := &cmd2.ResetOptions{

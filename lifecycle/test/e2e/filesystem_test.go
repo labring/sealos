@@ -21,14 +21,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/labring/sealos/test/e2e/testhelper/cmd"
-
+	"github.com/labring/sealos/test/e2e/suites/checkers"
 	"github.com/labring/sealos/test/e2e/suites/operators"
+	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/checkers"
-
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -55,9 +52,13 @@ var _ = Describe("E2E_sealos_filesystem_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to copy sealctl to rootfs: %v", err))
 
 			By("build image")
-			err = fakeClient.Image.BuildImage("kubernetes-filesystem:v1.25.0", tmpdir, operators.BuildOptions{
-				MaxPullProcs: 5,
-			})
+			err = fakeClient.Image.BuildImage(
+				"kubernetes-filesystem:v1.25.0",
+				tmpdir,
+				operators.BuildOptions{
+					MaxPullProcs: 5,
+				},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 		})
 		AfterEach(func() {
@@ -94,5 +95,4 @@ var _ = Describe("E2E_sealos_filesystem_test", func() {
 			_ = os.Unsetenv("SEALOS_REGISTRY_SYNC_EXPERIMENTAL")
 		})
 	})
-
 })

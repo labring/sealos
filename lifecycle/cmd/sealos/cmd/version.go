@@ -20,27 +20,28 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"sigs.k8s.io/yaml"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
 	versionutils "github.com/labring/sealos/pkg/version/utils"
+	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
-var shortPrint bool
-var output string
+var (
+	shortPrint bool
+	output     string
+)
 
 func newVersionCmd() *cobra.Command {
-	var versionCmd = &cobra.Command{
+	versionCmd := &cobra.Command{
 		Use:     "version",
 		Short:   "Print version info",
 		Args:    cobra.NoArgs,
 		Example: `sealos version`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//output default to be yaml
+			// output default to be yaml
 			if output != "yaml" && output != "json" {
 				return errors.New(`--output must be 'yaml' or 'json'`)
 			}
@@ -51,7 +52,8 @@ func newVersionCmd() *cobra.Command {
 			return PrintInfo()
 		},
 	}
-	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
+	versionCmd.Flags().
+		BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
 	versionCmd.Flags().StringVarP(&output, "output", "o", "yaml", "One of 'yaml' or 'json'")
 	return versionCmd
 }
@@ -91,26 +93,29 @@ func PrintInfo() error {
 		missinfo = append(missinfo, "cri runtime version")
 	}
 	if OutputInfo.KubernetesVersion == nil || OutputInfo.CriRuntimeVersion == nil {
-		fmt.Printf("WARNING: Failed to get %s.\nCheck kubernetes status or use command \"sealos run\" to launch kubernetes\n", strings.Join(missinfo, " and "))
+		fmt.Printf(
+			"WARNING: Failed to get %s.\nCheck kubernetes status or use command \"sealos run\" to launch kubernetes\n",
+			strings.Join(missinfo, " and "),
+		)
 	}
 
 	return nil
 }
 
-func PrintToStd(OutputInfo *version.Output) error {
+func PrintToStd(outputInfo *version.Output) error {
 	var (
 		marshalled []byte
 		err        error
 	)
 	switch output {
 	case "yaml":
-		marshalled, err = yaml.Marshal(&OutputInfo)
+		marshalled, err = yaml.Marshal(outputInfo)
 		if err != nil {
 			return fmt.Errorf("fail to marshal yaml: %w", err)
 		}
 		fmt.Println(string(marshalled))
 	case "json":
-		marshalled, err = json.Marshal(&OutputInfo)
+		marshalled, err = json.Marshal(outputInfo)
 		if err != nil {
 			return fmt.Errorf("fail to marshal json: %w", err)
 		}
@@ -118,7 +123,10 @@ func PrintToStd(OutputInfo *version.Output) error {
 	default:
 		// There is a bug in the program if we hit this case.
 		// However, we follow a policy of never panicking.
-		return fmt.Errorf("versionOptions were not validated: --output=%q should have been rejected", output)
+		return fmt.Errorf(
+			"versionOptions were not validated: --output=%q should have been rejected",
+			output,
+		)
 	}
 	return nil
 }

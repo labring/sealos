@@ -23,19 +23,25 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/pflag"
-
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/spf13/pflag"
 )
 
 func TestParseClusterFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
 		flags   *Cluster
 		desired *Cluster
 	}{
 		{
-			[]string{"--masters", "10.74.22.22:22", "--nodes", "10.74.22.44:22", "--cluster", "default"},
+			[]string{
+				"--masters",
+				"10.74.22.22:22",
+				"--nodes",
+				"10.74.22.44:22",
+				"--cluster",
+				"default",
+			},
 			&Cluster{},
 			&Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
 		},
@@ -57,7 +63,7 @@ func TestParseClusterFlagsCorrect(t *testing.T) {
 }
 
 func TestParseSSHFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
 		flags   *SSH
 		desired *SSH
@@ -65,7 +71,12 @@ func TestParseSSHFlagsCorrect(t *testing.T) {
 		{
 			[]string{"-u", "root", "-p", "s3cret", "--port", "2222"},
 			&SSH{},
-			&SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+			&SSH{
+				User:     "root",
+				Password: "s3cret",
+				Port:     2222,
+				Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+			},
 		},
 	}
 
@@ -84,14 +95,20 @@ func TestParseSSHFlagsCorrect(t *testing.T) {
 	}
 }
 
-func equal(in, out interface{}) bool {
-	inByte, _ := json.Marshal(&in)
-	outByte, _ := json.Marshal(&out)
+func equal(in, out any) bool {
+	inByte, err := json.Marshal(in)
+	if err != nil {
+		return false
+	}
+	outByte, err := json.Marshal(out)
+	if err != nil {
+		return false
+	}
 	return bytes.Equal(inByte, outByte)
 }
 
 func TestParseRunArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
 		flags   *RunArgs
 		desired *RunArgs
@@ -108,8 +125,17 @@ func TestParseRunArgsFlagsCorrect(t *testing.T) {
 				SSH:     &SSH{},
 			},
 			&RunArgs{
-				Cluster:           &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
-				SSH:               &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+				Cluster: &Cluster{
+					Masters:     "10.74.22.22:22",
+					Nodes:       "10.74.22.44:22",
+					ClusterName: "default",
+				},
+				SSH: &SSH{
+					User:     "root",
+					Password: "s3cret",
+					Port:     2222,
+					Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+				},
 				CustomEnv:         []string{"testk=testv"},
 				CustomCMD:         []string{"echo test"},
 				CustomConfigFiles: []string{},
@@ -133,7 +159,7 @@ func TestParseRunArgsFlagsCorrect(t *testing.T) {
 }
 
 func TestParseArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
 		flags   *Args
 		desired *Args
@@ -168,7 +194,7 @@ func TestParseArgsFlagsCorrect(t *testing.T) {
 }
 
 func TestParseResetArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
 		flags   *ResetArgs
 		desired *ResetArgs
@@ -184,7 +210,12 @@ func TestParseResetArgsFlagsCorrect(t *testing.T) {
 			},
 			&ResetArgs{
 				ClusterName: &ClusterName{ClusterName: "default"},
-				SSH:         &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+				SSH: &SSH{
+					User:     "root",
+					Password: "s3cret",
+					Port:     2222,
+					Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+				},
 			},
 		},
 	}
@@ -205,7 +236,7 @@ func TestParseResetArgsFlagsCorrect(t *testing.T) {
 }
 
 func TestParseScaleArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
 		flags   *ScaleArgs
 		desired *ScaleArgs
@@ -220,8 +251,17 @@ func TestParseScaleArgsFlagsCorrect(t *testing.T) {
 				SSH:     &SSH{},
 			},
 			&ScaleArgs{
-				Cluster: &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
-				SSH:     &SSH{User: "root", Password: "passwd", Port: 22, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+				Cluster: &Cluster{
+					Masters:     "10.74.22.22:22",
+					Nodes:       "10.74.22.44:22",
+					ClusterName: "default",
+				},
+				SSH: &SSH{
+					User:     "root",
+					Password: "passwd",
+					Port:     22,
+					Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+				},
 			},
 		},
 	}

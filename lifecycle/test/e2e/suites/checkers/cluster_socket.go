@@ -35,11 +35,19 @@ func (c *fakeSocketClient) Verify() error {
 		return err
 	}
 	if strings.TrimSpace(string(socket)) != c.data {
-		return fmt.Errorf("cri socket %s not match %s from sealctl", strings.TrimSpace(string(socket)), c.data)
+		return fmt.Errorf(
+			"cri socket %s not match %s from sealctl",
+			strings.TrimSpace(string(socket)),
+			c.data,
+		)
 	}
 
-	if c.InitConfiguration.NodeRegistration.CRISocket != fmt.Sprintf("unix://%s", c.data) {
-		return fmt.Errorf("init config cri socket %s not match %s", c.InitConfiguration.NodeRegistration.CRISocket, c.data)
+	if c.InitConfiguration.NodeRegistration.CRISocket != "unix://"+c.data {
+		return fmt.Errorf(
+			"init config cri socket %s not match %s",
+			c.InitConfiguration.NodeRegistration.CRISocket,
+			c.data,
+		)
 	}
 	return nil
 }

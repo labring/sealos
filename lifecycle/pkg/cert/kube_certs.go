@@ -23,9 +23,8 @@ import (
 	"path"
 	"strings"
 
-	utilnet "k8s.io/utils/net"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	utilnet "k8s.io/utils/net"
 )
 
 var (
@@ -33,10 +32,10 @@ var (
 	kubeDefaultCertEtcdPath = "/etc/kubernetes/pki/etcd"
 )
 
-func CaList(CertPath, CertEtcdPath string) []Config {
+func CaList(certPath, certEtcdPath string) []Config {
 	return []Config{
 		{
-			Path:         CertPath,
+			Path:         certPath,
 			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "ca",
 			CommonName:   "kubernetes",
@@ -46,7 +45,7 @@ func CaList(CertPath, CertEtcdPath string) []Config {
 			Usages:       nil,
 		},
 		{
-			Path:         CertPath,
+			Path:         certPath,
 			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "front-proxy-ca",
 			CommonName:   "front-proxy-ca",
@@ -56,7 +55,7 @@ func CaList(CertPath, CertEtcdPath string) []Config {
 			Usages:       nil,
 		},
 		{
-			Path:         CertEtcdPath,
+			Path:         certEtcdPath,
 			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "ca",
 			CommonName:   "etcd-ca",
@@ -68,10 +67,10 @@ func CaList(CertPath, CertEtcdPath string) []Config {
 	}
 }
 
-func List(CertPath, CertEtcdPath string) []Config {
+func List(certPath, certEtcdPath string) []Config {
 	return []Config{
 		{
-			Path:         CertPath,
+			Path:         certPath,
 			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "apiserver",
 			CAName:       "kubernetes",
@@ -92,7 +91,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
 		{
-			Path:         CertPath,
+			Path:         certPath,
 			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "apiserver-kubelet-client",
 			CAName:       "kubernetes",
@@ -103,7 +102,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         CertPath,
+			Path:         certPath,
 			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "front-proxy-client",
 			CAName:       "front-proxy-ca",
@@ -114,7 +113,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         CertPath,
+			Path:         certPath,
 			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "apiserver-etcd-client",
 			CAName:       "etcd-ca",
@@ -125,7 +124,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         CertEtcdPath,
+			Path:         certEtcdPath,
 			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "server",
 			CAName:       "etcd-ca",
@@ -133,10 +132,13 @@ func List(CertPath, CertEtcdPath string) []Config {
 			Organization: nil,
 			Year:         100,
 			AltNames:     AltNames{}, // need set altNames
-			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+			Usages: []x509.ExtKeyUsage{
+				x509.ExtKeyUsageServerAuth,
+				x509.ExtKeyUsageClientAuth,
+			},
 		},
 		{
-			Path:         CertEtcdPath,
+			Path:         certEtcdPath,
 			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "peer",
 			CAName:       "etcd-ca",
@@ -144,10 +146,13 @@ func List(CertPath, CertEtcdPath string) []Config {
 			Organization: nil,
 			Year:         100,
 			AltNames:     AltNames{}, // change this in filter
-			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+			Usages: []x509.ExtKeyUsage{
+				x509.ExtKeyUsageServerAuth,
+				x509.ExtKeyUsageClientAuth,
+			},
 		},
 		{
-			Path:         CertEtcdPath,
+			Path:         certEtcdPath,
 			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "healthcheck-client",
 			CAName:       "etcd-ca",
@@ -166,7 +171,7 @@ type SealosCertMetaData struct {
 	NodeName  string
 	NodeIP    string
 	DNSDomain string
-	//证书生成的位置
+	// 证书生成的位置
 	CertPath     string
 	CertEtcdPath string
 }
@@ -182,15 +187,19 @@ const (
 )
 
 // apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
-func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP, DNSDomain string) (*SealosCertMetaData, error) {
+func NewSealosCertMetaData(
+	certPath, certEtcdPath string,
+	apiServerIPAndDomains []string,
+	svcCIDR, nodeName, nodeIP, dnsDomain string,
+) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
-	data.CertPath = certPATH
-	data.CertEtcdPath = certEtcdPATH
-	data.DNSDomain = DNSDomain
+	data.CertPath = certPath
+	data.CertEtcdPath = certEtcdPath
+	data.DNSDomain = dnsDomain
 	data.APIServer.IPs = make(map[string]net.IP)
 	data.APIServer.DNSNames = make(map[string]string)
 
-	for _, svcCidr := range strings.Split(SvcCIDR, ",") {
+	for _, svcCidr := range strings.Split(svcCIDR, ",") {
 		_, svcNet, err := net.ParseCIDR(svcCidr)
 		if err != nil {
 			return nil, err
@@ -224,7 +233,7 @@ func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
 		(*certList)[APIserverCert].AltNames.DNSNames[dns] = dns
 	}
 
-	svcDNS := fmt.Sprintf("kubernetes.default.svc.%s", meta.DNSDomain)
+	svcDNS := "kubernetes.default.svc." + meta.DNSDomain
 	(*certList)[APIserverCert].AltNames.DNSNames[svcDNS] = svcDNS
 	(*certList)[APIserverCert].AltNames.DNSNames[meta.NodeName] = meta.NodeName
 
@@ -251,7 +260,11 @@ func (meta *SealosCertMetaData) etcdAltAndCommonName(certList *[]Config) {
 	(*certList)[EtcdPeerCert].CommonName = meta.NodeName
 	(*certList)[EtcdPeerCert].AltNames = altname
 
-	logger.Info("Etcd altnames : %v, commonName : %s", (*certList)[EtcdPeerCert].AltNames, (*certList)[EtcdPeerCert].CommonName)
+	logger.Info(
+		"Etcd altnames : %v, commonName : %s",
+		(*certList)[EtcdPeerCert].AltNames,
+		(*certList)[EtcdPeerCert].CommonName,
+	)
 }
 
 // create sa.key sa.pub for service Account

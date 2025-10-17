@@ -17,9 +17,7 @@ package clusterfile
 import (
 	"bytes"
 	"errors"
-
-	"helm.sh/helm/v3/pkg/cli/values"
-	"helm.sh/helm/v3/pkg/getter"
+	"fmt"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/decode"
@@ -29,6 +27,8 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/getter"
 )
 
 var ErrClusterFileNotExists = errors.New("the cluster file is not exist")
@@ -51,7 +51,7 @@ func (c *ClusterFile) Process() (err error) {
 			return c.decode(clusterFileData)
 		}()
 	})
-	return
+	return err
 }
 
 func (c *ClusterFile) loadClusterFile() ([]byte, error) {
@@ -64,7 +64,7 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 		return nil, err
 	}
 	logger.Debug("loadClusterFile loadRenderValues: %+v", mergeValues)
-	data := map[string]interface{}{
+	data := map[string]any{
 		"Values": mergeValues,
 	}
 	out := bytes.NewBuffer(nil)
@@ -100,7 +100,7 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func (c *ClusterFile) loadRenderValues() (map[string]interface{}, error) {
+func (c *ClusterFile) loadRenderValues() (map[string]any, error) {
 	valueOpt := &values.Options{
 		ValueFiles: c.customValues,
 		Values:     c.customSets,
@@ -115,7 +115,7 @@ func (c *ClusterFile) decode(data []byte) error {
 	for _, fn := range []func([]byte) error{
 		c.DecodeCluster, c.DecodeConfigs, c.DecodeRuntimeConfig,
 	} {
-		if err := fn(data); err != nil && err != ErrTypeNotFound {
+		if err := fn(data); err != nil && !errors.Is(err, ErrTypeNotFound) {
 			return err
 		}
 	}
@@ -142,8 +142,11 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 	if configs == nil {
 		return ErrTypeNotFound
 	}
-	cfgs := configs.([]v2.Config)
-	c.configs = cfgs
+	cfgList, ok := configs.([]v2.Config)
+	if !ok {
+		return fmt.Errorf("unexpected config list type %T", configs)
+	}
+	c.configs = cfgList
 	return nil
 }
 

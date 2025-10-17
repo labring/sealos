@@ -34,7 +34,11 @@ const (
 	sshdConfigPath        = "/etc/ssh/sshd_config"
 )
 
-func NewSudoSftpClient(conn *ssh.Client, sudopwd string, opts ...sftp.ClientOption) (*sftp.Client, error) {
+func NewSudoSftpClient(
+	conn *ssh.Client,
+	sudopwd string,
+	opts ...sftp.ClientOption,
+) (*sftp.Client, error) {
 	s, err := conn.NewSession()
 	if err != nil {
 		return nil, err
@@ -77,7 +81,6 @@ func NewSudoSftpClient(conn *ssh.Client, sudopwd string, opts ...sftp.ClientOpti
 	}
 
 	err = s.Start(cmd)
-
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +113,7 @@ func NewSudoSftpClient(conn *ssh.Client, sudopwd string, opts ...sftp.ClientOpti
 	case prompterror:
 		return nil, errors.New("sudo failed or no sudo rights")
 	case promptpwd:
-		return nil, fmt.Errorf("wrong sudo password")
+		return nil, errors.New("wrong sudo password")
 	}
 
 	return sftp.NewClientPipe(stdout, stdin, opts...)
@@ -148,7 +151,7 @@ func getSftpServerPath(conn *ssh.Client, sudopwd string) (string, error) {
 	}
 	defer ses.Close()
 
-	cmd := fmt.Sprintf(`sudo -S grep -oP "Subsystem\s+sftp\s+\K.*" %s`, sshdConfigPath)
+	cmd := "sudo -S grep -oP \"Subsystem\\s+sftp\\s+\\K.*\" " + sshdConfigPath
 	in, err := ses.StdinPipe()
 	if err != nil {
 		return "", err
@@ -162,7 +165,11 @@ func getSftpServerPath(conn *ssh.Client, sudopwd string) (string, error) {
 	ses.Stderr = &b
 	err = ses.Run(cmd)
 	if err != nil {
-		return "", fmt.Errorf("failed to find sftp-server binary path on %s: %v", sshdConfigPath, err)
+		return "", fmt.Errorf(
+			"failed to find sftp-server binary path on %s: %w",
+			sshdConfigPath,
+			err,
+		)
 	}
 	sftpServerPath := strings.ReplaceAll(b.b.String(), "\r", "")
 	return sftpServerPath, nil

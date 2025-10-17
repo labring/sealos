@@ -26,7 +26,7 @@ import (
 func CopyDir(sshClient Interface, host, src, dest string, filter func(fs.DirEntry) bool) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {
-		return fmt.Errorf("failed to read dir entries %s", err)
+		return fmt.Errorf("failed to read dir entries %w", err)
 	}
 	// Copy empty dir anyway
 	if len(entries) == 0 {
@@ -36,7 +36,13 @@ func CopyDir(sshClient Interface, host, src, dest string, filter func(fs.DirEntr
 		if filter == nil || filter(f) {
 			err = sshClient.Copy(host, filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()))
 			if err != nil {
-				return fmt.Errorf("failed to copy entry %s -> %s to %s: %v", filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()), host, err)
+				return fmt.Errorf(
+					"failed to copy entry %s -> %s to %s: %w",
+					filepath.Join(src, f.Name()),
+					filepath.Join(dest, f.Name()),
+					host,
+					err,
+				)
 			}
 		}
 	}

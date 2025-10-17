@@ -111,7 +111,7 @@ func Test_realImpl_InspectImage(t *testing.T) {
 				Use:   "test",
 				Short: "test",
 			}
-			//storage-driver
+			// storage-driver
 			RegisterRootCommand(root)
 			impl, err := New("")
 			if err != nil {

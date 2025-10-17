@@ -17,19 +17,19 @@ package k3s
 import (
 	"context"
 	"fmt"
-
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/strings"
+	"net"
+	"strconv"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
 )
 
 type K3s struct {
@@ -75,7 +75,7 @@ func (k *K3s) Reset() error {
 	return nil
 }
 
-func (k *K3s) ScaleUp(masters []string, nodes []string) error {
+func (k *K3s) ScaleUp(masters, nodes []string) error {
 	if len(masters) != 0 {
 		logger.Info("%s will be added as master", masters)
 		if err := k.joinMasters(masters); err != nil {
@@ -91,7 +91,7 @@ func (k *K3s) ScaleUp(masters []string, nodes []string) error {
 	return nil
 }
 
-func (k *K3s) ScaleDown(masters []string, nodes []string) error {
+func (k *K3s) ScaleDown(masters, nodes []string) error {
 	if len(masters) != 0 {
 		logger.Info("master %s will be deleted", masters)
 		if err := k.removeNodes(masters); err != nil {
@@ -111,11 +111,14 @@ func (k *K3s) Upgrade(version string) error {
 }
 
 func (k *K3s) GetRawConfig() ([]byte, error) {
-	defaultCallbacks := []callback{defaultingConfig, k.sealosCfg, k.overrideCertSans, k.overrideServerConfig, setClusterInit}
-	cfg, err := k.getInitConfig(defaultCallbacks...)
-	if err != nil {
-		return nil, err
+	defaultCallbacks := []callback{
+		defaultingConfig,
+		k.sealosCfg,
+		k.overrideCertSans,
+		k.overrideServerConfig,
+		setClusterInit,
 	}
+	cfg := k.getInitConfig(defaultCallbacks...)
 	cluster := k.cluster.DeepCopy()
 	cluster.Status = v2.ClusterStatus{}
 	return yaml.MarshalConfigs(cluster, cfg)
@@ -125,18 +128,27 @@ func (k *K3s) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {
 	apiPort := k.getAPIServerPort()
 	mastersIPList = strings.RemoveDuplicate(mastersIPList)
 	masters := make([]string, 0)
+	port := strconv.Itoa(apiPort)
 	for _, master := range mastersIPList {
-		masters = append(masters, fmt.Sprintf("%s:%d", iputils.GetHostIP(master), apiPort))
+		masters = append(masters, net.JoinHostPort(iputils.GetHostIP(master), port))
 	}
 	image := k.cluster.GetLvscareImage()
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range nodeIPList {
-		node := node
 		eg.Go(func() error {
 			logger.Info("start to sync lvscare static pod to node: %s master: %+v", node, masters)
-			err := k.remoteUtil.StaticPod(node, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, k3sEtcStaticPod, "--health-status", "401")
+			err := k.remoteUtil.StaticPod(
+				node,
+				k.getVipAndPort(),
+				constants.LvsCareStaticPodName,
+				image,
+				masters,
+				k3sEtcStaticPod,
+				"--health-status",
+				"401",
+			)
 			if err != nil {
-				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
+				return fmt.Errorf("update lvscare static pod failed %s %w", node, err)
 			}
 			return nil
 		})
@@ -148,7 +160,7 @@ func (k *K3s) runPipelines(phase string, pipelines ...func() error) error {
 	logger.Info("starting %s", phase)
 	for i := range pipelines {
 		if err := pipelines[i](); err != nil {
-			return fmt.Errorf("failed to %s: %v", phase, err)
+			return fmt.Errorf("failed to %s: %w", phase, err)
 		}
 	}
 	return nil

@@ -19,13 +19,10 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
 	"github.com/labring/sealos/test/e2e/suites/checkers"
+	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
-
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -42,7 +39,11 @@ var _ = Describe("E2E_sealos_run_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
 		It("sealos run single by containerd", func() {
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{
+				"labring/kubernetes:v1.25.0",
+				"labring/helm:v3.8.2",
+				"labring/calico:v3.24.1",
+			}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{
@@ -54,7 +55,6 @@ var _ = Describe("E2E_sealos_run_test", func() {
 		})
 
 		It("sealos run single by containerd-buildimage", func() {
-
 			By("build image from dockerfile")
 			kubeadm := `
 apiVersion: kubeadm.k8s.io/v1beta2
@@ -70,21 +70,30 @@ networking:
 			tmpdir, err = dFile.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
 
-			err = fakeClient.Image.BuildImage("test-build-image:kubeadm-servicecidr", tmpdir, operators.BuildOptions{
-				MaxPullProcs: 5,
-				SaveImage:    true,
-			})
+			err = fakeClient.Image.BuildImage(
+				"test-build-image:kubeadm-servicecidr",
+				tmpdir,
+				operators.BuildOptions{
+					MaxPullProcs: 5,
+					SaveImage:    true,
+				},
+			)
 			utils.CheckErr(err)
 			By("running kubernete image using build image")
-			images := []string{"test-build-image:kubeadm-servicecidr", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{
+				"test-build-image:kubeadm-servicecidr",
+				"labring/helm:v3.8.2",
+				"labring/calico:v3.24.1",
+			}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{ServiceCIDR: "100.55.0.0/16", Images: images})
+			fakeCheckInterface, err = checkers.NewFakeGroupClient(
+				"default",
+				&checkers.FakeOpts{ServiceCIDR: "100.55.0.0/16", Images: images},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
-
 	})
-
 })

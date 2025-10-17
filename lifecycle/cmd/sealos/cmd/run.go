@@ -17,12 +17,11 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 var exampleRun = `
@@ -59,7 +58,7 @@ func newRunCmd() *cobra.Command {
 		SSH:     &apply.SSH{},
 	}
 	var transport string
-	var runCmd = &cobra.Command{
+	runCmd := &cobra.Command{
 		Use:     "run",
 		Short:   "Run cloud native applications with ease, with or without a existing cluster",
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
@@ -89,8 +88,10 @@ func newRunCmd() *cobra.Command {
 	if err := runCmd.Flags().MarkDeprecated("single", "it defaults to running cluster in single mode when there are no master and node"); err != nil {
 		logger.Fatal(err)
 	}
-	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
+	runCmd.Flags().
+		BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
 	runCmd.Flags().StringVarP(&transport, "transport", "t", buildah.OCIArchive,
-		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive))
+		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive),
+	)
 	return runCmd
 }

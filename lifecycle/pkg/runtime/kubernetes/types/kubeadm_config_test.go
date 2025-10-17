@@ -320,6 +320,7 @@ func TestKubeadmRuntime_setFeatureGatesConfigurationLowerVersion(t *testing.T) {
 		})
 	}
 }
+
 func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -344,7 +345,11 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k, err := LoadKubeadmConfigs(DefaultKubeadmInitConfiguration(), false, decode.CRDFromString)
+			k, err := LoadKubeadmConfigs(
+				DefaultKubeadmInitConfiguration(),
+				false,
+				decode.CRDFromString,
+			)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
@@ -364,6 +369,7 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 		})
 	}
 }
+
 func TestKubeadmRuntime_setFeatureGatesConfiguration4Controller(t *testing.T) {
 	testyaml := `apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration

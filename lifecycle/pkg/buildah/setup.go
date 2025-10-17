@@ -21,14 +21,12 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/system"
-
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage/pkg/homedir"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/containers/storage/types"
-
+	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -140,7 +138,7 @@ func setupStorageConfigFile() error {
 	var content string
 	if unshare.IsRootless() {
 		runRoot := fmt.Sprintf("/run/user/%d", unshare.GetRootlessUID())
-		if err := os.MkdirAll(runRoot, 0755); err != nil && errors.Is(err, os.ErrPermission) {
+		if err := os.MkdirAll(runRoot, 0o755); err != nil && errors.Is(err, os.ErrPermission) {
 			// has not permission, then use cache home
 			cacheHome, err := homedir.GetCacheHome()
 			if err != nil {
@@ -168,7 +166,10 @@ func writeFileIfNotExists(filename string, data []byte) error {
 }
 
 func determineIfRootlessPackagePresent() error {
-	deps := map[string][]string{"uidmap": {"newuidmap", "newgidmap"}, "fuse-overlayfs": {"fuse-overlayfs"}}
+	deps := map[string][]string{
+		"uidmap":         {"newuidmap", "newgidmap"},
+		"fuse-overlayfs": {"fuse-overlayfs"},
+	}
 	if err := determineIfPackagePresent(deps); err != nil {
 		return fmt.Errorf("%s or consider running in root mode", err.Error())
 	}
@@ -179,7 +180,11 @@ func determineIfPackagePresent(deps map[string][]string) error {
 	for pkg, executables := range deps {
 		for i := range executables {
 			if _, err := exec.LookPath(executables[i]); err != nil {
-				return fmt.Errorf("executable file '%s' not found in $PATH, install package '%s' first", executables[i], pkg)
+				return fmt.Errorf(
+					"executable file '%s' not found in $PATH, install package '%s' first",
+					executables[i],
+					pkg,
+				)
 			}
 		}
 	}

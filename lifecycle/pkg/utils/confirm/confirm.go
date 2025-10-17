@@ -18,14 +18,13 @@ import (
 	"errors"
 	"os"
 
-	"github.com/manifoldco/promptui"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/manifoldco/promptui"
 )
 
 // Confirm is send the prompt and get result
 func Confirm(prompt, cancel string) (bool, error) {
-	var hostname, _ = os.Hostname()
+	hostname, _ := os.Hostname()
 	promptLabel := "Do you want to continue on '" + hostname + "' cluster? Input '" + hostname + "' to continue"
 	logger.Info(prompt)
 
@@ -70,7 +69,6 @@ func PasswordInput(promptInput string) string {
 	}
 
 	result, err := prompt.Run()
-
 	if err != nil {
 		logger.Error("Prompt failed %v\n", err)
 		return ""
@@ -93,7 +91,6 @@ func SelectInput(promptInput string, items []string) string {
 	}
 
 	_, result, err := prompt.Run()
-
 	if err != nil {
 		logger.Error("Prompt failed %v\n", err)
 		return ""

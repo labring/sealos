@@ -19,16 +19,13 @@ import (
 	"errors"
 	"os"
 
-	"github.com/labring/sealos/pkg/template"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type SvcChecker struct {
@@ -59,31 +56,40 @@ func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	n.client = c
 
-	//namespaceSvcList, err := n.client.ListAllNamespacesSvcs()
+	// namespaceSvcList, err := n.client.ListAllNamespacesSvcs()
 
-	nsList, err := n.client.Kubernetes().CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	nsList, err := n.client.Kubernetes().
+		CoreV1().
+		Namespaces().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	var svcNamespaceStatusList []*SvcNamespaceStatus
+	svcNamespaceStatusList := make([]*SvcNamespaceStatus, 0, len(nsList.Items))
 	if err != nil {
 		return err
 	}
 	for _, svcNamespace := range nsList.Items {
-		namespaceSVCList, err := n.client.Kubernetes().CoreV1().Services(svcNamespace.Name).List(context.TODO(), metav1.ListOptions{})
+		namespaceSVCList, err := n.client.Kubernetes().
+			CoreV1().
+			Services(svcNamespace.Name).
+			List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			break
 		}
 
-		namespaceEPList, err := n.client.Kubernetes().CoreV1().Endpoints(svcNamespace.Name).List(context.TODO(), metav1.ListOptions{})
+		namespaceEPList, err := n.client.Kubernetes().
+			CoreV1().
+			Endpoints(svcNamespace.Name).
+			List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			break
 		}
 
 		serviceCount := len(namespaceSVCList.Items)
 		var unhaelthService []string
-		var endpointCount = 0
+		endpointCount := 0
 
 		for _, service := range namespaceSVCList.Items {
 			if IsExistEndpoint(namespaceEPList, service.Name) {

@@ -15,7 +15,6 @@
 package exec
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +27,7 @@ func ExecutableFilePath(name string) string {
 }
 
 func ExecutableFileArch(path string) string {
-	fileCmd := fmt.Sprintf("file %s", path)
+	fileCmd := "file " + path
 	out := BashEval(fileCmd)
 	arm64 := []string{"aarch64", "arm64"}
 	amd64 := []string{"x86-64", "x86_64"}

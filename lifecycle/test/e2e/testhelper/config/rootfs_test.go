@@ -38,7 +38,10 @@ func TestDockerfile_Write(t *testing.T) {
 		{
 			name: "default",
 			fields: fields{
-				Images: []string{"docker.io/altinity/clickhouse-operator:0.18.4", "docker.io/altinity/metrics-exporter:0.18.4"},
+				Images: []string{
+					"docker.io/altinity/clickhouse-operator:0.18.4",
+					"docker.io/altinity/metrics-exporter:0.18.4",
+				},
 			},
 			wantErr: false,
 		},

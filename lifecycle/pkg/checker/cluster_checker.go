@@ -21,18 +21,16 @@ import (
 	"os"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ClusterChecker struct {
-}
+type ClusterChecker struct{}
 
 type ClusterStatus struct {
 	IP                    string
@@ -60,7 +58,7 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 		return err
 	}
 	healthyClient := kubernetes.NewKubeHealthy(c.Kubernetes(), 30*time.Second)
-	var NodeList []ClusterStatus
+	NodeList := make([]ClusterStatus, 0, len(nodes.Items))
 	ctx := context.Background()
 	for _, node := range nodes.Items {
 		ip, _ := getNodeStatus(node)
@@ -75,7 +73,11 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 			}
 			cStatus.KubeAPIServer = healthyClient.ForHealthyPod(apiPod)
 
-			controllerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeControllerManager)
+			controllerPod, err := ke.FetchStaticPod(
+				ctx,
+				node.Name,
+				kubernetes.KubeControllerManager,
+			)
 			if err != nil {
 				return err
 			}

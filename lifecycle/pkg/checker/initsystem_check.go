@@ -27,8 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-type InitSystemChecker struct {
-}
+type InitSystemChecker struct{}
 
 type systemStatus struct {
 	Name   string
@@ -58,7 +57,14 @@ func (n *InitSystemChecker) Check(_ *v2.Cluster, phase string) error {
 		return nil
 	}
 
-	serviceNames := []string{"kubelet", "containerd", "cri-docker", "docker", "registry", "image-cri-shim"}
+	serviceNames := []string{
+		"kubelet",
+		"containerd",
+		"cri-docker",
+		"docker",
+		"registry",
+		"image-cri-shim",
+	}
 	status.ServiceList = make([]systemStatus, 0)
 	for _, sn := range serviceNames {
 		status.ServiceList = append(status.ServiceList, systemStatus{
@@ -84,7 +90,10 @@ Systemd Service Status
   {{ end }}`)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("failed to render system service checkers template. error: %s", err.Error())
+			logger.Error(
+				"failed to render system service checkers template. error: %s",
+				err.Error(),
+			)
 			return err
 		}
 		return errors.New("convert system service template failed")
@@ -96,7 +105,10 @@ func NewInitSystemChecker() Interface {
 	return &InitSystemChecker{}
 }
 
-func (n *InitSystemChecker) checkInitSystem(system initsystem.InitSystem, name string) (status string) {
+func (n *InitSystemChecker) checkInitSystem(
+	system initsystem.InitSystem,
+	name string,
+) (status string) {
 	if !system.ServiceExists(name) {
 		status = "NotExists"
 	} else {
@@ -114,5 +126,5 @@ func (n *InitSystemChecker) checkInitSystem(system initsystem.InitSystem, name s
 		status = fmt.Sprintf("%s && %s", enable, subStatus)
 	}
 
-	return
+	return status
 }

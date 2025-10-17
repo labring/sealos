@@ -19,10 +19,9 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 
 	"github.com/containers/storage"
-	"golang.org/x/exp/slices"
-
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -110,7 +109,7 @@ func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
 	mount.Env = maps.FromSlice(oci.OCIv1.Config.Env)
 	delete(mount.Env, "PATH")
 	// mount.Entrypoint
-	var entrypoint []string
+	entrypoint := make([]string, 0, len(oci.OCIv1.Config.Entrypoint))
 	for _, cmd := range oci.OCIv1.Config.Entrypoint {
 		if cmd == "/bin/sh" || cmd == "-c" {
 			continue
@@ -119,9 +118,9 @@ func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
 	}
 	mount.Entrypoint = entrypoint
 
-	//mount.Cmd
+	// mount.Cmd
 	cmds := oci.OCIv1.Config.Cmd
-	var newCMDs []string
+	newCMDs := make([]string, 0, len(cmds))
 	for _, cmd := range cmds {
 		if cmd == "/bin/sh" || cmd == "-c" {
 			continue
@@ -237,7 +236,9 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 	}
 
 	if !hasRootfsType {
-		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
+		return errors.New(
+			"can't apply application type images only since RootFS type image is not applied yet",
+		)
 	}
 	return nil
 }

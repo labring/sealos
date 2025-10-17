@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -72,7 +71,8 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	objects := []interface{}{cluster,
+	objects := []any{
+		cluster,
 		conversion.InitConfiguration,
 		conversion.ClusterConfiguration,
 		conversion.JoinConfiguration,
@@ -87,11 +87,15 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 }
 
 func (k *KubeadmRuntime) Reset() error {
-	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
+	logger.Info(
+		"start to delete Cluster: master %s, node %s",
+		k.getMasterIPList(),
+		k.getNodeIPList(),
+	)
 	return k.reset()
 }
 
-func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
+func (k *KubeadmRuntime) ScaleUp(newMasterIPList, newNodeIPList []string) error {
 	if len(newMasterIPList) != 0 {
 		logger.Info("%s will be added as master", newMasterIPList)
 		if err := k.joinMasters(newMasterIPList); err != nil {
@@ -108,7 +112,7 @@ func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []strin
 	return nil
 }
 
-func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error {
+func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList, deleteNodesIPList []string) error {
 	if len(deleteMastersIPList) != 0 {
 		logger.Info("master %s will be deleted", deleteMastersIPList)
 		if err := k.deleteMasters(deleteMastersIPList); err != nil {
@@ -158,13 +162,13 @@ func New(cluster *v2.Cluster, config any) (*KubeadmRuntime, error) {
 
 func (k *KubeadmRuntime) Validate() error {
 	if len(k.cluster.Spec.Hosts) == 0 {
-		return fmt.Errorf("master hosts cannot be empty")
+		return errors.New("master hosts cannot be empty")
 	}
 	if k.getMaster0IP() == "" {
-		return fmt.Errorf("master hosts ip cannot be empty")
+		return errors.New("master hosts ip cannot be empty")
 	}
 	if k.getKubeVersionFromImage() == "" && k.cluster.DeletionTimestamp.IsZero() {
-		return fmt.Errorf("cluster image kubernetes version cannot be empty")
+		return errors.New("cluster image kubernetes version cannot be empty")
 	}
 	return nil
 }
@@ -189,7 +193,11 @@ func (k *KubeadmRuntime) Upgrade(version string) error {
 		return fmt.Errorf("cannot apply an older version %s than %s", version, currVersion)
 	}
 	if v0.Minor()+1 < v1.Minor() {
-		return fmt.Errorf("cannot be upgraded across more than one major releases, %s -> %s", currVersion, version)
+		return fmt.Errorf(
+			"cannot be upgraded across more than one major releases, %s -> %s",
+			currVersion,
+			version,
+		)
 	}
 
 	return k.upgradeCluster(version)

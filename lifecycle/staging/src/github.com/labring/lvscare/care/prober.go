@@ -53,9 +53,24 @@ func (p *httpProber) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.HealthScheme, "health-schem", "https", "http scheme for prober")
 	fs.StringVar(&p.Method, "health-req-method", "GET", "http request method")
 	fs.StringVar(&p.Body, "health-req-body", "", "body to send for health checker")
-	fs.StringToStringVar(&p.Headers, "health-req-headers", map[string]string{}, "http request headers")
-	fs.IntSliceVar(&p.ValidStatusCodes, "health-status", []int{}, "extra valid status codes greater than 400")
-	fs.BoolVar(&p.InsecureSkipVerify, "health-insecure-skip-verify", true, "skip verify insecure request")
+	fs.StringToStringVar(
+		&p.Headers,
+		"health-req-headers",
+		map[string]string{},
+		"http request headers",
+	)
+	fs.IntSliceVar(
+		&p.ValidStatusCodes,
+		"health-status",
+		[]int{},
+		"extra valid status codes greater than 400",
+	)
+	fs.BoolVar(
+		&p.InsecureSkipVerify,
+		"health-insecure-skip-verify",
+		true,
+		"skip verify insecure request",
+	)
 	fs.DurationVar(&p.timeout, "health-timeout", 10*time.Second, "http probe timeout")
 }
 

@@ -240,7 +240,7 @@ func (co *CertOptions) Args() []string {
 		appendFlagsWithValues("--alt-names", strings.Join(co.AltName, ","))
 }
 
-func (args Args) appendFlagsWithValues(flagName string, values interface{}) Args {
+func (args Args) appendFlagsWithValues(flagName string, values any) Args {
 	switch vv := values.(type) {
 	case []string:
 		if vv == nil {

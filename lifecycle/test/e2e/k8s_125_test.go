@@ -21,7 +21,6 @@ import (
 
 	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -45,5 +44,4 @@ var _ = Describe("E2E_sealos_runtime_version_125_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to check version image list: %v", err))
 		})
 	})
-
 })

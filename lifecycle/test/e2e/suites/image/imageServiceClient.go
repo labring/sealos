@@ -16,11 +16,10 @@ package image
 
 import (
 	"context"
-	"fmt"
-
-	v1api "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"errors"
 
 	"github.com/labring/sealos/pkg/utils/logger"
+	v1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 const V1 = "v1"
@@ -71,19 +70,20 @@ func (f FakeImageServiceClient) ListImages() ([]string, error) {
 }
 
 func (f FakeImageServiceClient) ImageStatus(image string) (*v1api.ImageStatusResponse, error) {
-	var (
-		ctx, cancel = context.WithCancel(context.Background())
-	)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	v1ImageSpec := &v1api.ImageSpec{Image: image}
 	if f.Version == V1 {
-		v1ImageListResp, err := f.V1ImageServiceClient.ImageStatus(ctx, &v1api.ImageStatusRequest{Image: v1ImageSpec, Verbose: true})
+		v1ImageListResp, err := f.V1ImageServiceClient.ImageStatus(
+			ctx,
+			&v1api.ImageStatusRequest{Image: v1ImageSpec, Verbose: true},
+		)
 		if err != nil {
 			return nil, err
 		}
 		return v1ImageListResp, nil
 	}
-	return nil, fmt.Errorf("not support cri api v1")
+	return nil, errors.New("not support cri api v1")
 }
 
 // return image ID
@@ -94,35 +94,37 @@ func (f FakeImageServiceClient) PullImage(image string) (string, error) {
 	)
 	defer cancel()
 	if f.Version == V1 {
-		v1ImageListResp, err := f.V1ImageServiceClient.PullImage(ctx, &v1api.PullImageRequest{Image: v1ImageSpec})
+		v1ImageListResp, err := f.V1ImageServiceClient.PullImage(
+			ctx,
+			&v1api.PullImageRequest{Image: v1ImageSpec},
+		)
 		if err != nil {
 			return "", err
 		}
 		return v1ImageListResp.ImageRef, nil
 	}
-	return "", fmt.Errorf("not support cri api v1")
+	return "", errors.New("not support cri api v1")
 }
 
 func (f FakeImageServiceClient) RemoveImage(image string) error {
-	var (
-		ctx, cancel = context.WithCancel(context.Background())
-	)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	v1ImageSpec := &v1api.ImageSpec{Image: image}
 	if f.Version == V1 {
-		_, err := f.V1ImageServiceClient.RemoveImage(ctx, &v1api.RemoveImageRequest{Image: v1ImageSpec})
+		_, err := f.V1ImageServiceClient.RemoveImage(
+			ctx,
+			&v1api.RemoveImageRequest{Image: v1ImageSpec},
+		)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-	return fmt.Errorf("not support cri api v1")
+	return errors.New("not support cri api v1")
 }
 
 func (f FakeImageServiceClient) ImageFsInfo() ([]*v1api.FilesystemUsage, error) {
-	var (
-		ctx, cancel = context.WithCancel(context.Background())
-	)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if f.Version == V1 {
 		v1ImageListResp, err := f.V1ImageServiceClient.ImageFsInfo(ctx, &v1api.ImageFsInfoRequest{})
@@ -131,5 +133,5 @@ func (f FakeImageServiceClient) ImageFsInfo() ([]*v1api.FilesystemUsage, error) 
 		}
 		return v1ImageListResp.ImageFilesystems, nil
 	}
-	return nil, fmt.Errorf("not support cri api v1")
+	return nil, errors.New("not support cri api v1")
 }

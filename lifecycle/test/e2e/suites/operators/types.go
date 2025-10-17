@@ -34,9 +34,9 @@ type BuildOptions struct {
 }
 
 type PodStruct struct {
-	//var pod PodStruct
-	//err = json.Unmarshal(data, &pod)
-	//if err != nil {
+	// var pod PodStruct
+	// err = json.Unmarshal(data, &pod)
+	// if err != nil {
 	//	return nil, err
 	//}
 	//return &pod, nil
@@ -64,19 +64,19 @@ type ImageStruct struct {
 	//}
 	//	return &image, nil
 	Images []struct {
-		ID          string      `json:"id"`
-		RepoTags    []string    `json:"repoTags"`
-		RepoDigests []string    `json:"repoDigests"`
-		Size        string      `json:"size"`
-		UID         interface{} `json:"uid"`
-		Username    string      `json:"username"`
-		Spec        interface{} `json:"spec"`
-		Pinned      bool        `json:"pinned"`
+		ID          string   `json:"id"`
+		RepoTags    []string `json:"repoTags"`
+		RepoDigests []string `json:"repoDigests"`
+		Size        string   `json:"size"`
+		UID         any      `json:"uid"`
+		Username    string   `json:"username"`
+		Spec        any      `json:"spec"`
+		Pinned      bool     `json:"pinned"`
 	} `json:"images"`
 }
 
 type ProcessStruct struct {
-	//var process ProcessStruct
+	// var process ProcessStruct
 	//	err = json.Unmarshal(data, &process)
 	//	if err != nil {
 	//		return nil, err

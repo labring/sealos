@@ -21,10 +21,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 var exampleGen = `
@@ -52,7 +51,7 @@ func newGenCmd() *cobra.Command {
 	}
 
 	var out string
-	var genCmd = &cobra.Command{
+	genCmd := &cobra.Command{
 		Use:     "gen",
 		Short:   "generate a Clusterfile with all default settings",
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
@@ -66,7 +65,9 @@ func newGenCmd() *cobra.Command {
 			var outputWriter io.WriteCloser
 			switch out {
 			case "", "stdout":
-				logger.Info("if you want to save the output of gen command, use '--output' option instead of redirecting to file")
+				logger.Info(
+					"if you want to save the output of gen command, use '--output' option instead of redirecting to file",
+				)
 				outputWriter = os.Stdout
 			default:
 				outputWriter, err = os.Create(out)

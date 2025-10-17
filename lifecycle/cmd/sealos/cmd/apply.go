@@ -15,10 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 var clusterFile string
@@ -26,7 +25,7 @@ var clusterFile string
 func newApplyCmd() *cobra.Command {
 	applyArgs := &apply.Args{}
 	// applyCmd represents the apply command
-	var applyCmd = &cobra.Command{
+	applyCmd := &cobra.Command{
 		Use:     "apply",
 		Short:   "Run cloud images within a kubernetes cluster with Clusterfile",
 		Example: `sealos apply -f Clusterfile`,
@@ -43,7 +42,8 @@ func newApplyCmd() *cobra.Command {
 		},
 	}
 	setRequireBuildahAnnotation(applyCmd)
-	applyCmd.Flags().StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")
+	applyCmd.Flags().
+		StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")
 	applyArgs.RegisterFlags(applyCmd.Flags())
 	return applyCmd
 }

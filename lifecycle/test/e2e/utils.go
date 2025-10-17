@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/onsi/gomega"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	"github.com/onsi/gomega"
 )
 
 func checkVersionImageList(fakeClient *operators.FakeClient) error {

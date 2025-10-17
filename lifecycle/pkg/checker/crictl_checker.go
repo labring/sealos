@@ -20,11 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"strings"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	executils "k8s.io/utils/exec"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -36,10 +34,11 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	executils "k8s.io/utils/exec"
 )
 
-type CRICtlChecker struct {
-}
+type CRICtlChecker struct{}
 
 type Container struct {
 	Container string
@@ -115,7 +114,11 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
-	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))
+	regStatus, err := n.getRegistryStatus(
+		crictlPath,
+		pauseImage,
+		net.JoinHostPort(regInfo.Domain, regInfo.Port),
+	)
 	if err != nil {
 		status.Error = fmt.Errorf("pull registry image error: %w", err).Error()
 	}
@@ -186,16 +189,16 @@ func (n *CRICtlChecker) getCRICtlContainerList(crictlPath string) ([]Container, 
 			ID           string `json:"id"`
 			PodSandboxID string `json:"podSandboxId"`
 			Metadata     struct {
-				Name    string
-				Attempt int
-			}
+				Name    string `json:"name"`
+				Attempt int    `json:"attempt"`
+			} `json:"metadata"`
 			Image struct {
-				Image string
-			}
-			State       string //CONTAINER_RUNNING
-			Labels      map[string]string
-			Annotations map[string]string
-		}
+				Image string `json:"image"`
+			} `json:"image"`
+			State       string            `json:"state"`
+			Labels      map[string]string `json:"labels"`
+			Annotations map[string]string `json:"annotations"`
+		} `json:"containers"`
 	}
 	ps := &psStruct{}
 	psCmd := `%s  ps -a -o json`
@@ -220,14 +223,16 @@ func (n *CRICtlChecker) getCRICtlContainerList(crictlPath string) ([]Container, 
 	return containerList, nil
 }
 
-func (n *CRICtlChecker) getRegistryStatus(crictlPath string, pauseImage string, registry string) (status string, err error) {
+func (n *CRICtlChecker) getRegistryStatus(
+	crictlPath, pauseImage, registry string,
+) (status string, err error) {
 	pullCmd := `%s  pull %s/%s`
 	regStatus, err := exec2.RunBashCmd(fmt.Sprintf(pullCmd, crictlPath, registry, pauseImage))
 	regStatus = strings.ReplaceAll(regStatus, "\n", "")
 	if err != nil {
 		status = "unknown:" + regStatus
-		return
+		return status, err
 	}
 	status = "ok:" + regStatus
-	return
+	return status, err
 }
