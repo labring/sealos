@@ -48,15 +48,15 @@ export default function TeamCenter({
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { t } = useTranslation();
   const user = session?.user;
-  const default_ns_uid = user?.ns_uid || '';
-  const default_nsid = user?.nsid || '';
+  const current_ns_uid = user?.ns_uid || '';
+  const current_nsid = user?.nsid || '';
   const userCrUid = user?.userCrUid || '';
   const k8s_username = user?.k8s_username || '';
   const { copyData } = useCopyData();
-  const [nsid, setNsid] = useState(default_nsid);
+  const [nsid, setNsid] = useState(current_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
   const [ns_uid, setNs_uid] = useState(() =>
-    default_nsid === 'ns-' + k8s_username ? '' : default_ns_uid
+    current_nsid === 'ns-' + k8s_username ? '' : current_ns_uid
   );
   // team detail and users list
   const { data } = useQuery(
@@ -94,29 +94,27 @@ export default function TeamCenter({
     }
   });
   const namespaces = _namespaces || [];
-  useEffect(() => {
-    const defaultNamespace =
-      namespaces?.length > 0
-        ? namespaces[0]
-        : {
-            uid: '',
-            id: ''
-          };
-    if (defaultNamespace && !_namespaces?.find((ns) => ns.uid === ns_uid)) {
-      // after delete namespace
-      setNs_uid(defaultNamespace.uid);
-      setNsid(defaultNamespace.id);
-    }
-  }, [_namespaces, ns_uid]);
 
   useEffect(() => {
     if (isOpen) {
+      setNs_uid(current_ns_uid);
+      setNsid(current_nsid);
+
       track('module_view', {
         view_name: 'manage',
         module: 'workspace'
       });
     }
-  }, [isOpen]);
+  }, [isOpen, current_ns_uid, current_nsid]);
+
+  useEffect(() => {
+    if (_namespaces && _namespaces.length > 0 && ns_uid) {
+      if (!_namespaces.find((ns) => ns.uid === ns_uid)) {
+        setNs_uid(_namespaces[0].uid);
+        setNsid(_namespaces[0].id);
+      }
+    }
+  }, [_namespaces, ns_uid]);
 
   const openAccountCenterApp = (page?: string) => {
     openDesktopApp({
