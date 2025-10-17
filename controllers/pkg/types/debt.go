@@ -53,8 +53,10 @@ var StatusMap = map[DebtStatusType]int{
 	FinalDeletionPeriod:   5,
 }
 
-var NonDebtStates = []DebtStatusType{NormalPeriod, LowBalancePeriod, CriticalBalancePeriod}
-var DebtStates = []DebtStatusType{DebtPeriod, DebtDeletionPeriod, FinalDeletionPeriod}
+var (
+	NonDebtStates = []DebtStatusType{NormalPeriod, LowBalancePeriod, CriticalBalancePeriod}
+	DebtStates    = []DebtStatusType{DebtPeriod, DebtDeletionPeriod, FinalDeletionPeriod}
+)
 
 func ContainDebtStatus(statuses []DebtStatusType, status DebtStatusType) bool {
 	for _, s := range statuses {
@@ -70,16 +72,16 @@ type Debt struct {
 	UserUID           uuid.UUID          `gorm:"column:user_uid;type:uuid;not null;primary_key"`
 	CreatedAt         time.Time          `gorm:"column:created_at;autoCreateTime;default:current_timestamp"` // 创建时间
 	UpdatedAt         time.Time          `gorm:"column:updated_at;autoUpdateTime;default:current_timestamp"` // 更新时间
-	AccountDebtStatus DebtStatusType     `gorm:"column:account_debt_status;not null" json:"account_debt_status,omitempty"`
+	AccountDebtStatus DebtStatusType     `gorm:"column:account_debt_status;not null"                        json:"account_debt_status,omitempty"`
 	StatusRecords     []DebtStatusRecord `gorm:"foreignKey:UserUID;references:UserUID"`
 }
 
 // DebtStatusRecord 表示 debt_status_records 表
 type DebtStatusRecord struct {
 	ID            uuid.UUID      `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
-	UserUID       uuid.UUID      `gorm:"column:user_uid;type:uuid;not null" json:"user_uid"` // 外键，关联 User.ID
-	LastStatus    DebtStatusType `gorm:"column:last_status" json:"last_status,omitempty"`
-	CurrentStatus DebtStatusType `gorm:"column:current_status" json:"current_status,omitempty"`
+	UserUID       uuid.UUID      `gorm:"column:user_uid;type:uuid;not null"                                 json:"user_uid"` // 外键，关联 User.ID
+	LastStatus    DebtStatusType `gorm:"column:last_status"                                                 json:"last_status,omitempty"`
+	CurrentStatus DebtStatusType `gorm:"column:current_status"                                              json:"current_status,omitempty"`
 	CreateAt      time.Time      `gorm:"column:create_at;not null;autoCreateTime;default:current_timestamp" json:"create_at,omitempty"`
 }
 
@@ -92,12 +94,12 @@ func (DebtStatusRecord) TableName() string {
 }
 
 type DebtResumeDeductionBalanceTransaction struct {
-	ID                     uuid.UUID `json:"id" gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
-	UserUID                uuid.UUID `json:"user_uid" gorm:"column:user_uid;type:uuid;not null"`
+	ID                     uuid.UUID `json:"id"                       gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	UserUID                uuid.UUID `json:"user_uid"                 gorm:"column:user_uid;type:uuid;not null"`
 	BeforeDeductionBalance int64     `json:"before_deduction_balance" gorm:"column:before_deduction_balance;not null"`
-	AfterDeductionBalance  int64     `json:"after_deduction_balance" gorm:"column:after_deduction_balance;not null"`
-	BeforeBalance          int64     `json:"before_balance" gorm:"column:before_balance;not null"`
-	CreatedAt              time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime;default:current_timestamp"`
+	AfterDeductionBalance  int64     `json:"after_deduction_balance"  gorm:"column:after_deduction_balance;not null"`
+	BeforeBalance          int64     `json:"before_balance"           gorm:"column:before_balance;not null"`
+	CreatedAt              time.Time `json:"created_at"               gorm:"column:created_at;autoCreateTime;default:current_timestamp"`
 }
 
 func (DebtResumeDeductionBalanceTransaction) TableName() string {

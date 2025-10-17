@@ -6,9 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type Subscription struct {
@@ -59,7 +58,7 @@ type SubscriptionPlan struct {
 	MaxResources  string    `gorm:"column:max_resources"`             // 最大资源数: map[string]string: {"cpu": "4", "memory": "8Gi", "storage": "100Gi"}
 	CreatedAt     time.Time `gorm:"column:created_at;autoCreateTime"` // 创建时间
 	UpdatedAt     time.Time `gorm:"column:updated_at;autoUpdateTime"` // 更新时间
-	//Most Popular
+	// Most Popular
 	MostPopular bool `gorm:"column:most_popular"`
 }
 
@@ -85,15 +84,15 @@ const (
 )
 
 func DayPeriod(days int) SubscriptionPeriod {
-	return SubscriptionPeriod(fmt.Sprintf("%d", days) + "d")
+	return SubscriptionPeriod(strconv.Itoa(days) + "d")
 }
 
 func WeekPeriod(weeks int) SubscriptionPeriod {
-	return SubscriptionPeriod(fmt.Sprintf("%d", weeks) + "w")
+	return SubscriptionPeriod(strconv.Itoa(weeks) + "w")
 }
 
 func MonthPeriod(months int) SubscriptionPeriod {
-	return SubscriptionPeriod(fmt.Sprintf("%d", months) + "m")
+	return SubscriptionPeriod(strconv.Itoa(months) + "m")
 }
 
 func ParsePeriod(period SubscriptionPeriod) (time.Duration, error) {
@@ -138,6 +137,7 @@ type ProductPrice struct {
 func (p SubscriptionPlan) GetName() string {
 	return p.Name
 }
+
 func (p SubscriptionPlan) GetMaxResources() string {
 	return p.MaxResources
 }
@@ -160,14 +160,14 @@ func (ProductPrice) TableName() string {
 
 type AccountRegionUserTask struct {
 	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // ID
-	//RegionUID uuid.UUID `gorm:"type:uuid;not null;index;column:region_uid"`               // Region ID
+	// RegionUID uuid.UUID `gorm:"type:uuid;not null;index;column:region_uid"`               // Region ID
 	RegionDomain string    `gorm:"type:varchar(50);not null;column:region_domain"` // Region Domain
 	UserUID      uuid.UUID `gorm:"type:uuid;not null;index;column:user_uid"`       // 用户 ID
 	CreatedAt    time.Time `gorm:"column:created_at;autoCreateTime"`               // 创建时间
 	// flush-quota
 	Type AccountRegionUserTaskType `gorm:"column:type"` // 类型
-	//TaskID    uuid.UUID                 `gorm:"type:uuid;column:task_id"`                                 // 任务 ID
-	//Executed bool      `gorm:"column:executed"` // 是否已执行
+	// TaskID    uuid.UUID                 `gorm:"type:uuid;column:task_id"`                                 // 任务 ID
+	// Executed bool      `gorm:"column:executed"` // 是否已执行
 	StartAt time.Time `gorm:"column:start_at"` // 开始时间
 	EndAt   time.Time `gorm:"column:end_at"`   // 结束时间
 	Status  AccountRegionUserTaskStatus

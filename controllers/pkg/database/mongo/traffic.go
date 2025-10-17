@@ -41,23 +41,43 @@ import (
   }
 */
 
-func (m *mongoDB) GetTrafficRecvBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error) {
+func (m *mongoDB) GetTrafficRecvBytes(
+	startTime, endTime time.Time,
+	namespace string,
+	_type uint8,
+	name string,
+) (int64, error) {
 	return m.getTrafficBytes(false, startTime, endTime, namespace, _type, name)
 }
 
-func (m *mongoDB) GetTrafficSentBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error) {
+func (m *mongoDB) GetTrafficSentBytes(
+	startTime, endTime time.Time,
+	namespace string,
+	_type uint8,
+	name string,
+) (int64, error) {
 	return m.getTrafficBytes(true, startTime, endTime, namespace, _type, name)
 }
 
-func (m *mongoDB) GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error) {
+func (m *mongoDB) GetPodTrafficSentBytes(
+	startTime, endTime time.Time,
+	namespace, name string,
+) (int64, error) {
 	return m.getPodTrafficBytes(true, startTime, endTime, namespace, name)
 }
 
-func (m *mongoDB) GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error) {
+func (m *mongoDB) GetPodTrafficRecvBytes(
+	startTime, endTime time.Time,
+	namespace, name string,
+) (int64, error) {
 	return m.getPodTrafficBytes(false, startTime, endTime, namespace, name)
 }
 
-func (m *mongoDB) getPodTrafficBytes(sent bool, startTime, endTime time.Time, namespace string, name string) (int64, error) {
+func (m *mongoDB) getPodTrafficBytes(
+	sent bool,
+	startTime, endTime time.Time,
+	namespace, name string,
+) (int64, error) {
 	filter := bson.M{
 		"traffic_meta.pod_namespace": namespace,
 		"traffic_meta.pod_name":      name,
@@ -70,7 +90,18 @@ func (m *mongoDB) getPodTrafficBytes(sent bool, startTime, endTime time.Time, na
 		bson.D{{Key: "$match", Value: filter}},
 	}
 	if sent {
-		pipeline = append(pipeline, bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: "$sent_bytes"}}}}}})
+		pipeline = append(
+			pipeline,
+			bson.D{
+				{
+					Key: "$group",
+					Value: bson.D{
+						{Key: "_id", Value: nil},
+						{Key: "total", Value: bson.D{{Key: "$sum", Value: "$sent_bytes"}}},
+					},
+				},
+			},
+		)
 	} else {
 		pipeline = append(pipeline, bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: "$recv_bytes"}}}}}})
 	}
@@ -92,7 +123,13 @@ func (m *mongoDB) getPodTrafficBytes(sent bool, startTime, endTime time.Time, na
 	return total, nil
 }
 
-func (m *mongoDB) getTrafficBytes(sent bool, startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error) {
+func (m *mongoDB) getTrafficBytes(
+	sent bool,
+	startTime, endTime time.Time,
+	namespace string,
+	_type uint8,
+	name string,
+) (int64, error) {
 	filter := bson.M{
 		"traffic_meta.pod_namespace": namespace,
 		"traffic_meta.pod_type":      _type,
@@ -106,7 +143,18 @@ func (m *mongoDB) getTrafficBytes(sent bool, startTime, endTime time.Time, names
 		bson.D{{Key: "$match", Value: filter}},
 	}
 	if sent {
-		pipeline = append(pipeline, bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: "$sent_bytes"}}}}}})
+		pipeline = append(
+			pipeline,
+			bson.D{
+				{
+					Key: "$group",
+					Value: bson.D{
+						{Key: "_id", Value: nil},
+						{Key: "total", Value: bson.D{{Key: "$sum", Value: "$sent_bytes"}}},
+					},
+				},
+			},
+		)
 	} else {
 		pipeline = append(pipeline, bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: "$recv_bytes"}}}}}})
 	}
@@ -132,11 +180,17 @@ func (m *mongoDB) getTrafficCollection() *mongo.Collection {
 	return m.Client.Database(m.TrafficDB).Collection(m.TrafficConn)
 }
 
-func (m *mongoDB) GetNamespaceTraffic(ctx context.Context, startTime, endTime time.Time) (resultMap map[string]int64, err error) {
+func (m *mongoDB) GetNamespaceTraffic(
+	ctx context.Context,
+	startTime, endTime time.Time,
+) (resultMap map[string]int64, err error) {
 	collection := m.getTrafficCollection()
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.D{
-			{Key: "timestamp", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}},
+			{
+				Key:   "timestamp",
+				Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}},
+			},
 			{Key: "sent_bytes", Value: bson.D{{Key: "$gt", Value: 0}}},
 		}}},
 		{{Key: "$group", Value: bson.D{
@@ -148,7 +202,7 @@ func (m *mongoDB) GetNamespaceTraffic(ctx context.Context, startTime, endTime ti
 	}
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute aggregation: %v", err)
+		return nil, fmt.Errorf("failed to execute aggregation: %w", err)
 	}
 	defer cursor.Close(ctx)
 	resultMap = make(map[string]int64)
@@ -158,14 +212,14 @@ func (m *mongoDB) GetNamespaceTraffic(ctx context.Context, startTime, endTime ti
 			TotalSentBytes int64  `bson:"total_sent_bytes"`
 		}
 		if err := cursor.Decode(&result); err != nil {
-			return nil, fmt.Errorf("failed to decode result: %v", err)
+			return nil, fmt.Errorf("failed to decode result: %w", err)
 		}
 		if strings.HasPrefix(result.Namespace, "ns-") && result.TotalSentBytes > 0 {
 			resultMap[result.Namespace] = result.TotalSentBytes
 		}
 	}
 	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("failed to iterate cursor: %v", err)
+		return nil, fmt.Errorf("failed to iterate cursor: %w", err)
 	}
 	return resultMap, nil
 }

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
@@ -94,7 +93,7 @@ const (
 type NotificationEvent struct {
 	UserUID   uuid.UUID                   `json:"user_uid"`
 	EventType EventType                   `json:"event_type"`
-	EventData map[string]interface{}      `json:"event_data"`
+	EventData map[string]any              `json:"event_data"`
 	Recipient types.NotificationRecipient `json:"recipient,omitempty"`
 	Methods   []NotificationMethod        `json:"methods"`
 	Priority  NotificationPriority        `json:"priority,omitempty"`
@@ -104,11 +103,11 @@ type NotificationEvent struct {
 }
 
 type EventData interface {
-	ToMap() map[string]interface{}
+	ToMap() map[string]any
 }
 
-func (t *WorkspaceSubscriptionTrafficEventData) ToMap() map[string]interface{} {
-	return map[string]interface{}{
+func (t *WorkspaceSubscriptionTrafficEventData) ToMap() map[string]any {
+	return map[string]any{
 		"type":            t.Type,
 		"status":          t.Status,
 		"used_percentage": t.UsagePercent,
@@ -126,8 +125,8 @@ func (t *WorkspaceSubscriptionTrafficEventData) GetType() EventType {
 	return t.Type
 }
 
-func (t *DebtEventData) ToMap() map[string]interface{} {
-	return map[string]interface{}{
+func (t *DebtEventData) ToMap() map[string]any {
+	return map[string]any{
 		"type":           t.Type,
 		"last_status":    t.LastStatus,
 		"current_status": t.CurrentStatus,
@@ -139,8 +138,8 @@ func (t *DebtEventData) GetType() EventType {
 	return t.Type
 }
 
-func (t *WorkspaceSubscriptionDebtEventData) ToMap() map[string]interface{} {
-	return map[string]interface{}{
+func (t *WorkspaceSubscriptionDebtEventData) ToMap() map[string]any {
+	return map[string]any{
 		"type":            t.Type,
 		"last_status":     t.LastStatus,
 		"current_status":  t.CurrentStatus,
@@ -160,8 +159,8 @@ func (t *CustomEventData) GetType() EventType {
 	return t.Type
 }
 
-func (t *WorkspaceSubscriptionEventData) ToMap() map[string]interface{} {
-	return map[string]interface{}{
+func (t *WorkspaceSubscriptionEventData) ToMap() map[string]any {
+	return map[string]any{
 		"type":            t.Type,
 		"region_domain":   t.RegionDomain,
 		"expiration_date": t.ExpirationDate,
@@ -181,8 +180,8 @@ func (t *WorkspaceSubscriptionEventData) ToMap() map[string]interface{} {
 	}
 }
 
-func (t *CustomEventData) ToMap() map[string]interface{} {
-	return map[string]interface{}{
+func (t *CustomEventData) ToMap() map[string]any {
+	return map[string]any{
 		"type":       t.Type,
 		"title":      t.Title,
 		"content":    t.Content,
@@ -199,7 +198,7 @@ type NotificationMessage struct {
 	Title      string                      `json:"title"`
 	Content    string                      `json:"content"`
 	Recipient  types.NotificationRecipient `json:"recipient"`
-	EventData  map[string]interface{}      `json:"event_data"`
+	EventData  map[string]any              `json:"event_data"`
 	TemplateID string                      `json:"template_id,omitempty"`
 	Timestamp  time.Time                   `json:"timestamp"`
 }
@@ -232,7 +231,10 @@ type UserContactProvider interface {
 
 // NotificationContentGenerator 通知内容生成器接口
 type NotificationContentGenerator interface {
-	GenerateContent(event *NotificationEvent, method NotificationMethod) (title, content, templateID string, err error)
+	GenerateContent(
+		event *NotificationEvent,
+		method NotificationMethod,
+	) (title, content, templateID string, err error)
 }
 
 // ProviderConfig 通知提供者配置
@@ -264,18 +266,18 @@ type ProviderConfig struct {
 	SMSDefaultTemplate string               `json:"sms_default_template"` // 默认短信模板
 
 	// 通用配置
-	IsEnabled   bool                   `json:"is_enabled"`
-	MaxRetries  int                    `json:"max_retries"`
-	RetryDelay  time.Duration          `json:"retry_delay"`
-	Timeout     time.Duration          `json:"timeout"`
-	ExtraConfig map[string]interface{} `json:"extra_config,omitempty"`
+	IsEnabled   bool           `json:"is_enabled"`
+	MaxRetries  int            `json:"max_retries"`
+	RetryDelay  time.Duration  `json:"retry_delay"`
+	Timeout     time.Duration  `json:"timeout"`
+	ExtraConfig map[string]any `json:"extra_config,omitempty"`
 }
 
 func ParseConfigsWithJSON(cfgStr string) (map[NotificationMethod]ProviderConfig, error) {
 	var configs map[NotificationMethod]ProviderConfig
 	err := json.Unmarshal([]byte(cfgStr), &configs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config json: %v", err)
+		return nil, fmt.Errorf("failed to parse config json: %w", err)
 	}
 	return configs, nil
 }
@@ -309,13 +311,14 @@ func (c *ProviderConfig) GenerateEmailContent(event *NotificationEvent) (string,
 		fmt.Printf("emailData: %+v\n", emailData.PlanDetails.Features)
 	}
 	// 构建HTML内容
-	tmpl, err := template.New("email").Parse(c.GetEmailTemplate(EventTypeUniversalWorkspaceSubscriptionEvent))
+	tmpl, err := template.New("email").
+		Parse(c.GetEmailTemplate(EventTypeUniversalWorkspaceSubscriptionEvent))
 	if err != nil {
-		return "", fmt.Errorf("failed to parse email template: %v", err)
+		return "", fmt.Errorf("failed to parse email template: %w", err)
 	}
 	var renderedContent strings.Builder
 	if err := tmpl.Execute(&renderedContent, emailData); err != nil {
-		return "", fmt.Errorf("failed to render email template: %v", err)
+		return "", fmt.Errorf("failed to render email template: %w", err)
 	}
 	return renderedContent.String(), nil
 }
@@ -385,8 +388,8 @@ type WorkspaceSubscriptionTrafficEventData struct {
 
 // CustomEventData 自定义事件数据
 type CustomEventData struct {
-	Type      EventType              `json:"-"`
-	Title     string                 `json:"title"`
-	Content   string                 `json:"content"`
-	ExtraData map[string]interface{} `json:"extra_data,omitempty"`
+	Type      EventType      `json:"-"`
+	Title     string         `json:"title"`
+	Content   string         `json:"content"`
+	ExtraData map[string]any `json:"extra_data,omitempty"`
 }

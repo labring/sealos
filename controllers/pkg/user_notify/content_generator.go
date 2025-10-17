@@ -28,19 +28,32 @@ type DefaultContentGenerator struct {
 }
 
 // NewDefaultContentGenerator 创建默认内容生成器
-func NewDefaultContentGenerator(config map[NotificationMethod]ProviderConfig) *DefaultContentGenerator {
+func NewDefaultContentGenerator(
+	config map[NotificationMethod]ProviderConfig,
+) *DefaultContentGenerator {
 	return &DefaultContentGenerator{config: config}
 }
 
 // GenerateContent 生成通知内容
-func (g *DefaultContentGenerator) GenerateContent(event *NotificationEvent, method NotificationMethod) (title, content, templateID string, err error) {
+func (g *DefaultContentGenerator) GenerateContent(
+	event *NotificationEvent,
+	method NotificationMethod,
+) (title, content, templateID string, err error) {
 	switch event.EventType {
 	case EventTypeDebtStatusChange:
 		return g.generateDebtContent(method, event.EventData, event.Recipient)
-	case EventTypeSubscriptionStatusChange, EventTypeSubscriptionOperationDone, EventTypeSubscriptionPaymentDone, EventTypeWorkspaceSubscriptionCreatedSuccess,
-		EventTypeWorkspaceSubscriptionCreatedFailed, EventTypeWorkspaceSubscriptionUpgradedSuccess, EventTypeWorkspaceSubscriptionUpgradedFailed,
-		EventTypeWorkspaceSubscriptionRenewedSuccess, EventTypeWorkspaceSubscriptionRenewedBalanceFallback, EventTypeWorkspaceSubscriptionRenewedFailed,
-		EventTypeWorkspaceSubscriptionDebt, EventTypeWorkspaceSubscriptionDebtPreDeletion,
+	case EventTypeSubscriptionStatusChange,
+		EventTypeSubscriptionOperationDone,
+		EventTypeSubscriptionPaymentDone,
+		EventTypeWorkspaceSubscriptionCreatedSuccess,
+		EventTypeWorkspaceSubscriptionCreatedFailed,
+		EventTypeWorkspaceSubscriptionUpgradedSuccess,
+		EventTypeWorkspaceSubscriptionUpgradedFailed,
+		EventTypeWorkspaceSubscriptionRenewedSuccess,
+		EventTypeWorkspaceSubscriptionRenewedBalanceFallback,
+		EventTypeWorkspaceSubscriptionRenewedFailed,
+		EventTypeWorkspaceSubscriptionDebt,
+		EventTypeWorkspaceSubscriptionDebtPreDeletion,
 		EventTypeTrafficUsageAlert:
 		return g.generateWorkspaceSubscriptionContent(method, event)
 	case EventTypeTrafficStatusChange /*EventTypeTrafficUsageAlert*/ :
@@ -53,19 +66,27 @@ func (g *DefaultContentGenerator) GenerateContent(event *NotificationEvent, meth
 }
 
 // generateDebtContent 生成债务相关通知内容
-func (g *DefaultContentGenerator) generateDebtContent(method NotificationMethod, eventData map[string]interface{}, recipient types.NotificationRecipient) (title, content, templateID string, err error) {
+func (g *DefaultContentGenerator) generateDebtContent(
+	method NotificationMethod,
+	eventData map[string]any,
+	recipient types.NotificationRecipient,
+) (title, content, templateID string, err error) {
 	var debtData DebtEventData
-	dataBytes, _ := json.Marshal(eventData)
+	dataBytes, err := json.Marshal(eventData)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to marshal debt event data: %w", err)
+	}
 	if err := json.Unmarshal(dataBytes, &debtData); err != nil {
-		return "", "", "", fmt.Errorf("failed to parse debt event data: %v", err)
+		return "", "", "", fmt.Errorf("failed to parse debt event data: %w", err)
 	}
 
 	// 获取模板ID
 	if config, exists := g.config[method]; exists {
 		templateID = config.GetVMSTemplateID(EventTypeDebtStatusChange)
-		if method == NotificationMethodSMS {
+		switch method {
+		case NotificationMethodSMS:
 			templateID = config.GetSMSTemplateCode(EventTypeDebtStatusChange)
-		} else if method == NotificationMethodEmail {
+		case NotificationMethodEmail:
 			templateID = config.GetEmailTemplate(EventTypeDebtStatusChange)
 		}
 	}
@@ -75,29 +96,45 @@ func (g *DefaultContentGenerator) generateDebtContent(method NotificationMethod,
 		if debtData.LastStatus != types.DebtPeriod {
 			// 首次进入欠费状态
 			title = "账户欠费通知"
-			content = g.formatContent(method, "尊敬的{{.UserName}}，您的账户余额不足，请及时充值以避免服务中断。", map[string]interface{}{
-				"UserName": recipient.UserName,
-			})
+			content = g.formatContent(
+				method,
+				"尊敬的{{.UserName}}，您的账户余额不足，请及时充值以避免服务中断。",
+				map[string]any{
+					"UserName": recipient.UserName,
+				},
+			)
 		}
 	case types.DebtDeletionPeriod:
 		title = "账户欠费警告"
-		content = g.formatContent(method, "尊敬的{{.UserName}}，您的账户已欠费{{.DebtDays}}天，请尽快充值以避免服务中断。", map[string]interface{}{
-			"UserName": recipient.UserName,
-			"DebtDays": debtData.DebtDays,
-		})
+		content = g.formatContent(
+			method,
+			"尊敬的{{.UserName}}，您的账户已欠费{{.DebtDays}}天，请尽快充值以避免服务中断。",
+			map[string]any{
+				"UserName": recipient.UserName,
+				"DebtDays": debtData.DebtDays,
+			},
+		)
 	case types.FinalDeletionPeriod:
 		title = "资源清理预警"
-		content = g.formatContent(method, "尊敬的{{.UserName}}，您的账户已欠费{{.DebtDays}}天，系统将在24小时内进行资源清理，请立即充值！", map[string]interface{}{
-			"UserName": recipient.UserName,
-			"DebtDays": debtData.DebtDays,
-		})
+		content = g.formatContent(
+			method,
+			"尊敬的{{.UserName}}，您的账户已欠费{{.DebtDays}}天，系统将在24小时内进行资源清理，请立即充值！",
+			map[string]any{
+				"UserName": recipient.UserName,
+				"DebtDays": debtData.DebtDays,
+			},
+		)
 	case types.NormalPeriod:
 		if debtData.LastStatus != types.NormalPeriod {
 			// 恢复正常状态
 			title = "账户恢复通知"
-			content = g.formatContent(method, "尊敬的{{.UserName}}，您的账户已恢复正常，感谢您的及时充值。", map[string]interface{}{
-				"UserName": recipient.UserName,
-			})
+			content = g.formatContent(
+				method,
+				"尊敬的{{.UserName}}，您的账户已恢复正常，感谢您的及时充值。",
+				map[string]any{
+					"UserName": recipient.UserName,
+				},
+			)
 		}
 	default:
 		return "", "", "", fmt.Errorf("unsupported debt status: %s", debtData.CurrentStatus)
@@ -106,22 +143,29 @@ func (g *DefaultContentGenerator) generateDebtContent(method NotificationMethod,
 	return title, content, templateID, nil
 }
 
-func (g *DefaultContentGenerator) generateWorkspaceSubscriptionContent(method NotificationMethod, event *NotificationEvent) (title, content, templateID string, err error) {
+func (g *DefaultContentGenerator) generateWorkspaceSubscriptionContent(
+	method NotificationMethod,
+	event *NotificationEvent,
+) (title, content, templateID string, err error) {
 	var subData WorkspaceSubscriptionEventData
-	dataBytes, _ := json.Marshal(event.EventData)
+	dataBytes, err := json.Marshal(event.EventData)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to marshal subscription event data: %w", err)
+	}
 	if err := json.Unmarshal(dataBytes, &subData); err != nil {
-		return "", "", "", fmt.Errorf("failed to parse subscription event data: %v", err)
+		return "", "", "", fmt.Errorf("failed to parse subscription event data: %w", err)
 	}
 
 	// 获取模板ID
 	if config, exists := g.config[method]; exists {
 		templateID = config.GetVMSTemplateID(EventTypeSubscriptionOperationDone)
-		if method == NotificationMethodSMS {
+		switch method {
+		case NotificationMethodSMS:
 			templateID = config.GetSMSTemplateCode(EventTypeSubscriptionOperationDone)
-		} else if method == NotificationMethodEmail {
+		case NotificationMethodEmail:
 			templateID, err = config.GenerateEmailContent(event)
 			if err != nil {
-				return "", "", "", fmt.Errorf("failed to generate email content: %v", err)
+				return "", "", "", fmt.Errorf("failed to generate email content: %w", err)
 			}
 		}
 	}
@@ -130,42 +174,42 @@ func (g *DefaultContentGenerator) generateWorkspaceSubscriptionContent(method No
 	switch event.EventType {
 	case EventTypeWorkspaceSubscriptionCreatedSuccess:
 		title = "Workspace Subscription Created Successfully"
-		contentTmpl = "尊敬的{{.UserName}}，您的工作空间 {{.PlanName}} 订阅已成功创建。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的工作空间 {{.PlanName}} 订阅已成功创建。"
 		contentTmpl = "Dear {{.UserName}}, your workspace subscription for {{.PlanName}} has been successfully created."
 	case EventTypeWorkspaceSubscriptionCreatedFailed:
 		title = "Workspace Subscription Creation Failed"
-		contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅创建失败，原因：{{.ErrorReason}}。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅创建失败，原因：{{.ErrorReason}}。"
 		contentTmpl = "Dear {{.UserName}}, your subscription for {{.PlanName}} failed to be created. Reason: {{.ErrorReason}}."
 	case EventTypeWorkspaceSubscriptionUpgradedSuccess:
 		title = "Workspace Subscription Upgraded Successfully"
-		contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅已成功升级。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅已成功升级。"
 		contentTmpl = "Dear {{.UserName}}, your subscription for {{.PlanName}} has been successfully upgraded."
 	case EventTypeWorkspaceSubscriptionUpgradedFailed:
 		title = "Workspace Subscription Upgrade Failed"
-		contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅升级失败，原因：{{.ErrorReason}}。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅升级失败，原因：{{.ErrorReason}}。"
 		contentTmpl = "Dear {{.UserName}}, your subscription upgrade for {{.PlanName}} failed. Reason: {{.ErrorReason}}."
 	case EventTypeWorkspaceSubscriptionRenewedSuccess:
 		title = "Workspace Subscription Renewed Successfully"
-		contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅已成功续订。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅已成功续订。"
 		contentTmpl = "Dear {{.UserName}}, your subscription for {{.PlanName}} has been successfully renewed."
 	case EventTypeWorkspaceSubscriptionRenewedBalanceFallback:
 		title = "Workspace Subscription Renewed with Balance Fallback"
-		contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅续订因余额不足已切换至备用支付方式。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅续订因余额不足已切换至备用支付方式。"
 		contentTmpl = "Dear {{.UserName}}, your subscription for {{.PlanName}} has been renewed using your balance due to insufficient funds."
 	case EventTypeWorkspaceSubscriptionRenewedFailed:
 		title = "Workspace Subscription Renewal Failed"
-		contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅续订失败，原因：{{.ErrorReason}}。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的{{.PlanName}}订阅续订失败，原因：{{.ErrorReason}}。"
 		contentTmpl = "Dear {{.UserName}}, your subscription renewal for {{.PlanName}} failed. Reason: {{.ErrorReason}}."
 	case EventTypeWorkspaceSubscriptionDebt, EventTypeWorkspaceSubscriptionDebtPreDeletion:
 		title = "Workspace Subscription Debt Notice"
-		contentTmpl = "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}订阅已进入欠费状态，请及时充值以避免服务中断。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}订阅已进入欠费状态，请及时充值以避免服务中断。"
 		contentTmpl = "Dear {{.UserName}}, your workspace subscription for {{.Workspace}} is in debt status. Please recharge promptly to avoid service interruption."
 	case EventTypeTrafficUsageAlert:
 		title = "Workspace Traffic Usage Alert"
-		contentTmpl = "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量使用已达到{{.UsagePercent}}%，请注意控制使用。"
+		// contentTmpl = "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量使用已达到{{.UsagePercent}}%，请注意控制使用。"
 		contentTmpl = "Dear {{.UserName}}, your workspace {{.Workspace}} has used {{.UsagePercent}}% of its traffic. Please monitor your usage."
 	}
-	content = g.formatContent(method, contentTmpl, map[string]interface{}{
+	content = g.formatContent(method, contentTmpl, map[string]any{
 		"UserName":    event.Recipient.UserName,
 		"PlanName":    subData.NewPlanName,
 		"ErrorReason": subData.ErrorReason,
@@ -177,19 +221,27 @@ func (g *DefaultContentGenerator) generateWorkspaceSubscriptionContent(method No
 }
 
 // generateTrafficContent 生成流量相关通知内容
-func (g *DefaultContentGenerator) generateTrafficContent(method NotificationMethod, eventData map[string]interface{}, recipient types.NotificationRecipient) (title, content, templateID string, err error) {
+func (g *DefaultContentGenerator) generateTrafficContent(
+	method NotificationMethod,
+	eventData map[string]any,
+	recipient types.NotificationRecipient,
+) (title, content, templateID string, err error) {
 	var trafficData WorkspaceSubscriptionTrafficEventData
-	dataBytes, _ := json.Marshal(eventData)
+	dataBytes, err := json.Marshal(eventData)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to marshal traffic event data: %w", err)
+	}
 	if err := json.Unmarshal(dataBytes, &trafficData); err != nil {
-		return "", "", "", fmt.Errorf("failed to parse traffic event data: %v", err)
+		return "", "", "", fmt.Errorf("failed to parse traffic event data: %w", err)
 	}
 
 	// 获取模板ID
 	if config, exists := g.config[method]; exists {
 		templateID = config.GetVMSTemplateID(EventTypeTrafficStatusChange)
-		if method == NotificationMethodSMS {
+		switch method {
+		case NotificationMethodSMS:
 			templateID = config.GetSMSTemplateCode(EventTypeTrafficStatusChange)
-		} else if method == NotificationMethodEmail {
+		case NotificationMethodEmail:
 			templateID = config.GetEmailTemplate(EventTypeTrafficStatusChange)
 		}
 	}
@@ -197,18 +249,26 @@ func (g *DefaultContentGenerator) generateTrafficContent(method NotificationMeth
 	switch trafficData.Status {
 	case /*types.WorkspaceTrafficStatusExhausted,*/ types.WorkspaceTrafficStatusUsedUp:
 		title = "流量已用尽"
-		content = g.formatContent(method, "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量已用尽，请及时购买流量包。", map[string]interface{}{
-			"UserName":  recipient.UserName,
-			"Workspace": trafficData.Workspace,
-		})
+		content = g.formatContent(
+			method,
+			"尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量已用尽，请及时购买流量包。",
+			map[string]any{
+				"UserName":  recipient.UserName,
+				"Workspace": trafficData.Workspace,
+			},
+		)
 	default:
 		if trafficData.UsagePercent >= 80 {
 			title = "流量预警"
-			content = g.formatContent(method, "尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量使用已达到{{.UsagePercent}}%，请注意控制使用。", map[string]interface{}{
-				"UserName":     recipient.UserName,
-				"Workspace":    trafficData.Workspace,
-				"UsagePercent": trafficData.UsagePercent,
-			})
+			content = g.formatContent(
+				method,
+				"尊敬的{{.UserName}}，您的工作空间{{.Workspace}}流量使用已达到{{.UsagePercent}}%，请注意控制使用。",
+				map[string]any{
+					"UserName":     recipient.UserName,
+					"Workspace":    trafficData.Workspace,
+					"UsagePercent": trafficData.UsagePercent,
+				},
+			)
 		}
 	}
 
@@ -216,25 +276,33 @@ func (g *DefaultContentGenerator) generateTrafficContent(method NotificationMeth
 }
 
 // generateCustomContent 生成自定义通知内容
-func (g *DefaultContentGenerator) generateCustomContent(method NotificationMethod, eventData map[string]interface{}, recipient types.NotificationRecipient) (title, content, templateID string, err error) {
+func (g *DefaultContentGenerator) generateCustomContent(
+	method NotificationMethod,
+	eventData map[string]any,
+	recipient types.NotificationRecipient,
+) (title, content, templateID string, err error) {
 	var customData CustomEventData
-	dataBytes, _ := json.Marshal(eventData)
+	dataBytes, err := json.Marshal(eventData)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to marshal custom event data: %w", err)
+	}
 	if err := json.Unmarshal(dataBytes, &customData); err != nil {
-		return "", "", "", fmt.Errorf("failed to parse custom event data: %v", err)
+		return "", "", "", fmt.Errorf("failed to parse custom event data: %w", err)
 	}
 
 	// 获取模板ID
 	if config, exists := g.config[method]; exists {
 		templateID = config.GetVMSTemplateID(EventTypeCustom)
-		if method == NotificationMethodSMS {
+		switch method {
+		case NotificationMethodSMS:
 			templateID = config.GetSMSTemplateCode(EventTypeCustom)
-		} else if method == NotificationMethodEmail {
+		case NotificationMethodEmail:
 			templateID = config.GetEmailTemplate(EventTypeCustom)
 		}
 	}
 
 	title = customData.Title
-	content = g.formatContent(method, customData.Content, map[string]interface{}{
+	content = g.formatContent(method, customData.Content, map[string]any{
 		"UserName": recipient.UserName,
 	})
 
@@ -250,7 +318,11 @@ func (g *DefaultContentGenerator) generateCustomContent(method NotificationMetho
 }
 
 // formatContent 格式化内容，根据不同的通知方式进行适配
-func (g *DefaultContentGenerator) formatContent(method NotificationMethod, template string, data map[string]interface{}) string {
+func (g *DefaultContentGenerator) formatContent(
+	method NotificationMethod,
+	template string,
+	data map[string]any,
+) string {
 	content := template
 
 	// 基本参数替换
@@ -292,9 +364,6 @@ func (g *DefaultContentGenerator) enrichEmailContent(content string) string {
 
 // optimizeVMSContent 优化VMS语音内容
 func (g *DefaultContentGenerator) optimizeVMSContent(content string) string {
-	// 语音内容需要更加口语化，去除标点符号
-	content = strings.ReplaceAll(content, "，", "，停顿，")
-	content = strings.ReplaceAll(content, "。", "。")
 	content = strings.ReplaceAll(content, "%", "百分之")
 	return content
 }

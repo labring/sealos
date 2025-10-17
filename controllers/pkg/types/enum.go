@@ -17,7 +17,7 @@ const (
 	SubscriptionStatusDeleted           SubscriptionStatus = "DELETED"
 )
 
-func (s *SubscriptionStatus) Scan(value interface{}) error {
+func (s *SubscriptionStatus) Scan(value any) error {
 	if value == nil {
 		*s = ""
 		return nil
@@ -53,7 +53,7 @@ const (
 	// SubscriptionTransactionTypePayStatusChanged SubscriptionOperator = "pay_status_changed"
 )
 
-func (o *SubscriptionOperator) Scan(value interface{}) error {
+func (o *SubscriptionOperator) Scan(value any) error {
 	if value == nil {
 		*o = ""
 		return nil
@@ -94,7 +94,7 @@ const (
 	SubscriptionPayStatusFailedAndUseBalance SubscriptionPayStatus = "failed_and_use_balance"
 )
 
-func (p *SubscriptionPayStatus) Scan(value interface{}) error {
+func (p *SubscriptionPayStatus) Scan(value any) error {
 	if value == nil {
 		*p = ""
 		return nil
@@ -118,7 +118,7 @@ const (
 	SubscriptionPeriodYearly  SubscriptionPeriod = "1y"
 )
 
-func (p *SubscriptionPeriod) Scan(value interface{}) error {
+func (p *SubscriptionPeriod) Scan(value any) error {
 	if value == nil {
 		*p = ""
 		return nil
@@ -144,7 +144,7 @@ const (
 	WorkspaceTrafficStatusExpired   WorkspaceTrafficStatus = "expired"
 )
 
-func (t *WorkspaceTrafficStatus) Scan(value interface{}) error {
+func (t *WorkspaceTrafficStatus) Scan(value any) error {
 	if value == nil {
 		*t = ""
 		return nil
@@ -171,7 +171,7 @@ const (
 	SubscriptionTransactionStatusCanceled   SubscriptionTransactionStatus = "canceled"
 )
 
-func (s *SubscriptionTransactionStatus) Scan(value interface{}) error {
+func (s *SubscriptionTransactionStatus) Scan(value any) error {
 	if value == nil {
 		*s = ""
 		return nil
