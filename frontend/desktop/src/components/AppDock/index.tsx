@@ -36,9 +36,9 @@ function StaticIcon({ item, logo, t, i18n, handleNavItem }: any) {
         w="54px"
         h="54px"
         borderRadius={'16px'}
-        bg={'rgba(255, 255, 255, 0.85)'}
+        bg={'#FFF'}
         backdropFilter={'blur(25px)'}
-        boxShadow={' 0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+        boxShadow={'0 0 1px 0 rgba(0, 0, 0, 0.20), 0 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05);'}
         overflow={'hidden'}
       >
         <Image
@@ -127,10 +127,10 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
         }}
         borderRadius={'16px'}
         position="relative"
-        bg={'rgba(255, 255, 255, 0.85)'}
+        bg={'#FFF'}
         backdropFilter={'blur(25px)'}
-        border={'1px solid rgba(0, 0, 0, 0.05)'}
-        boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+        // border={'1px solid rgba(0, 0, 0, 0.05)'}
+        boxShadow={'0 0 1px 0 rgba(0, 0, 0, 0.20), 0 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05);'}
         overflow={'hidden'}
       >
         <Image
