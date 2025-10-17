@@ -16,7 +16,7 @@ limitations under the License.
 
 package controllers
 
-//const (
+// const (
 //	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
 //
 //	SMSAccessKeyIDEnv     = "SMS_AK"
@@ -37,7 +37,7 @@ package controllers
 //)
 //
 //// DebtReconciler reconciles a Debt object
-//type DebtReconciler struct {
+// type DebtReconciler struct {
 //	client.Client
 //	*AccountReconciler
 //	AccountV2           database.AccountV2
@@ -59,7 +59,7 @@ package controllers
 //	SendDebtStatusEmailBody     map[accountv1.DebtStatusType]string
 //}
 //
-//type VmsConfig struct {
+// type VmsConfig struct {
 //	TemplateCode map[string]string
 //	NumberPoll   string
 //}

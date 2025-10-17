@@ -8,22 +8,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/database/cockroach"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/google/uuid"
-
-	types2 "k8s.io/apimachinery/pkg/types"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	v1 "k8s.io/api/core/v1"
-
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/resources"
-
 	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
+	v1 "k8s.io/api/core/v1"
+	types2 "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // WorkspaceSubscriptionProcessor 处理工作空间订阅事务的处理器
@@ -37,7 +30,10 @@ type WorkspaceSubscriptionProcessor struct {
 }
 
 // TODO 需要添加用户通知
-func NewWorkspaceSubscriptionProcessor(reconciler *AccountReconciler, workspaceTrafficProcessor *WorkspaceTrafficController) (*WorkspaceSubscriptionProcessor, error) {
+func NewWorkspaceSubscriptionProcessor(
+	reconciler *AccountReconciler,
+	workspaceTrafficProcessor *WorkspaceTrafficController,
+) (*WorkspaceSubscriptionProcessor, error) {
 	return &WorkspaceSubscriptionProcessor{
 		WorkspaceTrafficController: workspaceTrafficProcessor,
 		db:                         reconciler.AccountV2.GetGlobalDB(),
@@ -64,7 +60,10 @@ func (wsp *WorkspaceSubscriptionProcessor) Start(ctx context.Context) {
 			case <-ticker.C:
 				count, err := wsp.processPendingTransactions(ctx)
 				if err != nil {
-					log.Printf("Failed to process pending workspace subscription transactions: %v", err)
+					log.Printf(
+						"Failed to process pending workspace subscription transactions: %v",
+						err,
+					)
 				}
 				if count == 0 {
 					idleCount++
@@ -87,7 +86,9 @@ func (wsp *WorkspaceSubscriptionProcessor) Stop() {
 }
 
 // processPendingTransactions 处理待处理的事务
-func (wsp *WorkspaceSubscriptionProcessor) processPendingTransactions(ctx context.Context) (int, error) {
+func (wsp *WorkspaceSubscriptionProcessor) processPendingTransactions(
+	ctx context.Context,
+) (int, error) {
 	var transactions []types.WorkspaceSubscriptionTransaction
 	now := time.Now()
 
@@ -111,7 +112,7 @@ func (wsp *WorkspaceSubscriptionProcessor) processPendingTransactions(ctx contex
 			continue
 		}
 
-		wsp.AccountReconciler.Logger.Info("Processing workspace subscription transaction",
+		wsp.Logger.Info("Processing workspace subscription transaction",
 			"workspace", transactions[i].Workspace,
 			"region", transactions[i].RegionDomain,
 			"operator", transactions[i].Operator,
@@ -119,20 +120,32 @@ func (wsp *WorkspaceSubscriptionProcessor) processPendingTransactions(ctx contex
 			"plan", transactions[i].NewPlanName)
 
 		if err := wsp.processTransaction(ctx, &transactions[i]); err != nil {
-			wsp.Logger.Error(fmt.Errorf("failed to process workspace subscription transaction: %w", err), "", "id", transactions[i].ID)
+			wsp.Logger.Error(
+				fmt.Errorf("failed to process workspace subscription transaction: %w", err),
+				"",
+				"id",
+				transactions[i].ID,
+			)
 		}
 	}
 	return len(transactions), nil
 }
 
 // processTransaction 处理单个事务
-func (wsp *WorkspaceSubscriptionProcessor) processTransaction(ctx context.Context, tx *types.WorkspaceSubscriptionTransaction) error {
+func (wsp *WorkspaceSubscriptionProcessor) processTransaction(
+	ctx context.Context,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
 	return wsp.db.Transaction(func(dbTx *gorm.DB) error {
 		latestTx := *tx
 
 		// 检查是否仍需处理
 		if !wsp.shouldProcessTransaction(&latestTx) {
-			wsp.Logger.Info("Workspace subscription transaction needn't processed", "id", latestTx.ID)
+			wsp.Logger.Info(
+				"Workspace subscription transaction needn't processed",
+				"id",
+				latestTx.ID,
+			)
 			return nil
 		}
 
@@ -154,7 +167,9 @@ func (wsp *WorkspaceSubscriptionProcessor) processTransaction(ctx context.Contex
 }
 
 // shouldProcessTransaction 检查事务是否需要处理
-func (wsp *WorkspaceSubscriptionProcessor) shouldProcessTransaction(tx *types.WorkspaceSubscriptionTransaction) bool {
+func (wsp *WorkspaceSubscriptionProcessor) shouldProcessTransaction(
+	tx *types.WorkspaceSubscriptionTransaction,
+) bool {
 	now := time.Now()
 	return (tx.PayStatus == types.SubscriptionPayStatusPaid || tx.PayStatus == types.SubscriptionPayStatusNoNeed) &&
 		!tx.StartAt.After(now) &&
@@ -163,10 +178,13 @@ func (wsp *WorkspaceSubscriptionProcessor) shouldProcessTransaction(tx *types.Wo
 }
 
 // updateWorkspaceQuotaLimit0 初始化未使用期的工作空间的资源配额限制为0
-func (r *AccountReconciler) updateWorkspaceQuotaLimit0(ctx context.Context, workspace string) error {
+func (r *AccountReconciler) updateWorkspaceQuotaLimit0(
+	ctx context.Context,
+	workspace string,
+) error {
 	nsQuota := resources.GetLimit0Quota(workspace, "quota-"+workspace)
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, nsQuota, func() error {
-		//if nsQuota.Spec.Hard != nil {
+		// if nsQuota.Spec.Hard != nil {
 		//	for usedRs, usedQuantity := range nsQuota.Status.Used {
 		//		if quantity, ok := nsQuota.Spec.Hard[usedRs]; ok {
 		//			if usedQuantity.Cmp(quantity) > 0 {
@@ -180,7 +198,9 @@ func (r *AccountReconciler) updateWorkspaceQuotaLimit0(ctx context.Context, work
 		if nsQuota.Annotations == nil {
 			nsQuota.Annotations = make(map[string]string)
 		}
-		nsQuota.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().UTC().Format(time.RFC3339)
+		nsQuota.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().
+			UTC().
+			Format(time.RFC3339)
 		return nil
 	})
 	if err != nil {
@@ -203,7 +223,10 @@ func (r *AccountReconciler) updateWorkspaceQuotaLimit0(ctx context.Context, work
 }
 
 // updateWorkspaceQuota 更新工作空间的资源配额
-func (r *AccountReconciler) updateWorkspaceQuota(ctx context.Context, workspace, planName string) error {
+func (r *AccountReconciler) updateWorkspaceQuota(
+	ctx context.Context,
+	workspace, planName string,
+) error {
 	rs, ok := r.workspaceSubPlansResourceLimit[planName]
 	if !ok {
 		return fmt.Errorf("plan %s not found in workspace subscription plans", planName)
@@ -222,7 +245,13 @@ func (r *AccountReconciler) updateWorkspaceQuota(ctx context.Context, workspace,
 					if usedQuantity.Cmp(quantity) > 0 {
 						// TODO situations exceeding the quota need to be handled
 						// restart the space resource deploy sts
-						return fmt.Errorf("used resource %s exceeds the limit in plan %s: used %s, limit %s", usedRs, planName, usedQuantity.String(), quantity.String())
+						return fmt.Errorf(
+							"used resource %s exceeds the limit in plan %s: used %s, limit %s",
+							usedRs,
+							planName,
+							usedQuantity.String(),
+							quantity.String(),
+						)
 					}
 				}
 			}
@@ -230,7 +259,9 @@ func (r *AccountReconciler) updateWorkspaceQuota(ctx context.Context, workspace,
 		if nsQuota.Annotations == nil {
 			nsQuota.Annotations = make(map[string]string)
 		}
-		nsQuota.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().UTC().Format(time.RFC3339)
+		nsQuota.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().
+			UTC().
+			Format(time.RFC3339)
 		nsQuota.Spec.Hard = rs
 		return nil
 	})
@@ -253,11 +284,19 @@ func (r *AccountReconciler) updateWorkspaceQuota(ctx context.Context, workspace,
 	return nil
 }
 
-func (wsp *WorkspaceSubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
-	return wsp.AccountReconciler.HandleWorkspaceSubscriptionCreated(ctx, dbTx, tx)
+func (wsp *WorkspaceSubscriptionProcessor) handleCreated(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
+	return wsp.HandleWorkspaceSubscriptionCreated(ctx, dbTx, tx)
 }
 
-func (r *AccountReconciler) handlerNoTrialInitialWorkspaceSubscription(ctx context.Context, userUID uuid.UUID, workspace string) error {
+func (r *AccountReconciler) handlerNoTrialInitialWorkspaceSubscription(
+	ctx context.Context,
+	userUID uuid.UUID,
+	workspace string,
+) error {
 	return r.AccountV2.GetGlobalDB().Transaction(func(dbTx *gorm.DB) error {
 		// 1. create subscription transaction
 		// 2. create limit0 quota
@@ -295,27 +334,39 @@ func (r *AccountReconciler) handlerNoTrialInitialWorkspaceSubscription(ctx conte
 	})
 }
 
-func (r *AccountReconciler) handleProbationPeriodWorkspaceSubscription(ctx context.Context, userUID uuid.UUID, nsName string) error {
+func (r *AccountReconciler) handleProbationPeriodWorkspaceSubscription(
+	ctx context.Context,
+	userUID uuid.UUID,
+	nsName string,
+) error {
 	plan, err := r.AccountV2.GetWorkspaceSubscriptionPlan(types.FreeSubscriptionPlanName)
 	if err != nil {
-		return fmt.Errorf("get workspace subscription plan failed: %v", err)
+		return fmt.Errorf("get workspace subscription plan failed: %w", err)
 	}
 	r.Logger.Info("get workspace subscription plan", "plan", plan)
 	return r.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
-		return r.handleWorkspaceSubscriptionCreated(ctx, tx, &types.WorkspaceSubscriptionTransaction{
-			UserUID:      userUID,
-			ID:           uuid.New(),
-			Workspace:    nsName,
-			RegionDomain: r.localDomain,
-			Operator:     types.SubscriptionTransactionTypeCreated,
-			PayStatus:    types.SubscriptionPayStatusNoNeed,
-			NewPlanName:  plan.Name,
-			Period:       types.DayPeriod(7),
-		})
+		return r.handleWorkspaceSubscriptionCreated(
+			ctx,
+			tx,
+			&types.WorkspaceSubscriptionTransaction{
+				UserUID:      userUID,
+				ID:           uuid.New(),
+				Workspace:    nsName,
+				RegionDomain: r.localDomain,
+				Operator:     types.SubscriptionTransactionTypeCreated,
+				PayStatus:    types.SubscriptionPayStatusNoNeed,
+				NewPlanName:  plan.Name,
+				Period:       types.DayPeriod(7),
+			},
+		)
 	})
 }
 
-func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
+func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
 	var sub types.WorkspaceSubscription
 	addPeriod, err := types.ParsePeriod(tx.Period)
 	if err != nil {
@@ -355,9 +406,16 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Conte
 		if err = r.NewTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
 			return fmt.Errorf("failed to add traffic package: %w", err)
 		}
-		err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String())
+		err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+			dbTx,
+			sub.ID,
+			plan.AIQuota,
+			sub.CurrentPeriodEndAt,
+			types.PKGFromWorkspaceSubscription,
+			tx.ID.String(),
+		)
 		if err != nil {
-			return fmt.Errorf("failed to create AI quota package: %v", err)
+			return fmt.Errorf("failed to create AI quota package: %w", err)
 		}
 	}
 
@@ -367,7 +425,11 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(ctx context.Conte
 }
 
 // handleCreated 处理创建工作空间订阅
-func (r *AccountReconciler) HandleWorkspaceSubscriptionCreated(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
+func (r *AccountReconciler) HandleWorkspaceSubscriptionCreated(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
 	if err := r.handleWorkspaceSubscriptionCreated(ctx, dbTx, tx); err != nil {
 		return err
 	}
@@ -375,7 +437,11 @@ func (r *AccountReconciler) HandleWorkspaceSubscriptionCreated(ctx context.Conte
 }
 
 // handleUpgrade 处理升级
-func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
+func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
 	var sub types.WorkspaceSubscription
 	if err := dbTx.Model(&types.WorkspaceSubscription{}).
 		Where("workspace = ? AND region_domain = ?", tx.Workspace, tx.RegionDomain).
@@ -390,7 +456,7 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, db
 	// 更新订阅信息
 	sub.PlanName = tx.NewPlanName
 	sub.Status = types.SubscriptionStatusNormal
-	//sub.StartAt = now
+	// sub.StartAt = now
 	sub.UpdateAt = now
 	sub.CurrentPeriodStartAt = now
 	sub.CurrentPeriodEndAt = now.Add(addPeriod)
@@ -403,7 +469,7 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, db
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
 	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
-		return fmt.Errorf("failed to create AI quota package: %v", err)
+		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 
 	if err := dbTx.Save(&sub).Error; err != nil {
@@ -421,7 +487,11 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, db
 }
 
 // handleDowngrade 处理降级
-func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
+func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
 	var sub types.WorkspaceSubscription
 	if err := dbTx.Model(&types.WorkspaceSubscription{}).
 		Where("workspace = ? AND region_domain = ?", tx.Workspace, tx.RegionDomain).
@@ -451,7 +521,7 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(ctx context.Context, 
 	now := time.Now()
 	sub.PlanName = tx.NewPlanName
 	sub.Status = types.SubscriptionStatusNormal
-	//sub.StartAt = now
+	// sub.StartAt = now
 	sub.CurrentPeriodStartAt = now
 	sub.CurrentPeriodEndAt = now.Add(addPeriod)
 	sub.UpdateAt = now
@@ -472,7 +542,11 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(ctx context.Context, 
 }
 
 // handleRenewal 处理续订
-func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.DB, tx *types.WorkspaceSubscriptionTransaction) error {
+func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(
+	_ context.Context,
+	dbTx *gorm.DB,
+	tx *types.WorkspaceSubscriptionTransaction,
+) error {
 	var sub types.WorkspaceSubscription
 	if err := dbTx.Model(&types.WorkspaceSubscription{}).
 		Where("workspace = ? AND region_domain = ?", tx.Workspace, tx.RegionDomain).
@@ -498,7 +572,7 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(ctx context.Context, db
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
 	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
-		return fmt.Errorf("failed to create AI quota package: %v", err)
+		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 	sub.Status = types.SubscriptionStatusNormal
 	sub.UpdateAt = now
@@ -512,7 +586,11 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(ctx context.Context, db
 
 // checkWorkspaceDowngradeConditions 检查工作空间降级条件
 // TODO: 需要后续实现具体的降级条件检查逻辑
-func (wsp *WorkspaceSubscriptionProcessor) checkWorkspaceDowngradeConditions(_ context.Context, subscription *types.WorkspaceSubscription, newPlanName string) (bool, error) {
+func (wsp *WorkspaceSubscriptionProcessor) checkWorkspaceDowngradeConditions(
+	_ context.Context,
+	subscription *types.WorkspaceSubscription,
+	newPlanName string,
+) (bool, error) {
 	// TODO: 实现工作空间降级条件检查逻辑
 	// 例如：检查工作空间内的资源使用情况是否满足新计划的限制
 	// wsp.Logger.Info("Checking workspace downgrade conditions",
@@ -527,7 +605,10 @@ func (wsp *WorkspaceSubscriptionProcessor) checkWorkspaceDowngradeConditions(_ c
 
 // checkWorkspaceQuotaConditions 检查工作空间配额条件
 // TODO: 需要后续实现具体的配额条件检查逻辑
-func (wsp *WorkspaceSubscriptionProcessor) checkWorkspaceQuotaConditions(_ context.Context, workspace, regionDomain, planName string) (bool, error) {
+func (wsp *WorkspaceSubscriptionProcessor) checkWorkspaceQuotaConditions(
+	_ context.Context,
+	workspace, regionDomain, planName string,
+) (bool, error) {
 	// TODO: 实现工作空间配额条件检查逻辑
 	// 例如：检查工作空间的资源使用是否超出新计划的限制
 	// wsp.Logger.Info("Checking workspace quota conditions",

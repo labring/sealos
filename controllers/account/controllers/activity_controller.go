@@ -17,7 +17,7 @@ limitations under the License.
 package controllers
 
 //
-//import (
+// import (
 //	"context"
 //	"fmt"
 //	"reflect"
@@ -47,7 +47,7 @@ package controllers
 //	"github.com/labring/sealos/controllers/pkg/types"
 //)
 //
-//type ActivityReconciler struct {
+// type ActivityReconciler struct {
 //	client.Client
 //	Scheme   *runtime.Scheme
 //	Logger   logr.Logger
@@ -68,7 +68,7 @@ package controllers
 ////
 //// For more details, check Reconcile and its Result here:
 //// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-//func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 //	r.Logger = log.FromContext(ctx)
 //
 //	account := &accountv1.Account{}
