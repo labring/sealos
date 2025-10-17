@@ -22,9 +22,8 @@ import (
 	"sync"
 	"time"
 
-	ipvs "k8s.io/kubernetes/pkg/proxy/ipvs/util"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	ipvs "k8s.io/kubernetes/pkg/proxy/ipvs/util"
 )
 
 type Proxier interface {
@@ -45,7 +44,12 @@ func (ep *endpoint) String() string {
 	return net.JoinHostPort(ep.IP, strconv.Itoa(int(ep.Port)))
 }
 
-func NewProxier(scheduler string, interval time.Duration, prober Prober, syncFn func() error) Proxier {
+func NewProxier(
+	scheduler string,
+	interval time.Duration,
+	prober Prober,
+	syncFn func() error,
+) Proxier {
 	return &realProxier{
 		scheduler:  scheduler,
 		ipvsHandle: ipvs.New(),
@@ -121,7 +125,10 @@ func (p *realProxier) DeleteVirtualServer(vs string) error {
 	return nil
 }
 
-func (p *realProxier) getRealServer(vs *ipvs.VirtualServer, rs *ipvs.RealServer) (*ipvs.RealServer, error) {
+func (p *realProxier) getRealServer(
+	vs *ipvs.VirtualServer,
+	rs *ipvs.RealServer,
+) (*ipvs.RealServer, error) {
 	applied, err := p.ipvsHandle.GetRealServers(vs)
 	if err != nil {
 		return nil, err
@@ -134,7 +141,9 @@ func (p *realProxier) getRealServer(vs *ipvs.VirtualServer, rs *ipvs.RealServer)
 	return nil, nil
 }
 
-func (p *realProxier) getServersByEndpoint(vs, rs endpoint) (*ipvs.VirtualServer, *ipvs.RealServer, error) {
+func (p *realProxier) getServersByEndpoint(
+	vs, rs endpoint,
+) (*ipvs.VirtualServer, *ipvs.RealServer, error) {
 	vSrv, err := p.ensureVirtualServer(p.buildVirtualServer(&vs))
 	if err != nil {
 		return nil, nil, err

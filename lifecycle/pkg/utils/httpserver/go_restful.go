@@ -16,9 +16,9 @@ package httpserver
 
 import (
 	"net/http"
+	"time"
 
 	restful "github.com/emicklei/go-restful/v3"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -31,10 +31,14 @@ func GoRestful(registerFunc func(*restful.WebService), addr string) error {
 	registerFunc(webService)
 
 	container.Add(webService)
-	//cors
+	// cors
 	Cors(container)
 
-	server := &http.Server{Addr: addr, Handler: container}
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           container,
+		ReadHeaderTimeout: 30 * time.Second,
+	}
 	logger.Info("start listening on addr", addr)
 
 	return server.ListenAndServe()

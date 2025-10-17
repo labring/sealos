@@ -21,13 +21,12 @@ import (
 	"path/filepath"
 
 	"github.com/imdario/mergo"
-	"sigs.k8s.io/yaml"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"sigs.k8s.io/yaml"
 )
 
 /*
@@ -88,7 +87,7 @@ func (c *Dumper) Dump() error {
 	}
 
 	if err := c.WriteFiles(); err != nil {
-		return fmt.Errorf("failed to write config files %v", err)
+		return fmt.Errorf("failed to write config files %w", err)
 	}
 	return nil
 }
@@ -114,7 +113,7 @@ func (c *Dumper) WriteFiles() (err error) {
 		}
 		err = file.WriteFile(configPath, configData)
 		if err != nil {
-			return fmt.Errorf("write config file failed %v", err)
+			return fmt.Errorf("write config file failed %w", err)
 		}
 	}
 
@@ -139,26 +138,26 @@ func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte,
 
 // merge the contents of data into the path file
 func getMergeConfigData(path string, data []byte) ([]byte, error) {
-	var configs [][]byte
+	configs := make([][]byte, 0, 8) // reasonable estimate for config chunks
 	context, err := os.ReadFile(filepath.Clean(path))
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
-	mergeConfigMap := make(map[string]interface{})
+	mergeConfigMap := make(map[string]any)
 	err = yaml.Unmarshal(data, &mergeConfigMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal merge map: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal merge map: %w", err)
 	}
 	for _, rawCfgData := range bytes.Split(context, []byte("---\n")) {
-		configMap := make(map[string]interface{})
+		configMap := make(map[string]any)
 		err = yaml.Unmarshal(rawCfgData, &configMap)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+			return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 		}
 		if err := mergo.Merge(&configMap, &mergeConfigMap,
 			mergo.WithOverwriteWithEmptyValue, mergo.WithTypeCheck,
 		); err != nil {
-			return nil, fmt.Errorf("merge: %v", err)
+			return nil, fmt.Errorf("merge: %w", err)
 		}
 
 		cfg, err := yaml.Marshal(&configMap)

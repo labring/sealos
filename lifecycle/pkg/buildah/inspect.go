@@ -34,13 +34,12 @@ import (
 	imagestorage "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/opencontainers/go-digest"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/term"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -63,8 +62,20 @@ func newDefaultInspectResults() *inspectResults {
 
 func (opts *inspectResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
-	fs.StringVarP(&opts.format, "format", "f", opts.format, "use `format` as a Go template to format the output")
-	fs.StringVarP(&opts.inspectType, "type", "t", opts.inspectType, "look at the item of the specified `type` (container or image) and name")
+	fs.StringVarP(
+		&opts.format,
+		"format",
+		"f",
+		opts.format,
+		"use `format` as a Go template to format the output",
+	)
+	fs.StringVarP(
+		&opts.inspectType,
+		"type",
+		"t",
+		opts.inspectType,
+		"look at the item of the specified `type` (container or image) and name",
+	)
 }
 
 func newInspectCommand() *cobra.Command {
@@ -155,9 +166,16 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 		return manifestInspect(ctx, store, systemContext, name)
 	default:
 		return fmt.Errorf("available type options are %s", strings.Join(
-			[]string{inspectTypeContainer, inspectTypeApp, inspectTypeImage, inspectTypeManifest}, ", "))
+			[]string{
+				inspectTypeContainer,
+				inspectTypeApp,
+				inspectTypeImage,
+				inspectTypeManifest,
+			},
+			", ",
+		))
 	}
-	var out interface{}
+	var out any
 	if builder != nil {
 		out = buildah.GetBuildInfo(builder)
 	} else if output != nil {
@@ -198,7 +216,13 @@ type InspectOutput struct {
 	OCIv1           *ociv1.Image  `json:"OCIv1,omitempty"`
 }
 
-func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgRef string) (*InspectOutput, error) {
+func openImage(
+	ctx context.Context,
+	sc *types.SystemContext,
+	store storage.Store,
+	transport types.ImageTransport,
+	imgRef string,
+) (*InspectOutput, error) {
 	var (
 		rawManifest          []byte
 		config               *ociv1.Image
@@ -255,18 +279,30 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 	}, nil
 }
 
-func parseTransportAndReference(defaultTransport types.ImageTransport, ref string) (types.ImageTransport, string, error) {
+func parseTransportAndReference(
+	defaultTransport types.ImageTransport,
+	ref string,
+) (types.ImageTransport, string, error) {
 	transport, imgRef := finalizeReference(defaultTransport, ref)
 	parts := strings.SplitN(imgRef, ":", 2)
 	// should never happened
 	if len(parts) != 2 {
-		return nil, "", fmt.Errorf(`invalid image name "%s", expected colon-separated transport:reference`, imgRef)
+		return nil, "", fmt.Errorf(
+			`invalid image name "%s", expected colon-separated transport:reference`,
+			imgRef,
+		)
 	}
 	return transport, parts[1], nil
 }
 
 // inspectImage return image id if found
-func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgName string) (string, types.Image, types.ImageSource, error) {
+func inspectImage(
+	ctx context.Context,
+	sc *types.SystemContext,
+	store storage.Store,
+	transport types.ImageTransport,
+	imgName string,
+) (string, types.Image, types.ImageSource, error) {
 	parseSource := func(s string) (types.ImageSource, error) {
 		logger.Debug("parse reference %s with transport %s", s, transport.Name())
 		ref, err := transport.ParseReference(s)

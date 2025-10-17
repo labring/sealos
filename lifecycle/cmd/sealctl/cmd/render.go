@@ -18,15 +18,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"helm.sh/helm/v3/pkg/cli/values"
-	"helm.sh/helm/v3/pkg/getter"
-
 	"github.com/labring/sealos/pkg/template"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/getter"
 )
 
 type renderOptions struct {
@@ -55,7 +54,7 @@ func newRenderCommand() *cobra.Command {
 	return cmd
 }
 
-func loadValues(valueFiles, sets []string) (map[string]interface{}, error) {
+func loadValues(valueFiles, sets []string) (map[string]any, error) {
 	valueOpt := &values.Options{
 		ValueFiles: valueFiles,
 		Values:     sets,
@@ -84,7 +83,7 @@ func runRender(opts *renderOptions, args []string) error {
 		return err
 	}
 	envs := maps.FromSlice(os.Environ())
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	// For compatibility with older templates
 	for k, v := range envs {
 		data[k] = v
@@ -104,7 +103,7 @@ func runRender(opts *renderOptions, args []string) error {
 			if fileutils.IsExist(trimed) {
 				logger.Debug("found existing file %s, override it", trimed)
 			}
-			file, err := os.OpenFile(trimed, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+			file, err := os.OpenFile(trimed, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 			if err != nil {
 				return err
 			}

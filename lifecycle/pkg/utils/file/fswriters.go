@@ -60,7 +60,7 @@ func AtomicWriteFile(filepath string, data []byte, perm os.FileMode) (err error)
 		err = afw.Close()
 	}()
 	if _, err = afw.Write(data); err != nil {
-		return
+		return err
 	}
-	return
+	return err
 }

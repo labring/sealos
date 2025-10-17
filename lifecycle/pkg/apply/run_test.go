@@ -18,16 +18,14 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/utils/iputils"
-
-	"github.com/labring/sealos/pkg/apply/applydrivers"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestClusterArgs_SetClusterRunArgs(t *testing.T) {
@@ -167,7 +165,16 @@ func TestNewApplierFromArgs(t *testing.T) {
 					},
 					Spec: v2.ClusterSpec{
 						Hosts: []v2.Host{
-							{IPS: []string{iputils.LocalIP(addr) + ":22"}, Roles: []string{v2.MASTER, GetHostArch(ssh.MustNewClient(&v2.SSH{}, true), iputils.LocalIP(addr)+":22")}},
+							{
+								IPS: []string{iputils.LocalIP(addr) + ":22"},
+								Roles: []string{
+									v2.MASTER,
+									GetHostArch(
+										ssh.MustNewClient(&v2.SSH{}, true),
+										iputils.LocalIP(addr)+":22",
+									),
+								},
+							},
 						},
 						Image: []string{"labring/kubernetes:v1.24.0"},
 						SSH:   v2.SSH{},

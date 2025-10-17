@@ -55,7 +55,13 @@ func newRMICommand() *cobra.Command {
 	flags.SetInterspersed(false)
 	flags.BoolVarP(&opts.all, "all", "a", false, "remove all images")
 	flags.BoolVarP(&opts.prune, "prune", "p", false, "prune dangling images")
-	flags.BoolVarP(&opts.force, "force", "f", false, "force removal of the image and any containers using the image")
+	flags.BoolVarP(
+		&opts.force,
+		"force",
+		"f",
+		false,
+		"force removal of the image and any containers using the image",
+	)
 
 	return rmiCommand
 }
@@ -87,7 +93,10 @@ func rmiCmd(c *cobra.Command, args []string, iopts rmiOptions) error {
 	if err != nil {
 		return err
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}

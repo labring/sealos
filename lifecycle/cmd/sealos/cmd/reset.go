@@ -17,11 +17,10 @@ package cmd
 import (
 	"errors"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 var exampleReset = `
@@ -35,7 +34,7 @@ func newResetCmd() *cobra.Command {
 		SSH:         &apply.SSH{},
 	}
 
-	var resetCmd = &cobra.Command{
+	resetCmd := &cobra.Command{
 		Use:     "reset",
 		Short:   "Reset all, everything in the cluster",
 		Example: exampleReset,
@@ -59,6 +58,7 @@ func newResetCmd() *cobra.Command {
 	}
 	setRequireBuildahAnnotation(resetCmd)
 	resetArgs.RegisterFlags(resetCmd.Flags())
-	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
+	resetCmd.Flags().
+		BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
 	return resetCmd
 }

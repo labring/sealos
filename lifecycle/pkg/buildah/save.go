@@ -37,13 +37,40 @@ type saveOptions struct {
 }
 
 func (o *saveOptions) RegisterFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.compress, "compress", false, "compress tarball image layers when saving to a directory using the 'dir' transport. (default is same compression type as source)")
+	fs.BoolVar(
+		&o.compress,
+		"compress",
+		false,
+		"compress tarball image layers when saving to a directory using the 'dir' transport. (default is same compression type as source)",
+	)
 	fs.BoolVarP(&o.quiet, "quiet", "q", false, "suppress the output")
-	fs.BoolVarP(&o.multiImageArchive, "multi-image-archive", "m", false, "interpret additional arguments as images not tags and create a multi-image-archive (only for docker-archive)")
-	fs.BoolVar(&o.ociAcceptUncompressedLayers, "uncompressed", false, "Accept uncompressed layers when copying OCI images")
-	fs.StringVar(&o.format, "format", OCIArchive, "save image to oci-archive, oci-dir (directory with oci manifest type), "+
-		"docker-archive, docker-dir (directory with v2s2 manifest type)")
-	fs.StringVarP(&o.output, "output", "o", "", "write to a specified file (default: stdout, which must be redirected)")
+	fs.BoolVarP(
+		&o.multiImageArchive,
+		"multi-image-archive",
+		"m",
+		false,
+		"interpret additional arguments as images not tags and create a multi-image-archive (only for docker-archive)",
+	)
+	fs.BoolVar(
+		&o.ociAcceptUncompressedLayers,
+		"uncompressed",
+		false,
+		"Accept uncompressed layers when copying OCI images",
+	)
+	fs.StringVar(
+		&o.format,
+		"format",
+		OCIArchive,
+		"save image to oci-archive, oci-dir (directory with oci manifest type), "+
+			"docker-archive, docker-dir (directory with v2s2 manifest type)",
+	)
+	fs.StringVarP(
+		&o.output,
+		"output",
+		"o",
+		"",
+		"write to a specified file (default: stdout, which must be redirected)",
+	)
 }
 
 func (o *saveOptions) Validate() error {
@@ -54,7 +81,7 @@ func (o *saveOptions) Validate() error {
 }
 
 func newSaveCommand() *cobra.Command {
-	var opts = &saveOptions{}
+	opts := &saveOptions{}
 
 	saveCommand := &cobra.Command{
 		Use:   "save",
@@ -63,7 +90,7 @@ func newSaveCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSave(cmd, args, opts)
 		},
-		Example: fmt.Sprintf(`%[1]s save -o kubernetes.tar labring/kubernetes:latest`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " save -o kubernetes.tar labring/kubernetes:latest",
 	}
 	saveCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(saveCommand.Flags())
@@ -73,9 +100,7 @@ func newSaveCommand() *cobra.Command {
 }
 
 func runSave(cmd *cobra.Command, args []string, saveOpts *saveOptions) error {
-	var (
-		tags []string
-	)
+	var tags []string
 	if flagChanged(cmd, "compress") && saveOpts.format != DockerManifestDir {
 		return errors.New("--compress can only be set when --format is 'docker-dir'")
 	}

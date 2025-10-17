@@ -22,10 +22,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/util/sets"
 	netutils "k8s.io/utils/net"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // use only one
@@ -62,20 +61,20 @@ func GetDiffHosts(hostsOld, hostsNew []string) (add, sub []string) {
 			}
 		}
 	}
-	return
+	return add, sub
 }
 
 func GetHostIPs(hosts []string) []string {
-	var ips []string
+	ips := make([]string, 0, len(hosts))
 	for _, name := range hosts {
 		ips = append(ips, GetHostIP(name))
 	}
 	return ips
 }
 
-func GetHostIPAndPortOrDefault(host, Default string) (string, string) {
+func GetHostIPAndPortOrDefault(host, defaultPort string) (string, string) {
 	if !strings.ContainsRune(host, ':') {
-		return host, Default
+		return host, defaultPort
 	}
 	split := strings.Split(host, ":")
 	return split[0], split[1]
@@ -85,19 +84,19 @@ func GetSSHHostIPAndPort(host string) (string, string) {
 	return GetHostIPAndPortOrDefault(host, "22")
 }
 
-func GetHostIPAndPortSlice(hosts []string, Default string) (res []string) {
+func GetHostIPAndPortSlice(hosts []string, defaultPort string) (res []string) {
 	for _, ip := range hosts {
-		_ip, port := GetHostIPAndPortOrDefault(ip, Default)
-		res = append(res, fmt.Sprintf("%s:%s", _ip, port))
+		_ip, port := GetHostIPAndPortOrDefault(ip, defaultPort)
+		res = append(res, net.JoinHostPort(_ip, port))
 	}
-	return
+	return res
 }
 
 func GetHostIPSlice(hosts []string) (res []string) {
 	for _, ip := range hosts {
 		res = append(res, GetHostIP(ip))
 	}
-	return
+	return res
 }
 
 func ListLocalHostAddrs() (*[]net.Addr, error) {
@@ -110,7 +109,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		return netInterfaces[i].Index < netInterfaces[j].Index
 	})
 	var allAddrs []net.Addr
-	for i := 0; i < len(netInterfaces); i++ {
+	for i := range netInterfaces {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
 			continue
 		}
@@ -118,9 +117,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		if err != nil {
 			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
-		for j := 0; j < len(addrs); j++ {
-			allAddrs = append(allAddrs, addrs[j])
-		}
+		allAddrs = append(allAddrs, addrs...)
 	}
 	return &allAddrs, nil
 }
@@ -130,7 +127,9 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 		ip = defaultIP
 	}
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil && ipnet.IP.String() == ip {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
+			ipnet.IP.To4() != nil &&
+			ipnet.IP.String() == ip {
 			return true
 		}
 	}
@@ -139,7 +138,8 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 
 func LocalIP(addrs *[]net.Addr) string {
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
+			ipnet.IP.To4() != nil {
 			return ipnet.IP.String()
 		}
 	}
@@ -167,7 +167,8 @@ func ParseIPList(s string) ([]string, error) {
 		return nil, nil
 	}
 	var ret []string
-	if strings.Contains(s, ",") {
+	switch {
+	case strings.Contains(s, ","):
 		ss := strings.Split(s, ",")
 		for i := range ss {
 			ret2, err := ParseIPList(ss[i])
@@ -176,7 +177,7 @@ func ParseIPList(s string) ([]string, error) {
 			}
 			ret = append(ret, ret2...)
 		}
-	} else if strings.Contains(s, "/") {
+	case strings.Contains(s, "/"):
 		ip, ipnet, err := net.ParseCIDR(s)
 		if err != nil {
 			return nil, err
@@ -185,7 +186,7 @@ func ParseIPList(s string) ([]string, error) {
 			ret = append(ret, ip.String())
 		}
 		// network address and broadcast address are included
-	} else if strings.Contains(s, "-") {
+	case strings.Contains(s, "-"):
 		ips := strings.Split(s, "-")
 		if len(ips) != 2 {
 			return nil, errors.New("ip range format is invalid")
@@ -200,7 +201,11 @@ func ParseIPList(s string) ([]string, error) {
 			res, _ := CompareIP(ips[0], ips[1])
 			if res > 0 {
 				if first {
-					return nil, fmt.Errorf("start ip %s cannot greater than end ip %s", ips[0], ips[1])
+					return nil, fmt.Errorf(
+						"start ip %s cannot greater than end ip %s",
+						ips[0],
+						ips[1],
+					)
 				}
 				break
 			}
@@ -208,7 +213,7 @@ func ParseIPList(s string) ([]string, error) {
 			ips[0] = NextIP(ips[0]).String()
 			first = false
 		}
-	} else {
+	default:
 		ip := net.ParseIP(GetHostIP(s))
 		if ip == nil {
 			return nil, fmt.Errorf("invalid ip: %v", s)
@@ -238,7 +243,7 @@ func CompareIP(v1, v2 string) (int, error) {
 	j := IPToInt(v2)
 
 	if i == nil || j == nil {
-		return 2, fmt.Errorf("ip is invalid，check you command args")
+		return 2, errors.New("ip is invalid，check you command args")
 	}
 	return i.Cmp(j), nil
 }

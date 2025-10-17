@@ -38,7 +38,10 @@ func DecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
 }
 
 // EncryptConfig translates encryptionKeys into a EncriptionsConfig structure
-func EncryptConfig(encryptionKeys []string, encryptLayers []int) (*encconfig.EncryptConfig, *[]int, error) {
+func EncryptConfig(
+	encryptionKeys []string,
+	encryptLayers []int,
+) (*encconfig.EncryptConfig, *[]int, error) {
 	var encLayers *[]int
 	var encConfig *encconfig.EncryptConfig
 

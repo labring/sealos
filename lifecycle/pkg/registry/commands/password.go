@@ -19,16 +19,15 @@ package commands
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/registry/password"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func NewRegistryPasswdCmd() *cobra.Command {
 	flagsResults := password.RegistryPasswdResults{}
 
-	var registryPasswdCmd = &cobra.Command{
+	registryPasswdCmd := &cobra.Command{
 		Use:   "passwd",
 		Short: "configure registry password",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -41,7 +40,7 @@ func NewRegistryPasswdCmd() *cobra.Command {
 				return nil
 			}
 			if err := flagsResults.Apply(cluster); err != nil {
-				return fmt.Errorf("registry passwd apply error: %v", err)
+				return fmt.Errorf("registry passwd apply error: %w", err)
 			}
 			logger.Info("registry passwd apply success")
 			return nil

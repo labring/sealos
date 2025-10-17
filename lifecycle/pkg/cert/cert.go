@@ -57,7 +57,7 @@ type Config struct {
 	CAName       string // root ca map key
 	CommonName   string
 	Organization []string
-	Year         time.Duration
+	Year         int
 	AltNames     AltNames
 	Usages       []x509.ExtKeyUsage
 }
@@ -80,7 +80,12 @@ func NewPrivateKey(keyType x509.PublicKeyAlgorithm) (crypto.Signer, error) {
 }
 
 // NewSelfSignedCACert creates a CA certificate
-func NewSelfSignedCACert(key crypto.Signer, commonName string, organization []string, year time.Duration) (*x509.Certificate, error) {
+func NewSelfSignedCACert(
+	key crypto.Signer,
+	commonName string,
+	organization []string,
+	years int,
+) (*x509.Certificate, error) {
 	now := time.Now()
 	tmpl := x509.Certificate{
 		SerialNumber: new(big.Int).SetInt64(0),
@@ -89,7 +94,7 @@ func NewSelfSignedCACert(key crypto.Signer, commonName string, organization []st
 			Organization: organization,
 		},
 		NotBefore:             now.UTC(),
-		NotAfter:              now.Add(duration365d * year).UTC(),
+		NotAfter:              now.Add(duration365d * time.Duration(years)).UTC(),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
@@ -111,11 +116,14 @@ func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 
 	key, err := NewPrivateKey(x509.UnknownPublicKeyAlgorithm)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create private key while generating CA certificate %s", err)
+		return nil, nil, fmt.Errorf(
+			"unable to create private key while generating CA certificate %w",
+			err,
+		)
 	}
 	cert, err := NewSelfSignedCACert(key, cfg.CommonName, cfg.Organization, cfg.Year)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create ca cert %s", err)
+		return nil, nil, fmt.Errorf("unable to create ca cert %w", err)
 	}
 	return cert, key, nil
 }
@@ -140,7 +148,7 @@ func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	// Parse the private key from a file
 	privKey, err := keyutil.PrivateKeyFromFile(pkiPath)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't load the private key file %s", err)
+		return nil, fmt.Errorf("couldn't load the private key file %w", err)
 	}
 
 	// Allow RSA and ECDSA formats only
@@ -151,28 +159,40 @@ func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	case *ecdsa.PrivateKey:
 		key = k
 	default:
-		return nil, fmt.Errorf("couldn't convert the private key file %s", err)
+		return nil, fmt.Errorf("couldn't convert the private key file %w", err)
 	}
 
 	return key, nil
 }
 
 // NewCaCertAndKeyFromRoot cmd/kubeadm/app/util/pkiutil/pki_helpers.go NewCertAndKey
-func NewCaCertAndKeyFromRoot(cfg Config, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, crypto.Signer, error) {
+func NewCaCertAndKeyFromRoot(
+	cfg Config,
+	caCert *x509.Certificate,
+	caKey crypto.Signer,
+) (*x509.Certificate, crypto.Signer, error) {
 	key, err := NewPrivateKey(x509.UnknownPublicKeyAlgorithm)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create private key while generating CA certificate %s", err)
+		return nil, nil, fmt.Errorf(
+			"unable to create private key while generating CA certificate %w",
+			err,
+		)
 	}
 	cert, err := NewSignedCert(cfg, key, caCert, caKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new signed cert failed %s", err)
+		return nil, nil, fmt.Errorf("new signed cert failed %w", err)
 	}
 
 	return cert, key, nil
 }
 
 // NewSignedCert creates a signed certificate using the given CA certificate and key
-func NewSignedCert(cfg Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
+func NewSignedCert(
+	cfg Config,
+	key crypto.Signer,
+	caCert *x509.Certificate,
+	caKey crypto.Signer,
+) (*x509.Certificate, error) {
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {
 		return nil, err
@@ -184,8 +204,8 @@ func NewSignedCert(cfg Config, key crypto.Signer, caCert *x509.Certificate, caKe
 		return nil, errors.New("must specify at least one ExtKeyUsage")
 	}
 
-	var dnsNames []string
-	var ips []net.IP
+	dnsNames := make([]string, 0, len(cfg.AltNames.DNSNames))
+	ips := make([]net.IP, 0, len(cfg.AltNames.IPs))
 
 	for _, v := range cfg.AltNames.DNSNames {
 		dnsNames = append(dnsNames, v)
@@ -202,7 +222,7 @@ func NewSignedCert(cfg Config, key crypto.Signer, caCert *x509.Certificate, caKe
 		IPAddresses:  ips,
 		SerialNumber: serial,
 		NotBefore:    caCert.NotBefore,
-		NotAfter:     time.Now().Add(duration365d * cfg.Year).UTC(),
+		NotAfter:     time.Now().Add(duration365d * time.Duration(cfg.Year)).UTC(),
 		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  cfg.Usages,
 	}
@@ -215,7 +235,7 @@ func NewSignedCert(cfg Config, key crypto.Signer, caCert *x509.Certificate, caKe
 
 // WriteTofile
 // WriteCertAndKey stores certificate and key at the specified location
-func WriteCertAndKey(pkiPath string, name string, cert *x509.Certificate, key crypto.Signer) error {
+func WriteCertAndKey(pkiPath, name string, cert *x509.Certificate, key crypto.Signer) error {
 	if err := WriteKey(pkiPath, name, key); err != nil {
 		return err
 	}
@@ -231,7 +251,7 @@ func WriteCert(pkiPath, name string, cert *x509.Certificate) error {
 
 	certificatePath := pathForCert(pkiPath, name)
 	if err := certutil.WriteCert(certificatePath, EncodeCertPEM(cert)); err != nil {
-		return fmt.Errorf("unable to write certificate to file %s %s", certificatePath, err)
+		return fmt.Errorf("unable to write certificate to file %s %w", certificatePath, err)
 	}
 
 	return nil
@@ -255,10 +275,10 @@ func WriteKey(pkiPath, name string, key crypto.Signer) error {
 	privateKeyPath := pathForKey(pkiPath, name)
 	encoded, err := keyutil.MarshalPrivateKeyToPEM(key)
 	if err != nil {
-		return fmt.Errorf("unable to marshal private key to PEM %s", err)
+		return fmt.Errorf("unable to marshal private key to PEM %w", err)
 	}
 	if err := keyutil.WriteKey(privateKeyPath, encoded); err != nil {
-		return fmt.Errorf("unable to write private key to file %s %s", privateKeyPath, err)
+		return fmt.Errorf("unable to write private key to file %s %w", privateKeyPath, err)
 	}
 
 	return nil
@@ -276,14 +296,14 @@ func WritePublicKey(pkiPath, name string, key crypto.PublicKey) error {
 	}
 	publicKeyPath := pathForPublicKey(pkiPath, name)
 	if err := keyutil.WriteKey(publicKeyPath, publicKeyBytes); err != nil {
-		return fmt.Errorf("unable to write public key to file %s %s", publicKeyPath, err)
+		return fmt.Errorf("unable to write public key to file %s %w", publicKeyPath, err)
 	}
 
 	return nil
 }
 
 func pathForPublicKey(pkiPath, name string) string {
-	return filepath.Join(pkiPath, fmt.Sprintf("%s.pub", name))
+	return filepath.Join(pkiPath, name+".pub")
 }
 
 // EncodePublicKeyPEM returns PEM-encoded public data
@@ -300,9 +320,9 @@ func EncodePublicKeyPEM(key crypto.PublicKey) ([]byte, error) {
 }
 
 func pathForCert(pkiPath, name string) string {
-	return filepath.Join(pkiPath, fmt.Sprintf("%s.crt", name))
+	return filepath.Join(pkiPath, name+".crt")
 }
 
 func pathForKey(pkiPath, name string) string {
-	return filepath.Join(pkiPath, fmt.Sprintf("%s.key", name))
+	return filepath.Join(pkiPath, name+".key")
 }

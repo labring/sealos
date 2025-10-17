@@ -19,14 +19,13 @@ package cmd
 import (
 	"context"
 
-	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 const exampleScp = `
@@ -46,7 +45,7 @@ func newScpCmd() *cobra.Command {
 		ips     []string
 		cluster *v1beta1.Cluster
 	)
-	var scpCmd = &cobra.Command{
+	scpCmd := &cobra.Command{
 		Use:     "scp",
 		Short:   "Copy file to remote on specified nodes",
 		Example: exampleScp,
@@ -57,25 +56,25 @@ func newScpCmd() *cobra.Command {
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
 			cluster, err = clusterfile.GetClusterFromName(clusterName)
-			return
+			return err
 		},
 	}
-	scpCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to run scp action")
+	scpCmd.Flags().
+		StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to run scp action")
 	scpCmd.Flags().StringSliceVarP(&roles, "roles", "r", []string{}, "copy file to nodes with role")
 	scpCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "copy file to nodes with ip address")
 	return scpCmd
 }
 
-func runCopy(cluster *v1beta1.Cluster, targets []string, args []string) error {
+func runCopy(cluster *v1beta1.Cluster, targets, args []string) error {
 	execer, err := exec.New(ssh.NewCacheClientFromCluster(cluster, true))
 	if err != nil {
 		return err
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range targets {
-		ip := ipAddr
 		eg.Go(func() error {
-			return execer.Copy(ip, args[0], args[1])
+			return execer.Copy(ipAddr, args[0], args[1])
 		})
 	}
 	if err = eg.Wait(); err != nil {

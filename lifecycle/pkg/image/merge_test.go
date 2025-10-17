@@ -112,10 +112,8 @@ COPY --from=cccc  . .`,
 		t.Run(tt.name, func(t *testing.T) {
 			if data, err := MergeDockerfileFromImages(tt.args.ociList); (err != nil) != tt.wantErr {
 				t.Errorf("MergeDockerfileFromImages() error = %v, wantErr %v", err, tt.wantErr)
-			} else {
-				if data != tt.wantData {
-					t.Errorf("MergeDockerfileFromImages() data = %v, wantData %v", data, tt.wantData)
-				}
+			} else if data != tt.wantData {
+				t.Errorf("MergeDockerfileFromImages() data = %v, wantData %v", data, tt.wantData)
 			}
 		})
 	}

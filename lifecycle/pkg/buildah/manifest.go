@@ -36,12 +36,11 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	"github.com/hashicorp/go-multierror"
+	"github.com/labring/sealos/pkg/utils/logger"
 	digest "github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type manifestCreateOpts struct {
@@ -50,12 +49,42 @@ type manifestCreateOpts struct {
 }
 
 func (opts *manifestCreateOpts) RegisterFlags(fs *pflag.FlagSet) error {
-	fs.BoolVar(&opts.all, "all", false, "add all of the lists' images if the images to add are lists")
-	fs.BoolVar(&opts.amend, "amend", false, "modify an existing list if one with the desired name already exists")
-	fs.StringVar(&opts.os, "os", "", "if any of the specified images is a list, choose the one for `os`")
-	fs.StringVar(&opts.arch, "arch", "", "if any of the specified images is a list, choose the one for `arch`")
-	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(
+		&opts.all,
+		"all",
+		false,
+		"add all of the lists' images if the images to add are lists",
+	)
+	fs.BoolVar(
+		&opts.amend,
+		"amend",
+		false,
+		"modify an existing list if one with the desired name already exists",
+	)
+	fs.StringVar(
+		&opts.os,
+		"os",
+		"",
+		"if any of the specified images is a list, choose the one for `os`",
+	)
+	fs.StringVar(
+		&opts.arch,
+		"arch",
+		"",
+		"if any of the specified images is a list, choose the one for `arch`",
+	)
+	fs.BoolVar(
+		&opts.insecure,
+		"insecure",
+		false,
+		"neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	fs.BoolVar(
+		&opts.tlsVerify,
+		"tls-verify",
+		false,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	return markFlagsHidden(fs, []string{"os", "arch", "insecure", "tls-verify"}...)
 }
@@ -67,18 +96,58 @@ type manifestAddOpts struct {
 }
 
 func (opts *manifestAddOpts) RegisterFlags(fs *pflag.FlagSet) error {
-	fs.StringVar(&opts.authfile, "authfile", auth.GetDefaultAuthFile(), "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
-	fs.StringVar(&opts.certDir, "cert-dir", "", "use certificates at the specified path to access the registry")
+	fs.StringVar(
+		&opts.authfile,
+		"authfile",
+		auth.GetDefaultAuthFile(),
+		"path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override",
+	)
+	fs.StringVar(
+		&opts.certDir,
+		"cert-dir",
+		"",
+		"use certificates at the specified path to access the registry",
+	)
 	fs.StringVar(&opts.creds, "creds", "", "use `[username[:password]]` for accessing the registry")
 	fs.StringVar(&opts.os, "os", "", "override the `OS` of the specified image")
 	fs.StringVar(&opts.arch, "arch", "", "override the `architecture` of the specified image")
 	fs.StringVar(&opts.variant, "variant", "", "override the `variant` of the specified image")
-	fs.StringVar(&opts.osVersion, "os-version", "", "override the OS `version` of the specified image")
-	fs.StringSliceVar(&opts.features, "features", nil, "override the `features` of the specified image")
-	fs.StringSliceVar(&opts.osFeatures, "os-features", nil, "override the OS `features` of the specified image")
-	fs.StringSliceVar(&opts.annotations, "annotation", nil, "set an `annotation` for the specified image")
-	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.StringVar(
+		&opts.osVersion,
+		"os-version",
+		"",
+		"override the OS `version` of the specified image",
+	)
+	fs.StringSliceVar(
+		&opts.features,
+		"features",
+		nil,
+		"override the `features` of the specified image",
+	)
+	fs.StringSliceVar(
+		&opts.osFeatures,
+		"os-features",
+		nil,
+		"override the OS `features` of the specified image",
+	)
+	fs.StringSliceVar(
+		&opts.annotations,
+		"annotation",
+		nil,
+		"set an `annotation` for the specified image",
+	)
+	fs.BoolVar(
+		&opts.insecure,
+		"insecure",
+		false,
+		"neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	fs.BoolVar(
+		&opts.tlsVerify,
+		"tls-verify",
+		false,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
 	fs.BoolVar(&opts.all, "all", false, "add all of the list's images if the image is a list")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	return markFlagsHidden(fs, []string{"insecure", "tls-verify"}...)
@@ -95,10 +164,30 @@ func (opts *manifestAnnotateOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringVar(&opts.os, "os", "", "override the `OS` of the specified image")
 	fs.StringVar(&opts.arch, "arch", "", "override the `Architecture` of the specified image")
 	fs.StringVar(&opts.variant, "variant", "", "override the `Variant` of the specified image")
-	fs.StringVar(&opts.osVersion, "os-version", "", "override the os `version` of the specified image")
-	fs.StringSliceVar(&opts.features, "features", nil, "override the `features` of the specified image")
-	fs.StringSliceVar(&opts.osFeatures, "os-features", nil, "override the os `features` of the specified image")
-	fs.StringSliceVar(&opts.annotations, "annotation", nil, "set an `annotation` for the specified image")
+	fs.StringVar(
+		&opts.osVersion,
+		"os-version",
+		"",
+		"override the os `version` of the specified image",
+	)
+	fs.StringSliceVar(
+		&opts.features,
+		"features",
+		nil,
+		"override the `features` of the specified image",
+	)
+	fs.StringSliceVar(
+		&opts.osFeatures,
+		"os-features",
+		nil,
+		"override the os `features` of the specified image",
+	)
+	fs.StringSliceVar(
+		&opts.annotations,
+		"annotation",
+		nil,
+		"set an `annotation` for the specified image",
+	)
 	return nil
 }
 
@@ -177,21 +266,19 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestRemoveCmd(cmd, args, manifestRemoveOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest remove mylist:v1.11 sha256:15352d97781ffdf357bf3459c037be3efac4133dc9070c2dce7eca7c05c3e736`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " manifest remove mylist:v1.11 sha256:15352d97781ffdf357bf3459c037be3efac4133dc9070c2dce7eca7c05c3e736",
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestRemoveCommand.SetUsageTemplate(UsageTemplate())
 	manifestCommand.AddCommand(manifestRemoveCommand)
 
 	manifestExistsCommand := &cobra.Command{
-		Use:   "exists",
-		Short: "Check if a manifest list exists in local storage",
-		Long:  manifestExistsDescription,
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return manifestExistsCmd(cmd, args)
-		},
-		Example: fmt.Sprintf(`%s manifest exists mylist`, rootCmd.CommandPath()),
+		Use:     "exists",
+		Short:   "Check if a manifest list exists in local storage",
+		Long:    manifestExistsDescription,
+		Args:    cobra.ExactArgs(1),
+		RunE:    manifestExistsCmd,
+		Example: rootCmd.CommandPath() + " manifest exists mylist",
 	}
 	manifestExistsCommand.SetUsageTemplate(UsageTemplate())
 	manifestCommand.AddCommand(manifestExistsCommand)
@@ -203,7 +290,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestAnnotateCmd(cmd, args, manifestAnnotateOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest annotate --annotation left=right mylist:v1.11 image:v1.11-amd64`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " manifest annotate --annotation left=right mylist:v1.11 image:v1.11-amd64",
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestAnnotateCommand.SetUsageTemplate(UsageTemplate())
@@ -218,7 +305,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestInspectCmd(cmd, args, manifestInspectOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest inspect mylist:v1.11`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " manifest inspect mylist:v1.11",
 		Args:    cobra.MinimumNArgs(1),
 	}
 	manifestInspectCommand.SetUsageTemplate(UsageTemplate())
@@ -231,36 +318,92 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestPushCmd(cmd, args, manifestPushOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest push mylist:v1.11 transport:imageName`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " manifest push mylist:v1.11 transport:imageName",
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestPushCommand.SetUsageTemplate(UsageTemplate())
 	fs := manifestPushCommand.Flags()
 	fs.BoolVar(&manifestPushOpts.rm, "rm", false, "remove the manifest list if push succeeds")
 	fs.BoolVar(&manifestPushOpts.all, "all", false, "also push the images in the list")
-	fs.StringVar(&manifestPushOpts.authfile, "authfile", auth.GetDefaultAuthFile(), "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
-	fs.StringVar(&manifestPushOpts.certDir, "cert-dir", "", "use certificates at the specified path to access the registry")
-	fs.StringVar(&manifestPushOpts.creds, "creds", "", "use `[username[:password]]` for accessing the registry")
-	fs.StringVar(&manifestPushOpts.digestfile, "digestfile", "", "after copying the image, write the digest of the resulting digest to the file")
-	fs.StringVarP(&manifestPushOpts.format, "format", "f", "", "manifest type (oci or v2s2) to attempt to use when pushing the manifest list (default is manifest type of source)")
-	fs.BoolVarP(&manifestPushOpts.removeSignatures, "remove-signatures", "", false, "don't copy signatures when pushing images")
-	fs.StringVar(&manifestPushOpts.signBy, "sign-by", "", "sign the image using a GPG key with the specified `FINGERPRINT`")
-	fs.StringVar(&manifestPushOpts.signaturePolicy, "signature-policy", "", "`pathname` of signature policy file (not usually used)")
-	fs.BoolVar(&manifestPushOpts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVarP(&manifestPushOpts.quiet, "quiet", "q", false, "don't output progress information when pushing lists")
+	fs.StringVar(
+		&manifestPushOpts.authfile,
+		"authfile",
+		auth.GetDefaultAuthFile(),
+		"path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override",
+	)
+	fs.StringVar(
+		&manifestPushOpts.certDir,
+		"cert-dir",
+		"",
+		"use certificates at the specified path to access the registry",
+	)
+	fs.StringVar(
+		&manifestPushOpts.creds,
+		"creds",
+		"",
+		"use `[username[:password]]` for accessing the registry",
+	)
+	fs.StringVar(
+		&manifestPushOpts.digestfile,
+		"digestfile",
+		"",
+		"after copying the image, write the digest of the resulting digest to the file",
+	)
+	fs.StringVarP(
+		&manifestPushOpts.format,
+		"format",
+		"f",
+		"",
+		"manifest type (oci or v2s2) to attempt to use when pushing the manifest list (default is manifest type of source)",
+	)
+	fs.BoolVarP(
+		&manifestPushOpts.removeSignatures,
+		"remove-signatures",
+		"",
+		false,
+		"don't copy signatures when pushing images",
+	)
+	fs.StringVar(
+		&manifestPushOpts.signBy,
+		"sign-by",
+		"",
+		"sign the image using a GPG key with the specified `FINGERPRINT`",
+	)
+	fs.StringVar(
+		&manifestPushOpts.signaturePolicy,
+		"signature-policy",
+		"",
+		"`pathname` of signature policy file (not usually used)",
+	)
+	fs.BoolVar(
+		&manifestPushOpts.insecure,
+		"insecure",
+		false,
+		"neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	fs.BoolVar(
+		&manifestPushOpts.tlsVerify,
+		"tls-verify",
+		false,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	fs.BoolVarP(
+		&manifestPushOpts.quiet,
+		"quiet",
+		"q",
+		false,
+		"don't output progress information when pushing lists",
+	)
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	bailOnError(markFlagsHidden(fs, "signature-policy", "insecure", "tls-verify"), "")
 	manifestCommand.AddCommand(manifestPushCommand)
 
 	manifestRmCommand := &cobra.Command{
-		Use:   "rm",
-		Short: "Remove manifest list or image index",
-		Long:  manifestRmDescription,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return manifestRmCmd(cmd, args)
-		},
-		Example: fmt.Sprintf(`%s manifest rm mylist:v1.11`, rootCmd.CommandPath()),
+		Use:     "rm",
+		Short:   "Remove manifest list or image index",
+		Long:    manifestRmDescription,
+		RunE:    manifestRmCmd,
+		Example: rootCmd.CommandPath() + " manifest rm mylist:v1.11",
 		Args:    cobra.MinimumNArgs(1),
 	}
 	manifestRmCommand.SetUsageTemplate(UsageTemplate())
@@ -283,7 +426,10 @@ func manifestExistsCmd(c *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -316,7 +462,10 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -344,7 +493,10 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 				break
 			}
 			if list == nil {
-				return fmt.Errorf("--amend specified but no matching manifest list found with name %q", listImageSpec)
+				return fmt.Errorf(
+					"--amend specified but no matching manifest list found with name %q",
+					listImageSpec,
+				)
 			}
 		} else {
 			return err
@@ -387,8 +539,10 @@ func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error
 		return err
 	}
 
-	listImageSpec := ""
-	imageSpec := ""
+	var (
+		listImageSpec string
+		imageSpec     string
+	)
 	switch len(args) {
 	case 0, 1:
 		return errors.New("at least a list image and an image to add must be specified")
@@ -414,7 +568,10 @@ func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -507,11 +664,13 @@ func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error
 }
 
 func manifestRemoveCmd(c *cobra.Command, args []string, _ manifestRemoveOpts) error {
-	listImageSpec := ""
+	var listImageSpec string
 	var instanceDigest digest.Digest
 	switch len(args) {
 	case 0, 1:
-		return errors.New("at least a list image and one or more instance digests must be specified")
+		return errors.New(
+			"at least a list image and one or more instance digests must be specified",
+		)
 	case 2:
 		listImageSpec = args[0]
 		if listImageSpec == "" {
@@ -523,11 +682,13 @@ func manifestRemoveCmd(c *cobra.Command, args []string, _ manifestRemoveOpts) er
 		}
 		d, err := digest.Parse(instanceSpec)
 		if err != nil {
-			return fmt.Errorf(`invalid instance "%s": %v`, args[1], err)
+			return fmt.Errorf(`invalid instance "%s": %w`, args[1], err)
 		}
 		instanceDigest = d
 	default:
-		return errors.New("at least two arguments are necessary: list and digest of instance to remove from list")
+		return errors.New(
+			"at least two arguments are necessary: list and digest of instance to remove from list",
+		)
 	}
 
 	store, err := getStore(c)
@@ -540,7 +701,10 @@ func manifestRemoveCmd(c *cobra.Command, args []string, _ manifestRemoveOpts) er
 		return fmt.Errorf("building system context: %w", err)
 	}
 
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -569,7 +733,10 @@ func manifestRmCmd(c *cobra.Command, args []string) error {
 		return fmt.Errorf("building system context: %w", err)
 	}
 
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -596,7 +763,7 @@ func manifestRmCmd(c *cobra.Command, args []string) error {
 }
 
 func manifestAnnotateCmd(c *cobra.Command, args []string, opts manifestAnnotateOpts) error {
-	listImageSpec := ""
+	var listImageSpec string
 	imageSpec := ""
 	switch len(args) {
 	case 0:
@@ -628,7 +795,10 @@ func manifestAnnotateCmd(c *cobra.Command, args []string, opts manifestAnnotateO
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -718,7 +888,7 @@ func manifestAnnotateCmd(c *cobra.Command, args []string, opts manifestAnnotateO
 }
 
 func manifestInspectCmd(c *cobra.Command, args []string, _ manifestInspectOpts) error {
-	imageSpec := ""
+	var imageSpec string
 	switch len(args) {
 	case 0:
 		return errors.New("at least a source list ID must be specified")
@@ -744,8 +914,16 @@ func manifestInspectCmd(c *cobra.Command, args []string, _ manifestInspectOpts) 
 	return manifestInspect(getContext(), store, systemContext, imageSpec)
 }
 
-func manifestInspect(ctx context.Context, store storage.Store, systemContext *types.SystemContext, imageSpec string) error {
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+func manifestInspect(
+	ctx context.Context,
+	store storage.Store,
+	systemContext *types.SystemContext,
+	imageSpec string,
+) error {
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -807,7 +985,7 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ty
 		if latestErr == nil {
 			latestErr = e
 		} else {
-			latestErr = fmt.Errorf("tried %v: %w", e, latestErr)
+			latestErr = fmt.Errorf("tried %w: %w", e, latestErr)
 		}
 	}
 
@@ -849,8 +1027,10 @@ func manifestPushCmd(c *cobra.Command, args []string, opts pushOptions) error {
 		return err
 	}
 
-	listImageSpec := ""
-	destSpec := ""
+	var (
+		listImageSpec string
+		destSpec      string
+	)
 	switch len(args) {
 	case 0:
 		return errors.New("at least a source list ID must be specified")
@@ -881,8 +1061,16 @@ func manifestPushCmd(c *cobra.Command, args []string, opts pushOptions) error {
 	return manifestPush(systemContext, store, listImageSpec, destSpec, opts)
 }
 
-func manifestPush(systemContext *types.SystemContext, store storage.Store, listImageSpec, destSpec string, opts pushOptions) error {
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+func manifestPush(
+	systemContext *types.SystemContext,
+	store storage.Store,
+	listImageSpec, destSpec string,
+	opts pushOptions,
+) error {
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}
@@ -910,7 +1098,10 @@ func manifestPush(systemContext *types.SystemContext, store storage.Store, listI
 		case "v2s2", "docker":
 			manifestType = manifest.DockerV2Schema2MediaType
 		default:
-			return fmt.Errorf("unknown format %q. Choose on of the supported formats: 'oci' or 'v2s2'", opts.format)
+			return fmt.Errorf(
+				"unknown format %q. Choose on of the supported formats: 'oci' or 'v2s2'",
+				opts.format,
+			)
 		}
 	}
 
@@ -937,8 +1128,11 @@ func manifestPush(systemContext *types.SystemContext, store storage.Store, listI
 	}
 
 	if opts.digestfile != "" {
-		if err = os.WriteFile(opts.digestfile, []byte(digest.String()), 0644); err != nil {
-			return util.GetFailureCause(err, fmt.Errorf("failed to write digest to file %q: %w", opts.digestfile, err))
+		if err = os.WriteFile(opts.digestfile, []byte(digest.String()), 0o644); err != nil {
+			return util.GetFailureCause(
+				err,
+				fmt.Errorf("failed to write digest to file %q: %w", opts.digestfile, err),
+			)
 		}
 	}
 
