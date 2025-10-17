@@ -13,6 +13,11 @@ on:
         default: "latest"
         required: false
         type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
   workflow_dispatch:
     inputs:
       push_image:
@@ -25,6 +30,11 @@ on:
         default: "latest"
         required: false
         type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
   push:
     branches: [ "main" ]
     paths:
@@ -62,7 +72,7 @@ jobs:
         run: bash ./scripts/resolve-modules.sh ./webhooks
 
   golangci-lint:
-    if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
+    if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request') }}
     needs: [ resolve-modules ]
     runs-on: ubuntu-24.04
     strategy:
@@ -78,14 +88,16 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+        run: |
+          sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.64.5
+          version: v2.5.0
           working-directory: ${{ matrix.workdir }}
-          args: "--out-${NO_FUTURE}format colored-line-number"
+          # args between =, not space
+          args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
   image-build:
     runs-on: ubuntu-24.04
