@@ -18,7 +18,7 @@ const (
 	ReasonUnknown           reason = "unknown"
 )
 
-// podInfo 包含失败原因、节点信息及锁
+// podInfo contains failure reasons, node information and lock
 type podInfo struct {
 	mu        sync.Mutex
 	reasons   map[string]failureInfo // key: container name, value: failureInfo with node info
@@ -26,15 +26,15 @@ type podInfo struct {
 	podName   string
 }
 
-// failureInfo 现在包含节点信息和镜像信息,确保 Dec 操作在正确的节点上执行
+// failureInfo now includes node and image information to ensure Dec operations execute on the correct node
 type failureInfo struct {
-	registry string // 镜像仓库
-	nodeName string // 节点信息
-	image    string // 镜像信息
-	reason   reason // 失败原因
+	registry string // Image registry
+	nodeName string // Node information
+	image    string // Image information
+	reason   reason // Failure reason
 }
 
-// slowPullInfo 记录慢拉取的信息
+// slowPullInfo records slow pull information
 type slowPullInfo struct {
 	namespace string
 	podName   string

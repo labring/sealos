@@ -31,15 +31,15 @@ func checkImagePullError(
 			cs.State.Waiting.Message,
 		)
 		registry := parseRegistry(cs.Image)
-		// 使用容器名作为 key
+		// Use container name as key
 		reasons[cs.Name] = failureInfo{
 			registry: registry,
-			nodeName: nodeName,   // 记录当前节点
-			image:    cs.Image,   // 记录镜像信息
-			reason:   classified, // 记录失败原因
+			nodeName: nodeName,   // Record current node
+			image:    cs.Image,   // Record image info
+			reason:   classified, // Record failure reason
 		}
 
-		// 如果是失败状态,清理对应的慢拉取状态
+		// If in failure state, clean up corresponding slow pull state
 		key := fmt.Sprintf("%s/%s/%s", pod.Namespace, pod.Name, cs.Name)
 		cleanupSlowPull(key)
 	}

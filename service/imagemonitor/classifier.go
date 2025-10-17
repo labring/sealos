@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// 为不同失败原因预定义正则表达式,用于根据错误信息做归类
+// Predefined regular expressions for different failure reasons, used to classify error messages
 var (
 	reImageNotFound = regexp.MustCompile(
 		`(?i)not found|NotFound|manifest unknown|repository does not exist`,
@@ -21,7 +21,7 @@ var (
 	reNetworkError      = regexp.MustCompile(`(?i)failed to do request`)
 )
 
-// isBackOffPullingImage 检查是否为 back-off pulling image 状态
+// isBackOffPullingImage checks if the state is back-off pulling image
 func isBackOffPullingImage(reason, message string) bool {
 	if strings.ToLower(reason) == "imagepullbackoff" {
 		return true
@@ -88,7 +88,7 @@ func classifyFailureReason(r, message string) reason {
 			return ReasonBackOff
 		}
 
-		log.Printf("[Classify] 未知错误分类 reason=%s message=%s", r, message)
+		log.Printf("[Classify] Unknown error classification reason=%s message=%s", r, message)
 
 		return ReasonUnknown
 	default:
@@ -96,7 +96,7 @@ func classifyFailureReason(r, message string) reason {
 	}
 }
 
-// isSpecificReason 判断是否为具体的失败原因(非 back_off_pulling_image)
+// isSpecificReason determines if it's a specific failure reason (not back_off_pulling_image)
 func isSpecificReason(reason string) bool {
 	return reason != ReasonBackOff && reason != ReasonUnknown
 }

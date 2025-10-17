@@ -4,7 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// 定义Prometheus指标
+// Define Prometheus metrics
 var (
 	//nolint:promlinter
 	imagePullFailureGauge = prometheus.NewGaugeVec(
@@ -14,7 +14,7 @@ var (
 		},
 		[]string{"exported_namespace", "exported_pod", "node", "registry", "image", "reason"},
 	)
-	// 改为 Gauge 类型,可以进行 Inc 和 Dec 操作
+	// Changed to Gauge type, allowing Inc and Dec operations
 	//nolint:promlinter
 	imagePullSlowAlertGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{

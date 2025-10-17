@@ -30,7 +30,7 @@ func onPodAddOrUpdate(obj any) {
 		len(pod.Status.ContainerStatuses),
 	)
 
-	// 遍历 InitContainerStatuses + ContainerStatuses
+	// Iterate through InitContainerStatuses + ContainerStatuses
 	for _, cs := range pod.Status.InitContainerStatuses {
 		checkSlowPull(pod.Namespace, pod.Name, cs, cs.Image)
 	}
@@ -51,7 +51,7 @@ func onPodAddOrUpdate(obj any) {
 
 	pi, ok := piVal.(*podInfo)
 	if !ok {
-		log.Printf("[onPodAddOrUpdate] 无法解析已添加对象类型: %T", piVal)
+		log.Printf("[onPodAddOrUpdate] Unable to parse added object type: %T", piVal)
 		return
 	}
 
@@ -69,13 +69,13 @@ func onPodDelete(obj any) {
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
-			log.Printf("[onPodDelete] 无法解析已删除对象类型: %T", obj)
+			log.Printf("[onPodDelete] Unable to parse deleted object type: %T", obj)
 			return
 		}
 
 		pod, ok = tombstone.Obj.(*corev1.Pod)
 		if !ok {
-			log.Printf("[onPodDelete] Tombstone 对象无法转换: %T", tombstone.Obj)
+			log.Printf("[onPodDelete] Unable to convert tombstone object: %T", tombstone.Obj)
 			return
 		}
 	}
@@ -88,7 +88,7 @@ func onPodDelete(obj any) {
 	if loaded {
 		pi, ok := reasonsVal.(*podInfo)
 		if !ok {
-			log.Printf("[onPodDelete] 无法解析已删除对象类型: %T", reasonsVal)
+			log.Printf("[onPodDelete] Unable to parse deleted object type: %T", reasonsVal)
 			return
 		}
 
@@ -102,7 +102,7 @@ func onPodDelete(obj any) {
 			len(pi.reasons),
 		)
 
-		// 使用存储的节点信息进行 Dec 操作,确保在正确的节点上执行
+		// Use stored node information for Dec operation to ensure execution on correct node
 		for containerName, info := range pi.reasons {
 			log.Printf(
 				"[onPodDelete] Dec gauge: namespace=%s pod=%s container=%s node=%s registry=%s image=%s reason=%s",
@@ -127,7 +127,7 @@ func onPodDelete(obj any) {
 		log.Printf("[onPodDelete] pod %s not found in podFailures", key)
 	}
 
-	// 清理慢拉取相关的状态
+	// Clean up slow pull related state
 	prefix := key + "/"
 	slowPullTimers.Range(newCleanupSlowPullWithPrefixFunc(prefix))
 	slowPullTracking.Range(newCleanupSlowPullWithPrefixFunc(prefix))
@@ -137,7 +137,7 @@ func updateReasons(
 	pi *podInfo,
 	reasons map[string]failureInfo,
 ) {
-	// 删除旧的原因 - 使用存储的节点信息
+	// Remove old reasons - use stored node information
 	for containerName, oldInfo := range pi.reasons {
 		if _, found := reasons[containerName]; !found {
 			log.Printf(
@@ -162,14 +162,14 @@ func updateReasons(
 		}
 	}
 
-	// 添加新的原因
+	// Add new reasons
 	for containerName, info := range reasons {
 		oldInfo, found := pi.reasons[containerName]
 		if found {
-			// 检查是否需要保留原有的具体原因
+			// Check if we need to preserve the existing specific reason
 			finalReason := info.reason
 
-			// 如果新的原因是 back_off_pulling_image,且其他信息没变,且之前有具体原因,则保留具体原因
+			// If the new reason is back_off_pulling_image, and other info hasn't changed, and there was a specific reason before, preserve the specific reason
 			if info.reason == ReasonBackOff &&
 				oldInfo.nodeName == info.nodeName &&
 				oldInfo.image == info.image &&
@@ -185,7 +185,7 @@ func updateReasons(
 				)
 			}
 
-			// 检查是否有变化(节点、失败原因、镜像等)
+			// Check if there are changes (node, failure reason, image, etc.)
 			if oldInfo.nodeName != info.nodeName || oldInfo.reason != finalReason ||
 				oldInfo.image != info.image {
 				log.Printf(
@@ -201,7 +201,7 @@ func updateReasons(
 					info.image,
 				)
 
-				// 在旧信息上 Dec
+				// Dec on old information
 				imagePullFailureGauge.DeleteLabelValues(
 					pi.namespace,
 					pi.podName,
@@ -210,15 +210,15 @@ func updateReasons(
 					oldInfo.image,
 					oldInfo.reason,
 				)
-				// 在新信息上 Inc
+				// Inc on new information
 				imagePullFailureGauge.WithLabelValues(pi.namespace, pi.podName, info.nodeName, info.registry, info.image, finalReason).
 					Set(1)
 
-				// 更新存储的信息,使用最终确定的原因
+				// Update stored information using the final determined reason
 				info.reason = finalReason
 				pi.reasons[containerName] = info
 			} else if oldInfo.reason != finalReason {
-				// 只有原因发生变化的情况
+				// Case where only the reason has changed
 				log.Printf(
 					"[UpdateReasons] Only reason changed for %s/%s container=%s: %s->%s",
 					pi.namespace,
@@ -246,7 +246,7 @@ func updateReasons(
 			continue
 		}
 
-		// 全新的失败容器
+		// Brand new failed container
 		log.Printf(
 			"[UpdateReasons] Inc gauge: namespace=%s pod=%s container=%s node=%s registry=%s image=%s reason=%s",
 			pi.namespace,

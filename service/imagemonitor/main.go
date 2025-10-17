@@ -19,11 +19,11 @@ import (
 )
 
 func main() {
-	// 注册 Prometheus 指标
+	// Register Prometheus metrics
 	prometheus.MustRegister(imagePullFailureGauge)
 	prometheus.MustRegister(imagePullSlowAlertGauge)
 
-	// 创建 in-cluster 配置
+	// Create in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Fatalf("Error creating in-cluster config: %v", err)
@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("Error creating Kubernetes clientset: %v", err)
 	}
 
-	// 创建 informer
+	// Create informer
 	factory := informers.NewSharedInformerFactory(clientset, 0)
 	podInformer := factory.Core().V1().Pods().Informer()
 	_, _ = podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -53,7 +53,7 @@ func main() {
 		log.Fatalf("Timed out waiting for caches to sync")
 	}
 
-	// HTTP server 和优雅停机
+	// HTTP server and graceful shutdown
 	srv := &http.Server{
 		Addr:              ":8080",
 		Handler:           promhttp.Handler(),
@@ -67,7 +67,7 @@ func main() {
 		}
 	}()
 
-	// 捕获信号
+	// Capture signals
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh

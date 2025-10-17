@@ -12,10 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// slowPullTimers 存储 image pull 定时器
+// slowPullTimers stores image pull timers
 var slowPullTimers sync.Map // key:string -> *time.Timer
 
-// slowPullTracking 跟踪当前的慢拉取状态
+// slowPullTracking tracks current slow pull state
 var slowPullTracking sync.Map // key: namespace/pod/container -> slowPullInfo
 
 func newCheckSlowPullHandler(
@@ -30,7 +30,7 @@ func newCheckSlowPullHandler(
 			Pods(ns).
 			Get(context.Background(), podName, metav1.GetOptions{})
 		if err != nil {
-			log.Printf("[SlowPull] 获取 Pod %s/%s 失败: %v", ns, podName, err)
+			log.Printf("[SlowPull] Failed to get Pod %s/%s: %v", ns, podName, err)
 			return
 		}
 
@@ -45,7 +45,7 @@ func newCheckSlowPullHandler(
 				continue
 			}
 
-			// 检查容器是否仍在等待且不是失败状态
+			// Check if container is still waiting and not in failure state
 			if newCs.ContainerID != "" ||
 				newCs.State.Waiting == nil ||
 				!isImagePullSlowReason(newCs.State.Waiting.Reason) ||
@@ -58,7 +58,7 @@ func newCheckSlowPullHandler(
 
 			registry := parseRegistry(image)
 
-			// 记录慢拉取状态
+			// Record slow pull state
 			slowPullInfo := slowPullInfo{
 				namespace: ns,
 				podName:   podName,
@@ -68,7 +68,7 @@ func newCheckSlowPullHandler(
 			}
 			slowPullTracking.Store(slowPullTimerKey, slowPullInfo)
 
-			// 增加慢拉取指标
+			// Increment slow pull metric
 			imagePullSlowAlertGauge.WithLabelValues(ns, podName, nodeName, registry, image).
 				Set(1)
 
@@ -90,7 +90,7 @@ func newCheckSlowPullHandler(
 func checkSlowPull(ns, podName string, cs corev1.ContainerStatus, image string) {
 	slowPullTimerKey := fmt.Sprintf("%s/%s/%s", ns, podName, cs.Name)
 
-	// 检查是否为 image pull slow 状态
+	// Check if in image pull slow state
 	if cs.ContainerID != "" ||
 		cs.State.Waiting == nil ||
 		!isImagePullSlowReason(cs.State.Waiting.Reason) ||
@@ -100,9 +100,9 @@ func checkSlowPull(ns, podName string, cs corev1.ContainerStatus, image string) 
 		return
 	}
 
-	// 检查是否已经有定时器在运行
+	// Check if a timer is already running
 	if _, exists := slowPullTimers.Load(slowPullTimerKey); exists {
-		// 定时器已存在,不需要重复创建
+		// Timer already exists, no need to create duplicate
 		return
 	}
 
@@ -133,7 +133,7 @@ func newCleanupSlowPullWithPrefixFunc(prefix string) func(k, v any) bool {
 	}
 }
 
-// cleanupSlowPull 清理慢拉取状态
+// cleanupSlowPull cleans up slow pull state
 func cleanupSlowPull(slowPullTimerKey string) {
 	if val, exists := slowPullTracking.LoadAndDelete(slowPullTimerKey); exists {
 		if info, ok := val.(slowPullInfo); ok {
@@ -155,7 +155,7 @@ func cleanupSlowPull(slowPullTimerKey string) {
 		}
 	}
 
-	// 同时清理定时器
+	// Also clean up timer
 	if val, exists := slowPullTimers.LoadAndDelete(slowPullTimerKey); exists {
 		if t, ok := val.(*time.Timer); ok {
 			t.Stop()
