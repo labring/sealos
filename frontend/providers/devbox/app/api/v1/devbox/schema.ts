@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-
 const CpuOptions = z.union([
   z.literal(0.1), z.literal(0.2), z.literal(0.5), 
   z.literal(1), z.literal(2), z.literal(4), z.literal(8), z.literal(16)
@@ -12,7 +11,6 @@ const CpuOptions = z.union([
   example: 1
 });
 
-
 const MemoryOptions = z.union([
   z.literal(0.1), z.literal(0.5), z.literal(1), z.literal(2), 
   z.literal(4), z.literal(8), z.literal(16), z.literal(32)
@@ -20,7 +18,6 @@ const MemoryOptions = z.union([
   description: 'Memory in GB - will be converted to Gi format (e.g., 1 -> 1Gi)',
   example: 2
 });
-
 
 const RuntimeName = z.enum([
 'nuxt3',
@@ -54,17 +51,16 @@ const RuntimeName = z.enum([
 'astro',
 'umi',
 'gin',
+'node.js',
 'echo',
 'rust'
 ]).openapi({
   description: 'Runtime environment name (lowercase)'
 });
 
-
 const ProtocolType = z.enum(['HTTP', 'GRPC', 'WS']).openapi({
   description: 'Protocol type'
 });
-
 
 const PortConfig = z.object({
   number: z.number().min(1).max(65535).openapi({
@@ -81,7 +77,6 @@ const PortConfig = z.object({
   })
 });
 
-
 const ResourceConfig = z.object({
   cpu: CpuOptions.openapi({
     description: 'CPU allocation in cores'
@@ -91,6 +86,32 @@ const ResourceConfig = z.object({
   })
 });
 
+const EnvConfig = z.object({
+  name: z.string().min(1).openapi({
+    description: 'Environment variable name'
+  }),
+  value: z.string().optional().openapi({
+    description: 'Environment variable value'
+  }),
+  valueFrom: z.object({
+    secretKeyRef: z.object({
+      key: z.string().openapi({
+        description: 'Secret key'
+      }),
+      name: z.string().openapi({
+        description: 'Secret name'
+      })
+    })
+  }).optional().openapi({
+    description: 'Source for the environment variable value'
+  })
+}).refine(
+  (data) => data.value || data.valueFrom,
+  {
+    message: "Either 'value' or 'valueFrom' must be provided",
+    path: ["value", "valueFrom"]
+  }
+);
 
 export const RequestSchema = z.object({
   name: z.string().min(1).max(63).regex(/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/).openapi({
@@ -104,9 +125,14 @@ export const RequestSchema = z.object({
   }),
   ports: z.array(PortConfig).optional().default([]).openapi({
     description: 'Port configurations (optional, can be empty)'
+  }),
+  env: z.array(EnvConfig).optional().default([]).openapi({
+    description: 'Environment variables (optional, can be empty)'
+  }),
+  autostart: z.boolean().optional().default(false).openapi({
+    description: 'Auto start devbox after creation (defaults to false)'
   })
 });
-
 
 const PortResponseData = z.object({
   portName: z.string().openapi({
@@ -132,7 +158,6 @@ const PortResponseData = z.object({
   })
 });
 
-
 export const SuccessResponseSchema = z.object({
   data: z.object({
     name: z.string().openapi({
@@ -155,10 +180,12 @@ export const SuccessResponseSchema = z.object({
     }),
     ports: z.array(PortResponseData).optional().openapi({
       description: 'Created port configurations'
+    }),
+    autostarted: z.boolean().optional().openapi({
+      description: 'Whether autostart was triggered'
     })
   })
 });
-
 
 export const ErrorResponseSchema = z.object({
   code: z.number().openapi({

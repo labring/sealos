@@ -17,6 +17,8 @@ type State = {
   setScreenWidth: (e: number) => void;
   lastRoute: string;
   setLastRoute: (val: string) => void;
+  isInitialized: boolean;
+  setInitialized: (val: boolean) => void;
 };
 
 export const useGlobalStore = create<State>()(
@@ -32,6 +34,12 @@ export const useGlobalStore = create<State>()(
       setLastRoute(val) {
         set((state) => {
           state.lastRoute = val;
+        });
+      },
+      isInitialized: false,
+      setInitialized(val) {
+        set((state) => {
+          state.isInitialized = val;
         });
       }
     }))
