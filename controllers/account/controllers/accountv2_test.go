@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/labring/sealos/controllers/pkg/database"
-
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 )
@@ -67,11 +66,11 @@ func TestAccountV2_GetAccount(t *testing.T) {
 	}
 	t.Logf("success create account: %+v", aa)
 
-	//aa, err = account.GetAccount(&types.UserQueryOpts{Owner: "1ycieb5b"})
-	//if err != nil {
+	// aa, err = account.GetAccount(&types.UserQueryOpts{Owner: "1ycieb5b"})
+	// if err != nil {
 	//	t.Errorf("failed to get account: %v", err)
 	//}
-	//t.Logf("success create account: %+v", aa)
+	// t.Logf("success create account: %+v", aa)
 }
 
 func TestAccountV2_GetUser(t *testing.T) {
@@ -101,7 +100,11 @@ func TestAccountV2_TransferAccount(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	err = account.TransferAccount(&types.UserQueryOpts{Owner: "eoxwhh80"}, &types.UserQueryOpts{Owner: "1ycieb5b"}, 85*cockroach.BaseUnit)
+	err = account.TransferAccount(
+		&types.UserQueryOpts{Owner: "eoxwhh80"},
+		&types.UserQueryOpts{Owner: "1ycieb5b"},
+		85*cockroach.BaseUnit,
+	)
 	if err != nil {
 		t.Errorf("failed to transfer account: %v", err)
 	}
@@ -128,11 +131,11 @@ func TestAccountV2_AddBalance(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	//err = account.AddBalance(&types.UserQueryOpts{Owner: "zzxns1si"}, 100*cockroach.BaseUnit)
-	//if err != nil {
+	// err = account.AddBalance(&types.UserQueryOpts{Owner: "zzxns1si"}, 100*cockroach.BaseUnit)
+	// if err != nil {
 	//	t.Errorf("failed to add balance: %v", err)
 	//}
-	//err = account.AddDeductionBalance(&types.UserQueryOpts{Owner: "zzxns1si"}, 999*cockroach.BaseUnit)
+	// err = account.AddDeductionBalance(&types.UserQueryOpts{Owner: "zzxns1si"}, 999*cockroach.BaseUnit)
 	//if err != nil {
 	//	t.Fatalf("failed to add deduction balance: %v", err)
 	//}
@@ -143,5 +146,8 @@ func TestAccountV2_AddBalance(t *testing.T) {
 	t.Logf("success create DeductionBalance: %+v", aa.DeductionBalance/cockroach.BaseUnit)
 
 	t.Logf("success create Balance: %+v", aa.Balance/cockroach.BaseUnit)
-	t.Logf("success create accountbalance: %+v", (aa.Balance-aa.DeductionBalance)/cockroach.BaseUnit)
+	t.Logf(
+		"success create accountbalance: %+v",
+		(aa.Balance-aa.DeductionBalance)/cockroach.BaseUnit,
+	)
 }

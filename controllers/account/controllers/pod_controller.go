@@ -21,18 +21,15 @@ import (
 	"os"
 	"strconv"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
-
 	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // PodReconciler reconciles a Pod object
@@ -63,7 +60,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// Fetch the pod
 	pod := corev1.Pod{}
 
-	err := r.Client.Get(ctx, req.NamespacedName, &pod)
+	err := r.Get(ctx, req.NamespacedName, &pod)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -90,7 +87,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 func (r *PodReconciler) patchStatus(ctx context.Context, pod *corev1.Pod) error {
 	key := client.ObjectKeyFromObject(pod)
 	latest := &corev1.Pod{}
-	if err := r.Client.Get(ctx, key, latest); err != nil {
+	if err := r.Get(ctx, key, latest); err != nil {
 		return err
 	}
 

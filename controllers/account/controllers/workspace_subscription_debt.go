@@ -8,15 +8,12 @@ import (
 	"sync"
 	"time"
 
-	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
-
 	"github.com/labring/sealos/controllers/pkg/types"
+	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types2 "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,7 +71,9 @@ var workspaceTitleTemplateZHMap = map[types.SubscriptionStatus]string{
 }
 
 // NewWorkspaceSubscriptionDebtProcessor 创建工作空间订阅债务处理器
-func NewWorkspaceSubscriptionDebtProcessor(reconciler *AccountReconciler) *WorkspaceSubscriptionDebtProcessor {
+func NewWorkspaceSubscriptionDebtProcessor(
+	reconciler *AccountReconciler,
+) *WorkspaceSubscriptionDebtProcessor {
 	return &WorkspaceSubscriptionDebtProcessor{
 		AccountReconciler: reconciler,
 		db:                reconciler.AccountV2.GetGlobalDB(),
@@ -125,7 +124,9 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) Stop() {
 	wdp.wg.Wait()
 }
 
-func (wdp *WorkspaceSubscriptionDebtProcessor) determineCurrentStatus(expireTime time.Time) types.SubscriptionStatus {
+func (wdp *WorkspaceSubscriptionDebtProcessor) determineCurrentStatus(
+	expireTime time.Time,
+) types.SubscriptionStatus {
 	now := time.Now().UTC()
 	if expireTime.After(now) {
 		return types.SubscriptionStatusNormal
@@ -140,7 +141,9 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) determineCurrentStatus(expireTime
 }
 
 // processExpiredWorkspaces 处理过期的工作空间
-func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(ctx context.Context) (int, error) {
+func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(
+	ctx context.Context,
+) (int, error) {
 	now := time.Now().UTC()
 	processedCount := 0
 
@@ -179,10 +182,15 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(ctx cont
 			types.SubscriptionStatusDebtPreDeletion).
 		Find(&preDeletionExpiredSubscriptions).Error
 	if err != nil {
-		return 0, fmt.Errorf("failed to query pre-deletion expired workspace subscriptions: %w", err)
+		return 0, fmt.Errorf(
+			"failed to query pre-deletion expired workspace subscriptions: %w",
+			err,
+		)
 	}
 
-	subscriptions := append(append(normalExpiredSubscriptions, debtExpiredSubscriptions...), preDeletionExpiredSubscriptions...)
+	subscriptions := append(
+		append(normalExpiredSubscriptions, debtExpiredSubscriptions...),
+		preDeletionExpiredSubscriptions...)
 
 	for i := range subscriptions {
 		if subscriptions[i].Status == types.SubscriptionStatusDeleted {
@@ -209,7 +217,11 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(ctx cont
 }
 
 // processExpiredWorkspace 处理单个过期的工作空间
-func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspace(ctx context.Context, subscription *types.WorkspaceSubscription, now time.Time) error {
+func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspace(
+	ctx context.Context,
+	subscription *types.WorkspaceSubscription,
+	now time.Time,
+) error {
 	currentStatus, lastStatus := wdp.determineCurrentStatus(now), subscription.Status
 	if lastStatus == currentStatus {
 		return nil
@@ -234,23 +246,23 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 	ctx context.Context,
 	subscription *types.WorkspaceSubscription,
 	lastDebtStatus,
-	currentDebtStatus types.SubscriptionStatus) error {
+	currentDebtStatus types.SubscriptionStatus,
+) error {
 	namespaces := []string{subscription.Workspace}
 
 	// 获取namespace状态，如果是删除中则跳过
 	ns := &corev1.Namespace{}
-	if err := wdp.Get(ctx, types2.NamespacedName{Name: subscription.Workspace}, ns); err != nil && !apierrors.IsNotFound(err) {
+	if err := wdp.Get(ctx, types2.NamespacedName{Name: subscription.Workspace}, ns); err != nil &&
+		!apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to get namespace %s: %w", subscription.Workspace, err)
-	} else {
-		if apierrors.IsNotFound(err) || ns.DeletionTimestamp != nil || ns.Status.Phase == corev1.NamespaceTerminating {
-			if subscription.CreateAt.After(time.Now().Add(-24 * time.Hour)) {
-				wdp.Logger.Info("Namespace not found or terminating, but subscription is new, skip", "namespace", subscription.Workspace, "currentStatus", currentDebtStatus)
-				return nil
-			}
-			// currentDebtStatus = types.SubscriptionStatusDeleted
-			wdp.Logger.Info("Namespace is terminating, set to Deleted", "namespace", subscription.Workspace, "currentStatus", currentDebtStatus)
-			return wdp.updateSubscriptionStatus(ctx, subscription, types.SubscriptionStatusDeleted)
+	} else if apierrors.IsNotFound(err) || ns.DeletionTimestamp != nil || ns.Status.Phase == corev1.NamespaceTerminating {
+		if subscription.CreateAt.After(time.Now().Add(-24 * time.Hour)) {
+			wdp.Logger.Info("Namespace not found or terminating, but subscription is new, skip", "namespace", subscription.Workspace, "currentStatus", currentDebtStatus)
+			return nil
 		}
+		// currentDebtStatus = types.SubscriptionStatusDeleted
+		wdp.Logger.Info("Namespace is terminating, set to Deleted", "namespace", subscription.Workspace, "currentStatus", currentDebtStatus)
+		return wdp.updateSubscriptionStatus(ctx, subscription, types.SubscriptionStatusDeleted)
 	}
 
 	userUID := subscription.UserUID
@@ -263,14 +275,18 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 	defer wdp.UserContactProvider.RemoveUserContact(userUID)
 
 	eventData := &usernotify.WorkspaceSubscriptionDebtEventData{
-		Type:           usernotify.EventTypeWorkspaceSubscriptionDebt,
-		PlanName:       subscription.PlanName,
-		LastStatus:     lastDebtStatus,
-		CurrentStatus:  currentDebtStatus,
-		DebtDays:       7,
-		RegionDomain:   subscription.RegionDomain,
-		WorkspaceName:  subscription.Workspace,
-		ExpirationDate: fmt.Sprintf("%s-%s", subscription.CurrentPeriodStartAt.Format("2006-01-02"), subscription.CurrentPeriodEndAt.Format("2006-01-02")),
+		Type:          usernotify.EventTypeWorkspaceSubscriptionDebt,
+		PlanName:      subscription.PlanName,
+		LastStatus:    lastDebtStatus,
+		CurrentStatus: currentDebtStatus,
+		DebtDays:      7,
+		RegionDomain:  subscription.RegionDomain,
+		WorkspaceName: subscription.Workspace,
+		ExpirationDate: fmt.Sprintf(
+			"%s-%s",
+			subscription.CurrentPeriodStartAt.Format(time.DateOnly),
+			subscription.CurrentPeriodEndAt.Format(time.DateOnly),
+		),
 	}
 
 	// 根据债务状态进行处理
@@ -286,7 +302,11 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 			return fmt.Errorf("update workspace debt status error: %w", err)
 		}
 		if _, err = wdp.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeDebt, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-			wdp.VLogger.Errorf("failed to send subscription success notification for user %s: %v", userUID, err)
+			wdp.VLogger.Errorf(
+				"failed to send subscription success notification for user %s: %v",
+				userUID,
+				err,
+			)
 			// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
 		}
 
@@ -320,13 +340,25 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 }
 
 // updateSubscriptionStatus 更新订阅状态
-func (wdp *WorkspaceSubscriptionDebtProcessor) updateSubscriptionStatus(ctx context.Context, subscription *types.WorkspaceSubscription, status types.SubscriptionStatus) error {
-	return wdp.db.WithContext(ctx).Debug().Model(&types.WorkspaceSubscription{}).Where("id = ?", subscription.ID).
-		Update("status", status).Error
+func (wdp *WorkspaceSubscriptionDebtProcessor) updateSubscriptionStatus(
+	ctx context.Context,
+	subscription *types.WorkspaceSubscription,
+	status types.SubscriptionStatus,
+) error {
+	return wdp.db.WithContext(ctx).
+		Debug().
+		Model(&types.WorkspaceSubscription{}).
+		Where("id = ?", subscription.ID).
+		Update("status", status).
+		Error
 }
 
 // updateWorkspaceDebtStatus 更新工作空间债务状态
-func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(ctx context.Context, status string, namespaces []string) error {
+func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
+	ctx context.Context,
+	status string,
+	namespaces []string,
+) error {
 	for _, nsName := range namespaces {
 		ns := &corev1.Namespace{}
 		if err := wdp.Get(ctx, types2.NamespacedName{Name: nsName}, ns); err != nil {
@@ -338,7 +370,8 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(ctx con
 		}
 
 		// 检查是否需要更新
-		if ns.Annotations[types.DebtNamespaceAnnoStatusKey] == status || ns.Annotations[types.DebtNamespaceAnnoStatusKey] == status+"Completed" {
+		if ns.Annotations[types.DebtNamespaceAnnoStatusKey] == status ||
+			ns.Annotations[types.DebtNamespaceAnnoStatusKey] == status+"Completed" {
 			if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == status {
 				continue
 			}
@@ -348,7 +381,8 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(ctx con
 
 		original := ns.DeepCopy()
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = status
-		ns.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().Format(time.RFC3339)
+		ns.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().
+			Format(time.RFC3339)
 
 		if err := wdp.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch workspace namespace annotation failed: %w", err)
@@ -358,7 +392,11 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(ctx con
 }
 
 // sendWorkspaceDesktopNotice 发送工作空间桌面通知
-func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(ctx context.Context, debtStatus types.SubscriptionStatus, namespaces []string) error {
+func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(
+	ctx context.Context,
+	debtStatus types.SubscriptionStatus,
+	namespaces []string,
+) error {
 	now := time.Now().UTC().Unix()
 	ntfTmp := &notificationv1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
@@ -402,7 +440,11 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(ctx co
 }
 
 // readWorkspaceNotices 标记工作空间通知为已读
-func (wdp *WorkspaceSubscriptionDebtProcessor) readWorkspaceNotices(ctx context.Context, namespaces []string, noticeTypes ...types.SubscriptionStatus) error {
+func (wdp *WorkspaceSubscriptionDebtProcessor) readWorkspaceNotices(
+	ctx context.Context,
+	namespaces []string,
+	noticeTypes ...types.SubscriptionStatus,
+) error {
 	for _, nsName := range namespaces {
 		for _, noticeStatus := range noticeTypes {
 			ntf := &notificationv1.Notification{}
@@ -433,7 +475,9 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) readWorkspaceNotices(ctx context.
 }
 
 // getWorkspaceStatusesGreaterThan 获取比当前状态级别更高的所有状态
-func (wdp *WorkspaceSubscriptionDebtProcessor) getWorkspaceStatusesGreaterThan(currentStatus types.SubscriptionStatus) []types.SubscriptionStatus {
+func (wdp *WorkspaceSubscriptionDebtProcessor) getWorkspaceStatusesGreaterThan(
+	currentStatus types.SubscriptionStatus,
+) []types.SubscriptionStatus {
 	// 定义状态优先级映射
 	statusPriority := map[types.SubscriptionStatus]int{
 		types.SubscriptionStatusDebt:              0,

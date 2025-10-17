@@ -2,24 +2,21 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
 	"time"
 
-	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
-
+	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
-
+	"github.com/labring/sealos/controllers/pkg/types"
+	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	types2 "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/labring/sealos/controllers/pkg/types"
-
-	"github.com/google/uuid"
-	"github.com/labring/sealos/controllers/pkg/database"
-	"gorm.io/gorm"
 )
 
 // WorkspaceTrafficController handles workspace-level traffic management
@@ -30,7 +27,10 @@ type WorkspaceTrafficController struct {
 }
 
 // NewWorkspaceTrafficController creates a new workspace traffic controller
-func NewWorkspaceTrafficController(ar *AccountReconciler, trafficDBURI database.Interface) *WorkspaceTrafficController {
+func NewWorkspaceTrafficController(
+	ar *AccountReconciler,
+	trafficDBURI database.Interface,
+) *WorkspaceTrafficController {
 	return &WorkspaceTrafficController{
 		TrafficDB:         trafficDBURI,
 		GlobalDB:          ar.AccountV2.GetGlobalDB(),
@@ -45,7 +45,7 @@ func (c *WorkspaceTrafficController) BatchGetWorkspaceSubscriptions() (map[strin
 
 	err := c.GlobalDB.Where("region_domain = ?", c.localDomain).Find(&subscriptions).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get workspace subscriptions: %v", err)
+		return nil, fmt.Errorf("failed to get workspace subscriptions: %w", err)
 	}
 
 	for i := range subscriptions {
@@ -59,7 +59,7 @@ func (c *WorkspaceTrafficController) BatchGetWorkspaceSubscriptions() (map[strin
 func (c *WorkspaceTrafficController) processWorkspaceTraffic(resultMap map[string]int64) error {
 	workspaceMap, err := c.BatchGetWorkspaceSubscriptions()
 	if err != nil {
-		return fmt.Errorf("failed to batch get workspace subscriptions: %v", err)
+		return fmt.Errorf("failed to batch get workspace subscriptions: %w", err)
 	}
 
 	for namespace, consumedBytes := range resultMap {
@@ -82,7 +82,11 @@ func (c *WorkspaceTrafficController) processWorkspaceTraffic(resultMap map[strin
 			/*c.Logger.Error(err, "failed to consume workspace traffic",
 			"workspace", matchedSubscription.Workspace,
 			"region", matchedSubscription.RegionDomain)*/
-			c.VLogger.Errorf("failed to consume workspace traffic for namespace %s, err: %v", namespace, err)
+			c.VLogger.Errorf(
+				"failed to consume workspace traffic for namespace %s, err: %v",
+				namespace,
+				err,
+			)
 		}
 	}
 
@@ -90,16 +94,20 @@ func (c *WorkspaceTrafficController) processWorkspaceTraffic(resultMap map[strin
 }
 
 // consumeWorkspaceTraffic consumes traffic from workspace packages based on priority
-func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types.WorkspaceSubscription, consumedBytes int64) error {
+func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(
+	subscription *types.WorkspaceSubscription,
+	consumedBytes int64,
+) error {
 	// Get available traffic packages ordered by expiry date (nearest expiry first)
 	var availablePackages []types.WorkspaceTraffic
-	err := c.GlobalDB.Model(&types.WorkspaceTraffic{}).Where("workspace_subscription_id = ? AND status = ? AND expired_at > ? AND total_bytes > used_bytes",
-		subscription.ID, types.WorkspaceTrafficStatusActive, time.Now()).
+	err := c.GlobalDB.Model(&types.WorkspaceTraffic{}).
+		Where("workspace_subscription_id = ? AND status = ? AND expired_at > ? AND total_bytes > used_bytes",
+			subscription.ID, types.WorkspaceTrafficStatusActive, time.Now()).
 		Order("expired_at ASC").
-		Find(&availablePackages).Error
-
+		Find(&availablePackages).
+		Error
 	if err != nil {
-		return fmt.Errorf("failed to get available traffic packages: %v", err)
+		return fmt.Errorf("failed to get available traffic packages: %w", err)
 	}
 
 	if len(availablePackages) == 0 {
@@ -150,7 +158,7 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 	if len(packagesToUpdate) > 0 {
 		err = c.batchUpdateTrafficPackages(packagesToUpdate)
 		if err != nil {
-			return fmt.Errorf("failed to update traffic packages: %v", err)
+			return fmt.Errorf("failed to update traffic packages: %w", err)
 		}
 	}
 
@@ -159,13 +167,14 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 
 	// Determine new status
 	var newStatus types.WorkspaceTrafficStatus
-	if remainingToConsume > 0 {
+	switch {
+	case remainingToConsume > 0:
 		// Traffic is used up (even if percentage <100% due to overage)
 		newStatus = types.WorkspaceTrafficStatusUsedUp
-	} else if usagePercentage >= 80 {
+	case usagePercentage >= 80:
 		// 80% or more traffic used, but still available
 		newStatus = types.WorkspaceTrafficStatusExhausted
-	} else {
+	default:
 		newStatus = types.WorkspaceTrafficStatusActive
 	}
 
@@ -174,7 +183,7 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 	if oldStatus != newStatus {
 		err = c.updateWorkspaceTrafficStatus(subscription.ID, newStatus)
 		if err != nil {
-			return fmt.Errorf("failed to update workspace traffic status: %v", err)
+			return fmt.Errorf("failed to update workspace traffic status: %w", err)
 		}
 
 		// Send notification for Exhausted or UsedUp
@@ -188,11 +197,12 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 
 			var usagePercent int
 			var totalBytes, usedBytes int64
-			if newStatus == types.WorkspaceTrafficStatusUsedUp {
+			switch newStatus {
+			case types.WorkspaceTrafficStatusUsedUp:
 				usagePercent = 100
 				totalBytes = 0
 				usedBytes = 0
-			} else if newStatus == types.WorkspaceTrafficStatusExhausted {
+			case types.WorkspaceTrafficStatusExhausted:
 				usagePercent = int(math.Round(usagePercentage))
 				totalBytes = totalTraffic
 				usedBytes = usedTraffic
@@ -227,7 +237,7 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 		if newStatus == types.WorkspaceTrafficStatusUsedUp {
 			err = c.suspendWorkspaceTraffic(subscription.Workspace)
 			if err != nil {
-				return fmt.Errorf("failed to suspend workspace traffic: %v", err)
+				return fmt.Errorf("failed to suspend workspace traffic: %w", err)
 			}
 		}
 	}
@@ -236,22 +246,24 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(subscription *types
 }
 
 // batchUpdateTrafficPackages updates multiple traffic packages
-func (c *WorkspaceTrafficController) batchUpdateTrafficPackages(packages []types.WorkspaceTraffic) error {
+func (c *WorkspaceTrafficController) batchUpdateTrafficPackages(
+	packages []types.WorkspaceTraffic,
+) error {
 	tx := c.GlobalDB.Begin()
 	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %v", tx.Error)
+		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
 	}
 
 	for _, pkg := range packages {
 		err := tx.Model(&types.WorkspaceTraffic{}).Where("id = ?", pkg.ID).
-			Updates(map[string]interface{}{
+			Updates(map[string]any{
 				"used_bytes": pkg.UsedBytes,
 				"status":     pkg.Status,
 				"updated_at": pkg.UpdatedAt,
 			}).Error
 		if err != nil {
 			tx.Rollback()
-			return fmt.Errorf("failed to update package %s: %v", pkg.ID, err)
+			return fmt.Errorf("failed to update package %s: %w", pkg.ID, err)
 		}
 	}
 
@@ -259,18 +271,20 @@ func (c *WorkspaceTrafficController) batchUpdateTrafficPackages(packages []types
 }
 
 // handleNoAvailableTraffic handles the case when workspace has no available traffic
-func (c *WorkspaceTrafficController) handleNoAvailableTraffic(subscription *types.WorkspaceSubscription) error {
+func (c *WorkspaceTrafficController) handleNoAvailableTraffic(
+	subscription *types.WorkspaceSubscription,
+) error {
 	c.Logger.Info("Handling no available traffic", "workspace", subscription.Workspace)
 	oldStatus := subscription.TrafficStatus
 	if oldStatus != types.WorkspaceTrafficStatusUsedUp {
 		err := c.updateWorkspaceTrafficStatus(subscription.ID, types.WorkspaceTrafficStatusUsedUp)
 		if err != nil {
-			return fmt.Errorf("failed to update workspace traffic status: %v", err)
+			return fmt.Errorf("failed to update workspace traffic status: %w", err)
 		}
 
 		err = c.suspendWorkspaceTraffic(subscription.Workspace)
 		if err != nil {
-			return fmt.Errorf("failed to suspend workspace traffic: %v", err)
+			return fmt.Errorf("failed to suspend workspace traffic: %w", err)
 		}
 
 		userUID := subscription.UserUID
@@ -310,13 +324,16 @@ func (c *WorkspaceTrafficController) handleNoAvailableTraffic(subscription *type
 }
 
 // updateWorkspaceTrafficStatus updates the traffic status of a workspace
-func (c *WorkspaceTrafficController) updateWorkspaceTrafficStatus(subscriptionID uuid.UUID, status types.WorkspaceTrafficStatus) error {
+func (c *WorkspaceTrafficController) updateWorkspaceTrafficStatus(
+	subscriptionID uuid.UUID,
+	status types.WorkspaceTrafficStatus,
+) error {
 	result := c.GlobalDB.Model(&types.WorkspaceSubscription{}).
 		Where("id = ?", subscriptionID).
 		Update("traffic_status", status)
 
 	if result.Error != nil {
-		return fmt.Errorf("failed to update traffic status: %v", result.Error)
+		return fmt.Errorf("failed to update traffic status: %w", result.Error)
 	}
 
 	return nil
@@ -346,23 +363,38 @@ func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
 	}
 }
 
-func (r *AccountReconciler) addTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+func (r *AccountReconciler) addTrafficPackage(
+	globalDB *gorm.DB,
+	sub *types.WorkspaceSubscription,
+	plan *types.WorkspaceSubscriptionPlan,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+) error {
 	if plan.Traffic <= 0 {
 		return nil
 	}
 	totalBytes := plan.Traffic * 1024 * 1024 // Convert MiB to Bytes
-	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(globalDB, sub.ID, plan.Traffic, expireAt, from, fromID)
+	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(
+		globalDB,
+		sub.ID,
+		plan.Traffic,
+		expireAt,
+		from,
+		fromID,
+	)
 	if err != nil {
-		return fmt.Errorf("failed to create traffic package: %v", err)
+		return fmt.Errorf("failed to create traffic package: %w", err)
 	}
 	// Check if workspace was previously exhausted or used up and needs to be resumed
-	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp || sub.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
+	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp ||
+		sub.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
 		// Update workspace status to active
 		err = globalDB.Model(&types.WorkspaceSubscription{}).
 			Where("id = ?", sub.ID).
 			Update("traffic_status", types.WorkspaceTrafficStatusActive).Error
 		if err != nil {
-			return fmt.Errorf("failed to update workspace traffic status: %v", err)
+			return fmt.Errorf("failed to update workspace traffic status: %w", err)
 		}
 		// Send resume request
 		err = r.resumeWorkspaceTraffic(sub.Workspace)
@@ -382,23 +414,37 @@ func (r *AccountReconciler) addTrafficPackage(globalDB *gorm.DB, sub *types.Work
 }
 
 // AddTrafficPackage adds a new traffic package to workspace
-func (r *AccountReconciler) AddTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+func (r *AccountReconciler) AddTrafficPackage(
+	globalDB *gorm.DB,
+	sub *types.WorkspaceSubscription,
+	plan *types.WorkspaceSubscriptionPlan,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+) error {
 	if sub.ID == uuid.Nil {
-		return fmt.Errorf("workspace subscription ID cannot be nil")
+		return errors.New("workspace subscription ID cannot be nil")
 	}
 	// Get workspace subscription
 	var subscription types.WorkspaceSubscription
 	err := globalDB.First(&subscription, "id = ?", sub.ID).Error
 	if err != nil {
-		return fmt.Errorf("failed to get workspace subscription: %v", err)
+		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
 	return r.addTrafficPackage(globalDB, &subscription, plan, expireAt, from, fromID)
 }
 
 // NewTrafficPackage adds a new traffic package, tolerating non-existent subscription
-func (r *AccountReconciler) NewTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+func (r *AccountReconciler) NewTrafficPackage(
+	globalDB *gorm.DB,
+	sub *types.WorkspaceSubscription,
+	plan *types.WorkspaceSubscriptionPlan,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+) error {
 	if sub.ID == uuid.Nil {
-		return fmt.Errorf("workspace subscription ID cannot be nil")
+		return errors.New("workspace subscription ID cannot be nil")
 	}
 	return r.addTrafficPackage(globalDB, sub, plan, expireAt, from, fromID)
 }
@@ -410,14 +456,19 @@ func (c *WorkspaceTrafficController) CleanupExpiredPackages() error {
 		Update("status", types.WorkspaceTrafficStatusExpired)
 
 	if result.Error != nil {
-		return fmt.Errorf("failed to cleanup expired packages: %v", result.Error)
+		return fmt.Errorf("failed to cleanup expired packages: %w", result.Error)
 	}
 
 	c.Logger.Info("cleaned up expired traffic packages", "count", result.RowsAffected)
 	return nil
 }
 
-func updateNamespaceStatus(clt client.Client, ctx context.Context, status string, namespaces []string) error {
+func updateNamespaceStatus(
+	clt client.Client,
+	ctx context.Context,
+	status string,
+	namespaces []string,
+) error {
 	for i := range namespaces {
 		ns := &corev1.Namespace{}
 		if err := clt.Get(ctx, types2.NamespacedName{Name: namespaces[i]}, ns); err != nil {
@@ -436,12 +487,22 @@ func updateNamespaceStatus(clt client.Client, ctx context.Context, status string
 
 // suspendWorkspaceTraffic suspends traffic for a workspace
 func (c *WorkspaceTrafficController) suspendWorkspaceTraffic(workspace string) error {
-	return updateNamespaceStatus(c.Client, context.Background(), types.NetworkSuspend, []string{workspace})
+	return updateNamespaceStatus(
+		c.Client,
+		context.Background(),
+		types.NetworkSuspend,
+		[]string{workspace},
+	)
 }
 
 // resumeWorkspaceTraffic resumes traffic for a workspace
 func (r *AccountReconciler) resumeWorkspaceTraffic(workspace string) error {
-	return updateNamespaceStatus(r.Client, context.Background(), types.NetworkResume, []string{workspace})
+	return updateNamespaceStatus(
+		r.Client,
+		context.Background(),
+		types.NetworkResume,
+		[]string{workspace},
+	)
 }
 
 // WorkspaceTrafficManager provides high-level traffic management operations
@@ -458,12 +519,14 @@ func NewWorkspaceTrafficManager(controller *WorkspaceTrafficController) *Workspa
 }
 
 // GetWorkspaceTrafficSummary returns traffic summary for a workspace
-func (m *WorkspaceTrafficManager) GetWorkspaceTrafficSummary(workspace, regionDomain string) (*WorkspaceTrafficSummary, error) {
+func (m *WorkspaceTrafficManager) GetWorkspaceTrafficSummary(
+	workspace, regionDomain string,
+) (*WorkspaceTrafficSummary, error) {
 	var subscription types.WorkspaceSubscription
 	err := m.db.Where("workspace = ? AND region_domain = ?", workspace, regionDomain).
 		First(&subscription).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get workspace subscription: %v", err)
+		return nil, fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
 
 	var packages []types.WorkspaceTraffic
@@ -471,7 +534,7 @@ func (m *WorkspaceTrafficManager) GetWorkspaceTrafficSummary(workspace, regionDo
 		Order("expire_at ASC").
 		Find(&packages).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get traffic packages: %v", err)
+		return nil, fmt.Errorf("failed to get traffic packages: %w", err)
 	}
 
 	summary := &WorkspaceTrafficSummary{
