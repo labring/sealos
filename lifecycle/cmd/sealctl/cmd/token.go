@@ -18,15 +18,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/json"
-
 	runtimeutils "github.com/labring/sealos/pkg/runtime/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 func newTokenCmd() *cobra.Command {
-	var tokenCmd = &cobra.Command{
+	tokenCmd := &cobra.Command{
 		Use:   "token",
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {

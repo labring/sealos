@@ -22,9 +22,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/modood/table"
-	"github.com/spf13/pflag"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -34,6 +31,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/confirm"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/modood/table"
+	"github.com/spf13/pflag"
 )
 
 type RegistryPasswdResults struct {
@@ -50,8 +49,20 @@ type RegistryPasswdResults struct {
 func (r *RegistryPasswdResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
 	fs.StringVarP(&r.ClusterName, "cluster-name", "c", "default", "cluster name")
-	fs.StringVarP(&r.HtpasswdPath, "htpasswd-path", "p", "/etc/registry/registry_htpasswd", "registry passwd file path")
-	fs.StringVarP(&r.ImageCRIShimFilePath, "cri-shim-file-path", "f", "/etc/image-cri-shim.yaml", "image cri shim file path,if empty will not update image cri shim file")
+	fs.StringVarP(
+		&r.HtpasswdPath,
+		"htpasswd-path",
+		"p",
+		"/etc/registry/registry_htpasswd",
+		"registry passwd file path",
+	)
+	fs.StringVarP(
+		&r.ImageCRIShimFilePath,
+		"cri-shim-file-path",
+		"f",
+		"/etc/image-cri-shim.yaml",
+		"image cri shim file path,if empty will not update image cri shim file",
+	)
 }
 
 type confirmPrint struct {
@@ -75,19 +86,30 @@ func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
 	clusterFile := clusterfile.NewClusterFile(clusterPath)
 	err := clusterFile.Process()
 	if err != nil {
-		return nil, fmt.Errorf("cluster %s process error: %+v", r.ClusterName, err)
+		return nil, fmt.Errorf("cluster %s process error: %+w", r.ClusterName, err)
 	}
 	cluster := clusterFile.GetCluster()
-	r.RegistryType = confirm.SelectInput("Please select registry type", []string{string(RegistryTypeRegistry), string(RegistryTypeContainerd), string(RegistryTypeDocker)})
+	r.RegistryType = confirm.SelectInput(
+		"Please select registry type",
+		[]string{
+			string(RegistryTypeRegistry),
+			string(RegistryTypeContainerd),
+			string(RegistryTypeDocker),
+		},
+	)
 	if r.RegistryType == "" {
 		return nil, errors.New("invalid registry type")
 	}
-	r.RegistryUsername = confirm.Input("Please input registry username", "admin", func(input string) error {
-		if len(input) < 3 {
-			return errors.New("username must have more than 3 characters")
-		}
-		return nil
-	})
+	r.RegistryUsername = confirm.Input(
+		"Please input registry username",
+		"admin",
+		func(input string) error {
+			if len(input) < 3 {
+				return errors.New("username must have more than 3 characters")
+			}
+			return nil
+		},
+	)
 	r.RegistryPasswd = confirm.PasswordInput("Please input registry password")
 	if r.RegistryUsername == "" || r.RegistryPasswd == "" {
 		return nil, errors.New("must provide registry username and password")
@@ -145,13 +167,17 @@ func (r *RegistryPasswdResults) Apply(cluster *v1beta1.Cluster) error {
 	}
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	registry := helpers.GetRegistryInfo(r.execer, root, cluster.GetRegistryIPAndPort())
-	shim := helpers.GetImageCRIShimInfo(r.execer, r.ImageCRIShimFilePath, cluster.GetMaster0IPAndPort())
+	shim := helpers.GetImageCRIShimInfo(
+		r.execer,
+		r.ImageCRIShimFilePath,
+		cluster.GetMaster0IPAndPort(),
+	)
 	if registry == nil || shim == nil {
 		return errors.New("get registry or shim info error")
 	}
 	registry.Username = r.RegistryUsername
 	registry.Password = r.RegistryPasswd
-	shim.Auth = fmt.Sprintf("%s:%s", r.RegistryUsername, r.RegistryPasswd)
+	shim.Auth = r.RegistryUsername + ":" + r.RegistryPasswd
 	passwordErrorIP := make([]string, 0)
 	for _, v := range cluster.GetRegistryIPAndPortList() {
 		if err := r.upgrade.UpdateRegistryPasswd(registry, r.HtpasswdPath, v, RegistryType(r.RegistryType)); err != nil {

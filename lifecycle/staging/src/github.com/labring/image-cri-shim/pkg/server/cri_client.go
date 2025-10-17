@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:staticcheck
 package server
 
 import (
@@ -23,11 +22,10 @@ import (
 	"syscall"
 	"time"
 
+	netutil "github.com/labring/sealos/pkg/utils/net"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-
-	netutil "github.com/labring/sealos/pkg/utils/net"
 )
 
 // DialNotifyFn is a function to call after a successful net.Dial[Timeout]().
@@ -204,6 +202,6 @@ func (c *client) dialNotify(socket string) {
 }
 
 // Return a formatted client-specific error.
-func clientError(format string, args ...interface{}) error {
+func clientError(format string, args ...any) error {
 	return fmt.Errorf("cri/client: "+format, args...)
 }

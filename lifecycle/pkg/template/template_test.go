@@ -20,7 +20,7 @@ import (
 
 func TestTemplateSemverCompare(t *testing.T) {
 	staticPodIPVSTemplate := `static-pod lvscare --path {{.path}} --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}} --masters  {{$h}}  {{end}} {{range $o := .options}} --options  {{$o}} {{end}} `
-	data := map[string]interface{}{
+	data := map[string]any{
 		"vip":     "127.0.0.1",
 		"image":   "test",
 		"masters": []string{"127.0.0.2"},

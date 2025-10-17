@@ -20,9 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/spf13/cobra"
 )
 
 func Test_NewApplierFromFile(t *testing.T) {
@@ -86,7 +85,11 @@ func Test_NewApplierFromFile(t *testing.T) {
 				})
 			t.Log(err)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewApplierFromFile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NewApplierFromFile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}

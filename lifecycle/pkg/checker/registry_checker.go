@@ -19,18 +19,13 @@ package checker
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 
 	"github.com/docker/docker/api/types/registry"
-
-	"github.com/labring/sreg/pkg/registry/crane"
-
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/registry/helpers"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -38,10 +33,11 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"github.com/labring/sreg/pkg/registry/crane"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-type RegistryChecker struct {
-}
+type RegistryChecker struct{}
 
 type RegistryStatus struct {
 	Port           string
@@ -95,8 +91,8 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(execer, root, cluster.GetRegistryIPAndPort())
-	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
-	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)
+	status.Auth = regInfo.Username + ":" + regInfo.Password
+	status.RegistryDomain = net.JoinHostPort(regInfo.Domain, regInfo.Port)
 	cfg := registry.AuthConfig{
 		Username: regInfo.Username,
 		Password: regInfo.Password,

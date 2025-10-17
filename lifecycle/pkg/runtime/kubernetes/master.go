@@ -17,22 +17,19 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"net"
 	"path"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
-
-	"github.com/labring/sreg/pkg/registry/crane"
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/labring/sealos/pkg/registry/helpers"
-
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	str2 "github.com/labring/sealos/pkg/utils/strings"
-
+	"github.com/labring/sreg/pkg/registry/crane"
 	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 func (k *KubeadmRuntime) InitMaster0() error {
@@ -43,7 +40,10 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	}
 	cmdInit := k.Command(InitMaster)
 	if cmdInit == "" {
-		return fmt.Errorf("get init master command failed, kubernetes version is %s", k.getKubeVersion())
+		return fmt.Errorf(
+			"get init master command failed, kubernetes version is %s",
+			k.getKubeVersion(),
+		)
 	}
 	err := k.sshCmdAsync(master0, cmdInit)
 	if err != nil {
@@ -59,17 +59,28 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 	type Images struct {
 		Images []string `json:"images"`
 	}
-	imageList := fmt.Sprintf("kubeadm config images list --kubernetes-version %s -o json 2>/dev/null", version)
-	listJson, err := k.sshCmdToString(hostAndPort, imageList)
+	imageList := fmt.Sprintf(
+		"kubeadm config images list --kubernetes-version %s -o json 2>/dev/null",
+		version,
+	)
+	listJSON, err := k.sshCmdToString(hostAndPort, imageList)
 	if err != nil {
 		return fmt.Errorf("get kubeadm images list failed, error: %s", err.Error())
 	}
 	var images Images
-	if err = json.Unmarshal([]byte(listJson), &images); err != nil {
-		return fmt.Errorf("unmarshal kubeadm images list failed, json: %s, error: %s", listJson, err.Error())
+	if err = json.Unmarshal([]byte(listJSON), &images); err != nil {
+		return fmt.Errorf(
+			"unmarshal kubeadm images list failed, json: %s, error: %s",
+			listJSON,
+			err.Error(),
+		)
 	}
 	var newImageList []string
-	registry := helpers.GetRegistryInfo(k.execer, k.pathResolver.RootFSPath(), k.cluster.GetRegistryIPAndPort())
+	registry := helpers.GetRegistryInfo(
+		k.execer,
+		k.pathResolver.RootFSPath(),
+		k.cluster.GetRegistryIPAndPort(),
+	)
 	for _, image := range images.Images {
 		image = strings.TrimSpace(image)
 		if image == "" {
@@ -77,14 +88,19 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 		}
 		regAddr := crane.GetRegistryDomain(image)
 		if regAddr != "" {
-			image = strings.Replace(image, regAddr, fmt.Sprintf("%s:%s", registry.Domain, registry.Port), 1)
+			image = strings.Replace(
+				image,
+				regAddr,
+				net.JoinHostPort(registry.Domain, registry.Port),
+				1,
+			)
 			newImageList = append(newImageList, image)
 		}
 	}
 	logger.Info("start to pull images: %s", strings.Join(newImageList, ", "))
 
 	for _, image := range newImageList {
-		imagePullCmd := fmt.Sprintf("crictl pull %s", image)
+		imagePullCmd := "crictl pull " + image
 		if err := k.sshCmdAsync(hostAndPort, imagePullCmd); err != nil {
 			return fmt.Errorf("pull image %s failed, error: %s", image, err.Error())
 		}
@@ -98,7 +114,6 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, master := range joinMaster {
-		master := master
 		eg.Go(func() error {
 			k.mu.Lock()
 			defer k.mu.Unlock()
@@ -114,7 +129,11 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join master kubeadm config: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.pathResolver.TmpPath(), iputils.GetHostIP(master), defaultJoinMasterKubeadmFileName)
+	joinConfigPath := path.Join(
+		k.pathResolver.TmpPath(),
+		iputils.GetHostIP(master),
+		defaultJoinMasterKubeadmFileName,
+	)
 	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
@@ -160,7 +179,10 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	}
 	joinCmd := k.Command(JoinMaster)
 	if joinCmd == "" {
-		return fmt.Errorf("get join master command failed, kubernetes version is %s", k.getKubeVersion())
+		return fmt.Errorf(
+			"get join master command failed, kubernetes version is %s",
+			k.getKubeVersion(),
+		)
 	}
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
@@ -170,17 +192,17 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		logger.Debug("start to generate cert for master %s", master)
 		err = k.execCert(master)
 		if err != nil {
-			return fmt.Errorf("failed to create cert for master %s: %v", master, err)
+			return fmt.Errorf("failed to create cert for master %s: %w", master, err)
 		}
 
 		err = k.sshCmdAsync(master, joinCmd)
 		if err != nil {
-			return fmt.Errorf("exec kubeadm join in %s failed %v", master, err)
+			return fmt.Errorf("exec kubeadm join in %s failed %w", master, err)
 		}
 
 		err = k.execHostsAppend(master, master, k.getAPIServerDomain())
 		if err != nil {
-			return fmt.Errorf("add master0 apiserver domain hosts in %s failed %v", master, err)
+			return fmt.Errorf("add master0 apiserver domain hosts in %s failed %w", master, err)
 		}
 
 		err = k.copyMasterKubeConfig(master)
@@ -202,7 +224,6 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, master := range masters {
-		master := master
 		eg.Go(func() error {
 			logger.Info("start to delete master %s", master)
 			if err := k.deleteMaster(master); err != nil {
@@ -218,12 +239,12 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 
 func (k *KubeadmRuntime) deleteMaster(master string) error {
 	return k.resetNode(master, func() {
-		//remove master
+		// remove master
 		masterIPs := str2.RemoveFromSlice(k.getMasterIPList(), master)
 		if len(masterIPs) > 0 {
 			// TODO: do we need draining first?
 			if err := k.removeNode(master); err != nil {
-				logger.Warn(fmt.Errorf("delete master %s failed %v", master, err))
+				logger.Warn(fmt.Errorf("delete master %s failed %w", master, err))
 			}
 		}
 	})

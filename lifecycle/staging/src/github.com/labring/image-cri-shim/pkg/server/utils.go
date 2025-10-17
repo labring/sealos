@@ -20,17 +20,15 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/registry"
-
-	"github.com/labring/sreg/pkg/registry/crane"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	name "github.com/google/go-containerregistry/pkg/name"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sreg/pkg/registry/crane"
 )
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
 func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
-	isReplace bool, cfg *registry.AuthConfig) {
+	isReplace bool, cfg *registry.AuthConfig,
+) {
 	if len(authConfig) == 0 {
 		return image, false, nil
 	}
@@ -75,7 +73,8 @@ func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]boo
 	if cfg == nil {
 		return true
 	}
-	return cfg.Username == "" && cfg.Password == "" && cfg.Auth == "" && cfg.IdentityToken == "" && cfg.RegistryToken == ""
+	return cfg.Username == "" && cfg.Password == "" && cfg.Auth == "" && cfg.IdentityToken == "" &&
+		cfg.RegistryToken == ""
 }
 
 func referenceSuffix(ref name.Reference) string {

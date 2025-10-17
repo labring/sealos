@@ -33,7 +33,7 @@ type Interface interface {
 func RunCheckList(list []Interface, cluster *v2.Cluster, phase string) error {
 	for _, l := range list {
 		if err := l.Check(cluster, phase); err != nil {
-			return fmt.Errorf("failed to run checker: %v", err)
+			return fmt.Errorf("failed to run checker: %w", err)
 		}
 	}
 	return nil

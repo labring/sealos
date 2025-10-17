@@ -15,15 +15,15 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func newHostsNameCmd() *cobra.Command {
-	var hostsNameCmd = &cobra.Command{
+	hostsNameCmd := &cobra.Command{
 		Use:   "hostname",
 		Short: "get os.hostname",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -32,7 +32,7 @@ func newHostsNameCmd() *cobra.Command {
 				logger.Error(err)
 				os.Exit(1)
 			}
-			print(hostname)
+			fmt.Print(hostname)
 		},
 	}
 	return hostsNameCmd

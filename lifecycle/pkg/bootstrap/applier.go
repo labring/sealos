@@ -15,16 +15,16 @@
 package bootstrap
 
 type Applier interface {
-	Filter(Context, string) bool
-	Apply(Context, string) error
-	Undo(Context, string) error
+	Filter(ctx Context, phase string) bool
+	Apply(ctx Context, phase string) error
+	Undo(ctx Context, phase string) error
 }
 
 type common struct{}
 
-func (c *common) Filter(Context, string) bool { return true }
-func (c *common) Apply(Context, string) error { return nil }
-func (c *common) Undo(Context, string) error  { return nil }
+func (c *common) Filter(_ Context, _ string) bool { return true }
+func (c *common) Apply(_ Context, _ string) error { return nil }
+func (c *common) Undo(_ Context, _ string) error  { return nil }
 
 var (
 	defaultPreflights   []Applier

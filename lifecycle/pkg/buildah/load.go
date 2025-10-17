@@ -37,12 +37,18 @@ type loadOptions struct {
 }
 
 func (o *loadOptions) RegisterFlags(fs *pflag.FlagSet) {
-	fs.StringVarP(&o.input, "input", "i", "", "load images from specified tar archive file, default(stdin)")
+	fs.StringVarP(
+		&o.input,
+		"input",
+		"i",
+		"",
+		"load images from specified tar archive file, default(stdin)",
+	)
 	fs.BoolVarP(&o.quiet, "quiet", "q", false, "suppress the output")
 }
 
 func newLoadCommand() *cobra.Command {
-	var opts = &loadOptions{}
+	opts := &loadOptions{}
 
 	loadCommand := &cobra.Command{
 		Use:   "load",
@@ -50,7 +56,7 @@ func newLoadCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return load(cmd, args, opts)
 		},
-		Example: fmt.Sprintf(`%[1]s load -i kubernetes.tar`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " load -i kubernetes.tar",
 	}
 	loadCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(loadCommand.Flags())
@@ -61,7 +67,8 @@ func newLoadCommand() *cobra.Command {
 func load(cmd *cobra.Command, _ []string, loadOpts *loadOptions) error {
 	if len(loadOpts.input) > 0 {
 		// Download the input file if needed.
-		if strings.HasPrefix(loadOpts.input, "https://") || strings.HasPrefix(loadOpts.input, "http://") {
+		if strings.HasPrefix(loadOpts.input, "https://") ||
+			strings.HasPrefix(loadOpts.input, "http://") {
 			containerConfig, err := config.Default()
 			if err != nil {
 				return err
@@ -87,14 +94,14 @@ func load(cmd *cobra.Command, _ []string, loadOpts *loadOptions) error {
 		}
 		outFile, err := os.CreateTemp("", rootCmd.Name())
 		if err != nil {
-			return fmt.Errorf("creating file %v", err)
+			return fmt.Errorf("creating file %w", err)
 		}
 		defer os.Remove(outFile.Name())
 		defer outFile.Close()
 
 		_, err = io.Copy(outFile, os.Stdin)
 		if err != nil {
-			return fmt.Errorf("copying file %v", err)
+			return fmt.Errorf("copying file %w", err)
 		}
 		loadOpts.input = outFile.Name()
 	}

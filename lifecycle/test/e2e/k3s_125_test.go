@@ -24,17 +24,13 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
-
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
-
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	. "github.com/onsi/ginkgo/v2"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 var _ = Describe("E2E_sealos_k3s_basic_test", func() {
@@ -73,7 +69,16 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 			err = fakeClient.Cluster.Run("k3s:buildin")
 			utils.CheckErr(err)
 			fn := func() []byte {
-				data, err := fakeClient.CmdInterface.Exec("kubectl", "get", "pods", "-A", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml", "-o", "yaml")
+				data, err := fakeClient.CmdInterface.Exec(
+					"kubectl",
+					"get",
+					"pods",
+					"-A",
+					"--kubeconfig",
+					"/etc/rancher/k3s/k3s.yaml",
+					"-o",
+					"yaml",
+				)
 				utils.CheckErr(err)
 				return data
 			}
@@ -99,7 +104,13 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 					utils.CheckErr(errors.New("k3s pods is empty, for timeout"))
 				}
 			}
-			err = fakeClient.CmdInterface.AsyncExec("kubectl", "get", "nodes", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml")
+			err = fakeClient.CmdInterface.AsyncExec(
+				"kubectl",
+				"get",
+				"nodes",
+				"--kubeconfig",
+				"/etc/rancher/k3s/k3s.yaml",
+			)
 			utils.CheckErr(err)
 			displayImages, err := fakeClient.CRI.ImageList()
 			utils.CheckErr(err)
@@ -111,12 +122,16 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 						utils.CheckErr(err)
 						logger.Info("image registry is %s", ref.Context().RegistryStr())
 						if ref.Context().RegistryStr() != "sealos.hub:5000" {
-							utils.CheckErr(fmt.Errorf("crictl image is not sealos.hub, %+v", strings.TrimSpace(tag)))
+							utils.CheckErr(
+								fmt.Errorf(
+									"crictl image is not sealos.hub, %+v",
+									strings.TrimSpace(tag),
+								),
+							)
 						}
 					}
 				}
 			}
 		})
 	})
-
 })

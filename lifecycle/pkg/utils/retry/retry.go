@@ -21,7 +21,7 @@ import (
 
 func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error {
 	var err error
-	for i := 0; i < tryTimes; i++ {
+	for i := range tryTimes {
 		err = action()
 		if err == nil {
 			return nil
@@ -29,5 +29,5 @@ func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error 
 
 		time.Sleep(trySleepTime * time.Duration(2*i+1))
 	}
-	return fmt.Errorf("retry action timeout: %v", err)
+	return fmt.Errorf("retry action timeout: %w", err)
 }

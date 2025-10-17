@@ -19,14 +19,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilsysctl "k8s.io/component-helpers/node/util/sysctl"
 	proxyipvs "k8s.io/kubernetes/pkg/proxy/ipvs"
 	utilipset "k8s.io/kubernetes/pkg/proxy/ipvs/ipset"
 	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
 	"k8s.io/utils/exec"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type iptablesImpl struct {
@@ -62,9 +61,24 @@ var iptablesJumpChain = []struct {
 	to      utiliptables.Chain
 	comment string
 }{
-	{utiliptables.TableNAT, utiliptables.ChainOutput, virtualServicesChain, "virtual service portals"},
-	{utiliptables.TableNAT, utiliptables.ChainPrerouting, virtualServicesChain, "virtual service portals"},
-	{utiliptables.TableNAT, utiliptables.ChainPostrouting, virtualPostroutingChain, "virtual service postrouting rules"},
+	{
+		utiliptables.TableNAT,
+		utiliptables.ChainOutput,
+		virtualServicesChain,
+		"virtual service portals",
+	},
+	{
+		utiliptables.TableNAT,
+		utiliptables.ChainPrerouting,
+		virtualServicesChain,
+		"virtual service portals",
+	},
+	{
+		utiliptables.TableNAT,
+		utiliptables.ChainPostrouting,
+		virtualPostroutingChain,
+		"virtual service postrouting rules",
+	},
 }
 
 var iptablesChains = []struct {
@@ -184,7 +198,11 @@ func ensureSysctl(sysctl utilsysctl.Interface, name string, newVal int) error {
 	return nil
 }
 
-func ensureDummyDeviceAndAddresses(nl proxyipvs.NetLinkHandle, ifaceName string, addresses ...string) error {
+func ensureDummyDeviceAndAddresses(
+	nl proxyipvs.NetLinkHandle,
+	ifaceName string,
+	addresses ...string,
+) error {
 	if _, err := nl.EnsureDummyDevice(ifaceName); err != nil {
 		return err
 	}
@@ -238,7 +256,12 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 	// service chain
 	for _, ch := range iptablesChains {
 		if _, err := impl.iptables.EnsureChain(ch.table, ch.chain); err != nil {
-			logger.Error("Failed to ensure chain, table: %s, chain: %s, %v", ch.table, ch.chain, err)
+			logger.Error(
+				"Failed to ensure chain, table: %s, chain: %s, %v",
+				ch.table,
+				ch.chain,
+				err,
+			)
 			return err
 		}
 	}
@@ -246,7 +269,13 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 	for _, jc := range iptablesJumpChain {
 		args := []string{"-m", "comment", "--comment", jc.comment, "-j", string(jc.to)}
 		if _, err := impl.iptables.EnsureRule(utiliptables.Append, jc.table, jc.from, args...); err != nil {
-			logger.Error("Failed to ensure chain jumps, table: %s, src: %s, dst: %s, %v", jc.table, jc.from, jc.to, err)
+			logger.Error(
+				"Failed to ensure chain jumps, table: %s, src: %s, dst: %s, %v",
+				jc.table,
+				jc.from,
+				jc.to,
+				err,
+			)
 		}
 	}
 
@@ -280,7 +309,10 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 	if impl.iptables.HasRandomFully() {
 		masqArgs = append(masqArgs, "--random-fully")
 	}
-	rules = append(rules, iptablesRule{utiliptables.Append, utiliptables.TableNAT, virtualPostroutingChain, masqArgs})
+	rules = append(
+		rules,
+		iptablesRule{utiliptables.Append, utiliptables.TableNAT, virtualPostroutingChain, masqArgs},
+	)
 	for i := range rules {
 		if _, err := impl.iptables.EnsureRule(rules[i].position, rules[i].table, rules[i].chain, rules[i].args...); err != nil {
 			return err
@@ -289,7 +321,12 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 	return nil
 }
 
-func ensureIPSetWithEntries(handle utilipset.Interface, name, comment string, setType utilipset.Type, entries ...string) error {
+func ensureIPSetWithEntries(
+	handle utilipset.Interface,
+	name, comment string,
+	setType utilipset.Type,
+	entries ...string,
+) error {
 	set := utilipset.IPSet{
 		Name:       name,
 		SetType:    setType,

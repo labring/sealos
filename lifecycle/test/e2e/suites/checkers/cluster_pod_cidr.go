@@ -24,13 +24,17 @@ var _ FakeInterface = &fakePodCIDRClient{}
 
 type fakePodCIDRClient struct {
 	*fakeClient
-	//100.64.0.0/10
+	// 100.64.0.0/10
 	data string
 }
 
 func (f *fakePodCIDRClient) Verify() error {
 	if f.ClusterConfiguration.Networking.PodSubnet != f.data {
-		return fmt.Errorf("cluster config pod subnet %s not match %s", f.ClusterConfiguration.Networking.PodSubnet, f.data)
+		return fmt.Errorf(
+			"cluster config pod subnet %s not match %s",
+			f.ClusterConfiguration.Networking.PodSubnet,
+			f.data,
+		)
 	}
 	return nil
 }

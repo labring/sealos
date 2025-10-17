@@ -20,9 +20,7 @@ import (
 	"sync"
 
 	rtype "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/types"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -51,7 +49,11 @@ func (a *AuthStore) Update(auth *types.ShimAuthConfig) {
 
 	a.criConfigs = cloneAuthMap(auth.CRIConfigs)
 	a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
-	logger.Info("updated shim auth config, registries: %d, offline: %d", len(a.criConfigs), len(a.offlineCRIConfigs))
+	logger.Info(
+		"updated shim auth config, registries: %d, offline: %d",
+		len(a.criConfigs),
+		len(a.offlineCRIConfigs),
+	)
 }
 
 func (a *AuthStore) GetCRIConfig(registry string) (rtype.AuthConfig, bool) {

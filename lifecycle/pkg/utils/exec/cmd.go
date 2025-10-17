@@ -16,7 +16,6 @@ package exec
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -26,7 +25,7 @@ import (
 
 func CmdWithContext(ctx context.Context, name string, args ...string) error {
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	cmd := exec.CommandContext(ctx, name, args[:]...) // #nosec
+	cmd := exec.CommandContext(ctx, name, args...) // #nosec
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -35,7 +34,7 @@ func CmdWithContext(ctx context.Context, name string, args ...string) error {
 
 func Output(name string, args ...string) ([]byte, error) {
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	cmd := exec.Command(name, args[:]...) // #nosec
+	cmd := exec.Command(name, args...) // #nosec
 	return cmd.CombinedOutput()
 }
 
@@ -62,7 +61,7 @@ func Eval(cmd string) string {
 }
 
 func CheckCmdIsExist(cmd string) (string, bool) {
-	cmd = fmt.Sprintf("type %s", cmd)
+	cmd = "type " + cmd
 	out, err := RunSimpleCmd(cmd)
 	if err != nil {
 		return "", false

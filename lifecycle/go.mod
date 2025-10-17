@@ -15,7 +15,7 @@ require (
 	github.com/containers/ocicrypt v1.1.7
 	github.com/containers/storage v1.50.2
 	github.com/davecgh/go-spew v1.1.1
-	github.com/docker/docker v25.0.1+incompatible
+	github.com/docker/docker v25.0.6+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/emicklei/go-restful/v3 v3.11.0
 	github.com/emirpasic/gods v1.18.1
@@ -300,6 +300,7 @@ replace (
 	github.com/containers/storage => github.com/containers/storage v1.46.1
 	github.com/docker/docker => github.com/docker/docker v25.0.1+incompatible
 	github.com/imdario/mergo => github.com/imdario/mergo v0.3.13
+	github.com/mitchellh/osext => github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
 )
 

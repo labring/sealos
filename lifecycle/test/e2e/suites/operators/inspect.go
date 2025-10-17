@@ -17,8 +17,6 @@ limitations under the License.
 package operators
 
 import (
-	"fmt"
-
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
@@ -33,21 +31,21 @@ func newInspectClient(sealosCmd *cmd.SealosCmd) FakeInspectInterface {
 }
 
 func (c *fakeInspectClient) LocalImage(name string) error {
-	return c.SealosCmd.ImageInspect(name)
+	return c.ImageInspect(name)
 }
 
 func (c *fakeInspectClient) RemoteImage(name string) error {
-	return c.SealosCmd.ImageInspect(fmt.Sprintf("docker://%s", name))
+	return c.ImageInspect("docker://" + name)
 }
 
 func (c *fakeInspectClient) DockerArchiveImage(name string) error {
-	return c.SealosCmd.ImageInspect(fmt.Sprintf("docker-archive://%s", name))
+	return c.ImageInspect("docker-archive://" + name)
 }
 
 func (c *fakeInspectClient) OCIArchiveImage(name string) error {
-	return c.SealosCmd.ImageInspect(fmt.Sprintf("oci-archive://%s", name))
+	return c.ImageInspect("oci-archive://" + name)
 }
 
 func (c *fakeInspectClient) ImageID(id string) error {
-	return c.SealosCmd.ImageInspect(id)
+	return c.ImageInspect(id)
 }

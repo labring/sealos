@@ -54,7 +54,7 @@ func TestTarWithRootDir(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	//tmp, err := os.CreateTemp("/tmp", "tar")
+	// tmp, err := os.CreateTemp("/tmp", "tar")
 	_, err = io.Copy(tmp, reader)
 	if err != nil {
 		t.Error(err)

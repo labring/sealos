@@ -20,15 +20,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
-
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
-
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type Clusterfile struct {
@@ -50,15 +47,14 @@ func (c *Clusterfile) Write() (string, error) {
 	for k, v := range c.Replaces {
 		replaceClusterfile = strings.ReplaceAll(replaceClusterfile, k, v)
 	}
-	if err = os.WriteFile(tmpdir+"/Clusterfile", []byte(replaceClusterfile), 0644); err != nil {
+	if err = os.WriteFile(tmpdir+"/Clusterfile", []byte(replaceClusterfile), 0o644); err != nil {
 		return "", errors.WithMessage(err, "write clusterfile failed")
 	}
 	yamls := utils.ToYalms(replaceClusterfile)
 	for _, yamlString := range yamls {
 		obj, _ := utils.UnmarshalData([]byte(yamlString))
 		kind, _, _ := unstructured.NestedString(obj, "kind")
-		switch kind {
-		case "Cluster":
+		if kind == "Cluster" {
 			err = yaml.Unmarshal([]byte(yamlString), &c.Cluster)
 			if err != nil {
 				return "", errors.WithMessage(err, "unmarshal cluster failed")
