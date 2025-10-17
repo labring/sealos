@@ -33,7 +33,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { setEnv, env } = useEnvStore();
   const { loadUserDebt, setSession } = useUserStore();
   const { setSourcePrice } = usePriceStore();
-  const { setScreenWidth, setLastRoute } = useGlobalStore();
+  const { setScreenWidth, setLastRoute, setInitialized } = useGlobalStore();
 
   const [init, setInit] = useState(false);
   const [refresh, setRefresh] = useState(false);
@@ -50,6 +50,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         if (!!token) {
           setSessionToSessionStorage(token);
           setInit(true);
+          setInitialized(true);
         }
         queryClient.clear();
       } catch (err) {

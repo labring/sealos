@@ -317,6 +317,29 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
 }
 
 /**
+ * Restart an application by updating the restartTime label
+ * @param appName Application name
+ * @param k8s Kubernetes context containing clients and configuration
+ */
+export async function restartApp(appName: string, k8s: K8sContext) {
+  const { apiClient, getDeployApp } = k8s;
+
+  const app = await getDeployApp(appName);
+
+  if (!app.spec?.template.metadata?.labels) {
+    throw new Error('app data error');
+  }
+
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:T]/g, '')
+    .replace(/\./g, '')
+    .replace(/-/g, '');
+  app.spec.template.metadata.labels['restartTime'] = timestamp;
+  await apiClient.replace(app);
+}
+
+/**
  * Delete application and its related resources by application name
  * @param name Application name
  * @param k8s Kubernetes context containing clients and configuration
