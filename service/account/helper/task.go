@@ -17,7 +17,7 @@ type TaskQueue struct {
 	queue   chan Task
 	workers int
 	wg      sync.WaitGroup
-	//mu      sync.Mutex
+	// mu      sync.Mutex
 	started bool
 }
 
@@ -32,11 +32,11 @@ func NewTaskQueue(ctx context.Context, workerCount, queueSize int) *TaskQueue {
 }
 
 func (tq *TaskQueue) AddTask(task Task) {
-	//tq.mu.Lock()
-	//defer tq.mu.Unlock()
-	//if tq.started {
+	// tq.mu.Lock()
+	// defer tq.mu.Unlock()
+	// if tq.started {
 	//	tq.queue <- task
-	//} else {
+	// } else {
 	//	fmt.Println("TaskQueue has not been started yet")
 	//}
 	select {
@@ -51,7 +51,7 @@ func (tq *TaskQueue) Start() {
 		return
 	}
 	tq.started = true
-	for i := 0; i < tq.workers; i++ {
+	for i := range tq.workers {
 		tq.wg.Add(1)
 		go tq.worker(i)
 	}

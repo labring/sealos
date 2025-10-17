@@ -5,22 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-	types2 "k8s.io/apimachinery/pkg/types"
-
-	"github.com/labring/sealos/controllers/pkg/pay"
-
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/pay"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
 	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	types2 "k8s.io/apimachinery/pkg/types"
 )
 
 // AdminGetAccountWithWorkspaceID GetAccount
@@ -36,7 +33,10 @@ import (
 func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	workspace, exist := c.GetQuery("namespace")
@@ -45,20 +45,32 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 		return
 	}
 	ns := &corev1.Namespace{}
-	err = dao.K8sManager.GetClient().Get(context.Background(), types2.NamespacedName{Name: workspace}, ns)
+	err = dao.K8sManager.GetClient().
+		Get(context.Background(), types2.NamespacedName{Name: workspace}, ns)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get workspace %s: %v", workspace, err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to get workspace %s: %v", workspace, err),
+			},
+		)
 		return
 	}
 	if _, exist = ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; exist {
 		totalQuota, remainQuota, err := dao.DBClient.GetWorkspaceRemainingAIQuota(workspace)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace remaining quota: %v", err)})
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to get workspace remaining quota: %v", err)},
+			)
 			return
 		}
-		userUID, err := dao.DBClient.GetWorkspaceUserUid(workspace)
+		userUID, err := dao.DBClient.GetWorkspaceUserUID(workspace)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace userUID: %v", err)})
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to get workspace userUID: %v", err)},
+			)
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -72,7 +84,10 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 	}
 	account, err := dao.DBClient.GetAccountWithWorkspace(workspace)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get account : %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get account : %v", err)},
+		)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -95,19 +110,28 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 func AdminChargeBilling(c *gin.Context) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	billingReq, err := helper.ParseAdminChargeBillingReq(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request : %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request : %v", err)},
+		)
 		return
 	}
 	helper.CallCounter.WithLabelValues("ChargeBilling", billingReq.UserUID.String()).Inc()
 	// if Namespace is workspace subscription, should charge to workspace ai quota
 	isSubscription, err := GetWorkspaceIsSubscription(billingReq.Namespace)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get workspace subscription status: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get workspace subscription status: %v", err)},
+		)
 		return
 	}
 	if isSubscription {
@@ -116,7 +140,10 @@ func AdminChargeBilling(c *gin.Context) {
 		err = dao.DBClient.ChargeBilling(billingReq)
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to charge billing : %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to charge billing : %v", err)},
+		)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -218,7 +245,7 @@ func (c *WorkspaceSubscriptionCache) startCleanupWorker() {
 // 使用缓存和读写锁确保并发安全性，只缓存订阅状态的工作空间
 func GetWorkspaceIsSubscription(workspace string) (bool, error) {
 	if workspace == "" {
-		return false, fmt.Errorf("workspace name cannot be empty")
+		return false, errors.New("workspace name cannot be empty")
 	}
 
 	cache := getSubscriptionCache()
@@ -228,9 +255,10 @@ func GetWorkspaceIsSubscription(workspace string) (bool, error) {
 		return true, nil
 	}
 	ns := &corev1.Namespace{}
-	err := dao.K8sManager.GetClient().Get(context.Background(), types2.NamespacedName{Name: workspace}, ns)
+	err := dao.K8sManager.GetClient().
+		Get(context.Background(), types2.NamespacedName{Name: workspace}, ns)
 	if err != nil {
-		return false, fmt.Errorf("failed to get workspace %s: %v", workspace, err)
+		return false, fmt.Errorf("failed to get workspace %s: %w", workspace, err)
 	}
 
 	// 检查是否有订阅状态注解
@@ -257,7 +285,10 @@ func GetWorkspaceIsSubscription(workspace string) (bool, error) {
 func AdminGetUserRealNameInfo(c *gin.Context) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	userUID, exist := c.GetQuery("userUID")
@@ -267,7 +298,10 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 	}
 	userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{UID: uuid.MustParse(userUID)})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user ID: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get user ID: %v", err)},
+		)
 		return
 	}
 	ck := dao.DBClient.GetCockroach()
@@ -275,14 +309,22 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 	userRealNameInfo, err := ck.GetUserRealNameInfoByUserID(userID)
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user real name info: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get user real name info: %v", err)},
+		)
 		return
 	}
 
 	enterpriseRealNameInfo, err := ck.GetEnterpriseRealNameInfoByUserID(userID)
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get enterprise real name info: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to get enterprise real name info: %v", err),
+			},
+		)
 		return
 	}
 
@@ -305,7 +347,7 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to activate billing"
 // @Router /admin/v1alpha1/active [post]
-//func AdminActiveBilling(c *gin.Context) {
+// func AdminActiveBilling(c *gin.Context) {
 //	err := authenticateAdminRequest(c)
 //	if err != nil {
 //		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
@@ -327,18 +369,18 @@ const AdminUserName = "sealos-admin"
 func authenticateAdminRequest(c *gin.Context) error {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
-		return fmt.Errorf("null auth found")
+		return errors.New("null auth found")
 	}
 	token := strings.TrimPrefix(tokenString, "Bearer ")
 	user, err := dao.JwtMgr.ParseUser(token)
 	if err != nil {
-		return fmt.Errorf("failed to parse user: %v", err)
+		return fmt.Errorf("failed to parse user: %w", err)
 	}
 	if user == nil {
-		return fmt.Errorf("user not found")
+		return errors.New("user not found")
 	}
 	if user.Requester != AdminUserName {
-		return fmt.Errorf("user is not admin")
+		return errors.New("user is not admin")
 	}
 	return nil
 }
@@ -354,7 +396,10 @@ func AdminResumeUserTraffic(c *gin.Context) {
 func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	userUIDStr, exist := c.GetQuery("userUID")
@@ -364,12 +409,18 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 	}
 	userUID, err := uuid.Parse(userUIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("invalid userUID format: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{Error: fmt.Sprintf("invalid userUID format: %v", err)},
+		)
 		return
 	}
 	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: userUID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)},
+		)
 		return
 	}
 	if owner == "" {
@@ -378,7 +429,10 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 	}
 	namespaces, err := getOwnNsListWithClt(dao.K8sManager.GetClient(), owner)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)},
+		)
 		return
 	}
 	if len(namespaces) == 0 {
@@ -386,7 +440,12 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 		return
 	}
 	if err = updateNetworkNamespaceStatus(context.Background(), dao.K8sManager.GetClient(), networkStatus, namespaces); err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush user resource status: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to flush user resource status: %v", err),
+			},
+		)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
@@ -412,7 +471,7 @@ func AdminPaymentRefund(c *gin.Context) {
 	postDo := func(p types.PaymentRefund) error {
 		svc, err := pay.NewPayHandler(string(p.Method))
 		if err != nil {
-			return fmt.Errorf("new payment handler failed: %v", err)
+			return fmt.Errorf("new payment handler failed: %w", err)
 		}
 		_, _, err = svc.RefundPayment(pay.RefundOption{
 			TradeNo:  p.TradeNo,
@@ -420,7 +479,7 @@ func AdminPaymentRefund(c *gin.Context) {
 			RefundID: p.RefundNo,
 		})
 		if err != nil {
-			return fmt.Errorf("failed to refund payment: %v", err)
+			return fmt.Errorf("failed to refund payment: %w", err)
 		}
 		return nil
 	}

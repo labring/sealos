@@ -2,44 +2,31 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils/logger"
-
-	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
-
+	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
+	"github.com/goccy/go-json"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-
+	"github.com/labring/sealos/controllers/pkg/database"
 	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/types"
+	usernotify "github.com/labring/sealos/controllers/pkg/user_notify"
+	"github.com/labring/sealos/controllers/pkg/utils"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	"github.com/labring/sealos/service/account/helper"
+	services "github.com/labring/sealos/service/pkg/pay"
+	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/labring/sealos/controllers/pkg/types"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/labring/sealos/controllers/pkg/database"
-
-	"github.com/labring/sealos/controllers/pkg/utils"
-
-	"github.com/labring/sealos/controllers/pkg/resources"
-
-	corev1 "k8s.io/api/core/v1"
-
-	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
-
-	services "github.com/labring/sealos/service/pkg/pay"
-
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/goccy/go-json"
-
-	"github.com/labring/sealos/service/account/helper"
 )
 
 type Config struct {
@@ -78,55 +65,65 @@ var (
 	UserNotificationService usernotify.EventNotificationService
 
 	SendDebtStatusEmailBody map[types.DebtStatusType]string
-	//Debug                bool
+	// Debug                bool
 )
 
 func Init(ctx context.Context) error {
-	BillingTask = helper.NewTaskQueue(ctx, env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_WORKER_COUNT", 10), env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_QUEUE_SIZE", 10000))
+	BillingTask = helper.NewTaskQueue(
+		ctx,
+		env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_WORKER_COUNT", 10),
+		env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_QUEUE_SIZE", 10000),
+	)
 	var err error
 	globalCockroach := os.Getenv(helper.ENVGlobalCockroach)
 	if globalCockroach == "" {
-		return fmt.Errorf("empty global cockroach uri, please check env: %s", helper.ENVGlobalCockroach)
+		return fmt.Errorf(
+			"empty global cockroach uri, please check env: %s",
+			helper.ENVGlobalCockroach,
+		)
 	}
 	localCockroach := os.Getenv(helper.ENVLocalCockroach)
 	if localCockroach == "" {
-		return fmt.Errorf("empty local cockroach uri, please check env: %s", helper.ENVLocalCockroach)
+		return fmt.Errorf(
+			"empty local cockroach uri, please check env: %s",
+			helper.ENVLocalCockroach,
+		)
 	}
 	mongoURI := os.Getenv(helper.EnvMongoURI)
 	if mongoURI == "" {
 		return fmt.Errorf("empty mongo uri, please check env: %s", helper.EnvMongoURI)
 	}
-	//Debug = os.Getenv("DEBUG") == "true"
+	// Debug = os.Getenv("DEBUG") == "true"
 	DBClient, err = NewAccountInterface(mongoURI, globalCockroach, localCockroach)
 	if err != nil {
 		return err
 	}
 	if _, err = DBClient.GetProperties(); err != nil {
-		return fmt.Errorf("get properties error: %v", err)
+		return fmt.Errorf("get properties error: %w", err)
 	}
 	// init region env
 	err = database.InitRegionEnv(DBClient.GetGlobalDB(), DBClient.GetLocalRegion().Domain)
 	if err != nil {
-		return fmt.Errorf("init region env error: %v", err)
+		return fmt.Errorf("init region env error: %w", err)
 	}
 	file := helper.ConfigPath
 	Cfg = &Config{} // Initialize Cfg regardless of file existence
 	if _, err := os.Stat(file); err == nil {
 		data, err := os.ReadFile(file)
 		if err != nil {
-			return fmt.Errorf("read config file error: %v", err)
+			return fmt.Errorf("read config file error: %w", err)
 		}
 		fmt.Printf("config file found, use config file: \n%s\n", file)
 
 		// json unmarshal
 		if err = json.Unmarshal(data, Cfg); err != nil {
-			return fmt.Errorf("unmarshal config file error: %v", err)
+			return fmt.Errorf("unmarshal config file error: %w", err)
 		}
 	}
 	if len(Cfg.Regions) == 0 {
 		regions, err := DBClient.GetRegions()
 		if err != nil {
-			return fmt.Errorf("get regions error: %v", err)
+			return fmt.Errorf("get regions error: %w", err)
 		}
 		Cfg = &Config{
 			Regions: make([]Region, 0),
@@ -144,7 +141,12 @@ func Init(ctx context.Context) error {
 		}
 	}
 	Cfg.LocalRegionDomain = DBClient.GetLocalRegion().Domain
-	Logger = logger.NewFeishuLogger(nil, os.Getenv("FEISHU_WEBHOOK"), logger.INFO, Cfg.LocalRegionDomain+"-account-service")
+	Logger = logger.NewFeishuLogger(
+		nil,
+		os.Getenv("FEISHU_WEBHOOK"),
+		logger.INFO,
+		Cfg.LocalRegionDomain+"-account-service",
+	)
 	fmt.Println("region-info: ", Cfg)
 	jwtSecret := os.Getenv(helper.EnvJwtSecret)
 	if jwtSecret == "" {
@@ -152,19 +154,35 @@ func Init(ctx context.Context) error {
 	}
 	JwtMgr = utils.NewJWTManager(os.Getenv(helper.EnvJwtSecret), time.Minute*30)
 
-	gatewayURL, clientID, privateKey, publicKey := os.Getenv(helper.EnvAlipayGatewayURL), os.Getenv(helper.EnvAlipayClientID), os.Getenv(helper.EnvAlipayPrivateKey), os.Getenv(helper.EnvAlipayPublicKey)
+	gatewayURL, clientID, privateKey, publicKey := os.Getenv(
+		helper.EnvAlipayGatewayURL,
+	), os.Getenv(
+		helper.EnvAlipayClientID,
+	), os.Getenv(
+		helper.EnvAlipayPrivateKey,
+	), os.Getenv(
+		helper.EnvAlipayPublicKey,
+	)
 	if gatewayURL != "" && clientID != "" && privateKey != "" && publicKey != "" {
 		fmt.Printf("init alipay client with gatewayUrl: %s, clientID: %s\n", gatewayURL, clientID)
 		if Cfg.LocalRegionDomain == "" {
-			return fmt.Errorf("empty local region domain, please check config")
+			return errors.New("empty local region domain, please check config")
 		}
 		payNotificationURL := "https://" + "account-api." + Cfg.LocalRegionDomain
 		if err != nil {
-			return fmt.Errorf("join pay notification url error: %v", err)
+			return fmt.Errorf("join pay notification url error: %w", err)
 		}
 		payRedirectURL := "https://" + "account-center." + Cfg.LocalRegionDomain
-		fmt.Printf("init alipay client with payNotificationURL: %s , payRedirectURL: %s\n", payNotificationURL, payRedirectURL)
-		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey), payNotificationURL, payRedirectURL)
+		fmt.Printf(
+			"init alipay client with payNotificationURL: %s , payRedirectURL: %s\n",
+			payNotificationURL,
+			payRedirectURL,
+		)
+		PaymentService = services.NewPaymentService(
+			defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey),
+			payNotificationURL,
+			payRedirectURL,
+		)
 		ClientIP, DeviceTokenID = os.Getenv(helper.EnvClientIP), os.Getenv(helper.EnvDeviceTokenID)
 		if ClientIP == "" {
 			return fmt.Errorf("empty client ip, please check env: %s", helper.EnvClientIP)
@@ -176,11 +194,11 @@ func Init(ctx context.Context) error {
 	if os.Getenv(helper.EnvSubscriptionEnabled) == "true" {
 		plans, err := DBClient.GetSubscriptionPlanList()
 		if err != nil {
-			return fmt.Errorf("get subscription plan list error: %v", err)
+			return fmt.Errorf("get subscription plan list error: %w", err)
 		}
 		SubPlanResourceQuota, err = resources.ParseResourceLimitWithPlans(plans)
 		if err != nil {
-			return fmt.Errorf("parse resource limit with subscription error: %v", err)
+			return fmt.Errorf("parse resource limit with subscription error: %w", err)
 		}
 		FlushQuotaProcesser = &FlushQuotaTask{
 			LocalDomain: Cfg.LocalRegionDomain,
@@ -188,21 +206,24 @@ func Init(ctx context.Context) error {
 	}
 	workspacePlans, err := DBClient.GetWorkspaceSubscriptionPlanList()
 	if err != nil {
-		return fmt.Errorf("get workspace subscription plan list error: %v", err)
+		return fmt.Errorf("get workspace subscription plan list error: %w", err)
 	}
 	WorkspacePlanResQuota, err = resources.ParseResourceLimitWithPlans(workspacePlans)
 	if err != nil {
-		return fmt.Errorf("parse resource limit with workspace subscription error: %v", err)
+		return fmt.Errorf("parse resource limit with workspace subscription error: %w", err)
 	}
 
 	notifyConfigStr := os.Getenv(helper.EnvNotifyConfig)
 	if notifyConfigStr != "" {
 		notifyConfig, err := usernotify.ParseConfigsWithJSON(notifyConfigStr)
 		if err != nil {
-			return fmt.Errorf("parse notify config error: %v", err)
+			return fmt.Errorf("parse notify config error: %w", err)
 		}
 		UserContactProvider = usernotify.NewMemoryContactProvider()
-		UserNotificationService = usernotify.NewEventNotificationService(notifyConfig, UserContactProvider)
+		UserNotificationService = usernotify.NewEventNotificationService(
+			notifyConfig,
+			UserContactProvider,
+		)
 	} else {
 		logrus.Errorf("empty notify config env: %s, user notification service disabled", helper.EnvNotifyConfig)
 	}
@@ -232,10 +253,10 @@ func Init(ctx context.Context) error {
 		Scheme: scheme,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to start manager: %v", err)
+		return fmt.Errorf("unable to start manager: %w", err)
 	}
 	if err = SetupCache(K8sManager); err != nil {
-		return fmt.Errorf("setup cache error: %v", err)
+		return fmt.Errorf("setup cache error: %w", err)
 	}
 
 	// Initialize Stripe service if configured
@@ -255,10 +276,18 @@ const UserOwnerLabel = "user.sealos.io/owner"
 func SetupCache(mgr ctrl.Manager) error {
 	ns := &corev1.Namespace{}
 	nsNameFunc := func(obj client.Object) []string {
-		return []string{obj.(*corev1.Namespace).Name}
+		_ns, ok := obj.(*corev1.Namespace)
+		if !ok {
+			return []string{}
+		}
+		return []string{_ns.Name}
 	}
 	nsOwnerFunc := func(obj client.Object) []string {
-		return []string{obj.(*corev1.Namespace).Labels[UserOwnerLabel]}
+		_ns, ok := obj.(*corev1.Namespace)
+		if !ok {
+			return []string{}
+		}
+		return []string{_ns.Labels[UserOwnerLabel]}
 	}
 
 	for _, idx := range []struct {
@@ -267,7 +296,8 @@ func SetupCache(mgr ctrl.Manager) error {
 		extractValue client.IndexerFunc
 	}{
 		{ns, accountv1.Name, nsNameFunc},
-		{ns, accountv1.Owner, nsOwnerFunc}} {
+		{ns, accountv1.Owner, nsOwnerFunc},
+	} {
 		if err := mgr.GetFieldIndexer().IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
 			return err
 		}
@@ -312,7 +342,11 @@ func setDefaultDebtPeriodWaitSecond() {
 		types.DebtDeletionPeriod:    "The system will release the resources of the current space soon. Please recharge in time to avoid affecting your normal use.",
 		types.FinalDeletionPeriod:   "The system will completely release all resources under the current account at any time. Please recharge in time to avoid affecting your normal use.",
 	}
-	EmailTemplateZHMap, EmailTemplateENMap = make(map[types.DebtStatusType]string), make(map[types.DebtStatusType]string)
+	EmailTemplateZHMap, EmailTemplateENMap = make(
+		map[types.DebtStatusType]string,
+	), make(
+		map[types.DebtStatusType]string,
+	)
 	for _, i := range []types.DebtStatusType{types.LowBalancePeriod, types.CriticalBalancePeriod, types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod} {
 		EmailTemplateENMap[i] = TitleTemplateENMap[i] + "：" + NoticeTemplateENMap[i] + "(" + domain + ")"
 		EmailTemplateZHMap[i] = TitleTemplateZHMap[i] + "：" + NoticeTemplateZHMap[i] + "(" + domain + ")"
