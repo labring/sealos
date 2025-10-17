@@ -383,6 +383,60 @@ export const openApiDocument = (sealosDomain: string) =>
             }
           }
         }
+      },
+      '/api/v1/app/{name}/restart': {
+        post: {
+          summary: 'Restart application',
+          description:
+            'Restart an application by updating the restartTime label to trigger pod recreation',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              description: 'Name of the application to restart',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Application restarted successfully',
+              content: {
+                'application/json': {
+                  schema: z.object({
+                    message: z.string()
+                  })
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid path parameters',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Application not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
       }
     }
   });

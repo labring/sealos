@@ -1,4 +1,5 @@
 import { IncomingHttpHeaders } from 'http';
+import { verify } from 'jsonwebtoken';
 
 export const authSession = async (header: IncomingHttpHeaders) => {
   if (!header) return Promise.reject('unAuthorization');
@@ -22,5 +23,17 @@ export const authAppToken = async (header: IncomingHttpHeaders) => {
     return Promise.resolve(authorization);
   } catch (err) {
     return Promise.reject('unAuthorization');
+  }
+};
+
+export const verifyJwt = async <TPayload>(
+  token: string,
+  secret: string
+): Promise<TPayload | null> => {
+  try {
+    const payload = verify(token, secret) as TPayload;
+    return payload;
+  } catch (err) {
+    return null;
   }
 };
