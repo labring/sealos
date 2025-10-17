@@ -21,13 +21,13 @@ import (
 )
 
 type ObjectStorageTraffic struct {
-	Time   time.Time `json:"time" bson:"time"`
-	User   string    `json:"user" bson:"user"`
-	Bucket string    `json:"bucket" bson:"bucket"`
-	//bytes
+	Time   time.Time `json:"time"      bson:"time"`
+	User   string    `json:"user"      bson:"user"`
+	Bucket string    `json:"bucket"    bson:"bucket"`
+	// bytes
 	TotalSent int64 `json:"totalSent" bson:"totalSent"`
 
-	//The sent traffic since the last time
+	// The sent traffic since the last time
 	Sent int64 `json:"sent" bson:"sent"`
 }
 
@@ -35,9 +35,9 @@ type UserTimeRangeTraffic struct {
 	CreatedAt     time.Time                  `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	UpdatedAt     time.Time                  `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
 	NextCleanTime time.Time                  `gorm:"type:timestamp(3) with time zone"`
-	UserUID       uuid.UUID                  `gorm:"type:uuid;primaryKey" json:"user_uid" bson:"user_uid"`
-	SentBytes     int64                      `gorm:"type:bigint;default:0" json:"sent_bytes" bson:"sent_bytes"`
-	Status        UserTimeRangeTrafficStatus `gorm:"type:varchar(20);default:'processing'" json:"status" bson:"status"`
+	UserUID       uuid.UUID                  `gorm:"type:uuid;primaryKey"                                                      json:"user_uid"   bson:"user_uid"`
+	SentBytes     int64                      `gorm:"type:bigint;default:0"                                                     json:"sent_bytes" bson:"sent_bytes"`
+	Status        UserTimeRangeTrafficStatus `gorm:"type:varchar(20);default:'processing'"                                     json:"status"     bson:"status"`
 }
 
 func (UserTimeRangeTraffic) TableName() string {
@@ -53,3 +53,31 @@ const (
 
 	UserTimeRangeTrafficStatusRecovering UserTimeRangeTrafficStatus = "recovering"
 )
+
+type WorkspaceTraffic struct {
+	ID                      uuid.UUID              `gorm:"type:uuid;default:gen_random_uuid();primaryKey"                                   json:"id"                        bson:"id"`
+	CreatedAt               time.Time              `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt               time.Time              `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
+	ExpiredAt               time.Time              `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	Workspace               string                 `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:workspace"`     // Workspace 名称
+	RegionDomain            string                 `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:region_domain"` // Region Domain
+	WorkspaceSubscriptionID uuid.UUID              `gorm:"type:uuid"                                                                        json:"workspace_subscription_id" bson:"workspace_subscription_id"`
+	Status                  WorkspaceTrafficStatus `gorm:"type:workspace_traffic_status;default:'active'"                                   json:"status"                    bson:"status"`
+	From                    WorkspaceTrafficFrom   `gorm:"type:varchar(50)"                                                                 json:"from"                      bson:"from"`
+	FromID                  string                 `gorm:"type:varchar(50)"                                                                 json:"from_id"                   bson:"from_id"`
+	TotalBytes              int64                  `gorm:"type:bigint;default:0"                                                            json:"total_bytes"               bson:"total_bytes"`
+	UsedBytes               int64                  `gorm:"type:bigint;default:0"                                                            json:"used_bytes"                bson:"used_bytes"`
+}
+
+type (
+	WorkspaceTrafficFrom string
+	PackageFrom          string
+)
+
+const (
+	WorkspaceTrafficFromWorkspaceSubscription WorkspaceTrafficFrom = "workspace_subscription"
+)
+
+func (WorkspaceTraffic) TableName() string {
+	return "WorkspaceTraffic"
+}

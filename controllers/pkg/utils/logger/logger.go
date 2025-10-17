@@ -25,9 +25,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var (
-	defaultLogger *zap.Logger
-)
+var defaultLogger *zap.Logger
 
 // init default logger with only console output info above
 func init() {
@@ -37,7 +35,7 @@ func init() {
 
 // CfgConsoleLogger config for console logs
 // cfg donot support concurrent calls (as any package should init cfg at startup once)
-func CfgConsoleLogger(debugMode bool, showPath bool) {
+func CfgConsoleLogger(debugMode, showPath bool) {
 	level, zos := genConfigs(debugMode, showPath)
 
 	zc := zapcore.NewTee(newConsoleCore(level))
@@ -58,7 +56,7 @@ func CfgConsoleAndFileLogger(debugMode bool, logDir, name string, showPath bool)
 	defaultLogger = zap.New(zc, zos...)
 }
 
-func genConfigs(debugMode bool, showPath bool) (zapcore.LevelEnabler, []zap.Option) {
+func genConfigs(debugMode, showPath bool) (zapcore.LevelEnabler, []zap.Option) {
 	level := zapcore.InfoLevel
 	if debugMode {
 		level = zapcore.DebugLevel
@@ -91,7 +89,7 @@ func newConsoleCore(le zapcore.LevelEnabler) zapcore.Core {
 }
 
 func newFileCore(filename string, le zapcore.LevelEnabler) zapcore.Core {
-	//TODO: export more rotate configs
+	// TODO: export more rotate configs
 	fileLogger := zapcore.AddSync(&lumberjack.Logger{
 		Filename: filename,
 		MaxSize:  10, // megabytes per file
@@ -116,36 +114,36 @@ func IsDebugMode() bool {
 }
 
 // Fatal logs a message at emergency level and exit.
-func Fatal(f interface{}, v ...interface{}) {
+func Fatal(f any, v ...any) {
 	defaultLogger.Sugar().Fatalf(formatLog(zapcore.FatalLevel, f, v...))
 }
 
 // Panic logs a message at emergency level and exit.
-func Panic(f interface{}, v ...interface{}) {
+func Panic(f any, v ...any) {
 	defaultLogger.Sugar().Panicf(formatLog(zapcore.PanicLevel, f, v...))
 }
 
 // Error logs a message at error level.
-func Error(f interface{}, v ...interface{}) {
+func Error(f any, v ...any) {
 	defaultLogger.Sugar().Errorf(formatLog(zapcore.ErrorLevel, f, v...))
 }
 
 // Warn logs a message at warning level.
-func Warn(f interface{}, v ...interface{}) {
+func Warn(f any, v ...any) {
 	defaultLogger.Sugar().Warnf(formatLog(zapcore.WarnLevel, f, v...))
 }
 
 // Info logs a message at info level.
-func Info(f interface{}, v ...interface{}) {
+func Info(f any, v ...any) {
 	defaultLogger.Sugar().Infof(formatLog(zapcore.InfoLevel, f, v...))
 }
 
 // Debug logs a message at debug level.
-func Debug(f interface{}, v ...interface{}) {
+func Debug(f any, v ...any) {
 	defaultLogger.Sugar().Debugf(formatLog(zapcore.DebugLevel, f, v...))
 }
 
-func formatLog(l zapcore.Level, f interface{}, v ...interface{}) string {
+func formatLog(l zapcore.Level, f any, v ...any) string {
 	var msg string
 	switch f := f.(type) {
 	case string:

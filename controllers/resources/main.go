@@ -109,20 +109,20 @@ func main() {
 		setupLog.Error(err, "failed to init index field")
 		os.Exit(1)
 	}
-	if env.GetBoolWithDefault("ENABLE_AUTO_RESOURCE_QUOTA", false) {
-		if err = (&controllers.NamespaceQuotaReconciler{
-			Client:   mgr.GetClient(),
-			Scheme:   mgr.GetScheme(),
-			Recorder: mgr.GetEventRecorderFor("namespace-quota-controller"),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "NamespaceQuota")
-			os.Exit(1)
-		}
-	}
-	if err = (&controllers.NetworkReconciler{}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Network")
-		os.Exit(1)
-	}
+	//if env.GetBoolWithDefault("ENABLE_AUTO_RESOURCE_QUOTA", false) {
+	//	if err = (&controllers.NamespaceQuotaReconciler{
+	//		Client:   mgr.GetClient(),
+	//		Scheme:   mgr.GetScheme(),
+	//		Recorder: mgr.GetEventRecorderFor("namespace-quota-controller"),
+	//	}).SetupWithManager(mgr); err != nil {
+	//		setupLog.Error(err, "unable to create controller", "controller", "NamespaceQuota")
+	//		os.Exit(1)
+	//	}
+	//}
+	//if err = (&controllers.NetworkReconciler{}).SetupWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create controller", "controller", "Network")
+	//	os.Exit(1)
+	//}
 
 	go func() {
 		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

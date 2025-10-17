@@ -48,10 +48,11 @@ func TestFatalLog(t *testing.T) {
 		Fatal("this is fatal")
 		return
 	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestFatalLog")
+	cmd := exec.Command(os.Args[0], "-test.run=TestFatalLog") // #nosec G204
 	cmd.Env = append(os.Environ(), "LOG_FATAL=1")
 	err := cmd.Run()
-	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+	e := &exec.ExitError{}
+	if errors.As(err, &e) {
 		return
 	}
 	t.Fatalf("process ran with err %v, want exit status 1", err)

@@ -5,13 +5,12 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
+	"github.com/sirupsen/logrus"
 )
 
 // @Summary Get credits info
@@ -25,13 +24,19 @@ import (
 func GetCreditsInfo(c *gin.Context) {
 	req := &helper.AuthBase{}
 	if err := authenticateRequest(c, req); err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	creditsInfo, err := getCreditsInfo(req.UserUID)
 	if err != nil {
 		logrus.Errorf("GetCreditsInfo error: %v", err)
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get credits info: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get credits info: %v", err)},
+		)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -64,22 +69,22 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		//start := time.Now()
+		// start := time.Now()
 		subscription, err = dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: userUID})
-		//logrus.Printf("[DB] GetSubscription took %v", time.Since(start))
+		// logrus.Printf("[DB] GetSubscription took %v", time.Since(start))
 		if err != nil {
-			errChan <- fmt.Errorf("failed to get subscription info: %v", err)
+			errChan <- fmt.Errorf("failed to get subscription info: %w", err)
 		}
 	}()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		//start := time.Now()
+		// start := time.Now()
 		account, err = dao.DBClient.GetAccount(types.UserQueryOpts{UID: userUID})
 		if err != nil {
-			errChan <- fmt.Errorf("failed to get account: %v", err)
+			errChan <- fmt.Errorf("failed to get account: %w", err)
 		}
-		//logrus.Printf("[DB] GetAccount took %v", time.Since(start))
+		// logrus.Printf("[DB] GetAccount took %v", time.Since(start))
 	}()
 
 	wg.Wait()
@@ -91,20 +96,20 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 		}
 	}
 
-	//start := time.Now()
+	// start := time.Now()
 	currentPlan, err := dao.DBClient.GetSubscriptionPlan(subscription.PlanName)
-	//logrus.Printf("[DB] GetSubscriptionPlan (%s) took %v", subscription.PlanName, time.Since(start))
+	// logrus.Printf("[DB] GetSubscriptionPlan (%s) took %v", subscription.PlanName, time.Since(start))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get subscription plan info: %v", err)
+		return nil, fmt.Errorf("failed to get subscription plan info: %w", err)
 	}
 	freePlan, err := dao.DBClient.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get free plan info: %v", err)
+		return nil, fmt.Errorf("failed to get free plan info: %w", err)
 	}
 
 	credits, err := dao.DBClient.GetAvailableCredits(&types.UserQueryOpts{UID: userUID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get available credits: %v", err)
+		return nil, fmt.Errorf("failed to get available credits: %w", err)
 	}
 
 	var currentCredits, freeCredits types.Credits

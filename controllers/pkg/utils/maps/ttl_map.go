@@ -28,7 +28,7 @@ func New[T any](maxTTL int) (m *TTLMap[T]) {
 			m.l.Unlock()
 		}
 	}()
-	return
+	return m
 }
 
 func (m *TTLMap[T]) Len() int {

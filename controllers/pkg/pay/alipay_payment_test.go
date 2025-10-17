@@ -2,11 +2,10 @@ package pay
 
 import (
 	"os"
+	"testing"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/account"
-
-	"testing"
 )
 
 func setupenvAlipay() {
@@ -60,7 +59,10 @@ func setupenvAlipay() {
 func TestCreatePaymentIntegration(t *testing.T) {
 	ap, err := NewAlipayPayment()
 	if err != nil {
-		t.Skipf("Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v", err)
+		t.Skipf(
+			"Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v",
+			err,
+		)
 	}
 	// place an order of $1
 	tradeNo, qrURL, err := ap.CreatePayment(1_000_000, "test-user", "unit tests create payments")
@@ -80,7 +82,11 @@ func TestSandbox_EndToEnd(t *testing.T) {
 
 	// place an order
 	const amount = 20_000
-	outTradeNo, qrURL, err := ap.CreatePayment(amount, "sandbox-user", "sandbox_environment_testing")
+	outTradeNo, qrURL, err := ap.CreatePayment(
+		amount,
+		"sandbox-user",
+		"sandbox_environment_testing",
+	)
 	if err != nil {
 		t.Fatalf("CreatePayment() failed: %v", err)
 	}

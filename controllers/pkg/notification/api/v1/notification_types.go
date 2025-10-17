@@ -22,9 +22,11 @@ import (
 
 type Type string
 
-const High Type = "High"
-const Medium Type = "Medium"
-const Low Type = "Low"
+const (
+	High   Type = "High"
+	Medium Type = "Medium"
+	Low    Type = "Low"
+)
 
 // NotificationSpec defines the desired state of Notification
 // UserName and whether read will be set in label,because set in label is ease to query
@@ -45,8 +47,7 @@ type I18n struct {
 }
 
 // NotificationStatus defines the observed state of Notification
-type NotificationStatus struct {
-}
+type NotificationStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

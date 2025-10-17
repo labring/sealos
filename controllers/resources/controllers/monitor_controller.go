@@ -25,8 +25,6 @@ import (
 	"sync"
 	"time"
 
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
-
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -275,10 +273,10 @@ func filterNormalNamespace(namespaceList *corev1.NamespaceList) {
 		debtStatus := ""
 		anno := namespaceList.Items[i].Annotations
 		if anno != nil {
-			debtStatus = anno[v1.DebtNamespaceAnnoStatusKey]
+			debtStatus = anno[types.DebtNamespaceAnnoStatusKey]
 		}
-		if debtStatus == v1.SuspendDebtNamespaceAnnoStatus || debtStatus == v1.SuspendCompletedDebtNamespaceAnnoStatus ||
-			debtStatus == v1.FinalDeletionDebtNamespaceAnnoStatus || debtStatus == v1.FinalDeletionCompletedDebtNamespaceAnnoStatus {
+		if debtStatus == types.SuspendDebtNamespaceAnnoStatus || debtStatus == types.SuspendCompletedDebtNamespaceAnnoStatus ||
+			debtStatus == types.FinalDeletionDebtNamespaceAnnoStatus || debtStatus == types.FinalDeletionCompletedDebtNamespaceAnnoStatus {
 			continue
 		}
 		items = append(items, namespaceList.Items[i])

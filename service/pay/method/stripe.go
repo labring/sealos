@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/pay/handler"
 	"github.com/labring/sealos/service/pay/helper"
-	"github.com/stripe/stripe-go/v74"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -106,26 +105,26 @@ func GetStripePaymentStatus(c *gin.Context, request *helper.Request, client *mon
 	}
 
 	switch session.Status {
-	case stripe.CheckoutSessionStatusComplete:
-		// change the status of the database to pay.Payment Success
-		paymentStatus, err := handler.UpdatePaymentStatus(client, request.OrderID, pay.PaymentSuccess)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": fmt.Sprintf("update payment status failed when wechat order status is success: %s, %v", paymentStatus, err),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"message": "payment has been successfully completed, database has been updated",
-			"status":  pay.PaymentSuccess,
-			"orderID": request.OrderID,
-		})
-		return
-	case stripe.CheckoutSessionStatusExpired:
-		handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentExpired)
-	case stripe.CheckoutSessionStatusOpen:
-		handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentNotPaid)
-	default:
-		handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentUnknown)
+	//case stripe.CheckoutSessionStatusComplete:
+	//	// change the status of the database to pay.Payment Success
+	//	paymentStatus, err := handler.UpdatePaymentStatus(client, request.OrderID, pay.PaymentSuccess)
+	//	if err != nil {
+	//		c.JSON(http.StatusBadRequest, gin.H{
+	//			"error": fmt.Sprintf("update payment status failed when wechat order status is success: %s, %v", paymentStatus, err),
+	//		})
+	//		return
+	//	}
+	//	c.JSON(http.StatusOK, gin.H{
+	//		"message": "payment has been successfully completed, database has been updated",
+	//		"status":  pay.PaymentSuccess,
+	//		"orderID": request.OrderID,
+	//	})
+	//	return
+	//case stripe.CheckoutSessionStatusExpired:
+	//	handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentExpired)
+	//case stripe.CheckoutSessionStatusOpen:
+	//	handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentNotPaid)
+	//default:
+	//	handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentUnknown)
 	}
 }
