@@ -2,19 +2,17 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/labring/sealos/service/account/helper"
-
-	services "github.com/labring/sealos/service/pkg/pay"
-
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
-
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
+	"github.com/labring/sealos/service/account/helper"
+	services "github.com/labring/sealos/service/pkg/pay"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 const (
@@ -121,7 +119,6 @@ func (p *SubscriptionProcessor) acquireProcessingLock(lockID string) (bool, erro
 		WHERE subscription_processor_locks.lock_until < NOW()
 		RETURNING true as acquired
 	`, lockID, time.Now().UTC().Add(LockTimeout)).Scan(&result).Error
-
 	if err != nil {
 		return false, err
 	}
@@ -154,7 +151,6 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 			LIMIT ?
 		`, time.Now().UTC().Add(10*time.Minute), types.SubscriptionStatusNormal, types.FreeSubscriptionPlanName, BatchSize).Scan(&expiredSubscriptions).Error
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to query expired subscriptions: %w", err)
 	}
@@ -165,17 +161,27 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 	for _, subscription := range expiredSubscriptions {
 		logrus.Infof("Renewal subscription plan: %v", subscription)
 		var userStatus types.UserStatus
-		err = p.db.Model(&types.User{}).Where(&types.User{UID: subscription.UserUID}).Select("status").Scan(&userStatus).Error
+		err = p.db.Model(&types.User{}).
+			Where(&types.User{UID: subscription.UserUID}).
+			Select("status").
+			Scan(&userStatus).
+			Error
 		if err != nil {
 			logrus.Errorf("Failed to get user status for subscription %s: %v", subscription.ID, err)
 			continue
 		}
 		if userStatus != types.UserStatusNormal {
-			logrus.Infof("User %s is not NORMAL_USER, skipping subscription %s", subscription.UserUID, subscription.ID)
-			p.db.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", userStatus)
+			logrus.Infof(
+				"User %s is not NORMAL_USER, skipping subscription %s",
+				subscription.UserUID,
+				subscription.ID,
+			)
+			p.db.Model(&types.Subscription{}).
+				Where(&types.Subscription{ID: subscription.ID}).
+				Update("status", userStatus)
 			continue
 		}
-		//TODO transaction operation:
+		// TODO transaction operation:
 		// 1. Create a renewal subscription transaction for an expiring subscription
 		// 2. Automatically renew payment by binding cardID (create payment order, manage transaction PayID, initiate tied card payment, deduct payment by balance if card payment fails, and change payment information to ChargeSourceBalance)
 		// 3. Notification of successful renewal and information on the source of deduction
@@ -189,7 +195,9 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 	return nil
 }
 
-func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *types.Subscription) error {
+func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(
+	subscription *types.Subscription,
+) error {
 	subPlan, err := dao.DBClient.GetSubscriptionPlan(subscription.PlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get subscription plan: %w", err)
@@ -213,14 +221,15 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 		Status:         types.SubscriptionTransactionStatusProcessing,
 	}
 
-	//TODO if free subscription, determine whether to bind github account. If bound, renewal subscription; otherwise, the status changes to Debt
-	if subscription.PlanName == types.FreeSubscriptionPlanName && subscription.Status == types.SubscriptionStatusNormal {
+	// TODO if free subscription, determine whether to bind github account. If bound, renewal subscription; otherwise, the status changes to Debt
+	if subscription.PlanName == types.FreeSubscriptionPlanName &&
+		subscription.Status == types.SubscriptionStatusNormal {
 		// TODO 待删除逻辑
-		//ok, err := HasGithubOauthProvider(p.db, subscription.UserUID)
-		//if err != nil {
+		// ok, err := HasGithubOauthProvider(p.db, subscription.UserUID)
+		// if err != nil {
 		//	return fmt.Errorf("failed to check github oauth provider: %w", err)
 		//}
-		//if ok {
+		// if ok {
 		//	subTransaction.PayStatus = types.SubscriptionPayStatusNoNeed
 		//	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
 		//		return tx.Create(&subTransaction).Error
@@ -228,7 +237,7 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 		//	if err != nil {
 		//		return fmt.Errorf("failed to create subscription transaction: %w", err)
 		//	}
-		//} else {
+		// } else {
 		//	subscription.Status = types.SubscriptionStatusDebt
 		//	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
 		//		return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
@@ -240,7 +249,7 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 		return nil
 	}
 
-	//TODO card binding payment
+	// TODO card binding payment
 	if subscription.CardID != nil {
 		paymentReq := services.PaymentRequest{
 			RequestID:     uuid.NewString(),
@@ -273,7 +282,7 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 	}
 	logrus.Errorf("Failed to pay by balance: %v, subscription: %v", err, subscription)
 
-	//TODO Send a subscription failure notification
+	// TODO Send a subscription failure notification
 
 	if err := p.sendRenewalFailureNotification(subscription, subTransaction); err != nil {
 		logrus.Errorf("Failed to send renewal failure notification for subscription %s: %v",
@@ -287,7 +296,10 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 		if dErr != nil {
 			return fmt.Errorf("failed to create subscription transaction: %w", dErr)
 		}
-		return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
+		return tx.Model(&types.Subscription{}).
+			Where(&types.Subscription{ID: subscription.ID}).
+			Update("status", types.SubscriptionStatusDebt).
+			Error
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update subscription status: %w", err)
@@ -308,12 +320,15 @@ func InitSubscriptionProcessorTables(db *gorm.DB) error {
 }
 
 // sendRenewalFailureNotification 发送续费失败通知
-func (p *SubscriptionProcessor) sendRenewalFailureNotification(subscription *types.Subscription, transaction types.SubscriptionTransaction) error {
-	//logrus.Infof("Sending renewal failure notification to user %s for subscription %s. Plan: %s, transaction ID: %s",
+func (p *SubscriptionProcessor) sendRenewalFailureNotification(
+	subscription *types.Subscription,
+	transaction types.SubscriptionTransaction,
+) error {
+	// logrus.Infof("Sending renewal failure notification to user %s for subscription %s. Plan: %s, transaction ID: %s",
 	//	subscription.UserUID, subscription.ID, subscription.PlanName, transaction.ID)
 	//
 	//// TODO: implement the actual notification logic
-	//if err := SendUserPayEmail(subscription.UserUID, utils.EnvSubFailedEmailTmpl); err != nil {
+	// if err := SendUserPayEmail(subscription.UserUID, utils.EnvSubFailedEmailTmpl); err != nil {
 	//	logrus.Errorf("Failed to send subscription success email: %v", err)
 	//}
 
@@ -346,7 +361,7 @@ func (p *SubscriptionProcessor) processSubscriptions() {
 	}
 }
 
-//func (p *SubscriptionProcessor) ProcessKYCStatus() {
+// func (p *SubscriptionProcessor) ProcessKYCStatus() {
 //	logrus.Info("Processing KYC")
 //
 //	// 获取分布式锁
@@ -373,7 +388,7 @@ func (p *SubscriptionProcessor) processSubscriptions() {
 //	}
 //}
 //
-//func (p *SubscriptionProcessor) processKYCStatus() error {
+// func (p *SubscriptionProcessor) processKYCStatus() error {
 //	logrus.Info("Processing KYC status")
 //
 //	var users []types.UserKYC
@@ -429,7 +444,7 @@ func (p *SubscriptionProcessor) ProcessKYCCredits() {
 	}
 
 	if !acquired {
-		//logrus.Info("Another instance is currently processing KYC credits")
+		// logrus.Info("Another instance is currently processing KYC credits")
 		return
 	}
 
@@ -447,9 +462,11 @@ func (p *SubscriptionProcessor) ProcessKYCCredits() {
 func (p *SubscriptionProcessor) processKYCCredits() error {
 	var users []types.UserKYC
 	err := p.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().UTC().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).Find(&users).Error
+		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().UTC().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).
+			Find(&users).
+			Error
 	})
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to query completed KYC: %w", err)
 	}
 	if len(users) == 0 {
@@ -466,7 +483,11 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 			// If the status is Pending, check whether KYC has been completed
 			if user.Status == types.UserKYCStatusPending {
 				userInfo := &types.UserInfo{}
-				dErr := dao.DBClient.GetGlobalDB().Model(&types.UserInfo{}).Where(`"userUid" = ?`, user.UserUID).Find(userInfo).Error
+				dErr := dao.DBClient.GetGlobalDB().
+					Model(&types.UserInfo{}).
+					Where(`"userUid" = ?`, user.UserUID).
+					Find(userInfo).
+					Error
 				if dErr != nil {
 					return fmt.Errorf("failed to get user info: %w", dErr)
 				}
@@ -489,14 +510,17 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 
 				// 判断创建时间是否为180天以前
 				if status == types.UserKYCStatusFailed {
-					return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusFailed).Error
+					return tx.Model(&types.UserKYC{}).
+						Where("user_uid = ?", user.UserUID).
+						Update("status", types.UserKYCStatusFailed).
+						Error
 				} else {
 					return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusCompleted).Error
 				}
 			}
 			// Obtain the integral records that are in the active state within normal time. If yes, change the status to failed and create a new one
-			//dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
-			//if dErr != nil && dErr != gorm.ErrRecordNotFound {
+			// dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
+			// if dErr != nil && dErr != gorm.ErrRecordNotFound {
 			//	return fmt.Errorf("failed to check credits: %w", dErr)
 			//}
 			now := time.Now().UTC()
@@ -515,7 +539,10 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 			if dErr := tx.Create(credits).Error; dErr != nil {
 				return fmt.Errorf("failed to create credits: %w", dErr)
 			}
-			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("next_at", user.NextAt.AddDate(0, 1, 0)).Error
+			return tx.Model(&types.UserKYC{}).
+				Where("user_uid = ?", user.UserUID).
+				Update("next_at", user.NextAt.AddDate(0, 1, 0)).
+				Error
 		})
 		if err != nil {
 			logrus.Errorf("Failed to update %#+v credits: %v", user, err)

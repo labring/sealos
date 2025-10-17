@@ -8,18 +8,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/labring/sealos/service/account/helper"
-
 	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/service/account/helper"
 )
 
 func TestCockroach_GetPayment(t *testing.T) {
-	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	db, err := newAccountForTest(
+		"",
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
 	}
-	got, resp, err := db.GetPayment(&types.UserQueryOpts{Owner: "1fgtm0mn"}, &helper.GetPaymentReq{})
+	got, resp, err := db.GetPayment(
+		&types.UserQueryOpts{Owner: "1fgtm0mn"},
+		&helper.GetPaymentReq{},
+	)
 	if err != nil {
 		t.Fatalf("GetPayment() error = %v", err)
 		return
@@ -60,9 +66,13 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 }
 
 func TestCockroach_GetTransfer(t *testing.T) {
-	os.Setenv("LOCAL_REGION", "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a")
+	t.Setenv("LOCAL_REGION", "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a")
 
-	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	db, err := newAccountForTest(
+		"",
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -110,9 +120,9 @@ func TestMongoDB_GetCostAppList(t *testing.T) {
 				Owner: "E1xAJ0fy4k",
 			},
 		},
-		//Namespace: "ns-hwhbg4vf",
-		//AppType: "APP-STORE",
-		//AppName: "cronicle-ldokpaus",
+		// Namespace: "ns-hwhbg4vf",
+		// AppType: "APP-STORE",
+		// AppName: "cronicle-ldokpaus",
 		LimitReq: helper.LimitReq{
 			Page:     1,
 			PageSize: 5,
@@ -149,9 +159,9 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 				Owner: "E1xAJ0fy4k",
 			},
 		},
-		//Namespace: "ns-hwhbg4vf",
-		//AppType: "APP",
-		//AppName: "hello-world",
+		// Namespace: "ns-hwhbg4vf",
+		// AppType: "APP",
+		// AppName: "hello-world",
 	}
 
 	/*
@@ -220,11 +230,15 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 				if len(appList.Overviews) != GetCurrentPageItemCount(int(appList.Total), j, i) {
 					fmt.Printf("limit: %#+v\n", req.LimitReq)
 					fmt.Printf("total: %v\n", appList.Total)
-					t.Fatalf("len costAppList: %v, not equal getPageCount: %v", len(appList.Overviews), GetCurrentPageItemCount(int(appList.Total), j, i))
+					t.Fatalf(
+						"len costAppList: %v, not equal getPageCount: %v",
+						len(appList.Overviews),
+						GetCurrentPageItemCount(int(appList.Total), j, i),
+					)
 				}
 
 				t.Logf("len costAppList: %v", len(appList.Overviews))
-				//t.Logf("costAppList: %#+v", appList)
+				// t.Logf("costAppList: %#+v", appList)
 
 				// 转json
 				if len(appList.Overviews) != 0 {
@@ -239,34 +253,34 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 		}
 	}
 
-	//req.LimitReq = helper.LimitReq{
+	// req.LimitReq = helper.LimitReq{
 	//	Page:     2,
 	//	PageSize: 2,
 	//}
 	////req.AppType = "APP-STORE"
-	//req.AppName = "rustdesk-ijhdszru"
-	//appList, err := m.GetCostOverview(req)
-	//if err != nil {
+	// req.AppName = "rustdesk-ijhdszru"
+	// appList, err := m.GetCostOverview(req)
+	// if err != nil {
 	//	t.Fatalf("failed to get cost app list: %v", err)
 	//}
-	//if len(appList.Overviews) != GetCurrentPageItemCount(int(appList.Total), req.PageSize, req.Page) {
+	// if len(appList.Overviews) != GetCurrentPageItemCount(int(appList.Total), req.PageSize, req.Page) {
 	//	fmt.Printf("limit: %#+v\n", req.LimitReq)
 	//	fmt.Printf("total: %v\n", appList.Total)
 	//	t.Fatalf("len costAppList: %v, not equal getPageCount: %v", len(appList.Overviews), GetCurrentPageItemCount(int(appList.Total), 2, 1))
 	//}
 	//
-	//t.Logf("len costAppList: %v", len(appList.Overviews))
+	// t.Logf("len costAppList: %v", len(appList.Overviews))
 	////t.Logf("costAppList: %#+v", appList)
 	//
 	//// 转json
-	//if len(appList.Overviews) != 0 {
+	// if len(appList.Overviews) != 0 {
 	//	b, err := json.MarshalIndent(appList, "", "  ")
 	//	if err != nil {
 	//		t.Fatalf("failed to marshal cost app list: %v", err)
 	//	}
 	//	t.Logf("costoverview json: %s", string(b))
 	//}
-	//t.Logf("success: %#+v", req.LimitReq)
+	// t.Logf("success: %#+v", req.LimitReq)
 }
 
 func GetCurrentPageItemCount(totalItems, pageSize, currentPage int) int {
@@ -343,9 +357,9 @@ func TestMongoDB_GetBasicCostDistribution(t *testing.T) {
 				Owner: "5uxfy8jl",
 			},
 		},
-		//Namespace: "ns-hwhbg4vf",
+		// Namespace: "ns-hwhbg4vf",
 		AppType: "APP-STORE",
-		//AppName: "cronicle-ldokpaus",
+		// AppName: "cronicle-ldokpaus",
 		LimitReq: helper.LimitReq{
 			Page:     1,
 			PageSize: 5,
@@ -376,8 +390,8 @@ func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
 				Owner: "5uxfy8jl",
 			},
 		},
-		//Namespace: "ns-hwhbg4vf",
-		//AppType: "APP-STORE",
+		// Namespace: "ns-hwhbg4vf",
+		// AppType: "APP-STORE",
 		AppType: "DB",
 		AppName: "test",
 		LimitReq: helper.LimitReq{
@@ -476,14 +490,14 @@ func TestMongoDB_GetAppCost1(t *testing.T) {
 				},
 			},
 		},
-		//Namespace: "ns-hwhbg4vf",
-		//AppType: "APP",
-		//AppName: "hello-world",
+		// Namespace: "ns-hwhbg4vf",
+		// AppType: "APP",
+		// AppName: "hello-world",
 		Page:     1,
 		PageSize: 10,
 	}
 
-	//for _, appType := range []string{"", "DB", "APP", "APP-STORE", "TERMINAL", "JOB"} {
+	// for _, appType := range []string{"", "DB", "APP", "APP-STORE", "TERMINAL", "JOB"} {
 	//	req.AppType = appType
 	//	for i := 1; i <= 30; i++ {
 	//		for j := 1; j <= 30; j++ {
@@ -529,7 +543,11 @@ func TestMongoDB_GetAppCost1(t *testing.T) {
 
 func TestAccount_ApplyInvoice(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := newAccountForTest(os.Getenv("MONGO_URI"), os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	m, err := newAccountForTest(
+		os.Getenv("MONGO_URI"),
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -581,7 +599,11 @@ func TestAccount_ApplyInvoice(t *testing.T) {
 
 func TestAccount_SetStatusInvoice(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := newAccountForTest(os.Getenv("MONGO_URI"), os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	m, err := newAccountForTest(
+		os.Getenv("MONGO_URI"),
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -601,7 +623,11 @@ func TestAccount_SetStatusInvoice(t *testing.T) {
 }
 
 func TestAccount_UseGiftCode(t *testing.T) {
-	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	db, err := newAccountForTest(
+		"",
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -615,7 +641,6 @@ func TestAccount_UseGiftCode(t *testing.T) {
 			},
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("UseGiftCode() error = %v", err)
 		return
@@ -624,7 +649,11 @@ func TestAccount_UseGiftCode(t *testing.T) {
 }
 
 func TestAccount_GetUserRealNameInfo(t *testing.T) {
-	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	db, err := newAccountForTest(
+		"",
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -637,7 +666,6 @@ func TestAccount_GetUserRealNameInfo(t *testing.T) {
 			},
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("GetUserRealNameInfo() error = %v", err)
 		return
@@ -646,7 +674,11 @@ func TestAccount_GetUserRealNameInfo(t *testing.T) {
 }
 
 func TestAccount_GetEnterpriseRealNameInfo(t *testing.T) {
-	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	db, err := newAccountForTest(
+		"",
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -659,7 +691,6 @@ func TestAccount_GetEnterpriseRealNameInfo(t *testing.T) {
 			},
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("GetUserRealNameInfo() error = %v", err)
 		return
@@ -681,7 +712,11 @@ func TestMongoDB_GetMonitorUniqueValues(t *testing.T) {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
 	}
-	monitors, err := db.GetMonitorUniqueValues(time.Now().UTC().Add(-2*time.Minute), time.Now().UTC(), []string{"ns-ufbih5nx", "ns-fb3qejql", "ns-pvq1d3ri", "ns-cyvisdnk"})
+	monitors, err := db.GetMonitorUniqueValues(
+		time.Now().UTC().Add(-2*time.Minute),
+		time.Now().UTC(),
+		[]string{"ns-ufbih5nx", "ns-fb3qejql", "ns-pvq1d3ri", "ns-cyvisdnk"},
+	)
 	if err != nil {
 		t.Fatalf("GetMonitorUniqueValues() error = %v", err)
 		return

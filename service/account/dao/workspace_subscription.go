@@ -12,14 +12,19 @@ import (
 )
 
 // WorkspaceSubscription methods implementation
-func (g *Cockroach) GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error) {
+func (g *Cockroach) GetWorkspaceSubscription(
+	workspace, regionDomain string,
+) (*types.WorkspaceSubscription, error) {
 	return g.ck.GetWorkspaceSubscription(workspace, regionDomain)
 }
 
-func (g *Cockroach) GetWorkspaceSubscriptionPaymentAmount(userUID uuid.UUID, workspace string) (int64, error) {
+func (g *Cockroach) GetWorkspaceSubscriptionPaymentAmount(
+	userUID uuid.UUID,
+	workspace string,
+) (int64, error) {
 	db := g.ck.GetGlobalDB()
 	query := `"user_uid" = ? AND pay_status = ?`
-	params := []interface{}{userUID, types.SubscriptionPayStatusPaid}
+	params := []any{userUID, types.SubscriptionPayStatusPaid}
 	if workspace != "" {
 		query += " AND workspace = ?"
 		params = append(params, workspace)
@@ -52,7 +57,9 @@ func (g *Cockroach) ListWorkspaceSubscriptionWorkspace(userUID uuid.UUID) ([]str
 	return workspaces, nil
 }
 
-func (g *Cockroach) GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error) {
+func (g *Cockroach) GetWorkspaceSubscriptionTraffic(
+	workspace, regionDomain string,
+) (total, used int64, err error) {
 	return g.ck.GetWorkspaceSubscriptionTraffic(workspace, regionDomain)
 }
 
@@ -60,7 +67,9 @@ func (g *Cockroach) GetAIQuota(workspace, regionDomain string) (total, used int6
 	return g.ck.GetAIQuota(workspace, regionDomain)
 }
 
-func (g *Cockroach) ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error) {
+func (g *Cockroach) ListWorkspaceSubscription(
+	userUID uuid.UUID,
+) ([]types.WorkspaceSubscription, error) {
 	return g.ck.ListWorkspaceSubscription(userUID)
 }
 
@@ -68,11 +77,16 @@ func (g *Cockroach) GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscri
 	return g.ck.GetWorkspaceSubscriptionPlanList()
 }
 
-func (g *Cockroach) GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error) {
+func (g *Cockroach) GetWorkspaceSubscriptionPlan(
+	planName string,
+) (*types.WorkspaceSubscriptionPlan, error) {
 	return g.ck.GetWorkspaceSubscriptionPlan(planName)
 }
 
-func (g *Cockroach) GetWorkspaceSubscriptionPlanPrice(planName string, period types.SubscriptionPeriod) (*types.ProductPrice, error) {
+func (g *Cockroach) GetWorkspaceSubscriptionPlanPrice(
+	planName string,
+	period types.SubscriptionPeriod,
+) (*types.ProductPrice, error) {
 	plan, err := g.ck.GetWorkspaceSubscriptionPlan(planName)
 	if err != nil {
 		return nil, err
@@ -82,22 +96,43 @@ func (g *Cockroach) GetWorkspaceSubscriptionPlanPrice(planName string, period ty
 			return &plan.Prices[i], nil
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("no such subscription plan %s", planName))
+	return nil, fmt.Errorf("no such subscription plan %s", planName)
 }
 
-func (g *Cockroach) GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain string) (*types.WorkspaceSubscriptionTransaction, error) {
+func (g *Cockroach) GetLastWorkspaceSubscriptionTransaction(
+	workspace, regionDomain string,
+) (*types.WorkspaceSubscriptionTransaction, error) {
 	return g.ck.GetLastWorkspaceSubscriptionTransaction(workspace, regionDomain)
 }
 
-func (g *Cockroach) GetAllUnprocessedWorkspaceSubscriptionTransaction(userUid uuid.UUID) ([]types.WorkspaceSubscriptionTransaction, error) {
-	return g.ck.GetAllUnprocessedWorkspaceSubscriptionTransaction(userUid)
+func (g *Cockroach) GetAllUnprocessedWorkspaceSubscriptionTransaction(
+	userUID uuid.UUID,
+) ([]types.WorkspaceSubscriptionTransaction, error) {
+	return g.ck.GetAllUnprocessedWorkspaceSubscriptionTransaction(userUID)
 }
 
-func AddWorkspaceSubscriptionTrafficPackage(globalDB *gorm.DB, subscriptionID uuid.UUID, totalMiB int64, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
-	return cockroach.AddWorkspaceSubscriptionTrafficPackage(globalDB, subscriptionID, totalMiB, expireAt, from, fromID)
+func AddWorkspaceSubscriptionTrafficPackage(
+	globalDB *gorm.DB,
+	subscriptionID uuid.UUID,
+	totalMiB int64,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+) error {
+	return cockroach.AddWorkspaceSubscriptionTrafficPackage(
+		globalDB,
+		subscriptionID,
+		totalMiB,
+		expireAt,
+		from,
+		fromID,
+	)
 }
 
-func (g *Cockroach) CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transactions ...*types.WorkspaceSubscriptionTransaction) error {
+func (g *Cockroach) CreateWorkspaceSubscriptionTransaction(
+	tx *gorm.DB,
+	transactions ...*types.WorkspaceSubscriptionTransaction,
+) error {
 	for i := range transactions {
 		err := tx.Create(transactions[i]).Error
 		if err != nil {
@@ -107,28 +142,6 @@ func (g *Cockroach) CreateWorkspaceSubscriptionTransaction(tx *gorm.DB, transact
 	return nil
 }
 
-/*
-	type WorkspaceSubscription struct {
-	    ID                   uuid.UUID              `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
-	    PlanName             string                 `gorm:"type:varchar(50);column:plan_name"`
-	    Workspace            string                 `gorm:"type:varchar(50);column:workspace;uniqueIndex:idx_workspace_region_domain"`
-	    RegionDomain         string                 `gorm:"type:varchar(50);column:region_domain;uniqueIndex:idx_workspace_region_domain"`
-	    UserUID              uuid.UUID              `gorm:"type:uuid;index:idx_workspace_subscription_user_uid;column:user_uid"`
-	    Status               SubscriptionStatus     `gorm:"type:subscription_status;column:status"`
-	    PayStatus            SubscriptionPayStatus  `gorm:"type:subscription_pay_status;column:pay_status"`
-	    PayMethod            PaymentMethod          `gorm:"type:string;column:pay_method"`
-	    Stripe               *StripePay             `gorm:"column:stripe;type:json"`
-	    TrafficStatus        WorkspaceTrafficStatus `gorm:"type:workspace_traffic_status;default:'active';column:traffic_status"`
-	    CurrentPeriodStartAt time.Time              `gorm:"column:current_period_start_at"`
-	    CurrentPeriodEndAt   time.Time              `gorm:"column:current_period_end_at"`
-	    CancelAtPeriodEnd    bool                   `gorm:"column:cancel_at_period_end;default:false"`
-	    CancelAt             time.Time              `gorm:"column:cancel_at"`
-	    CreateAt             time.Time              `gorm:"column:create_at"`
-	    UpdateAt             time.Time              `gorm:"column:update_at;autoCreateTime"`
-	    ExpireAt             *time.Time             `gorm:"column:expire_at"`
-	    Traffic              []WorkspaceTraffic     `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"`
-	}
-*/
 func (g *Cockroach) GetUserStripeCustomerID(userUID uuid.UUID) (string, error) {
 	var customerID string
 	err := g.ck.GetGlobalDB().Debug().Model(&types.Payment{}).

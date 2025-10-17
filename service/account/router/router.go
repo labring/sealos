@@ -11,24 +11,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/labring/sealos/service/account/docs"
-
-	"github.com/labring/sealos/service/account/dao"
-
 	"github.com/labring/sealos/service/account/api"
-
+	"github.com/labring/sealos/service/account/dao"
+	"github.com/labring/sealos/service/account/docs"
 	"github.com/labring/sealos/service/account/helper"
-
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	"github.com/gin-gonic/gin"
 )
 
 func RegisterPayRouter() {
@@ -132,9 +124,9 @@ func RegisterPayRouter() {
 		if os.Getenv(helper.EnvKycProcessEnabled) == _true {
 			go processor.StartKYCProcessing(ctx)
 		}
-		//go processor.StartFlushQuotaProcessing(ctx)
+		// go processor.StartFlushQuotaProcessing(ctx)
 	}
-	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
+	// POST(helper.AdminActiveBilling, api.AdminActiveBilling)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	router.GET("/health", func(c *gin.Context) {
@@ -147,8 +139,9 @@ func RegisterPayRouter() {
 
 	// Start the HTTP server to listen on port 2333.
 	srv := &http.Server{
-		Addr:    ":2333",
-		Handler: router,
+		Addr:              ":2333",
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -238,8 +231,12 @@ func startReconcileBilling(ctx context.Context) {
 			return
 		case t := <-ticker.C:
 			currentTime := t.UTC()
-			lastTime := lastReconcileTime.Load().(time.Time)
-			//doBillingReconcile(lastTime, currentTime)
+			lastTime, ok := lastReconcileTime.Load().(time.Time)
+			if !ok {
+				logrus.Errorf("Invalid last reconcile time: %v", lastReconcileTime)
+				continue
+			}
+			// doBillingReconcile(lastTime, currentTime)
 			dao.BillingTask.AddTask(&dao.ActiveBillingReconcile{
 				StartTime: lastTime,
 				EndTime:   currentTime,
@@ -252,7 +249,16 @@ func startReconcileBilling(ctx context.Context) {
 func startHourlyBillingActiveArchive(ctx context.Context) {
 	logrus.Info("Starting hourly billing active archive service")
 	now := time.Now().UTC()
-	lastHourStart := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, now.Location())
+	lastHourStart := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour()-1,
+		0,
+		0,
+		0,
+		now.Location(),
+	)
 
 	dao.BillingTask.AddTask(&dao.ArchiveBillingReconcile{
 		StartTime: lastHourStart,
@@ -280,7 +286,10 @@ func startExpiredWorkspaceSubscriptionProcessing(ctx context.Context) {
 	intervalStr := env.GetEnvWithDefault("WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL", "1h")
 	interval, err := time.ParseDuration(intervalStr)
 	if err != nil {
-		logrus.Errorf("Failed to parse WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL: %v, using default 1h", err)
+		logrus.Errorf(
+			"Failed to parse WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL: %v, using default 1h",
+			err,
+		)
 		interval = time.Hour
 	}
 
@@ -290,7 +299,7 @@ func startExpiredWorkspaceSubscriptionProcessing(ctx context.Context) {
 	defer ticker.Stop()
 
 	// 启动后立即执行一次
-	//if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
+	// if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
 	//	logrus.Errorf("Initial expired workspace subscription processing failed: %v", err)
 	//}
 
@@ -301,9 +310,9 @@ func startExpiredWorkspaceSubscriptionProcessing(ctx context.Context) {
 			return
 		case <-ticker.C:
 			logrus.Debug("Processing expired workspace subscriptions...")
-			//if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
+			// if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
 			//	logrus.Errorf("Expired workspace subscription processing failed: %v", err)
-			//} else {
+			// } else {
 			//	logrus.Debug("Expired workspace subscription processing completed successfully")
 			//}
 		}

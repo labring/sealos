@@ -53,7 +53,6 @@ func ParseCreatePayReq(c *gin.Context) (*CreatePayReq, error) {
 }
 
 type CardOperationReq struct {
-
 	// @Summary Authentication information
 	// @Description Authentication information
 	AuthBase `json:",inline" bson:",inline"`
@@ -141,7 +140,7 @@ func ParseSubscriptionQuotaCheckReq(c *gin.Context) (*SubscriptionQuotaCheckReq,
 }
 
 type SubscriptionQuotaCheckResp struct {
-	//allWorkspaceReady
+	// allWorkspaceReady
 	AllWorkspaceReady bool `json:"allWorkspaceReady" bson:"allWorkspaceReady" example:"true"`
 
 	ReadyWorkspace []string `json:"readyWorkspace" bson:"readyWorkspace" example:"workspace1,workspace2"`

@@ -6,46 +6,71 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/util/retry"
-
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	types2 "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func AddTrafficPackage(globalDB *gorm.DB, client client.Client, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
-	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(globalDB, sub.ID, plan.Traffic, expireAt, from, fromID)
+func AddTrafficPackage(
+	globalDB *gorm.DB,
+	client client.Client,
+	sub *types.WorkspaceSubscription,
+	plan *types.WorkspaceSubscriptionPlan,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+) error {
+	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(
+		globalDB,
+		sub.ID,
+		plan.Traffic,
+		expireAt,
+		from,
+		fromID,
+	)
 	if err != nil {
-		return fmt.Errorf("failed to create traffic package: %v", err)
+		return fmt.Errorf("failed to create traffic package: %w", err)
 	}
 	// Check if workspace was previously exhausted and needs to be resumed
-	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp || sub.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
+	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp ||
+		sub.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
 		// Update workspace status to available
 		err = globalDB.Model(&types.WorkspaceSubscription{}).
 			Where("id = ?", sub.ID).
 			Update("traffic_status", types.WorkspaceTrafficStatusActive).Error
 		if err != nil {
-			return fmt.Errorf("failed to update workspace traffic status: %v", err)
+			return fmt.Errorf("failed to update workspace traffic status: %w", err)
 		}
 		// Send resume request (outside transaction)
 	}
 	err = resumeWorkspaceTraffic(client, sub.Workspace)
 	if err != nil {
-		return fmt.Errorf("failed to resume workspace traffic: %v", err)
+		return fmt.Errorf("failed to resume workspace traffic: %w", err)
 		// Note: We don't rollback here as the traffic package was successfully added
 	}
 	return nil
 }
 
 func resumeWorkspaceTraffic(client client.Client, workspace string) error {
-	return updateNamespaceStatus(client, context.Background(), types.NetworkResume, []string{workspace})
+	return updateNamespaceStatus(
+		client,
+		context.Background(),
+		types.NetworkResume,
+		[]string{workspace},
+	)
 }
 
-func updateNamespaceStatus(clt client.Client, ctx context.Context, status string, namespaces []string) error {
+func updateNamespaceStatus(
+	clt client.Client,
+	ctx context.Context,
+	status string,
+	namespaces []string,
+) error {
 	logger := logr.FromContextOrDiscard(ctx)
 
 	for _, nsName := range namespaces {
@@ -66,7 +91,13 @@ func updateNamespaceStatus(clt client.Client, ctx context.Context, status string
 				ns.Annotations = make(map[string]string)
 			}
 			if ns.Annotations[types.NetworkStatusAnnoKey] == status {
-				logger.Info("Namespace already has desired status, skipping", "namespace", nsName, "status", status)
+				logger.Info(
+					"Namespace already has desired status, skipping",
+					"namespace",
+					nsName,
+					"status",
+					status,
+				)
 				return nil
 			}
 
@@ -76,7 +107,6 @@ func updateNamespaceStatus(clt client.Client, ctx context.Context, status string
 			// Attempt to update the namespace
 			return clt.Update(ctx, ns)
 		})
-
 		if err != nil {
 			return err
 		}
