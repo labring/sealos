@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/labring/sealos/controllers/pkg/types"
-
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/types"
 )
 
 type MemoryContactProvider struct {
@@ -35,7 +34,10 @@ func NewMemoryContactProvider() *MemoryContactProvider {
 	}
 }
 
-func (p *MemoryContactProvider) GetUserContact(ctx context.Context, userUID uuid.UUID) (*types.NotificationRecipient, error) {
+func (p *MemoryContactProvider) GetUserContact(
+	ctx context.Context,
+	userUID uuid.UUID,
+) (*types.NotificationRecipient, error) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
@@ -47,7 +49,10 @@ func (p *MemoryContactProvider) GetUserContact(ctx context.Context, userUID uuid
 	return contact, nil
 }
 
-func (p *MemoryContactProvider) SetUserContact(userUID uuid.UUID, recipient *types.NotificationRecipient) {
+func (p *MemoryContactProvider) SetUserContact(
+	userUID uuid.UUID,
+	recipient *types.NotificationRecipient,
+) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 

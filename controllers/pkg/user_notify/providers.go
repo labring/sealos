@@ -17,21 +17,19 @@ package usernotify
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/labring/sealos/controllers/pkg/types"
-
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/go-gomail/gomail"
+	"github.com/sirupsen/logrus"
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 )
 
@@ -89,13 +87,16 @@ func NewVMSProvider(config ProviderConfig) *VMSProvider {
 	return provider
 }
 
-func (p *VMSProvider) Send(ctx context.Context, message *NotificationMessage) (*NotificationResult, error) {
+func (p *VMSProvider) Send(
+	ctx context.Context,
+	message *NotificationMessage,
+) (*NotificationResult, error) {
 	if !p.IsAvailable() {
-		return nil, fmt.Errorf("VMS provider is not available")
+		return nil, errors.New("VMS provider is not available")
 	}
 
 	if message.Recipient.PhoneNumber == "" {
-		return nil, fmt.Errorf("phone number is required for VMS notification")
+		return nil, errors.New("phone number is required for VMS notification")
 	}
 
 	result := &NotificationResult{
@@ -109,7 +110,7 @@ func (p *VMSProvider) Send(ctx context.Context, message *NotificationMessage) (*
 	log.Printf("Sending VMS notification to %s: %s", message.Recipient.PhoneNumber, message.Title)
 
 	// 构建VMS参数，包括模板变量
-	phoneParam := make(map[string]interface{})
+	phoneParam := make(map[string]any)
 	if message.EventData != nil {
 		// 根据事件数据构建phone参数
 		if workspaceName, ok := message.EventData["workspace_name"]; ok {
@@ -128,7 +129,7 @@ func (p *VMSProvider) Send(ctx context.Context, message *NotificationMessage) (*
 		TriggerTime:  &vms.JsonTime{Time: result.SentAt},
 		Resource:     message.TemplateID, // 使用TemplateID作为Resource
 		NumberPoolNo: p.Config.VMSNumberPool,
-		SingleOpenId: message.Recipient.PhoneNumber + "-" + result.SentAt.Format("2006-01-02"),
+		SingleOpenId: message.Recipient.PhoneNumber + "-" + result.SentAt.Format(time.DateOnly),
 	}
 
 	// 如果有参数，添加PhoneParam
@@ -163,7 +164,7 @@ func (p *VMSProvider) Send(ctx context.Context, message *NotificationMessage) (*
 	}
 
 	// 构建响应数据
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"template_id":    message.TemplateID,
 		"phone":          message.Recipient.PhoneNumber,
 		"title":          message.Title,
@@ -181,7 +182,11 @@ func (p *VMSProvider) Send(ctx context.Context, message *NotificationMessage) (*
 	}
 
 	result.Success = true
-	log.Printf("VMS notification sent successfully to %s, status: %d", message.Recipient.PhoneNumber, statusCode)
+	log.Printf(
+		"VMS notification sent successfully to %s, status: %d",
+		message.Recipient.PhoneNumber,
+		statusCode,
+	)
 	return result, nil
 }
 
@@ -201,7 +206,8 @@ func NewEmailProvider(config ProviderConfig) *EmailProvider {
 	}
 
 	// 检查配置是否完整
-	if config.SMTPHost == "" || config.SMTPUsername == "" || config.SMTPPassword == "" || config.FromEmail == "" {
+	if config.SMTPHost == "" || config.SMTPUsername == "" || config.SMTPPassword == "" ||
+		config.FromEmail == "" {
 		log.Printf("Email provider configuration incomplete, disabling provider")
 		return provider
 	}
@@ -211,13 +217,16 @@ func NewEmailProvider(config ProviderConfig) *EmailProvider {
 	return provider
 }
 
-func (p *EmailProvider) Send(ctx context.Context, message *NotificationMessage) (*NotificationResult, error) {
+func (p *EmailProvider) Send(
+	ctx context.Context,
+	message *NotificationMessage,
+) (*NotificationResult, error) {
 	if !p.IsAvailable() {
-		return nil, fmt.Errorf("Email provider is not available")
+		return nil, errors.New("email provider is not available")
 	}
 
 	if message.Recipient.Email == "" {
-		return nil, fmt.Errorf("email address is required for email notification")
+		return nil, errors.New("email address is required for email notification")
 	}
 
 	result := &NotificationResult{
@@ -249,17 +258,22 @@ func (p *EmailProvider) Send(ctx context.Context, message *NotificationMessage) 
 	m.SetBody("text/html", emailContent)
 
 	// 创建邮件发送器
-	d := gomail.NewDialer(p.Config.SMTPHost, p.Config.SMTPPort, p.Config.SMTPUsername, p.Config.SMTPPassword)
+	d := gomail.NewDialer(
+		p.Config.SMTPHost,
+		p.Config.SMTPPort,
+		p.Config.SMTPUsername,
+		p.Config.SMTPPassword,
+	)
 
 	// 发送邮件
 	if err := d.DialAndSend(m); err != nil {
 		result.Success = false
 		result.Error = fmt.Sprintf("failed to send email: %v", err)
-		return result, fmt.Errorf("failed to send email: %v", err)
+		return result, fmt.Errorf("failed to send email: %w", err)
 	}
 
 	// 构建响应数据
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"template_id": message.TemplateID,
 		"email":       message.Recipient.Email,
 		"subject":     message.Title,
@@ -281,43 +295,75 @@ func (p *EmailProvider) Send(ctx context.Context, message *NotificationMessage) 
 }
 
 // renderEmailTemplate 渲染邮件HTML模板并替换变量
-func (p *EmailProvider) renderEmailTemplate(templateContent, content string, eventData map[string]interface{}, recipient types.NotificationRecipient) string {
-	renderedTemplate := templateContent
-
-	// 基本变量替换
-	renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.content}}", content)
-	renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.UserName}}", recipient.UserName)
-
-	// 替换事件数据中的变量
-	if eventData != nil {
-		if workspaceName, ok := eventData["workspace_name"]; ok {
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.workspace_name}}", fmt.Sprintf("%v", workspaceName))
-		}
-		if usedPercentage, ok := eventData["used_percentage"]; ok {
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.used_percentage}}", fmt.Sprintf("%v", usedPercentage))
-		}
-		if planName, ok := eventData["plan_name"]; ok {
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.plan_name}}", fmt.Sprintf("%v", planName))
-		}
-		if errorReason, ok := eventData["error_reason"]; ok {
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.error_reason}}", fmt.Sprintf("%v", errorReason))
-		}
-		if amount, ok := eventData["amount"]; ok {
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.amount}}", fmt.Sprintf("%v", amount))
-		}
-		if expireDays, ok := eventData["expire_days"]; ok {
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.expire_days}}", fmt.Sprintf("%v", expireDays))
-		}
-
-		// 处理其他动态变量
-		for key, value := range eventData {
-			placeholder := fmt.Sprintf("{{.%s}}", key)
-			renderedTemplate = strings.ReplaceAll(renderedTemplate, placeholder, fmt.Sprintf("%v", value))
-		}
-	}
-
-	return renderedTemplate
-}
+// func (p *EmailProvider) renderEmailTemplate(
+//	templateContent, content string,
+//	eventData map[string]any,
+//	recipient types.NotificationRecipient,
+// ) string {
+//	renderedTemplate := templateContent
+//
+//	// 基本变量替换
+//	renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.content}}", content)
+//	renderedTemplate = strings.ReplaceAll(renderedTemplate, "{{.UserName}}", recipient.UserName)
+//
+//	// 替换事件数据中的变量
+//	if eventData != nil {
+//		if workspaceName, ok := eventData["workspace_name"]; ok {
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				"{{.workspace_name}}",
+//				fmt.Sprintf("%v", workspaceName),
+//			)
+//		}
+//		if usedPercentage, ok := eventData["used_percentage"]; ok {
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				"{{.used_percentage}}",
+//				fmt.Sprintf("%v", usedPercentage),
+//			)
+//		}
+//		if planName, ok := eventData["plan_name"]; ok {
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				"{{.plan_name}}",
+//				fmt.Sprintf("%v", planName),
+//			)
+//		}
+//		if errorReason, ok := eventData["error_reason"]; ok {
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				"{{.error_reason}}",
+//				fmt.Sprintf("%v", errorReason),
+//			)
+//		}
+//		if amount, ok := eventData["amount"]; ok {
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				"{{.amount}}",
+//				fmt.Sprintf("%v", amount),
+//			)
+//		}
+//		if expireDays, ok := eventData["expire_days"]; ok {
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				"{{.expire_days}}",
+//				fmt.Sprintf("%v", expireDays),
+//			)
+//		}
+//
+//		// 处理其他动态变量
+//		for key, value := range eventData {
+//			placeholder := fmt.Sprintf("{{.%s}}", key)
+//			renderedTemplate = strings.ReplaceAll(
+//				renderedTemplate,
+//				placeholder,
+//				fmt.Sprintf("%v", value),
+//			)
+//		}
+//	}
+//
+//	return renderedTemplate
+//}
 
 type EmailData struct {
 	UserName       string
@@ -575,7 +621,7 @@ You have successfully subscribed to the %s plan for the %s space in the %s regio
 		AlertTemplate:     "Your %s Plan for the %s workspace in the %s region has expired. Your service will be suspended on your plan's expiration date.",
 		BorderColor:       "#ff0000",
 		WarnAlertTemplate: "To prevent service interruption and data loss, please update your payment information as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.",
-		//Content:           `To prevent service interruption and data loss, please update your plan as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.`,
+		// Content:           `To prevent service interruption and data loss, please update your plan as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.`,
 		Content:        "Your subscription will delete in %d days. Please renew your subscription to continue enjoying our services.",
 		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
 	},
@@ -595,9 +641,12 @@ func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
 	switch event.EventType {
 	case EventTypeTrafficUsageAlert:
 		var trafficData WorkspaceSubscriptionTrafficEventData
-		dataBytes, _ := json.Marshal(event.EventData)
+		dataBytes, err := json.Marshal(event.EventData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal traffic event data: %w", err)
+		}
 		if err := json.Unmarshal(dataBytes, &trafficData); err != nil {
-			return nil, fmt.Errorf("failed to parse traffic event data: %v", err)
+			return nil, fmt.Errorf("failed to parse traffic event data: %w", err)
 		}
 		// Determine title suffix based on UsagePercent
 		titleSuffix := "Usage Alert"
@@ -606,10 +655,28 @@ func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
 			data.Content = "Please upgrade your plan immediately to ensure continued operation."
 			data.BorderColor = "#ff0000"
 		}
-		data.Title = fmt.Sprintf(config.TitleTemplate, trafficData.RegionDomain, trafficData.Workspace, titleSuffix)
-		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
-			"Traffic", trafficData.RegionDomain, trafficData.Workspace, strconv.Itoa(trafficData.UsagePercent)+"%")
-		data.Recommendation = fmt.Sprintf(config.Recommendation, trafficData.RegionDomain, trafficData.Workspace)
+		data.Title = fmt.Sprintf(
+			config.TitleTemplate,
+			trafficData.RegionDomain,
+			trafficData.Workspace,
+			titleSuffix,
+		)
+		data.AlertMessage = fmt.Sprintf(
+			strings.ReplaceAll(
+				config.AlertTemplate,
+				`%s`,
+				`<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`,
+			),
+			"Traffic",
+			trafficData.RegionDomain,
+			trafficData.Workspace,
+			strconv.Itoa(trafficData.UsagePercent)+"%",
+		)
+		data.Recommendation = fmt.Sprintf(
+			config.Recommendation,
+			trafficData.RegionDomain,
+			trafficData.Workspace,
+		)
 		data.PlanDetails = &PlanDetails{
 			Title:    trafficData.PlanName,
 			Dates:    fmt.Sprintf(config.DatesFormat, trafficData.ExpirationDate),
@@ -622,28 +689,64 @@ func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
 		}
 	case EventTypeWorkspaceSubscriptionDebt:
 		var subData WorkspaceSubscriptionDebtEventData
-		dataBytes, _ := json.Marshal(event.EventData)
+		dataBytes, err := json.Marshal(event.EventData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal subscription debt event data: %w", err)
+		}
 		if err := json.Unmarshal(dataBytes, &subData); err != nil {
-			return nil, fmt.Errorf("failed to parse subscription debt event data: %v", err)
+			return nil, fmt.Errorf("failed to parse subscription debt event data: %w", err)
 		}
 		data.Title = fmt.Sprintf(config.TitleTemplate, subData.RegionDomain, subData.WorkspaceName)
-		data.AlertMessage = fmt.Sprintf(config.AlertTemplate, subData.PlanName, subData.WorkspaceName, subData.RegionDomain)
-		data.Content = fmt.Sprintf(config.Content, subData.PlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.AlertMessage = fmt.Sprintf(
+			config.AlertTemplate,
+			subData.PlanName,
+			subData.WorkspaceName,
+			subData.RegionDomain,
+		)
+		data.Content = fmt.Sprintf(
+			config.Content,
+			subData.PlanName,
+			subData.WorkspaceName,
+			subData.RegionDomain,
+		)
 		data.WarnContent = config.WarnAlertTemplate
-		data.Recommendation = fmt.Sprintf(config.Recommendation, subData.RegionDomain, subData.WorkspaceName)
-		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
-			subData.PlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.Recommendation = fmt.Sprintf(
+			config.Recommendation,
+			subData.RegionDomain,
+			subData.WorkspaceName,
+		)
+		data.AlertMessage = fmt.Sprintf(
+			strings.ReplaceAll(
+				config.AlertTemplate,
+				`%s`,
+				`<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`,
+			),
+			subData.PlanName,
+			subData.WorkspaceName,
+			subData.RegionDomain,
+		)
 		data.WarnContent = config.WarnAlertTemplate
 	default:
 		var subData WorkspaceSubscriptionEventData
-		dataBytes, _ := json.Marshal(event.EventData)
+		dataBytes, err := json.Marshal(event.EventData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal subscription event data: %w", err)
+		}
 		if err := json.Unmarshal(dataBytes, &subData); err != nil {
-			return nil, fmt.Errorf("failed to parse subscription event data: %v", err)
+			return nil, fmt.Errorf("failed to parse subscription event data: %w", err)
 		}
 		data.Title = fmt.Sprintf(config.TitleTemplate, subData.RegionDomain, subData.WorkspaceName)
 
-		data.AlertMessage = fmt.Sprintf(strings.ReplaceAll(config.AlertTemplate, `%s`, `<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`),
-			subData.NewPlanName, subData.WorkspaceName, subData.RegionDomain)
+		data.AlertMessage = fmt.Sprintf(
+			strings.ReplaceAll(
+				config.AlertTemplate,
+				`%s`,
+				`<span class="region-text" style="font-family: Arial, Helvetica, sans-serif;letter-spacing: 0.25px;font-weight: 600;color: #333;">%s</span>`,
+			),
+			subData.NewPlanName,
+			subData.WorkspaceName,
+			subData.RegionDomain,
+		)
 		data.PlanDetails = &PlanDetails{
 			Title:    subData.NewPlanName,
 			Dates:    fmt.Sprintf(config.DatesFormat, subData.ExpirationDate),
@@ -651,13 +754,18 @@ func generateEmailContent(event *NotificationEvent) (*EmailData, error) {
 			Features: subData.Features,
 		}
 		if config.Recommendation != "" {
-			data.Recommendation = fmt.Sprintf(config.Recommendation, subData.RegionDomain, subData.WorkspaceName)
+			data.Recommendation = fmt.Sprintf(
+				config.Recommendation,
+				subData.RegionDomain,
+				subData.WorkspaceName,
+			)
 		}
 		if event.EventType == EventTypeWorkspaceSubscriptionExpired {
 			data.Content = fmt.Sprintf(config.Content, subData.DaysRemaining)
 		}
 		switch event.EventType {
-		case EventTypeWorkspaceSubscriptionUpgradedSuccess, EventTypeWorkspaceSubscriptionCreatedSuccess:
+		case EventTypeWorkspaceSubscriptionUpgradedSuccess,
+			EventTypeWorkspaceSubscriptionCreatedSuccess:
 			data.Content = fmt.Sprintf(config.Content, subData.NextPayDate)
 		case EventTypeWorkspaceSubscriptionRenewedFailed:
 			data.Content = fmt.Sprintf(config.Content, subData.NewPlanName)
@@ -710,7 +818,8 @@ func NewSMSProvider(config ProviderConfig) *SMSProvider {
 	}
 
 	// 检查配置是否完整
-	if config.SMSAccessKeyID == "" || config.SMSAccessKeySecret == "" || config.SMSDefaultTemplate == "" {
+	if config.SMSAccessKeyID == "" || config.SMSAccessKeySecret == "" ||
+		config.SMSDefaultTemplate == "" {
 		log.Printf("SMS provider configuration incomplete, disabling provider")
 		return provider
 	}
@@ -720,9 +829,12 @@ func NewSMSProvider(config ProviderConfig) *SMSProvider {
 	return provider
 }
 
-func (p *SMSProvider) Send(ctx context.Context, message *NotificationMessage) (*NotificationResult, error) {
+func (p *SMSProvider) Send(
+	ctx context.Context,
+	message *NotificationMessage,
+) (*NotificationResult, error) {
 	if !p.IsAvailable() {
-		return nil, fmt.Errorf("SMS provider is not available")
+		return nil, errors.New("SMS provider is not available")
 	}
 	// 准备短信模板参数
 	templateParam := ""
@@ -794,7 +906,7 @@ func (p *SMSProvider) Send(ctx context.Context, message *NotificationMessage) (*
 	}
 
 	// 构建响应数据
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"template_code":  message.TemplateID,
 		"phone":          message.Recipient.PhoneNumber,
 		"content":        message.Content,
@@ -815,7 +927,11 @@ func (p *SMSProvider) Send(ctx context.Context, message *NotificationMessage) (*
 	}
 
 	result.Success = true
-	log.Printf("SMS notification sent successfully to %s, RequestId: %s", message.Recipient.PhoneNumber, *resp.Body.RequestId)
+	log.Printf(
+		"SMS notification sent successfully to %s, RequestId: %s",
+		message.Recipient.PhoneNumber,
+		*resp.Body.RequestId,
+	)
 	return result, nil
 }
 
@@ -827,7 +943,10 @@ type ProviderManager struct {
 }
 
 // NewProviderManager 创建提供者管理器
-func NewProviderManager(configs map[NotificationMethod]ProviderConfig, contactProvider UserContactProvider) *ProviderManager {
+func NewProviderManager(
+	configs map[NotificationMethod]ProviderConfig,
+	contactProvider UserContactProvider,
+) *ProviderManager {
 	manager := &ProviderManager{
 		providers:       make(map[NotificationMethod]NotificationProvider),
 		contactProvider: contactProvider,
@@ -868,15 +987,18 @@ func (m *ProviderManager) GetAvailableProviders() []NotificationProvider {
 }
 
 // SendEvent 发送事件通知
-func (m *ProviderManager) SendEvent(ctx context.Context, event *NotificationEvent) ([]*NotificationResult, error) {
-	var results []*NotificationResult
+func (m *ProviderManager) SendEvent(
+	ctx context.Context,
+	event *NotificationEvent,
+) ([]*NotificationResult, error) {
+	results := make([]*NotificationResult, 0)
 	var errors []string
 
 	// 如果事件中没有接收者信息，尝试获取
 	if m.contactProvider != nil {
 		contact, err := m.contactProvider.GetUserContact(ctx, event.UserUID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user contact: %v", err)
+			return nil, fmt.Errorf("failed to get user contact: %w", err)
 		} else if contact != nil {
 			// 补充接收者信息
 			event.Recipient = *contact
@@ -912,7 +1034,10 @@ func (m *ProviderManager) SendEvent(ctx context.Context, event *NotificationEven
 		// 生成通知内容
 		title, content, templateID, err := m.contentGen.GenerateContent(event, method)
 		if err != nil {
-			errors = append(errors, fmt.Sprintf("failed to generate content for %s: %v", method, err))
+			errors = append(
+				errors,
+				fmt.Sprintf("failed to generate content for %s: %v", method, err),
+			)
 			continue
 		}
 

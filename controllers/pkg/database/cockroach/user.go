@@ -5,7 +5,9 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-func (c *Cockroach) GetNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, error) {
+func (c *Cockroach) GetNotificationRecipient(
+	userUID uuid.UUID,
+) (*types.NotificationRecipient, error) {
 	var result types.NotificationRecipient
 	err := c.DB.Model(&types.User{}).
 		Select(`

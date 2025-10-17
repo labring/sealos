@@ -78,6 +78,7 @@ type WorkspaceSubscriptionPlan struct {
 func (p WorkspaceSubscriptionPlan) GetName() string {
 	return p.Name
 }
+
 func (p WorkspaceSubscriptionPlan) GetMaxResources() string {
 	return p.MaxResources
 }
@@ -117,10 +118,10 @@ func ParseMaxResource(res string, traffic int64) ([]string, error) {
 
 func parseResource(res WorkspaceFeatureResource) ([]string, error) {
 	result := []string{
-		fmt.Sprintf("%s vCPU", res.CPU),
-		fmt.Sprintf("%sGB RAM", strings.TrimSuffix(res.Memory, "Gi")),
-		fmt.Sprintf("%sGB Disk", strings.TrimSuffix(res.Storage, "Gi")),
-		fmt.Sprintf("%s / NodePorts", res.NodePorts),
+		res.CPU + " vCPU",
+		strings.TrimSuffix(res.Memory, "Gi") + "GB RAM",
+		strings.TrimSuffix(res.Storage, "Gi") + "GB Disk",
+		res.NodePorts + " / NodePorts",
 	}
 
 	// Handle nodeports (traffic) if present

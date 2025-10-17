@@ -89,10 +89,10 @@ type Logger struct {
 // - webhook: the Feishu Webhook URL for alerts (empty string to disable)
 // - minLevel: the minimum log level for sending Feishu alerts
 // - component: the system component name to include in Feishu alerts
-func NewFeishuLogger(stdOutput *os.File, webhook string, minLevel Level, component string) *Logger {
-	if stdOutput == nil {
-		stdOutput = os.Stdout
-	}
+func NewFeishuLogger(_ *os.File, webhook string, minLevel Level, component string) *Logger {
+	// if stdOutput == nil {
+	//	stdOutput = os.Stdout
+	//}
 	if component == "" {
 		component = "Unknown"
 	}
@@ -102,7 +102,11 @@ func NewFeishuLogger(stdOutput *os.File, webhook string, minLevel Level, compone
 		minLevel:  minLevel,
 		component: component,
 	}
-	logger.Infof("starting Feishu logger for component: %s with minLevel: %s", component, minLevel.String())
+	logger.Infof(
+		"starting Feishu logger for component: %s with minLevel: %s",
+		component,
+		minLevel.String(),
+	)
 	return logger
 }
 
@@ -139,8 +143,12 @@ func (l *Logger) sendAlert(level Level, message string) error {
 		Content string `json:"content"`
 	}{
 		{
-			Tag:     "markdown",
-			Content: fmt.Sprintf("**Message**: %s\n**Time**: %s", message, time.Now().Format(time.RFC3339)),
+			Tag: "markdown",
+			Content: fmt.Sprintf(
+				"**Message**: %s\n**Time**: %s",
+				message,
+				time.Now().Format(time.RFC3339),
+			),
 		},
 	}
 
@@ -163,7 +171,7 @@ func (l *Logger) sendAlert(level Level, message string) error {
 }
 
 // Debugf logs a debug-level message to stdout.
-func (l *Logger) Debugf(format string, v ...interface{}) {
+func (l *Logger) Debugf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	l.stdLogger.Printf("[DEBUG] %s", msg)
 	if err := l.sendAlert(DEBUG, msg); err != nil {
@@ -172,12 +180,12 @@ func (l *Logger) Debugf(format string, v ...interface{}) {
 }
 
 // Printf logs an info-level message to stdout (alias for Infof).
-func (l *Logger) Printf(format string, v ...interface{}) {
+func (l *Logger) Printf(format string, v ...any) {
 	l.Infof(format, v...)
 }
 
 // Infof logs an info-level message to stdout.
-func (l *Logger) Infof(format string, v ...interface{}) {
+func (l *Logger) Infof(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	l.stdLogger.Printf("[INFO] %s", msg)
 	if err := l.sendAlert(INFO, msg); err != nil {
@@ -186,7 +194,7 @@ func (l *Logger) Infof(format string, v ...interface{}) {
 }
 
 // Warnf logs a warn-level message to stdout and sends a Feishu alert if level >= minLevel.
-func (l *Logger) Warnf(format string, v ...interface{}) {
+func (l *Logger) Warnf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	l.stdLogger.Printf("[WARN] %s", msg)
 	if err := l.sendAlert(WARN, msg); err != nil {
@@ -195,7 +203,7 @@ func (l *Logger) Warnf(format string, v ...interface{}) {
 }
 
 // Errorf logs an error-level message to stdout and sends a Feishu alert if level >= minLevel.
-func (l *Logger) Errorf(format string, v ...interface{}) {
+func (l *Logger) Errorf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	l.stdLogger.Printf("[ERROR] %s", msg)
 	if err := l.sendAlert(ERROR, msg); err != nil {
@@ -204,7 +212,7 @@ func (l *Logger) Errorf(format string, v ...interface{}) {
 }
 
 // Fatalf logs a fatal error to stdout, sends an alert if level >= minLevel, and exits.
-func (l *Logger) Fatalf(format string, v ...interface{}) {
+func (l *Logger) Fatalf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	l.stdLogger.Printf("[FATAL] %s", msg)
 	if err := l.sendAlert(FATAL, msg); err != nil {
@@ -214,7 +222,7 @@ func (l *Logger) Fatalf(format string, v ...interface{}) {
 }
 
 // Debugln logs a debug-level message to stdout.
-func (l *Logger) Debugln(v ...interface{}) {
+func (l *Logger) Debugln(v ...any) {
 	msg := fmt.Sprintln(v...)
 	l.stdLogger.Printf("[DEBUG] %s", msg)
 	if err := l.sendAlert(DEBUG, msg); err != nil {
@@ -223,12 +231,12 @@ func (l *Logger) Debugln(v ...interface{}) {
 }
 
 // Println logs an info-level message to stdout (alias for Infoln).
-func (l *Logger) Println(v ...interface{}) {
+func (l *Logger) Println(v ...any) {
 	l.Infoln(v...)
 }
 
 // Infoln logs an info-level message to stdout.
-func (l *Logger) Infoln(v ...interface{}) {
+func (l *Logger) Infoln(v ...any) {
 	msg := fmt.Sprintln(v...)
 	l.stdLogger.Printf("[INFO] %s", msg)
 	if err := l.sendAlert(INFO, msg); err != nil {
@@ -237,7 +245,7 @@ func (l *Logger) Infoln(v ...interface{}) {
 }
 
 // Warnln logs a warn-level message to stdout and sends a Feishu alert if level >= minLevel.
-func (l *Logger) Warnln(v ...interface{}) {
+func (l *Logger) Warnln(v ...any) {
 	msg := fmt.Sprintln(v...)
 	l.stdLogger.Printf("[WARN] %s", msg)
 	if err := l.sendAlert(WARN, msg); err != nil {
@@ -246,7 +254,7 @@ func (l *Logger) Warnln(v ...interface{}) {
 }
 
 // Errorln logs an error-level message to stdout and sends a Feishu alert if level >= minLevel.
-func (l *Logger) Errorln(v ...interface{}) {
+func (l *Logger) Errorln(v ...any) {
 	msg := fmt.Sprintln(v...)
 	l.stdLogger.Printf("[ERROR] %s", msg)
 	if err := l.sendAlert(ERROR, msg); err != nil {
@@ -255,7 +263,7 @@ func (l *Logger) Errorln(v ...interface{}) {
 }
 
 // Fatalln logs a fatal error to stdout, sends an alert if level >= minLevel, and exits.
-func (l *Logger) Fatalln(v ...interface{}) {
+func (l *Logger) Fatalln(v ...any) {
 	msg := fmt.Sprintln(v...)
 	l.stdLogger.Printf("[FATAL] %s", msg)
 	if err := l.sendAlert(FATAL, msg); err != nil {

@@ -18,7 +18,7 @@ func setupenvWechatpayment() {
 		envMchCertificateSerialNumber = ""
 		envMchAPIv3Key                = ""
 		envAppID                      = ""
-		//envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
+		// envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
 	)
 
 	// check that the environment variables are set
@@ -37,7 +37,10 @@ func setupenvWechatpayment() {
 	if os.Getenv(MchCertificateSerialNumber) == "" {
 		err := os.Setenv(MchCertificateSerialNumber, envMchCertificateSerialNumber)
 		if err != nil {
-			log.Fatalf("Failed to set the environment variable of the serial number of the WeChat merchant certificate: %v", err)
+			log.Fatalf(
+				"Failed to set the environment variable of the serial number of the WeChat merchant certificate: %v",
+				err,
+			)
 		}
 	}
 	if os.Getenv(MchAPIv3Key) == "" {
@@ -93,7 +96,7 @@ func TestWechatPayment_PaymentAndRefund(t *testing.T) {
 	fmt.Printf("payment amount %d cent\n", paidAmount)
 
 	// determine whether the payment was successful
-	//if status != StatusSuccess {
+	// if status != StatusSuccess {
 	//	t.Fatalf("The payment was unsuccessful and no refund can be made")
 	//}
 

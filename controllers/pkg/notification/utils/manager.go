@@ -21,10 +21,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-
 	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,7 +66,8 @@ type Manager struct {
 }
 
 func NewNotificationManager(ctx context.Context, client client.Client,
-	logger logr.Logger, batchSize, channelSize int) *Manager {
+	logger logr.Logger, batchSize, channelSize int,
+) *Manager {
 	return &Manager{
 		ctx:         ctx,
 		client:      client,
@@ -84,7 +83,6 @@ func (nm *Manager) Run() {
 	pool := NewPool(nm.batchSize)
 	pool.Run(nm.channelSize)
 	for _, notification := range nm.queue {
-		notification := notification
 		pool.Add(func() {
 			err := write(nm.ctx, nm.client, &notification)
 			if err != nil {
@@ -108,7 +106,12 @@ func (nm *Manager) loadNotification(receivers []string, event Event) {
 	}
 }
 
-func write(ctx context.Context, client client.Client, obj client.Object, opts ...client.CreateOption) error {
+func write(
+	ctx context.Context,
+	client client.Client,
+	obj client.Object,
+	opts ...client.CreateOption,
+) error {
 	err := client.Create(ctx, obj, opts...)
 	if err != nil && apierrors.IsAlreadyExists(err) {
 		return nil

@@ -16,22 +16,19 @@ package objectstorage
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
-	"github.com/prometheus/prom2json"
-
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/prometheus/common/model"
-
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
+	"github.com/prometheus/prom2json"
 )
 
 func ListUserObjectStorageBucket(client *minio.Client, username string) ([]string, error) {
@@ -54,7 +51,7 @@ func ListAllObjectStorageBucket(client *minio.Client) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var allBuckets []string
+	allBuckets := make([]string, 0, len(buckets))
 	for _, bucket := range buckets {
 		allBuckets = append(allBuckets, bucket.Name)
 	}
@@ -74,10 +71,13 @@ func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
 	return totalSize, objectsCount
 }
 
-func GetObjectStorageFlow(promURL, bucket, instance string, startTime, endTime time.Time) (int64, error) {
+func GetObjectStorageFlow(
+	promURL, bucket, instance string,
+	startTime, endTime time.Time,
+) (int64, error) {
 	flow, err := QueryPrometheus(promURL, bucket, instance, startTime, endTime)
 	if err != nil {
-		return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucket, err)
+		return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %w", bucket, err)
 	}
 	return flow, nil
 }
@@ -85,7 +85,7 @@ func GetObjectStorageFlow(promURL, bucket, instance string, startTime, endTime t
 func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error) {
 	buckets, err := ListUserObjectStorageBucket(client, username)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to list object storage buckets: %v", err)
+		return 0, 0, fmt.Errorf("failed to list object storage buckets: %w", err)
 	}
 
 	var totalSize int64
@@ -98,17 +98,21 @@ func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int
 	return totalSize, objectsCount, nil
 }
 
-func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance string, startTime, endTime time.Time) (int64, error) {
+func GetUserObjectStorageFlow(
+	client *minio.Client,
+	promURL, username, instance string,
+	startTime, endTime time.Time,
+) (int64, error) {
 	buckets, err := ListUserObjectStorageBucket(client, username)
 	if err != nil {
-		return 0, fmt.Errorf("failed to list object storage buckets: %v", err)
+		return 0, fmt.Errorf("failed to list object storage buckets: %w", err)
 	}
 
 	var totalFlow int64
 	for _, bucketName := range buckets {
 		flow, err := QueryPrometheus(promURL, bucketName, instance, startTime, endTime)
 		if err != nil {
-			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)
+			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %w", bucketName, err)
 		}
 		totalFlow += flow
 	}
@@ -116,18 +120,21 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 	return totalFlow, nil
 }
 
-var timeoutDuration = time.Duration(env.GetInt64EnvWithDefault(EnvPromQueryObsTimeoutSecEnv, 10)) * time.Second
+var timeoutDuration = time.Duration(
+	env.GetInt64EnvWithDefault(EnvPromQueryObsTimeoutSecEnv, 10),
+) * time.Second
 
 const (
 	EnvPromQueryObsTimeoutSecEnv = "PROM_QUERY_OBS_TIMEOUT_SEC"
-	timeFormat                   = "2006-01-02 15:04:05"
+	timeFormat                   = time.DateTime
 )
 
-var (
-	bytePattern = regexp.MustCompile(`\d+`)
-)
+var bytePattern = regexp.MustCompile(`\d+`)
 
-func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.Time) (int64, error) {
+func QueryPrometheus(
+	host, bucketName, instance string,
+	startTime, endTime time.Time,
+) (int64, error) {
 	client, err := api.NewClient(api.Config{
 		Address: host,
 	})
@@ -139,41 +146,91 @@ func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
 	defer cancel()
 
-	rcvdQuery := fmt.Sprintf("sum(minio_bucket_traffic_received_bytes{bucket=\"%s\", instance=\"%s\"})", bucketName, instance)
+	rcvdQuery := fmt.Sprintf(
+		"sum(minio_bucket_traffic_received_bytes{bucket=\"%s\", instance=\"%s\"})",
+		bucketName,
+		instance,
+	)
 	rcvdValues, err := queryPrometheus(ctx, v1api, rcvdQuery, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
 	}
 
 	if rcvdValues[0] <= 0 || rcvdValues[1] <= 0 {
-		fmt.Println("[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.", "bucket:", bucketName)
-		fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), rcvdValues[0], endTime.Format(timeFormat), rcvdValues[1])
+		fmt.Println(
+			"[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.",
+			"bucket:",
+			bucketName,
+		)
+		fmt.Printf(
+			"received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n",
+			startTime.Format(timeFormat),
+			rcvdValues[0],
+			endTime.Format(timeFormat),
+			rcvdValues[1],
+		)
 		return 0, nil
 	}
 
-	sentQuery := fmt.Sprintf("sum(minio_bucket_traffic_sent_bytes{bucket=\"%s\", instance=\"%s\"})", bucketName, instance)
+	sentQuery := fmt.Sprintf(
+		"sum(minio_bucket_traffic_sent_bytes{bucket=\"%s\", instance=\"%s\"})",
+		bucketName,
+		instance,
+	)
 	sentValues, err := queryPrometheus(ctx, v1api, sentQuery, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
 	}
 
 	if sentValues[0] <= 0 || sentValues[1] <= 0 {
-		fmt.Println("[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.", "bucket:", bucketName)
-		fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), sentValues[0], endTime.Format(timeFormat), sentValues[1])
+		fmt.Println(
+			"[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.",
+			"bucket:",
+			bucketName,
+		)
+		fmt.Printf(
+			"sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n",
+			startTime.Format(timeFormat),
+			sentValues[0],
+			endTime.Format(timeFormat),
+			sentValues[1],
+		)
 		return 0, nil
 	}
 
 	receivedDiff := rcvdValues[1] - rcvdValues[0]
 	sentDiff := sentValues[1] - sentValues[0]
 
-	fmt.Printf("bucket: %v, received bytes in duration: %v, sent bytes in duration: %v\n", bucketName, receivedDiff, sentDiff)
-	fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), rcvdValues[0], endTime.Format(timeFormat), rcvdValues[1])
-	fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), sentValues[0], endTime.Format(timeFormat), sentValues[1])
+	fmt.Printf(
+		"bucket: %v, received bytes in duration: %v, sent bytes in duration: %v\n",
+		bucketName,
+		receivedDiff,
+		sentDiff,
+	)
+	fmt.Printf(
+		"received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n",
+		startTime.Format(timeFormat),
+		rcvdValues[0],
+		endTime.Format(timeFormat),
+		rcvdValues[1],
+	)
+	fmt.Printf(
+		"sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n",
+		startTime.Format(timeFormat),
+		sentValues[0],
+		endTime.Format(timeFormat),
+		sentValues[1],
+	)
 
 	return rcvdValues[1] + sentValues[1] - rcvdValues[0] - sentValues[0], nil
 }
 
-func queryPrometheus(ctx context.Context, api v1.API, query string, startTime, endTime time.Time) ([]int64, error) {
+func queryPrometheus(
+	ctx context.Context,
+	api v1.API,
+	query string,
+	startTime, endTime time.Time,
+) ([]int64, error) {
 	result1, _, err := api.Query(ctx, query, startTime, v1.WithTimeout(timeoutDuration))
 	if err != nil {
 		return nil, err
@@ -218,7 +275,10 @@ func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 			continue
 		}
 		for _, metrics := range bucketMetric.Metrics {
-			promMetrics := metrics.(prom2json.Metric)
+			promMetrics, ok := metrics.(prom2json.Metric)
+			if !ok {
+				return nil, errors.New("failed to convert metrics to prom2json.Metric")
+			}
 			floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse %s to float value", promMetrics.Value)
@@ -258,20 +318,23 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 		}
 
 		for _, metrics := range bucketMetric.Metrics {
-			promMetrics := metrics.(prom2json.Metric)
+			promMetrics, ok := metrics.(prom2json.Metric)
+			if !ok {
+				return nil, errors.New("failed to convert metrics to prom2json.Metric")
+			}
 			floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse %s to float value", promMetrics.Value)
 			}
 			intValue := int64(floatValue)
 			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
-				//fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
+				// fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
 				user := getUserWithBucket(bucket)
 				if user == "" {
-					//fmt.Println("debug info", "false bucket:", bucket)
+					// fmt.Println("debug info", "false bucket:", bucket)
 					continue
 				}
-				//fmt.Println("debug info", "true bucket:", bucket, "user:", user)
+				// fmt.Println("debug info", "true bucket:", bucket, "user:", user)
 				metricData, exists := obMetrics[user]
 				if !exists {
 					metricData = MetricData{
@@ -370,7 +433,7 @@ func getUserWithBucket(bucket string) string {
 						6/halo-faxdridb-pg-yhxnjm.tar.gz
 */
 
-//func GetUserBakFileSize(client *minio.Client) map[string]int64 {
+// func GetUserBakFileSize(client *minio.Client) map[string]int64 {
 //	bucket := "file-backup"
 //	userUsageMap := make(map[string]int64)
 //	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
@@ -384,7 +447,7 @@ func getUserWithBucket(bucket string) string {
 //	return userUsageMap
 //}
 
-//func extractNamespace(input string) string {
+// func extractNamespace(input string) string {
 //	re := regexp.MustCompile(`ns-(\w+)`)
 //	matches := re.FindStringSubmatch(input)
 //	if len(matches) < 2 {
