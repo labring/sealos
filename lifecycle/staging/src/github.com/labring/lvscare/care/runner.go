@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/retry"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -96,11 +97,25 @@ func (r *runner) Run() (err error) {
 
 // run once at startup
 func (r *runner) ensureIPVSRules() error {
-	if err := r.proxier.EnsureVirtualServer(r.options.VirtualServer); err != nil {
+	// Add retry logic for virtual server setup
+	if err := retry.Retry(3, 200*time.Millisecond, func() error {
+		if err := r.proxier.EnsureVirtualServer(r.options.VirtualServer); err != nil {
+			return fmt.Errorf("failed to ensure virtual server %s: %w", r.options.VirtualServer, err)
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
+
+	// Add retry logic for each real server
 	for i := range r.options.RealServer {
-		if err := r.proxier.EnsureRealServer(r.options.VirtualServer, r.options.RealServer[i]); err != nil {
+		rs := r.options.RealServer[i] // create local variable to avoid closure issues
+		if err := retry.Retry(3, 200*time.Millisecond, func() error {
+			if err := r.proxier.EnsureRealServer(r.options.VirtualServer, rs); err != nil {
+				return fmt.Errorf("failed to ensure real server %s: %w", rs, err)
+			}
+			return nil
+		}); err != nil {
 			return err
 		}
 	}
