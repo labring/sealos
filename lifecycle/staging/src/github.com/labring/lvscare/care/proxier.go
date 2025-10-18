@@ -20,12 +20,14 @@ package care
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/retry"
 	ipvs "k8s.io/kubernetes/pkg/proxy/ipvs/util"
 )
 
@@ -79,21 +81,32 @@ type realProxier struct {
 }
 
 func (p *realProxier) ensureVirtualServer(vs *ipvs.VirtualServer) (*ipvs.VirtualServer, error) {
-	applied, _ := p.ipvsHandle.GetVirtualServer(vs)
-	if applied == nil {
-		logger.Debug("Add new IPVS service", vs.String())
-		if err := p.ipvsHandle.AddVirtualServer(vs); err != nil {
-			logger.Error("Failed to add IPVS service: %v", err)
-			return nil, err
+	var result *ipvs.VirtualServer
+
+	retryErr := retry.Retry(3, 100*time.Millisecond, func() error {
+		applied, _ := p.ipvsHandle.GetVirtualServer(vs)
+		if applied == nil {
+			logger.Debug("Add new IPVS service", vs.String())
+			if err := p.ipvsHandle.AddVirtualServer(vs); err != nil {
+				logger.Error("Failed to add IPVS service: %v", err)
+				return fmt.Errorf("failed to add IPVS service: %w", err)
+			}
+		} else if !applied.Equal(vs) {
+			logger.Debug("IPVS service is changed %s", applied.String())
+			if err := p.ipvsHandle.UpdateVirtualServer(vs); err != nil {
+				logger.Error("Failed to update IPVS service: %v", err)
+				return fmt.Errorf("failed to update IPVS service: %w", err)
+			}
 		}
-	} else if !applied.Equal(vs) {
-		logger.Debug("IPVS service is changed %s", applied.String())
-		if err := p.ipvsHandle.UpdateVirtualServer(vs); err != nil {
-			logger.Error("Failed to update IPVS service: %v", err)
-			return nil, err
-		}
+		result = vs
+		return nil
+	})
+
+	if retryErr != nil {
+		return nil, retryErr
 	}
-	return vs, nil
+
+	return result, nil
 }
 
 func (p *realProxier) EnsureVirtualServer(vs string) error {
@@ -179,11 +192,21 @@ func (p *realProxier) EnsureRealServer(vs, rs string) error {
 	if rSrv != nil {
 		return nil
 	}
+
+	// Add retry logic for adding real server
 	rSrv = p.buildRealServer(&rsEp)
-	if err = p.ipvsHandle.AddRealServer(vSrv, rSrv); err != nil {
-		logger.Error("Failed to add real server: %v", err)
-		return err
+	retryErr := retry.Retry(3, 100*time.Millisecond, func() error {
+		if err = p.ipvsHandle.AddRealServer(vSrv, rSrv); err != nil {
+			logger.Error("Failed to add real server: %v", err)
+			return fmt.Errorf("failed to add real server: %w", err)
+		}
+		return nil
+	})
+
+	if retryErr != nil {
+		return retryErr
 	}
+
 	return nil
 }
 
@@ -264,33 +287,61 @@ func (p *realProxier) checkRealServer(wg *sync.WaitGroup, vSrv *ipvs.VirtualServ
 		logger.Debug("probe error: %v", probeErr)
 		if rSrv != nil {
 			if rSrv.Weight != 0 {
-				logger.Debug("Trying to update wight to 0 for graceful termination")
+				logger.Debug("Trying to update weight to 0 for graceful termination")
 				rSrv.Weight = 0
-				if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
-					logger.Warn("Failed to update real server wight: %v", err)
+				// Add retry logic for weight update
+				if retryErr := retry.Retry(2, 50*time.Millisecond, func() error {
+					if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
+						logger.Warn("Failed to update real server weight: %v", err)
+						return fmt.Errorf("failed to update real server weight: %w", err)
+					}
+					return nil
+				}); retryErr != nil {
+					logger.Warn("Failed to update real server weight after retries: %v", retryErr)
 				}
 				return
 			}
 			logger.Debug("Trying to delete real server")
-			if err = p.ipvsHandle.DeleteRealServer(vSrv, rSrv); err != nil {
-				logger.Warn("Failed to delete real server: %v", err)
+			// Add retry logic for deletion
+			if retryErr := retry.Retry(2, 50*time.Millisecond, func() error {
+				if err = p.ipvsHandle.DeleteRealServer(vSrv, rSrv); err != nil {
+					logger.Warn("Failed to delete real server: %v", err)
+					return fmt.Errorf("failed to delete real server: %w", err)
+				}
+				return nil
+			}); retryErr != nil {
+				logger.Warn("Failed to delete real server after retries: %v", retryErr)
 			}
 		}
 		return
 	}
 	if rSrv != nil {
 		if rSrv.Weight == 0 {
-			logger.Debug("Trying to update wight to 1 to receive traffic")
+			logger.Debug("Trying to update weight to 1 to receive traffic")
 			rSrv.Weight = 1
-			if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
-				logger.Warn("Failed to update real server wight: %v", err)
+			// Add retry logic for weight update
+			if retryErr := retry.Retry(2, 50*time.Millisecond, func() error {
+				if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
+					logger.Warn("Failed to update real server weight: %v", err)
+					return fmt.Errorf("failed to update real server weight: %w", err)
+				}
+				return nil
+			}); retryErr != nil {
+				logger.Warn("Failed to update real server weight after retries: %v", retryErr)
 			}
 		}
 		return
 	}
 	logger.Debug("Trying to add real server back")
-	if err = p.ipvsHandle.AddRealServer(vSrv, p.buildRealServer(&rs)); err != nil {
-		logger.Warn("Failed to add real server back: %v", err)
+	// Add retry logic for adding back
+	if retryErr := retry.Retry(2, 50*time.Millisecond, func() error {
+		if err = p.ipvsHandle.AddRealServer(vSrv, p.buildRealServer(&rs)); err != nil {
+			logger.Warn("Failed to add real server back: %v", err)
+			return fmt.Errorf("failed to add real server back: %w", err)
+		}
+		return nil
+	}); retryErr != nil {
+		logger.Warn("Failed to add real server back after retries: %v", retryErr)
 	}
 }
 
