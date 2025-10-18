@@ -337,6 +337,7 @@ func (c *Applier) syncWorkdir() {
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range ipList {
+		ipAddr := ipAddr
 		eg.Go(func() error {
 			return execer.Copy(ipAddr, workDir, workDir)
 		})
