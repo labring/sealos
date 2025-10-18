@@ -34,7 +34,7 @@ import (
 )
 
 type Prober interface {
-	Probe(string, string) error
+	Probe(host, port string) error
 }
 
 type httpProber struct {

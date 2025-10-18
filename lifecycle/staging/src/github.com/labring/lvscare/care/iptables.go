@@ -119,7 +119,7 @@ func newIptablesImpl(iface string, masqueradeBit int, virtualIPs ...string) (Rul
 		virtualEntries = append(virtualEntries, entry.String())
 	}
 
-	masqueradeValue := 1 << uint(masqueradeBit)
+	masqueradeValue := uint(1 << masqueradeBit)
 
 	execer := exec.New()
 	return &iptablesImpl{
@@ -194,7 +194,7 @@ func (impl *iptablesImpl) cleanupLeftovers() (encounteredError bool) {
 func ensureSysctl(sysctl utilsysctl.Interface, name string, newVal int) error {
 	if oldVal, _ := sysctl.GetSysctl(name); oldVal != newVal {
 		if err := sysctl.SetSysctl(name, newVal); err != nil {
-			return fmt.Errorf("can't set sysctl %s to %d: %v", name, newVal, err)
+			return fmt.Errorf("can't set sysctl %s to %d: %w", name, newVal, err)
 		}
 		logger.Debug("changed sysctl %s: before %d, after: %d", name, oldVal, newVal)
 	}
