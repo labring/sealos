@@ -89,6 +89,7 @@ func runCommand(cluster *v2.Cluster, targets, args []string) error {
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range targets {
+		ipAddr := ipAddr
 		eg.Go(func() error {
 			return execer.CmdAsync(ipAddr, args...)
 		})

@@ -73,6 +73,7 @@ func runCopy(cluster *v1beta1.Cluster, targets, args []string) error {
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range targets {
+		ipAddr := ipAddr
 		eg.Go(func() error {
 			return execer.Copy(ipAddr, args[0], args[1])
 		})

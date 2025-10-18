@@ -29,6 +29,7 @@ func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts ...string) error {
 	src := k.pathResolver.AdminFile()
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range hosts {
+		node := node
 		eg.Go(func() error {
 			home, err := k.execer.CmdToString(node, "echo $HOME", "")
 			if err != nil {

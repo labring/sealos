@@ -58,6 +58,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	envProcessor := env.NewEnvProcessor(cluster)
 	// TODO: remove this when rendering on client side is GA
 	for _, mount := range f.mounts {
+		mount := mount
 		eg.Go(func() error {
 			if !file.IsExist(mount.MountPoint) {
 				logger.Debug("Image %s not exist, render env continue", mount.ImageName)
@@ -120,6 +121,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
 
 	for _, ip := range ipList {
+		ip := ip
 		eg.Go(func() error {
 			var renderingRequired bool
 			for i := range f.mounts {
@@ -191,6 +193,7 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	}
 
 	for _, ip := range ipList {
+		ip := ip
 		eg.Go(func() error {
 			return execer.CmdAsync(ip, rmRootfs, deleteHomeDirCmd)
 		})
