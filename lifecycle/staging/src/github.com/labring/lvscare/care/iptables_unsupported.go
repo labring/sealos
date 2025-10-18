@@ -77,8 +77,8 @@ type Prober interface {
 // httpProber provides a stub implementation for non-Linux platforms
 type httpProber struct{}
 
-func (p *httpProber) Probe(addr string, path string) error {
-	logger.Info("HTTP probe is a no-op on non-Linux platform: %s%s", addr, path)
+func (p *httpProber) Probe(host, port string) error {
+	logger.Info("HTTP probe is a no-op on non-Linux platform: %s%s", host, port)
 	return nil
 }
 

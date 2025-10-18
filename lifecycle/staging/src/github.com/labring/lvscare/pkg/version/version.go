@@ -63,7 +63,7 @@ func parse(str string, semver bool) (*Version, error) {
 		num, err := strconv.ParseUint(comp, 10, 0)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"illegal non-numeric version component %q in %q: %v",
+				"illegal non-numeric version component %q in %q: %w",
 				comp,
 				str,
 				err,
