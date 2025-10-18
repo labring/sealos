@@ -34,7 +34,7 @@ type Proxier interface {
 	DeleteVirtualServer(vs string) error
 	EnsureRealServer(vs, rs string) error
 	DeleteRealServer(vs, rs string) error
-	RunLoop(context.Context) error
+	RunLoop(ctx context.Context) error
 	TryRun() error
 }
 

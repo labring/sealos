@@ -56,7 +56,7 @@ func (r *Route) SetRoute() error {
 
 	err := addRouteGatewayViaHost(r.Host, r.Gateway, 50)
 	if err != nil && !errors.Is(err, os.ErrExist) /* return if route already exist */ {
-		return fmt.Errorf("failed to add %s route gateway via host err: %v", r.Host, err)
+		return fmt.Errorf("failed to add %s route gateway via host err: %w", r.Host, err)
 	}
 	logger.Info("success to set route.(host:%s, gateway:%s)", r.Host, r.Gateway)
 	return nil
@@ -69,7 +69,7 @@ func (r *Route) DelRoute() error {
 
 	err := delRouteGatewayViaHost(r.Host, r.Gateway)
 	if err != nil && !errors.Is(err, syscall.ESRCH) /* return if route does not exist */ {
-		return fmt.Errorf("failed to delete %s route gateway via host err: %v", r.Host, err)
+		return fmt.Errorf("failed to delete %s route gateway via host err: %w", r.Host, err)
 	}
 	logger.Info("success to del route.(host:%s, gateway:%s)", r.Host, r.Gateway)
 	return nil
