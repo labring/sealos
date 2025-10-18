@@ -121,6 +121,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunConfig in CreateProcessor.")
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, cManifest := range cluster.Status.Mounts {
+		cManifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(
 				cManifest.ImageName,

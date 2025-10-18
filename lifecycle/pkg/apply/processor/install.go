@@ -240,6 +240,7 @@ func (c *InstallProcessor) RunConfig(_ *v2.Cluster) error {
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, cManifest := range c.NewMounts {
+		cManifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(
 				cManifest.ImageName,
