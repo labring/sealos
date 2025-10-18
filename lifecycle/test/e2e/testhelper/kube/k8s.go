@@ -54,7 +54,7 @@ func NewK8sClient(kubeconfig, apiServer string) (K8s, error) {
 	//}
 	//
 	// clientSet, err := kubernetes.NewForConfig(config)
-	//if err != nil {
+	// if err != nil {
 	//	return nil, err
 	//}
 

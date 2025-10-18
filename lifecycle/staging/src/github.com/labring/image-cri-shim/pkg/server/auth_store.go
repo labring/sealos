@@ -89,6 +89,7 @@ func cloneAuthMap(src map[string]rtype.AuthConfig) map[string]rtype.AuthConfig {
 	return dst
 }
 
+//nolint:unused // utility function for future use
 func cloneSkipMap(src map[string]bool) map[string]bool {
 	if len(src) == 0 {
 		return map[string]bool{}

@@ -52,11 +52,11 @@ type ConnectOptions struct {
 // Client is the interface we expose to our CRI client.
 type Client interface {
 	// Connect tries to connect the client to the specified image and runtime services.
-	Connect(ConnectOptions) (*grpc.ClientConn, error)
+	Connect(opts ConnectOptions) (*grpc.ClientConn, error)
 	// Close closes any existing client connections.
 	Close()
 	// CheckConnection checks if we have (un-Close()'d as opposed to working) connections.
-	CheckConnection(ConnectOptions) error
+	CheckConnection(opts ConnectOptions) error
 	// HasRuntimeService checks if the client is configured with runtime services.
 	HasRuntimeService() bool
 	// HasImageService checks if the client is configured with image services.
@@ -88,10 +88,10 @@ func NewClient(options CRIClientOptions) (Client, error) {
 }
 
 // Connect attempts to establish gRPC client connections to the configured services.
-func (c *client) Connect(options ConnectOptions) (*grpc.ClientConn, error) {
+func (c *client) Connect(opts ConnectOptions) (*grpc.ClientConn, error) {
 	kind, socket := "image services", c.options.ImageSocket
 
-	icc, err := c.connect(kind, socket, options)
+	icc, err := c.connect(kind, socket, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -110,14 +110,14 @@ func (c *client) Close() {
 }
 
 // CheckConnection if the connecton to CRI services is up, try to reconnect if requested.
-func (c *client) CheckConnection(options ConnectOptions) error {
+func (c *client) CheckConnection(opts ConnectOptions) error {
 	if c.icc == nil || c.icc.GetState() == connectivity.Ready {
 		return nil
 	}
 
 	c.Close()
 
-	if options.Reconnect {
+	if opts.Reconnect {
 		if _, err := c.Connect(ConnectOptions{Wait: false}); err == nil {
 			return nil
 		}
