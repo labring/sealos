@@ -162,6 +162,7 @@ func runRender(mountPoints, env []string) error {
 	envs := maps.FromSlice(env)
 
 	for _, mountPoint := range mountPoints {
+		mountPoint := mountPoint
 		eg.Go(func() error {
 			if !file.IsExist(mountPoint) {
 				logger.Debug("MountPoint %s does not exist, skipping", mountPoint)
