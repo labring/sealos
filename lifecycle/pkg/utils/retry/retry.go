@@ -35,7 +35,7 @@ func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error 
 // RetryWithBackoff provides exponential backoff retry with jitter
 func RetryWithBackoff(maxAttempts int, baseDelay time.Duration, action func() error) error {
 	var lastErr error
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for attempt := range maxAttempts {
 		if err := action(); err == nil {
 			return nil
 		} else {
@@ -44,7 +44,7 @@ func RetryWithBackoff(maxAttempts int, baseDelay time.Duration, action func() er
 
 		if attempt < maxAttempts-1 {
 			// Exponential backoff with jitter
-			delay := baseDelay * time.Duration(1<<uint(attempt))
+			delay := baseDelay * time.Duration(1<<attempt)
 			if delay > 5*time.Second {
 				delay = 5 * time.Second // cap the delay
 			}
@@ -57,9 +57,14 @@ func RetryWithBackoff(maxAttempts int, baseDelay time.Duration, action func() er
 }
 
 // RetryConditionally retries only when the condition returns true
-func RetryConditionally(maxAttempts int, baseDelay time.Duration, condition func(error) bool, action func() error) error {
+func RetryConditionally(
+	maxAttempts int,
+	baseDelay time.Duration,
+	condition func(error) bool,
+	action func() error,
+) error {
 	var lastErr error
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for attempt := range maxAttempts {
 		if err := action(); err == nil {
 			return nil
 		} else {
