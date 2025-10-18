@@ -44,7 +44,7 @@ type runner struct {
 }
 
 func (r *runner) Run() (err error) {
-	if !r.options.RunOnce {
+	if !r.RunOnce {
 		defer func() {
 			cleanupErr := r.cleanup()
 			if err != nil {
@@ -62,14 +62,14 @@ func (r *runner) Run() (err error) {
 	}
 
 	cleanVirtualServer := func() error {
-		logger.Info("delete IPVS service %s", r.options.VirtualServer)
-		err := r.proxier.DeleteVirtualServer(r.options.VirtualServer)
+		logger.Info("delete IPVS service %s", r.VirtualServer)
+		err := r.proxier.DeleteVirtualServer(r.VirtualServer)
 		if err != nil {
 			logger.Warn("failed to delete IPVS service: %v", err)
 		}
 		return err
 	}
-	if r.options.CleanAndExit {
+	if r.CleanAndExit {
 		r.cleanupFuncs = append(r.cleanupFuncs, cleanVirtualServer)
 		if r.ruler != nil {
 			r.cleanupFuncs = append(r.cleanupFuncs, r.ruler.Cleanup)
@@ -99,8 +99,8 @@ func (r *runner) Run() (err error) {
 func (r *runner) ensureIPVSRules() error {
 	// Add retry logic for virtual server setup
 	if err := retry.Retry(3, 200*time.Millisecond, func() error {
-		if err := r.proxier.EnsureVirtualServer(r.options.VirtualServer); err != nil {
-			return fmt.Errorf("failed to ensure virtual server %s: %w", r.options.VirtualServer, err)
+		if err := r.proxier.EnsureVirtualServer(r.VirtualServer); err != nil {
+			return fmt.Errorf("failed to ensure virtual server %s: %w", r.VirtualServer, err)
 		}
 		return nil
 	}); err != nil {
@@ -108,10 +108,10 @@ func (r *runner) ensureIPVSRules() error {
 	}
 
 	// Add retry logic for each real server
-	for i := range r.options.RealServer {
-		rs := r.options.RealServer[i] // create local variable to avoid closure issues
+	for i := range r.RealServer {
+		rs := r.RealServer[i] // create local variable to avoid closure issues
 		if err := retry.Retry(3, 200*time.Millisecond, func() error {
-			if err := r.proxier.EnsureRealServer(r.options.VirtualServer, rs); err != nil {
+			if err := r.proxier.EnsureRealServer(r.VirtualServer, rs); err != nil {
 				return fmt.Errorf("failed to ensure real server %s: %w", rs, err)
 			}
 			return nil
@@ -163,12 +163,12 @@ func (r *runner) ValidateAndSetDefaults() error {
 		}
 	}
 	r.proxier = NewProxier(
-		r.options.scheduler,
-		time.Duration(r.options.Interval),
+		r.scheduler,
+		time.Duration(r.Interval),
 		r.prober,
 		r.periodicRun,
 	)
-	virtualIP, _, err := splitHostPort(r.options.VirtualServer)
+	virtualIP, _, err := splitHostPort(r.VirtualServer)
 	if err != nil {
 		return err
 	}
@@ -176,16 +176,16 @@ func (r *runner) ValidateAndSetDefaults() error {
 	var ruler Ruler
 	switch r.Mode {
 	case routeMode:
-		if r.options.TargetIP == nil {
+		if r.TargetIP == nil {
 			logger.Warn("running routeMode and Target IP is not valid IP, skipping")
 			break
 		}
-		ruler, err = newRouteImpl(virtualIP, r.options.TargetIP.String())
+		ruler, err = newRouteImpl(virtualIP, r.TargetIP.String())
 	case linkMode:
 		ruler, err = newIptablesImpl(
-			r.options.IfaceName,
-			r.options.MasqueradeBit,
-			r.options.VirtualServer,
+			r.IfaceName,
+			r.MasqueradeBit,
+			r.VirtualServer,
 		)
 	case "":
 		// do nothing, disable ruler
