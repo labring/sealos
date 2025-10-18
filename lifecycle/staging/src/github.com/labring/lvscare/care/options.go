@@ -61,7 +61,7 @@ func (o *options) RegisterFlags(fs *pflag.FlagSet) {
 		"name of dummy interface to created, same behavior as kube-proxy",
 	)
 	fs.StringVar(&o.Logger, "logger", "INFO", "logger level: DEBG/INFO")
-	fs.StringVar(&o.Mode, "mode", routeMode, fmt.Sprintf("proxy mode: %s/%s", routeMode, linkMode))
+	fs.StringVar(&o.Mode, "mode", routeMode, "proxy mode: "+routeMode+"/"+linkMode)
 	fs.BoolVar(&o.RunOnce, "run-once", false, "create proxy rules and exit")
 	fs.BoolVarP(&o.CleanAndExit, "clean", "C", false, "clean existing rules and then exit")
 	fs.Var(&o.Interval, "interval", "health check interval")

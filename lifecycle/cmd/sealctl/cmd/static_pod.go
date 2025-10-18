@@ -86,7 +86,7 @@ func newLvscareCmd() *cobra.Command {
 }
 
 func genNewPod(obj lvscarePod) error {
-	fileName := fmt.Sprintf("%s.%s", obj.name, constants.YamlFileSuffix)
+	fileName := obj.name + "." + constants.YamlFileSuffix
 	yaml, err := ipvs.LvsStaticPodYaml(obj.vip, obj.master, obj.image, obj.name, obj.options)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func genNewPod(obj lvscarePod) error {
 }
 
 func setNewPodImage(obj lvscarePod) error {
-	fileName := fmt.Sprintf("%s.%s", obj.name, constants.YamlFileSuffix)
+	fileName := obj.name + "." + constants.YamlFileSuffix
 	podPath := path.Join(staticPodPath, fileName)
 	if file.IsExist(podPath) {
 		pod := &v1.Pod{}
