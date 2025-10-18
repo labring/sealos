@@ -16,7 +16,6 @@ package hosts
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -64,8 +63,8 @@ func appendToFile(filePath string, hostname *hostname) {
 
 func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 	if !file.IsExist(path) {
-		logger.Warn("path %s is not exists", path)
-		return nil, errors.New("path %s is not exists")
+		logger.Warn("path %s does not exist", path)
+		return nil, fmt.Errorf("path %s does not exist", path)
 	}
 
 	fp, fpErr := os.Open(path)
@@ -122,7 +121,7 @@ func (h *HostFile) AppendHost(domain, ip string) {
 
 func (h *HostFile) writeToFile(hostnameMap *linkedhashmap.Map, path string) {
 	if !file.IsExist(path) {
-		logger.Warn("path %s is not exists", path)
+		logger.Warn("path %s does not exist", path)
 		return
 	}
 
