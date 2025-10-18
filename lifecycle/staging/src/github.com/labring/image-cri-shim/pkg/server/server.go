@@ -16,6 +16,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
