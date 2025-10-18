@@ -25,9 +25,9 @@ import (
 
 func NewEnvCmd(appName string) *cobra.Command {
 	var verbose bool
-	var cmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "env",
-		Short: fmt.Sprintf("prints out all the environment information in use by %s", appName),
+		Short: "prints out all the environment information in use by " + appName,
 		Run: func(cmd *cobra.Command, args []string) {
 			list := ConfigOptions()
 			for _, v := range list {

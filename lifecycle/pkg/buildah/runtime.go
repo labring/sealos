@@ -27,6 +27,7 @@ import (
 	imagestorage "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/archive"
 	"github.com/spf13/cobra"
 )
 
@@ -35,8 +36,14 @@ type Runtime struct {
 	*libimage.Runtime
 }
 
-func getRuntimeWithStoreAndSystemContext(store storage.Store, sc *types.SystemContext) (*Runtime, error) {
-	libimageRuntime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: sc})
+func getRuntimeWithStoreAndSystemContext(
+	store storage.Store,
+	sc *types.SystemContext,
+) (*Runtime, error) {
+	libimageRuntime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: sc},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +71,7 @@ func getRuntime(c *cobra.Command) (*Runtime, error) {
 func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	var lastErr error
 	if diffType&DiffImage == DiffImage {
-		toImage, _, err := r.Runtime.LookupImage(id, nil)
+		toImage, _, err := r.LookupImage(id, nil)
 		if err == nil {
 			return toImage.TopLayer(), nil
 		}
@@ -72,7 +79,7 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	}
 
 	if diffType&DiffContainer == DiffContainer {
-		toCtr, err := r.Store.Container(id)
+		toCtr, err := r.Container(id)
 		if err == nil {
 			return toCtr.LayerID, nil
 		}
@@ -80,7 +87,7 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	}
 
 	if diffType == DiffAll {
-		toLayer, err := r.Store.Layer(id)
+		toLayer, err := r.Layer(id)
 		if err == nil {
 			return toLayer.ID, nil
 		}
@@ -89,12 +96,16 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	return "", fmt.Errorf("%s not found: %w", id, lastErr)
 }
 
-func (r *Runtime) PullOrLoadImages(ctx context.Context, args []string, options libimage.CopyOptions) ([]string, error) {
+func (r *Runtime) PullOrLoadImages(
+	ctx context.Context,
+	args []string,
+	options libimage.CopyOptions,
+) ([]string, error) {
 	copyOpts := options
 	if copyOpts.Writer == nil {
 		copyOpts.Writer = os.Stderr
 	}
-	var result []string
+	result := make([]string, 0, len(args))
 	for i := range args {
 		name := args[i]
 		tr, ref, err := parseTransportAndReference(imagestorage.Transport, name)
@@ -106,9 +117,14 @@ func (r *Runtime) PullOrLoadImages(ctx context.Context, args []string, options l
 			if tr.Name() == TransportDocker {
 				ref = strings.TrimPrefix(ref, "//")
 			}
-			pullImages, err := r.Runtime.Pull(ctx, ref, config.PullPolicyMissing, &libimage.PullOptions{
-				CopyOptions: copyOpts,
-			})
+			pullImages, err := r.Pull(
+				ctx,
+				ref,
+				config.PullPolicyMissing,
+				&libimage.PullOptions{
+					CopyOptions: copyOpts,
+				},
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -124,7 +140,7 @@ func (r *Runtime) PullOrLoadImages(ctx context.Context, args []string, options l
 				}
 				ref = filepath.Join(cwd, ref)
 			}
-			images, err := r.Runtime.Load(ctx, ref, &libimage.LoadOptions{
+			images, err := r.Load(ctx, ref, &libimage.LoadOptions{
 				CopyOptions: copyOpts,
 			})
 			if err != nil {
@@ -147,4 +163,67 @@ func (r *Runtime) getLayerIDs(from, to string, diffType DiffType) (string, strin
 		return "", "", err
 	}
 	return fromLayer, toLayer, nil
+}
+
+// Changes returns a list of changes between two layers.
+func (r *Runtime) Changes(from, to string) ([]archive.Change, error) {
+	return r.Store.Changes(from, to)
+}
+
+// Image returns a specific image from the store.
+func (r *Runtime) Image(id string) (*storage.Image, error) {
+	return r.Store.Image(id)
+}
+
+// DifferTarget gets the path to the differ target for a layer.
+func (r *Runtime) DifferTarget(id string) (string, error) {
+	return r.Store.DifferTarget(id)
+}
+
+// Load loads images from a file into the storage.
+func (r *Runtime) Load(
+	ctx context.Context,
+	path string,
+	options *libimage.LoadOptions,
+) ([]string, error) {
+	return r.Runtime.Load(ctx, path, options)
+}
+
+// LookupImage looks up an image by name or ID in the storage.
+func (r *Runtime) LookupImage(
+	name string,
+	options *libimage.LookupImageOptions,
+) (*libimage.Image, string, error) {
+	return r.Runtime.LookupImage(name, options)
+}
+
+// Container returns a specific container from the storage.
+func (r *Runtime) Container(id string) (*storage.Container, error) {
+	return r.Store.Container(id)
+}
+
+// Layer returns a specific layer from the storage.
+func (r *Runtime) Layer(id string) (*storage.Layer, error) {
+	return r.Store.Layer(id)
+}
+
+// Pull pulls images from a registry into the storage.
+func (r *Runtime) Pull(
+	ctx context.Context,
+	name string,
+	pullPolicy config.PullPolicy,
+	options *libimage.PullOptions,
+) ([]*libimage.Image, error) {
+	return r.Runtime.Pull(ctx, name, pullPolicy, options)
+}
+
+// Save saves images to a file from the storage.
+func (r *Runtime) Save(
+	ctx context.Context,
+	names []string,
+	format, output string,
+	options *libimage.SaveOptions,
+) ([]string, error) {
+	err := r.Runtime.Save(ctx, names, format, output, options)
+	return names, err
 }

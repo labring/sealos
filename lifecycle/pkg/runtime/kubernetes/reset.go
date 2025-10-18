@@ -17,11 +17,10 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-
-	"golang.org/x/exp/slices"
-	"golang.org/x/sync/errgroup"
+	"slices"
 
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -79,7 +78,11 @@ func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	}
 	removeKubeConfigErr := k.sshCmdAsync(node, removeKubeConfig)
 	if removeKubeConfigErr != nil {
-		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
+		logger.Error(
+			"failed to clean node, exec command %s failed, %v",
+			removeKubeConfig,
+			removeKubeConfigErr,
+		)
 	}
 	if slices.Contains(k.cluster.GetNodeIPAndPortList(), node) {
 		ipvscleanErr := k.execIPVSClean(node)

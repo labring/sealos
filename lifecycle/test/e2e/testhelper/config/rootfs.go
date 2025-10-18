@@ -24,13 +24,12 @@ import (
 
 	"github.com/labring/sealos/test/e2e/testhelper/template"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"github.com/pkg/errors"
 )
 
 const (
 	//	ImageDockerfile = `FROM scratch
-	//COPY . .`
+	// COPY . .`
 	RootfsTemplateDockerfile = `FROM {{ .BaseImage }}
 MAINTAINER labring
 {{- if .Copys }}
@@ -57,11 +56,11 @@ func (d *RootfsDockerfile) Write() (string, error) {
 		d.BaseImage = "scratch"
 	}
 	if len(d.Images) != 0 {
-		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755); err != nil {
+		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0o755); err != nil {
 			return "", errors.WithMessage(err, "create images dir failed")
 		}
 		for i, image := range d.Images {
-			if err := os.WriteFile(path.Join(tmpdir, "images", "shim", fmt.Sprintf("image%d", i)), []byte(image), 0644); err != nil {
+			if err := os.WriteFile(path.Join(tmpdir, "images", "shim", fmt.Sprintf("image%d", i)), []byte(image), 0o644); err != nil {
 				return "", errors.WithMessage(err, "write shim image failed")
 			}
 		}
@@ -69,7 +68,7 @@ func (d *RootfsDockerfile) Write() (string, error) {
 	}
 
 	if d.KubeadmYaml != "" {
-		if err := os.WriteFile(tmpdir+"/kubeadm.yml", []byte(d.KubeadmYaml), 0644); err != nil {
+		if err := os.WriteFile(tmpdir+"/kubeadm.yml", []byte(d.KubeadmYaml), 0o644); err != nil {
 			return "", errors.WithMessage(err, "write kubeadm.yml failed")
 		}
 		d.Copys = append(d.Copys, "kubeadm.yml etc/")
@@ -87,7 +86,7 @@ func (d *RootfsDockerfile) Write() (string, error) {
 	if d.dockerfileContent == "" {
 		return "", errors.New("dockerfile content is not set")
 	}
-	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0644); err != nil {
+	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0o644); err != nil {
 		return "", errors.WithMessage(err, "write RootfsDockerfile failed")
 	}
 	return tmpdir, nil

@@ -51,7 +51,8 @@ func IsFile(filePath string) bool {
 }
 
 func IsTarFile(s string) bool {
-	return strings.HasSuffix(s, ".tar") || strings.HasSuffix(s, ".gz") || strings.HasSuffix(s, ".tgz")
+	return strings.HasSuffix(s, ".tar") || strings.HasSuffix(s, ".gz") ||
+		strings.HasSuffix(s, ".tgz")
 }
 
 // IsDir returns if the given path is a directory.
@@ -67,7 +68,7 @@ func IsDir(path string) bool {
 func GetFiles(path string) (paths []string, err error) {
 	_, err = os.Stat(path)
 	if err != nil {
-		return
+		return paths, err
 	}
 	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
@@ -81,7 +82,7 @@ func GetFiles(path string) (paths []string, err error) {
 
 // ReadLines reads the contents from the file line by line.
 func ReadLines(fileName string) ([]string, error) {
-	var lines []string
+	lines := make([]string, 0, 64) // reasonable starting capacity for file lines
 	if !IsExist(fileName) {
 		return nil, errors.New("no such file")
 	}
@@ -121,9 +122,9 @@ func MkDirs(dirs ...string) error {
 		return nil
 	}
 	for _, dir := range dirs {
-		err := os.MkdirAll(dir, 0755)
+		err := os.MkdirAll(dir, 0o755)
 		if err != nil {
-			return fmt.Errorf("failed to create %s, %v", dir, err)
+			return fmt.Errorf("failed to create %s, %w", dir, err)
 		}
 	}
 	return nil
@@ -135,7 +136,7 @@ func MkTmpdir(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return tempDir, os.MkdirAll(tempDir, 0755)
+	return tempDir, os.MkdirAll(tempDir, 0o755)
 }
 
 // MkTmpFile creates a temporary file.
@@ -147,12 +148,12 @@ func MkTmpFile(path string) (*os.File, error) {
 func WriteFile(fileName string, content []byte) error {
 	dir := filepath.Dir(fileName)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err = os.MkdirAll(dir, 0755); err != nil {
+		if err = os.MkdirAll(dir, 0o755); err != nil {
 			return err
 		}
 	}
 
-	return AtomicWriteFile(fileName, content, 0644)
+	return AtomicWriteFile(fileName, content, 0o644)
 }
 
 // RecursionCopy equals to `cp -r`
@@ -164,9 +165,9 @@ func RecursionCopy(src, dst string) error {
 		return CopyDirV3(src, dst)
 	}
 
-	err := os.MkdirAll(filepath.Dir(dst), 0700|0055)
+	err := os.MkdirAll(filepath.Dir(dst), 0o700|0o055)
 	if err != nil {
-		return fmt.Errorf("failed to mkdir for recursion copy, err: %v", err)
+		return fmt.Errorf("failed to mkdir for recursion copy, err: %w", err)
 	}
 
 	return Copy(src, dst)
@@ -179,7 +180,7 @@ func CleanFile(file *os.File) {
 	}
 	// the following operation won't failed regularly, if failed, log it
 	err := file.Close()
-	if err != nil && err != os.ErrClosed {
+	if err != nil && !errors.Is(err, os.ErrClosed) {
 		logger.Warn(err)
 	}
 	err = os.Remove(file.Name())
@@ -193,7 +194,7 @@ func CleanFiles(file ...string) error {
 	for _, f := range file {
 		err := os.RemoveAll(f)
 		if err != nil {
-			return fmt.Errorf("failed to clean file %s, %v", f, err)
+			return fmt.Errorf("failed to clean file %s, %w", f, err)
 		}
 	}
 	return nil
@@ -244,7 +245,7 @@ func CountDirFiles(dirName string) int {
 func GetFileSize(path string) (size int64, err error) {
 	_, err = os.Stat(path)
 	if err != nil {
-		return
+		return size, err
 	}
 	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
 		if !info.IsDir() {

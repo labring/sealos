@@ -31,7 +31,7 @@ func ToString(data map[string]string, sep string) string {
 	return strings.Join(result, sep)
 }
 
-func FromString(data string, sep string) map[string]string {
+func FromString(data, sep string) map[string]string {
 	list := strings.Split(data, sep)
 	return FromSlice(list)
 }
@@ -59,19 +59,19 @@ func Merge(ms ...map[string]string) map[string]string {
 	return res
 }
 
-func DeepMerge(dst, src *map[string]interface{}) {
+func DeepMerge(dst, src *map[string]any) {
 	for srcK, srcV := range *src {
 		dstV, ok := (*dst)[srcK]
 		if !ok {
 			continue
 		}
-		dV, ok := dstV.(map[string]interface{})
+		dV, ok := dstV.(map[string]any)
 		// dstV is string type
 		if !ok {
 			(*dst)[srcK] = srcV
 			continue
 		}
-		sV, ok := srcV.(map[string]interface{})
+		sV, ok := srcV.(map[string]any)
 		if !ok {
 			continue
 		}

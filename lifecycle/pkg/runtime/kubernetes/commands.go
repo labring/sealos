@@ -45,7 +45,10 @@ const (
 
 func (k *KubeadmRuntime) Command(cmdType CommandType) (cmd string) {
 	initConfigPath := k.getInitMasterKubeadmConfigFilePath()
-	joinMasterConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinMasterKubeadmFileName)
+	joinMasterConfigPath := path.Join(
+		k.pathResolver.ConfigsPath(),
+		defaultJoinMasterKubeadmFileName,
+	)
 	joinNodeConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	updateClusterConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultUpdateKubeadmFileName)
 
@@ -63,7 +66,12 @@ func (k *KubeadmRuntime) Command(cmdType CommandType) (cmd string) {
 	}
 
 	if cmdType == InitMaster || cmdType == JoinMaster {
-		return fmt.Sprintf("%s%s%s", cmd, vlogToStr(k.klogLevel), " --ignore-preflight-errors=SystemVerification")
+		return fmt.Sprintf(
+			"%s%s%s",
+			cmd,
+			vlogToStr(k.klogLevel),
+			" --ignore-preflight-errors=SystemVerification",
+		)
 	}
 	return fmt.Sprintf("%s%s", cmd, vlogToStr(k.klogLevel))
 }

@@ -18,7 +18,6 @@ import (
 	"os"
 
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
-
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 )
 
@@ -48,22 +47,22 @@ func (s *SealosCmd) SetCriBinPath() error {
 }
 
 type ClusterCycle interface {
-	Apply(*ApplyOptions) error
-	Build(*BuildOptions) error
-	Create(*CreateOptions) ([]byte, error)
-	Add(*AddOptions) error
-	Delete(*DeleteOptions) error
-	Run(*RunOptions) error
-	Reset(*ResetOptions) error
-	Cert(*CertOptions) error
+	Apply(opts *ApplyOptions) error
+	Build(opts *BuildOptions) error
+	Create(opts *CreateOptions) ([]byte, error)
+	Add(opts *AddOptions) error
+	Delete(opts *DeleteOptions) error
+	Run(opts *RunOptions) error
+	Reset(opts *ResetOptions) error
+	Cert(opts *CertOptions) error
 }
 
 type ImageService interface {
-	ImagePull(*PullOptions) error
+	ImagePull(opts *PullOptions) error
 	ImagePush(image string) error
 	ImageList() error
 	ImageTag(name, newName string) error
-	ImageSave(image string, path string, archive string) error
+	ImageSave(image, path, archive string) error
 	ImageLoad(path string) error
 	ImageMerge(options *MergeOptions) error
 	ImageRemove(images ...string) error
@@ -159,7 +158,7 @@ func (s *SealosCmd) ImageList() error {
 	return s.Executor.AsyncExec(s.BinPath, "list")
 }
 
-func (s *SealosCmd) ImageSave(image string, path string, archive string) error {
+func (s *SealosCmd) ImageSave(image, path, archive string) error {
 	if archive == "" {
 		return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, image)
 	}
@@ -190,18 +189,21 @@ func (s *SealosCmd) ImageRemove(images ...string) error {
 func (s *SealosCmd) ImageInspect(image string) error {
 	return s.Executor.AsyncExec(s.BinPath, "inspect", image)
 }
+
 func (s *SealosCmd) CRIImageList(display bool) ([]byte, error) {
 	if display {
 		return nil, s.Executor.AsyncExec(s.CriBinPath, "images")
 	}
 	return s.Executor.Exec(s.CriBinPath, "images", "-o", "json")
 }
+
 func (s *SealosCmd) CRIProcessList(display bool) ([]byte, error) {
 	if display {
 		return nil, s.Executor.AsyncExec(s.CriBinPath, "ps", "-a")
 	}
 	return s.Executor.Exec(s.CriBinPath, "ps", "-a", "-o", "json")
 }
+
 func (s *SealosCmd) CRIPodList(display bool) ([]byte, error) {
 	if display {
 		return nil, s.Executor.AsyncExec(s.CriBinPath, "pods")
@@ -212,6 +214,7 @@ func (s *SealosCmd) CRIPodList(display bool) ([]byte, error) {
 	}
 	return data, nil
 }
+
 func (s *SealosCmd) CRIImagePull(name string) error {
 	return s.Executor.AsyncExec(s.CriBinPath, "pull", name)
 }

@@ -22,15 +22,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/template"
 	"github.com/labring/sealos/pkg/utils/file"
-
-	"golang.org/x/exp/slices"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -63,7 +61,7 @@ func FilterNonEmptyFromSlice(list []string) (ret []string) {
 			ret = append(ret, list[i])
 		}
 	}
-	return
+	return ret
 }
 
 func FilterNonEmptyFromString(s, sep string) []string {
@@ -101,7 +99,7 @@ func RemoveFromSlice(ss []string, s string) (result []string) {
 			result = append(result, v)
 		}
 	}
-	return
+	return result
 }
 
 func Merge(ss []string, s string) []string {
@@ -115,17 +113,17 @@ func Merge(ss []string, s string) []string {
 	return ret
 }
 
-func FormatSize(size int64) (Size string) {
-	if size < 1024 {
-		Size = fmt.Sprintf("%.2fB", float64(size)/float64(1))
-	} else if size < (1024 * 1024) {
-		Size = fmt.Sprintf("%.2fKB", float64(size)/float64(1024))
-	} else if size < (1024 * 1024 * 1024) {
-		Size = fmt.Sprintf("%.2fMB", float64(size)/float64(1024*1024))
-	} else {
-		Size = fmt.Sprintf("%.2fGB", float64(size)/float64(1024*1024*1024))
+func FormatSize(size int64) string {
+	switch {
+	case size < 1024:
+		return fmt.Sprintf("%.2fB", float64(size))
+	case size < 1024*1024:
+		return fmt.Sprintf("%.2fKB", float64(size)/float64(1024))
+	case size < 1024*1024*1024:
+		return fmt.Sprintf("%.2fMB", float64(size)/float64(1024*1024))
+	default:
+		return fmt.Sprintf("%.2fGB", float64(size)/float64(1024*1024*1024))
 	}
-	return
 }
 
 func IsLetterOrNumber(k string) bool {
@@ -156,7 +154,7 @@ func RenderTextWithEnv(text string, envs map[string]string) string {
 	for k, v := range envs {
 		replaces[fmt.Sprintf("$(%s)", k)] = v
 		replaces[fmt.Sprintf("${%s}", k)] = v
-		replaces[fmt.Sprintf("$%s", k)] = v
+		replaces["$"+k] = v
 	}
 	logger.Debug("renderTextFromEnv: replaces: %+v ; text: %s", replaces, text)
 	for o, n := range replaces {
@@ -196,7 +194,7 @@ func RenderTemplatesWithEnv(filePaths string, envs map[string]string) error {
 
 			writer, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, os.ModePerm)
 			if err != nil {
-				return fmt.Errorf("failed to open file [%s] for rendering: %v", path, err)
+				return fmt.Errorf("failed to open file [%s] for rendering: %w", path, err)
 			}
 			defer writer.Close()
 
@@ -208,10 +206,10 @@ func RenderTemplatesWithEnv(filePaths string, envs map[string]string) error {
 			t, isOk, err := template.TryParse(string(body))
 			if isOk {
 				if err != nil {
-					return fmt.Errorf("failed to create template: %s %v", path, err)
+					return fmt.Errorf("failed to create template: %s %w", path, err)
 				}
 				if err := t.Execute(writer, envs); err != nil {
-					return fmt.Errorf("failed to render env template: %s %v", path, err)
+					return fmt.Errorf("failed to render env template: %s %w", path, err)
 				}
 			} else {
 				return errors.New("parse template failed")
@@ -219,7 +217,7 @@ func RenderTemplatesWithEnv(filePaths string, envs map[string]string) error {
 
 			return nil
 		}); err != nil {
-			return fmt.Errorf("failed to render templates in directory %s: %v", dir, err)
+			return fmt.Errorf("failed to render templates in directory %s: %w", dir, err)
 		}
 	}
 

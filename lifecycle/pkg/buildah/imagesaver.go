@@ -20,20 +20,17 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/labring/sreg/pkg/registry/crane"
-	"github.com/labring/sreg/pkg/registry/save"
-
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/image/v5/types"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sreg/pkg/buildimage"
+	"github.com/labring/sreg/pkg/registry/crane"
+	"github.com/labring/sreg/pkg/registry/save"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/labring/sreg/pkg/buildimage"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type saverOptions struct {
@@ -43,10 +40,20 @@ type saverOptions struct {
 
 func (opts *saverOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&opts.maxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
-	fs.BoolVar(&opts.enabled, "save-image", true, "store images that parsed from the specific directories")
+	fs.BoolVar(
+		&opts.enabled,
+		"save-image",
+		true,
+		"store images that parsed from the specific directories",
+	)
 }
 
-func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saverOptions) error {
+func runSaveImages(
+	contextDir string,
+	platforms []v1.Platform,
+	sys *types.SystemContext,
+	opts *saverOptions,
+) error {
 	if !opts.enabled {
 		logger.Warn("save-image is disabled, skip pulling images")
 		return nil
@@ -118,7 +125,7 @@ func parsePlatforms(c *cobra.Command) ([]v1.Platform, error) {
 		return []v1.Platform{platform}, nil
 	}
 
-	var ret []v1.Platform
+	ret := make([]v1.Platform, 0, len(parsedPlatforms))
 	for _, pf := range parsedPlatforms {
 		ret = append(ret, v1.Platform{Architecture: pf.Arch, OS: pf.OS, Variant: pf.Variant})
 	}

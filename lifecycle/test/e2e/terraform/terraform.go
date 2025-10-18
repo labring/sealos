@@ -18,19 +18,18 @@ package terraform
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/json"
-
-	"k8s.io/client-go/util/homedir"
-
 	executils "github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/client-go/util/homedir"
 )
 
 //go:generate go run main.go
@@ -45,7 +44,9 @@ type Terraform struct {
 func (tf *Terraform) Apply(architecture string) error {
 	_, ok := executils.CheckCmdIsExist("terraform")
 	if !ok {
-		return fmt.Errorf("not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ")
+		return errors.New(
+			"not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ",
+		)
 	}
 	tf.setEnv()
 	defer func() {
@@ -63,7 +64,7 @@ func (tf *Terraform) Apply(architecture string) error {
 		if err != nil {
 			return err
 		}
-		if f == fmt.Sprintf("infra/vars.tf.%s", architecture) {
+		if f == "infra/vars.tf."+architecture {
 			if err = file.WriteFile(path.Join(HomeDir, "vars.tf"), data); err != nil {
 				return err
 			}
@@ -76,11 +77,21 @@ func (tf *Terraform) Apply(architecture string) error {
 		}
 	}
 	_ = file.CleanFiles(path.Join(HomeDir, "vars.tf.amd64"), path.Join(HomeDir, "vars.tf.arm64"))
-	err := executils.CmdWithContext(context.Background(), "bash", "-c", fmt.Sprintf("cd %s && terraform init", HomeDir))
+	err := executils.CmdWithContext(
+		context.Background(),
+		"bash",
+		"-c",
+		fmt.Sprintf("cd %s && terraform init", HomeDir),
+	)
 	if err != nil {
 		return err
 	}
-	err = executils.CmdWithContext(context.Background(), "bash", "-c", fmt.Sprintf("cd %s && terraform apply -auto-approve", HomeDir))
+	err = executils.CmdWithContext(
+		context.Background(),
+		"bash",
+		"-c",
+		fmt.Sprintf("cd %s && terraform apply -auto-approve", HomeDir),
+	)
 	if err != nil {
 		return err
 	}
@@ -90,7 +101,9 @@ func (tf *Terraform) Apply(architecture string) error {
 func (tf *Terraform) Destroy() error {
 	_, ok := executils.CheckCmdIsExist("terraform")
 	if !ok {
-		return fmt.Errorf("not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ")
+		return errors.New(
+			"not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ",
+		)
 	}
 	var err error
 	tf.setEnv()
@@ -98,7 +111,7 @@ func (tf *Terraform) Destroy() error {
 		tf.unsetEnv()
 	}()
 	if !file.IsExist(HomeDir) {
-		err = fmt.Errorf("infra terraform home dir is not exist")
+		err = errors.New("infra terraform home dir is not exist")
 		return err
 	}
 	defer func() {
@@ -107,7 +120,12 @@ func (tf *Terraform) Destroy() error {
 			file.CleanDir(HomeDir)
 		}
 	}()
-	err = executils.CmdWithContext(context.Background(), "bash", "-c", fmt.Sprintf("cd %s && terraform destroy -auto-approve", HomeDir))
+	err = executils.CmdWithContext(
+		context.Background(),
+		"bash",
+		"-c",
+		fmt.Sprintf("cd %s && terraform destroy -auto-approve", HomeDir),
+	)
 	if err != nil {
 		return err
 	}
@@ -115,21 +133,23 @@ func (tf *Terraform) Destroy() error {
 }
 
 type Host struct {
-	Name      string
-	Password  string
-	PublicIP  string
-	PrivateIP string
+	Name      string `json:"name"`
+	Password  string `json:"password"`
+	PublicIP  string `json:"public_ip"`
+	PrivateIP string `json:"private_ip"`
 }
 
 type InfraDetail struct {
-	Public *Host
-	Nodes  []Host
+	Public *Host  `json:"public"`
+	Nodes  []Host `json:"nodes"`
 }
 
 func (tf *Terraform) Detail() (*InfraDetail, error) {
 	_, ok := executils.CheckCmdIsExist("terraform")
 	if !ok {
-		return nil, fmt.Errorf("not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ")
+		return nil, errors.New(
+			"not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ",
+		)
 	}
 	var err error
 	tf.setEnv()
@@ -137,32 +157,48 @@ func (tf *Terraform) Detail() (*InfraDetail, error) {
 		tf.unsetEnv()
 	}()
 	if !file.IsExist(path.Join(HomeDir, "terraform.tfstate")) {
-		err = fmt.Errorf("infra terraform status file is not exist")
+		err = errors.New("infra terraform status file is not exist")
 		return nil, err
 	}
 	data, err := file.ReadAll(path.Join(HomeDir, "terraform.tfstate"))
 	if err != nil {
 		return nil, err
 	}
-	var stateMap map[string]interface{}
+	var stateMap map[string]any
 	if err = json.Unmarshal(data, &stateMap); err != nil {
 		return nil, err
 	}
 	d := &InfraDetail{}
 	resources, _, _ := unstructured.NestedSlice(stateMap, "resources")
 	for _, res := range resources {
-		if obj, ok := res.(map[string]interface{}); ok {
+		if obj, ok := res.(map[string]any); ok {
 			resourceType, _, _ := unstructured.NestedString(obj, "type")
 			resourceName, _, _ := unstructured.NestedString(obj, "name")
 			if resourceType == "alicloud_instance" {
 				instances, _, _ := unstructured.NestedSlice(obj, "instances")
 				for i, instance := range instances {
-					if instanceObj, ok := instance.(map[string]interface{}); ok {
+					if instanceObj, ok := instance.(map[string]any); ok {
 						h := &Host{}
-						h.Name, _, _ = unstructured.NestedString(instanceObj, "attributes", "instance_name")
-						h.Password, _, _ = unstructured.NestedString(instanceObj, "attributes", "password")
-						h.PublicIP, _, _ = unstructured.NestedString(instanceObj, "attributes", "public_ip")
-						h.PrivateIP, _, _ = unstructured.NestedString(instanceObj, "attributes", "private_ip")
+						h.Name, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"instance_name",
+						)
+						h.Password, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"password",
+						)
+						h.PublicIP, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"public_ip",
+						)
+						h.PrivateIP, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"private_ip",
+						)
 						if resourceName == "sealos" {
 							d.Public = h
 							break

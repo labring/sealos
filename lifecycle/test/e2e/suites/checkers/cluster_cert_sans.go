@@ -20,9 +20,7 @@ import (
 	"fmt"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -37,7 +35,8 @@ func (f *fakeCertSansClient) Verify() error {
 	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has("127.0.0.1") {
 		return fmt.Errorf("cert SANs not match %s", "127.0.0.1")
 	}
-	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has("apiserver.cluster.local") {
+	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).
+		Has("apiserver.cluster.local") {
 		return fmt.Errorf("cert SANs not match %s", "apiserver.cluster.local")
 	}
 	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has("10.103.97.2") {
@@ -52,7 +51,11 @@ func (f *fakeCertSansClient) Verify() error {
 		for _, v := range f.data {
 			if v != "" {
 				if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has(v) {
-					return fmt.Errorf("cert SANs %+v not match %s", f.ClusterConfiguration.APIServer.CertSANs, v)
+					return fmt.Errorf(
+						"cert SANs %+v not match %s",
+						f.ClusterConfiguration.APIServer.CertSANs,
+						v,
+					)
 				}
 			}
 		}

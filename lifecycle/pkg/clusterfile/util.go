@@ -15,20 +15,20 @@
 package clusterfile
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
-
-	k8sV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/decode"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	yaml2 "github.com/labring/sealos/pkg/utils/yaml"
+	k8sV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
-var ErrClusterNotExist = fmt.Errorf("no cluster exist")
+var ErrClusterNotExist = errors.New("no cluster exist")
 
 func GetDefaultClusterName() (string, error) {
 	files, err := os.ReadDir(constants.WorkDir())
@@ -44,11 +44,12 @@ func GetDefaultClusterName() (string, error) {
 	if len(clusters) == 1 {
 		return clusters[0], nil
 	} else if len(clusters) > 1 {
-		return "", fmt.Errorf("select a cluster through the -c parameter: " + strings.Join(clusters, ","))
+		return "", errors.New("select a cluster through the -c parameter: " + strings.Join(clusters, ","))
 	}
 
 	return "", ErrClusterNotExist
 }
+
 func GetClusterFromName(clusterName string) (cluster *v2.Cluster, err error) {
 	if clusterName == "" {
 		clusterName, err = GetDefaultClusterName()
@@ -58,18 +59,18 @@ func GetClusterFromName(clusterName string) (cluster *v2.Cluster, err error) {
 	}
 	clusterFile := constants.Clusterfile(clusterName)
 	cluster, err = GetClusterFromFile(clusterFile)
-	return
+	return cluster, err
 }
+
 func GetClusterFromFile(filepath string) (cluster *v2.Cluster, err error) {
 	cluster = &v2.Cluster{}
 	if err = yaml2.UnmarshalFile(filepath, cluster); err != nil {
-		return nil, fmt.Errorf("failed to get cluster from %s, %v", filepath, err)
+		return nil, fmt.Errorf("failed to get cluster from %s, %w", filepath, err)
 	}
 	return cluster, nil
 }
 
 func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
-	var cluster *v2.Cluster
 	metaType := k8sV1.TypeMeta{}
 	err := yaml.Unmarshal(data, &metaType)
 	if err != nil {
@@ -84,6 +85,9 @@ func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
 	} else if c == nil {
 		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
 	}
-	cluster = c.(*v2.Cluster)
-	return cluster, nil
+	clusterTyped, ok := c.(*v2.Cluster)
+	if !ok {
+		return nil, fmt.Errorf("unexpected cluster type %T", c)
+	}
+	return clusterTyped, nil
 }

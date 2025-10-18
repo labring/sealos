@@ -19,17 +19,12 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
-
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
-	. "github.com/onsi/ginkgo/v2"
-
-	"github.com/labring/sealos/test/e2e/testhelper/config"
-
 	"github.com/labring/sealos/test/e2e/suites/checkers"
+	"github.com/labring/sealos/test/e2e/suites/operators"
+	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
+	"github.com/labring/sealos/test/e2e/testhelper/config"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	. "github.com/onsi/ginkgo/v2"
 )
 
 var _ = Describe("E2E_sealos_apply_test", func() {
@@ -45,7 +40,6 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
 		It("sealos apply single by containerd", func() {
-
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  kubeadm.PackageName + "/containerd-svc-sans.yaml",
@@ -71,7 +65,6 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd-buildimage", func() {
-
 			By("build image from dockerfile")
 			kubeadmVar := `
 apiVersion: kubeadm.k8s.io/v1beta2
@@ -87,16 +80,23 @@ networking:
 			var tmpdir string
 			tmpdir, err = dFile.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
-			err = fakeClient.Image.BuildImage("apply-hack-containerd:kubeadm-network", tmpdir, operators.BuildOptions{
-				MaxPullProcs: 5,
-				SaveImage:    true,
-			})
+			err = fakeClient.Image.BuildImage(
+				"apply-hack-containerd:kubeadm-network",
+				tmpdir,
+				operators.BuildOptions{
+					MaxPullProcs: 5,
+					SaveImage:    true,
+				},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  kubeadm.PackageName + "/custome-containerd-svc.yaml",
-				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes:v1.25.0": "apply-hack-containerd:kubeadm-network"},
+				BinData: kubeadm.PackageName + "/custome-containerd-svc.yaml",
+				Replaces: map[string]string{
+					"127.0.0.1":                  utils.GetLocalIpv4(),
+					"labring/kubernetes:v1.25.0": "apply-hack-containerd:kubeadm-network",
+				},
 			}
 			applyfile, err := clusterfileConfig.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
@@ -116,5 +116,4 @@ networking:
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 	})
-
 })
