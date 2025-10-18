@@ -133,5 +133,6 @@ func runSave(cmd *cobra.Command, args []string, saveOpts *saveOptions) error {
 	} else {
 		saveOptions.AdditionalTags = tags
 	}
-	return r.Save(getContext(), names, saveOpts.format, saveOpts.output, saveOptions)
+	_, err = r.Save(getContext(), names, saveOpts.format, saveOpts.output, saveOptions)
+	return err
 }
