@@ -27,6 +27,7 @@ import (
 	imagestorage "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/archive"
 	"github.com/spf13/cobra"
 )
 
@@ -162,4 +163,67 @@ func (r *Runtime) getLayerIDs(from, to string, diffType DiffType) (string, strin
 		return "", "", err
 	}
 	return fromLayer, toLayer, nil
+}
+
+// Changes returns a list of changes between two layers.
+func (r *Runtime) Changes(from, to string) ([]archive.Change, error) {
+	return r.Store.Changes(from, to)
+}
+
+// Image returns a specific image from the store.
+func (r *Runtime) Image(id string) (*storage.Image, error) {
+	return r.Store.Image(id)
+}
+
+// DifferTarget gets the path to the differ target for a layer.
+func (r *Runtime) DifferTarget(id string) (string, error) {
+	return r.Store.DifferTarget(id)
+}
+
+// Load loads images from a file into the storage.
+func (r *Runtime) Load(
+	ctx context.Context,
+	path string,
+	options *libimage.LoadOptions,
+) ([]string, error) {
+	return r.Runtime.Load(ctx, path, options)
+}
+
+// LookupImage looks up an image by name or ID in the storage.
+func (r *Runtime) LookupImage(
+	name string,
+	options *libimage.LookupImageOptions,
+) (*libimage.Image, string, error) {
+	return r.Runtime.LookupImage(name, options)
+}
+
+// Container returns a specific container from the storage.
+func (r *Runtime) Container(id string) (*storage.Container, error) {
+	return r.Store.Container(id)
+}
+
+// Layer returns a specific layer from the storage.
+func (r *Runtime) Layer(id string) (*storage.Layer, error) {
+	return r.Store.Layer(id)
+}
+
+// Pull pulls images from a registry into the storage.
+func (r *Runtime) Pull(
+	ctx context.Context,
+	name string,
+	pullPolicy config.PullPolicy,
+	options *libimage.PullOptions,
+) ([]*libimage.Image, error) {
+	return r.Runtime.Pull(ctx, name, pullPolicy, options)
+}
+
+// Save saves images to a file from the storage.
+func (r *Runtime) Save(
+	ctx context.Context,
+	names []string,
+	format, output string,
+	options *libimage.SaveOptions,
+) ([]string, error) {
+	err := r.Runtime.Save(ctx, names, format, output, options)
+	return names, err
 }

@@ -58,6 +58,7 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 	return newImage, true, cfg
 }
 
+//nolint:unused // utility function for future use
 func registryFromImage(image string) string {
 	parts := strings.SplitN(image, "/", 2)
 	if len(parts) == 0 {
@@ -66,6 +67,7 @@ func registryFromImage(image string) string {
 	return parts[0]
 }
 
+//nolint:unused // utility function for future use
 func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]bool) bool {
 	if skip != nil && skip[domain] {
 		return true
@@ -77,6 +79,7 @@ func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]boo
 		cfg.RegistryToken == ""
 }
 
+//nolint:unused // utility function for future use
 func referenceSuffix(ref name.Reference) string {
 	switch v := ref.(type) {
 	case name.Tag:

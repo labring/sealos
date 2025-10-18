@@ -40,7 +40,7 @@ type Shim interface {
 	// Stop stops the shim.
 	Stop()
 	// UpdateAuth refreshes registry credentials without restarting the shim.
-	UpdateAuth(*types.ShimAuthConfig)
+	UpdateAuth(cfg *types.ShimAuthConfig)
 }
 
 // shim is the implementation of Shim.
@@ -117,11 +117,11 @@ func (r *shim) Stop() {
 	r.server.Stop()
 }
 
-func (r *shim) UpdateAuth(auth *types.ShimAuthConfig) {
+func (r *shim) UpdateAuth(cfg *types.ShimAuthConfig) {
 	if r.authStore == nil {
 		return
 	}
-	r.authStore.Update(auth)
+	r.authStore.Update(cfg)
 }
 
 func (r *shim) dialNotify(socket string, uid, gid int, mode os.FileMode, err error) {
