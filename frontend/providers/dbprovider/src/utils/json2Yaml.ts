@@ -657,8 +657,8 @@ export const json2CreateCluster = (
   function buildMilvusYaml() {
     const milvusRes = (resources['milvus'] as any) || {
       cpuMemory: {
-        limits: { cpu: '0.5', memory: '0.5Gi' },
-        requests: { cpu: '0.5', memory: '0.5Gi' }
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '200m', memory: '256Mi' }
       },
       storage: 3,
       other: { replicas: 1 }
@@ -666,8 +666,8 @@ export const json2CreateCluster = (
 
     const etcdRes = (resources['etcd'] as any) || {
       cpuMemory: {
-        limits: { cpu: '0.5', memory: '0.5Gi' },
-        requests: { cpu: '0.5', memory: '0.5Gi' }
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '200m', memory: '256Mi' }
       },
       storage: 3,
       other: { replicas: 1 }
@@ -675,16 +675,15 @@ export const json2CreateCluster = (
 
     const minioRes = (resources['minio'] as any) || {
       cpuMemory: {
-        limits: { cpu: '0.5', memory: '0.5Gi' },
-        requests: { cpu: '0.5', memory: '0.5Gi' }
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '200m', memory: '256Mi' }
       },
       storage: 3,
       other: { replicas: 1 }
     };
 
     const labels = {
-      'kb.io/database': data.dbVersion,
-      'clusterversion.kubeblocks.io/name': data.dbVersion
+      'clusterdefinition.kubeblocks.io/name': 'milvus'
     };
 
     const milvusObj = {
@@ -696,24 +695,16 @@ export const json2CreateCluster = (
         namespace: getUserNamespace()
       },
       spec: {
-        topology: 'standalone',
-        clusterDefinitionRef: 'milvus',
-        terminationPolicy,
         affinity: {
           podAntiAffinity: 'Preferred',
-          topologyKeys: ['kubernetes.io/hostname'],
           tenancy: 'SharedNode'
         },
-        tolerations: [
-          {
-            key: 'kb-data',
-            operator: 'Equal',
-            value: 'true',
-            effect: 'NoSchedule'
-          }
-        ],
+        clusterDefinitionRef: 'milvus',
+        clusterVersionRef: data.dbVersion,
+        terminationPolicy,
         componentSpecs: [
           {
+            componentDefRef: 'milvus',
             name: 'milvus',
             disableExporter: true,
             serviceAccountName: `kb-${data.dbName}`,
@@ -731,7 +722,10 @@ export const json2CreateCluster = (
           },
 
           {
+            componentDefRef: 'etcd',
             name: 'etcd',
+            disableExporter: true,
+            serviceAccountName: `kb-${data.dbName}`,
             replicas: data.replicas,
             resources: etcdRes.cpuMemory,
             volumeClaimTemplates: [
@@ -746,7 +740,10 @@ export const json2CreateCluster = (
           },
 
           {
+            componentDefRef: 'minio',
             name: 'minio',
+            disableExporter: true,
+            serviceAccountName: `kb-${data.dbName}`,
             replicas: data.replicas,
             resources: minioRes.cpuMemory,
             volumeClaimTemplates: [
@@ -759,7 +756,14 @@ export const json2CreateCluster = (
               }
             ]
           }
-        ]
+        ],
+        resources: {
+          cpu: '0',
+          memory: '0'
+        },
+        storage: {
+          size: '0'
+        }
       }
     };
 
