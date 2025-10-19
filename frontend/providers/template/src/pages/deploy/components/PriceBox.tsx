@@ -21,8 +21,8 @@ export const usePriceCalculation = ({ cpu, memory, storage, nodeport }: Resource
     const memoryPMin = +((userSourcePrice.memory * memory.min * 24) / 1024).toFixed(2);
     const memoryPMax = +((userSourcePrice.memory * memory.max * 24) / 1024).toFixed(2);
 
-    const storagePMin = +(userSourcePrice.storage * storage.min * 24).toFixed(2);
-    const storagePMax = +(userSourcePrice.storage * storage.max * 24).toFixed(2);
+    const storagePMin = +((userSourcePrice.storage * storage.min * 24) / 1024).toFixed(2);
+    const storagePMax = +((userSourcePrice.storage * storage.max * 24) / 1024).toFixed(2);
 
     const nodePortP = +(userSourcePrice.nodeports * nodeport * 24).toFixed(2);
 
