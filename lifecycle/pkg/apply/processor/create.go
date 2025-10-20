@@ -120,8 +120,8 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunConfig in CreateProcessor.")
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range cluster.Status.Mounts {
-		cManifest := cManifest
+	for i := range cluster.Status.Mounts {
+		cManifest := cluster.Status.Mounts[i]
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(
 				cManifest.ImageName,

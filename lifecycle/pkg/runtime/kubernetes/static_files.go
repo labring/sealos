@@ -57,8 +57,8 @@ func (k *KubeadmRuntime) copyStaticFiles(nodes []string) error {
 			filepath.Join(file.DestinationDir, file.Name),
 		)
 		eg, _ := errgroup.WithContext(context.Background())
-		for _, host := range nodes {
-			host := host
+		for i := range nodes {
+			host := nodes[i]
 			eg.Go(func() error {
 				err := k.sshCmdAsync(host, cmdLinkStatic)
 				if err != nil {

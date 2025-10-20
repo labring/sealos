@@ -239,8 +239,8 @@ func (c *InstallProcessor) RunConfig(_ *v2.Cluster) error {
 		return nil
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range c.NewMounts {
-		cManifest := cManifest
+	for i := range c.NewMounts {
+		cManifest := c.NewMounts[i]
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(
 				cManifest.ImageName,

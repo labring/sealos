@@ -191,8 +191,9 @@ func (k *KubeadmRuntime) deleteAPIServer() error {
 	}
 	logger.Info("delete pod apiserver from crictl")
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, master := range k.getMasterIPAndPortList() {
-		master := master
+	masters := k.getMasterIPAndPortList()
+	for i := range masters {
+		master := masters[i]
 		eg.Go(func() error {
 			podIDJson, err := k.sshCmdToString(master, podIDSh)
 			if err != nil {

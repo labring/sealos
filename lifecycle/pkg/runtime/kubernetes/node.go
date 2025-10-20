@@ -40,8 +40,8 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		return err
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range newNodesIPList {
-		node := node
+	for i := range newNodesIPList {
+		node := newNodesIPList[i]
 		eg.Go(func() error {
 			logger.Info("start to join %s as worker", node)
 			k.mu.Lock()
@@ -101,8 +101,8 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 		return nil
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range nodes {
-		node := node
+	for i := range nodes {
+		node := nodes[i]
 		eg.Go(func() error {
 			logger.Info("start to delete worker %s", node)
 			if err := k.deleteNode(node); err != nil {

@@ -267,8 +267,8 @@ func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 		return errors.WithMessage(err, "write admin.config file failed")
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range hosts {
-		node := node
+	for i := range hosts {
+		node := hosts[i]
 		eg.Go(func() error {
 			home, err := k.execer.CmdToString(node, "echo $HOME", "")
 			if err != nil {

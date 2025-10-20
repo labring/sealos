@@ -988,7 +988,7 @@ func manifestInspect(
 		if latestErr == nil {
 			latestErr = e
 		} else {
-			latestErr = fmt.Errorf("tried %v: %w", e, latestErr)
+			latestErr = errors.Join(fmt.Errorf("tried %w", e), latestErr)
 		}
 	}
 

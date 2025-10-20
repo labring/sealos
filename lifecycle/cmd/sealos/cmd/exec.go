@@ -88,10 +88,10 @@ func runCommand(cluster *v2.Cluster, targets, args []string) error {
 		return err
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, ipAddr := range targets {
-		ipAddr := ipAddr
+	for i := range targets {
+		addr := targets[i]
 		eg.Go(func() error {
-			return execer.CmdAsync(ipAddr, args...)
+			return execer.CmdAsync(addr, args...)
 		})
 	}
 	return eg.Wait()
