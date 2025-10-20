@@ -226,7 +226,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
       <Card>
         <CardHeader className="gap-0 p-5 bg-blue-50">
           <CardTitle className="font-semibold text-xl flex items-center justify-center">
-            <span className="text-foreground mr-3">{t('Total Amount')}: </span>
+            <span className="text-foreground mr-3">{t('common:total_amount')}: </span>
             <CurrencySymbol type={currencyType} className="w-5 h-5 mr-1 text-blue-600" />
             <span className="text-blue-600">{totalAmount}</span>
           </CardTitle>
@@ -234,7 +234,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
 
         <CardHeader className="border-y gap-0 p-4 font-medium text-sm rounded-none">
           <CardTitle>
-            <span>{t('resource')}</span>
+            <span>{t('common:resource')}</span>
           </CardTitle>
         </CardHeader>
 
@@ -243,7 +243,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <Cpu size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('CPU')}</span>
+              <span>{t('common:cpu')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorSlider
@@ -266,7 +266,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <MemoryStick size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('memory')}</span>
+              <span>{t('common:memory')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorSlider
@@ -291,7 +291,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <HardDrive size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('storage')}</span>
+              <span>{t('common:storage')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
@@ -309,7 +309,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <Network size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('network')}</span>
+              <span>{t('common:network')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
@@ -328,7 +328,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
             <div className="flex items-center">
               <div className="flex items-center gap-2 w-[15ch]">
                 <CircuitBoard size={20} strokeWidth={1.33} className="text-gray-400" />
-                <span>{t('GPU')}</span>
+                <span>{t('common:gpu')}</span>
               </div>
               <div className="flex items-center gap-5">
                 <Select
@@ -360,7 +360,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
                   </SelectContent>
                 </Select>
                 <CalculatorNumberInput
-                  unit={t('GPU Unit')}
+                  unit={t('common:gpu_unit')}
                   value={config.resources.gpu.count}
                   disabled={gpuData.length === 0}
                   onChange={(str, count) => {
@@ -375,11 +375,11 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <HdmiPort size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('Port')}</span>
+              <span>{t('common:port')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
-                unit={t('port_unit')}
+                unit={t('common:port_unit')}
                 value={config.resources.ports}
                 onChange={(str, val) => {
                   if (val < 0) return;
@@ -393,7 +393,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
 
         <CardHeader className="border-y gap-0 p-4 font-medium text-sm rounded-none">
           <CardTitle>
-            <span>{t('usage')}</span>
+            <span>{t('common:usage')}</span>
           </CardTitle>
         </CardHeader>
 
@@ -402,7 +402,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <Boxes size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('quantity')}</span>
+              <span>{t('common:quantity')}</span>
             </div>
             <div className="flex items-center gap-10">
               <CalculatorNumberInput
@@ -419,7 +419,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
           <div className="flex items-center">
             <div className="flex items-center gap-2 w-[15ch]">
               <Clock3 size={20} strokeWidth={1.33} className="text-gray-400" />
-              <span>{t('duration')}</span>
+              <span>{t('common:duration')}</span>
             </div>
             <div className="flex items-center gap-5">
               <CalculatorNumberInput

@@ -2,6 +2,7 @@ import { Button, Separator } from '@sealos/shadcn-ui';
 import { CircleCheck, Sparkles } from 'lucide-react';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import usePlanStore from '@/stores/plan';
+import { useTranslation } from 'next-i18next';
 
 export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
   if (isPayg) return 'bg-plan-payg';
@@ -36,6 +37,7 @@ interface PlanHeaderProps {
 }
 
 export function PlanHeader({ children }: PlanHeaderProps) {
+  const { t } = useTranslation();
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
@@ -43,7 +45,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
   const plans = plansData?.plans;
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
-  const planName = subscription?.PlanName || 'Free Plan';
+  const planName = subscription?.PlanName || t('common:free_plan');
 
   const renewalTime = subscription?.CurrentPeriodEndAt
     ? new Date(subscription.CurrentPeriodEndAt)
@@ -84,14 +86,14 @@ export function PlanHeader({ children }: PlanHeaderProps) {
           className={`${backgroundClass} rounded-xl px-6 py-4 flex justify-between items-center`}
         >
           <div>
-            <span className="text-slate-500 text-sm">Current Workspace Plan</span>
+            <span className="text-slate-500 text-sm">{t('common:current_workspace_plan')}</span>
             <h1 className="font-semibold text-2xl">{planDisplayName}</h1>
           </div>
 
           {children?.({
             trigger: (
               <Button size="lg" variant="outline">
-                <span>{'Subscribe Plan'}</span>
+                <span>{t('common:subscribe_plan')}</span>
               </Button>
             )
           })}
@@ -105,7 +107,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
       <div className={`${backgroundClass} rounded-xl p-6 flex flex-col gap-4`}>
         <div className="flex justify-between items-center">
           <div>
-            <span className="text-slate-500 text-sm">Current Workspace Plan</span>
+            <span className="text-slate-500 text-sm">{t('common:current_workspace_plan')}</span>
             <h1 className="font-semibold text-2xl">{isPaygType ? 'PAYG' : planName}</h1>
           </div>
 
@@ -113,7 +115,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
             trigger: (
               <Button size="lg">
                 <Sparkles />
-                <span>{'Upgrade Plan'}</span>
+                <span>{t('common:upgrade_plan')}</span>
               </Button>
             )
           })}
@@ -142,7 +144,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
             <div className="flex gap-2 items-center">
               <CircleCheck size={16} className="text-blue-600"></CircleCheck>
               <span className="text-gray-600 text-sm">
-                {formatMoney(currentPlan.AIQuota * 100)} AI Credits
+                {formatMoney(currentPlan.AIQuota * 100)} {t('common:valuation.ai_credits')}
               </span>
             </div>
           )}
@@ -151,14 +153,14 @@ export function PlanHeader({ children }: PlanHeaderProps) {
 
       <div className={`px-6 py-5 grid ${isDowngrade ? 'grid-cols-3' : 'grid-cols-2'}`}>
         <div className="flex gap-2 flex-col">
-          <span className="text-sm text-muted-foreground">Price/Month</span>
+          <span className="text-sm text-muted-foreground">{t('common:price_per_month')}</span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
             ${displayMoney(formatMoney(monthlyPrice))}
           </span>
         </div>
 
         <div className="flex gap-2 flex-col">
-          <span className="text-sm text-muted-foreground">Renewal Time</span>
+          <span className="text-sm text-muted-foreground">{t('common:renewal_time')}</span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
             {renewalTime}
           </span>
@@ -166,9 +168,9 @@ export function PlanHeader({ children }: PlanHeaderProps) {
 
         {isDowngrade && (
           <div className="flex gap-2 flex-col">
-            <span className="text-sm text-muted-foreground">Next Plan</span>
+            <span className="text-sm text-muted-foreground">{t('common:next_plan')}</span>
             <span className="bg-[#FFEDD5] text-orange-600 font-medium text-sm leading-none flex items-center gap-2 px-2 py-1 w-fit rounded-full">
-              {nextPlanName} Plan
+              {nextPlanName} {t('common:plan')}
             </span>
           </div>
         )}

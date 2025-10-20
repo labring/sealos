@@ -52,24 +52,24 @@ export const TrendBar = memo(function Trend() {
   );
   const rechargeArr = rechareData?.data || [];
   const inOutData: [[number, string | number][], string][] = [
-    [totalArr, t('Total Expenditure')],
-    [rechargeArr, t('Total Recharge')]
+    [totalArr, t('common:total_expenditure')],
+    [rechargeArr, t('common:total_recharge')]
   ];
   return (
     <div className="flex flex-col text-sm border rounded-2xl shadow-sm">
       <div className="flex px-6 items-center h-16 border-b">
         <div className="flex h-5 gap-2 items-center font-medium">
-          <h3>{t('Annual Income and Expenditure')}</h3>
+          <h3>{t('common:annual_income_and_expenditure')}</h3>
           <Separator
             orientation="vertical"
             className="data-[orientation=vertical]:w-0.5 text-zinc-400"
           />
-          <span className="text-zinc-500">{t('Last 6 Months')}</span>
+          <span className="text-zinc-500">{t('common:last_6_months')}</span>
           <Separator
             orientation="vertical"
             className="data-[orientation=vertical]:w-0.5 text-zinc-400"
           />
-          <span className="text-zinc-500">{t('All Regions')}</span>
+          <span className="text-zinc-500">{t('common:all_regions')}</span>
         </div>
       </div>
       <div className="px-8 py-4 flex flex-col items-center justify-center gap-4 h-[calc(300px+2rem)]">

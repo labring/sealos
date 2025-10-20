@@ -198,7 +198,7 @@ export function PAYGAppBillingDrawerView({
   const columns: ColumnDef<TableRowData, any>[] = [
     columnHelper.display({
       id: hasSubApps ? 'app-name' : 'time',
-      header: hasSubApps ? 'Sub-app' : 'Time',
+      header: hasSubApps ? t('common:sub_app') : t('common:time'),
       cell: (info) => {
         const row = info.row.original;
 
@@ -283,7 +283,7 @@ export function PAYGAppBillingDrawerView({
     }),
     columnHelper.display({
       id: 'network-usage',
-      header: 'Traffic',
+      header: t('common:network'),
       cell: (info) =>
         renderUsageCell(
           info.row.original,
@@ -361,7 +361,7 @@ export function PAYGAppBillingDrawerView({
             {onOpenApp && (
               <div>
                 <Button variant="outline" onClick={onOpenApp}>
-                  <span>Open App</span>
+                  <span>{t('common:open_app')}</span>
                   <ArrowUpRight size={16} />
                 </Button>
               </div>
@@ -374,8 +374,8 @@ export function PAYGAppBillingDrawerView({
           <TableLayout>
             <TableLayoutCaption className="font-medium text-base">
               <div className="flex gap-2 items-center">
-                <h3>Billing & Usage</h3>
-                <Badge variant="secondary">Hourly</Badge>
+                <h3>{t('common:billing_and_usage')}</h3>
+                <Badge variant="secondary">{t('common:hourly')}</Badge>
               </div>
               <div>
                 <DateRangePicker
@@ -467,7 +467,8 @@ export function PAYGAppBillingDrawerView({
             <TableLayoutFooter>
               <div className="px-4 py-3 flex justify-between">
                 <div className="flex items-center text-zinc-500">
-                  Total:{' '}
+                  {t('common:total')}
+                  {': '}
                   {isLoading ? <Skeleton className="h-4 w-8 inline-block ml-1" /> : totalCount}
                 </div>
                 <div className="flex items-center gap-3">
@@ -478,7 +479,7 @@ export function PAYGAppBillingDrawerView({
                   />
                   <span>
                     <span>{pageSize}</span>
-                    <span className="text-zinc-500"> / Page</span>
+                    <span className="text-zinc-500"> / {t('common:page')}</span>
                   </span>
                 </div>
               </div>

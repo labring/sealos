@@ -75,7 +75,7 @@ export function PAYGCostTableView({
       <TableCell>${formatMoney(item.cost)}</TableCell>
       <TableCell>
         <Button variant="outline" size="sm" onClick={() => onUsageClick?.(item)}>
-          Usage
+          {t('common:usage')}
         </Button>
       </TableCell>
     </TableRow>
@@ -112,10 +112,10 @@ export function PAYGCostTableView({
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">Item</TableHead>
-          <TableHead className="bg-transparent">Type</TableHead>
-          <TableHead className="bg-transparent">Cost</TableHead>
-          <TableHead className="bg-transparent">Action</TableHead>
+          <TableHead className="bg-transparent">{t('common:item')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:orders.type')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:cost')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:orders.action')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
@@ -131,7 +131,8 @@ export function PAYGCostTableView({
       <TableLayoutFooter>
         <div className="px-4 py-2 flex justify-between">
           <div className="flex items-center text-zinc-500">
-            Total: {isLoading ? <Skeleton className="h-4 w-8 inline-block ml-1" /> : totalCount}
+            {t('common:total')}:{' '}
+            {isLoading ? <Skeleton className="h-4 w-8 inline-block ml-1" /> : totalCount}
           </div>
           <div className="flex items-center gap-3">
             <Pagination
@@ -141,7 +142,7 @@ export function PAYGCostTableView({
             />
             <span>
               <span>{pageSize}</span>
-              <span className="text-zinc-500"> / Page</span>
+              <span className="text-zinc-500"> / {t('common:page')}</span>
             </span>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { SubscriptionPlan } from '@/types/plan';
 import { UpgradePlanCard } from './UpgradePlanCard';
 import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 interface PlansDisplayProps {
   isSubscribing?: boolean;
@@ -24,6 +25,7 @@ export function PlansDisplay({
   onPlanSelect,
   workspaceName
 }: PlansDisplayProps) {
+  const { t } = useTranslation();
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
@@ -146,7 +148,7 @@ export function PlansDisplay({
                 }}
               />
               <label htmlFor="more-plans" className="text-sm font-medium">
-                More Plans
+                {t('common:more_plans')}
               </label>
             </div>
           )}
@@ -166,7 +168,7 @@ export function PlansDisplay({
             }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a plan" />
+              <SelectValue placeholder={t('common:select_a_plan')} />
             </SelectTrigger>
             <SelectContent>
               {additionalPlans.map((plan) => {
@@ -193,7 +195,7 @@ export function PlansDisplay({
                             margin: '0 12px'
                           }}
                         />
-                        <span>Contact us</span>
+                        <span>{t('common:contact_us')}</span>
                       </div>
                     </SelectItem>
                   );
@@ -225,12 +227,12 @@ export function PlansDisplay({
                       <span className="text-xs text-gray-500">${monthlyPrice.toFixed(0)}</span>
                       {isCurrentPlanInSelect && (
                         <span className="bg-blue-100 text-blue-600 font-medium text-xs px-2 py-1 rounded-full ml-2">
-                          Your current plan
+                          {t('common:your_current_plan')}
                         </span>
                       )}
                       {isNextPlanInSelect && (
                         <span className="bg-orange-100 text-orange-600 font-medium text-xs px-2 py-1 rounded-full ml-2">
-                          Your next plan
+                          {t('common:your_next_plan')}
                         </span>
                       )}
                     </div>
@@ -269,20 +271,21 @@ export function PlansDisplay({
               }}
             >
               {(() => {
-                if (isSubscribing) return 'Processing...';
+                if (isSubscribing) return t('common:processing');
 
                 const selectedPlanName = additionalPlans.find((p) => p.ID === selectedPlan)?.Name;
-                if (selectedPlanName === currentPlan) return 'Your current plan';
-                if (selectedPlanName === nextPlanName) return 'Your next plan';
+                if (selectedPlanName === currentPlan) return t('common:your_current_plan');
+                if (selectedPlanName === nextPlanName) return t('common:your_next_plan');
 
                 // Determine if it's upgrade or downgrade based on plan relationships
                 if (currentPlanObj && selectedPlanName) {
-                  if (currentPlanObj.UpgradePlanList?.includes(selectedPlanName)) return 'Upgrade';
+                  if (currentPlanObj.UpgradePlanList?.includes(selectedPlanName))
+                    return t('common:upgrade');
                   if (currentPlanObj.DowngradePlanList?.includes(selectedPlanName))
-                    return 'Downgrade';
+                    return t('common:downgrade');
                 }
 
-                return 'Upgrade';
+                return t('common:upgrade');
               })()}
             </Button>
           )}

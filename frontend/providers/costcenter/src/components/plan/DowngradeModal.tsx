@@ -9,6 +9,7 @@ import usePlanStore from '@/stores/plan';
 import { UserQuotaItem } from '@/types/workspace';
 import { useQuery } from '@tanstack/react-query';
 import { formatTime } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 interface DowngradeModalProps {
   targetPlan?: SubscriptionPlan;
@@ -20,6 +21,7 @@ interface DowngradeModalProps {
 const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
   const { targetPlan, isOpen = false, onConfirm, onCancel } = props;
 
+  const { t } = useTranslation();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   // 优化性能：只订阅需要的状态
@@ -187,14 +189,16 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
       <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-sm" />
       <DialogContent className="max-w-[460px] p-0 gap-0">
         <div className="flex justify-between items-center px-6 py-5">
-          <h2 className="text-lg font-semibold text-gray-900">We are sorry to see you go</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {t('common:we_are_sorry_to_see_you_go')}
+          </h2>
         </div>
 
         <div className="px-6 pb-6 pt-0">
           {/* Loading state */}
           {isLoading && (
             <div className="flex justify-center items-center py-8">
-              <div className="text-sm text-gray-600">Loading resource usage...</div>
+              <div className="text-sm text-gray-600">{t('common:loading_resource_usage')}</div>
             </div>
           )}
 
@@ -204,12 +208,14 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
               <div className="flex items-start gap-3">
                 {!hasExceededResources ? (
                   <div>
-                    <h3 className="text-sm font-medium text-zinc-900 mb-1">Exceeded Resources</h3>
+                    <h3 className="text-sm font-medium text-zinc-900 mb-1">
+                      {t('common:exceeded_resources')}
+                    </h3>
                     <p className="text-sm text-orange-600">
-                      Your current usage exceeds downgraded plan limits.
+                      {t('common:your_current_usage_exceeds_downgraded_plan_limits')}
                     </p>
                     <p className="text-sm">
-                      To continue service, free up excess resources by
+                      {t('common:to_continue_service_free_up_excess_resources_by')}
                       {subscription?.CurrentPeriodEndAt && (
                         <span className="font-bold px-1">
                           {formatTime(subscription?.CurrentPeriodEndAt, 'yyyy-MM-dd')}
@@ -220,17 +226,16 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
                 ) : (
                   <div>
                     <span className="text-sm text-orange-600">
-                      Please ensure your resource usage stays within the {currentPlan?.Name} Plan
-                      limits
+                      {t('common:please_ensure_your_resource_usage_stays_within_plan_limits')}
                     </span>
                     <p className="text-sm text-zinc-900">
-                      before the next billing date
+                      {t('common:before_the_next_billing_date')}
                       {subscription?.CurrentPeriodEndAt && (
                         <span className="font-bold px-1">
                           {formatTime(subscription?.CurrentPeriodEndAt, 'yyyy-MM-dd')}
                         </span>
                       )}
-                      to avoid charges.
+                      {t('common:to_avoid_charges')}
                     </p>
                   </div>
                 )}
@@ -239,7 +244,9 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
               <Separator className="my-3" />
 
               <div className="mb-6">
-                <h3 className="text-base font-medium text-gray-900 mb-3">Downgrade Impact</h3>
+                <h3 className="text-base font-medium text-gray-900 mb-3">
+                  {t('common:downgrade_impact')}
+                </h3>
                 <ul className="space-y-2">
                   {resourceComparisons.map((comparison, index) => (
                     <li
@@ -267,7 +274,7 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
                 {hasExceededResources && (
                   <div className="mt-3 text-xs text-orange-700 bg-orange-50 p-2 rounded">
                     <AlertTriangle size={14} className="inline mr-1" />
-                    Resources marked in red exceed the target plan limits
+                    {t('common:resources_marked_in_red_exceed_target_plan_limits')}
                   </div>
                 )}
               </div>
@@ -277,23 +284,23 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
           {/* Billing Info */}
           <div className="mb-4">
             <p className="text-sm text-gray-600">
-              Cancellation will take effect on next billing cycle (
+              {t('common:cancellation_will_take_effect_on_next_billing_cycle')} (
               {subscription?.CurrentPeriodEndAt
                 ? new Date(subscription.CurrentPeriodEndAt).toLocaleDateString()
                 : 'N/A'}
               ).
               <br />
-              Until then, your {currentPlan?.Name || 'current'} plan remains active.
+              {t('common:until_then_your_current_plan_remains_active')}
             </p>
           </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3">
             <Button variant="outline" className="w-fit" onClick={handleClose}>
-              Keep Plan
+              {t('common:keep_plan')}
             </Button>
             <Button variant="outline" className="w-fit text-red-600" onClick={handleConfirm}>
-              Downgrade Plan
+              {t('common:downgrade_plan')}
             </Button>
           </div>
         </div>

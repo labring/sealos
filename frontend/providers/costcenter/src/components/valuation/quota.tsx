@@ -3,7 +3,7 @@ import { getWorkspaceQuota } from '@/api/workspace';
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { TableCell, TableRow, TableHead } from '@sealos/shadcn-ui/table';
 import { Progress } from '@sealos/shadcn-ui/progress';
 import {
@@ -50,7 +50,7 @@ export default function Quota() {
   return (
     <TableLayout>
       <TableLayoutCaption className="text-sm">
-        <div>{t('Usage')}</div>
+        <div>{t('common:usage')}</div>
         <div className="flex">
           <RegionMenu className={{ trigger: 'w-36 rounded-r-none' }} />
           <NamespaceMenu className={{ trigger: 'w-36 rounded-l-none border-l-0' }} />
@@ -59,18 +59,18 @@ export default function Quota() {
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">{t('Resource Name')}</TableHead>
-          <TableHead className="bg-transparent">{t('Chart')}</TableHead>
-          <TableHead className="bg-transparent">{t('Total')}</TableHead>
-          <TableHead className="bg-transparent">{t('Used')}</TableHead>
-          <TableHead className="bg-transparent">{t('Remain')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:resource_name')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:chart')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:total')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:used')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:remain')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
           {quota.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-sm text-muted-foreground h-20">
-                {t('Please select a specific workspace')}
+                {t('common:please_select_a_specific_workspace')}
               </TableCell>
             </TableRow>
           ) : (

@@ -2,12 +2,14 @@ import { SubscriptionPlan } from '@/types/plan';
 import { StaticPlanCard } from './StaticPlanCard';
 import { useMemo } from 'react';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 interface SubscriptionPlansPanelProps {
   plansData?: SubscriptionPlan[];
 }
 
 export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProps) {
+  const { t } = useTranslation();
   const { mainPlans, additionalPlans } = useMemo(() => {
     if (!plansData || plansData.length === 0) {
       return { mainPlans: [], additionalPlans: [] };
@@ -29,7 +31,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
   if (!plansData || plansData.length === 0) {
     return (
       <div className="flex justify-center py-12">
-        <div className="text-gray-500">No plans available</div>
+        <div className="text-gray-500">{t('common:no_plans_available')}</div>
       </div>
     );
   }
@@ -46,7 +48,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
       {/* More Plans Section */}
       {additionalPlans.length > 0 && (
         <div>
-          <div className="text-lg font-medium mb-4 text-black">More Plans</div>
+          <div className="text-lg font-medium mb-4 text-black">{t('common:more_plans')}</div>
           <div className="flex w-full gap-3 justify-start">
             {additionalPlans.slice(0, 2).map((plan) => {
               let resources: any = {};

@@ -43,11 +43,11 @@ function Invoice() {
           <Tabs defaultValue="listing">
             <TabsList variant="underline" className="w-fit">
               <TabsTrigger variant="cleanUnderline" value="listing">
-                Order List
+                {t('common:orders.order_list')}
               </TabsTrigger>
               {!invoiceDirectDownload && (
                 <TabsTrigger variant="cleanUnderline" value="history">
-                  Invoice History
+                  {t('common:orders.invoice_history')}
                 </TabsTrigger>
               )}
             </TabsList>

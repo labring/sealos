@@ -1,7 +1,7 @@
 import { cn } from '@sealos/shadcn-ui';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Separator } from '@sealos/shadcn-ui/separator';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
 import { ArrowLeft } from 'lucide-react';
 
@@ -34,11 +34,11 @@ export const InvoiceInspectionView = ({
 
   const typeList = [
     {
-      label: t('orders.details.type.list.normal'),
+      label: t('common:orders.details.type.list.normal'),
       value: 'normal'
     },
     {
-      label: t('orders.details.type.list.special'),
+      label: t('common:orders.details.type.list.special'),
       value: 'special'
     }
   ];
@@ -50,20 +50,22 @@ export const InvoiceInspectionView = ({
         <Button type="button" variant="ghost" onClick={onBack} className="hover:bg-gray-100">
           <div className="flex items-center gap-3">
             {onBack && <ArrowLeft size={20} className="size-5" />}
-            <h1 className="text-xl font-semibold">{t('SideBar.CreateInvoice')}</h1>
+            <h1 className="text-xl font-semibold">{t('common:sidebar.createinvoice')}</h1>
           </div>
         </Button>
         <div className="flex items-center gap-3">
-          <div className="text-blue-600 rounded-lg text-sm font-medium">Invoice Details</div>
+          <div className="text-blue-600 rounded-lg text-sm font-medium">
+            {t('common:orders.invoice_details')}
+          </div>
         </div>
       </div>
 
       {/* Invoice Details Section */}
       <section className="flex flex-col border rounded-2xl mb-4 shadow-sm">
         <div className="border-b text-base font-medium p-6 flex items-center justify-between">
-          <span>Invoice Details</span>
+          <span>{t('common:orders.invoice_details')}</span>
           <span className="text-sm font-normal">
-            {t('orders.invoiceAmount')}:{' '}
+            {t('common:orders.invoice_amount')}:
             <span className="text-blue-600">￥ {formatMoney(invoiceAmount)}</span>
           </span>
         </div>
@@ -76,42 +78,42 @@ export const InvoiceInspectionView = ({
           )}
         >
           <div>
-            <span>Invoice Items</span>
-            <span>{t('orders.Electronic Computer Service Fee')}</span>
+            <span>{t('common:orders.invoice_items')}</span>
+            <span>{t('common:orders.electronic_computer_service_fee')}</span>
           </div>
           <div>
-            <span>Invoice Type</span>
+            <span>{t('common:orders.invoice_type')}</span>
             <span>
               {typeList.find((type) => type.value === invoiceData.invoiceType)?.label ||
                 invoiceData.invoiceType}
             </span>
           </div>
           <div>
-            <span>Invoice Title</span>
+            <span>{t('common:orders.invoice_title')}</span>
             <span>{invoiceData.invoiceTitle || '-'}</span>
           </div>
           <div>
-            <span>Tax ID</span>
+            <span>{t('common:orders.tax_id')}</span>
             <span>{invoiceData.taxId || '-'}</span>
           </div>
           <div>
-            <span>Bank Name</span>
+            <span>{t('common:orders.bank_name')}</span>
             <span>{invoiceData.bankName || '-'}</span>
           </div>
           <div>
-            <span>Bank Account No.</span>
+            <span>{t('common:orders.bank_account')}</span>
             <span>{invoiceData.bankAccount || '-'}</span>
           </div>
           <div>
-            <span>Address</span>
+            <span>{t('common:orders.address')}</span>
             <span>{invoiceData.address || '-'}</span>
           </div>
           <div>
-            <span>Tel</span>
+            <span>{t('common:orders.tel')}</span>
             <span>{invoiceData.phone || '-'}</span>
           </div>
           <div>
-            <span>Fax</span>
+            <span>{t('common:orders.fax')}</span>
             <span>{invoiceData.fax || '-'}</span>
           </div>
         </div>
@@ -119,7 +121,9 @@ export const InvoiceInspectionView = ({
 
       {/* Contact Information Section */}
       <section className="flex flex-col border rounded-2xl shadow-sm">
-        <div className="border-b text-base font-medium p-6">Contact Information</div>
+        <div className="border-b text-base font-medium p-6">
+          {t('common:orders.contact_information')}
+        </div>
         <div
           className={cn(
             'px-8 py-6 grid grid-cols-2 gap-y-4 gap-x-6',
@@ -129,16 +133,16 @@ export const InvoiceInspectionView = ({
           )}
         >
           <div>
-            <span>Contact Person</span>
+            <span>{t('common:orders.contact_person')}</span>
             <span>{invoiceData.contactPerson || '-'}</span>
           </div>
           <div>
-            <span>Notification Email</span>
+            <span>{t('common:orders.notification_email')}</span>
             <span>{invoiceData.email || '-'}</span>
           </div>
           <Separator className="col-span-2 border-dashed bg-transparent border-b-1"></Separator>
           <div>
-            <span>Mobile Number</span>
+            <span>{t('common:orders.mobile_number')}</span>
             <span>{invoiceData.mobileNumber || '-'}</span>
           </div>
         </div>

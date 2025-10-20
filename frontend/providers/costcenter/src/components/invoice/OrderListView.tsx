@@ -18,6 +18,7 @@ import {
 import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
 import { formatMoney } from '@/utils/format';
 import { format as formatDate } from 'date-fns';
+import { useTranslation } from 'next-i18next';
 
 function formatDateTime(iso: string) {
   return formatDate(new Date(iso), 'yyyy-MM-dd HH:mm:ss');
@@ -50,6 +51,7 @@ export default function OrderListView({
   rows: OrderListRow[];
   onObtainInvoice?: () => void;
 }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
@@ -119,7 +121,7 @@ export default function OrderListView({
           />
           <Input
             icon={<Search size={16} />}
-            placeholder="Order ID"
+            placeholder={t('common:order_number')}
             className="w-[15rem]"
             value={orderIdFilter}
             onChange={(e) => onOrderIdFilterChange(e.target.value)}
@@ -128,11 +130,13 @@ export default function OrderListView({
 
         <div className="flex items-center gap-3 font-medium">
           <div className="text-blue-600 text-base">
-            Amount: ${formatMoney(selectedAmount).toFixed(2)}
+            {t('common:total_amount')}: ${formatMoney(selectedAmount).toFixed(2)}
           </div>
           <Button disabled={selectedRows.length <= 0} onClick={onObtainInvoice}>
             <ReceiptText size={16} />
-            <span>Obtain Invoice: {selectedRows.length}</span>
+            <span>
+              {t('common:orders.apply_invoice')}: {selectedRows.length}
+            </span>
           </Button>
         </div>
       </TableLayoutCaption>
@@ -142,12 +146,12 @@ export default function OrderListView({
           <TableHead>
             <Checkbox checked={allSelectedOnPage} onCheckedChange={toggleSelectAllOnPage} />
           </TableHead>
-          <TableHead>Order ID</TableHead>
-          <TableHead>Region</TableHead>
-          <TableHead>Workspace</TableHead>
-          <TableHead>Transaction Time</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Amount</TableHead>
+          <TableHead>{t('common:order_number')}</TableHead>
+          <TableHead>{t('common:region')}</TableHead>
+          <TableHead>{t('common:workspace')}</TableHead>
+          <TableHead>{t('common:orders.transaction_time')}</TableHead>
+          <TableHead>{t('common:orders.type')}</TableHead>
+          <TableHead>{t('common:total_amount')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
@@ -165,9 +169,11 @@ export default function OrderListView({
               <TableCell>{formatDateTime(row.time)}</TableCell>
               <TableCell>
                 {row.type === 'subscription' ? (
-                  <Badge className="bg-blue-50 text-blue-600">Subscription Charge</Badge>
+                  <Badge className="bg-blue-50 text-blue-600">
+                    {t('common:orders.subscription_charge')}
+                  </Badge>
                 ) : row.type === 'recharge' ? (
-                  <Badge className="bg-zinc-50 text-zinc-700">Top-up</Badge>
+                  <Badge className="bg-zinc-50 text-zinc-700">{t('common:top_up')}</Badge>
                 ) : (
                   '-'
                 )}
@@ -180,7 +186,9 @@ export default function OrderListView({
 
       <TableLayoutFooter>
         <div className="px-4 py-3 flex justify-between">
-          <div className="flex items-center text-zinc-500">Total: {filteredRows.length}</div>
+          <div className="flex items-center text-zinc-500">
+            {t('common:total')}: {filteredRows.length}
+          </div>
           <div className="flex items-center gap-3">
             <Pagination
               currentPage={page}
@@ -189,7 +197,7 @@ export default function OrderListView({
             />
             <span>
               <span>{pageSize}</span>
-              <span className="text-zinc-500"> / Page</span>
+              <span className="text-zinc-500"> / {t('common:page')}</span>
             </span>
           </div>
         </div>

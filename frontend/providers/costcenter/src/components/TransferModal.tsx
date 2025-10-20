@@ -78,7 +78,7 @@ const TransferModal = forwardRef(
           else {
             toast({
               status: 'success',
-              title: t('Transfer Success'),
+              title: t('common:transfer_success'),
               isClosable: true,
               duration: 2000,
               position: 'top'
@@ -104,7 +104,7 @@ const TransferModal = forwardRef(
       if (!trim_to || trim_to.length < 6) {
         toast({
           status: 'error',
-          title: t('Recipient ID is invalid'),
+          title: t('common:recipient_id_is_invalid'),
           isClosable: true,
           position: 'top'
         });
@@ -116,7 +116,7 @@ const TransferModal = forwardRef(
       ) {
         toast({
           status: 'error',
-          title: t('The payee cannot be oneself'),
+          title: t('common:the_payee_cannot_be_oneself'),
           isClosable: true,
           position: 'top'
         });
@@ -126,7 +126,7 @@ const TransferModal = forwardRef(
       if (!Number.isInteger(amount)) {
         toast({
           status: 'error',
-          title: t('Transfer Amount must be a integer'),
+          title: t('common:transfer_amount_must_be_a_integer'),
           isClosable: true,
           position: 'top'
         });
@@ -135,7 +135,7 @@ const TransferModal = forwardRef(
       if (deFormatMoney(amount + 10) > balance) {
         toast({
           status: 'error',
-          title: t('Transfer Amount must be less than balance'),
+          title: t('common:transfer_amount_must_be_less_than_balance'),
           isClosable: true,
           position: 'top'
         });
@@ -168,7 +168,7 @@ const TransferModal = forwardRef(
             color={'grayModern.900'}
             borderColor={'grayModern.100'}
           >
-            {t('Transfer')}
+            {t('common:transfer')}
           </ModalHeader>
           <ModalCloseButton top={'8px'} right={'18px'} />
           <Flex
@@ -188,7 +188,7 @@ const TransferModal = forwardRef(
               mb={'8px'}
               color={'grayModern.900'}
             >
-              {t('Recipient ID')}
+              {t('common:recipient_id')}
             </Text>
             <Input
               type={'text'}
@@ -208,7 +208,7 @@ const TransferModal = forwardRef(
               alignItems="center"
               display={'flex'}
               value={to}
-              placeholder={t('Recipient ID')}
+              placeholder={t('common:recipient_id')}
               variant={'unstyled'}
               onChange={(e) => {
                 e.preventDefault();
@@ -223,7 +223,7 @@ const TransferModal = forwardRef(
               mb={'8px'}
               color={'grayModern.900'}
             >
-              {t('Transfer Amount')}
+              {t('common:transfer_amount')}
             </Text>
             <NumberInput
               defaultValue={15}
@@ -258,7 +258,7 @@ const TransferModal = forwardRef(
             </NumberInput>
             <Flex align={'center'} w="full" fontWeight={'500'}>
               <Text fontSize="12px" mr={'12px'} color={'grayModern.900'}>
-                {t('Balance')}
+                {t('common:balance')}
               </Text>
               <Currencysymbol w="16px" type={currency} color="rgba(33, 155, 244, 1)" mr={'6px'} />
               <Text color="brightBlue.600" fontSize={'16px'}>
@@ -274,7 +274,7 @@ const TransferModal = forwardRef(
                 onClick={() => handleConfirm()}
                 isLoading={mutation.isLoading}
               >
-                {t('Transfer')}
+                {t('common:transfer')}
               </Button>
             </Flex>
           </Flex>

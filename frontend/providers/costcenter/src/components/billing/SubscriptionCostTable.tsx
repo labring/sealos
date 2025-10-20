@@ -8,6 +8,7 @@ import {
   TableLayoutBody
 } from '@sealos/shadcn-ui/table-layout';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
 
 export type SubscriptionData = {
@@ -35,6 +36,7 @@ const formatDate = (dateStr?: string) => {
 };
 
 export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
+  const { t } = useTranslation();
   const SubscriptionRow = ({ item }: { item: SubscriptionData }) => (
     <TableRow>
       <TableCell>{formatDate(item.time)}</TableCell>
@@ -48,14 +50,14 @@ export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
   return (
     <TableLayout className="border-r-0 rounded-r-none">
       <TableLayoutCaption className="font-medium text-sm bg-zinc-50">
-        <h3>Subscription</h3>
+        <h3>{t('common:subscription')}</h3>
       </TableLayoutCaption>
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">Time</TableHead>
-          <TableHead className="bg-transparent">Plan</TableHead>
-          <TableHead className="bg-transparent">Cost</TableHead>
+          <TableHead className="bg-transparent">{t('common:time')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:plan')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:cost')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>

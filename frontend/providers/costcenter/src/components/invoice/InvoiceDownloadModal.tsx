@@ -15,6 +15,7 @@ import { formatMoney } from '@/utils/format';
 import { InvoiceItem } from './InvoicePrintableView';
 import { format } from 'date-fns';
 import { snapdom } from '@zumer/snapdom';
+import { useTranslation } from 'next-i18next';
 
 interface InvoiceDownloadModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface InvoiceDownloadModalProps {
 }
 
 export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownloadModalProps) {
+  const { t } = useTranslation();
   const [billTo, setBillTo] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState<string>('');
 
@@ -69,20 +71,20 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Download Invoice</DialogTitle>
+          <DialogTitle>{t('common:download_invoice')}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-6">
           {/* Customer Information Form */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="billTo">Bill To</Label>
+              <Label htmlFor="billTo">{t('common:bill_to')}</Label>
               <Textarea
                 id="billTo"
                 className="min-h-64"
                 value={billTo}
                 onChange={(e) => setBillTo(e.target.value)}
-                placeholder="Enter your info"
+                placeholder={t('common:enter_your_info')}
               />
             </div>
           </div>
@@ -103,10 +105,10 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common:cancel')}
           </Button>
           <Button onClick={handleDownload} disabled={!billTo}>
-            Download Invoice
+            {t('common:download_invoice')}
           </Button>
         </DialogFooter>
       </DialogContent>

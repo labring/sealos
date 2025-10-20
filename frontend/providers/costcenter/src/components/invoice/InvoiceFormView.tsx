@@ -3,7 +3,7 @@ import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
 import { Separator } from '@sealos/shadcn-ui/separator';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
 import { ArrowLeft } from 'lucide-react';
 
@@ -53,11 +53,11 @@ const InvoiceFormView = ({
 
   const typeList = [
     {
-      label: t('orders.details.type.list.normal'),
+      label: t('common:orders.details.type.list.normal'),
       value: 'normal'
     },
     {
-      label: t('orders.details.type.list.special'),
+      label: t('common:orders.details.type.list.special'),
       value: 'special'
     }
   ];
@@ -69,12 +69,12 @@ const InvoiceFormView = ({
         <Button type="button" variant="ghost" onClick={onBack} className="hover:bg-gray-100">
           <div className="flex items-center gap-3">
             {onBack && <ArrowLeft size={20} className="size-5" />}
-            <h1 className="text-xl font-semibold">{t('SideBar.CreateInvoice')}</h1>
+            <h1 className="text-xl font-semibold">{t('common:sidebar.createinvoice')}</h1>
           </div>
         </Button>
         <div className="flex items-center gap-3">
           <div className="text-blue-600 rounded-lg text-sm font-medium">
-            {t('orders.Apply Inovice Tips')}
+            {t('common:orders.apply_inovice_tips')}
           </div>
           <Button
             type="button"
@@ -83,18 +83,18 @@ const InvoiceFormView = ({
             className="min-w-[120px]"
           >
             {isSubmitting
-              ? t('orders.submitting')
-              : `${t('orders.Apply Invoice')} ${invoiceCount > 0 ? `(${invoiceCount})` : ''}`}
+              ? t('common:orders.submitting')
+              : `${t('common:orders.apply_invoice')} ${invoiceCount > 0 ? `(${invoiceCount})` : ''}`}
           </Button>
         </div>
       </div>
 
-      {/* Invoice Details Section */}
+      {/* Invoice details Section */}
       <section className="flex flex-col border rounded-2xl mb-4 shadow-sm">
         <div className="border-b text-base font-medium p-6 flex items-center justify-between">
           <span>Invoice Details</span>
           <span className="text-sm font-normal">
-            {t('orders.invoiceAmount')}:{' '}
+            {t('common:orders.invoice_amount')}:{' '}
             <span className="text-blue-600">￥ {formatMoney(invoiceAmount)}</span>
           </span>
         </div>
@@ -111,7 +111,7 @@ const InvoiceFormView = ({
           <label>
             <span>Invoice Items</span>
             <span className="font-normal text-zinc-600 leading-[2.5rem]">
-              {t('orders.Electronic Computer Service Fee')}
+              {t('common:orders.electronic_computer_service_fee')}
             </span>
           </label>
           <label>
@@ -146,7 +146,7 @@ const InvoiceFormView = ({
                 value={formData.invoiceTitle}
                 onChange={(e) => onFieldChange('invoiceTitle', e.target.value)}
                 onBlur={(e) => onFieldBlur('invoiceTitle', e.target.value)}
-                placeholder={t('orders.details.invoiceTitle.placeholder')}
+                placeholder={t('common:orders.details.invoice_title.placeholder')}
                 aria-invalid={!!errors.invoiceTitle}
               />
               <p>{errors.invoiceTitle || 'No error'}</p>
@@ -160,7 +160,7 @@ const InvoiceFormView = ({
                 value={formData.taxId}
                 onChange={(e) => onFieldChange('taxId', e.target.value)}
                 onBlur={(e) => onFieldBlur('taxId', e.target.value)}
-                placeholder={t('orders.details.taxRegistrationNumber.placeholder')}
+                placeholder={t('common:orders.details.tax_registration_number.placeholder')}
                 aria-invalid={!!errors.taxId}
               />
               <p>{errors.taxId || 'No error'}</p>
@@ -174,7 +174,7 @@ const InvoiceFormView = ({
                 value={formData.bankName}
                 onChange={(e) => onFieldChange('bankName', e.target.value)}
                 onBlur={(e) => onFieldBlur('bankName', e.target.value)}
-                placeholder={t('orders.details.bankName.placeholder')}
+                placeholder={t('common:orders.details.bank_name.placeholder')}
                 aria-invalid={!!errors.bankName}
               />
               <p>{errors.bankName || 'No error'}</p>
@@ -188,7 +188,7 @@ const InvoiceFormView = ({
                 value={formData.bankAccount}
                 onChange={(e) => onFieldChange('bankAccount', e.target.value)}
                 onBlur={(e) => onFieldBlur('bankAccount', e.target.value)}
-                placeholder={t('orders.details.bankAccount.placeholder')}
+                placeholder={t('common:orders.details.bank_account.placeholder')}
                 aria-invalid={!!errors.bankAccount}
               />
               <p>{errors.bankAccount || 'No error'}</p>
@@ -202,7 +202,7 @@ const InvoiceFormView = ({
                 value={formData.address}
                 onChange={(e) => onFieldChange('address', e.target.value)}
                 onBlur={(e) => onFieldBlur('address', e.target.value)}
-                placeholder={t('orders.details.address.placeholder')}
+                placeholder={t('common:orders.details.address.placeholder')}
                 aria-invalid={!!errors.address}
               />
               <p>{errors.address || 'No error'}</p>
@@ -216,7 +216,7 @@ const InvoiceFormView = ({
                 value={formData.phone}
                 onChange={(e) => onFieldChange('phone', e.target.value)}
                 onBlur={(e) => onFieldBlur('phone', e.target.value)}
-                placeholder={t('orders.details.phone.placeholder')}
+                placeholder={t('common:orders.details.phone.placeholder')}
                 aria-invalid={!!errors.phone}
               />
               <p>{errors.phone || 'No error'}</p>
@@ -230,7 +230,7 @@ const InvoiceFormView = ({
                 value={formData.fax}
                 onChange={(e) => onFieldChange('fax', e.target.value)}
                 onBlur={(e) => onFieldBlur('fax', e.target.value)}
-                placeholder={t('orders.details.fax.placeholder')}
+                placeholder={t('common:orders.details.fax.placeholder')}
                 aria-invalid={!!errors.fax}
               />
               <p>{errors.fax || 'No error'}</p>
@@ -241,7 +241,9 @@ const InvoiceFormView = ({
 
       {/* Contact Information Section */}
       <section className="flex flex-col border rounded-2xl shadow-sm">
-        <div className="border-b text-base font-medium p-6">Contact Information</div>
+        <div className="border-b text-base font-medium p-6">
+          {t('common:orders.contact_information')}
+        </div>
         <div
           className={cn(
             'px-8 py-6 grid grid-cols-2 gap-y-3 gap-x-6',
@@ -251,37 +253,37 @@ const InvoiceFormView = ({
           )}
         >
           <label>
-            <span>Contact Person</span>
+            <span>{t('common:orders.contact_person')}</span>
             <Input
               type="text"
               value={formData.contactPerson}
               onChange={(e) => onFieldChange('contactPerson', e.target.value)}
               onBlur={(e) => onFieldBlur('contactPerson', e.target.value)}
-              placeholder={t('orders.contract.person.placeholder')}
+              placeholder={t('common:orders.contract.person.placeholder')}
               aria-invalid={!!errors.contactPerson}
             />
           </label>
           <label>
-            <span>Notification Email</span>
+            <span>{t('common:orders.notification_email')}</span>
             <Input
               type="email"
               value={formData.email}
               onChange={(e) => onFieldChange('email', e.target.value)}
               onBlur={(e) => onFieldBlur('email', e.target.value)}
-              placeholder={t('orders.contract.email.placeholder')}
+              placeholder={t('common:orders.contract.email.placeholder')}
               aria-invalid={!!errors.email}
             />
           </label>
           <Separator className="col-span-2 border-dashed bg-transparent border-b-1"></Separator>
           <label>
-            <span>Mobile Number</span>
+            <span>{t('common:orders.mobile_number')}</span>
             <div className="flex gap-2 items-center">
               <Input
                 type="tel"
                 value={formData.mobileNumber}
                 onChange={(e) => onFieldChange('mobileNumber', e.target.value)}
                 onBlur={(e) => onFieldBlur('mobileNumber', e.target.value)}
-                placeholder={t('orders.contract.phone.placeholder')}
+                placeholder={t('common:orders.contract.phone.placeholder')}
                 aria-invalid={!!errors.mobileNumber}
               />
               <Button
@@ -291,18 +293,18 @@ const InvoiceFormView = ({
                 disabled={remainTime > 0 || !formData.mobileNumber}
                 className="whitespace-nowrap text-blue-600"
               >
-                {remainTime > 0 ? `${remainTime}s` : t('Get Code')}
+                {remainTime > 0 ? `${remainTime}s` : t('common:get_code')}
               </Button>
             </div>
           </label>
           <label>
-            <span>Verification Code</span>
+            <span>{t('common:verification_code')}</span>
             <Input
               type="text"
               value={formData.verificationCode}
               onChange={(e) => onFieldChange('verificationCode', e.target.value)}
               onBlur={(e) => onFieldBlur('verificationCode', e.target.value)}
-              placeholder={t('orders.contract.code.placeholder')}
+              placeholder={t('common:orders.contract.code.placeholder')}
               aria-invalid={!!errors.verificationCode}
               className="flex-1"
             />
