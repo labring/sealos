@@ -20,7 +20,8 @@ ENV icpKey=""
 ENV namespaceWebhookEnabled="true"
 ENV namespaceWebhookFailurePolicy="Fail"
 
-ENV podWebhookEnabled="true"
+# Workload webhook settings (applies to Deployment, StatefulSet, ReplicaSet, and Pod)
+ENV workloadWebhookEnabled="true"
 ENV defaultOversellRatio="10"
 ENV databaseOversellRatio="5"
 ENV skipCPUThreshold="100m"
