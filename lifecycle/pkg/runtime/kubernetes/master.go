@@ -113,8 +113,8 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 // sendJoinCPConfig send join CP masters configuration
 func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, master := range joinMaster {
-		master := master
+	for i := range joinMaster {
+		master := joinMaster[i]
 		eg.Go(func() error {
 			k.mu.Lock()
 			defer k.mu.Unlock()
@@ -224,8 +224,8 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 		return nil
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, master := range masters {
-		master := master
+	for i := range masters {
+		master := masters[i]
 		eg.Go(func() error {
 			logger.Info("start to delete master %s", master)
 			if err := k.deleteMaster(master); err != nil {

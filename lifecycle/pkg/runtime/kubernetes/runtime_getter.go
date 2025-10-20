@@ -102,8 +102,8 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	}
 
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range nodesIPs {
-		node := node
+	for i := range nodesIPs {
+		node := nodesIPs[i]
 		eg.Go(func() error {
 			logger.Info("start to sync lvscare static pod to node: %s master: %+v", node, masters)
 			err := k.execIPVSPod(node, masters)

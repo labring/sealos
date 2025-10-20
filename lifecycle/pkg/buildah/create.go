@@ -161,14 +161,14 @@ func runRender(mountPoints, env []string) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	envs := maps.FromSlice(env)
 
-	for _, mountPoint := range mountPoints {
-		mountPoint := mountPoint
+	for i := range mountPoints {
+		path := mountPoints[i]
 		eg.Go(func() error {
-			if !file.IsExist(mountPoint) {
-				logger.Debug("MountPoint %s does not exist, skipping", mountPoint)
+			if !file.IsExist(path) {
+				logger.Debug("MountPoint %s does not exist, skipping", path)
 				return nil
 			}
-			return stringsutil.RenderTemplatesWithEnv(mountPoint, envs)
+			return stringsutil.RenderTemplatesWithEnv(path, envs)
 		})
 	}
 

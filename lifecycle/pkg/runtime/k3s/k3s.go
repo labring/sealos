@@ -134,8 +134,8 @@ func (k *K3s) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {
 	}
 	image := k.cluster.GetLvscareImage()
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range nodeIPList {
-		node := node
+	for i := range nodeIPList {
+		node := nodeIPList[i]
 		eg.Go(func() error {
 			logger.Info("start to sync lvscare static pod to node: %s master: %+v", node, masters)
 			err := k.remoteUtil.StaticPod(

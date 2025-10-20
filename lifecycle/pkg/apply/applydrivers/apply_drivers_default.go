@@ -336,10 +336,10 @@ func (c *Applier) syncWorkdir() {
 		logger.Error("failed to create ssh client: %v", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, ipAddr := range ipList {
-		ipAddr := ipAddr
+	for i := range ipList {
+		addr := ipList[i]
 		eg.Go(func() error {
-			return execer.Copy(ipAddr, workDir, workDir)
+			return execer.Copy(addr, workDir, workDir)
 		})
 	}
 	if err := eg.Wait(); err != nil {

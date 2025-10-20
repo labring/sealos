@@ -114,8 +114,8 @@ func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 
 func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, mount := range cluster.Status.Mounts {
-		mount := mount
+	for i := range cluster.Status.Mounts {
+		mount := cluster.Status.Mounts[i]
 		eg.Go(func() error {
 			return d.Buildah.Delete(mount.Name)
 		})

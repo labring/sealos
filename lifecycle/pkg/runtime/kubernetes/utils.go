@@ -60,8 +60,8 @@ func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
 
 func (k *KubeadmRuntime) sendFileToHosts(hosts []string, src, dst string) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range hosts {
-		node := node
+	for i := range hosts {
+		node := hosts[i]
 		eg.Go(func() error {
 			if err := k.sshCopy(node, src, dst); err != nil {
 				return fmt.Errorf("send file failed %w", err)
