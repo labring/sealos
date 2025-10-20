@@ -18,13 +18,12 @@ import (
 	"strings"
 
 	"github.com/miekg/dns"
-
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	userServiceAccountPrefix = "system:serviceaccount:ns-"
+	userServiceAccountPrefix = "system:serviceaccount:user-system:"
 	userNamespacePrefix      = "ns-"
 )
 
