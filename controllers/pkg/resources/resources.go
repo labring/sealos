@@ -45,11 +45,11 @@ Network bandwidth: Mebibytes (MiB) 0.00078125 / 1024 * 1000000 = 781 unit price
 // | Cpu          | 67    | mCore unit     |
 // | Memory       | 33    | Mebibytes unit |
 // | Disk         | 2     | Mebibytes unit |
-//| Mongodb      | 1     | feature...     |
-//| Minio        | 1     | Mebibytes unit |
-//| Infra-Cpu    | 67    | mCore unit     |
-//| Infra-Memory | 33    | Mebibytes unit |
-//| Infra-Disk   | 2     | Mebibytes unit |
+// | Mongodb      | 1     | feature...     |
+// | Minio        | 1     | Mebibytes unit |
+// | Infra-Cpu    | 67    | mCore unit     |
+// | Infra-Memory | 33    | Mebibytes unit |
+// | Infra-Disk   | 2     | Mebibytes unit |
 //
 // price: 1000000 = 1¥
 
@@ -65,14 +65,14 @@ type Price struct {
 // | Namespace1 | cpu          | timestamp1 | 5     |      |
 // | Namespace1 | memory       | timestamp1 | 100   |      |
 // | Namespace1 | disk         | timestamp1 | 30    |      |
-//| appid1     | mongodb      | timestamp1 | 100   |      |
-//| appid1     | Minio        | timestamp1 | 100   |      |
-//| Namespace2 | Infra-Cpu    | timestamp1 | 5     |      |
-//| Namespace2 | cpu          | timestamp1 | 100   |      |
-//| Namespace2 | Infra-Memory | timestamp1 | 30    |      |
-//| Namespace2 | Infra-Disk   | timestamp1 | 100   |      |
-//| Namespace2 | memory       | timestamp1 | 100   |      |
-//| Namespace2 |  disk        | timestamp1 | 100   |      |
+// | appid1     | mongodb      | timestamp1 | 100   |      |
+// | appid1     | Minio        | timestamp1 | 100   |      |
+// | Namespace2 | Infra-Cpu    | timestamp1 | 5     |      |
+// | Namespace2 | cpu          | timestamp1 | 100   |      |
+// | Namespace2 | Infra-Memory | timestamp1 | 30    |      |
+// | Namespace2 | Infra-Disk   | timestamp1 | 100   |      |
+// | Namespace2 | memory       | timestamp1 | 100   |      |
+// | Namespace2 |  disk        | timestamp1 | 100   |      |
 
 // Composite index: category, property, time, speed up query
 type Monitor struct {

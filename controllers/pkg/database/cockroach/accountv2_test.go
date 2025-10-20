@@ -110,8 +110,8 @@ func TestCockroach_InitTables(t *testing.T) {
 	//	t.Fatalf("CreateCredits() error = %v", err)
 	//}
 	//
-	//err = ck.AddDeductionBalanceWithCredits(ops, 10_000000, []string{"order1", "order2"})
-	//if err != nil {
+	// err = ck.AddDeductionBalanceWithCredits(ops, 10_000000, []string{"order1", "order2"})
+	// if err != nil {
 	//	t.Fatalf("AddDeductionBalanceWithCredits() error = %v", err)
 	//}
 }
