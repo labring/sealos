@@ -489,7 +489,79 @@ webhooks:
     - namespaces
   sideEffects: None
 {{ end }}
-{{ if .podWebhookEnabled }}
+{{ if .workloadWebhookEnabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /mutate-apps-v1-deployment
+  failurePolicy: Ignore
+  name: mdeployment.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /mutate-apps-v1-statefulset
+  failurePolicy: Ignore
+  name: mstatefulset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - statefulsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /mutate-apps-v1-replicaset
+  failurePolicy: Ignore
+  name: mreplicaset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - replicasets
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -585,7 +657,79 @@ webhooks:
     - namespaces
   sideEffects: None
 {{ end }}
-{{ if .podWebhookEnabled }}
+{{ if .workloadWebhookEnabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /validate-apps-v1-deployment
+  failurePolicy: Ignore
+  name: vdeployment.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /validate-apps-v1-statefulset
+  failurePolicy: Ignore
+  name: vstatefulset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - statefulsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /validate-apps-v1-replicaset
+  failurePolicy: Ignore
+  name: vreplicaset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - replicasets
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

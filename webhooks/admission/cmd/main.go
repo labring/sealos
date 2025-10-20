@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -181,17 +182,52 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create workload mutator and validator
+	workloadMutatorValidator := v1.NewWorkloadMutatorWithThresholds(
+		defaultOversellRatio,
+		databaseOversellRatio,
+		skipCPUThreshold,
+		skipMemoryThreshold,
+	)
+
+	// Register Deployment webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.Deployment{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create deployment webhook")
+		os.Exit(1)
+	}
+
+	// Register StatefulSet webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.StatefulSet{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create statefulset webhook")
+		os.Exit(1)
+	}
+
+	// Register ReplicaSet webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.ReplicaSet{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create replicaset webhook")
+		os.Exit(1)
+	}
+
+	// Register Pod webhook (only for pods created directly by users)
 	err = builder.WebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
-		WithDefaulter(
-			v1.NewPodMutatorWithThresholds(
-				defaultOversellRatio,
-				databaseOversellRatio,
-				skipCPUThreshold,
-				skipMemoryThreshold,
-			),
-		).
-		WithValidator(&v1.PodValidator{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create pod webhook")
