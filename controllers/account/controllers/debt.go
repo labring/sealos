@@ -180,11 +180,11 @@ func determineCurrentStatus(
 const (
 	// fromEn = "Debt-System"
 	// fromZh = "欠费系统"
-	////languageEn = "en"
+	// languageEn = "en"
 	// languageZh       = "zh"
-	//debtChoicePrefix = "debt-choice-"
-	//readStatusLabel  = "isRead"
-	//falseStatus      = "false"
+	// debtChoicePrefix = "debt-choice-"
+	// readStatusLabel  = "isRead"
+	// falseStatus      = "false"
 	trueStatus = "true"
 )
 

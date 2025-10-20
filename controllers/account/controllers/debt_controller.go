@@ -64,22 +64,22 @@ package controllers
 //	NumberPoll   string
 //}
 //
-//type SmsConfig struct {
+// type SmsConfig struct {
 //	Client      *client2.Client
 //	SmsSignName string
 //	SmsCode     map[string]string
 //}
 //
-//var DebtConfig = accountv1.DefaultDebtConfig
+// var DebtConfig = accountv1.DefaultDebtConfig
 //
-//func (r *DebtReconciler) DetermineCurrentStatus(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
+// func (r *DebtReconciler) DetermineCurrentStatus(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
 //	if SubscriptionEnabled {
 //		return r.determineCurrentStatusWithSubscription(oweamount, userUID, updateIntervalSeconds, lastStatus)
 //	}
 //	return determineCurrentStatus(oweamount, updateIntervalSeconds, lastStatus), nil
 //}
 //
-//func (r *DebtReconciler) determineCurrentStatusWithSubscription(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
+// func (r *DebtReconciler) determineCurrentStatusWithSubscription(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
 //	userSubscription, err := r.AccountV2.GetSubscription(&pkgtypes.UserQueryOpts{UID: userUID})
 //	if err != nil {
 //		return accountv1.NormalPeriod, fmt.Errorf("failed to get user subscription: %w", err)
@@ -105,7 +105,7 @@ package controllers
 //	return lastStatus, nil // Maintain current debt state if no transition
 //}
 //
-//func determineCurrentStatus(oweamount int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
+// func determineCurrentStatus(oweamount int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
 //	if oweamount > 0 {
 //		if oweamount > 10*BaseUnit {
 //			return accountv1.NormalPeriod
@@ -126,7 +126,7 @@ package controllers
 //	return lastStatus // Maintain current debt state if no transition
 //}
 //
-//const (
+// const (
 //	fromEn = "Debt-System"
 //	fromZh = "欠费系统"
 //	//languageEn = "en"
@@ -137,7 +137,7 @@ package controllers
 //	trueStatus       = "true"
 //)
 //
-//var (
+// var (
 //	TitleTemplateZHMap = map[accountv1.DebtStatusType]string{
 //		accountv1.LowBalancePeriod:      "余额不足",
 //		accountv1.CriticalBalancePeriod: "余额即将耗尽",
@@ -158,13 +158,13 @@ package controllers
 //	EmailTemplateZHMap  map[accountv1.DebtStatusType]string
 //)
 //
-//var (
+// var (
 //	forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
 //	UTCPlus8    = time.FixedZone("UTC+8", 8*3600)
 //)
 //
 //// GetSendVmsTimeInUTCPlus8 send vms time in UTC+8 10:00-20:00
-//func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
+// func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
 //	nowInUTCPlus8 := t.In(UTCPlus8)
 //	hour := nowInUTCPlus8.Hour()
 //	if hour >= 10 && hour < 20 {
@@ -180,7 +180,7 @@ package controllers
 //}
 //
 //// convert "1:code1,2:code2" to map[int]string
-//func splitSmsCodeMap(codeStr string) (map[string]string, error) {
+// func splitSmsCodeMap(codeStr string) (map[string]string, error) {
 //	codeMap := make(map[string]string)
 //	for _, code := range strings.Split(codeStr, ",") {
 //		split := strings.SplitN(code, ":", 2)
@@ -192,7 +192,7 @@ package controllers
 //	return codeMap, nil
 //}
 //
-//func (r *DebtReconciler) setupSmsConfig() error {
+// func (r *DebtReconciler) setupSmsConfig() error {
 //	if err := env.CheckEnvSetting([]string{SMSAccessKeyIDEnv, SMSAccessKeySecretEnv, SMSEndpointEnv, SMSSignNameEnv, SMSCodeMapEnv}); err != nil {
 //		return fmt.Errorf("check env setting error: %w", err)
 //	}
@@ -219,7 +219,7 @@ package controllers
 //	return nil
 //}
 //
-//func (r *DebtReconciler) setupVmsConfig() error {
+// func (r *DebtReconciler) setupVmsConfig() error {
 //	if err := env.CheckEnvSetting([]string{VmsAccessKeyIDEnv, VmsAccessKeySecretEnv, VmsNumberPollEnv}); err != nil {
 //		return fmt.Errorf("check env setting error: %w", err)
 //	}
@@ -243,7 +243,7 @@ package controllers
 //	return nil
 //}
 //
-//func (r *DebtReconciler) setupSMTPConfig() error {
+// func (r *DebtReconciler) setupSMTPConfig() error {
 //	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
 //		return fmt.Errorf("check env setting error: %w", err)
 //	}
@@ -263,7 +263,7 @@ package controllers
 //}
 //
 //// SetupWithManager sets up the controller with the Manager.
-//func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
+// func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 //	r.Init()
 //	/*
 //		{"DebtConfig":{
@@ -283,7 +283,7 @@ package controllers
 //		Complete(r)
 //}
 //
-//func (r *DebtReconciler) Init() {
+// func (r *DebtReconciler) Init() {
 //	r.Logger = ctrl.Log.WithName("DebtController")
 //	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 //	r.LocalRegionID = os.Getenv(cockroach.EnvLocalRegion)
@@ -317,7 +317,7 @@ package controllers
 //	r.Logger.Info("debt config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle)
 //}
 //
-//func setDefaultDebtPeriodWaitSecond() {
+// func setDefaultDebtPeriodWaitSecond() {
 //	DebtConfig[accountv1.DebtDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.DebtDeletionPeriod), 7*accountv1.DaySecond)
 //	DebtConfig[accountv1.FinalDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
 //	domain := os.Getenv("DOMAIN")
@@ -342,15 +342,15 @@ package controllers
 //	}
 //}
 //
-//type UserOwnerPredicate struct {
+// type UserOwnerPredicate struct {
 //	predicate.Funcs
 //}
 //
-//func (UserOwnerPredicate) Create(e event.CreateEvent) bool {
+// func (UserOwnerPredicate) Create(e event.CreateEvent) bool {
 //	owner := e.Object.GetAnnotations()[userv1.UserAnnotationOwnerKey]
 //	return owner != "" && owner == e.Object.GetName()
 //}
 //
-//func (UserOwnerPredicate) Update(_ event.UpdateEvent) bool {
+// func (UserOwnerPredicate) Update(_ event.UpdateEvent) bool {
 //	return false
 //}

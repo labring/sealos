@@ -136,7 +136,7 @@ func TestAccountV2_AddBalance(t *testing.T) {
 	//	t.Errorf("failed to add balance: %v", err)
 	//}
 	// err = account.AddDeductionBalance(&types.UserQueryOpts{Owner: "zzxns1si"}, 999*cockroach.BaseUnit)
-	//if err != nil {
+	// if err != nil {
 	//	t.Fatalf("failed to add deduction balance: %v", err)
 	//}
 	aa, err := account.GetAccount(&types.UserQueryOpts{Owner: "zzxns1si"})
