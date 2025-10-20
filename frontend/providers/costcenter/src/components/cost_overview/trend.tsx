@@ -45,12 +45,12 @@ export const Trend = memo(function Trend() {
     <div className="flex flex-col text-sm border rounded-2xl shadow-sm">
       <div className="flex px-6 items-center h-16 border-b">
         <div className="flex h-5 gap-2 items-center font-medium">
-          <h3>{t('Cost Trend')}</h3>
+          <h3>{t('common:cost_trend')}</h3>
           <Separator
             orientation="vertical"
             className="data-[orientation=vertical]:w-0.5 text-zinc-400"
           />
-          <span className="text-zinc-500">{t('Last 7 days')}</span>
+          <span className="text-zinc-500">{t('common:last_7_days')}</span>
         </div>
       </div>
       <div className="px-8 py-4 flex flex-col items-center justify-center gap-4 h-[calc(300px+2rem)]">

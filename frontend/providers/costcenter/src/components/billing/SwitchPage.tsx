@@ -44,7 +44,7 @@ export default function SwitchPage({
   return (
     <Flex minW="370px" h="32px" align={'center'} mt={'20px'} fontSize="14px" {...props}>
       <Text fontSize="14px" color={'grayModern.500'}>
-        {t('Total')}:
+        {t('common:total')}:
       </Text>
       <Flex mr="25px" color={'grayModern.500'}>
         {totalItem}
@@ -124,7 +124,7 @@ export default function SwitchPage({
         {pageSize}
       </Text>
       <Text fontSize="12px" fontWeight="500" color={'grayModern.500'}>
-        /{t('Page')}
+        /{t('common:page')}
       </Text>
     </Flex>
   );

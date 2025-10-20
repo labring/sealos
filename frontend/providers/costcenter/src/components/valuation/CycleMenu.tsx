@@ -35,7 +35,7 @@ export default function CycleMenu({
       {...selectProps}
     >
       <SelectTrigger className={cn(className?.trigger)}>
-        <SelectValue placeholder={t('Cycle')} />
+        <SelectValue placeholder={t('common:cycle')} />
       </SelectTrigger>
       <SelectContent>
         {CYCLE.map((item, idx) => (

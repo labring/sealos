@@ -2,6 +2,7 @@ import { SubscriptionPlan } from '@/types/plan';
 import { CircleCheck } from 'lucide-react';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 interface StaticPlanCardProps {
   plan: SubscriptionPlan;
@@ -9,6 +10,7 @@ interface StaticPlanCardProps {
 }
 
 export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps) {
+  const { t } = useTranslation();
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
   const originalPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.OriginalPrice || 0;
 
@@ -39,7 +41,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           <h3 className="text-xl font-semibold text-gray-900">{plan.Name}</h3>
           {isPopular && (
             <Badge className="bg-blue-600 z-10 text-white text-xs px-2 py-1 rounded-full absolute -top-4 left-1/2 leading-[14px] -translate-x-1/2">
-              Most popular
+              {t('common:most_popular')}
             </Badge>
           )}
         </div>
@@ -56,7 +58,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
             <span className="text-4xl font-bold text-gray-900">
               ${formatMoney(monthlyPrice).toFixed(0)}
             </span>
-            <span className="text-gray-600 ml-1">/month</span>
+            <span className="text-gray-600 ml-1">/{t('common:month')}</span>
           </div>
         </div>
 
@@ -68,19 +70,25 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           {resources.cpu && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.cpu} vCPU</span>
+              <span className="text-sm text-gray-700">
+                {resources.cpu} {t('common:valuation.vcpu')}
+              </span>
             </li>
           )}
           {resources.memory && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.memory} RAM</span>
+              <span className="text-sm text-gray-700">
+                {resources.memory} {t('common:valuation.ram')}
+              </span>
             </li>
           )}
           {resources.storage && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.storage} Disk</span>
+              <span className="text-sm text-gray-700">
+                {resources.storage} {t('common:valuation.disk')}
+              </span>
             </li>
           )}
           <li className="flex items-center gap-3">
@@ -90,14 +98,16 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           {resources.nodeports && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.nodeports} Nodeport</span>
+              <span className="text-sm text-gray-700">
+                {resources.nodeports} {t('common:valuation.nodeport')}
+              </span>
             </li>
           )}
           {plan.AIQuota && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
               <span className="text-sm text-gray-700">
-                {formatMoney(plan.AIQuota * 100)} AI Credits
+                {formatMoney(plan.AIQuota * 100)} {t('common:valuation.ai_credits')}
               </span>
             </li>
           )}

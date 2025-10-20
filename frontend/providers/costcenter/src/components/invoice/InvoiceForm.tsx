@@ -7,7 +7,7 @@ import {
 } from '@/utils/tools';
 import { useToast } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import request from '@/service/request';
 import InvoiceFormView, { InvoiceFormData } from './InvoiceFormView';
 
@@ -64,29 +64,29 @@ const InvoiceForm = ({
   const validateField = (field: keyof InvoiceFormData, value: string): string => {
     switch (field) {
       case 'invoiceTitle':
-        return !value.trim() ? t('orders.require') : '';
+        return !value.trim() ? t('common:orders.require') : '';
       case 'taxId':
-        if (!value.trim()) return t('orders.require');
-        return !isValidCNTaxNumber(value) ? t('orders.taxNumberValidation') : '';
+        if (!value.trim()) return t('common:orders.require');
+        return !isValidCNTaxNumber(value) ? t('common:orders.tax_number_validation') : '';
       case 'bankName':
-        return !value.trim() ? t('orders.require') : '';
+        return !value.trim() ? t('common:orders.require') : '';
       case 'bankAccount':
-        if (!value.trim()) return t('orders.require');
-        return !isValidBANKAccount(value) ? t('orders.bankAccountValidation') : '';
+        if (!value.trim()) return t('common:orders.require');
+        return !isValidBANKAccount(value) ? t('common:orders.bank_account_validation') : '';
       case 'address':
-        return !value.trim() ? t('orders.require') : '';
+        return !value.trim() ? t('common:orders.require') : '';
       case 'phone':
-        return !value.trim() ? t('orders.require') : '';
+        return !value.trim() ? t('common:orders.require') : '';
       case 'contactPerson':
-        return !value.trim() ? t('orders.require') : '';
+        return !value.trim() ? t('common:orders.require') : '';
       case 'email':
-        if (!value.trim()) return t('orders.require');
-        return !isValidEmail(value) ? t('orders.emailValidation') : '';
+        if (!value.trim()) return t('common:orders.require');
+        return !isValidEmail(value) ? t('common:orders.email_validation') : '';
       case 'mobileNumber':
-        if (!value.trim()) return t('orders.require');
-        return !isValidPhoneNumber(value) ? t('orders.phoneValidation') : '';
+        if (!value.trim()) return t('common:orders.require');
+        return !isValidPhoneNumber(value) ? t('common:orders.phone_validation') : '';
       case 'verificationCode':
-        return !value.trim() ? t('orders.require') : '';
+        return !value.trim() ? t('common:orders.require') : '';
       case 'fax':
         // Fax is optional, no validation needed
         return '';
@@ -134,7 +134,7 @@ const InvoiceForm = ({
   const getVerificationCode = async () => {
     if (!isValidPhoneNumber(formData.mobileNumber)) {
       toast({
-        title: t('orders.phoneValidation'),
+        title: t('common:orders.phone_validation'),
         status: 'error',
         position: 'top',
         duration: 2000
@@ -151,14 +151,14 @@ const InvoiceForm = ({
         throw new Error('Get code failed');
       }
       toast({
-        title: t('orders.code success'),
+        title: t('common:orders.code_success'),
         status: 'success',
         duration: 2000,
         position: 'top'
       });
     } catch (err) {
       toast({
-        title: t('orders.code error'),
+        title: t('common:orders.code_error'),
         status: 'error',
         position: 'top',
         duration: 2000
@@ -204,7 +204,7 @@ const InvoiceForm = ({
       );
 
       toast({
-        title: t('orders.submit success'),
+        title: t('common:orders.submit_success'),
         status: 'success',
         position: 'top',
         duration: 2000
@@ -214,7 +214,7 @@ const InvoiceForm = ({
       onSuccess?.();
     } catch (err) {
       toast({
-        title: (err as { message: string }).message || t('orders.submit fail'),
+        title: (err as { message: string }).message || t('common:orders.submit_fail'),
         status: 'error',
         position: 'top',
         duration: 2000

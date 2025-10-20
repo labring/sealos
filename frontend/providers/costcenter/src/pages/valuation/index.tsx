@@ -123,11 +123,11 @@ export default function Valuation() {
       }}
     >
       <TabList mx={'24px'}>
-        <Tab>{t('Subscription Plans')}</Tab>
+        <Tab>{t('common:subscription_plans')}</Tab>
         {!!isPaygType && (
           <>
-            <Tab>{t('Price Table')}</Tab>
-            <Tab>{t('price_calculator')}</Tab>
+            <Tab>{t('common:price_table')}</Tab>
+            <Tab>{t('common:price_calculator')}</Tab>
           </>
         )}
         <Flex ml="auto" gap={'12px'}>

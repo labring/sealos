@@ -409,10 +409,10 @@ function Billing() {
       <Tabs defaultValue="listing" className="h-[calc(100vh-60px)]">
         <TabsList variant="underline" className="w-fit">
           <TabsTrigger variant="cleanUnderline" value="listing">
-            Billing
+            {t('common:billing_page.billing')}
           </TabsTrigger>
           <TabsTrigger variant="cleanUnderline" value="trends">
-            Cost & Revenue Trends
+            {t('common:billing_page.cost_and_revenue_trends')}
           </TabsTrigger>
         </TabsList>
 

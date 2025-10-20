@@ -6,7 +6,7 @@ export default function Index() {
 
   return (
     <Text color={'#9CA2A8'} fontSize={'12px'}>
-      {t('No data available')}
+      {t('common:no_data_available')}
     </Text>
   );
 }

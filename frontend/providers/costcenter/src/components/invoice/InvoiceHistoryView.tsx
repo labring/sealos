@@ -4,6 +4,7 @@ import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
+import { useTranslation } from 'next-i18next';
 import { Search } from 'lucide-react';
 import {
   TableLayout,
@@ -49,6 +50,7 @@ export default function InvoiceHistoryView({
   toInvoiceDetail?: () => void;
   onInvoiceClick?: (invoice: InvoicePayload) => void;
 }) {
+  const { t } = useTranslation();
   const getStatusDisplay = (status: InvoicePayload['status']) => {
     switch (status) {
       case 'COMPLETED':
@@ -75,12 +77,12 @@ export default function InvoiceHistoryView({
             className="w-fit"
             value={dateRange}
             onChange={onDateRangeChange}
-            placeholder="PICK DATE RANGE!"
+            placeholder={t('common:pick_date_range')}
             buttonClassName="shadow-none"
           />
           <Input
             icon={<Search size={16} />}
-            placeholder="Order ID"
+            placeholder={t('common:order_number')}
             className="w-[15rem]"
             value={orderIdFilter}
             onChange={(e) => onOrderIdFilterChange(e.target.value)}
@@ -90,11 +92,11 @@ export default function InvoiceHistoryView({
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead>Invoice Request Time</TableHead>
-          <TableHead>Invoice Issued Time</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Invoice Amount</TableHead>
-          <TableHead>Action</TableHead>
+          <TableHead>{t('common:orders.invoice_request_time')}</TableHead>
+          <TableHead>{t('common:orders.invoice_issued_time')}</TableHead>
+          <TableHead>{t('common:orders.status_label')}</TableHead>
+          <TableHead>{t('common:orders.invoice_amount')}</TableHead>
+          <TableHead>{t('common:orders.action')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
@@ -113,7 +115,7 @@ export default function InvoiceHistoryView({
                   <div className="flex gap-2">
                     {isCompleted && (
                       <Button variant="outline" size="sm" onClick={() => handleDownload(invoice)}>
-                        Download
+                        {t('common:orders.download')}
                       </Button>
                     )}
                     {toInvoiceDetail && (
@@ -125,7 +127,7 @@ export default function InvoiceHistoryView({
                           toInvoiceDetail();
                         }}
                       >
-                        Details
+                        {t('common:orders.details')}
                       </Button>
                     )}
                   </div>
@@ -139,7 +141,7 @@ export default function InvoiceHistoryView({
       <TableLayoutFooter>
         <div className="px-4 py-3 flex justify-between">
           <div className="flex items-center text-zinc-500">
-            Total: {isLoading ? '...' : totalItem}
+            {t('common:total')}: {isLoading ? '...' : totalItem}
           </div>
           <div className="flex items-center gap-3">
             <Pagination
@@ -149,7 +151,7 @@ export default function InvoiceHistoryView({
             />
             <span>
               <span>10</span>
-              <span className="text-zinc-500"> / Page</span>
+              <span className="text-zinc-500"> / {t('common:page')}</span>
             </span>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { CircleCheck } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/plan';
 import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
@@ -26,6 +27,7 @@ export function UpgradePlanCard({
   onSelect,
   workspaceName
 }: UpgradePlanCardProps) {
+  const { t } = useTranslation();
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
   const getCurrentPlan = usePlanStore((state) => state.getCurrentPlan);
@@ -93,23 +95,23 @@ export function UpgradePlanCard({
   // Get button text based on action type
   const getButtonText = () => {
     if (isCreateMode) {
-      if (isLoading) return 'Creating...';
-      return 'Create Workspace';
+      if (isLoading) return t('common:creating');
+      return t('common:create_workspace');
     }
 
-    if (isCurrentPlan) return 'Your current plan';
-    if (isNextPlan) return 'Your next plan';
-    if (isLoading) return 'Processing...';
+    if (isCurrentPlan) return t('common:your_current_plan');
+    if (isNextPlan) return t('common:your_next_plan');
+    if (isLoading) return t('common:processing');
 
     switch (actionType) {
       case 'upgrade':
-        return 'Upgrade';
+        return t('common:upgrade');
       case 'downgrade':
-        return 'Downgrade';
+        return t('common:downgrade');
       case 'contact':
-        return 'Contact Us';
+        return t('common:contact_us');
       default:
-        return 'Subscribe';
+        return t('common:subscribe');
     }
   };
 
@@ -128,7 +130,7 @@ export function UpgradePlanCard({
           <h3 className="text-xl font-semibold text-gray-900">{plan.Name}</h3>
           {isPopular && (
             <Badge className="bg-blue-600 z-10 text-white text-xs px-2 py-1 rounded-full absolute -top-4 left-1/2 leading-[14px] -translate-x-1/2">
-              Most popular
+              {t('common:most_popular')}
             </Badge>
           )}
         </div>
@@ -144,7 +146,7 @@ export function UpgradePlanCard({
           <span className="text-4xl font-bold text-gray-900">
             ${formatMoney(monthlyPrice).toFixed(0)}
           </span>
-          <span className="text-gray-600 ml-1">/month</span>
+          <span className="text-gray-600 ml-1">/{t('common:month')}</span>
         </div>
 
         {!isCreateMode && (
@@ -196,7 +198,7 @@ export function UpgradePlanCard({
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
               <span className="text-sm text-gray-700">
-                {formatMoney(plan.AIQuota * 100)} AI Credits
+                {formatMoney(plan.AIQuota * 100)} {t('common:valuation.ai_credits')}
               </span>
             </li>
           )}

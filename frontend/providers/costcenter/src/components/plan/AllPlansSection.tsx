@@ -15,8 +15,10 @@ import { useMemo } from 'react';
 import { formatMoney } from '@/utils/format';
 import { getPlanBackgroundClass } from './PlanHeader';
 import usePlanStore from '@/stores/plan';
+import { useTranslation } from 'next-i18next';
 
 export function AllPlansSection() {
+  const { t } = useTranslation();
   const { regionList: regions } = useBillingStore();
   const { plansData } = usePlanStore();
   // Set default time range: 31 days ago to now
@@ -148,14 +150,14 @@ export function AllPlansSection() {
   if (subscriptionListLoading || nsListLoading || allPaymentsLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div>Loading subscriptions...</div>
+        <div>{t('common:loading_subscriptions')}</div>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="text-black font-medium text-lg mb-4">All Plans</div>
+      <div className="text-black font-medium text-lg mb-4">{t('common:all_plans')}</div>
       <div className="space-y-6">
         {allSubscriptions.map((regionData) => (
           <TableLayout key={regionData.regionUid} className="shadow-none">
@@ -165,10 +167,10 @@ export function AllPlansSection() {
 
             <TableLayoutContent>
               <TableLayoutHeadRow>
-                <TableHead className="bg-transparent">Workspace</TableHead>
-                <TableHead className="bg-transparent">Plan</TableHead>
-                <TableHead className="bg-transparent">Renewal Time</TableHead>
-                <TableHead className="bg-transparent">Price</TableHead>
+                <TableHead className="bg-transparent">{t('common:workspace')}</TableHead>
+                <TableHead className="bg-transparent">{t('common:plan')}</TableHead>
+                <TableHead className="bg-transparent">{t('common:renewal_time')}</TableHead>
+                <TableHead className="bg-transparent">{t('common:price')}</TableHead>
               </TableLayoutHeadRow>
 
               <TableLayoutBody>
@@ -181,7 +183,7 @@ export function AllPlansSection() {
                             {workspace.workspaceName?.[0]?.toUpperCase() || 'W'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>{workspace.workspaceName || 'Unknown Workspace'}</div>
+                        <div>{workspace.workspaceName || t('common:unknown_workspace')}</div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -191,7 +193,7 @@ export function AllPlansSection() {
                           getPlanBackgroundClass(workspace.plan, workspace.plan === 'PAYG')
                         )}
                       >
-                        {workspace.plan || 'Unknown'}
+                        {workspace.plan || t('common:unknown')}
                       </Badge>
                     </TableCell>
                     <TableCell>

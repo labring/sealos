@@ -3,6 +3,7 @@ import { CheckCircle } from 'lucide-react';
 import congratulationsIcon from '@/../public/congratulations.svg';
 import { Button } from '@sealos/shadcn-ui';
 import { formatTrafficAuto } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 interface CongratulationsModalProps {
   planName?: string;
@@ -19,6 +20,7 @@ interface CongratulationsModalProps {
 
 export default function CongratulationsModal(props: CongratulationsModalProps) {
   const { onClose, isOpen } = props;
+  const { t } = useTranslation();
 
   // Format plan resources
   const formatCpu = (cpu: string) => {
@@ -70,12 +72,13 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
             mb="8px"
             textAlign="start"
           >
-            Congratulations
+            {t('common:congratulations')}
           </Text>
 
           <Text fontSize="16px" color="var(--color-zinc-600)" textAlign="start" lineHeight="1.5">
-            You have upgraded to {props.planName || 'Pro Plan'}, these benefits are already
-            unlocked.
+            {t('common:you_have_upgraded_to_plan_benefits_unlocked', {
+              planName: props.planName || t('common:pro_plan')
+            })}
           </Text>
           <Divider my="8px" borderColor={'#F4F4F5'} />
           <Flex direction="column" gap="12px" mb="32px" w="100%">
@@ -106,7 +109,7 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
           </Flex>
 
           <Button variant={'outline'} className="w-full" onClick={onClose}>
-            Close
+            {t('common:close')}
           </Button>
         </Flex>
       </ModalContent>

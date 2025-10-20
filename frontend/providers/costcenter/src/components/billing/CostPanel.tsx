@@ -1,5 +1,6 @@
 import { cn } from '@sealos/shadcn-ui';
 import { formatMoney } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
 
 type CostPanelProps = {
   children: React.ReactNode;
@@ -10,17 +11,18 @@ type CostPanelProps = {
 };
 
 export function CostPanel({ children, region, workspace, totalCost, className }: CostPanelProps) {
+  const { t } = useTranslation();
   const displayTitle = (() => {
     if (!region && !workspace) {
-      return 'Total Cost';
+      return t('common:total_cost');
     }
     if (region && !workspace) {
-      return `${region} Cost`;
+      return t('common:region_cost', { region });
     }
     if (region && workspace) {
-      return `${region} / ${workspace} Cost`;
+      return t('common:region_workspace_cost', { region, workspace });
     }
-    return 'Total Cost';
+    return t('common:total_cost');
   })();
 
   return (

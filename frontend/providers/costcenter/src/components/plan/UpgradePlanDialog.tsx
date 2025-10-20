@@ -12,6 +12,7 @@ import { Checkbox } from '@sealos/shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import { PlansDisplay } from './PlansDisplay';
 import usePlanStore from '@/stores/plan';
+import { useTranslation } from 'next-i18next';
 
 interface UpgradePlanDialogProps {
   children: React.ReactNode;
@@ -34,6 +35,7 @@ export function UpgradePlanDialog({
   onOpenChange,
   defaultSelectedPlan = ''
 }: UpgradePlanDialogProps) {
+  const { t } = useTranslation();
   const plansData = usePlanStore((state) => state.plansData);
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const [workspaceName, setWorkspaceName] = useState('');
@@ -72,10 +74,12 @@ export function UpgradePlanDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="min-w-[1200px] py-12 px-14 bg-zinc-50">
-        <DialogTitle className="sr-only">Choose Your Workspace Plan</DialogTitle>
+        <DialogTitle className="sr-only">{t('common:choose_your_workspace_plan')}</DialogTitle>
         <div className="flex flex-col justify-center">
           <section>
-            <h1 className="text-3xl font-semibold text-left">Choose Your Workspace Plan</h1>
+            <h1 className="text-3xl font-semibold text-left">
+              {t('common:choose_your_workspace_plan')}
+            </h1>
           </section>
 
           {plans && plans.length > 0 ? (
@@ -89,7 +93,7 @@ export function UpgradePlanDialog({
             />
           ) : (
             <div className="flex justify-center py-12">
-              <div className="text-gray-500">No plans available</div>
+              <div className="text-gray-500">{t('common:no_plans_available')}</div>
             </div>
           )}
 
@@ -104,7 +108,7 @@ export function UpgradePlanDialog({
                   }}
                 />
                 <Label htmlFor="charge-by-volume" className="text-sm">
-                  Still want to charge by volume?
+                  {t('common:still_want_to_charge_by_volume')}
                 </Label>
               </div>
 
@@ -112,12 +116,12 @@ export function UpgradePlanDialog({
 
               <div className="flex gap-8 items-center">
                 <Label htmlFor="workspace-name" className="flex-shrink-0 mb-0!">
-                  Workspace Name
+                  {t('common:workspace_name')}
                 </Label>
                 <Input
                   className="bg-white"
                   id="workspace-name"
-                  placeholder="Enter Workspace Name"
+                  placeholder={t('common:enter_workspace_name')}
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
                 />
@@ -135,7 +139,7 @@ export function UpgradePlanDialog({
                   }}
                   disabled={isSubscribing}
                 >
-                  Cancel
+                  {t('common:cancel')}
                 </Button>
                 <Button
                   onClick={() => {
@@ -156,7 +160,7 @@ export function UpgradePlanDialog({
                     (!stillChargeByVolume && !selectedPlanId)
                   }
                 >
-                  {isSubscribing ? 'Creating...' : 'Create Workspace'}
+                  {isSubscribing ? t('common:creating') : t('common:create_workspace')}
                 </Button>
               </div>
             </div>

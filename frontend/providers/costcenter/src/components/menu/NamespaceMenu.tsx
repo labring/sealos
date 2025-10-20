@@ -56,7 +56,7 @@ export default function NamespaceMenu({
       {...selectProps}
     >
       <SelectTrigger className={cn(className?.trigger)}>
-        <SelectValue placeholder={t('region')} />
+        <SelectValue placeholder={t('common:region')} />
       </SelectTrigger>
       <SelectContent>
         {namespaceList.map((item, idx) => (

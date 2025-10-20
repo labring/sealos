@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
+import { useTranslation } from 'next-i18next';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
@@ -21,6 +22,7 @@ interface PlanConfirmationModalProps {
 const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
   const { plan, workspaceName, isCreateMode = false, isOpen = false, onConfirm, onCancel } = props;
 
+  const { t } = useTranslation();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   const isPaygType = usePlanStore((state) => state.isPaygType);
@@ -102,19 +104,23 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         {/* Header */}
         <div className="flex justify-center items-center px-6 py-5">
           <h2 className="text-lg font-semibold text-gray-900 text-center">
-            {isCreateMode ? 'Create Workspace' : 'Subscribe Plan'}
+            {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
           </h2>
         </div>
 
         <div className="p-6 border border-zinc-200 rounded-xl">
           {/* Order Summary */}
-          <h3 className="text-base font-semibold text-gray-900 mb-6 leading-4">Order summary</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-6 leading-4">
+            {t('common:order_summary')}
+          </h3>
 
           {/* Plan Info */}
           <div className="flex justify-between items-center mb-3">
-            <span className="text-base font-medium text-gray-900">{plan.Name} Plan</span>
             <span className="text-base font-medium text-gray-900">
-              ${displayMoney(formatMoney(monthlyPrice))}/mo
+              {plan.Name} {t('common:plan')}
+            </span>
+            <span className="text-base font-medium text-gray-900">
+              ${displayMoney(formatMoney(monthlyPrice))}/{t('common:month')}
             </span>
           </div>
 
@@ -159,18 +165,20 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
           {/* Billing Summary */}
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">Total billed monthly</span>
+              <span className="text-sm font-medium text-gray-900">
+                {t('common:total_billed_monthly')}
+              </span>
               <span className="text-sm font-medium text-gray-900">
                 ${displayMoney(formatMoney(monthlyPrice))}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">Due today</span>
+              <span className="text-sm font-medium text-gray-900">{t('common:due_today')}</span>
               <span className="text-sm font-semibold text-gray-900">
                 {isCreateMode || isPaygUser || amountLoading
                   ? isCreateMode || isPaygUser
                     ? `$${displayMoney(formatMoney(dueToday))}`
-                    : 'Calculating...'
+                    : t('common:calculating')
                   : `$${displayMoney(formatMoney(dueToday))}`}
               </span>
             </div>
@@ -181,7 +189,9 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
             <>
               <div className="border-t border-gray-100 mb-5" />
               <div className="mb-6">
-                <div className="text-sm font-medium text-gray-900 mb-2">Workspace Name</div>
+                <div className="text-sm font-medium text-gray-900 mb-2">
+                  {t('common:workspace_name')}
+                </div>
                 <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
                   <span className="text-sm text-gray-700">{workspaceName}</span>
                 </div>
@@ -197,10 +207,10 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
           disabled={!(isCreateMode || isPaygUser) && amountLoading}
         >
           {!(isCreateMode || isPaygUser) && amountLoading
-            ? 'Calculating...'
+            ? t('common:calculating')
             : isCreateMode
-              ? 'Create Workspace'
-              : 'Checkout'}
+              ? t('common:create_workspace')
+              : t('common:checkout')}
         </Button>
       </DialogContent>
     </Dialog>

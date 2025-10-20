@@ -50,7 +50,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
       };
     return [
       columnHelper.accessor((row) => row.title, {
-        id: t('Valuation.Name'),
+        id: t('common:valuation.name'),
         header: getTh(),
         cell(props) {
           const name = props.cell.getValue();
@@ -66,7 +66,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
         }
       }),
       columnHelper.accessor((row) => row.unit, {
-        id: t('Valuation.Unit'),
+        id: t('common:valuation.unit'),
         header: getTh(),
         cell(props) {
           const unit = props.cell.getValue();
@@ -74,7 +74,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
         }
       }),
       columnHelper.accessor((row) => row.price, {
-        id: t('Valuation.Price'),
+        id: t('common:valuation.price'),
         header: getTh(),
         cell(props) {
           const price = props.cell.getValue();
@@ -110,17 +110,17 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
           <TableCell key={colIdx} className="text-sm">
             {flexRender(column.cell, {
               getValue: () => {
-                if (column.id === t('Valuation.Name')) return row.title;
-                if (column.id === t('Valuation.Unit')) return row.unit;
-                if (column.id === t('Valuation.Price')) return row.price;
+                if (column.id === t('common:valuation.name')) return row.title;
+                if (column.id === t('common:valuation.unit')) return row.unit;
+                if (column.id === t('common:valuation.price')) return row.price;
                 return '';
               },
               row: { original: row },
               cell: {
                 getValue: () => {
-                  if (column.id === t('Valuation.Name')) return row.title;
-                  if (column.id === t('Valuation.Unit')) return row.unit;
-                  if (column.id === t('Valuation.Price')) return row.price;
+                  if (column.id === t('common:valuation.name')) return row.title;
+                  if (column.id === t('common:valuation.unit')) return row.unit;
+                  if (column.id === t('common:valuation.price')) return row.price;
                   return '';
                 }
               }
@@ -148,7 +148,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
             {/* Basic Pricing Section */}
             {baseData.length > 0 && (
               <>
-                <SectionHeader title={t('common valuation')} />
+                <SectionHeader title={t('common:common_valuation')} />
                 {renderDataRows(baseData)}
               </>
             )}
@@ -156,7 +156,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
             {/* Network Pricing Section */}
             {networkData.length > 0 && (
               <>
-                <SectionHeader title={t('Network valuation')} />
+                <SectionHeader title={t('common:network_valuation')} />
                 {renderDataRows(networkData)}
               </>
             )}
@@ -164,7 +164,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
             {/* GPU Section */}
             {gpuEnabled && gpuData.length > 0 && (
               <>
-                <SectionHeader title={t('Gpu valuation')} />
+                <SectionHeader title={t('common:gpu_valuation')} />
                 {renderDataRows(gpuData)}
               </>
             )}

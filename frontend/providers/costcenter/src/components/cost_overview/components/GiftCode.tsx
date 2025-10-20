@@ -35,7 +35,7 @@ function GiftCode() {
       alignSelf="stretch"
     >
       <Button variant="outline" onClick={onOpen}>
-        {t('Redeem')}
+        {t('common:redeem')}
       </Button>
       <GiftCodeModal isOpen={isOpen} onToggle={onToggle} />
     </Box>
@@ -70,7 +70,7 @@ function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
         queryClient.invalidateQueries(['getAccount']); // Invalidate the cache
         message({
           status: 'success',
-          title: t('Gift Code Redeemed Successfully'),
+          title: t('common:gift_code_redeemed_successfully'),
           isClosable: true,
           duration: 2000,
           position: 'top'
@@ -80,8 +80,8 @@ function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
       onError(err: any) {
         message({
           status: 'warning',
-          title: t('Failed to redeem Gift Code'),
-          description: err?.message || t('Failed to redeem Gift Code'),
+          title: t('common:failed_to_redeem_gift_code'),
+          description: err?.message || t('common:failed_to_redeem_gift_code'),
           isClosable: true,
           position: 'top'
         });
@@ -91,11 +91,11 @@ function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
 
   const validateCode = (value: string) => {
     if (!value) {
-      setError(t('Gift code is required'));
+      setError(t('common:gift_code_is_required'));
     } else if (value.length !== 24) {
-      setError(t('Gift code must be exactly 24 characters long'));
+      setError(t('common:gift_code_must_be_exactly_24_characters_long'));
     } else if (!/^[A-Za-z0-9-]+$/.test(value)) {
-      setError(t('Gift code can only contain letters and numbers'));
+      setError(t('common:gift_code_can_only_contain_letters_and_numbers'));
     } else {
       setError('');
     }
@@ -118,17 +118,17 @@ function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
     <>
       <Dialog open={isOpen} onOpenChange={(open) => onToggle(open)}>
         <DialogContent>
-          <DialogTitle>{t('Gift Card Redemption')}</DialogTitle>
+          <DialogTitle>{t('common:gift_card_redemption')}</DialogTitle>
 
           <div>
             <Label className="flex gap-2 flex-col w-full items-start">
-              <div>{t('Gift Code')}</div>
+              <div>{t('common:gift_code')}</div>
 
               <Input
                 type="text"
                 value={code}
                 onChange={handleCodeChange}
-                placeholder={t('Input Gift code')}
+                placeholder={t('common:input_gift_code')}
                 disabled={useGiftCodeMutation.isLoading}
               />
               {error && <p className="text-sm text-destructive">{error}</p>}
@@ -137,11 +137,11 @@ function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">{t('Cancel')}</Button>
+              <Button variant="outline">{t('common:cancel')}</Button>
             </DialogClose>
             <Button onClick={handleConfirm} disabled={!!error || useGiftCodeMutation.isLoading}>
               {useGiftCodeMutation.isLoading && <Loader size={14} className="animate-spin" />}
-              {t('Redeem')}
+              {t('common:redeem')}
             </Button>
           </DialogFooter>
         </DialogContent>

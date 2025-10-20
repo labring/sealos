@@ -53,7 +53,7 @@ export default function RegionMenu({
       {...selectProps}
     >
       <SelectTrigger className={cn(className?.trigger)}>
-        <SelectValue placeholder={t('region')} />
+        <SelectValue placeholder={t('common:region')} />
       </SelectTrigger>
       <SelectContent>
         {itemList.map((item, idx) => (
