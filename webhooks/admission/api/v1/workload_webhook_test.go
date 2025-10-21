@@ -18,12 +18,13 @@ import (
 	"context"
 	"testing"
 
+	kbappsv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	admissionv1 "k8s.io/api/admission/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -55,11 +56,11 @@ func TestWorkloadMutator_MutateDeployment(t *testing.T) {
 	mutator := NewWorkloadMutatorWithThresholds(testDefaultOversellRatio, testDatabaseRatio, "", "")
 
 	tests := []struct {
-		name        string
-		deployment  *appsv1.Deployment
-		username    string
-		expectedCPU string
-		expectedMem string
+		name         string
+		deployment   *appsv1.Deployment
+		username     string
+		expectedCPU  string
+		expectedMem  string
 		shouldMutate bool
 	}{
 		{
@@ -755,7 +756,7 @@ func TestWorkloadMutator_ValidateDeployment(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := createTestContext(tt.username)
-			err := mutator.ValidateCreate(ctx, tt.deployment)
+			_, err := mutator.ValidateCreate(ctx, tt.deployment)
 
 			if tt.expectError {
 				if err == nil {
@@ -765,10 +766,8 @@ func TestWorkloadMutator_ValidateDeployment(t *testing.T) {
 				if err.Error() != tt.errorMsg {
 					t.Errorf("Expected error message '%s', got '%s'", tt.errorMsg, err.Error())
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error but got: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Expected no error but got: %v", err)
 			}
 		})
 	}
@@ -846,7 +845,7 @@ func TestWorkloadMutator_ValidateStatefulSet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := createTestContext(tt.username)
-			err := mutator.ValidateCreate(ctx, tt.statefulset)
+			_, err := mutator.ValidateCreate(ctx, tt.statefulset)
 
 			if tt.expectError {
 				if err == nil {
@@ -856,10 +855,8 @@ func TestWorkloadMutator_ValidateStatefulSet(t *testing.T) {
 				if err.Error() != tt.errorMsg {
 					t.Errorf("Expected error message '%s', got '%s'", tt.errorMsg, err.Error())
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error but got: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Expected no error but got: %v", err)
 			}
 		})
 	}
@@ -968,7 +965,7 @@ func TestWorkloadMutator_ValidatePod(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := createTestContext(tt.username)
-			err := mutator.ValidateCreate(ctx, tt.pod)
+			_, err := mutator.ValidateCreate(ctx, tt.pod)
 
 			if tt.expectError {
 				if err == nil {
@@ -978,10 +975,8 @@ func TestWorkloadMutator_ValidatePod(t *testing.T) {
 				if err.Error() != tt.errorMsg {
 					t.Errorf("Expected error message '%s', got '%s'", tt.errorMsg, err.Error())
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error but got: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Expected no error but got: %v", err)
 			}
 		})
 	}
@@ -992,7 +987,12 @@ func TestWorkloadMutator_ValidatePod(t *testing.T) {
 func TestWorkloadMutator_WithThresholds(t *testing.T) {
 	skipCPU := "100m"
 	skipMem := "128Mi"
-	mutator := NewWorkloadMutatorWithThresholds(testDefaultOversellRatio, testDatabaseRatio, skipCPU, skipMem)
+	mutator := NewWorkloadMutatorWithThresholds(
+		testDefaultOversellRatio,
+		testDatabaseRatio,
+		skipCPU,
+		skipMem,
+	)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1038,11 +1038,19 @@ func TestWorkloadMutator_WithThresholds(t *testing.T) {
 	expectedMem := resource.MustParse("32Mi")
 
 	if !actualCPU.Equal(expectedCPU) {
-		t.Errorf("CPU should not be mutated due to threshold. Got %s, want %s", actualCPU.String(), expectedCPU.String())
+		t.Errorf(
+			"CPU should not be mutated due to threshold. Got %s, want %s",
+			actualCPU.String(),
+			expectedCPU.String(),
+		)
 	}
 
 	if !actualMem.Equal(expectedMem) {
-		t.Errorf("Memory should not be mutated due to threshold. Got %s, want %s", actualMem.String(), expectedMem.String())
+		t.Errorf(
+			"Memory should not be mutated due to threshold. Got %s, want %s",
+			actualMem.String(),
+			expectedMem.String(),
+		)
 	}
 }
 
@@ -1142,6 +1150,354 @@ func TestIsDatabasePod(t *testing.T) {
 			result := isDatabasePod(tt.pod)
 			if result != tt.expected {
 				t.Errorf("isDatabasePod() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestWorkloadMutator_MutateCluster tests the mutate webhook for KubeBlocks Cluster
+func TestWorkloadMutator_MutateCluster(t *testing.T) {
+	mutator := NewWorkloadMutatorWithThresholds(testDefaultOversellRatio, testDatabaseRatio, "", "")
+
+	tests := []struct {
+		name         string
+		cluster      *kbappsv1alpha1.Cluster
+		username     string
+		expectedCPU  string
+		expectedMem  string
+		shouldMutate bool
+	}{
+		{
+			name: "cluster in user namespace with user service account",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "ns-test",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2000m"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:     "system:serviceaccount:ns-test:default",
+			expectedCPU:  "400m",
+			expectedMem:  "819Mi",
+			shouldMutate: true,
+		},
+		{
+			name: "cluster with non-user service account - should not mutate",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "kube-system",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2000m"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:     "system:serviceaccount:kube-system:controller",
+			expectedCPU:  "1000m",
+			expectedMem:  "2Gi",
+			shouldMutate: false,
+		},
+		{
+			name: "cluster in non-user namespace - should not mutate",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "default",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2000m"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:     "system:serviceaccount:ns-test:default",
+			expectedCPU:  "1000m",
+			expectedMem:  "2Gi",
+			shouldMutate: false,
+		},
+		{
+			name: "cluster with no requests set - should set requests",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster-no-req",
+					Namespace: "ns-test",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("1000m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:     "system:serviceaccount:ns-test:default",
+			expectedCPU:  "200m",
+			expectedMem:  "204Mi",
+			shouldMutate: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := createTestContext(tt.username)
+			err := mutator.Default(ctx, tt.cluster)
+			if err != nil {
+				t.Errorf("Default() error = %v", err)
+				return
+			}
+
+			if tt.shouldMutate {
+				// Check first component resources
+				comp := tt.cluster.Spec.ComponentSpecs[0]
+				cpuRequest := comp.Resources.Requests[corev1.ResourceCPU]
+				memRequest := comp.Resources.Requests[corev1.ResourceMemory]
+
+				if cpuRequest.String() != tt.expectedCPU {
+					t.Errorf("Expected CPU request %s, got %s", tt.expectedCPU, cpuRequest.String())
+				}
+				if memRequest.String() != tt.expectedMem {
+					t.Errorf(
+						"Expected Memory request %s, got %s",
+						tt.expectedMem,
+						memRequest.String(),
+					)
+				}
+			} else {
+				// Should not mutate - verify requests are unchanged
+				comp := tt.cluster.Spec.ComponentSpecs[0]
+				expectedCPU := resource.MustParse(tt.expectedCPU)
+				expectedMem := resource.MustParse(tt.expectedMem)
+
+				cpuRequest := comp.Resources.Requests[corev1.ResourceCPU]
+				memRequest := comp.Resources.Requests[corev1.ResourceMemory]
+
+				if cpuRequest.Cmp(expectedCPU) != 0 {
+					t.Errorf("Expected CPU request to remain %s, got %s", tt.expectedCPU, cpuRequest.String())
+				}
+				if memRequest.Cmp(expectedMem) != 0 {
+					t.Errorf("Expected Memory request to remain %s, got %s", tt.expectedMem, memRequest.String())
+				}
+			}
+		})
+	}
+}
+
+// TestWorkloadMutator_ValidateCluster tests the validate webhook for KubeBlocks Cluster
+func TestWorkloadMutator_ValidateCluster(t *testing.T) {
+	mutator := NewWorkloadMutatorWithThresholds(testDefaultOversellRatio, testDatabaseRatio, "", "")
+
+	tests := []struct {
+		name      string
+		cluster   *kbappsv1alpha1.Cluster
+		username  string
+		expectErr bool
+	}{
+		{
+			name: "valid cluster in user namespace",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "ns-test",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2000m"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:  "system:serviceaccount:ns-test:default",
+			expectErr: false,
+		},
+		{
+			name: "cluster with zero CPU limit - should fail",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster-invalid",
+					Namespace: "ns-test",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("0"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:  "system:serviceaccount:ns-test:default",
+			expectErr: true,
+		},
+		{
+			name: "cluster with zero memory limit - should fail",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster-invalid-mem",
+					Namespace: "ns-test",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("2000m"),
+									corev1.ResourceMemory: resource.MustParse("0"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:  "system:serviceaccount:ns-test:default",
+			expectErr: true,
+		},
+		{
+			name: "cluster in non-user namespace - should not validate",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "default",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("0"),
+									corev1.ResourceMemory: resource.MustParse("0"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:  "system:serviceaccount:ns-test:default",
+			expectErr: false,
+		},
+		{
+			name: "cluster with non-user service account - should not validate",
+			cluster: &kbappsv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "ns-test",
+				},
+				Spec: kbappsv1alpha1.ClusterSpec{
+					ComponentSpecs: []kbappsv1alpha1.ClusterComponentSpec{
+						{
+							Name:            "mysql",
+							ComponentDefRef: "mysql-8.0",
+							Replicas:        1,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("0"),
+									corev1.ResourceMemory: resource.MustParse("0"),
+								},
+							},
+						},
+					},
+				},
+			},
+			username:  "system:serviceaccount:kube-system:controller",
+			expectErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := createTestContext(tt.username)
+
+			_, err := mutator.ValidateCreate(ctx, tt.cluster)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("ValidateCreate() error = %v, expectErr %v", err, tt.expectErr)
+			}
+
+			_, err = mutator.ValidateUpdate(ctx, tt.cluster, tt.cluster)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("ValidateUpdate() error = %v, expectErr %v", err, tt.expectErr)
+			}
+
+			// ValidateDelete should always succeed
+			_, err = mutator.ValidateDelete(ctx, tt.cluster)
+			if err != nil {
+				t.Errorf("ValidateDelete() should not return error, got %v", err)
 			}
 		})
 	}

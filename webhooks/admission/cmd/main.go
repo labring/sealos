@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	kbappsv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -41,8 +44,9 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(kbappsv1alpha1.AddToScheme(scheme))
 
-	//utilruntime.Must(netv1.AddToScheme(scheme))
+	// utilruntime.Must(netv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -134,9 +138,13 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "849b6b0b.sealos.io",
@@ -231,6 +239,17 @@ func main() {
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create pod webhook")
+		os.Exit(1)
+	}
+
+	// Register KubeBlocks Cluster webhook (using the same workload mutator)
+	err = builder.WebhookManagedBy(mgr).
+		For(&kbappsv1alpha1.Cluster{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create kubeblocks cluster webhook")
 		os.Exit(1)
 	}
 
