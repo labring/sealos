@@ -89,104 +89,155 @@ export async function fetchDBSecret(
   dbType: DBType,
   namespace: string
 ) {
-  // Get secret name based on database type
-  let secretName: string;
-
-  switch (dbType) {
-    case DBTypeEnum.mysql: // apecloud-mysql
-      secretName = `${dbName}-conn-credential`;
-      break;
-    case DBTypeEnum.clickhouse:
-      secretName = `${dbName}-conn-credential`;
-      break;
-    case DBTypeEnum.milvus:
-      secretName = `${dbName}-conn-credential`;
-      break;
-    case DBTypeEnum.postgresql:
-      secretName = `${dbName}-conn-credential`;
-      break;
-    case DBTypeEnum.kafka:
-      secretName = `${dbName}-broker-account-admin`;
-      break;
-    case DBTypeEnum.redis:
-      secretName = `${dbName}-redis-account-default`;
-      break;
-    case DBTypeEnum.mongodb:
-      secretName = `${dbName}-mongodb-account-root`;
-      break;
-    default:
-      secretName = `${dbName}-conn-credential`;
-      break;
-  }
-
-  try {
-    const res = await k8sCore.readNamespacedSecret(secretName, namespace);
-    if (!res?.body?.data) {
-      throw Error(`Secret ${secretName} has no data`);
-    }
-    const secret = res.body;
-
-    const username = Buffer.from(secret.data?.[dbTypeMap[dbType].usernameKey] || '', 'base64')
-      .toString('utf-8')
-      .trim();
-
-    const password = Buffer.from(secret.data?.[dbTypeMap[dbType].passwordKey] || '', 'base64')
-      .toString('utf-8')
-      .trim();
-
-    // Get host and port based on database type according to requirements
-    let host: string;
-    let port: string;
+  // Define primary and backup secret names based on database type
+  const getSecretNames = (dbType: DBType, dbName: string) => {
+    const backupSecretName = `${dbName}-conn-credential`;
 
     switch (dbType) {
-      case DBTypeEnum.mongodb:
-        host = `${dbName}-mongodb.${namespace}.svc`;
-        port = '27017';
-        break;
-      case DBTypeEnum.redis:
-        host = `${dbName}-redis-redis.${namespace}.svc`;
-        port = '6379';
-        break;
+      case DBTypeEnum.mysql: // apecloud-mysql
+        return { primary: backupSecretName, backup: null }; // Same for old and new
       case DBTypeEnum.clickhouse:
-        host = `${dbName}-clickhouse.${namespace}.svc`;
-        port = '8123';
-        break;
+        return { primary: backupSecretName, backup: null }; // Same for old and new
+      case DBTypeEnum.milvus:
+        return { primary: backupSecretName, backup: null }; // Same for old and new
+      case DBTypeEnum.postgresql:
+        return { primary: backupSecretName, backup: null }; // Same for old and new
       case DBTypeEnum.kafka:
-        host = `${dbName}-broker-advertised-listener-0.${namespace}.svc`;
-        port = '9092';
-        break;
+        return { primary: `${dbName}-broker-account-admin`, backup: backupSecretName };
+      case DBTypeEnum.redis:
+        return { primary: `${dbName}-redis-account-default`, backup: backupSecretName };
+      case DBTypeEnum.mongodb:
+        return { primary: `${dbName}-mongodb-account-root`, backup: backupSecretName };
       default:
-        // For other database types, try to get from secret or use default pattern
-        const hostKey = Buffer.from(secret.data?.[dbTypeMap[dbType].hostKey] || '', 'base64')
-          .toString('utf-8')
-          .trim();
-        host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
-
-        const portKey = Buffer.from(secret.data?.[dbTypeMap[dbType].portKey] || '', 'base64')
-          .toString('utf-8')
-          .trim();
-        port = portKey;
-        break;
+        return { primary: backupSecretName, backup: null };
     }
+  };
 
-    console.log('[fetchDBSecret] Successfully retrieved secret:', secretName);
+  const { primary: primarySecretName, backup: backupSecretName } = getSecretNames(dbType, dbName);
+  let secretName = primarySecretName;
 
-    return {
-      username,
-      password,
-      host,
-      port,
-      body: secret
-    };
-  } catch (e: any) {
-    const statusCode = e?.response?.statusCode || e?.statusCode;
-    if (statusCode && Number(statusCode) === 404) {
+  // Helper function to attempt to get secret
+  const attemptGetSecret = async (secretNameToTry: string, isBackup: boolean = false) => {
+    try {
+      const res = await k8sCore.readNamespacedSecret(secretNameToTry, namespace);
+      if (!res?.body?.data) {
+        throw Error(`Secret ${secretNameToTry} has no data`);
+      }
+      const secret = res.body;
+
+      // For backup secrets, we might need different password keys for some database types
+      let passwordKey = dbTypeMap[dbType].passwordKey;
+      if (isBackup) {
+        // Backup secrets might use 'admin-password' instead of 'password' for some types
+        if (dbType === DBTypeEnum.clickhouse || dbType === DBTypeEnum.kafka) {
+          passwordKey = 'admin-password';
+        }
+      }
+
+      const username = Buffer.from(secret.data?.[dbTypeMap[dbType].usernameKey] || '', 'base64')
+        .toString('utf-8')
+        .trim();
+
+      const password = Buffer.from(secret.data?.[passwordKey] || '', 'base64')
+        .toString('utf-8')
+        .trim();
+
+      console.log(
+        `[fetchDBSecret] Successfully retrieved ${isBackup ? 'backup' : 'primary'} secret:`,
+        secretNameToTry
+      );
+
+      return { username, password, secret };
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  let username: string, password: string, secret: any;
+
+  try {
+    // Try primary secret first
+    ({ username, password, secret } = await attemptGetSecret(secretName, false));
+  } catch (primaryError: any) {
+    const statusCode = primaryError?.response?.statusCode || primaryError?.statusCode;
+
+    // If primary secret failed with 404 and backup secret exists, try backup
+    if (
+      statusCode &&
+      Number(statusCode) === 404 &&
+      backupSecretName &&
+      backupSecretName !== secretName
+    ) {
+      console.log(
+        `[fetchDBSecret] Primary secret ${secretName} not found, trying backup secret ${backupSecretName}`
+      );
+
+      try {
+        ({ username, password, secret } = await attemptGetSecret(backupSecretName, true));
+        secretName = backupSecretName; // Update secretName to backup secret name for logging
+      } catch (backupError: any) {
+        // Both primary and backup failed
+        throw Error(
+          `Failed to fetch secret for database ${dbName} of type ${dbType}. Primary secret ${primarySecretName} not found, backup secret ${backupSecretName} also failed: ${backupError.message}`
+        );
+      }
+    } else {
+      // Primary secret failed with non-404 error or no backup available
       throw Error(
-        `Secret not found for database ${dbName} of type ${dbType}. Secret name: ${secretName}`
+        `Failed to fetch secret for database ${dbName} of type ${dbType}: ${primaryError.message}`
       );
     }
-    throw Error(`Failed to fetch secret for database ${dbName} of type ${dbType}: ${e.message}`);
   }
+
+  // Get host and port based on database type according to requirements
+  let host: string;
+  let port: string;
+
+  switch (dbType) {
+    case DBTypeEnum.mongodb:
+      host = `${dbName}-mongodb.${namespace}.svc`;
+      port = '27017';
+      break;
+    case DBTypeEnum.redis:
+      host = `${dbName}-redis-redis.${namespace}.svc`;
+      port = '6379';
+      break;
+    case DBTypeEnum.clickhouse:
+      host = `${dbName}-clickhouse.${namespace}.svc`;
+      port = '8123';
+      break;
+    case DBTypeEnum.kafka:
+      host = `${dbName}-broker-advertised-listener-0.${namespace}.svc`;
+      port = '9092';
+      break;
+    default:
+      // For other database types, try to get from secret or use default pattern
+      const hostKey = Buffer.from(secret.data?.[dbTypeMap[dbType].hostKey] || '', 'base64')
+        .toString('utf-8')
+        .trim();
+      host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
+
+      const portKey = Buffer.from(secret.data?.[dbTypeMap[dbType].portKey] || '', 'base64')
+        .toString('utf-8')
+        .trim();
+      port = portKey;
+      break;
+  }
+
+  console.log(`[fetchDBSecret] Successfully processed secret:`, {
+    secretName,
+    isBackup: secretName === backupSecretName,
+    host,
+    port
+  });
+
+  return {
+    username,
+    password,
+    host,
+    port,
+    body: secret
+  };
 }
 
 type resourcesDistributeMap = Partial<
