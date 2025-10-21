@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -97,6 +98,14 @@ func (r *WorkloadMutator) Default(ctx context.Context, obj runtime.Object) error
 		return nil
 	}
 
+	// Skip resources that have finalizers or are controlled by another resource
+	if shouldSkipMutation(obj) {
+		ctrl.Log.WithName("workload-mutator").
+			Info("Skipping mutation - resource has finalizers or is controlled",
+				"namespace", namespace)
+		return nil
+	}
+
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		return r.mutateDeployment(ctx, o)
@@ -139,6 +148,14 @@ func (r *WorkloadMutator) ValidateCreate(
 		return nil, nil
 	}
 
+	// Skip resources that have finalizers or are controlled by another resource
+	if shouldSkipMutation(obj) {
+		ctrl.Log.WithName("workload-validator").
+			Info("Skipping validation - resource has finalizers or is controlled",
+				"namespace", namespace)
+		return nil, nil
+	}
+
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		return nil, r.validateDeployment(ctx, o)
@@ -177,6 +194,14 @@ func (r *WorkloadMutator) ValidateUpdate(
 	if !isUserNamespace(namespace) {
 		ctrl.Log.WithName("workload-validator").
 			Info("Skipping validation - namespace doesn't match pattern",
+				"namespace", namespace)
+		return nil, nil
+	}
+
+	// Skip resources that have finalizers or are controlled by another resource
+	if shouldSkipMutation(newObj) {
+		ctrl.Log.WithName("workload-validator").
+			Info("Skipping validation - resource has finalizers or is controlled",
 				"namespace", namespace)
 		return nil, nil
 	}
@@ -649,6 +674,42 @@ func getNamespace(obj runtime.Object) string {
 	default:
 		return ""
 	}
+}
+
+// shouldSkipMutation checks if the resource should skip mutation/validation
+// Returns true if the resource has finalizers or is controlled by another resource
+func shouldSkipMutation(obj runtime.Object) bool {
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *appsv1.StatefulSet:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *appsv1.ReplicaSet:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *corev1.Pod:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *kbappsv1alpha1.Cluster:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	default:
+		return false
+	}
+}
+
+// hasFinalizersOrController checks if finalizers exist or any ownerReference has controller=true
+func hasFinalizersOrController(finalizers []string, ownerRefs []metav1.OwnerReference) bool {
+	// Check if there are any finalizers
+	if len(finalizers) > 0 {
+		return true
+	}
+
+	// Check if any ownerReference has controller set to true
+	for _, owner := range ownerRefs {
+		if owner.Controller != nil && *owner.Controller {
+			return true
+		}
+	}
+
+	return false
 }
 
 // mutateCluster mutates KubeBlocks Cluster resource
