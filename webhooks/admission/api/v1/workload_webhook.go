@@ -17,7 +17,9 @@ package v1
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	kbappsv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -104,13 +106,18 @@ func (r *WorkloadMutator) Default(ctx context.Context, obj runtime.Object) error
 		return r.mutateReplicaSet(ctx, o)
 	case *corev1.Pod:
 		return r.mutatePod(ctx, o)
+	case *kbappsv1alpha1.Cluster:
+		return r.mutateCluster(ctx, o)
 	default:
-		return fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet or Pod but got a %T", obj)
+		return fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, Pod or Cluster but got a %T", obj)
 	}
 }
 
 // ValidateCreate implements webhook.Validator interface
-func (r *WorkloadMutator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (r *WorkloadMutator) ValidateCreate(
+	ctx context.Context,
+	obj runtime.Object,
+) (admission.Warnings, error) {
 	request, _ := admission.RequestFromContext(ctx)
 
 	// Only process resources created by user service accounts
@@ -118,7 +125,7 @@ func (r *WorkloadMutator) ValidateCreate(ctx context.Context, obj runtime.Object
 		ctrl.Log.WithName("workload-validator").
 			Info("Skipping validation - not a user service account",
 				"username", request.UserInfo.Username)
-		return nil
+		return nil, nil
 	}
 
 	// Get namespace from the object
@@ -129,25 +136,30 @@ func (r *WorkloadMutator) ValidateCreate(ctx context.Context, obj runtime.Object
 		ctrl.Log.WithName("workload-validator").
 			Info("Skipping validation - namespace doesn't match pattern",
 				"namespace", namespace)
-		return nil
+		return nil, nil
 	}
 
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
-		return r.validateDeployment(ctx, o)
+		return nil, r.validateDeployment(ctx, o)
 	case *appsv1.StatefulSet:
-		return r.validateStatefulSet(ctx, o)
+		return nil, r.validateStatefulSet(ctx, o)
 	case *appsv1.ReplicaSet:
-		return r.validateReplicaSet(ctx, o)
+		return nil, r.validateReplicaSet(ctx, o)
 	case *corev1.Pod:
-		return r.validatePod(ctx, o)
+		return nil, r.validatePod(ctx, o)
+	case *kbappsv1alpha1.Cluster:
+		return nil, r.validateCluster(ctx, o)
 	default:
-		return fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet or Pod but got a %T", obj)
+		return nil, fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, Pod or Cluster but got a %T", obj)
 	}
 }
 
 // ValidateUpdate implements webhook.Validator interface
-func (r *WorkloadMutator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (r *WorkloadMutator) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
 	request, _ := admission.RequestFromContext(ctx)
 
 	// Only process resources created by user service accounts
@@ -155,7 +167,7 @@ func (r *WorkloadMutator) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		ctrl.Log.WithName("workload-validator").
 			Info("Skipping validation - not a user service account",
 				"username", request.UserInfo.Username)
-		return nil
+		return nil, nil
 	}
 
 	// Get namespace from the object
@@ -166,27 +178,32 @@ func (r *WorkloadMutator) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		ctrl.Log.WithName("workload-validator").
 			Info("Skipping validation - namespace doesn't match pattern",
 				"namespace", namespace)
-		return nil
+		return nil, nil
 	}
 
 	switch o := newObj.(type) {
 	case *appsv1.Deployment:
-		return r.validateDeployment(ctx, o)
+		return nil, r.validateDeployment(ctx, o)
 	case *appsv1.StatefulSet:
-		return r.validateStatefulSet(ctx, o)
+		return nil, r.validateStatefulSet(ctx, o)
 	case *appsv1.ReplicaSet:
-		return r.validateReplicaSet(ctx, o)
+		return nil, r.validateReplicaSet(ctx, o)
 	case *corev1.Pod:
-		return r.validatePod(ctx, o)
+		return nil, r.validatePod(ctx, o)
+	case *kbappsv1alpha1.Cluster:
+		return nil, r.validateCluster(ctx, o)
 	default:
-		return fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet or Pod but got a %T", newObj)
+		return nil, fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, Pod or Cluster but got a %T", newObj)
 	}
 }
 
 // ValidateDelete implements webhook.Validator interface
-func (r *WorkloadMutator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (r *WorkloadMutator) ValidateDelete(
+	ctx context.Context,
+	obj runtime.Object,
+) (admission.Warnings, error) {
 	// No validation needed for delete operations
-	return nil
+	return nil, nil
 }
 
 func (r *WorkloadMutator) mutateDeployment(
@@ -456,24 +473,33 @@ func (r *WorkloadMutator) getOversellRatioFromLabels(labels map[string]string) i
 	return r.DefaultOversellRatio
 }
 
-// mutateContainerResources adjusts container resource requests based on oversell ratio
-func (r *WorkloadMutator) mutateContainerResources(container *corev1.Container, oversellRatio int) {
-	if container.Resources.Requests == nil {
-		container.Resources.Requests = make(corev1.ResourceList)
-	}
-
-	if container.Resources.Limits == nil {
+// mutateResourceRequirements adjusts resource requests based on oversell ratio
+// This is a generic method that works with any corev1.ResourceRequirements
+func (r *WorkloadMutator) mutateResourceRequirements(
+	workloadName string,
+	resources *corev1.ResourceRequirements,
+	oversellRatio int,
+) {
+	if resources.Limits == nil {
 		return // No limits means no mutation needed
 	}
 
+	if resources.Requests == nil {
+		resources.Requests = make(corev1.ResourceList)
+	}
+
 	// Adjust CPU and memory requests
-	r.mutateCPURequest(container, oversellRatio)
-	r.mutateMemoryRequest(container, oversellRatio)
+	r.mutateCPURequestForResource(workloadName, resources, oversellRatio)
+	r.mutateMemoryRequestForResource(workloadName, resources, oversellRatio)
 }
 
-// mutateCPURequest adjusts container CPU resource requests based on oversell ratio
-func (r *WorkloadMutator) mutateCPURequest(container *corev1.Container, oversellRatio int) {
-	cpuLimit, exists := container.Resources.Limits[corev1.ResourceCPU]
+// mutateCPURequestForResource adjusts CPU resource requests based on oversell ratio
+func (r *WorkloadMutator) mutateCPURequestForResource(
+	workloadName string,
+	resources *corev1.ResourceRequirements,
+	oversellRatio int,
+) {
+	cpuLimit, exists := resources.Limits[corev1.ResourceCPU]
 	if !exists || cpuLimit.IsZero() {
 		return
 	}
@@ -482,21 +508,21 @@ func (r *WorkloadMutator) mutateCPURequest(container *corev1.Container, oversell
 	if r.SkipCPUThreshold != nil && cpuLimit.Cmp(*r.SkipCPUThreshold) < 0 {
 		ctrl.Log.WithName("workload-mutator").
 			Info("Skipping CPU request mutation - limit below threshold",
-				"container", container.Name,
+				"workload", workloadName,
 				"limit", cpuLimit.String(),
 				"threshold", r.SkipCPUThreshold.String())
 		return
 	}
 
 	maxCPURequest := r.calculateMaxCPURequest(cpuLimit, oversellRatio)
-	currentCPURequest := container.Resources.Requests[corev1.ResourceCPU]
+	currentCPURequest := resources.Requests[corev1.ResourceCPU]
 
 	// Only adjust if current request exceeds the maximum allowed or is not set
 	if currentCPURequest.IsZero() || currentCPURequest.Cmp(maxCPURequest) > 0 {
-		container.Resources.Requests[corev1.ResourceCPU] = maxCPURequest
+		resources.Requests[corev1.ResourceCPU] = maxCPURequest
 
 		ctrl.Log.WithName("workload-mutator").Info("Adjusted CPU request",
-			"container", container.Name,
+			"workload", workloadName,
 			"originalRequest", currentCPURequest.String(),
 			"limit", cpuLimit.String(),
 			"newRequest", maxCPURequest.String(),
@@ -504,9 +530,13 @@ func (r *WorkloadMutator) mutateCPURequest(container *corev1.Container, oversell
 	}
 }
 
-// mutateMemoryRequest adjusts container memory resource requests based on oversell ratio
-func (r *WorkloadMutator) mutateMemoryRequest(container *corev1.Container, oversellRatio int) {
-	memLimit, exists := container.Resources.Limits[corev1.ResourceMemory]
+// mutateMemoryRequestForResource adjusts memory resource requests based on oversell ratio
+func (r *WorkloadMutator) mutateMemoryRequestForResource(
+	workloadName string,
+	resources *corev1.ResourceRequirements,
+	oversellRatio int,
+) {
+	memLimit, exists := resources.Limits[corev1.ResourceMemory]
 	if !exists || memLimit.IsZero() {
 		return
 	}
@@ -515,26 +545,31 @@ func (r *WorkloadMutator) mutateMemoryRequest(container *corev1.Container, overs
 	if r.SkipMemoryThreshold != nil && memLimit.Cmp(*r.SkipMemoryThreshold) < 0 {
 		ctrl.Log.WithName("workload-mutator").
 			Info("Skipping memory request mutation - limit below threshold",
-				"container", container.Name,
+				"workload", workloadName,
 				"limit", memLimit.String(),
 				"threshold", r.SkipMemoryThreshold.String())
 		return
 	}
 
 	maxMemRequest := r.calculateMaxMemoryRequest(memLimit, oversellRatio)
-	currentMemRequest := container.Resources.Requests[corev1.ResourceMemory]
+	currentMemRequest := resources.Requests[corev1.ResourceMemory]
 
 	// Only adjust if current request exceeds the maximum allowed or is not set
 	if currentMemRequest.IsZero() || currentMemRequest.Cmp(maxMemRequest) > 0 {
-		container.Resources.Requests[corev1.ResourceMemory] = maxMemRequest
+		resources.Requests[corev1.ResourceMemory] = maxMemRequest
 
 		ctrl.Log.WithName("workload-mutator").Info("Adjusted Memory request",
-			"container", container.Name,
+			"workload", workloadName,
 			"originalRequest", currentMemRequest.String(),
 			"limit", memLimit.String(),
 			"newRequest", maxMemRequest.String(),
 			"oversellRatio", oversellRatio)
 	}
+}
+
+// mutateContainerResources adjusts container resource requests based on oversell ratio
+func (r *WorkloadMutator) mutateContainerResources(container *corev1.Container, oversellRatio int) {
+	r.mutateResourceRequirements(container.Name, &container.Resources, oversellRatio)
 }
 
 // calculateMaxCPURequest calculates the maximum allowed CPU request based on limit and oversell ratio
@@ -595,7 +630,7 @@ func (r *WorkloadMutator) calculateMaxMemoryRequest(
 	}
 
 	// Less than 1Ki, use bytes
-	return resource.MustParse(fmt.Sprintf("%d", maxRequestValue))
+	return resource.MustParse(strconv.FormatInt(maxRequestValue, 10))
 }
 
 // getNamespace extracts namespace from runtime.Object
@@ -609,9 +644,87 @@ func getNamespace(obj runtime.Object) string {
 		return o.Namespace
 	case *corev1.Pod:
 		return o.Namespace
+	case *kbappsv1alpha1.Cluster:
+		return o.Namespace
 	default:
 		return ""
 	}
+}
+
+// mutateCluster mutates KubeBlocks Cluster resource
+func (r *WorkloadMutator) mutateCluster(_ context.Context, cluster *kbappsv1alpha1.Cluster) error {
+	ctrl.Log.WithName("workload-mutator").
+		Info("Mutating cluster",
+			"name", cluster.Name,
+			"namespace", cluster.Namespace)
+
+	// Mutate component specs using database oversell ratio
+	for i := range cluster.Spec.ComponentSpecs {
+		r.mutateClusterComponentSpec(&cluster.Spec.ComponentSpecs[i])
+	}
+
+	return nil
+}
+
+// mutateClusterComponentSpec adjusts component resource requests based on database oversell ratio
+func (r *WorkloadMutator) mutateClusterComponentSpec(comp *kbappsv1alpha1.ClusterComponentSpec) {
+	ctrl.Log.WithName("workload-mutator").
+		Info("Mutating cluster component",
+			"component", comp.Name,
+			"type", comp.ComponentDefRef)
+
+	// Use the generic mutateResourceRequirements method with database oversell ratio
+	r.mutateResourceRequirements(comp.Name, &comp.Resources, r.DatabaseOversellRatio)
+}
+
+// validateCluster validates the cluster resource specifications
+func (r *WorkloadMutator) validateCluster(
+	_ context.Context,
+	cluster *kbappsv1alpha1.Cluster,
+) error {
+	ctrl.Log.WithName("workload-validator").Info("Validating cluster",
+		"name", cluster.Name,
+		"namespace", cluster.Namespace)
+
+	// Validate all component specs
+	for i := range cluster.Spec.ComponentSpecs {
+		if err := r.validateClusterComponentResources(&cluster.Spec.ComponentSpecs[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateClusterComponentResources validates that CPU and memory limits are not set to "0"
+func (r *WorkloadMutator) validateClusterComponentResources(
+	comp *kbappsv1alpha1.ClusterComponentSpec,
+) error {
+	if comp.Resources.Limits == nil {
+		return nil // No limits to validate
+	}
+
+	// Check CPU limit
+	if cpuLimit, exists := comp.Resources.Limits[corev1.ResourceCPU]; exists {
+		if cpuLimit.IsZero() {
+			return fmt.Errorf(
+				"CPU limit cannot be set to '0' for component '%s'",
+				comp.Name,
+			)
+		}
+	}
+
+	// Check Memory limit
+	if memLimit, exists := comp.Resources.Limits[corev1.ResourceMemory]; exists {
+		if memLimit.IsZero() {
+			return fmt.Errorf(
+				"memory limit cannot be set to '0' for component '%s'",
+				comp.Name,
+			)
+		}
+	}
+
+	return nil
 }
 
 //+kubebuilder:webhook:path=/mutate-apps-v1-deployment,mutating=true,failurePolicy=ignore,sideEffects=None,groups=apps,resources=deployments,verbs=create;update,versions=v1,name=mdeployment.sealos.io,admissionReviewVersions=v1
@@ -622,6 +735,8 @@ func getNamespace(obj runtime.Object) string {
 
 //+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mpod.sealos.io,admissionReviewVersions=v1
 
+//+kubebuilder:webhook:path=/mutate-apps-kubeblocks-io-v1alpha1-cluster,mutating=true,failurePolicy=ignore,sideEffects=None,groups=apps.kubeblocks.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.sealos.io,admissionReviewVersions=v1
+
 //+kubebuilder:webhook:path=/validate-apps-v1-deployment,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps,resources=deployments,verbs=create;update,versions=v1,name=vdeployment.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:webhook:path=/validate-apps-v1-statefulset,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps,resources=statefulsets,verbs=create;update,versions=v1,name=vstatefulset.sealos.io,admissionReviewVersions=v1
@@ -629,3 +744,5 @@ func getNamespace(obj runtime.Object) string {
 //+kubebuilder:webhook:path=/validate-apps-v1-replicaset,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps,resources=replicasets,verbs=create;update,versions=v1,name=vreplicaset.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:webhook:path=/validate--v1-pod,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=vpod.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:webhook:path=/validate-apps-kubeblocks-io-v1alpha1-cluster,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps.kubeblocks.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.sealos.io,admissionReviewVersions=v1
