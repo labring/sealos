@@ -1,4 +1,4 @@
-package server
+package query
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type VLogsQuery struct {
 	query string
 }
 
-func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
+func (v *VLogsQuery) GetQuery(req *api.VlogsRequest) (string, error) {
 	if req.PodQuery == modeTrue {
 		query := v.generatePodListQuery(req)
 		return query, nil
