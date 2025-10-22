@@ -49,6 +49,7 @@ const (
 	AdminResumeUserTraffic       = "/resume-user-traffic"
 
 	AdminWorkspaceSubscriptionProcessExpired = "/workspace-subscription/process-expired"
+	AdminWorkspaceSubscriptionAdd           = "/workspace-subscription/add"
 
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"

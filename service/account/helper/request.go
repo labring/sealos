@@ -852,3 +852,81 @@ func ParsePaymentStatusReq(c *gin.Context) (*PaymentStatusReq, error) {
 	}
 	return req, nil
 }
+
+// AdminWorkspaceSubscriptionAddReq defines request for admin to add workspace subscription
+type AdminWorkspaceSubscriptionAddReq struct {
+	// @Summary Workspace name
+	// @Description Workspace name
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain
+	// @JSONSchema required
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+
+	// @Summary User ID
+	// @Description User ID who owns the workspace
+	// @JSONSchema required
+	UserUID uuid.UUID `json:"userUID" bson:"userUID" binding:"required" example:"user-123"`
+
+	// @Summary Plan name
+	// @Description Plan name for the subscription
+	// @JSONSchema required
+	PlanName string `json:"planName" bson:"planName" binding:"required" example:"premium"`
+
+	// @Summary Subscription period
+	// @Description Subscription period (1m for monthly, 1y for yearly)
+	// @JSONSchema required
+	Period types.SubscriptionPeriod `json:"period" bson:"period" binding:"required" example:"1m"`
+
+	// @Summary Subscription operator
+	// @Description Subscription operator type (created/upgraded/renewed)
+	Operator types.SubscriptionOperator `json:"operator" bson:"operator" binding:"required" example:"created"`
+
+	// @Summary Optional description
+	// @Description Optional description for the admin operation
+	Description string `json:"description,omitempty" bson:"description,omitempty" example:"Internal admin subscription addition"`
+}
+
+func ParseAdminWorkspaceSubscriptionAddReq(c *gin.Context) (*AdminWorkspaceSubscriptionAddReq, error) {
+	req := &AdminWorkspaceSubscriptionAddReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+
+	// Validate required fields
+	if req.Workspace == "" {
+		return nil, errors.New("workspace cannot be empty")
+	}
+	if req.RegionDomain == "" {
+		return nil, errors.New("regionDomain cannot be empty")
+	}
+	if req.UserUID == uuid.Nil {
+		return nil, errors.New("userUID cannot be empty")
+	}
+	if req.PlanName == "" {
+		return nil, errors.New("planName cannot be empty")
+	}
+	if req.Period == "" {
+		req.Period = types.SubscriptionPeriodMonthly
+	}
+	if req.Operator == "" {
+		req.Operator = types.SubscriptionTransactionTypeCreated
+	}
+
+	// Validate operator type
+	switch req.Operator {
+	case types.SubscriptionTransactionTypeCreated,
+		types.SubscriptionTransactionTypeUpgraded,
+		types.SubscriptionTransactionTypeRenewed:
+		// Valid operations for admin
+	default:
+		return nil, fmt.Errorf(
+			"invalid operator: %s. Allowed: created, upgraded, renewed",
+			req.Operator,
+		)
+	}
+
+	return req, nil
+}
