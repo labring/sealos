@@ -61,7 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdTime: x.userCr.createdAt.toString(),
           joinTime: x.joinAt || undefined,
           role: roleToUserRole(x.role),
-          status: joinStatusToNStatus(x.status)
+          status: joinStatusToNStatus(x.status),
+          alias: x.alias ?? undefined
         }
       ];
     });
