@@ -248,6 +248,7 @@ export const callbackToUpdateBot = async (
     invoice: InvoicePayload;
     status: InvoicePayload['status'];
     payments: InvoiceBillingItem[];
+    status: InvoicePayload['status'];
   }
 ) => {
   const card = generateBotTemplate({ invoice, payments });
