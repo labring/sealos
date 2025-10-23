@@ -95,6 +95,10 @@ export type PropertiesCost = {
   4: number;
   5: number;
 };
+
+/**
+ * @deprecated `RechargeBillingItem` is *deprecated* in favor of `InvoiceBillingItem` so we should move this to API types.
+ */
 export type RechargeBillingItem = {
   ID: string;
   UserUID: string;
