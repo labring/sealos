@@ -26,15 +26,19 @@ export function JoinDiscordPrompt({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (isClient && layoutConfig?.discordInviteLink)
-      if (!store.dontShowAgain && !store.open && !store.closedInSession) {
-        store.setOpen(true);
-      }
+    if (!isClient || !layoutConfig?.discordInviteLink) {
+      return;
+    }
+
+    if (!store.dontShowAgain && !store.open && !store.autoOpenBlocked) {
+      store.setOpen(true);
+    }
   }, [store, isClient, layoutConfig?.discordInviteLink]);
 
   const handleClose = () => {
     store.setOpen(false);
-    store.setClosedInSession(true);
+    // Pervent auto open
+    store.blockAutoOpen();
   };
 
   const handleOpenDiscord = () => {
