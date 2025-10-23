@@ -1,7 +1,9 @@
 import { initAppConfig } from '@/pages/api/platform/getAppConfig';
 import { InvoicePayload, InvoicesCollection, RechargeBillingItem, ReqGenInvoice } from '@/types';
 import { formatMoney } from '@/utils/format';
-
+import Dysmsapi, * as dysmsapi from '@alicloud/dysmsapi20170525';
+import * as OpenApi from '@alicloud/openapi-client';
+import * as Util from '@alicloud/tea-util';
 import axios from 'axios';
 import { parseISO } from 'date-fns';
 import { NextApiResponse } from 'next';
@@ -234,22 +236,76 @@ export const callbackToUpdateBot = async (
   res: NextApiResponse,
   {
     invoice,
-    payments
+    payments,
+    status
   }: {
     invoice: InvoicePayload;
     payments: RechargeBillingItem[];
+    status: InvoicePayload['status'];
   }
 ) => {
   const card = generateBotTemplate({ invoice, payments });
+  const message = status === 'COMPLETED' ? '状态变更成功,短信发送成功' : '状态变更成功';
   return res.json({
     toast: {
       type: 'info',
-      content: '状态变更成功',
+      content: message,
       i18n: {
-        zh_cn: '状态变更成功',
+        zh_cn: message,
         en_us: 'card action success'
       }
     },
     card
   });
+};
+
+export const sendInvoiceCompletedSMS = async ({
+  phone,
+  invoiceId
+}: {
+  phone: string;
+  invoiceId: string;
+}) => {
+  try {
+    if (!phone || phone.trim() === '') {
+      console.log('Phone number is empty or undefined for invoice:', invoiceId);
+      return false;
+    }
+
+    const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
+    const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
+    const signName = global.AppConfig.costCenter.invoice.aliSms.signName;
+    const templateCode = global.AppConfig.costCenter.invoice.aliSms.invoiceCompletedTemplateCode;
+    const smsEndpoint = global.AppConfig.costCenter.invoice.aliSms.endpoint;
+    if (!accessKeyId || !accessKeySecret || !templateCode || !signName) {
+      console.log('Invoice completed SMS config is incomplete');
+      return false;
+    }
+
+    const config = new OpenApi.Config({
+      accessKeyId,
+      accessKeySecret,
+      endpoint: smsEndpoint || 'dysmsapi.aliyuncs.com'
+    });
+
+    const client = new Dysmsapi(config);
+
+    const sendSmsRequest = new dysmsapi.SendSmsRequest({
+      phoneNumbers: phone,
+      signName,
+      templateCode
+    });
+
+    const runtime = new Util.RuntimeOptions({});
+    const result = await client.sendSmsWithOptions(sendSmsRequest, runtime);
+
+    if (result.statusCode !== 200 || result.body.code !== 'OK') {
+      console.log('Failed to send invoice completed SMS:', result.body);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.log('Error sending invoice completed SMS:', error);
+    return false;
+  }
 };

@@ -163,7 +163,7 @@
       },
       "code": {
         "name": "验证码",
-        "placeholder": "填写验证码"
+        "placeholder": "填写手机号码收到的验证码"
       }
     },
     "Invoice Content": "发票内容",

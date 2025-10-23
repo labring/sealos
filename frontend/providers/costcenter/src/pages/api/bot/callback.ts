@@ -2,9 +2,10 @@ import { makeAPIClient } from '@/service/backend/region';
 import {
   callbackToUpdateBot,
   getInvoicePayments,
+  sendInvoiceCompletedSMS,
   updateTenantAccessToken
 } from '@/service/sendToBot';
-import { InvoiceListData, InvoicePayload } from '@/types';
+import { InvoiceListData, InvoicePayload, InvoicesCollection } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
@@ -98,9 +99,30 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         data: InvoiceListData;
       };
       const payments = await getInvoicePayments(invoiceId);
-      // @ts-ignore
 
-      return callbackToUpdateBot(resp, { invoice: invoiceListData.data.invoices[0], payments });
+      if (status === 'COMPLETED') {
+        const invoice = invoiceListData.data.invoices[0];
+        try {
+          const invoiceDetail = JSON.parse(invoice.detail) as InvoicesCollection;
+          const { contract } = invoiceDetail;
+          if (contract && contract.phone) {
+            sendInvoiceCompletedSMS({
+              phone: contract.phone,
+              invoiceId: invoice.id
+            });
+          }
+        } catch (err) {
+          console.log('Failed to parse invoice detail for SMS:', err, {
+            invoiceId: invoice.id,
+            detail: invoice.detail
+          });
+        }
+      }
+      return callbackToUpdateBot(resp, {
+        invoice: invoiceListData.data.invoices[0],
+        payments,
+        status
+      });
     }
   } catch (error) {
     console.log(error);
