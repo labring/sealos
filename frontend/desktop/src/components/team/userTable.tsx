@@ -15,7 +15,7 @@ import {
   Flex,
   Link
 } from '@chakra-ui/react';
-import { vaildManage } from '@/utils/tools';
+import { roleToUserRole, vaildManage } from '@/utils/tools';
 import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
@@ -113,7 +113,7 @@ export default function UserTable({
                         <span>{user.alias}</span>
 
                         {/* Owner can set alias */}
-                        {UserRole.Owner === userSelf.role && (
+                        {[UserRole.Owner, UserRole.Manager].includes(userSelf.role) && (
                           <Link
                             onClick={() => {
                               setSelectedUser(user);
@@ -133,7 +133,7 @@ export default function UserTable({
                       </Text>
                     )}
                   </Flex>
-                  {UserRole.Owner === userSelf.role && (
+                  {[UserRole.Owner, UserRole.Manager].includes(userSelf.role) && (
                     <Link
                       onClick={() => {
                         setSelectedUser(user);

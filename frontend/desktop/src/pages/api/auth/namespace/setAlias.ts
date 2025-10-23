@@ -43,8 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!own) return jsonRes(res, { code: 403, message: 'you are not in namespace' });
     const targetUser = queryResults.find((x) => x.userCrUid === targetUserCrUid);
     if (!targetUser) return jsonRes(res, { code: 404, message: 'target is not in namespace' });
-    if (roleToUserRole(own.role) !== UserRole.Owner)
-      return jsonRes(res, { code: 403, message: 'you are not owner' });
+    if (![UserRole.Owner, UserRole.Manager].includes(roleToUserRole(own.role)))
+      return jsonRes(res, { code: 403, message: 'you do not have sufficient permissions' });
 
     // if role is same, do nothing
     if (targetUser.alias === alias) return jsonRes(res, { code: 200, message: 'Successfully' });
