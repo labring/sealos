@@ -13,6 +13,7 @@ import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import '@/styles/globals.scss';
 import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
+import useAppStore from '@/stores/app';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,11 +34,12 @@ const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
 
   const { initAppConfig, layoutConfig } = useConfigStore();
+  const appStore = useAppStore();
   const joinDiscordPromptStore = useJoinDiscordPromptStore();
 
   useEffect(() => {
     // Block discord prompt under certain circumstances.
-    if (Object.hasOwn(router.query, 'openapp')) {
+    if (Object.hasOwn(router.query, 'openapp') || appStore.autolaunch) {
       joinDiscordPromptStore.blockAutoOpen();
     }
   }, [router.query, joinDiscordPromptStore]);

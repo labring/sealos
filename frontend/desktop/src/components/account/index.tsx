@@ -62,8 +62,8 @@ export default function Account() {
   const kubeconfig = session?.kubeconfig || '';
   const showDisclosure = useDisclosure();
   const [, setNotificationAmount] = useState(0);
-  const { openDesktopApp } = useAppStore();
-  const { openGuideModal, initGuide } = useGuideModalStore();
+  const { openDesktopApp, autolaunch } = useAppStore();
+  const { openGuideModal, initGuide, autoOpenBlocked, blockAutoOpen } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
@@ -99,10 +99,15 @@ export default function Account() {
   useEffect(() => {
     // [TODO] Guide is currently not compatible with narrow screen.
     // Do not show guide above auto opened windows.
-    if (initGuide && !isNarrowScreen && !Object.hasOwn(router.query, 'openapp')) {
+    if (Object.hasOwn(router.query, 'openapp') || autolaunch) {
+      blockAutoOpen();
+      return;
+    }
+
+    if (initGuide && !isNarrowScreen && !autoOpenBlocked) {
       openGuideModal();
     }
-  }, [initGuide, openGuideModal, isNarrowScreen]);
+  }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>
