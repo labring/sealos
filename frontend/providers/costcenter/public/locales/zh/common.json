@@ -164,10 +164,6 @@
     "code error": "验证码错误",
     "code success": "验证码已发送",
     "contract": {
-      "code": {
-        "name": "验证码",
-        "placeholder": "填写验证码"
-      },
       "email": {
         "name": "邮箱",
         "placeholder": "填写邮箱"
@@ -179,6 +175,10 @@
       "phone": {
         "name": "手机号码",
         "placeholder": "填写手机号码"
+      },
+      "code": {
+        "name": "验证码",
+        "placeholder": "填写手机号码收到的验证码"
       }
     },
     "details": {
