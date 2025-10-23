@@ -102,6 +102,7 @@ type DBLogsRequest struct {
 	NumberMode  string   `json:"numberMode,omitempty"`
 	NumberLevel string   `json:"numberLevel,omitempty"`
 	Pvc         []string `json:"pvc,omitempty"`
+	Type        []string `json:"type,omitempty"`
 	Container   []string `json:"container,omitempty"`
 	Keyword     string   `json:"keyword,omitempty"`
 	PodQuery    string   `json:"podQuery,omitempty"`

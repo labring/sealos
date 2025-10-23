@@ -16,6 +16,7 @@ func (v *DBLogsQuery) GetDBQuery(req *api.DBLogsRequest) (string, error) {
 	v.generateVolumeUIDQuery(req)
 	v.generateKeywordQuery(req)
 	v.generateContainerQuery(req)
+	v.generateTypeQuery(req)
 	v.generateCommonQuery(req)
 	v.generateNumberQuery(req)
 	return v.query, nil
@@ -40,6 +41,14 @@ func (v *DBLogsQuery) generateContainerQuery(req *api.DBLogsRequest) {
 		return
 	}
 	containerList := `"` + strings.Join(req.Container, `","`) + `"`
+	v.query += fmt.Sprintf(`container:in(%s) `, containerList)
+}
+
+func (v *DBLogsQuery) generateTypeQuery(req *api.DBLogsRequest) {
+	if len(req.Type) == 0 {
+		return
+	}
+	containerList := `"` + strings.Join(req.Type, `","`) + `"`
 	v.query += fmt.Sprintf(`container:in(%s) `, containerList)
 }
 
