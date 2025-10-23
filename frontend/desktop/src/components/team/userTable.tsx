@@ -13,19 +13,16 @@ import {
   Thead,
   Tr,
   Flex,
-  Link,
-  Box
+  Link
 } from '@chakra-ui/react';
 import { vaildManage } from '@/utils/tools';
 import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
 import { useTranslation } from 'next-i18next';
-import { useConfigStore } from '@/stores/config';
 import { PencilLine } from 'lucide-react';
 import { SetAlias } from './SetAlias';
 import { useState } from 'react';
-import { setAliasRequest } from '@/api/namespace';
 
 export default function UserTable({
   users = [],
@@ -154,7 +151,7 @@ export default function UserTable({
                       }}
                     >
                       <PencilLine size={16} />
-                      <span>Set Alias</span>
+                      <span>{t('common:user_table_set_alias')}</span>
                     </Link>
                   )}
                 </Flex>

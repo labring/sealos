@@ -25,11 +25,11 @@
   "apps_running_app_devbox": "DevBox",
   "apps_running_desc_devbox_one": "{{count}} 个开发环境正在运行",
   "apps_running_desc_devbox_other": "{{count}} 个开发环境正在运行",
+  "apps_running_do_not_show_again": "不再显示此提示",
   "apps_running_prompt_desc_applaunchpad_one": "{{count}} 个应用运行中",
   "apps_running_prompt_desc_applaunchpad_other": "{{count}} 个应用运行中",
   "apps_running_prompt_desc_devbox_one": "{{count}} 个数据库服务运行中",
   "apps_running_prompt_desc_devbox_other": "{{count}} 个数据库服务运行中",
-  "apps_running_do_not_show_again": "不再显示此提示",
   "apps_running_running_badge": "运行中",
   "apps_running_shutdown": "去关机",
   "apps_running_title": "确认关闭页面？",
@@ -276,6 +276,11 @@
   "search_apps": "搜索应用",
   "select_amount": "选择金额",
   "service_agreement": "服务协议",
+  "set_alias_prompt": {
+    "cancel": "取消",
+    "confirm": "确认",
+    "title": "设置别名"
+  },
   "spend": "花",
   "start_immediately": "立即开始",
   "start_now": "立即前往",
@@ -301,6 +306,7 @@
   "used_resources": "已用资源",
   "user_name": "用户名",
   "user_name_required": "请输入正确的企业法人姓名",
+  "user_table_set_alias": "设置别名",
   "username": "用户名",
   "username_tips": "用户名为3-16位的英文或数字的字符",
   "usertask": {
