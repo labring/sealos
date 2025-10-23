@@ -4,6 +4,7 @@ export type AliSms = {
   accessKeySecret: string;
   templateCode: string;
   signName: string;
+  invoiceCompletedTemplateCode: string;
 };
 
 export type Mongo = {
@@ -34,7 +35,7 @@ export type PayMethods = {
   };
   alipay: {
     enabled: boolean;
-  }
+  };
   stripe: {
     enabled: boolean;
     publicKey: string;
@@ -108,7 +109,8 @@ export var DefaultAppConfig: AppConfigType = {
         accessKeyID: '',
         accessKeySecret: '',
         templateCode: '',
-        signName: ''
+        signName: '',
+        invoiceCompletedTemplateCode: ''
       },
       mongo: {
         uri: ''
