@@ -62,7 +62,7 @@ export function SetAlias({
               fontWeight: 'semibold'
             }}
           >
-            Set Alias
+            {t('common:set_alias_prompt.title')}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody
@@ -89,7 +89,7 @@ export function SetAlias({
           >
             <div>
               <Button variant="outline" mr={3} onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('common:set_alias_prompt.cancel')}
               </Button>
               <Button
                 onClick={() => {
@@ -105,7 +105,7 @@ export function SetAlias({
                   onOpenChange(false);
                 }}
               >
-                Confirm
+                {t('common:set_alias_prompt.confirm')}
               </Button>
             </div>
           </ModalFooter>
