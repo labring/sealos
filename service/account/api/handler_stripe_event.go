@@ -55,6 +55,7 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 	// 5. handle it according to the billing reason branch
 	switch invoice.BillingReason {
 	case "subscription_update":
+		meta.PaymentID = "" // 清空 PaymentID，避免混淆
 		return handleSubscriptionUpdate(invoice, subscription, meta, userUID, nr)
 	case "subscription_create", "subscription_cycle":
 		return handleSubscriptionCreateOrRenew(

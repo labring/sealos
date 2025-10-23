@@ -1301,6 +1301,18 @@ func processUpgradeSubscription(
 	// Create transaction record first
 	transaction.Status = types.SubscriptionTransactionStatusProcessing
 	transaction.PayStatus = types.SubscriptionPayStatusPending
+	if transaction.PayID == "" {
+		paymentID, err := gonanoid.New(12)
+		if err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to create payment id: %v", err)},
+			)
+			return err
+		}
+		transaction.PayID = paymentID
+	}
 	if err := dao.DBClient.CreateWorkspaceSubscriptionTransaction(tx, &transaction); err != nil {
 		SetErrorResp(
 			c,
@@ -2813,21 +2825,21 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 
 		// Create workspace subscription transaction with no_need payment status
 		transaction := types.WorkspaceSubscriptionTransaction{
-			ID:            uuid.New(),
-			From:          types.TransactionFromSystem, // Mark as system/admin initiated
-			Workspace:     req.Workspace,
-			RegionDomain:  req.RegionDomain,
-			UserUID:       req.UserUID,
-			NewPlanName:   req.PlanName,
-			Operator:      req.Operator,
-			StartAt:       now,
-			CreatedAt:     now,
-			UpdatedAt:     now,
-			Status:        types.SubscriptionTransactionStatusCompleted,
-			PayStatus:     types.SubscriptionPayStatusNoNeed, // Skip payment processing
-			Period:        req.Period,
-			Amount:        price.Price,
-			StatusDesc:    fmt.Sprintf("Admin added subscription: %s", req.Description),
+			ID:           uuid.New(),
+			From:         types.TransactionFromSystem, // Mark as system/admin initiated
+			Workspace:    req.Workspace,
+			RegionDomain: req.RegionDomain,
+			UserUID:      req.UserUID,
+			NewPlanName:  req.PlanName,
+			Operator:     req.Operator,
+			StartAt:      now,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+			Status:       types.SubscriptionTransactionStatusCompleted,
+			PayStatus:    types.SubscriptionPayStatusNoNeed, // Skip payment processing
+			Period:       req.Period,
+			Amount:       price.Price,
+			StatusDesc:   fmt.Sprintf("Admin added subscription: %s", req.Description),
 		}
 
 		// Set old plan info if upgrading or renewing
