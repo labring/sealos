@@ -15,7 +15,6 @@ import {
   MenuList,
   Text,
   useBreakpointValue,
-  useColorMode,
   useDisclosure
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,7 +39,6 @@ import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
-import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
 
 const baseItemStyle = {
   minW: '36px',
@@ -57,25 +55,21 @@ export default function Account() {
   const { layoutConfig } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { delSession, session, setToken } = useSessionStore();
   const user = session?.user;
   const queryclient = useQueryClient();
   const kubeconfig = session?.kubeconfig || '';
   const showDisclosure = useDisclosure();
-  const [notificationAmount, setNotificationAmount] = useState(0);
-  const { installedApps, openApp, openDesktopApp } = useAppStore();
-  const { setBlockingPageUnload } = useAppsRunningPromptStore();
-  const { colorMode, toggleColorMode } = useColorMode();
-  const { openGuideModal, setInitGuide, initGuide } = useGuideModalStore();
+  const [, setNotificationAmount] = useState(0);
+  const { openDesktopApp } = useAppStore();
+  const { openGuideModal, initGuide } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    // We clear session data before unloading the page, running apps data can not be fetched at that time.
-    setBlockingPageUnload(false);
     delSession();
     queryclient.clear();
     router.replace('/signin');
@@ -104,7 +98,8 @@ export default function Account() {
 
   useEffect(() => {
     // [TODO] Guide is currently not compatible with narrow screen.
-    if (initGuide && !isNarrowScreen) {
+    // Do not show guide above auto opened windows.
+    if (initGuide && !isNarrowScreen && !Object.hasOwn(router.query, 'openapp')) {
       openGuideModal();
     }
   }, [initGuide, openGuideModal, isNarrowScreen]);

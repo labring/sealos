@@ -5,14 +5,13 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
-import Router from 'next/router';
+import Router, { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { GTMScript } from '@sealos/gtm';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import '@/styles/globals.scss';
-import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
 import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
 
 const queryClient = new QueryClient({
@@ -30,16 +29,18 @@ Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
   const { i18n } = useTranslation();
+
+  const router = useRouter();
+
   const { initAppConfig, layoutConfig } = useConfigStore();
-  const { setBlockingPageUnload } = useAppsRunningPromptStore();
   const joinDiscordPromptStore = useJoinDiscordPromptStore();
 
   useEffect(() => {
-    // Reset blocking status when opening desktop
-    setBlockingPageUnload(true);
-    // Reset join discord prompt status when opening desktop
-    joinDiscordPromptStore.setClosedInSession(false);
-  }, []);
+    // Block discord prompt under certain circumstances.
+    if (Object.hasOwn(router.query, 'openapp')) {
+      joinDiscordPromptStore.blockAutoOpen();
+    }
+  }, [router.query, joinDiscordPromptStore]);
 
   useEffect(() => {
     initAppConfig();
