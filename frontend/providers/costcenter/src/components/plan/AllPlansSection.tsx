@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, TableCell, TableHead, TableRow } from '@sealos/shadcn-ui';
+import { Avatar, AvatarFallback, cn, TableCell, TableHead, TableRow } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -186,10 +186,10 @@ export function AllPlansSection() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`font-medium ${getPlanBackgroundClass(
-                          workspace.plan,
-                          workspace.plan === 'PAYG'
-                        )} text-blue-600`}
+                        variant="subscription"
+                        className={cn(
+                          getPlanBackgroundClass(workspace.plan, workspace.plan === 'PAYG')
+                        )}
                       >
                         {workspace.plan || 'Unknown'}
                       </Badge>

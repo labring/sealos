@@ -28,11 +28,14 @@ interface BalancePopoverProps {
   children: React.ReactNode;
 }
 
+/**
+ * @deprecated - Move to `getPlanBackgroundClass` if possible.
+ */
 export function getPlanBackground(subscription?: WorkspaceSubscription) {
   if (!subscription) return 'var(--background-image-plan-payg)';
   const name = subscription?.PlanName ? subscription?.PlanName.toLowerCase() : 'Free';
   const status = subscription?.Status;
-  if (status === 'Debt') return 'var(--background-debt)';
+  if (status === 'Debt') return 'var(--background-image-plan-debt)';
   if (name.includes('free')) return 'var(--background-image-plan-hobby)';
   if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
   if (name.includes('starter')) return 'var(--background-image-plan-starter)';

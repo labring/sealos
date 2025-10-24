@@ -76,3 +76,14 @@ export const PlanListResponseSchema = z.object({
 });
 
 export type PlanListResponse = z.infer<typeof PlanListResponseSchema>;
+
+export const WorkspacesPlansResponseSchema = z.object({
+  plans: z.array(
+    z.object({
+      namespace: z.string(),
+      planName: z.string()
+    })
+  )
+});
+
+export type WorkspacesPlansResponse = z.infer<typeof WorkspacesPlansResponseSchema>;
