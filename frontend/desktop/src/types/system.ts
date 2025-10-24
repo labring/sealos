@@ -83,6 +83,7 @@ export type LayoutConfigType = {
     docsUrl?: string;
     aiAssistantEnabled: boolean;
     bannerEnabled: boolean;
+    subscriptionEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -315,7 +316,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     workorderEnabled: false,
     accountSettingEnabled: false,
     aiAssistantEnabled: false,
-    bannerEnabled: false
+    bannerEnabled: false,
+    subscriptionEnabled: false
   },
   gtmId: null
 };

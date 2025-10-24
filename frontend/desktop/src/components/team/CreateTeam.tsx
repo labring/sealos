@@ -20,8 +20,7 @@ import { track } from '@sealos/gtm';
 import useAppStore from '@/stores/app';
 
 /**
- * @deprecated This component is deprecated. Use Cost Center to create workspaces instead.
- * CreateTeam modal is no longer needed as workspace creation is handled by the Cost Center app.
+ * CreateTeam dialog is used if subscription is disabled.
  */
 export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t } = useTranslation();

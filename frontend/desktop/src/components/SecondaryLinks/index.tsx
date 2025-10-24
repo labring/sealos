@@ -62,18 +62,25 @@ export default function SecondaryLinks() {
     });
   };
 
-  const openCostCenterApp = (mode: 'create' | 'upgrade' | 'topup') => {
-    openDesktopApp({
-      appKey: 'system-costcenter',
-      pathname: '/',
-      query: {
-        mode: mode
-      },
-      messageData: {
-        type: 'InternalAppCall',
-        mode: mode
-      }
-    });
+  const openCostCenterApp = (mode?: 'create' | 'upgrade' | 'topup') => {
+    if (!mode) {
+      openDesktopApp({
+        appKey: 'system-costcenter',
+        pathname: '/'
+      });
+    } else {
+      openDesktopApp({
+        appKey: 'system-costcenter',
+        pathname: '/',
+        query: {
+          mode: mode
+        },
+        messageData: {
+          type: 'InternalAppCall',
+          mode: mode
+        }
+      });
+    }
   };
 
   const { data } = useQuery({
@@ -114,7 +121,11 @@ export default function SecondaryLinks() {
     return (
       <Flex gap={'4px'} ml={'auto'}>
         <BalancePopover
-          openCostCenterApp={() => openCostCenterApp('upgrade')}
+          openCostCenterApp={() =>
+            layoutConfig?.common.subscriptionEnabled
+              ? openCostCenterApp('upgrade')
+              : openCostCenterApp()
+          }
           openCostCenterTopup={() => openCostCenterApp('topup')}
         >
           <Center
@@ -128,7 +139,11 @@ export default function SecondaryLinks() {
             fontSize={'14px'}
             fontWeight={'500'}
             cursor={'pointer'}
-            onClick={() => openCostCenterApp('upgrade')}
+            onClick={() =>
+              layoutConfig?.common.subscriptionEnabled
+                ? openCostCenterApp('upgrade')
+                : openCostCenterApp()
+            }
           >
             {subscriptionInfo?.subscription?.type === 'PAYG' ? (
               <div className="flex items-center text-sm font-medium text-blue-600">
@@ -145,14 +160,19 @@ export default function SecondaryLinks() {
                   <CurrencySymbol type={currencySymbol} />
                 </div>
                 <Text>{formatMoney(balance).toFixed(2)}</Text>
-                <Divider
-                  orientation="vertical"
-                  mx={'12px'}
-                  borderColor={'rgba(0, 0, 0, 0.08)'}
-                  height={'16px'}
-                />
-                <span>Subscribe</span>
-                <Sparkles className="ml-[2px]" size={16} />
+
+                {layoutConfig?.common.subscriptionEnabled && (
+                  <>
+                    <Divider
+                      orientation="vertical"
+                      mx={'12px'}
+                      borderColor={'rgba(0, 0, 0, 0.08)'}
+                      height={'16px'}
+                    />
+                    <span>Subscribe</span>
+                    <Sparkles className="ml-[2px]" size={16} />
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -273,6 +293,7 @@ export default function SecondaryLinks() {
           fontSize="14px"
           fontWeight="500"
           justifyContent="center"
+          onClick={() => openCostCenterApp()}
         >
           <Flex height={'16px'} alignItems="center" my="8px" px="12px">
             <Text>{t('common:balance')}</Text>
