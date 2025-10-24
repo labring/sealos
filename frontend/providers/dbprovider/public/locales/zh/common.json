@@ -150,8 +150,8 @@
   "create": "新建",
   "create_db": "新建",
   "creation_time": "创建时间",
-  "chat2db":"chat2db",
-  "chat2db_redirect_failed":"跳转 Chat2DB 失败",
+  "chat2db": "chat2db",
+  "chat2db_redirect_failed": "跳转 Chat2DB 失败",
   "current_connections": "当前连接数",
   "data_import": "数据导入",
   "data_migration_config": "数据迁移配置",
@@ -285,13 +285,13 @@
   "lost_file": "缺少文件",
   "log_number": "日志数",
   "message": "消息",
-  "manage_data":"数据管理",
+  "manage_data": "数据管理",
   "manage_all_resources": "管理所有资源",
   "manual_backup": "手动备份",
   "manual_backup_tip": "建议在业务低峰期备份实例。备份期间，请勿执行DDL操作，避免锁表导致备份失败。若数据量较大，花费的时问可能较长，请耐心等待。点击 [开始备份] 后，将在1分钟后开始备份。",
   "max_replicas": "实例数最大为: ",
   "memory": "内存",
-  "backups":{
+  "backups": {
     "db_backup_running": "数据库备份中",
     "backup_running": "备份中",
     "stop_backup": "是否停止备份？",
@@ -443,5 +443,6 @@
   "yaml_file": "YAML 文件",
   "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
   "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用",
-  "log_count": "日志条数"
+  "log_count": "日志条数",
+  "disk_is_full": "磁盘已满"
 }
