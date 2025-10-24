@@ -32,7 +32,11 @@ spec:
           - name: PASSWORD_SALT
             value: {{ .PASSWORD_SALT }}
           - name: ADMIN_PASSWORD
-            value: {{ .ADMIN_PASSWORD }}
+            value: {{ .ADMIN_PASSWORD | default "sealos2023" }}
+          - name: ADMIN_USER_NAME
+            value: {{ .ADMIN_USER_NAME | default "admin" }}
+          - name: WORKSPACE_PREFIX
+            value: {{ .WORKSPACE_PREFIX | default "ns-" }}
         envFrom:
         - configMapRef:
             name: account-manager-env
