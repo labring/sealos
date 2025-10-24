@@ -41,7 +41,9 @@ import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
 import { useSubscriptionStore } from '@/stores/subscription';
-import { getPlanBackground } from './BalancePopover';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { cn } from '@sealos/shadcn-ui';
+import { getPlanBackgroundClass } from '@/utils/styling';
 
 const baseItemStyle = {
   minW: '36px',
@@ -277,14 +279,19 @@ export default function Account() {
                     <Text fontSize="14px" fontWeight="400">
                       {t('common:plan')}
                     </Text>
-                    <div
-                      style={{
-                        background: getPlanBackground(subscriptionInfo?.subscription)
-                      }}
-                      className="text-blue-600 rounded px-1 flex items-center justify-center uppercase text-xs font-medium"
+                    <Badge
+                      variant="subscription"
+                      className={cn(
+                        'px-1 text-xs',
+                        getPlanBackgroundClass(
+                          subscriptionInfo?.subscription.PlanName ?? '',
+                          !!subscriptionInfo?.subscription,
+                          subscriptionInfo?.subscription.Status === 'Debt'
+                        )
+                      )}
                     >
                       {subscriptionInfo?.subscription?.PlanName || 'payg'}
-                    </div>
+                    </Badge>
                   </Flex>
                 </MenuItem>
 

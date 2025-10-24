@@ -1,49 +1,6 @@
 @import '@sealos/shadcn-ui/shadcn.css';
 @import '@sealos/shadcn-ui/styles.css';
 
-@theme {
-  --background-image-plan-payg: linear-gradient(
-    90deg,
-    rgba(214, 217, 223, 0.16) 0%,
-    rgba(175, 178, 195, 0.16) 100%
-  );
-  --background-image-plan-starter: linear-gradient(
-    90deg,
-    rgba(129, 203, 252, 0.12) 0%,
-    rgba(81, 159, 245, 0.12) 100%
-  );
-  --background-image-plan-pro: linear-gradient(
-    90deg,
-    rgba(252, 129, 217, 0.12) 0%,
-    rgba(81, 159, 245, 0.12) 100%
-  );
-  --background-image-plan-enterprise: linear-gradient(
-    90deg,
-    rgba(252, 149, 129, 0.12) 0%,
-    rgba(81, 119, 245, 0.12) 100%
-  );
-  --background-image-plan-hobby: linear-gradient(
-    90deg,
-    rgba(229, 228, 118, 0.12) 0%,
-    rgba(129, 203, 252, 0.12) 100%
-  );
-  --background-image-plan-hobby-plus: linear-gradient(
-    90deg,
-    rgba(139, 237, 163, 0.12) 0%,
-    rgba(84, 187, 255, 0.12) 100%
-  );
-  --background-image-plan-team: linear-gradient(
-    90deg,
-    rgba(252, 129, 234, 0.12) 0%,
-    rgba(144, 81, 245, 0.12) 100%
-  );
-  --background-image-plan-customized: linear-gradient(
-    90deg,
-    rgba(252, 149, 129, 0.12) 0%,
-    rgba(206, 81, 245, 0.12) 100%
-  );
-}
-
 /* New designs uses white color for background. It's different from the default theme in shadcn-ui package (previously used by DevBox). */
 :root {
   --background: #ffffff;
