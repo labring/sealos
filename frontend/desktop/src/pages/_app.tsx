@@ -11,7 +11,7 @@ import { GTMScript } from '@sealos/gtm';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
-import '@/styles/globals.scss';
+import '@/styles/globals.css';
 import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
 import useAppStore from '@/stores/app';
 
@@ -61,7 +61,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         debug={process.env.NODE_ENV === 'development'}
       />
       <Hydrate state={pageProps.dehydratedState}>
-        <ChakraProvider theme={theme}>
+        <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
           <Component {...pageProps} />
         </ChakraProvider>
       </Hydrate>

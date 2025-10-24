@@ -120,7 +120,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       }
       return callbackToUpdateBot(resp, {
         invoice: invoiceListData.data.invoices[0],
-        payments,
+        // [FIXME] Use `InvoiceBillingItem` under ANY circumstances! `RechargeBillingItem` is used for API only.
+        payments: payments as any,
         status
       });
     }

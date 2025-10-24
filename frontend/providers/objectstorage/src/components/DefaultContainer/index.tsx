@@ -1,9 +1,11 @@
-import { Text, Stack, StackProps, Button, Box, Center } from '@chakra-ui/react';
+import { Text, Stack, StackProps, Center } from '@chakra-ui/react';
 import StorageIcon from '@/components/Icons/StorageIcon';
 import CreateBucketModal from '@/components/common/modal/CreateBucketModal';
 import { useTranslation } from 'next-i18next';
+
 export default function DefaultContainer({ ...styles }: StackProps) {
   const { t } = useTranslation('bucket');
+
   return (
     <Stack gap={'0'} align={'center'} {...styles}>
       <Center

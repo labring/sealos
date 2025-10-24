@@ -38,6 +38,10 @@ import RenameTeam from './RenameTeam';
 import { Plus, Settings } from 'lucide-react';
 import useAppStore from '@/stores/app';
 import { track } from '@sealos/gtm';
+import { getWorkspacesPlans } from '@/api/auth';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { cn } from '@sealos/shadcn-ui';
+import { getPlanBackgroundClass } from '@/utils/styling';
 
 export default function TeamCenter({
   isOpen,
@@ -86,7 +90,7 @@ export default function TeamCenter({
   });
   const messages: teamMessageDto[] = reciveMessage.data?.data?.messages || [];
   // namespace list
-  const { data: _namespaces } = useQuery({
+  const { data: _namespaces, isSuccess: namespacesQuerySuccess } = useQuery({
     queryKey: ['teamList', 'teamGroup'],
     queryFn: nsListRequest,
     select(data) {
@@ -94,6 +98,18 @@ export default function TeamCenter({
     }
   });
   const namespaces = _namespaces || [];
+
+  const { data: _plans } = useQuery({
+    queryKey: ['planList', ...(_namespaces ?? [])?.map((ns) => ns.id)],
+    queryFn: () => getWorkspacesPlans((_namespaces ?? [])?.map((ns) => ns.id)),
+    select(data) {
+      return data.data.plans;
+    },
+    enabled: namespacesQuerySuccess,
+    refetchOnWindowFocus: false
+  });
+
+  const selectedNsPlan = _plans?.find((nsPlan) => nsPlan.namespace === nsid)?.planName;
 
   useEffect(() => {
     if (isOpen) {
@@ -116,16 +132,17 @@ export default function TeamCenter({
     }
   }, [_namespaces, ns_uid]);
 
-  const openAccountCenterApp = (page?: string) => {
+  const openCostCenterApp = () => {
     openDesktopApp({
-      appKey: 'system-account-center',
+      appKey: 'system-costcenter',
+      pathname: '/',
       query: {
-        page: page || 'plan'
+        mode: 'create'
       },
       messageData: {
-        page: page || 'plan'
-      },
-      pathname: '/redirect'
+        type: 'InternalAppCall',
+        mode: 'create'
+      }
     });
   };
 
@@ -173,7 +190,7 @@ export default function TeamCenter({
                   />
                 ))}
             </Box>
-            <Stack flex="1" py="12px" bg={'#FAFAFA'} borderLeftRadius={'16px'}>
+            <Stack flex="1" py="12px" bg={'#FAFAFA'} borderLeftRadius={'16px'} maxWidth={'280px'}>
               <Flex py="8px" mx="14px" px="4px" justify={'space-between'} align={'center'} mb="4px">
                 <Text fontSize={'16px'} fontWeight={'600'}>
                   {t('common:team')}
@@ -199,6 +216,7 @@ export default function TeamCenter({
                           teamName={ns.teamName}
                           teamAvatar={ns.id}
                           selectedColor="rgba(0, 0, 0, 0.05)"
+                          planName={_plans?.find((nsPlan) => nsPlan.namespace === ns.id)?.planName}
                         />
                       );
                     })
@@ -220,7 +238,9 @@ export default function TeamCenter({
                   height={'40px'}
                   cursor={'pointer'}
                   onClick={() => {
-                    createTeamDisclosure.onOpen();
+                    console.log('create workspace');
+                    openCostCenterApp();
+                    onClose();
                   }}
                 >
                   <Plus size={20} color="#737373" />
@@ -247,10 +267,9 @@ export default function TeamCenter({
                     <Box mx="10px">
                       <Flex align={'center'} justifyContent={'space-between'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                          {isPrivate
-                            ? `${t('common:default_team')} - ${namespace.teamName}`
-                            : namespace.teamName}
+                          {namespace.teamName}
                         </Text>
+
                         {curTeamUser?.role === UserRole.Owner && (
                           <HStack>
                             <RenameTeam
@@ -275,6 +294,28 @@ export default function TeamCenter({
                         )}
                       </Flex>
                       <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
+                        {isPrivate && (
+                          <Badge variant="secondary" className="mr-2">
+                            {t('common:default_team')}
+                          </Badge>
+                        )}
+
+                        {selectedNsPlan && (
+                          <Badge
+                            variant={'subscription'}
+                            className={cn(
+                              'mr-2',
+                              getPlanBackgroundClass(
+                                selectedNsPlan,
+                                selectedNsPlan === 'PAYG',
+                                false
+                              )
+                            )}
+                          >
+                            {selectedNsPlan}
+                          </Badge>
+                        )}
+
                         <Text color={'grayModern.600'}>
                           {t('common:team')} ID: {nsid}
                         </Text>

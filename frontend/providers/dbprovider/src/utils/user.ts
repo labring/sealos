@@ -1,40 +1,37 @@
-'client';
+import { useUserStore } from '@/store/user';
 import yaml from 'js-yaml';
-import { SessionV1 } from 'sealos-desktop-sdk/*';
 
 export const getUserKubeConfig = () => {
   let kubeConfig: string =
-    process.env.NODE_ENV !== 'production' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
+    process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
-    const store = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
-    if (!kubeConfig && store) {
-      kubeConfig = JSON.parse(store)?.kubeconfig;
+    if (typeof window !== 'undefined') {
+      return useUserStore.getState().session?.kubeconfig ?? '';
     }
   } catch (err) {
-    err;
+    console.log(err);
   }
   return kubeConfig;
 };
 
+export const getUserSession = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      return useUserStore.getState().session;
+    }
+  } catch (err) {
+    return null;
+  }
+};
+
 export const getUserNamespace = () => {
   const kubeConfig = getUserKubeConfig();
+
   const json: any = yaml.load(kubeConfig);
   try {
     return json?.contexts[0]?.context?.namespace || `ns-${json.users[0].name}`;
   } catch (err) {
     return 'ns-';
-  }
-};
-
-export const getUserSession = () => {
-  try {
-    const store = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
-    if (store) {
-      return JSON.parse(store) as SessionV1;
-    }
-    return null;
-  } catch (err) {
-    return null;
   }
 };

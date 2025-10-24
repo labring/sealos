@@ -12,6 +12,9 @@ export * as startDatabaseSchemas from './database/start-database';
 import * as pauseDatabaseSchemas from './database/pause-database';
 export * as pauseDatabaseSchemas from './database/pause-database';
 
+import * as restartDatabaseSchemas from './database/restart-database';
+export * as restartDatabaseSchemas from './database/restart-database';
+
 import * as getDatabaseSchemas from './database/get-database';
 export * as getDatabaseSchemas from './database/get-database';
 
@@ -595,6 +598,33 @@ export const document = createDocument({
         }
       }
     },
+    '/database/{databaseName}/restart': {
+      post: {
+        summary: 'Restart Database',
+        description: 'Restart a database.',
+        security: [{ KubeconfigAuth: [] }],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string'
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: restartDatabaseSchemas.response
+              }
+            }
+          }
+        }
+      }
+    },
     '/database/{databaseName}/backup': {
       post: {
         summary: 'Create Database Backup',
@@ -759,8 +789,9 @@ export const document = createDocument({
                         },
                         newDbName: {
                           type: 'string',
-                          description: 'Name of the new restored database',
-                          example: 'my-postgres-db-restored'
+                          description:
+                            'Auto-generated name of the new restored database (8 random letters)',
+                          example: 'abcdefgh'
                         },
                         backupName: {
                           type: 'string',
@@ -777,6 +808,16 @@ export const document = createDocument({
                           description: 'Database version',
                           example: 'postgresql-14.8.2'
                         },
+                        resource: {
+                          type: 'object',
+                          properties: {
+                            cpu: { type: 'number' },
+                            memory: { type: 'number' },
+                            storage: { type: 'number' },
+                            replicas: { type: 'number' }
+                          },
+                          description: 'Resource configuration of the restored database'
+                        },
                         restoredAt: {
                           type: 'string',
                           format: 'date-time',
@@ -791,7 +832,7 @@ export const document = createDocument({
             }
           },
           '400': {
-            description: 'Bad Request - Invalid request body or missing parameters'
+            description: 'Bad Request - Invalid request body'
           },
           '404': {
             description: 'Backup or database not found'

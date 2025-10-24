@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export enum BillingType {
   ALL = -1,
   CONSUME,
@@ -49,9 +51,14 @@ export type APPBillingItem = {
   time: string;
   order_id: string;
   namespace: string;
-  used: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
-  used_amount: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
   amount: number;
+  resources_by_type: {
+    amount: number;
+    app_name: string;
+    app_type: number;
+    used: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
+    used_amount: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
+  }[];
 };
 export type BillingItem<T = Costs> = {
   amount: number;
@@ -88,6 +95,10 @@ export type PropertiesCost = {
   4: number;
   5: number;
 };
+
+/**
+ * @deprecated `RechargeBillingItem` is *deprecated* in favor of `InvoiceBillingItem` so we should move this to API types.
+ */
 export type RechargeBillingItem = {
   ID: string;
   UserUID: string;
@@ -124,3 +135,18 @@ export type TransferBilling = {
   FromUserID: string;
   ToUserID: string;
 };
+
+// Workspace Consumption API Schema
+export const WorkspaceConsumptionRequestSchema = z.object({
+  startTime: z.iso.datetime(),
+  endTime: z.iso.datetime(),
+  regionUid: z.string()
+});
+
+export type WorkspaceConsumptionRequest = z.infer<typeof WorkspaceConsumptionRequestSchema>;
+
+export const WorkspaceConsumptionResponseSchema = z.object({
+  amount: z.record(z.string(), z.number())
+});
+
+export type WorkspaceConsumptionResponse = z.infer<typeof WorkspaceConsumptionResponseSchema>;

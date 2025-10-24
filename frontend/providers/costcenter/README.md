@@ -1,68 +1,46 @@
-# sealos costcenter
+# Sealos CostCenter
 
-## directory
+Cost management center for Sealos cloud operating system.
 
-```
-./src
-├── constants
-│   ├── billing.ts
-│   └── payment.ts
-├── hooks
-│   └── useRecharge.tsx
-├── layout
-│   ├── index.module.scss
-│   ├── index.tsx
-│   └── sidebar.tsx
-├── mock
-│   ├── billing.ts
-│   └── valuation.ts
-├── pages
-│   ├── _app.tsx
-│   ├── _document.tsx
-│   ├── api
-│   │   ├── account
-│   │   │   ├── getAmount.ts
-│   │   │   └── payment
-│   │   │       ├── index.ts
-│   │   │       └── pay.ts
-│   │   └── order
-│   │       └── index.ts
-│   ├── billing
-│   │   ├── index.module.scss
-│   │   └── index.tsx
-│   ├── cost_overview
-│   │   ├── components
-│   │   │   ├── user.module.scss
-│   │   │   └── user.tsx
-│   │   ├── index.module.scss
-│   │   └── index.tsx
-│   ├── index.tsx
-│   └── valuation
-│       ├── index.module.scss
-│       └── index.tsx
-├── service
-│   ├── backend
-│   │   ├── auth.ts
-│   │   ├── kubernetes.ts
-│   │   └── response.ts
-│   └── request.ts
-├── stores
-│   └── session.ts
-├── styles
-│   ├── chakraTheme.ts
-│   └── globals.scss
-├── types
-│   ├── api.ts
-│   ├── billing.ts
-│   ├── crd.ts
-│   ├── session.ts
-│   └── valuation.ts
-└── utils
-    └── format.ts
+## Features
+
+- Cost monitoring and analysis
+- Multi-payment support (WeChat, Alipay, Stripe)
+- Resource billing (CPU, Memory, Storage, Network, GPU)
+- Multi-currency support (ShellCoin, CNY, USD)
+
+## Quick Start
+
+```bash
+npm install
+npm run dev
 ```
 
-## build and push the image
+## Build
+
+```bash
+npm run build
+npm start
+```
+
+## Project Structure
 
 ```
-.github/workflows/dockerize-web.yml
+src/
+├── components/     # UI components
+├── pages/         # Pages and API routes
+├── stores/        # State management
+├── types/         # TypeScript types
+└── utils/         # Utilities
 ```
+
+## Tech Stack
+
+- Next.js 13, React 18, TypeScript
+- Chakra UI, Tailwind CSS
+- Zustand, TanStack Query
+- ECharts
+
+## License
+
+Apache 2.0

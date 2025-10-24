@@ -22,28 +22,7 @@ const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditT
   console.log('Resources for K8s:', resources);
 
   const formatVersion = (dbType: string, version: string): string => {
-    if (
-      version.startsWith(`${dbType}-`) ||
-      (dbType === 'apecloud-mysql' && version.startsWith('ac-mysql-'))
-    ) {
-      return version;
-    }
-
-    switch (dbType) {
-      case 'postgresql':
-        return `postgresql-${version}`;
-      case 'apecloud-mysql':
-        if (version.startsWith('ac-mysql-') || version.startsWith('mysql-')) {
-          return version;
-        }
-        return `ac-mysql-${version}`;
-      case 'mongodb':
-        return `mongodb-${version}`;
-      case 'redis':
-        return `redis-${version}`;
-      default:
-        return version;
-    }
+    return version;
   };
 
   const formattedVersion = formatVersion(dbForm.type, dbForm.version);

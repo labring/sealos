@@ -23,12 +23,6 @@ const sessionKey = 'session';
 
 export { sessionKey };
 
-export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu';
-  used: number;
-  limit: number;
-};
-
 export type userPriceType = {
   cpu: number;
   memory: number;

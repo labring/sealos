@@ -11,7 +11,6 @@
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "esnext",
     "jsx": "react",
-    "types": ["node"],
     "importHelpers": true,
     "target": "esnext"
   }
