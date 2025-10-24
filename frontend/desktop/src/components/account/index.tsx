@@ -264,36 +264,38 @@ export default function Account() {
                     </MenuItem>
                   </AccountCenter>
                 )}
-                <MenuItem
-                  mt="0px"
-                  py="6px"
-                  px="8px"
-                  borderRadius="8px"
-                  _hover={{ bg: '#F4F4F5' }}
-                  onClick={() => openCostcenterApp({ page: 'plan' })}
-                >
-                  <Flex alignItems="center" gap="8px">
-                    <Center w="20px" h="20px">
-                      <Dock size={16} color="#737373" />
-                    </Center>
-                    <Text fontSize="14px" fontWeight="400">
-                      {t('common:plan')}
-                    </Text>
-                    <Badge
-                      variant="subscription"
-                      className={cn(
-                        'px-1 text-xs',
-                        getPlanBackgroundClass(
-                          subscriptionInfo?.subscription.PlanName ?? '',
-                          !!subscriptionInfo?.subscription,
-                          subscriptionInfo?.subscription.Status === 'Debt'
-                        )
-                      )}
-                    >
-                      {subscriptionInfo?.subscription?.PlanName || 'payg'}
-                    </Badge>
-                  </Flex>
-                </MenuItem>
+                {layoutConfig?.common.subscriptionEnabled && (
+                  <MenuItem
+                    mt="0px"
+                    py="6px"
+                    px="8px"
+                    borderRadius="8px"
+                    _hover={{ bg: '#F4F4F5' }}
+                    onClick={() => openCostcenterApp({ page: 'plan' })}
+                  >
+                    <Flex alignItems="center" gap="8px">
+                      <Center w="20px" h="20px">
+                        <Dock size={16} color="#737373" />
+                      </Center>
+                      <Text fontSize="14px" fontWeight="400">
+                        {t('common:plan')}
+                      </Text>
+                      <Badge
+                        variant="subscription"
+                        className={cn(
+                          'px-1 text-xs',
+                          getPlanBackgroundClass(
+                            subscriptionInfo?.subscription.PlanName ?? '',
+                            !!subscriptionInfo?.subscription,
+                            subscriptionInfo?.subscription.Status === 'Debt'
+                          )
+                        )}
+                      >
+                        {subscriptionInfo?.subscription?.PlanName || 'payg'}
+                      </Badge>
+                    </Flex>
+                  </MenuItem>
+                )}
 
                 <MenuItem
                   mt="0px"

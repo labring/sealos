@@ -51,6 +51,9 @@ export function BalancePopover({
   children
 }: BalancePopoverProps) {
   const { session } = useSessionStore();
+  const subscriptionEnabled = useConfigStore(
+    (state) => state.layoutConfig?.common.subscriptionEnabled
+  );
   const currencySymbol = useConfigStore(
     (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
   );
@@ -121,47 +124,53 @@ export function BalancePopover({
         <PopoverBody p={4}>
           <VStack spacing={3} align="stretch">
             <Box p={'20px'} bg={getPlanBackground(subscription)} borderRadius="12px">
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold capitalize">
-                  {subscription?.PlanName ? `${subscription?.PlanName} Plan` : 'PAYG'}
-                </span>
-                {subscriptionInfo?.subscription?.Status === 'Debt' && (
-                  <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
-                    Expired
-                  </div>
-                )}
-                {subscription?.PlanName === 'Free' && (
-                  <div className="border text-sm font-normal leading-3.5 bg-[#FFEDD5CC] border-none text-orange-500 rounded-full px-2 py-1">
-                    Limited Trial
-                  </div>
-                )}
-              </div>
-              {!subscription?.PlanName && (
+              {/* Show plan name only if subscription enabled */}
+              {subscriptionEnabled && (
                 <>
-                  <Separator className="my-2" />
-
-                  <div className="flex items-center gap-2 justify-between">
-                    <div className="flex items-start flex-col">
-                      <div className="text-sm text-zinc-500">Balance</div>
-                      <div className="text-2xl font-semibold text-zinc-900 flex">
-                        <span
-                          className={cn(
-                            'flex items-center justify-center',
-                            currencySymbol === 'shellCoin' && 'mr-1'
-                          )}
-                        >
-                          <CurrencySymbol type={currencySymbol} />
-                        </span>
-                        <span>{formatMoney(balance).toFixed(2)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-semibold capitalize">
+                      {subscription?.PlanName ? `${subscription?.PlanName} Plan` : 'PAYG'}
+                    </span>
+                    {subscriptionInfo?.subscription?.Status === 'Debt' && (
+                      <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
+                        Expired
                       </div>
-                    </div>
-                    {/* <Button variant="outline" onClick={openCostCenterTopup}>
-                      Top Up
-                    </Button> */}
+                    )}
+                    {subscription?.PlanName === 'Free' && (
+                      <div className="border text-sm font-normal leading-3.5 bg-[#FFEDD5CC] border-none text-orange-500 rounded-full px-2 py-1">
+                        Limited Trial
+                      </div>
+                    )}
                   </div>
+
+                  {!subscription?.PlanName && <Separator className="my-2" />}
                 </>
               )}
+              {!subscription?.PlanName && (
+                <div className="flex items-center gap-2 justify-between">
+                  <div className="flex items-start flex-col">
+                    <div className="text-sm text-zinc-500">Balance</div>
+                    <div className="text-2xl font-semibold text-zinc-900 flex">
+                      <span
+                        className={cn(
+                          'flex items-center justify-center',
+                          currencySymbol === 'shellCoin' && 'mr-1'
+                        )}
+                      >
+                        <CurrencySymbol type={currencySymbol} />
+                      </span>
+                      <span>{formatMoney(balance).toFixed(2)}</span>
+                    </div>
+                  </div>
 
+                  {/* Show topup button if subscription is enabled */}
+                  {!subscriptionEnabled && (
+                    <Button variant="outline" onClick={openCostCenterTopup}>
+                      Top Up
+                    </Button>
+                  )}
+                </div>
+              )}
               {!!subscription?.PlanName &&
                 (subscription?.PlanName !== 'Free' &&
                 subscriptionInfo?.subscription?.Status === 'Debt' &&
@@ -175,7 +184,6 @@ export function BalancePopover({
                 ) : (
                   <></>
                 ))}
-
               {subscription?.PlanName === 'Free' && (
                 <div className="text-zinc-600 text-sm font-normal mt-2">
                   Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
@@ -183,21 +191,25 @@ export function BalancePopover({
               )}
             </Box>
 
-            {subscription?.PlanName !== 'Free' ? (
-              <div className="text-sm text-zinc-900 font-normal">
-                To upgrade your plan, you can visit the Cost Center.
-              </div>
-            ) : (
-              <div className="text-sm text-zinc-900 font-normal">
-                Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
-                Upgrade to keep your services online.
-              </div>
-            )}
+            {subscriptionEnabled && (
+              <>
+                {subscription?.PlanName !== 'Free' ? (
+                  <div className="text-sm text-zinc-900 font-normal">
+                    To upgrade your plan, you can visit the Cost Center.
+                  </div>
+                ) : (
+                  <div className="text-sm text-zinc-900 font-normal">
+                    Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
+                    Upgrade to keep your services online.
+                  </div>
+                )}
 
-            <Button variant="outline" onClick={openCostCenterApp}>
-              <Sparkles size={16} />
-              Upgrade Plan
-            </Button>
+                <Button variant="outline" onClick={openCostCenterApp}>
+                  <Sparkles size={16} />
+                  Upgrade Plan
+                </Button>
+              </>
+            )}
             <HStack pt={2} borderTop="1px solid" borderColor="gray.100">
               <Flex
                 justifyContent={'space-between'}

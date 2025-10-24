@@ -29,8 +29,12 @@ import BoringAvatar from 'boring-avatars';
 import { useEffect, useRef } from 'react';
 import { track } from '@sealos/gtm';
 import useAppStore from '@/stores/app';
+import { useConfigStore } from '@/stores/config';
+import CreateTeam from './CreateTeam';
 
 export default function WorkspaceToggle() {
+  const { layoutConfig } = useConfigStore();
+  const createTeamDisclosure = useDisclosure();
   const modalDisclosure = useDisclosure();
   const { session } = useSessionStore();
   const { openDesktopApp } = useAppStore();
@@ -75,6 +79,14 @@ export default function WorkspaceToggle() {
         mode: 'create'
       }
     });
+  };
+
+  const handleCreateWorkspace = () => {
+    if (layoutConfig?.common.subscriptionEnabled) {
+      openCostCenterApp();
+    } else {
+      createTeamDisclosure.onOpen();
+    }
   };
 
   const { data } = useQuery({
@@ -145,7 +157,7 @@ export default function WorkspaceToggle() {
             height={'40px'}
             cursor={'pointer'}
             onClick={() => {
-              openCostCenterApp();
+              handleCreateWorkspace();
             }}
           >
             <Plus size={20} color="#71717A" />
@@ -244,6 +256,7 @@ export default function WorkspaceToggle() {
       </Popover>
 
       <TeamCenter isOpen={modalDisclosure.isOpen} onClose={modalDisclosure.onClose} />
+      <CreateTeam isOpen={createTeamDisclosure.isOpen} onClose={createTeamDisclosure.onClose} />
     </>
   );
 }
