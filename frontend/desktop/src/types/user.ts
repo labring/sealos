@@ -121,6 +121,7 @@ export type TeamUserDto = UserDto & {
   joinTime?: Date;
   role: UserRole;
   status: InvitedStatus;
+  alias?: string;
 };
 
 export type AccountCRD = {

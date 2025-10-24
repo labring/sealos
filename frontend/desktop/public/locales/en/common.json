@@ -282,6 +282,11 @@
   "search_apps": "Search Apps",
   "select_amount": "Select Amount",
   "service_agreement": "Service Agreement",
+  "set_alias_prompt": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "title": "Set Alias"
+  },
   "spend": "spend",
   "start_immediately": "Start",
   "start_now": "Go Now",
@@ -309,6 +314,7 @@
   "used_resources": "Resources Used",
   "user_name": "User Name",
   "user_name_required": "Please enter the correct name of the enterprise's legal representative",
+  "user_table_set_alias": "Set Alias",
   "username": "Username",
   "username_tips": "Username must be 3-16 characters, including letters, numbers",
   "usertask": {
