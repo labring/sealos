@@ -49,7 +49,7 @@ const getDiskOverflowStatus = async (dbName: string, dbType: string): Promise<bo
 export const useDBStore = create<State>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      immer<State>((set, get) => ({
         dbList: [],
         setDBList: async () => {
           const res = await getMyDBList();
