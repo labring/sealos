@@ -15,26 +15,30 @@
 package ipvs
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
-
+	"github.com/labring/sealos/pkg/utils/hosts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/hosts"
 )
 
 const (
 	LvsCareCommand = "/usr/bin/lvscare"
 )
 
-func LvsStaticPodYaml(vip string, masters []string, image, name string, options []string) (string, error) {
+func LvsStaticPodYaml(
+	vip string,
+	masters []string,
+	image, name string,
+	options []string,
+) (string, error) {
 	if vip == "" || len(masters) == 0 {
-		return "", fmt.Errorf("vip and mster not allow empty")
+		return "", errors.New("vip and mster not allow empty")
 	}
 	if image == "" {
 		image = v1beta1.DefaultLvsCareImage

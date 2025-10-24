@@ -17,14 +17,13 @@ limitations under the License.
 package v1beta1
 
 import (
+	"slices"
+
 	"github.com/Masterminds/semver/v3"
-	"golang.org/x/exp/slices"
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	stringsutil "github.com/labring/sealos/pkg/utils/strings"
-
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func (c *Cluster) GetMasterIPList() []string {
@@ -142,13 +141,13 @@ func (c *Cluster) ReplaceRootfsImage() {
 			}
 		}
 	}
-	//if no two rootfsImages, never replace
+	// if no two rootfsImages, never replace
 	if v1 == "" || v2 == "" {
 		return
 	}
 	sv1 := semver.MustParse(v1)
 	sv2 := semver.MustParse(v2)
-	//if version format error, never replace
+	// if version format error, never replace
 	if sv1.LessThan(sv2) {
 		c.Status.Mounts[i1], c.Status.Mounts[i2] = c.Status.Mounts[i2], c.Status.Mounts[i1]
 		c.Status.Mounts = append(c.Status.Mounts[:i2], c.Status.Mounts[i2+1:]...)
@@ -233,7 +232,8 @@ func UpdateCondition(conditions []ClusterCondition, condition ClusterCondition) 
 	for i, cond := range conditions {
 		if cond.Type == condition.Type {
 			hasCondition = true
-			if cond.Reason != condition.Reason || cond.Status != condition.Status || cond.Message != condition.Message {
+			if cond.Reason != condition.Reason || cond.Status != condition.Status ||
+				cond.Message != condition.Message {
 				conditions[i] = condition
 			}
 		}
@@ -245,7 +245,10 @@ func UpdateCondition(conditions []ClusterCondition, condition ClusterCondition) 
 }
 
 // UpdateCommandCondition updates condition in cluster conditions using giving condition, append only
-func UpdateCommandCondition(cmdConditions []CommandCondition, cmdCondition CommandCondition) []CommandCondition {
+func UpdateCommandCondition(
+	cmdConditions []CommandCondition,
+	cmdCondition CommandCondition,
+) []CommandCondition {
 	if cmdConditions == nil {
 		cmdConditions = make([]CommandCondition, 0)
 	}

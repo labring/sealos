@@ -17,13 +17,11 @@ limitations under the License.
 package password
 
 import (
+	"errors"
 	"fmt"
 	"path"
 
 	"github.com/labring/image-cri-shim/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/yaml"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/registry/helpers"
@@ -31,6 +29,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/passwd"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/yaml"
 )
 
 type RegistryType string
@@ -42,7 +42,11 @@ const (
 )
 
 type Upgrade interface {
-	UpdateRegistryPasswd(rc *v1beta1.RegistryConfig, target, host string, registryType RegistryType) error
+	UpdateRegistryPasswd(
+		rc *v1beta1.RegistryConfig,
+		target, host string,
+		registryType RegistryType,
+	) error
 	UpdateRegistryConfig(rc *v1beta1.RegistryConfig, target, host string) error
 	UpdateImageShimConfig(rc *types.Config, target, host string) error
 }
@@ -64,12 +68,15 @@ type upgrade struct {
 }
 
 func (m *upgrade) UpdateRegistryConfig(rc *v1beta1.RegistryConfig, target, host string) error {
-	configPath, err := m.mk.configLocalRegistryConfig(path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName), rc)
+	configPath, err := m.mk.configLocalRegistryConfig(
+		path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName),
+		rc,
+	)
 	if err != nil {
 		return err
 	}
 	if target == "" {
-		return fmt.Errorf("update registry target path is empty")
+		return errors.New("update registry target path is empty")
 	}
 	if len(configPath) > 0 {
 		if err = m.SSHInterface.Copy(host, configPath, target); err != nil {
@@ -78,13 +85,17 @@ func (m *upgrade) UpdateRegistryConfig(rc *v1beta1.RegistryConfig, target, host 
 	}
 	return nil
 }
+
 func (m *upgrade) UpdateImageShimConfig(rc *types.Config, target, host string) error {
-	configPath, err := m.mk.configLocalImageShimConfig(path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName), rc)
+	configPath, err := m.mk.configLocalImageShimConfig(
+		path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName),
+		rc,
+	)
 	if err != nil {
 		return err
 	}
 	if target == "" {
-		return fmt.Errorf("update image shim target path is empty")
+		return errors.New("update image shim target path is empty")
 	}
 	if len(configPath) > 0 {
 		if err = m.SSHInterface.Copy(host, configPath, target); err != nil {
@@ -96,13 +107,25 @@ func (m *upgrade) UpdateImageShimConfig(rc *types.Config, target, host string) e
 	}
 	return nil
 }
-func (m *upgrade) UpdateRegistryPasswd(rc *v1beta1.RegistryConfig, target, host string, registryType RegistryType) error {
-	htpasswdPath, err := m.mk.configLocalHtpasswd(path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName), rc)
+
+func (m *upgrade) UpdateRegistryPasswd(
+	rc *v1beta1.RegistryConfig,
+	target, host string,
+	registryType RegistryType,
+) error {
+	htpasswdPath, err := m.mk.configLocalHtpasswd(
+		path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName),
+		rc,
+	)
 	if err != nil {
 		return err
 	}
 	if target == "" {
-		target = path.Join(constants.GetRootWorkDir(m.Cluster), constants.EtcDirName, "registry_htpasswd")
+		target = path.Join(
+			constants.GetRootWorkDir(m.Cluster),
+			constants.EtcDirName,
+			"registry_htpasswd",
+		)
 	}
 	if len(htpasswdPath) > 0 {
 		if err = m.SSHInterface.Copy(host, htpasswdPath, target); err != nil {
@@ -137,13 +160,16 @@ func (m *maker) configLocalHtpasswd(cfgBasedir string, rc *v1beta1.RegistryConfi
 	if !m.paths.Has(fp) {
 		pwd := passwd.Htpasswd(rc.Username, rc.Password)
 		if err := file.WriteFile(fp, []byte(pwd)); err != nil {
-			return "", fmt.Errorf("failed to make htpasswd: %v", err)
+			return "", fmt.Errorf("failed to make htpasswd: %w", err)
 		}
 	}
 	return fp, nil
 }
 
-func (m *maker) configLocalRegistryConfig(cfgBasedir string, rc *v1beta1.RegistryConfig) (string, error) {
+func (m *maker) configLocalRegistryConfig(
+	cfgBasedir string,
+	rc *v1beta1.RegistryConfig,
+) (string, error) {
 	data, err := yaml.Marshal(rc)
 	if err != nil {
 		return "", err
@@ -151,7 +177,7 @@ func (m *maker) configLocalRegistryConfig(cfgBasedir string, rc *v1beta1.Registr
 	fp := path.Join(cfgBasedir, helpers.RegistryCustomConfig)
 	if !m.paths.Has(fp) {
 		if err = file.WriteFile(fp, data); err != nil {
-			return "", fmt.Errorf("failed to make registry config: %v", err)
+			return "", fmt.Errorf("failed to make registry config: %w", err)
 		}
 	}
 	return fp, nil
@@ -165,7 +191,7 @@ func (m *maker) configLocalImageShimConfig(cfgBasedir string, rc *types.Config) 
 	fp := path.Join(cfgBasedir, "image-cri-shim.yaml")
 	if !m.paths.Has(fp) {
 		if err = file.WriteFile(fp, data); err != nil {
-			return "", fmt.Errorf("failed to make registry config: %v", err)
+			return "", fmt.Errorf("failed to make registry config: %w", err)
 		}
 	}
 	return fp, nil

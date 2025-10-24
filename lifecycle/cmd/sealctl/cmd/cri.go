@@ -21,10 +21,9 @@ import (
 	"os"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	utilsexec "k8s.io/utils/exec"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var (
@@ -33,7 +32,7 @@ var (
 )
 
 func newCRICmd() *cobra.Command {
-	var criCmd = &cobra.Command{
+	criCmd := &cobra.Command{
 		Use:   "cri",
 		Short: "cri manager",
 	}
@@ -46,7 +45,7 @@ func newCRICmd() *cobra.Command {
 }
 
 func newCRISocketCmd() *cobra.Command {
-	var criSocketCmd = &cobra.Command{
+	criSocketCmd := &cobra.Command{
 		Use:   "socket",
 		Short: "cri manager socket",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -63,7 +62,7 @@ func newCRISocketCmd() *cobra.Command {
 
 func newCGroupDriverCmd() *cobra.Command {
 	var shortPrint bool
-	var cGroupDriverCmd = &cobra.Command{
+	cGroupDriverCmd := &cobra.Command{
 		Use:   "cgroup-driver",
 		Short: "cri manager cgroup-driver",
 		PreRun: func(cmd *cobra.Command, args []string) {

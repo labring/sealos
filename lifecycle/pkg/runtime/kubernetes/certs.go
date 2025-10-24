@@ -20,14 +20,13 @@ import (
 	"fmt"
 	"path"
 
-	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 const (
@@ -66,7 +65,7 @@ func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
 	}
 	for i, f := range pipeline {
 		if err := f(); err != nil {
-			return fmt.Errorf("failed to generate cert %v in %d", err, i)
+			return fmt.Errorf("failed to generate cert %w in %d", err, i)
 		}
 	}
 	return nil
@@ -82,13 +81,13 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	if err != nil {
 		return err
 	}
-	//unmarshal data from configmap
+	// unmarshal data from configmap
 	obj, err := yaml.UnmarshalToMap([]byte(data))
 	if err != nil {
 		return err
 	}
 	logger.Debug("current cluster config data: %+v", obj)
-	//set certs to obj interface
+	// set certs to obj interface
 	err = unstructured.SetNestedStringSlice(obj, k.getCertSANs(), "apiServer", "certSANs")
 	if err != nil {
 		return err
@@ -112,10 +111,17 @@ func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	}
 	cmd := k.Command(UpdateCluster)
 	if cmd == "" {
-		return fmt.Errorf("get config update kubeadm command failed, kubernetes version is %s", k.getKubeVersion())
+		return fmt.Errorf(
+			"get config update kubeadm command failed, kubernetes version is %s",
+			k.getKubeVersion(),
+		)
 	}
 	if err = k.sshCmdAsync(k.getMaster0IPAndPort(), cmd); err != nil {
-		return fmt.Errorf("failed to exec update kubeadm config %s %v", k.getMaster0IPAndPort(), err)
+		return fmt.Errorf(
+			"failed to exec update kubeadm config %s %w",
+			k.getMaster0IPAndPort(),
+			err,
+		)
 	}
 	return nil
 }
@@ -133,7 +139,13 @@ func (k *KubeadmRuntime) InitCertsAndKubeConfigs() error {
 	if err := k.CreateKubeConfigFiles(); err != nil {
 		return fmt.Errorf("failed to generate kubernetes conf: %w", err)
 	}
-	return k.SendJoinMasterKubeConfigs(k.getMasterIPAndPortList()[:1], AdminConf, ControllerConf, SchedulerConf, KubeletConf)
+	return k.SendJoinMasterKubeConfigs(
+		k.getMasterIPAndPortList()[:1],
+		AdminConf,
+		ControllerConf,
+		SchedulerConf,
+		KubeletConf,
+	)
 }
 
 func (k *KubeadmRuntime) initCert() error {
@@ -148,7 +160,7 @@ func (k *KubeadmRuntime) syncCert() error {
 			logger.Debug("start to generate cert for master %s", master)
 			err := k.execCert(master)
 			if err != nil {
-				return fmt.Errorf("failed to create cert for master %s: %v", master, err)
+				return fmt.Errorf("failed to create cert for master %s: %w", master, err)
 			}
 
 			err = k.copyMasterKubeConfig(master)
@@ -163,7 +175,10 @@ func (k *KubeadmRuntime) syncCert() error {
 
 func (k *KubeadmRuntime) showKubeadmCert() error {
 	certCheck := "kubeadm certs check-expiration"
-	return k.sshCmdAsync(k.getMaster0IPAndPort(), fmt.Sprintf("%s%s", certCheck, vlogToStr(k.klogLevel)))
+	return k.sshCmdAsync(
+		k.getMaster0IPAndPort(),
+		fmt.Sprintf("%s%s", certCheck, vlogToStr(k.klogLevel)),
+	)
 }
 
 func (k *KubeadmRuntime) deleteAPIServer() error {
@@ -176,10 +191,11 @@ func (k *KubeadmRuntime) deleteAPIServer() error {
 	}
 	logger.Info("delete pod apiserver from crictl")
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, master := range k.getMasterIPAndPortList() {
-		m := master
+	masters := k.getMasterIPAndPortList()
+	for i := range masters {
+		master := masters[i]
 		eg.Go(func() error {
-			podIDJson, err := k.sshCmdToString(m, podIDSh)
+			podIDJson, err := k.sshCmdToString(master, podIDSh)
 			if err != nil {
 				return err
 			}
@@ -189,13 +205,13 @@ func (k *KubeadmRuntime) deleteAPIServer() error {
 			}
 			if len(ps.Containers) > 0 {
 				podID := ps.Containers[0].PodSandboxID[:13]
-				logger.Debug("found podID %s in %s", podID, m)
-				//crictl stopp
-				if err = k.sshCmdAsync(m, fmt.Sprintf("crictl --timeout=10s stopp %s", podID)); err != nil {
+				logger.Debug("found podID %s in %s", podID, master)
+				// crictl stopp
+				if err = k.sshCmdAsync(master, "crictl --timeout=10s stopp "+podID); err != nil {
 					return err
 				}
-				//crictl rmp
-				return k.sshCmdAsync(m, fmt.Sprintf("crictl rmp %s", podID))
+				// crictl rmp
+				return k.sshCmdAsync(master, "crictl rmp "+podID)
 			}
 			return errors.New("not found apiServer pod running")
 		})

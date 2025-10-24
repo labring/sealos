@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 // Copyright © 2022 buildah.
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +27,11 @@ import (
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
+	"github.com/labring/sealos/pkg/system"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/labring/sealos/pkg/system"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type globalFlags struct {
@@ -70,16 +72,17 @@ func (opts *globalFlags) HiddenFlags() []string {
 const logLevel = "log-level"
 
 func RegisterGlobalFlags(fs *pflag.FlagSet) error {
-	var (
-		defaultStoreDriverOptions []string
+	var defaultStoreDriverOptions []string
+	storageOptions, err := storage.DefaultStoreOptions(
+		unshare.GetRootlessUID() > 0,
+		unshare.GetRootlessUID(),
 	)
-	storageOptions, err := storage.DefaultStoreOptions(unshare.GetRootlessUID() > 0, unshare.GetRootlessUID())
 	if err != nil {
 		return err
 	}
 
 	if len(storageOptions.GraphDriverOptions) > 0 {
-		optionSlice := storageOptions.GraphDriverOptions[:]
+		optionSlice := storageOptions.GraphDriverOptions
 		defaultStoreDriverOptions = optionSlice
 	}
 
@@ -89,20 +92,75 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 	}
 	containerConfig.CheckCgroupsAndAdjustConfig()
 	// TODO Need to allow for environment variable
-	fs.StringVar(&globalFlagResults.RegistriesConf, "registries-conf", "", "path to registries.conf file (not usually used)")
-	fs.StringVar(&globalFlagResults.RegistriesConfDir, "registries-conf-dir", "", "path to registries.conf.d directory (not usually used)")
-	fs.StringVar(&globalFlagResults.UserShortNameAliasConfPath, "short-name-alias-conf", "", "path to short name alias cache file (not usually used)")
+	fs.StringVar(
+		&globalFlagResults.RegistriesConf,
+		"registries-conf",
+		"",
+		"path to registries.conf file (not usually used)",
+	)
+	fs.StringVar(
+		&globalFlagResults.RegistriesConfDir,
+		"registries-conf-dir",
+		"",
+		"path to registries.conf.d directory (not usually used)",
+	)
+	fs.StringVar(
+		&globalFlagResults.UserShortNameAliasConfPath,
+		"short-name-alias-conf",
+		"",
+		"path to short name alias cache file (not usually used)",
+	)
 	fs.StringVar(&globalFlagResults.Root, "root", storageOptions.GraphRoot, "storage root dir")
 	fs.StringVar(&globalFlagResults.RunRoot, "runroot", storageOptions.RunRoot, "storage state dir")
-	fs.StringVar(&globalFlagResults.CgroupManager, "cgroup-manager", containerConfig.Engine.CgroupManager, "cgroup manager")
-	fs.StringVar(&globalFlagResults.StorageDriver, "storage-driver", storageOptions.GraphDriverName, "storage-driver")
-	fs.StringSliceVar(&globalFlagResults.StorageOpts, "storage-opt", defaultStoreDriverOptions, "storage driver option")
-	fs.StringSliceVar(&globalFlagResults.UserNSUID, "userns-uid-map", []string{}, "default `ctrID:hostID:length` UID mapping to use")
-	fs.StringSliceVar(&globalFlagResults.UserNSGID, "userns-gid-map", []string{}, "default `ctrID:hostID:length` GID mapping to use")
-	fs.StringVar(&globalFlagResults.DefaultMountsFile, "default-mounts-file", "", "path to default mounts file")
-	fs.StringVar(&globalFlagResults.LogLevel, logLevel, "warn", `The log level to be used. Either "trace", "debug", "info", "warn", "error", "fatal", or "panic".`)
+	fs.StringVar(
+		&globalFlagResults.CgroupManager,
+		"cgroup-manager",
+		containerConfig.Engine.CgroupManager,
+		"cgroup manager",
+	)
+	fs.StringVar(
+		&globalFlagResults.StorageDriver,
+		"storage-driver",
+		storageOptions.GraphDriverName,
+		"storage-driver",
+	)
+	fs.StringSliceVar(
+		&globalFlagResults.StorageOpts,
+		"storage-opt",
+		defaultStoreDriverOptions,
+		"storage driver option",
+	)
+	fs.StringSliceVar(
+		&globalFlagResults.UserNSUID,
+		"userns-uid-map",
+		[]string{},
+		"default `ctrID:hostID:length` UID mapping to use",
+	)
+	fs.StringSliceVar(
+		&globalFlagResults.UserNSGID,
+		"userns-gid-map",
+		[]string{},
+		"default `ctrID:hostID:length` GID mapping to use",
+	)
+	fs.StringVar(
+		&globalFlagResults.DefaultMountsFile,
+		"default-mounts-file",
+		"",
+		"path to default mounts file",
+	)
+	fs.StringVar(
+		&globalFlagResults.LogLevel,
+		logLevel,
+		"warn",
+		`The log level to be used. Either "trace", "debug", "info", "warn", "error", "fatal", or "panic".`,
+	)
 	fs.StringVar(&globalFlagResults.CPUProfile, "cpu-profile", "", "`file` to write CPU profile")
-	fs.StringVar(&globalFlagResults.MemoryProfile, "memory-profile", "", "`file` to write memory profile")
+	fs.StringVar(
+		&globalFlagResults.MemoryProfile,
+		"memory-profile",
+		"",
+		"`file` to write memory profile",
+	)
 	return markFlagsHidden(fs, globalFlagResults.HiddenFlags()...)
 }
 
@@ -115,7 +173,7 @@ var (
 func markFlagsHidden(fs *pflag.FlagSet, names ...string) error {
 	for _, name := range names {
 		if err := fs.MarkHidden(name); err != nil {
-			return fmt.Errorf("unable to mark %s flag as hidden: %v", name, err)
+			return fmt.Errorf("unable to mark %s flag as hidden: %w", name, err)
 		}
 	}
 	return nil
@@ -191,10 +249,7 @@ func SetRequireBuildahAnnotation(cmds ...*cobra.Command) {
 }
 
 func requirePreRun(cmd *cobra.Command) bool {
-	for {
-		if cmd == nil {
-			break
-		}
+	for cmd != nil {
 		if cmd.Annotations != nil &&
 			cmd.Annotations[requireBuildahAnnotationKey] == requireBuildahAnnotationVal {
 			return true
@@ -284,12 +339,20 @@ func after(cmd *cobra.Command) error {
 	if globalFlagResults.MemoryProfile != "" {
 		memoryProfileFile, err := os.Create(globalFlagResults.MemoryProfile)
 		if err != nil {
-			logger.Fatal("could not create memory profile %s: %v", globalFlagResults.MemoryProfile, err)
+			logger.Fatal(
+				"could not create memory profile %s: %v",
+				globalFlagResults.MemoryProfile,
+				err,
+			)
 		}
 		defer memoryProfileFile.Close()
 		runtime.GC()
 		if err := pprof.Lookup("heap").WriteTo(memoryProfileFile, 1); err != nil {
-			logger.Fatal("could not write memory profile %s: %v", globalFlagResults.MemoryProfile, err)
+			logger.Fatal(
+				"could not write memory profile %s: %v",
+				globalFlagResults.MemoryProfile,
+				err,
+			)
 		}
 	}
 	for i := range postRunHooks {
@@ -324,11 +387,15 @@ func maybeSetupProfiler() (err error) {
 	if globalFlagResults.CPUProfile != "" {
 		cpuProfileFile, err := os.Create(globalFlagResults.CPUProfile)
 		if err != nil {
-			return fmt.Errorf("could not create CPU profile %s: %v", globalFlagResults.CPUProfile, err)
+			return fmt.Errorf(
+				"could not create CPU profile %s: %w",
+				globalFlagResults.CPUProfile,
+				err,
+			)
 		}
 		globalFlagResults.cpuProfileFile = cpuProfileFile
 		if err = pprof.StartCPUProfile(globalFlagResults.cpuProfileFile); err != nil {
-			return fmt.Errorf("error starting CPU profiling: %v", err)
+			return fmt.Errorf("error starting CPU profiling: %w", err)
 		}
 	}
 	return nil

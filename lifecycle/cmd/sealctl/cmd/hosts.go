@@ -19,33 +19,33 @@ package cmd
 import (
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/hosts"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 var hostsPath string
 
 func newHostsCmd() *cobra.Command {
-	var hostsCmd = &cobra.Command{
+	hostsCmd := &cobra.Command{
 		Use:   "hosts",
 		Short: "hosts manager",
 		//Run: func(cmd *cobra.Command, args []string) {
 		//
-		//},
+		// },
 	}
 	// check route for host
 	hostsCmd.AddCommand(newHostsListCmd())
 	hostsCmd.AddCommand(newHostsAddCmd())
 	hostsCmd.AddCommand(newHostsDeleteCmd())
-	hostsCmd.PersistentFlags().StringVar(&hostsPath, "path", constants.DefaultHostsPath, "default hosts path")
+	hostsCmd.PersistentFlags().
+		StringVar(&hostsPath, "path", constants.DefaultHostsPath, "default hosts path")
 	return hostsCmd
 }
 
 func newHostsListCmd() *cobra.Command {
-	var hostsListCmd = &cobra.Command{
+	hostsListCmd := &cobra.Command{
 		Use:   "list",
 		Short: "hosts manager list",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -58,7 +58,7 @@ func newHostsListCmd() *cobra.Command {
 
 func newHostsAddCmd() *cobra.Command {
 	var ip, domain string
-	var hostsAddCmd = &cobra.Command{
+	hostsAddCmd := &cobra.Command{
 		Use:   "add",
 		Short: "hosts manager add",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -89,7 +89,7 @@ func newHostsAddCmd() *cobra.Command {
 
 func newHostsDeleteCmd() *cobra.Command {
 	var domain string
-	var hostsDeleteCmd = &cobra.Command{
+	hostsDeleteCmd := &cobra.Command{
 		Use:   "delete",
 		Short: "hosts manager delete",
 		PreRun: func(cmd *cobra.Command, args []string) {

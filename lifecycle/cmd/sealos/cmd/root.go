@@ -19,20 +19,17 @@ import (
 	"io"
 	"os"
 
-	sreglog "github.com/labring/sreg/pkg/utils/logger"
-	"github.com/spf13/cobra"
-	"k8s.io/kubectl/pkg/util/templates"
-
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	sreglog "github.com/labring/sreg/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"k8s.io/kubectl/pkg/util/templates"
 )
 
-var (
-	debug bool
-)
+var debug bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -115,7 +112,7 @@ func onBootOnDie() {
 	errExit(err)
 	constants.DefaultRuntimeRootDir = val
 
-	var rootDirs = []string{
+	rootDirs := []string{
 		constants.LogPath(),
 		constants.WorkDir(),
 	}

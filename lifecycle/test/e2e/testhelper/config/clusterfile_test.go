@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
-
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 )
 
