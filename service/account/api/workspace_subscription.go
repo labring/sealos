@@ -2846,6 +2846,9 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 		if existingSubscription != nil {
 			transaction.OldPlanName = existingSubscription.PlanName
 			transaction.OldPlanStatus = existingSubscription.Status
+		} else {
+			// For new subscriptions, set OldPlanStatus to NORMAL when OldPlanName is empty
+			transaction.OldPlanStatus = types.SubscriptionStatusNormal
 		}
 
 		// Create the transaction record
@@ -2991,5 +2994,77 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": fmt.Sprintf("Workspace subscription '%s' added successfully for workspace '%s'", req.PlanName, req.Workspace),
+	})
+}
+
+// GetWorkspaceSubscriptionPlans
+// @Summary Get workspace subscription plans by namespaces
+// @Description Get subscription plan names for multiple namespaces, returning "PAYG" for non-subscribed workspaces
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param req body helper.WorkspaceSubscriptionPlansReq true "WorkspaceSubscriptionPlansReq"
+// @Success 200 {object} WorkspaceSubscriptionPlansResp
+// @Router /account/v1alpha1/workspace-subscription/plans [post]
+func GetWorkspaceSubscriptionPlans(c *gin.Context) {
+	req, err := helper.ParseWorkspaceSubscriptionPlansReq(c)
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+
+	// Authenticate request
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)},
+		)
+		return
+	}
+
+	// Response structure
+	type NamespacePlanInfo struct {
+		Namespace string `json:"namespace"`
+		PlanName  string `json:"planName"`
+	}
+
+	type WorkspaceSubscriptionPlansResp struct {
+		Plans []NamespacePlanInfo `json:"plans"`
+	}
+
+	// Get local region domain
+	regionDomain := dao.DBClient.GetLocalRegion().Domain
+
+	plans := make([]NamespacePlanInfo, 0, len(req.Namespaces))
+
+	// Query subscription for each namespace
+	for _, namespace := range req.Namespaces {
+		subscription, err := dao.DBClient.GetWorkspaceSubscription(namespace, regionDomain)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			dao.Logger.Errorf("Failed to get workspace subscription for namespace %s: %v", namespace, err)
+			// Continue processing other namespaces, return PAYG for this one
+			plans = append(plans, NamespacePlanInfo{
+				Namespace: namespace,
+				PlanName:  "PAYG",
+			})
+			continue
+		}
+
+		planName := "PAYG"
+		if subscription != nil {
+			planName = subscription.PlanName
+		}
+
+		plans = append(plans, NamespacePlanInfo{
+			Namespace: namespace,
+			PlanName:  planName,
+		})
+	}
+
+	c.JSON(http.StatusOK, WorkspaceSubscriptionPlansResp{
+		Plans: plans,
 	})
 }

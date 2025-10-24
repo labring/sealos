@@ -215,12 +215,6 @@ func (d *DebtValidate) checkOption(
 		)
 	}
 
-	// Cache miss, query database
-	userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
-	if err != nil {
-		logger.Error(err, "get user error", "user", user)
-		return admission.ValidationResponse(true, err.Error())
-	}
 	if ns.Annotations[pkgtype.WorkspaceSubscriptionStatusAnnoKey] != "" {
 		workspaceSub, err := d.AccountV2.GetWorkspaceSubscription(
 			nsName,
@@ -240,6 +234,12 @@ func (d *DebtValidate) checkOption(
 			)
 		}
 	} else {
+		// Cache miss, query database
+		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
+		if err != nil {
+			logger.Error(err, "get user error", "user", user)
+			return admission.ValidationResponse(true, err.Error())
+		}
 		account, err := d.AccountV2.GetAccountWithCredits(userUID)
 		if err != nil {
 			logger.Error(err, "get account error", "user", user)

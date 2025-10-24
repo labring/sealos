@@ -85,6 +85,7 @@ const (
 	WorkspaceSubscriptionLastTransaction = "/workspace-subscription/last-transaction"
 	WorkspaceSubscriptionUpgradeAmount   = "/workspace-subscription/upgrade-amount"
 	WorkspaceSubscriptionPortalSession   = "/workspace-subscription/portal-session"
+	WorkspaceSubscriptionPlans           = "/workspace-subscription/plans"
 )
 
 const PayNotificationPath = PaymentGroup + Notify

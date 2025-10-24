@@ -930,3 +930,37 @@ func ParseAdminWorkspaceSubscriptionAddReq(c *gin.Context) (*AdminWorkspaceSubsc
 
 	return req, nil
 }
+
+// WorkspaceSubscriptionPlansReq defines request for getting subscription plans by namespaces
+type WorkspaceSubscriptionPlansReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Namespace list
+	// @Description List of workspace namespaces to query subscription plans for
+	// @JSONSchema required
+	Namespaces []string `json:"namespaces" bson:"namespaces" binding:"required" example:"[ns-admin, ns-test1, ns-dev]"`
+}
+
+func ParseWorkspaceSubscriptionPlansReq(c *gin.Context) (*WorkspaceSubscriptionPlansReq, error) {
+	req := &WorkspaceSubscriptionPlansReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+
+	// Validate namespaces list
+	if len(req.Namespaces) == 0 {
+		return nil, errors.New("namespaces list cannot be empty")
+	}
+
+	// Validate each namespace is not empty
+	for _, ns := range req.Namespaces {
+		if ns == "" {
+			return nil, errors.New("namespace cannot be empty")
+		}
+	}
+
+	return req, nil
+}
