@@ -50,6 +50,8 @@ const (
 
 	AdminWorkspaceSubscriptionProcessExpired = "/workspace-subscription/process-expired"
 	AdminWorkspaceSubscriptionAdd           = "/workspace-subscription/add"
+	AdminWorkspaceSubscriptionList          = "/workspace-subscription/list"
+	AdminSubscriptionPlans                  = "/subscription-plans"
 
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"

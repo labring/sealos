@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +23,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v82"
 	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	types2 "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -2032,7 +2037,50 @@ func finalizeWorkspaceSubscriptionSuccess(
 		}
 	}
 
+	if err := updateWorkspaceSubscriptionNamespaceStatus(workspaceSubscription.Workspace); err != nil {
+		//dao.Logger.Errorf("Failed to update workspace subscription namespace annotation: %v", err)
+		return fmt.Errorf("failed to update workspace subscription namespace annotation: %v", err)
+	}
 	return nil
+}
+
+// updateWorkspaceSubscriptionNamespaceStatus updates the workspace subscription status annotation on namespace
+func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
+	ctx := context.Background()
+
+	// Use retry.RetryOnConflict to handle conflicts
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Fetch the latest namespace object
+		ns := &corev1.Namespace{}
+		if err := dao.K8sManager.GetClient().Get(ctx, types2.NamespacedName{Name: workspace}, ns); err != nil {
+			if k8serrors.IsNotFound(err) {
+				logrus.Info("Namespace not found, skipping workspace subscription annotation update", "namespace", workspace)
+				return nil // Skip if namespace doesn't exist
+			}
+			return fmt.Errorf("failed to get namespace %s: %w", workspace, err)
+		}
+
+		// Initialize annotations if needed
+		if ns.Annotations == nil {
+			ns.Annotations = make(map[string]string)
+		}
+
+		// Check if the annotation already matches the desired status
+		if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == types.NormalDebtNamespaceAnnoStatus || ns.Status.Phase == corev1.NamespaceTerminating {
+			return nil
+		}
+
+		// Update the annotation
+		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
+
+		// Attempt to update the namespace
+		if err := dao.K8sManager.GetClient().Update(ctx, ns); err != nil {
+			return fmt.Errorf("failed to update namespace annotation: %w", err)
+		}
+
+		logrus.Infof("Successfully updated workspace subscription status annotation for namespace %s", workspace)
+		return nil
+	})
 }
 
 // Reimplemented handleWorkspaceSubscriptionRenewalFailure
@@ -2726,7 +2774,7 @@ func AdminProcessExpiredWorkspaceSubscriptions(c *gin.Context) {
 
 // AdminAddWorkspaceSubscription
 // @Summary Admin add workspace subscription
-// @Description Admin interface to add workspace subscription with no_need payment status
+// @Description Admin interface to add workspace subscription with no_need payment status. Performs quota check by default, can be skipped with skipQuotaCheck parameter
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
@@ -2753,6 +2801,26 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
 		)
 		return
+	}
+
+	// Set default values for optional fields
+	if req.UserUID == uuid.Nil {
+		// Get workspace owner as default user
+		workspaceOwner, err := dao.DBClient.GetWorkspaceUserUID(req.Workspace)
+		if err != nil {
+			SetErrorResp(
+				c,
+				http.StatusBadRequest,
+				gin.H{"error": fmt.Sprintf("failed to get workspace owner: %v", err)},
+			)
+			return
+		}
+		req.UserUID = workspaceOwner
+	}
+
+	if req.RegionDomain == "" {
+		// Use current region as default
+		req.RegionDomain = dao.DBClient.GetLocalRegion().Domain
 	}
 
 	logrus.Infof("Admin adding workspace subscription: workspace=%s, region=%s, user=%s, plan=%s, operator=%s",
@@ -2786,7 +2854,7 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 		return
 	}
 
-	// Check if workspace subscription already exists
+	// Check existing subscription and auto-determine operator if needed
 	existingSubscription, err := dao.DBClient.GetWorkspaceSubscription(req.Workspace, req.RegionDomain)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		SetErrorResp(
@@ -2795,6 +2863,17 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			gin.H{"error": fmt.Sprintf("failed to check existing workspace subscription: %v", err)},
 		)
 		return
+	}
+
+	// Auto-determine operator if not provided
+	if req.Operator == "" {
+		if existingSubscription != nil && existingSubscription.Status != types.SubscriptionStatusDeleted {
+			// If subscription exists and not deleted, default to upgrade
+			req.Operator = types.SubscriptionTransactionTypeUpgraded
+		} else {
+			// No existing subscription or deleted, default to create
+			req.Operator = types.SubscriptionTransactionTypeCreated
+		}
 	}
 
 	// For creation operation, ensure no existing subscription
@@ -2817,6 +2896,32 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			gin.H{"error": "workspace subscription not found for upgrade/renew operation"},
 		)
 		return
+	}
+
+	// Perform quota check by default (unless explicitly skipped)
+	if !req.SkipQuotaCheck {
+		ok, err := CheckQuota(context.Background(), req.Workspace, req.PlanName)
+		if err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to check quota: %v", err)},
+			)
+			return
+		}
+		if !ok {
+			SetErrorResp(
+				c,
+				http.StatusConflict,
+				gin.H{
+					"error": "quota exceeded for the requested plan, please change the resource usage to within the expected workspace subscription quota",
+					"code":  10004,
+				},
+			)
+			return
+		}
+	} else {
+		logrus.Infof("Admin skipped quota check for workspace %s, plan %s", req.Workspace, req.PlanName)
 	}
 
 	// Process in database transaction
@@ -2975,6 +3080,10 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			}
 		}
 
+		// Update workspace subscription namespace annotation for subscription
+		if err := updateWorkspaceSubscriptionNamespaceStatus(req.Workspace); err != nil {
+			return fmt.Errorf("failed to update workspace subscription namespace annotation after admin add: %v", err)
+		}
 		logrus.Infof("Successfully added workspace subscription via admin interface: workspace=%s, plan=%s, operator=%s, transaction_id=%s",
 			req.Workspace, req.PlanName, req.Operator, transaction.ID)
 
@@ -3067,4 +3176,519 @@ func GetWorkspaceSubscriptionPlans(c *gin.Context) {
 	c.JSON(http.StatusOK, WorkspaceSubscriptionPlansResp{
 		Plans: plans,
 	})
+}
+
+// AdminWorkspaceSubscriptionList
+// @Summary Admin get workspace subscription list
+// @Description Admin interface to get paginated workspace subscription list with filtering options
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param req body AdminWorkspaceSubscriptionListReq true "AdminWorkspaceSubscriptionListReq"
+// @Success 200 {object} AdminWorkspaceSubscriptionListResp
+// @Router /admin/v1alpha1/workspace-subscription/list [post]
+func AdminWorkspaceSubscriptionList(c *gin.Context) {
+	// Authenticate admin request
+	if err := authenticateAdminRequest(c); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusForbidden,
+			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
+		)
+		return
+	}
+
+	// Parse request
+	req, err := helper.ParseAdminWorkspaceSubscriptionListReq(c)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+
+	logrus.Infof("Admin getting workspace subscription list: page=%d, size=%d, filters=%+v",
+		req.PageIndex, req.PageSize, req)
+
+	// Build query conditions
+	conditions := map[string]interface{}{}
+	if req.Workspace != "" {
+		conditions["workspace"] = req.Workspace
+	}
+	if req.UserUID != uuid.Nil {
+		conditions["userUid"] = req.UserUID
+	}
+	if req.PlanName != "" {
+		conditions["planName"] = req.PlanName
+	}
+	if req.Status != "" {
+		conditions["status"] = req.Status
+	}
+	if req.RegionDomain != "" {
+		conditions["regionDomain"] = req.RegionDomain
+	}
+
+	// Get subscriptions with pagination
+	subscriptions, total, err := dao.DBClient.ListWorkspaceSubscriptionsWithPagination(
+		conditions,
+		req.PageIndex,
+		req.PageSize,
+	)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get workspace subscription list: %v", err)},
+		)
+		return
+	}
+
+	// Calculate pagination info
+	totalPages := int(total) / req.PageSize
+	if int(total)%req.PageSize > 0 {
+		totalPages++
+	}
+
+	// Format response
+	type SubscriptionInfo struct {
+		ID                   uuid.UUID  `json:"id"`
+		Workspace            string     `json:"workspace"`
+		RegionDomain         string     `json:"regionDomain"`
+		UserUID              uuid.UUID  `json:"userUID"`
+		PlanName             string     `json:"planName"`
+		Status               string     `json:"status"`
+		PayStatus            string     `json:"payStatus"`
+		PayMethod            string     `json:"payMethod"`
+		CurrentPeriodStartAt time.Time  `json:"currentPeriodStartAt"`
+		CurrentPeriodEndAt   time.Time  `json:"currentPeriodEndAt"`
+		CreateAt             time.Time  `json:"createAt"`
+		ExpireAt             *time.Time `json:"expireAt"`
+	}
+
+	subscriptionInfos := make([]SubscriptionInfo, len(subscriptions))
+	for i, sub := range subscriptions {
+		subscriptionInfos[i] = SubscriptionInfo{
+			ID:                   sub.ID,
+			Workspace:            sub.Workspace,
+			RegionDomain:         sub.RegionDomain,
+			UserUID:              sub.UserUID,
+			PlanName:             sub.PlanName,
+			Status:               string(sub.Status),
+			PayStatus:            string(sub.PayStatus),
+			PayMethod:            string(sub.PayMethod),
+			CurrentPeriodStartAt: sub.CurrentPeriodStartAt,
+			CurrentPeriodEndAt:   sub.CurrentPeriodEndAt,
+			CreateAt:             sub.CreateAt,
+			ExpireAt:             sub.ExpireAt,
+		}
+	}
+
+	resp := gin.H{
+		"subscriptions": subscriptionInfos,
+		"pagination": gin.H{
+			"pageIndex":    req.PageIndex,
+			"pageSize":     req.PageSize,
+			"totalRecords": total,
+			"totalPages":   totalPages,
+		},
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// AdminSubscriptionPlans
+// @Summary Admin get subscription plans
+// @Description Admin interface to get all available subscription plans
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param req body AdminSubscriptionPlansReq true "AdminSubscriptionPlansReq"
+// @Success 200 {object} AdminSubscriptionPlansResp
+// @Router /admin/v1alpha1/subscription-plans [post]
+func AdminSubscriptionPlans(c *gin.Context) {
+	// Authenticate admin request
+	if err := authenticateAdminRequest(c); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusForbidden,
+			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
+		)
+		return
+	}
+
+	// Parse request
+	req, err := helper.ParseAdminSubscriptionPlansReq(c)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+
+	logrus.Infof("Admin getting subscription plans: includeInactive=%v, planType=%s",
+		req.IncludeInactive, req.PlanType)
+
+	// Get subscription plans
+	plans, err := dao.DBClient.GetWorkspaceSubscriptionPlanList()
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get subscription plans: %v", err)},
+		)
+		return
+	}
+
+	// Filter plans based on request parameters
+	filteredPlans := []types.WorkspaceSubscriptionPlan{}
+	for _, plan := range plans {
+		// Filter by plan type if specified (check tags for type classification)
+		if req.PlanType != "" {
+			hasType := false
+			for _, tag := range plan.Tags {
+				if tag == req.PlanType {
+					hasType = true
+					break
+				}
+			}
+			if !hasType {
+				continue
+			}
+		}
+
+		// For now, include all plans since there's no explicit status field
+		// The includeInactive parameter can be used later if status tracking is added
+		filteredPlans = append(filteredPlans, plan)
+	}
+
+	// Format response with pricing information
+	type PlanPriceInfo struct {
+		BillingCycle string `json:"billingCycle"`
+		Price        int64  `json:"price"`
+		Currency     string `json:"currency"`
+	}
+
+	type PlanInfo struct {
+		ID           string          `json:"id"`
+		Name         string          `json:"name"`
+		Description  string          `json:"description"`
+		Order        int             `json:"order"`
+		Tags         []string        `json:"tags"`
+		Prices       []PlanPriceInfo `json:"prices"`
+		Traffic      int64           `json:"traffic"`
+		AIQuota      int64           `json:"aiQuota"`
+		MaxResources string          `json:"maxResources"`
+		MaxSeats     int             `json:"maxSeats"`
+	}
+
+	planInfos := make([]PlanInfo, len(filteredPlans))
+	for i, plan := range filteredPlans {
+		prices := make([]PlanPriceInfo, len(plan.Prices))
+		for j, price := range plan.Prices {
+			prices[j] = PlanPriceInfo{
+				BillingCycle: string(price.BillingCycle),
+				Price:        price.Price,
+				Currency:     "USD", // Default currency
+			}
+		}
+
+		planInfos[i] = PlanInfo{
+			ID:           plan.ID.String(),
+			Name:         plan.Name,
+			Description:  plan.Description,
+			Order:        plan.Order,
+			Tags:         plan.Tags,
+			Prices:       prices,
+			Traffic:      plan.Traffic,
+			AIQuota:      plan.AIQuota,
+			MaxResources: plan.MaxResources,
+			MaxSeats:     plan.MaxSeats,
+		}
+	}
+
+	resp := gin.H{
+		"plans": planInfos,
+		"total": len(planInfos),
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// AdminWorkspaceSubscriptionListGET
+// @Summary Admin get workspace subscription list (GET)
+// @Description Admin interface to get paginated workspace subscription list with filtering options using GET method
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param pageIndex query int false "Page index (0-based)" example(0)
+// @Param pageSize query int false "Page size (optional, defaults to 10)" example(10)
+// @Param workspace query string false "Filter by workspace name" example("ns-8gmgq0jn")
+// @Param userUID query string false "Filter by user ID" example("36ca5ee6-7b6e-4c15-922b-e861b3fbc061")
+// @Param planName query string false "Filter by plan name" example("Hobby")
+// @Param status query string false "Filter by subscription status" example("NORMAL")
+// @Param regionDomain query string false "Filter by region domain" example("192.168.10.35.nip.io")
+// @Success 200 {object} AdminWorkspaceSubscriptionListResp
+// @Router /admin/v1alpha1/workspace-subscription/list [get]
+func AdminWorkspaceSubscriptionListGET(c *gin.Context) {
+	// Authenticate admin request
+	if err := authenticateAdminRequest(c); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusForbidden,
+			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
+		)
+		return
+	}
+
+	// Parse query parameters
+	req := &helper.AdminWorkspaceSubscriptionListReq{}
+
+	// Parse pagination parameters
+	if pageIndexStr := c.Query("pageIndex"); pageIndexStr != "" {
+		if pageIndex, err := strconv.Atoi(pageIndexStr); err == nil {
+			req.PageIndex = pageIndex
+		}
+	}
+	if pageSizeStr := c.Query("pageSize"); pageSizeStr != "" {
+		if pageSize, err := strconv.Atoi(pageSizeStr); err == nil {
+			req.PageSize = pageSize
+		}
+	}
+
+	// Parse filter parameters
+	req.Workspace = c.Query("workspace")
+	req.PlanName = c.Query("planName")
+	req.Status = c.Query("status")
+	req.RegionDomain = c.Query("regionDomain")
+
+	// Parse userUID parameter
+	if userUIDStr := c.Query("userUID"); userUIDStr != "" {
+		if userUID, err := uuid.Parse(userUIDStr); err == nil {
+			req.UserUID = userUID
+		}
+	}
+
+	// Set default values
+	if req.PageIndex < 0 {
+		req.PageIndex = 0
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	if req.PageSize > 100 {
+		req.PageSize = 100 // Limit max page size
+	}
+
+	logrus.Infof("Admin getting workspace subscription list (GET): page=%d, size=%d, filters=%+v",
+		req.PageIndex, req.PageSize, req)
+
+	// Build query conditions
+	conditions := map[string]interface{}{}
+	if req.Workspace != "" {
+		conditions["workspace"] = req.Workspace
+	}
+	if req.UserUID != uuid.Nil {
+		conditions["userUid"] = req.UserUID
+	}
+	if req.PlanName != "" {
+		conditions["planName"] = req.PlanName
+	}
+	if req.Status != "" {
+		conditions["status"] = req.Status
+	}
+	if req.RegionDomain != "" {
+		conditions["regionDomain"] = req.RegionDomain
+	}
+
+	// Get subscriptions with pagination
+	subscriptions, total, err := dao.DBClient.ListWorkspaceSubscriptionsWithPagination(
+		conditions,
+		req.PageIndex,
+		req.PageSize,
+	)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get workspace subscription list: %v", err)},
+		)
+		return
+	}
+
+	// Calculate pagination info
+	totalPages := int(total) / req.PageSize
+	if int(total)%req.PageSize > 0 {
+		totalPages++
+	}
+
+	// Format response
+	type SubscriptionInfo struct {
+		ID                   uuid.UUID  `json:"id"`
+		Workspace            string     `json:"workspace"`
+		RegionDomain         string     `json:"regionDomain"`
+		UserUID              uuid.UUID  `json:"userUID"`
+		PlanName             string     `json:"planName"`
+		Status               string     `json:"status"`
+		PayStatus            string     `json:"payStatus"`
+		PayMethod            string     `json:"payMethod"`
+		CurrentPeriodStartAt time.Time  `json:"currentPeriodStartAt"`
+		CurrentPeriodEndAt   time.Time  `json:"currentPeriodEndAt"`
+		CreateAt             time.Time  `json:"createAt"`
+		ExpireAt             *time.Time `json:"expireAt"`
+	}
+
+	subscriptionInfos := make([]SubscriptionInfo, len(subscriptions))
+	for i, sub := range subscriptions {
+		subscriptionInfos[i] = SubscriptionInfo{
+			ID:                   sub.ID,
+			Workspace:            sub.Workspace,
+			RegionDomain:         sub.RegionDomain,
+			UserUID:              sub.UserUID,
+			PlanName:             sub.PlanName,
+			Status:               string(sub.Status),
+			PayStatus:            string(sub.PayStatus),
+			PayMethod:            string(sub.PayMethod),
+			CurrentPeriodStartAt: sub.CurrentPeriodStartAt,
+			CurrentPeriodEndAt:   sub.CurrentPeriodEndAt,
+			CreateAt:             sub.CreateAt,
+			ExpireAt:             sub.ExpireAt,
+		}
+	}
+
+	resp := gin.H{
+		"subscriptions": subscriptionInfos,
+		"pagination": gin.H{
+			"pageIndex":    req.PageIndex,
+			"pageSize":     req.PageSize,
+			"totalRecords": total,
+			"totalPages":   totalPages,
+		},
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// AdminSubscriptionPlansGET
+// @Summary Admin get subscription plans (GET)
+// @Description Admin interface to get all available subscription plans using GET method
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param includeInactive query bool false "Include inactive plans" example(false)
+// @Param planType query string false "Filter by plan type" example("workspace")
+// @Success 200 {object} AdminSubscriptionPlansResp
+// @Router /admin/v1alpha1/subscription-plans [get]
+func AdminSubscriptionPlansGET(c *gin.Context) {
+	// Authenticate admin request
+	if err := authenticateAdminRequest(c); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusForbidden,
+			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
+		)
+		return
+	}
+
+	// Parse query parameters
+	req := &helper.AdminSubscriptionPlansReq{}
+
+	if includeInactiveStr := c.Query("includeInactive"); includeInactiveStr != "" {
+		if includeInactive, err := strconv.ParseBool(includeInactiveStr); err == nil {
+			req.IncludeInactive = includeInactive
+		}
+	}
+
+	req.PlanType = c.Query("planType")
+
+	logrus.Infof("Admin getting subscription plans (GET): includeInactive=%v, planType=%s",
+		req.IncludeInactive, req.PlanType)
+
+	// Get subscription plans
+	plans, err := dao.DBClient.GetWorkspaceSubscriptionPlanList()
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get subscription plans: %v", err)},
+		)
+		return
+	}
+
+	// Filter plans based on request parameters
+	filteredPlans := []types.WorkspaceSubscriptionPlan{}
+	for _, plan := range plans {
+		// Filter by plan type if specified (check tags for type classification)
+		if req.PlanType != "" {
+			hasType := false
+			for _, tag := range plan.Tags {
+				if tag == req.PlanType {
+					hasType = true
+					break
+				}
+			}
+			if !hasType {
+				continue
+			}
+		}
+
+		// For now, include all plans since there's no explicit status field
+		// The includeInactive parameter can be used later if status tracking is added
+		filteredPlans = append(filteredPlans, plan)
+	}
+
+	// Format response with pricing information
+	type PlanPriceInfo struct {
+		BillingCycle string `json:"billingCycle"`
+		Price        int64  `json:"price"`
+		Currency     string `json:"currency"`
+	}
+
+	type PlanInfo struct {
+		ID           string          `json:"id"`
+		Name         string          `json:"name"`
+		Description  string          `json:"description"`
+		Order        int             `json:"order"`
+		Tags         []string        `json:"tags"`
+		Prices       []PlanPriceInfo `json:"prices"`
+		Traffic      int64           `json:"traffic"`
+		AIQuota      int64           `json:"aiQuota"`
+		MaxResources string          `json:"maxResources"`
+		MaxSeats     int             `json:"maxSeats"`
+	}
+
+	planInfos := make([]PlanInfo, len(filteredPlans))
+	for i, plan := range filteredPlans {
+		prices := make([]PlanPriceInfo, len(plan.Prices))
+		for j, price := range plan.Prices {
+			prices[j] = PlanPriceInfo{
+				BillingCycle: string(price.BillingCycle),
+				Price:        price.Price,
+				Currency:     "USD", // Default currency
+			}
+		}
+
+		planInfos[i] = PlanInfo{
+			ID:           plan.ID.String(),
+			Name:         plan.Name,
+			Description:  plan.Description,
+			Order:        plan.Order,
+			Tags:         plan.Tags,
+			Prices:       prices,
+			Traffic:      plan.Traffic,
+			AIQuota:      plan.AIQuota,
+			MaxResources: plan.MaxResources,
+			MaxSeats:     plan.MaxSeats,
+		}
+	}
+
+	resp := gin.H{
+		"plans": planInfos,
+		"total": len(planInfos),
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

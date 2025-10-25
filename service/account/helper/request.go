@@ -861,14 +861,14 @@ type AdminWorkspaceSubscriptionAddReq struct {
 	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
 
 	// @Summary Region domain
-	// @Description Region domain
-	// @JSONSchema required
-	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+	// @Description Region domain (optional, will default to current region if not provided)
+	// @JSONSchema
+	RegionDomain string `json:"regionDomain,omitempty" bson:"regionDomain,omitempty" example:"example.com"`
 
 	// @Summary User ID
-	// @Description User ID who owns the workspace
-	// @JSONSchema required
-	UserUID uuid.UUID `json:"userUID" bson:"userUID" binding:"required" example:"user-123"`
+	// @Description User ID who owns the workspace (optional, will default to workspace owner if not provided)
+	// @JSONSchema
+	UserUID uuid.UUID `json:"userUID,omitempty" bson:"userUID,omitempty" example:"user-123"`
 
 	// @Summary Plan name
 	// @Description Plan name for the subscription
@@ -876,17 +876,23 @@ type AdminWorkspaceSubscriptionAddReq struct {
 	PlanName string `json:"planName" bson:"planName" binding:"required" example:"premium"`
 
 	// @Summary Subscription period
-	// @Description Subscription period (1m for monthly, 1y for yearly)
-	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period" bson:"period" binding:"required" example:"1m"`
+	// @Description Subscription period (1m for monthly, 1y for yearly, optional, will default to monthly)
+	// @JSONSchema
+	Period types.SubscriptionPeriod `json:"period,omitempty" bson:"period,omitempty" example:"1m"`
 
 	// @Summary Subscription operator
-	// @Description Subscription operator type (created/upgraded/renewed)
-	Operator types.SubscriptionOperator `json:"operator" bson:"operator" binding:"required" example:"created"`
+	// @Description Subscription operator type (optional, will default to 'created' for new subscriptions)
+	// @JSONSchema
+	Operator types.SubscriptionOperator `json:"operator,omitempty" bson:"operator,omitempty" example:"created"`
 
 	// @Summary Optional description
 	// @Description Optional description for the admin operation
 	Description string `json:"description,omitempty" bson:"description,omitempty" example:"Internal admin subscription addition"`
+
+	// @Summary Skip quota check
+	// @Description Skip quota validation (optional, defaults to false, meaning quota check is performed by default)
+	// @JSONSchema
+	SkipQuotaCheck bool `json:"skipQuotaCheck,omitempty" bson:"skipQuotaCheck,omitempty" example:"false"`
 }
 
 func ParseAdminWorkspaceSubscriptionAddReq(c *gin.Context) (*AdminWorkspaceSubscriptionAddReq, error) {
@@ -899,33 +905,28 @@ func ParseAdminWorkspaceSubscriptionAddReq(c *gin.Context) (*AdminWorkspaceSubsc
 	if req.Workspace == "" {
 		return nil, errors.New("workspace cannot be empty")
 	}
-	if req.RegionDomain == "" {
-		return nil, errors.New("regionDomain cannot be empty")
-	}
-	if req.UserUID == uuid.Nil {
-		return nil, errors.New("userUID cannot be empty")
-	}
 	if req.PlanName == "" {
 		return nil, errors.New("planName cannot be empty")
 	}
+
+	// Set default values for optional fields if provided
 	if req.Period == "" {
 		req.Period = types.SubscriptionPeriodMonthly
 	}
-	if req.Operator == "" {
-		req.Operator = types.SubscriptionTransactionTypeCreated
-	}
 
-	// Validate operator type
-	switch req.Operator {
-	case types.SubscriptionTransactionTypeCreated,
-		types.SubscriptionTransactionTypeUpgraded,
-		types.SubscriptionTransactionTypeRenewed:
-		// Valid operations for admin
-	default:
-		return nil, fmt.Errorf(
-			"invalid operator: %s. Allowed: created, upgraded, renewed",
-			req.Operator,
-		)
+	// Validate operator type if provided
+	if req.Operator != "" {
+		switch req.Operator {
+		case types.SubscriptionTransactionTypeCreated,
+			types.SubscriptionTransactionTypeUpgraded,
+			types.SubscriptionTransactionTypeRenewed:
+			// Valid operations for admin
+		default:
+			return nil, fmt.Errorf(
+				"invalid operator: %s. Allowed: created, upgraded, renewed",
+				req.Operator,
+			)
+		}
 	}
 
 	return req, nil
@@ -960,6 +961,86 @@ func ParseWorkspaceSubscriptionPlansReq(c *gin.Context) (*WorkspaceSubscriptionP
 		if ns == "" {
 			return nil, errors.New("namespace cannot be empty")
 		}
+	}
+
+	return req, nil
+}
+
+// AdminWorkspaceSubscriptionListReq defines request for admin to get workspace subscription list
+type AdminWorkspaceSubscriptionListReq struct {
+	// @Summary Page index
+	// @Description Page index (0-based)
+	// @JSONSchema
+	PageIndex int `json:"pageIndex,omitempty" bson:"pageIndex,omitempty" example:"0"`
+
+	// @Summary Page size
+	// @Description Page size (optional, defaults to 10)
+	// @JSONSchema
+	PageSize int `json:"pageSize,omitempty" bson:"pageSize,omitempty" example:"10"`
+
+	// @Summary Workspace filter
+	// @Description Filter by workspace name (optional)
+	// @JSONSchema
+	Workspace string `json:"workspace,omitempty" bson:"workspace,omitempty" example:"my-workspace"`
+
+	// @Summary User filter
+	// @Description Filter by user ID (optional)
+	// @JSONSchema
+	UserUID uuid.UUID `json:"userUID,omitempty" bson:"userUID,omitempty" example:"user-123"`
+
+	// @Summary Plan name filter
+	// @Description Filter by plan name (optional)
+	// @JSONSchema
+	PlanName string `json:"planName,omitempty" bson:"planName,omitempty" example:"premium"`
+
+	// @Summary Status filter
+	// @Description Filter by subscription status (optional)
+	// @JSONSchema
+	Status string `json:"status,omitempty" bson:"status,omitempty" example:"normal"`
+
+	// @Summary Region domain filter
+	// @Description Filter by region domain (optional)
+	// @JSONSchema
+	RegionDomain string `json:"regionDomain,omitempty" bson:"regionDomain,omitempty" example:"example.com"`
+}
+
+func ParseAdminWorkspaceSubscriptionListReq(c *gin.Context) (*AdminWorkspaceSubscriptionListReq, error) {
+	req := &AdminWorkspaceSubscriptionListReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+
+	// Set default values
+	if req.PageIndex < 0 {
+		req.PageIndex = 0
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	if req.PageSize > 100 {
+		req.PageSize = 100 // Limit max page size
+	}
+
+	return req, nil
+}
+
+// AdminSubscriptionPlansReq defines request for admin to get subscription plans
+type AdminSubscriptionPlansReq struct {
+	// @Summary Include inactive plans
+	// @Description Include inactive plans in the response (optional, defaults to false)
+	// @JSONSchema
+	IncludeInactive bool `json:"includeInactive,omitempty" bson:"includeInactive,omitempty" example:"false"`
+
+	// @Summary Plan type filter
+	// @Description Filter by plan type (optional)
+	// @JSONSchema
+	PlanType string `json:"planType,omitempty" bson:"planType,omitempty" example:"workspace"`
+}
+
+func ParseAdminSubscriptionPlansReq(c *gin.Context) (*AdminSubscriptionPlansReq, error) {
+	req := &AdminSubscriptionPlansReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
 	}
 
 	return req, nil

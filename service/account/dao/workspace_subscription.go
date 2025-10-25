@@ -158,3 +158,52 @@ func (g *Cockroach) GetUserStripeCustomerID(userUID uuid.UUID) (string, error) {
 	}
 	return customerID, nil
 }
+
+// ListWorkspaceSubscriptionsWithPagination returns workspace subscriptions with pagination and filtering
+func (g *Cockroach) ListWorkspaceSubscriptionsWithPagination(
+	conditions map[string]interface{},
+	pageIndex, pageSize int,
+) ([]types.WorkspaceSubscription, int64, error) {
+	db := g.ck.GetGlobalDB()
+
+	// Build query with conditions
+	query := db.Model(&types.WorkspaceSubscription{})
+
+	// Apply filters
+	for key, value := range conditions {
+		switch key {
+		case "workspace":
+			// Support fuzzy search for workspace
+			query = query.Where("workspace ILIKE ?", "%"+fmt.Sprintf("%v", value)+"%")
+		case "userUid":
+			query = query.Where("user_uid = ?", value)
+		case "planName":
+			// Support fuzzy search for planName
+			query = query.Where("plan_name ILIKE ?", "%"+fmt.Sprintf("%v", value)+"%")
+		case "status":
+			query = query.Where("status = ?", value)
+		case "regionDomain":
+			query = query.Where("region_domain = ?", value)
+		}
+	}
+
+	// Get total count
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count workspace subscriptions: %w", err)
+	}
+
+	// Get paginated results
+	var subscriptions []types.WorkspaceSubscription
+	offset := pageIndex * pageSize
+	if err := query.
+		Order("create_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&subscriptions).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to list workspace subscriptions: %w", err)
+	}
+
+	return subscriptions, total, nil
+}
+

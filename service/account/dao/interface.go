@@ -129,6 +129,10 @@ type Interface interface {
 		transaction ...*types.WorkspaceSubscriptionTransaction,
 	) error
 	GetUserStripeCustomerID(userUID uuid.UUID) (string, error)
+	ListWorkspaceSubscriptionsWithPagination(
+		conditions map[string]interface{},
+		pageIndex, pageSize int,
+	) ([]types.WorkspaceSubscription, int64, error)
 	GetWorkspaceRemainingAIQuota(workspace string) (totalQuota, remainingQuota int64, err error)
 	ChargeWorkspaceAIQuota(usage int64, workspace string) error
 }
