@@ -1,12 +1,12 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
 type JWTManager struct {
@@ -50,23 +50,22 @@ func (manager *JWTManager) VerifyToken(tokenString string) (*UserClaims, error) 
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&UserClaims{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(token *jwt.Token) (any, error) {
 			_, ok := token.Method.(*jwt.SigningMethodHMAC)
 			if !ok {
-				return nil, fmt.Errorf("unexpected token signing method")
+				return nil, errors.New("unexpected token signing method")
 			}
 
 			return manager.secretKey, nil
 		},
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}
 
 	claims, ok := token.Claims.(*UserClaims)
 	if !ok {
-		return nil, fmt.Errorf("invalid token claims")
+		return nil, errors.New("invalid token claims")
 	}
 
 	return claims, nil

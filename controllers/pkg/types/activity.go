@@ -16,17 +16,17 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-
 	"gorm.io/gorm"
 )
 
 type UserRechargeDiscount struct {
 	DefaultActiveType  ActivityType    `json:"defaultActiveType,omitempty" bson:"defaultActiveType,omitempty"`
-	DefaultSteps       map[int64]int64 `json:"defaultSteps" bson:"defaultSteps"`
-	FirstRechargeSteps map[int64]int64 `json:"firstRechargeDiscount" bson:"firstRechargeDiscount"`
+	DefaultSteps       map[int64]int64 `json:"defaultSteps"                bson:"defaultSteps"`
+	FirstRechargeSteps map[int64]int64 `json:"firstRechargeDiscount"       bson:"firstRechargeDiscount"`
 }
 
 // TODO the following structures will be deleted
@@ -76,7 +76,7 @@ type UserPhase struct {
 	GiveAmount     int64
 }
 
-//type RechargeDiscount struct {
+// type RechargeDiscount struct {
 //	LimitTimes      int64           `json:"limitTimes,omitempty"`
 //	LimitDuration   string          `json:"limitDuration,omitempty"`
 //	DiscountRates   []float64       `json:"discountRates,omitempty"`
@@ -84,19 +84,19 @@ type UserPhase struct {
 //	SpecialDiscount map[int64]int64 `json:"specialDiscount,omitempty"`
 //}
 //
-//type Phase struct {
+// type Phase struct {
 //	Name             string           `json:"name"`
 //	GiveAmount       int64            `json:"giveAmount"`
 //	RechargeDiscount RechargeDiscount `json:",inline"`
 //}
 //
-//type Activity struct {
+// type Activity struct {
 //	ActivityType string           `json:"activityType"`
 //	Phases       map[string]Phase `json:"phases"`
 //	PhaseOrder   string           `json:"phaseOrder"`
 //}
 //
-//type UserPhase struct {
+// type UserPhase struct {
 //	Name string `json:"name"`
 //	//RFC339 time format
 //	StartTime    time.Time `json:"startTime"`
@@ -105,7 +105,7 @@ type UserPhase struct {
 //	GiveAmount   int64     `json:"giveAmount"`
 //}
 //
-//type UserActivity struct {
+// type UserActivity struct {
 //	CurrentPhase string `json:"currentPhase"`
 //	Phases       map[string]*UserPhase
 //}
@@ -114,7 +114,7 @@ type Activities map[string]*Activity
 
 type UserActivities map[string]*UserActivity
 
-//func ParseUserActivities(annotations map[string]string) (UserActivities, error) {
+// func ParseUserActivities(annotations map[string]string) (UserActivities, error) {
 //	userActivities := make(map[string]*UserActivity)
 //
 //	for key, value := range annotations {
@@ -171,17 +171,24 @@ type UserActivities map[string]*UserActivity
 //	return userActivities, nil
 //}
 
-//func SetUserPhaseRechargeTimes(annotations map[string]string, activityType string, phase string, rechargeNums int64) map[string]string {
+// func SetUserPhaseRechargeTimes(annotations map[string]string, activityType string, phase string, rechargeNums int64) map[string]string {
 //	annotations[fmt.Sprintf("activity.%s.%s.rechargeNums", activityType, phase)] = fmt.Sprintf("%d", rechargeNums)
 //	return annotations
 //}
 
-func SetUserPhaseGiveAmount(annotations map[string]string, activityType string, phase string, giveAmount int64) map[string]string {
-	annotations[fmt.Sprintf("activity.%s.%s.giveAmount", activityType, phase)] = fmt.Sprintf("%d", giveAmount)
+func SetUserPhaseGiveAmount(
+	annotations map[string]string,
+	activityType, phase string,
+	giveAmount int64,
+) map[string]string {
+	annotations[fmt.Sprintf("activity.%s.%s.giveAmount", activityType, phase)] = strconv.FormatInt(
+		giveAmount,
+		10,
+	)
 	return annotations
 }
 
-//func GetUserActivityDiscount(activities Activities, userActivities *UserActivities) (activityType string, returnPhase *Phase, returnErr error) {
+// func GetUserActivityDiscount(activities Activities, userActivities *UserActivities) (activityType string, returnPhase *Phase, returnErr error) {
 //	if activities == nil || userActivities == nil {
 //		returnErr = fmt.Errorf("activities is nil")
 //		return

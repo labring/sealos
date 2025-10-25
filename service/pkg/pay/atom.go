@@ -39,6 +39,18 @@ type PaymentRequest struct {
 	UserAgent     string
 	ClientIP      string
 	DeviceTokenID string
+	CustomerID    *string
+}
+
+// StripeResponse Stripe 支付响应
+type StripeResponse struct {
+	SessionID string `json:"sessionId"`
+	URL       string `json:"url"`
+}
+
+// StripeServiceInterface Stripe 服务接口
+type StripeServiceInterface interface {
+	CreateWorkspaceSubscriptionSession(req PaymentRequest, workspace, regionDomain, planName, period string) (*StripeResponse, error)
 }
 
 func (s *AtomPaymentService) CheckRspSign(requestURI, httpMethod, clientID, respTime, responseBody, signature string) (bool, error) {

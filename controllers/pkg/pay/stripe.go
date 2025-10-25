@@ -20,12 +20,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stripe/stripe-go/v74"
-
 	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/stripe/stripe-go/v74"
 )
 
-var DefaultURL = fmt.Sprintf("https://%s", env.GetEnvWithDefault("DOMAIN", DefaultDomain))
+var DefaultURL = "https://" + env.GetEnvWithDefault("DOMAIN", DefaultDomain)
 
 const (
 	stripeSuccessPostfix = "STRIPE_SUCCESS_POSTFIX"
@@ -47,7 +46,12 @@ func init() {
 }
 
 func (s StripePayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
-	session, err := CreateCheckoutSession(amount/10000, Currency, DefaultURL+os.Getenv(stripeSuccessPostfix), DefaultURL+os.Getenv(stripeCancelPostfix))
+	session, err := CreateCheckoutSession(
+		amount/10000,
+		Currency,
+		DefaultURL+os.Getenv(stripeSuccessPostfix),
+		DefaultURL+os.Getenv(stripeCancelPostfix),
+	)
 	if err != nil {
 		return "", "", err
 	}

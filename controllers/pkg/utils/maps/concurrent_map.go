@@ -18,22 +18,22 @@ import "sync"
 
 type ConcurrentMap struct {
 	mu sync.RWMutex
-	m  map[string]interface{}
+	m  map[string]any
 }
 
 func NewConcurrentMap() *ConcurrentMap {
 	return &ConcurrentMap{
-		m: make(map[string]interface{}),
+		m: make(map[string]any),
 	}
 }
 
-func (cm *ConcurrentMap) Set(key string, value interface{}) {
+func (cm *ConcurrentMap) Set(key string, value any) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	cm.m[key] = value
 }
 
-func (cm *ConcurrentMap) Get(key string) (interface{}, bool) {
+func (cm *ConcurrentMap) Get(key string) (any, bool) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
 	val, ok := cm.m[key]
@@ -60,7 +60,7 @@ func (cm *ConcurrentMap) Delete(key string) {
 func (cm *ConcurrentMap) DeleteAll() {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	cm.m = make(map[string]interface{})
+	cm.m = make(map[string]any)
 }
 
 func (cm *ConcurrentMap) Len() int {

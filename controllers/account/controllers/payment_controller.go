@@ -18,28 +18,22 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/google/uuid"
-
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
-
-	"github.com/labring/sealos/controllers/pkg/pay"
-
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/pkg/pay"
+	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"k8s.io/apimachinery/pkg/runtime"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // PaymentReconciler reconciles a Payment object
@@ -103,7 +97,8 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 		r.Logger.Info("default discount steps is empty, use default value")
 	}
 	r.Logger.V(1).Info("account config", "config", r.accountConfig)
-	r.Logger.V(1).Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
+	r.Logger.V(1).
+		Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
 	if err := mgr.Add(r); err != nil {
 		return fmt.Errorf("add payment controller failed: %w", err)
 	}
@@ -143,28 +138,40 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 
 func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) {
 	paymentList := &accountv1.PaymentList{}
-	err := r.Client.List(context.Background(), paymentList, &client.ListOptions{})
+	err := r.List(context.Background(), paymentList, &client.ListOptions{})
 	if err != nil {
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
-		return
+		return errs
 	}
 	for _, payment := range paymentList.Items {
 		if err := r.reconcilePayment(&payment); err != nil {
-			errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
+			errs = append(
+				errs,
+				fmt.Errorf(
+					"reconcile payment failed: payment: %s, user: %s, err: %w",
+					payment.Name,
+					payment.Spec.UserID,
+					err,
+				),
+			)
 		}
 	}
-	return
+	return errs
 }
 
 func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs []error) {
-	watcher, err := r.WatchClient.Watch(context.Background(), &accountv1.PaymentList{}, &client.ListOptions{})
+	watcher, err := r.WatchClient.Watch(
+		context.Background(),
+		&accountv1.PaymentList{},
+		&client.ListOptions{},
+	)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
-		return
+		return errs
 	}
 	select {
 	case <-ctx.Done():
-		return
+		return errs
 	case event := <-watcher.ResultChan():
 		if event.Object == nil {
 			break
@@ -175,10 +182,18 @@ func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs [
 			break
 		}
 		if err := r.reconcileNewPayment(payment); err != nil {
-			errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
+			errs = append(
+				errs,
+				fmt.Errorf(
+					"reconcile payment failed: payment: %s, user: %s, err: %w",
+					payment.Name,
+					payment.Spec.UserID,
+					err,
+				),
+			)
 		}
 	}
-	return
+	return errs
 }
 
 func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
@@ -206,7 +221,9 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 	}
 	switch status {
 	case pay.PaymentSuccess:
-		userUID, err := r.Account.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		userUID, err := r.Account.AccountV2.GetUserUID(
+			&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID},
+		)
 		if err != nil {
 			return fmt.Errorf("get user UID failed: %w", err)
 		}
@@ -215,7 +232,9 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		}
 		r.userLock[userUID].Lock()
 		defer r.userLock[userUID].Unlock()
-		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(
+			&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID},
+		)
 		if err != nil {
 			return fmt.Errorf("get user discount failed: %w", err)
 		}
@@ -227,7 +246,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 			Gift:            gift,
 			CreatedAt:       payment.CreationTimestamp.Time,
 			RegionUserOwner: getUsername(payment.Namespace),
-			Method:          payment.Spec.PaymentMethod,
+			Method:          pkgtypes.PaymentMethod(payment.Spec.PaymentMethod),
 			TradeNO:         payment.Status.TradeNO,
 			CodeURL:         payment.Status.CodeURL,
 		}
@@ -246,7 +265,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		if err := r.Status().Update(context.Background(), payment); err != nil {
 			return fmt.Errorf("update payment failed: %w", err)
 		}
-	//case pay.PaymentFailed, pay.PaymentExpired:
+	// case pay.PaymentFailed, pay.PaymentExpired:
 	default:
 		if err := r.expiredOvertimePayment(payment); err != nil {
 			return fmt.Errorf("expired payment failed: %w", err)
@@ -291,10 +310,12 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 	// backward compatibility
 	if payment.Spec.UserCR == "" {
 		if payment.Spec.UserID == "" {
-			return fmt.Errorf("user ID is empty")
+			return errors.New("user ID is empty")
 		}
 		payment.Spec.UserCR = payment.Spec.UserID
-		id, err := r.Account.AccountV2.GetUserID(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR, WithOutCache: true})
+		id, err := r.Account.AccountV2.GetUserID(
+			&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR, WithOutCache: true},
+		)
 		if err != nil {
 			return fmt.Errorf("get user ID failed: %w", err)
 		}
@@ -304,7 +325,9 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 		return fmt.Errorf("create payment failed: %w", err)
 	}
 	// get user ID
-	account, err := r.Account.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID, IgnoreEmpty: true})
+	account, err := r.Account.AccountV2.GetAccount(
+		&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID, IgnoreEmpty: true},
+	)
 	if err != nil {
 		return fmt.Errorf("get account failed: %w", err)
 	}
@@ -319,7 +342,14 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 	if err != nil {
 		return fmt.Errorf("get payment Interface failed: %w", err)
 	}
-	tradeNO, codeURL, err := payHandler.CreatePayment(payment.Spec.Amount, payment.Spec.UserID, fmt.Sprintf(env.GetEnvWithDefault("PAY_DESCRIBE_FORMAT", `sealos cloud pay [domain="%s"]`), r.domain))
+	tradeNO, codeURL, err := payHandler.CreatePayment(
+		payment.Spec.Amount,
+		payment.Spec.UserID,
+		fmt.Sprintf(
+			env.GetEnvWithDefault("PAY_DESCRIBE_FORMAT", `sealos cloud pay [domain="%s"]`),
+			r.domain,
+		),
+	)
 	if err != nil {
 		return fmt.Errorf("get tradeNO and codeURL failed: %w", err)
 	}

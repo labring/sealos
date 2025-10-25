@@ -16,11 +16,11 @@ package pay
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/refunddomestic"
 )
@@ -47,7 +47,7 @@ func (w WechatPayment) GetPaymentDetails(sessionID string) (string, int64, error
 	case StatusNotPay:
 		return PaymentNotPaid, 0, nil
 	case StatusFail:
-		return PaymentFailed, 0, fmt.Errorf("order failed")
+		return PaymentFailed, 0, errors.New("order failed")
 	default:
 		return PaymentUnknown, 0, fmt.Errorf("unknown order status: %s", *orderResp.TradeState)
 	}
@@ -61,16 +61,19 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 	// check the order and get SuccessTime
 	orderResp, err := QueryOrder(option.TradeNo)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to query wechat order: %v", err)
+		return "", "", fmt.Errorf("failed to query wechat order: %w", err)
 	}
 	if orderResp.SuccessTime != nil {
 		// The SuccessTime format is generally RFC3339
 		paidAt, err := time.Parse(time.RFC3339, *orderResp.SuccessTime)
 		if err != nil {
-			return "", "", fmt.Errorf("failed to resolve the payment time: %v", err)
+			return "", "", fmt.Errorf("failed to resolve the payment time: %w", err)
 		}
 		if time.Since(paidAt) > 365*24*time.Hour {
-			return "", "", fmt.Errorf("order %s has exceeded the one-year refund period and cannot be refunded", option.TradeNo)
+			return "", "", fmt.Errorf(
+				"order %s has exceeded the one-year refund period and cannot be refunded",
+				option.TradeNo,
+			)
 		}
 	} else {
 		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
@@ -78,7 +81,7 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 
 	_, paidAmount, err := w.GetPaymentDetails(option.TradeNo)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to query the payment order: %v", err)
+		return "", "", fmt.Errorf("failed to query the payment order: %w", err)
 	}
 
 	// generate a merchant refund number
@@ -93,13 +96,13 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 	ctx := context.Background()
 	client, err := NewClient(ctx)
 	if err != nil {
-		return "", "", fmt.Errorf("new wechat pay client err: %v", err)
+		return "", "", fmt.Errorf("new wechat pay client err: %w", err)
 	}
 
 	req := refunddomestic.CreateRequest{
 		OutTradeNo:  core.String(option.TradeNo),
 		OutRefundNo: core.String(refundNo),
-		Reason:      core.String(fmt.Sprintf("refund for order %s", option.OrderID)),
+		Reason:      core.String("refund for order " + option.OrderID),
 		Amount: &refunddomestic.AmountReq{
 			Total:    core.Int64(paidAmount / 10000),
 			Refund:   core.Int64(refundAmt),
@@ -111,10 +114,10 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 	svc := refunddomestic.RefundsApiService{Client: client}
 	resp, _, err := svc.Create(ctx, req)
 	if err != nil {
-		return refundNo, "", fmt.Errorf("call Refund API error: %v", err)
+		return refundNo, "", fmt.Errorf("call Refund API error: %w", err)
 	}
 	if resp == nil || resp.RefundId == nil {
-		return refundNo, "", fmt.Errorf("empty refund response")
+		return refundNo, "", errors.New("empty refund response")
 	}
 
 	// Return: Merchant Refund Number & WeChat Refund Number

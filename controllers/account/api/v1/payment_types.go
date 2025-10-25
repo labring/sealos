@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -80,8 +80,8 @@ type Payment struct {
 
 // PaymentList contains a list of Payment
 type PaymentList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `          json:",inline"`
+	metav1.ListMeta `          json:"metadata,omitempty"`
 	Items           []Payment `json:"items"`
 }
 
@@ -89,7 +89,7 @@ func (p *Payment) ToJSON() string {
 	return `{
 	"spec": {
 		"userID": "` + p.Spec.UserID + `",
-		"amount": ` + fmt.Sprint(p.Spec.Amount) + `,
+		"amount": ` + strconv.FormatInt(p.Spec.Amount, 10) + `,
 		"paymentMethod": "` + p.Spec.PaymentMethod + `"
 	},
 	"status": {

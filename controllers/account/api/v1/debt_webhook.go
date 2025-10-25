@@ -18,24 +18,22 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/controllers/pkg/utils/maps"
-
-	"github.com/labring/sealos/controllers/pkg/database/cockroach"
-
+	"github.com/go-logr/logr"
 	account2 "github.com/labring/sealos/controllers/pkg/account"
 	"github.com/labring/sealos/controllers/pkg/code"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	pkgtype "github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
+	"gorm.io/gorm"
 	admissionv1 "k8s.io/api/admission/v1"
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -70,8 +68,10 @@ var kubeSystemGroup string
 func init() {
 	kubeSystemGroup = fmt.Sprintf("%s:%s", saPrefix, kubeSystemNamespace)
 }
+
 func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req), "req.Operation", req.Operation)
+	logger.V(1).
+		Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req), "req.Operation", req.Operation)
 	// skip delete request (删除quota资源除外)
 	if req.Operation == admissionv1.Delete && !strings.Contains(getGVRK(req), "quotas") {
 		return admission.Allowed("")
@@ -97,17 +97,39 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 		if isWhiteList(req) {
 			return admission.ValidationResponse(true, "")
 		}
-		logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name", req.Name, "Operation", req.Operation)
+		logger.V(1).
+			Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name", req.Name, "Operation", req.Operation)
 		// Check if the request is for resourcequota resource
 		if req.Kind.Kind == "ResourceQuota" && isDefaultQuotaName(req.Name) {
 			// Check if the operation is UPDATE or DELETE
-			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+			return admission.Denied(
+				fmt.Sprintf(
+					"ns %s request %s %s permission denied",
+					req.Namespace,
+					req.Kind.Kind,
+					req.Operation,
+				),
+			)
 		}
 		if req.Kind.Kind == "Namespace" {
-			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+			return admission.Denied(
+				fmt.Sprintf(
+					"ns %s request %s %s permission denied",
+					req.Namespace,
+					req.Kind.Kind,
+					req.Operation,
+				),
+			)
 		}
 		if req.Kind.Kind == "Payment" && req.Operation == admissionv1.Update {
-			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+			return admission.Denied(
+				fmt.Sprintf(
+					"ns %s request %s %s permission denied",
+					req.Namespace,
+					req.Kind.Kind,
+					req.Operation,
+				),
+			)
 		}
 		return d.checkOption(ctx, logger, d.Client, req.Namespace)
 	}
@@ -119,7 +141,13 @@ func getGVRK(req admission.Request) string {
 	if req.Kind.Group == "" {
 		return fmt.Sprintf("%s.%s/%s", req.Resource.Resource, req.Kind.Kind, req.Kind.Version)
 	}
-	return fmt.Sprintf("%s.%s.%s/%s", req.Resource.Resource, req.Kind.Kind, req.Kind.Group, req.Kind.Version)
+	return fmt.Sprintf(
+		"%s.%s.%s/%s",
+		req.Resource.Resource,
+		req.Kind.Kind,
+		req.Kind.Group,
+		req.Kind.Version,
+	)
 }
 
 func isWhiteList(req admission.Request) bool {
@@ -133,14 +161,20 @@ func isWhiteList(req admission.Request) bool {
 	reqGVK := getGVRK(req)
 	for _, w := range whitelist {
 		if reqGVK == w {
-			logger.V(1).Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
+			logger.V(1).
+				Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
 			return true
 		}
 	}
 	return false
 }
 
-func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
+func (d *DebtValidate) checkOption(
+	ctx context.Context,
+	logger logr.Logger,
+	c client.Client,
+	nsName string,
+) admission.Response {
 	if nsName == "" {
 		return admission.Allowed("")
 	}
@@ -151,37 +185,73 @@ func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c cl
 	// Check if it is a user namespace
 	user, ok := ns.Labels[userv1.UserLabelOwnerKey]
 	if !ok {
-		return admission.ValidationResponse(false, fmt.Sprintf("this namespace is not user namespace %s, or have not created", ns.Name))
+		return admission.ValidationResponse(
+			false,
+			fmt.Sprintf("this namespace is not user namespace %s, or have not created", ns.Name),
+		)
 	}
 	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
 
 	// Check cache first
-	cacheKey := fmt.Sprintf("account:%s", user)
+	cacheKey := "account:" + user
 	if cachedAccount, ok := d.TTLUserMap.Get(cacheKey); ok {
 		logger.Info("cache hit for user", "user", user)
 		if cachedAccount.Balance+cachedAccount.UsableCredits <= cachedAccount.DeductionBalance {
-			return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(cachedAccount), user)))
+			return admission.ValidationResponse(
+				false,
+				fmt.Sprintf(
+					code.MessageFormat,
+					code.InsufficientBalance,
+					fmt.Sprintf(
+						"account balance less than 0, now account is %.2f¥. Please recharge the user %s.",
+						GetAccountDebtBalance(cachedAccount),
+						user,
+					),
+				),
+			)
 		}
-		return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s (from cache)", user, ns.Name))
+		return admission.Allowed(
+			fmt.Sprintf("pass user %s, namespace %s (from cache)", user, ns.Name),
+		)
 	}
 
-	// Cache miss, query database
-	userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
-	if err != nil {
-		logger.Error(err, "get user error", "user", user)
-		return admission.ValidationResponse(true, err.Error())
-	}
-	account, err := d.AccountV2.GetAccountWithCredits(userUID)
-	if err != nil {
-		logger.Error(err, "get account error", "user", user)
-		return admission.ValidationResponse(true, err.Error())
-	}
-	// Store in cache
-	d.TTLUserMap.Put(cacheKey, account)
-	logger.V(1).Info("cached account for user", "user", user)
+	if ns.Annotations[pkgtype.WorkspaceSubscriptionStatusAnnoKey] != "" {
+		workspaceSub, err := d.AccountV2.GetWorkspaceSubscription(
+			nsName,
+			d.AccountV2.GetLocalRegion().Domain,
+		)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Error(err, "get workspace subscription error", "workspace", nsName)
+			return admission.ValidationResponse(true, err.Error())
+		}
+		if workspaceSub != nil && workspaceSub.Status != pkgtype.SubscriptionStatusNormal {
+			return admission.ValidationResponse(
+				false,
+				fmt.Sprintf(
+					"the subscription status of workspace %s is expired, please contact the administrator",
+					ns.Name,
+				),
+			)
+		}
+	} else {
+		// Cache miss, query database
+		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
+		if err != nil {
+			logger.Error(err, "get user error", "user", user)
+			return admission.ValidationResponse(true, err.Error())
+		}
+		account, err := d.AccountV2.GetAccountWithCredits(userUID)
+		if err != nil {
+			logger.Error(err, "get account error", "user", user)
+			return admission.ValidationResponse(true, err.Error())
+		}
+		// Store in cache
+		d.TTLUserMap.Put(cacheKey, account)
+		logger.V(1).Info("cached account for user", "user", user)
 
-	if account.Balance+account.UsableCredits <= account.DeductionBalance {
-		return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
+		if account.Balance+account.UsableCredits <= account.DeductionBalance {
+			return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
+		}
 	}
 	return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s", user, ns.Name))
 }
@@ -191,7 +261,9 @@ func isDefaultQuotaName(name string) bool {
 }
 
 func GetAccountDebtBalance(account *pkgtype.UsableBalanceWithCredits) float64 {
-	return account2.GetCurrencyBalance(account.Balance + account.UsableCredits - account.DeductionBalance)
+	return account2.GetCurrencyBalance(
+		account.Balance + account.UsableCredits - account.DeductionBalance,
+	)
 }
 
 const debtLimit0QuotaName = "debt-limit0"

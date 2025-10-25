@@ -22,7 +22,6 @@ import (
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -32,15 +31,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	cfg       *rest.Config
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+)
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -74,7 +74,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -84,19 +83,19 @@ var _ = AfterSuite(func() {
 })
 
 func TestCalculateBillingHours(t *testing.T) {
-	//lastUpdateTime := time.Date(2021, 11, 1, 10, 35, 20, 0, time.UTC)
-	//currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+	// lastUpdateTime := time.Date(2021, 11, 1, 10, 35, 20, 0, time.UTC)
+	// currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
 
-	lastUpdateTime := time.Date(2021, 11, 1, 10, 0, 0, 0, time.UTC)
-	currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
-	//lastUpdateTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
-	//currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+	lastUpdateTime := time.Date(2021, time.November, 1, 10, 0, 0, 0, time.UTC)
+	currentHourTime := time.Date(2021, time.November, 1, 14, 0, 0, 0, time.UTC)
+	// lastUpdateTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+	// currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
 
 	expected := []time.Time{
-		time.Date(2021, 11, 1, 11, 0, 0, 0, time.UTC),
-		time.Date(2021, 11, 1, 12, 0, 0, 0, time.UTC),
-		time.Date(2021, 11, 1, 13, 0, 0, 0, time.UTC),
-		time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC),
+		time.Date(2021, time.November, 1, 11, 0, 0, 0, time.UTC),
+		time.Date(2021, time.November, 1, 12, 0, 0, 0, time.UTC),
+		time.Date(2021, time.November, 1, 13, 0, 0, 0, time.UTC),
+		time.Date(2021, time.November, 1, 14, 0, 0, 0, time.UTC),
 	}
 
 	result := CalculateBillingHours(lastUpdateTime, currentHourTime)
