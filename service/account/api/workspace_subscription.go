@@ -2038,8 +2038,8 @@ func finalizeWorkspaceSubscriptionSuccess(
 	}
 
 	if err := updateWorkspaceSubscriptionNamespaceStatus(workspaceSubscription.Workspace); err != nil {
-		//dao.Logger.Errorf("Failed to update workspace subscription namespace annotation: %v", err)
-		return fmt.Errorf("failed to update workspace subscription namespace annotation: %v", err)
+		// dao.Logger.Errorf("Failed to update workspace subscription namespace annotation: %v", err)
+		return fmt.Errorf("failed to update workspace subscription namespace annotation: %w", err)
 	}
 	return nil
 }
@@ -2054,7 +2054,11 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		ns := &corev1.Namespace{}
 		if err := dao.K8sManager.GetClient().Get(ctx, types2.NamespacedName{Name: workspace}, ns); err != nil {
 			if k8serrors.IsNotFound(err) {
-				logrus.Info("Namespace not found, skipping workspace subscription annotation update", "namespace", workspace)
+				logrus.Info(
+					"Namespace not found, skipping workspace subscription annotation update",
+					"namespace",
+					workspace,
+				)
 				return nil // Skip if namespace doesn't exist
 			}
 			return fmt.Errorf("failed to get namespace %s: %w", workspace, err)
@@ -2066,7 +2070,8 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		}
 
 		// Check if the annotation already matches the desired status
-		if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == types.NormalDebtNamespaceAnnoStatus || ns.Status.Phase == corev1.NamespaceTerminating {
+		if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == types.NormalDebtNamespaceAnnoStatus ||
+			ns.Status.Phase == corev1.NamespaceTerminating {
 			return nil
 		}
 
@@ -2078,7 +2083,10 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 			return fmt.Errorf("failed to update namespace annotation: %w", err)
 		}
 
-		logrus.Infof("Successfully updated workspace subscription status annotation for namespace %s", workspace)
+		logrus.Infof(
+			"Successfully updated workspace subscription status annotation for namespace %s",
+			workspace,
+		)
 		return nil
 	})
 }
@@ -2781,7 +2789,11 @@ func AdminProcessExpiredWorkspaceSubscriptions(c *gin.Context) {
 // @Param req body AdminWorkspaceSubscriptionAddReq true "AdminWorkspaceSubscriptionAddReq"
 // @Success 200 {object} gin.H
 // @Router /admin/v1alpha1/workspace-subscription/add [post]
-func AdminAddWorkspaceSubscription(c *gin.Context) {
+
+// authenticateAndParseAdminRequest handles authentication and request parsing for admin operations
+func authenticateAndParseAdminRequest(
+	c *gin.Context,
+) (*helper.AdminWorkspaceSubscriptionAddReq, error) {
 	// Authenticate admin request
 	if err := authenticateAdminRequest(c); err != nil {
 		SetErrorResp(
@@ -2789,7 +2801,7 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			http.StatusForbidden,
 			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
 		)
-		return
+		return nil, err
 	}
 
 	// Parse request
@@ -2800,10 +2812,14 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			http.StatusBadRequest,
 			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
 		)
-		return
+		return nil, err
 	}
 
-	// Set default values for optional fields
+	return req, nil
+}
+
+// setDefaultValues sets default values for optional fields in the request
+func setDefaultValues(c *gin.Context, req *helper.AdminWorkspaceSubscriptionAddReq) error {
 	if req.UserUID == uuid.Nil {
 		// Get workspace owner as default user
 		workspaceOwner, err := dao.DBClient.GetWorkspaceUserUID(req.Workspace)
@@ -2813,7 +2829,7 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 				http.StatusBadRequest,
 				gin.H{"error": fmt.Sprintf("failed to get workspace owner: %v", err)},
 			)
-			return
+			return err
 		}
 		req.UserUID = workspaceOwner
 	}
@@ -2823,9 +2839,22 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 		req.RegionDomain = dao.DBClient.GetLocalRegion().Domain
 	}
 
-	logrus.Infof("Admin adding workspace subscription: workspace=%s, region=%s, user=%s, plan=%s, operator=%s",
-		req.Workspace, req.RegionDomain, req.UserUID, req.PlanName, req.Operator)
+	logrus.Infof(
+		"Admin adding workspace subscription: workspace=%s, region=%s, user=%s, plan=%s, operator=%s",
+		req.Workspace,
+		req.RegionDomain,
+		req.UserUID,
+		req.PlanName,
+		req.Operator,
+	)
 
+	return nil
+}
+
+// validatePlanAndPrice validates the subscription plan and finds the appropriate price
+func validatePlanAndPrice(
+	c *gin.Context, req *helper.AdminWorkspaceSubscriptionAddReq,
+) (*types.WorkspaceSubscriptionPlan, *types.ProductPrice, error) {
 	// Get plan details
 	plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(req.PlanName)
 	if err != nil {
@@ -2834,7 +2863,7 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			http.StatusInternalServerError,
 			gin.H{"error": fmt.Sprintf("failed to get subscription plan: %v", err)},
 		)
-		return
+		return nil, nil, err
 	}
 
 	// Get plan price
@@ -2849,25 +2878,43 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 		SetErrorResp(
 			c,
 			http.StatusBadRequest,
-			gin.H{"error": fmt.Sprintf("no price found for plan %s with period %s", req.PlanName, req.Period)},
+			gin.H{
+				"error": fmt.Sprintf(
+					"no price found for plan %s with period %s",
+					req.PlanName,
+					req.Period,
+				),
+			},
 		)
-		return
+		return nil, nil, fmt.Errorf("no price found for plan %s with period %s",
+			req.PlanName, req.Period)
 	}
 
+	return plan, price, nil
+}
+
+// validateExistingSubscription checks existing subscription and determines operator
+func validateExistingSubscription(
+	c *gin.Context, req *helper.AdminWorkspaceSubscriptionAddReq,
+) (*types.WorkspaceSubscription, error) {
 	// Check existing subscription and auto-determine operator if needed
-	existingSubscription, err := dao.DBClient.GetWorkspaceSubscription(req.Workspace, req.RegionDomain)
+	existingSubscription, err := dao.DBClient.GetWorkspaceSubscription(
+		req.Workspace,
+		req.RegionDomain,
+	)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		SetErrorResp(
 			c,
 			http.StatusInternalServerError,
 			gin.H{"error": fmt.Sprintf("failed to check existing workspace subscription: %v", err)},
 		)
-		return
+		return nil, err
 	}
 
 	// Auto-determine operator if not provided
 	if req.Operator == "" {
-		if existingSubscription != nil && existingSubscription.Status != types.SubscriptionStatusDeleted {
+		if existingSubscription != nil &&
+			existingSubscription.Status != types.SubscriptionStatusDeleted {
 			// If subscription exists and not deleted, default to upgrade
 			req.Operator = types.SubscriptionTransactionTypeUpgraded
 		} else {
@@ -2884,7 +2931,7 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			http.StatusConflict,
 			gin.H{"error": "workspace already has an active subscription"},
 		)
-		return
+		return nil, errors.New("workspace already has an active subscription")
 	}
 
 	// For upgrade/renew operations, ensure subscription exists
@@ -2895,9 +2942,14 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			http.StatusBadRequest,
 			gin.H{"error": "workspace subscription not found for upgrade/renew operation"},
 		)
-		return
+		return nil, errors.New("workspace subscription not found for upgrade/renew operation")
 	}
 
+	return existingSubscription, nil
+}
+
+// checkSubscriptionQuota performs quota checking for the subscription
+func checkSubscriptionQuota(c *gin.Context, req *helper.AdminWorkspaceSubscriptionAddReq) error {
 	// Perform quota check by default (unless explicitly skipped)
 	if !req.SkipQuotaCheck {
 		ok, err := CheckQuota(context.Background(), req.Workspace, req.PlanName)
@@ -2907,7 +2959,7 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 				http.StatusInternalServerError,
 				gin.H{"error": fmt.Sprintf("failed to check quota: %v", err)},
 			)
-			return
+			return err
 		}
 		if !ok {
 			SetErrorResp(
@@ -2918,81 +2970,212 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 					"code":  10004,
 				},
 			)
-			return
+			return errors.New("quota exceeded")
 		}
 	} else {
 		logrus.Infof("Admin skipped quota check for workspace %s, plan %s", req.Workspace, req.PlanName)
 	}
+	return nil
+}
 
-	// Process in database transaction
-	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-		now := time.Now().UTC()
+// createSubscriptionTransaction creates the workspace subscription transaction record
+//
+//nolint:unparam // Function returns error for interface compatibility, always nil
+func createSubscriptionTransaction(
+	req *helper.AdminWorkspaceSubscriptionAddReq,
+	price *types.ProductPrice,
+	existingSubscription *types.WorkspaceSubscription,
+) (*types.WorkspaceSubscriptionTransaction, error) {
+	now := time.Now().UTC()
 
-		// Create workspace subscription transaction with no_need payment status
-		transaction := types.WorkspaceSubscriptionTransaction{
-			ID:           uuid.New(),
-			From:         types.TransactionFromSystem, // Mark as system/admin initiated
-			Workspace:    req.Workspace,
-			RegionDomain: req.RegionDomain,
-			UserUID:      req.UserUID,
-			NewPlanName:  req.PlanName,
-			Operator:     req.Operator,
-			StartAt:      now,
-			CreatedAt:    now,
-			UpdatedAt:    now,
-			Status:       types.SubscriptionTransactionStatusCompleted,
-			PayStatus:    types.SubscriptionPayStatusNoNeed, // Skip payment processing
-			Period:       req.Period,
-			Amount:       price.Price,
-			StatusDesc:   fmt.Sprintf("Admin added subscription: %s", req.Description),
+	transaction := &types.WorkspaceSubscriptionTransaction{
+		ID:           uuid.New(),
+		From:         types.TransactionFromSystem, // Mark as system/admin initiated
+		Workspace:    req.Workspace,
+		RegionDomain: req.RegionDomain,
+		UserUID:      req.UserUID,
+		NewPlanName:  req.PlanName,
+		Operator:     req.Operator,
+		StartAt:      now,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		Status:       types.SubscriptionTransactionStatusCompleted,
+		PayStatus:    types.SubscriptionPayStatusNoNeed, // Skip payment processing
+		Period:       req.Period,
+		Amount:       price.Price,
+		StatusDesc:   "Admin added subscription: " + req.Description,
+	}
+
+	// Set old plan info if upgrading or renewing
+	if existingSubscription != nil {
+		transaction.OldPlanName = existingSubscription.PlanName
+		transaction.OldPlanStatus = existingSubscription.Status
+	} else {
+		// For new subscriptions, set OldPlanStatus to NORMAL when OldPlanName is empty
+		transaction.OldPlanStatus = types.SubscriptionStatusNormal
+	}
+
+	return transaction, nil
+}
+
+// createOrUpdateWorkspaceSubscription creates a new subscription or updates an existing one
+//
+//nolint:unparam // Function returns error for interface compatibility, always nil
+func createOrUpdateWorkspaceSubscription(
+	req *helper.AdminWorkspaceSubscriptionAddReq, existingSubscription *types.WorkspaceSubscription,
+) (*types.WorkspaceSubscription, error) {
+	now := time.Now().UTC()
+
+	var workspaceSubscription *types.WorkspaceSubscription
+	if existingSubscription != nil {
+		workspaceSubscription = existingSubscription
+		workspaceSubscription.PlanName = req.PlanName
+		workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
+		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
+		workspaceSubscription.Status = types.SubscriptionStatusNormal
+
+		// Update period for renewals
+		if req.Operator == types.SubscriptionTransactionTypeRenewed {
+			workspaceSubscription.CurrentPeriodStartAt = now
+			workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0) // Monthly
+			workspaceSubscription.ExpireAt = stripe.Time(
+				workspaceSubscription.CurrentPeriodEndAt,
+			)
+		}
+	} else {
+		// Create new subscription
+		workspaceSubscription = &types.WorkspaceSubscription{
+			ID:                   uuid.New(),
+			PlanName:             req.PlanName,
+			Workspace:            req.Workspace,
+			RegionDomain:         req.RegionDomain,
+			UserUID:              req.UserUID,
+			Status:               types.SubscriptionStatusNormal,
+			TrafficStatus:        types.WorkspaceTrafficStatusActive,
+			PayStatus:            types.SubscriptionPayStatusNoNeed,
+			PayMethod:            types.PaymentMethodErrAndUseBalance, // Internal admin method
+			CurrentPeriodStartAt: now,
+			CurrentPeriodEndAt:   now.AddDate(0, 1, 0), // Monthly
+			CreateAt:             now,
+			ExpireAt:             stripe.Time(now.AddDate(0, 1, 0)),
+		}
+	}
+
+	return workspaceSubscription, nil
+}
+
+// addTrafficAndAIPackages handles adding traffic and AI quota packages to the subscription
+func addTrafficAndAIPackages(
+	tx *gorm.DB,
+	req *helper.AdminWorkspaceSubscriptionAddReq,
+	plan *types.WorkspaceSubscriptionPlan,
+	existingSubscription, workspaceSubscription *types.WorkspaceSubscription,
+	transactionID string,
+) error {
+	// Add traffic package
+	if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
+		period, err := types.ParsePeriod(req.Period)
+		if err != nil {
+			return fmt.Errorf("invalid subscription period: %w", err)
 		}
 
-		// Set old plan info if upgrading or renewing
-		if existingSubscription != nil {
-			transaction.OldPlanName = existingSubscription.PlanName
-			transaction.OldPlanStatus = existingSubscription.Status
-		} else {
-			// For new subscriptions, set OldPlanStatus to NORMAL when OldPlanName is empty
-			transaction.OldPlanStatus = types.SubscriptionStatusNormal
+		// Calculate additional traffic for upgrades
+		additionalTraffic := plan.Traffic
+		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
+			existingSubscription != nil &&
+			existingSubscription.PlanName != types.FreeSubscriptionPlanName {
+			oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(
+				existingSubscription.PlanName,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
+			}
+			additionalTraffic -= oldPlan.Traffic
+			if additionalTraffic < 0 {
+				additionalTraffic = 0
+			}
 		}
 
-		// Create the transaction record
-		if err := dao.DBClient.CreateWorkspaceSubscriptionTransaction(tx, &transaction); err != nil {
+		if additionalTraffic > 0 {
+			err = helper.AddTrafficPackage(
+				tx,
+				dao.K8sManager.GetClient(),
+				workspaceSubscription,
+				plan,
+				time.Now().Add(period),
+				types.WorkspaceTrafficFromWorkspaceSubscription,
+				transactionID,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to add traffic package: %w", err)
+			}
+		}
+	}
+
+	// Add AI quota package
+	if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
+		period, err := types.ParsePeriod(req.Period)
+		if err != nil {
+			return fmt.Errorf("invalid subscription period: %w", err)
+		}
+
+		// Calculate additional AI quota for upgrades
+		additionalAIQuota := plan.AIQuota
+		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
+			existingSubscription != nil &&
+			existingSubscription.PlanName != types.FreeSubscriptionPlanName {
+			oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(
+				existingSubscription.PlanName,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
+			}
+			additionalAIQuota -= oldPlan.AIQuota
+			if additionalAIQuota < 0 {
+				additionalAIQuota = 0
+			}
+		}
+
+		if additionalAIQuota > 0 {
+			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+				tx,
+				workspaceSubscription.ID,
+				additionalAIQuota,
+				time.Now().Add(period),
+				types.PKGFromWorkspaceSubscription,
+				transactionID,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to add AI quota package: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// processSubscriptionTransaction handles the complete database transaction for subscription creation/update
+func processSubscriptionTransaction(
+	req *helper.AdminWorkspaceSubscriptionAddReq,
+	plan *types.WorkspaceSubscriptionPlan,
+	price *types.ProductPrice,
+	existingSubscription *types.WorkspaceSubscription,
+) error {
+	return dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		// Create transaction record
+		transaction, err := createSubscriptionTransaction(req, price, existingSubscription)
+		if err != nil {
+			return fmt.Errorf("failed to create subscription transaction: %w", err)
+		}
+
+		if err := dao.DBClient.CreateWorkspaceSubscriptionTransaction(tx, transaction); err != nil {
 			return fmt.Errorf("failed to create workspace subscription transaction: %w", err)
 		}
 
 		// Create or update workspace subscription
-		var workspaceSubscription *types.WorkspaceSubscription
-		if existingSubscription != nil {
-			workspaceSubscription = existingSubscription
-			workspaceSubscription.PlanName = req.PlanName
-			workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
-			workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
-			workspaceSubscription.Status = types.SubscriptionStatusNormal
-
-			// Update period for renewals
-			if req.Operator == types.SubscriptionTransactionTypeRenewed {
-				workspaceSubscription.CurrentPeriodStartAt = now
-				workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0) // Monthly
-				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
-			}
-		} else {
-			// Create new subscription
-			workspaceSubscription = &types.WorkspaceSubscription{
-				ID:                   uuid.New(),
-				PlanName:             req.PlanName,
-				Workspace:            req.Workspace,
-				RegionDomain:         req.RegionDomain,
-				UserUID:              req.UserUID,
-				Status:               types.SubscriptionStatusNormal,
-				TrafficStatus:        types.WorkspaceTrafficStatusActive,
-				PayStatus:            types.SubscriptionPayStatusNoNeed,
-				PayMethod:            types.PaymentMethodErrAndUseBalance, // Internal admin method
-				CurrentPeriodStartAt: now,
-				CurrentPeriodEndAt:   now.AddDate(0, 1, 0), // Monthly
-				CreateAt:             now,
-				ExpireAt:             stripe.Time(now.AddDate(0, 1, 0)),
-			}
+		workspaceSubscription, err := createOrUpdateWorkspaceSubscription(req, existingSubscription)
+		if err != nil {
+			return fmt.Errorf("failed to create or update workspace subscription: %w", err)
 		}
 
 		// Save workspace subscription
@@ -3007,89 +3190,59 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 			}
 		}
 
-		// Add traffic package
-		if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-			period, err := types.ParsePeriod(req.Period)
-			if err != nil {
-				return fmt.Errorf("invalid subscription period: %w", err)
-			}
-
-			// Calculate additional traffic for upgrades
-			additionalTraffic := plan.Traffic
-			if req.Operator == types.SubscriptionTransactionTypeUpgraded && existingSubscription != nil &&
-				existingSubscription.PlanName != types.FreeSubscriptionPlanName {
-				oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(existingSubscription.PlanName)
-				if err != nil {
-					return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
-				}
-				additionalTraffic -= oldPlan.Traffic
-				if additionalTraffic < 0 {
-					additionalTraffic = 0
-				}
-			}
-
-			if additionalTraffic > 0 {
-				err = helper.AddTrafficPackage(
-					tx,
-					dao.K8sManager.GetClient(),
-					workspaceSubscription,
-					plan,
-					time.Now().Add(period),
-					types.WorkspaceTrafficFromWorkspaceSubscription,
-					transaction.ID.String(),
-				)
-				if err != nil {
-					return fmt.Errorf("failed to add traffic package: %w", err)
-				}
-			}
-		}
-
-		// Add AI quota package
-		if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-			period, err := types.ParsePeriod(req.Period)
-			if err != nil {
-				return fmt.Errorf("invalid subscription period: %w", err)
-			}
-
-			// Calculate additional AI quota for upgrades
-			additionalAIQuota := plan.AIQuota
-			if req.Operator == types.SubscriptionTransactionTypeUpgraded && existingSubscription != nil &&
-				existingSubscription.PlanName != types.FreeSubscriptionPlanName {
-				oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(existingSubscription.PlanName)
-				if err != nil {
-					return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
-				}
-				additionalAIQuota -= oldPlan.AIQuota
-				if additionalAIQuota < 0 {
-					additionalAIQuota = 0
-				}
-			}
-
-			if additionalAIQuota > 0 {
-				err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
-					tx,
-					workspaceSubscription.ID,
-					additionalAIQuota,
-					time.Now().Add(period),
-					types.PKGFromWorkspaceSubscription,
-					transaction.ID.String(),
-				)
-				if err != nil {
-					return fmt.Errorf("failed to add AI quota package: %w", err)
-				}
-			}
+		// Add traffic and AI packages
+		if err := addTrafficAndAIPackages(tx, req, plan, existingSubscription, workspaceSubscription, transaction.ID.String()); err != nil {
+			return err
 		}
 
 		// Update workspace subscription namespace annotation for subscription
 		if err := updateWorkspaceSubscriptionNamespaceStatus(req.Workspace); err != nil {
-			return fmt.Errorf("failed to update workspace subscription namespace annotation after admin add: %v", err)
+			return fmt.Errorf(
+				"failed to update workspace subscription namespace annotation after admin add: %w",
+				err,
+			)
 		}
-		logrus.Infof("Successfully added workspace subscription via admin interface: workspace=%s, plan=%s, operator=%s, transaction_id=%s",
-			req.Workspace, req.PlanName, req.Operator, transaction.ID)
+
+		logrus.Infof(
+			"Successfully added workspace subscription via admin interface: workspace=%s, plan=%s, operator=%s, transaction_id=%s",
+			req.Workspace,
+			req.PlanName,
+			req.Operator,
+			transaction.ID,
+		)
 
 		return nil
 	})
+}
 
+// @Success 200 {object} gin.H
+// @Router /admin/v1alpha1/workspace-subscription/add [post]
+func AdminAddWorkspaceSubscription(c *gin.Context) {
+	req, err := authenticateAndParseAdminRequest(c)
+	if err != nil {
+		return
+	}
+
+	if err := setDefaultValues(c, req); err != nil {
+		return
+	}
+
+	plan, price, err := validatePlanAndPrice(c, req)
+	if err != nil {
+		return
+	}
+
+	existingSubscription, err := validateExistingSubscription(c, req)
+	if err != nil {
+		return
+	}
+
+	if err := checkSubscriptionQuota(c, req); err != nil {
+		return
+	}
+
+	// Process subscription transaction
+	err = processSubscriptionTransaction(req, plan, price, existingSubscription)
 	if err != nil {
 		dao.Logger.Errorf("Failed to add workspace subscription via admin interface: %v", err)
 		SetErrorResp(
@@ -3102,7 +3255,11 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": fmt.Sprintf("Workspace subscription '%s' added successfully for workspace '%s'", req.PlanName, req.Workspace),
+		"message": fmt.Sprintf(
+			"Workspace subscription '%s' added successfully for workspace '%s'",
+			req.PlanName,
+			req.Workspace,
+		),
 	})
 }
 
@@ -3153,7 +3310,11 @@ func GetWorkspaceSubscriptionPlans(c *gin.Context) {
 	for _, namespace := range req.Namespaces {
 		subscription, err := dao.DBClient.GetWorkspaceSubscription(namespace, regionDomain)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			dao.Logger.Errorf("Failed to get workspace subscription for namespace %s: %v", namespace, err)
+			dao.Logger.Errorf(
+				"Failed to get workspace subscription for namespace %s: %v",
+				namespace,
+				err,
+			)
 			// Continue processing other namespaces, return PAYG for this one
 			plans = append(plans, NamespacePlanInfo{
 				Namespace: namespace,
@@ -3213,7 +3374,7 @@ func AdminWorkspaceSubscriptionList(c *gin.Context) {
 		req.PageIndex, req.PageSize, req)
 
 	// Build query conditions
-	conditions := map[string]interface{}{}
+	conditions := map[string]any{}
 	if req.Workspace != "" {
 		conditions["workspace"] = req.Workspace
 	}
@@ -3487,7 +3648,7 @@ func AdminWorkspaceSubscriptionListGET(c *gin.Context) {
 		req.PageIndex, req.PageSize, req)
 
 	// Build query conditions
-	conditions := map[string]interface{}{}
+	conditions := map[string]any{}
 	if req.Workspace != "" {
 		conditions["workspace"] = req.Workspace
 	}

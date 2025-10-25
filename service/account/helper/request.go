@@ -895,7 +895,9 @@ type AdminWorkspaceSubscriptionAddReq struct {
 	SkipQuotaCheck bool `json:"skipQuotaCheck,omitempty" bson:"skipQuotaCheck,omitempty" example:"false"`
 }
 
-func ParseAdminWorkspaceSubscriptionAddReq(c *gin.Context) (*AdminWorkspaceSubscriptionAddReq, error) {
+func ParseAdminWorkspaceSubscriptionAddReq(
+	c *gin.Context,
+) (*AdminWorkspaceSubscriptionAddReq, error) {
 	req := &AdminWorkspaceSubscriptionAddReq{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
@@ -1004,7 +1006,9 @@ type AdminWorkspaceSubscriptionListReq struct {
 	RegionDomain string `json:"regionDomain,omitempty" bson:"regionDomain,omitempty" example:"example.com"`
 }
 
-func ParseAdminWorkspaceSubscriptionListReq(c *gin.Context) (*AdminWorkspaceSubscriptionListReq, error) {
+func ParseAdminWorkspaceSubscriptionListReq(
+	c *gin.Context,
+) (*AdminWorkspaceSubscriptionListReq, error) {
 	req := &AdminWorkspaceSubscriptionListReq{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)

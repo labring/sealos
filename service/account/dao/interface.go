@@ -130,7 +130,7 @@ type Interface interface {
 	) error
 	GetUserStripeCustomerID(userUID uuid.UUID) (string, error)
 	ListWorkspaceSubscriptionsWithPagination(
-		conditions map[string]interface{},
+		conditions map[string]any,
 		pageIndex, pageSize int,
 	) ([]types.WorkspaceSubscription, int64, error)
 	GetWorkspaceRemainingAIQuota(workspace string) (totalQuota, remainingQuota int64, err error)

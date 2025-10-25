@@ -161,7 +161,7 @@ func (g *Cockroach) GetUserStripeCustomerID(userUID uuid.UUID) (string, error) {
 
 // ListWorkspaceSubscriptionsWithPagination returns workspace subscriptions with pagination and filtering
 func (g *Cockroach) ListWorkspaceSubscriptionsWithPagination(
-	conditions map[string]interface{},
+	conditions map[string]any,
 	pageIndex, pageSize int,
 ) ([]types.WorkspaceSubscription, int64, error) {
 	db := g.ck.GetGlobalDB()
@@ -206,4 +206,3 @@ func (g *Cockroach) ListWorkspaceSubscriptionsWithPagination(
 
 	return subscriptions, total, nil
 }
-
