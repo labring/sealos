@@ -19,7 +19,7 @@ func Test_Auth(t *testing.T) {
 		t.Errorf("failed to read kubeconfig: %v", err)
 	}
 
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"startTime":  "2023-01-01T00:00:00Z",
 		"endTime":    "2023-12-01T00:00:00Z",
 		"owner":      "admin",
@@ -31,6 +31,7 @@ func Test_Auth(t *testing.T) {
 		t.Errorf("failed to marshal request body: %v", err)
 	}
 
+	// #nosec G107
 	response, err := http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
 		t.Errorf("failed to post request: %v", err)

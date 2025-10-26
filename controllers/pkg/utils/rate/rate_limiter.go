@@ -39,15 +39,28 @@ type LimiterOptions struct {
 }
 
 func (o *LimiterOptions) BindFlags(fs *flag.FlagSet) {
-	fs.DurationVar(&o.MinRetryDelay, flagMinRetryDelay, defaultMinRetryDelay,
-		"The minimum amount of time for which an object being reconciled will have to wait before a retry.")
-	fs.DurationVar(&o.MaxRetryDelay, flagMaxRetryDelay, defaultMaxRetryDelay,
-		"The maximum amount of time for which an object being reconciled will have to wait before a retry.")
+	fs.DurationVar(
+		&o.MinRetryDelay,
+		flagMinRetryDelay,
+		defaultMinRetryDelay,
+		"The minimum amount of time for which an object being reconciled will have to wait before a retry.",
+	)
+	fs.DurationVar(
+		&o.MaxRetryDelay,
+		flagMaxRetryDelay,
+		defaultMaxRetryDelay,
+		"The maximum amount of time for which an object being reconciled will have to wait before a retry.",
+	)
 	fs.Float64Var(&o.QPS, flagQPS, defaultQPS, "The maximum number of batches per second to allow.")
-	fs.IntVar(&o.Burst, flagBurst, defaultBurst, "The maximum number of batches to allow in a short period of time.")
+	fs.IntVar(
+		&o.Burst,
+		flagBurst,
+		defaultBurst,
+		"The maximum number of batches to allow in a short period of time.",
+	)
 }
 
-//func GetRateLimiter(opts LimiterOptions) ratelimiter.RateLimiter {
+// func GetRateLimiter(opts LimiterOptions) ratelimiter.RateLimiter {
 //	return workqueue.NewMaxOfRateLimiter(
 //		workqueue.NewItemExponentialFailureRateLimiter(opts.MinRetryDelay, opts.MaxRetryDelay),
 //		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)

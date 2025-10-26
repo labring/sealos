@@ -3,6 +3,7 @@ package helper
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/types"
 )
 
 type CreatePayReq struct {
@@ -18,7 +19,7 @@ type CreatePayReq struct {
 	// @Summary Method
 	// @Description Method
 	// @JSONSchema required
-	Method string `json:"method" bson:"method" example:"CARD"`
+	Method types.PaymentMethod `json:"method" bson:"method" example:"CARD"`
 
 	*BindCardInfo `json:",inline" bson:",inline"`
 }
@@ -52,7 +53,6 @@ func ParseCreatePayReq(c *gin.Context) (*CreatePayReq, error) {
 }
 
 type CardOperationReq struct {
-
 	// @Summary Authentication information
 	// @Description Authentication information
 	AuthBase `json:",inline" bson:",inline"`
@@ -67,6 +67,11 @@ func ParseCardOperationReq(c *gin.Context) (*CardOperationReq, error) {
 	}
 	return req, nil
 }
+
+const (
+	STRIPE  = "stripe"
+	BALANCE = "balance"
+)
 
 type SubscriptionOperatorReq struct {
 	// @Summary Authentication information
@@ -83,7 +88,7 @@ type SubscriptionOperatorReq struct {
 
 	// @Summary PayMethod
 	// @Description PayMethod
-	PayMethod string `json:"payMethod" bson:"payMethod" example:"CARD"`
+	PayMethod types.PaymentMethod `json:"payMethod" bson:"payMethod" example:"CARD"`
 
 	// @Summary CardID
 	// @Description CardID
@@ -101,7 +106,7 @@ const (
 	Downgrade PlanType = "downgrade"
 	Renewal   PlanType = "renewal"
 
-	CARD string = "CARD"
+	CARD types.PaymentMethod = "CARD"
 )
 
 func ParseSubscriptionOperatorReq(c *gin.Context) (*SubscriptionOperatorReq, error) {
@@ -135,7 +140,7 @@ func ParseSubscriptionQuotaCheckReq(c *gin.Context) (*SubscriptionQuotaCheckReq,
 }
 
 type SubscriptionQuotaCheckResp struct {
-	//allWorkspaceReady
+	// allWorkspaceReady
 	AllWorkspaceReady bool `json:"allWorkspaceReady" bson:"allWorkspaceReady" example:"true"`
 
 	ReadyWorkspace []string `json:"readyWorkspace" bson:"readyWorkspace" example:"workspace1,workspace2"`

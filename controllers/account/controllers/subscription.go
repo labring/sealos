@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -11,11 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
-
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -88,27 +88,53 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 
 	for i := range transactions {
 		acc := &types.Account{}
-		dErr := sp.db.Model(&types.Account{}).Where(&types.Account{UserUID: transactions[i].UserUID}).Find(acc).Error
+		dErr := sp.db.Model(&types.Account{}).
+			Where(&types.Account{UserUID: transactions[i].UserUID}).
+			Find(acc).
+			Error
 		if dErr != nil {
-			sp.Logger.Error(fmt.Errorf("failed to fetch account: %w", dErr), "", "user_uid", transactions[i].UserUID)
+			sp.Logger.Error(
+				fmt.Errorf("failed to fetch account: %w", dErr),
+				"",
+				"user_uid",
+				transactions[i].UserUID,
+			)
 			continue
 		}
 		if acc.CreateRegionID != sp.AccountV2.GetLocalRegion().UID.String() {
 			continue
 		}
-		sp.AccountReconciler.Logger.Info("Processing transaction", "id", transactions[i].SubscriptionID, "operator", transactions[i].Operator, "status", transactions[i].Status, "plan", transactions[i].NewPlanName)
+		sp.Logger.Info(
+			"Processing transaction",
+			"id",
+			transactions[i].SubscriptionID,
+			"operator",
+			transactions[i].Operator,
+			"status",
+			transactions[i].Status,
+			"plan",
+			transactions[i].NewPlanName,
+		)
 		if err := sp.processTransaction(ctx, &transactions[i]); err != nil {
-			sp.Logger.Error(fmt.Errorf("failed to process transaction: %w", err), "", "id", transactions[i].ID)
+			sp.Logger.Error(
+				fmt.Errorf("failed to process transaction: %w", err),
+				"",
+				"id",
+				transactions[i].ID,
+			)
 		}
 	}
 	return nil
 }
 
 // processTransaction 处理单个事务
-func (sp *SubscriptionProcessor) processTransaction(ctx context.Context, tx *types.SubscriptionTransaction) error {
+func (sp *SubscriptionProcessor) processTransaction(
+	ctx context.Context,
+	tx *types.SubscriptionTransaction,
+) error {
 	return sp.db.Transaction(func(dbTx *gorm.DB) error {
-		//var latestTx types.SubscriptionTransaction
-		//if err := dbTx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		// var latestTx types.SubscriptionTransaction
+		// if err := dbTx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		//	Find(&latestTx, "subscription_id = ?", tx.SubscriptionID).Error; err != nil {
 		//	return fmt.Errorf("failed to lock transaction %s: %w", tx.SubscriptionID, err)
 		//}
@@ -145,7 +171,7 @@ func (sp *SubscriptionProcessor) shouldProcessTransaction(tx *types.Subscription
 }
 
 // If the account service network is too slow, can synchronize the database
-//func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
+// func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
 //	var regionTaskList []*types.AccountRegionUserTask
 //	for _, domain := range sp.allRegionDomain {
 //		if domain == sp.localDomain {
@@ -174,8 +200,12 @@ func (sp *SubscriptionProcessor) shouldProcessTransaction(tx *types.Subscription
 //}
 
 // updateQuota 更新用户的资源配额
-func (sp *SubscriptionProcessor) updateQuota(_ context.Context, userUID, planID uuid.UUID, planName string) error {
-	//if err := sp.flushOtherDomainQuota(ctx, userUID); err != nil {
+func (sp *SubscriptionProcessor) updateQuota(
+	_ context.Context,
+	userUID, planID uuid.UUID,
+	planName string,
+) error {
+	// if err := sp.flushOtherDomainQuota(ctx, userUID); err != nil {
 	//	return fmt.Errorf("failed to flush other domain quota: %w", err)
 	//}
 	if err := sp.sendFlushQuotaRequest(userUID, planID, planName); err != nil {
@@ -187,17 +217,25 @@ func (sp *SubscriptionProcessor) updateQuota(_ context.Context, userUID, planID 
 const AdminUserName = "sealos-admin"
 
 type AdminFlushSubscriptionQuotaReq struct {
-	UserUID  uuid.UUID `json:"userUID" bson:"userUID"`
+	UserUID  uuid.UUID `json:"userUID"  bson:"userUID"`
 	PlanName string    `json:"planName" bson:"planName"`
-	PlanID   uuid.UUID `json:"planID" bson:"planID"`
+	PlanID   uuid.UUID `json:"planID"   bson:"planID"`
 }
 
 // 延迟过高
-func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID, planID uuid.UUID, planName string) error {
+func (sp *SubscriptionProcessor) sendFlushQuotaRequest(
+	userUID, planID uuid.UUID,
+	planName string,
+) error {
 	return sendFlushQuotaRequest(sp.allRegionDomain, sp.jwtManager, userUID, planID, planName)
 }
 
-func sendFlushQuotaRequest(allRegion []string, jwtManager *utils.JWTManager, userUID, planID uuid.UUID, planName string) error {
+func sendFlushQuotaRequest(
+	allRegion []string,
+	jwtManager *utils.JWTManager,
+	userUID, planID uuid.UUID,
+	planName string,
+) error {
 	for _, domain := range allRegion {
 		token, err := jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
@@ -223,7 +261,7 @@ func sendFlushQuotaRequest(allRegion []string, jwtManager *utils.JWTManager, use
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest("POST", url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
@@ -252,7 +290,12 @@ func sendFlushQuotaRequest(allRegion []string, jwtManager *utils.JWTManager, use
 
 			// 进行重试
 			if attempt < maxRetries {
-				fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", attempt, lastErr, backoffTime)
+				fmt.Printf(
+					"Attempt %d failed: %v. Retrying in %v...\n",
+					attempt,
+					lastErr,
+					backoffTime,
+				)
 				time.Sleep(backoffTime)
 				backoffTime *= 2 // 指数增长退避时间
 			}
@@ -265,7 +308,11 @@ func sendFlushQuotaRequest(allRegion []string, jwtManager *utils.JWTManager, use
 }
 
 // handleCreated 处理创建订阅
-func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
+func (sp *SubscriptionProcessor) handleCreated(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.SubscriptionTransaction,
+) error {
 	var sub types.Subscription
 	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
@@ -305,7 +352,7 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 	}); err != nil {
 		return fmt.Errorf("failed to create credits: %w", err)
 	}
-	//TODO create Credits Transaction
+	// TODO create Credits Transaction
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
 	tx.UpdatedAt = now
@@ -313,7 +360,11 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 }
 
 // handleUpgrade 处理升级
-func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
+func (sp *SubscriptionProcessor) handleUpgrade(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.SubscriptionTransaction,
+) error {
 	var sub types.Subscription
 	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
@@ -341,7 +392,7 @@ func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.D
 		FromID:   tx.OldPlanID.String(),
 		FromType: types.CreditsFromTypeSubscription,
 	}).Where("expire_at > ? AND status = ?", now, types.CreditsStatusActive).Update("status", types.CreditsStatusExpired).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to update credits: %w", err)
 	}
 	// 更新积分
@@ -349,7 +400,7 @@ func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.D
 	if err != nil {
 		return fmt.Errorf("failed to get subscription plan: %w", err)
 	}
-	var credits = types.Credits{
+	credits := types.Credits{
 		UserUID:   sub.UserUID,
 		FromType:  types.CreditsFromTypeSubscription,
 		FromID:    sub.PlanID.String(),
@@ -369,7 +420,11 @@ func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.D
 }
 
 // handleDowngrade 处理降级
-func (sp *SubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
+func (sp *SubscriptionProcessor) handleDowngrade(
+	ctx context.Context,
+	dbTx *gorm.DB,
+	tx *types.SubscriptionTransaction,
+) error {
 	var sub types.Subscription
 	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
@@ -408,7 +463,11 @@ func (sp *SubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm
 }
 
 // handleRenewal 处理续订
-func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
+func (sp *SubscriptionProcessor) handleRenewal(
+	_ context.Context,
+	dbTx *gorm.DB,
+	tx *types.SubscriptionTransaction,
+) error {
 	var sub types.Subscription
 	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
@@ -437,7 +496,7 @@ func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.D
 			FromID:   sub.PlanID.String(),
 			FromType: types.CreditsFromTypeSubscription,
 		}).Update("status", types.CreditsStatusExpired).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to update credits: %w", err)
 		}
 		if err := cockroach.CreateCredits(dbTx, &types.Credits{
@@ -460,7 +519,11 @@ func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.D
 }
 
 // checkDowngradeConditions 检查降级条件
-func (sp *SubscriptionProcessor) checkDowngradeConditions(_ context.Context, subscription *types.Subscription, planID uuid.UUID) (bool, error) {
+func (sp *SubscriptionProcessor) checkDowngradeConditions(
+	_ context.Context,
+	subscription *types.Subscription,
+	planID uuid.UUID,
+) (bool, error) {
 	// //TODO: 检查 disk、namespace、seat 等条件
 	token, err := sp.desktopJwtManager.GenerateToken(utils.JwtUser{
 		UserUID:   subscription.UserUID,
@@ -477,7 +540,11 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(_ context.Context, sub
 
 	maxRetries := 3
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(fmt.Sprintf(`{"subscriptionPlanId": "%s"}`, planID))))
+		req, err := http.NewRequest(
+			http.MethodPost,
+			url,
+			bytes.NewBufferString(fmt.Sprintf(`{"subscriptionPlanId": "%s"}`, planID)),
+		)
 		if err != nil {
 			return false, fmt.Errorf("failed to create request: %w", err)
 		}
@@ -497,9 +564,10 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(_ context.Context, sub
 
 			// 读取响应
 			body, err := io.ReadAll(resp.Body)
-			if err != nil {
+			switch {
+			case err != nil:
 				return false, fmt.Errorf("failed to read response: %w", err)
-			} else if resp.StatusCode == http.StatusOK {
+			case resp.StatusCode == http.StatusOK:
 				var response APIResponse
 				if err = json.Unmarshal(body, &response); err != nil {
 					return false, fmt.Errorf("failed to unmarshal response: %w", err)
@@ -508,9 +576,9 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(_ context.Context, sub
 					return false, fmt.Errorf("response code is not 200: %v", response)
 				}
 				return response.Data.AllWorkspaceReady && response.Data.SeatReady, nil
-			} else if resp.StatusCode >= 500 {
+			case resp.StatusCode >= 500:
 				lastErr = fmt.Errorf("unexpected status code: %d; %s", resp.StatusCode, string(body))
-			} else {
+			default:
 				return false, fmt.Errorf("client error: %d; %s", resp.StatusCode, string(body))
 			}
 		}
@@ -536,7 +604,7 @@ type SubscriptionQuotaCheckReq struct {
 }
 
 type SubscriptionQuotaCheckResp struct {
-	//allWorkspaceReady
+	// allWorkspaceReady
 	AllWorkspaceReady bool `json:"allWorkspaceReady" bson:"allWorkspaceReady" example:"true"`
 
 	ReadyWorkspace []string `json:"readyWorkspace" bson:"readyWorkspace" example:"workspace1,workspace2"`
@@ -545,16 +613,23 @@ type SubscriptionQuotaCheckResp struct {
 }
 
 // checkDowngradeConditions 检查降级条件
-func (sp *SubscriptionProcessor) checkQuotaConditions(_ context.Context, userUID, planID uuid.UUID, planName string) (bool, error) {
+func (sp *SubscriptionProcessor) checkQuotaConditions(
+	_ context.Context,
+	userUID, planID uuid.UUID,
+	planName string,
+) (bool, error) {
 	for _, domain := range sp.allRegionDomain {
 		token, err := sp.jwtManager.GenerateToken(utils.JwtUser{
 			UserUID: userUID,
-			//RegionUID: sp.AccountV2.GetLocalRegion().UID.String(),
+			// RegionUID: sp.AccountV2.GetLocalRegion().UID.String(),
 		})
 		if err != nil {
 			return false, fmt.Errorf("failed to generate token: %w", err)
 		}
-		url := fmt.Sprintf("http://account-api.%s/payment/v1alpha1/subscription/quota-check", domain)
+		url := fmt.Sprintf(
+			"http://account-api.%s/payment/v1alpha1/subscription/quota-check",
+			domain,
+		)
 		quotaReq := SubscriptionQuotaCheckReq{
 			PlanID:   planID,
 			PlanName: planName,
@@ -563,7 +638,7 @@ func (sp *SubscriptionProcessor) checkQuotaConditions(_ context.Context, userUID
 		if err != nil {
 			return false, fmt.Errorf("failed to marshal request: %w", err)
 		}
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer(quotaReqBody))
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
 		if err != nil {
 			return false, fmt.Errorf("failed to create request: %w", err)
 		}

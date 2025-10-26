@@ -16,20 +16,32 @@ package objectstorage
 
 import (
 	"fmt"
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 )
 
 func TestGetUserObjectStorageFlow(t *testing.T) {
-	cli, err := objectstoragev1.NewOSClient(os.Getenv("MINIO_ENDPOINT"), os.Getenv("MINIO_ACCESS_KEY"), os.Getenv("MINIO_SECRET_KEY"))
+	cli, err := objectstoragev1.NewOSClient(
+		os.Getenv("MINIO_ENDPOINT"),
+		os.Getenv("MINIO_ACCESS_KEY"),
+		os.Getenv("MINIO_SECRET_KEY"),
+	)
 	if err != nil {
 		t.Error(err)
 	}
 	start := time.Now().Truncate(time.Hour).Add(-time.Hour)
-	bytes, err := GetUserObjectStorageFlow(cli, os.Getenv("PROM_URL"), os.Getenv("MINIO_USERNAME"), os.Getenv("MINIO_INSTANCE"), start, start.Add(time.Hour))
+	bytes, err := GetUserObjectStorageFlow(
+		cli,
+		os.Getenv("PROM_URL"),
+		os.Getenv("MINIO_USERNAME"),
+		os.Getenv("MINIO_INSTANCE"),
+		start,
+		start.Add(time.Hour),
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -37,19 +49,25 @@ func TestGetUserObjectStorageFlow(t *testing.T) {
 }
 
 func ConvertBytes(bytes int64) string {
-	if bytes < 1024 {
+	switch {
+	case bytes < 1024:
 		return strconv.FormatInt(bytes, 10) + "B"
-	} else if bytes < 1024*1024 {
+	case bytes < 1024*1024:
 		return strconv.FormatFloat(float64(bytes)/1024, 'f', 2, 64) + "KB"
-	} else if bytes < 1024*1024*1024 {
+	case bytes < 1024*1024*1024:
 		return strconv.FormatFloat(float64(bytes)/1024/1024, 'f', 2, 64) + "MB"
-	} else {
+	default:
 		return strconv.FormatFloat(float64(bytes)/1024/1024/1024, 'f', 2, 64) + "GB"
 	}
 }
 
 func TestQueryUserUsage(t *testing.T) {
-	obClient, err := NewMetricsClient("objectstorageapi.192.168.0.55.nip.io", "username", "passw0rd", false)
+	obClient, err := NewMetricsClient(
+		"objectstorageapi.192.168.0.55.nip.io",
+		"username",
+		"passw0rd",
+		false,
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,7 +81,12 @@ func TestQueryUserUsage(t *testing.T) {
 }
 
 func TestQueryUserTraffic(t *testing.T) {
-	obClient, err := NewMetricsClient("objectstorageapi.192.168.0.55.nip.io", "username", "passw0rd", false)
+	obClient, err := NewMetricsClient(
+		"objectstorageapi.192.168.0.55.nip.io",
+		"username",
+		"passw0rd",
+		false,
+	)
 	if err != nil {
 		t.Error(err)
 	}

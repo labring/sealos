@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,24 +10,19 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	corev1 "k8s.io/api/core/v1"
-	types2 "k8s.io/apimachinery/pkg/types"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	clt_log "sigs.k8s.io/controller-runtime/pkg/log"
-
-	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	"github.com/gin-gonic/gin"
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
 	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types2 "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	clt_log "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func init() {
@@ -36,40 +32,63 @@ func init() {
 func AdminFlushDebtResourceStatus(c *gin.Context) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	req, err := helper.ParseAdminFlushDebtResourceStatusReq(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)},
+		)
 		return
 	}
-	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: req.UserUID})
-	if err != nil && err != gorm.ErrRecordNotFound {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
-		return
-	}
-	if owner == "" {
-		c.JSON(http.StatusOK, gin.H{"success": true})
-		return
-	}
-	namespaces, err := getOwnNsListWithClt(dao.K8sManager.GetClient(), owner)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
-		return
-	}
-	if err = flushUserDebtResourceStatus(req, dao.K8sManager.GetClient(), namespaces); err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush user resource status: %v", err)})
+	if err = adminFlushDebtResourceStatus(req); err != nil {
+		dao.Logger.Errorf("failed to flush debt resource status: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to flush debt resource status: %v", err),
+			},
+		)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
-func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, clt client.Client, namespaces []string) error {
+func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) error {
+	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: req.UserUID})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to get user cr name: %w", err)
+	}
+	if owner == "" {
+		return nil
+	}
+	namespaces, err := getOwnNsListWithCltWithOutWorkspaceSubscription(
+		dao.K8sManager.GetClient(),
+		owner,
+	)
+	if err != nil {
+		return fmt.Errorf("get own namespace list failed: %w", err)
+	}
+	if err = flushUserDebtResourceStatus(req, dao.K8sManager.GetClient(), namespaces); err != nil {
+		return fmt.Errorf("failed to flush user resource status: %w", err)
+	}
+	return nil
+}
+
+func flushUserDebtResourceStatus(
+	req *helper.AdminFlushDebtResourceStatusReq,
+	clt client.Client,
+	namespaces []string,
+) error {
 	switch req.LastDebtStatus {
 	case types.NormalPeriod, types.LowBalancePeriod, types.CriticalBalancePeriod:
 		if types.StatusMap[req.CurrentDebtStatus] > types.StatusMap[req.LastDebtStatus] {
-			//if err := r.sendDesktopNoticeAndSms(ctx, debt.Spec.UserName, oweamount, currentStatus, userNamespaceList, smsEnable, isBasicUser); err != nil {
+			// if err := r.sendDesktopNoticeAndSms(ctx, debt.Spec.UserName, oweamount, currentStatus, userNamespaceList, smsEnable, isBasicUser); err != nil {
 			//	r.Logger.Error(err, fmt.Sprintf("send %s notice error", currentStatus))
 			//}
 			if err := SendDesktopNotice(context.Background(), clt, req, namespaces); err != nil {
@@ -81,20 +100,22 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 			}
 		}
 		if types.ContainDebtStatus(types.DebtStates, req.CurrentDebtStatus) {
-			//if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
+			// if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
 			if err := updateDebtNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		}
-	case types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod: // The current status may be: (Normal, LowBalance, CriticalBalance) Period [Service needs to be restored], DebtDeletionPeriod [Service suspended]
+	case types.DebtPeriod,
+		types.DebtDeletionPeriod,
+		types.FinalDeletionPeriod: // The current status may be: (Normal, LowBalance, CriticalBalance) Period [Service needs to be restored], DebtDeletionPeriod [Service suspended]
 		if types.ContainDebtStatus(types.NonDebtStates, req.CurrentDebtStatus) {
 			// TODO flash all region resume user resource
-			//if err := r.readNotice(ctx, userNamespaceList, debtStates...); err != nil {
+			// if err := r.readNotice(ctx, userNamespaceList, debtStates...); err != nil {
 			//	r.Logger.Error(err, "read low balance notice error")
 			//}
-			//if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
+			// if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
 			if err := readNotice(context.Background(), clt, namespaces, getAllGtStatus(req.CurrentDebtStatus)...); err != nil {
@@ -106,11 +127,11 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 			break
 		}
 		if req.CurrentDebtStatus != types.FinalDeletionPeriod {
-			//err = r.sendDesktopNoticeAndSms(ctx, debt.Spec.UserName, oweamount, currentStatus, userNamespaceList, smsEnable, isBasicUser)
-			//if err != nil {
+			// err = r.sendDesktopNoticeAndSms(ctx, debt.Spec.UserName, oweamount, currentStatus, userNamespaceList, smsEnable, isBasicUser)
+			// if err != nil {
 			//	r.Logger.Error(err, fmt.Sprintf("send %s notice error", currentStatus))
 			//}
-			//if err = r.SuspendUserResource(ctx, userNamespaceList); err != nil {
+			// if err = r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
 			if err := SendDesktopNotice(context.Background(), clt, req, namespaces); err != nil {
@@ -120,7 +141,7 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		} else {
-			//if err = r.DeleteUserResource(ctx, userNamespaceList); err != nil {
+			// if err = r.DeleteUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
 			if err := updateDebtNamespaceStatus(context.Background(), clt, FinalDeletionDebtNamespaceAnnoStatus, namespaces); err != nil {
@@ -131,21 +152,42 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 	return nil
 }
 
-func updateDebtNamespaceStatus(ctx context.Context, clt client.Client, status string, namespaces []string) error {
+func updateDebtNamespaceStatus(
+	ctx context.Context,
+	clt client.Client,
+	status string,
+	namespaces []string,
+) error {
 	return updateNamespaceStatus(ctx, clt, DebtNamespaceAnnoStatusKey, status, namespaces)
 }
 
-func updateNetworkNamespaceStatus(ctx context.Context, clt client.Client, status string, namespaces []string) error {
+func updateNetworkNamespaceStatus(
+	ctx context.Context,
+	clt client.Client,
+	status string,
+	namespaces []string,
+) error {
 	return updateNamespaceStatus(ctx, clt, NetworkStatusAnnoKey, status, namespaces)
 }
 
-func updateNamespaceStatus(ctx context.Context, clt client.Client, annoKey, status string, namespaces []string) error {
+func updateNamespaceStatus(
+	ctx context.Context,
+	clt client.Client,
+	annoKey, status string,
+	namespaces []string,
+) error {
 	for i := range namespaces {
 		ns := &corev1.Namespace{}
 		if err := clt.Get(ctx, types2.NamespacedName{Name: namespaces[i]}, ns); err != nil {
 			return err
 		}
-		if ns.Annotations[annoKey] == status {
+		if ns.Annotations == nil {
+			ns.Annotations = make(map[string]string)
+		}
+		if ns.Annotations[annoKey] == status || ns.Annotations[annoKey] == status+"Completed" {
+			continue
+		}
+		if ns.Status.Phase == corev1.NamespaceTerminating {
 			continue
 		}
 
@@ -155,7 +197,7 @@ func updateNamespaceStatus(ctx context.Context, clt client.Client, annoKey, stat
 		if err := clt.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch namespace annotation failed: %w", err)
 		}
-		//if err := clt.Update(ctx, ns); err != nil {
+		// if err := clt.Update(ctx, ns); err != nil {
 		//	return err
 		//}
 	}
@@ -172,6 +214,7 @@ const (
 	falseStatus     = "false"
 	trueStatus      = "true"
 )
+
 const (
 	DebtNamespaceAnnoStatusKey = "debt.sealos/status"
 	NetworkStatusAnnoKey       = "network.sealos.io/status"
@@ -186,8 +229,16 @@ const (
 	TerminateSuspendDebtNamespaceAnnoStatus = "TerminateSuspend"
 )
 
-func SendDesktopNotice(ctx context.Context, clt client.Client, req *helper.AdminFlushDebtResourceStatusReq, namespaces []string) error {
-	if req.IsBasicUser && req.CurrentDebtStatus != types.DebtPeriod && req.CurrentDebtStatus != types.DebtDeletionPeriod && req.CurrentDebtStatus != types.FinalDeletionPeriod && req.CurrentDebtStatus != types.CriticalBalancePeriod {
+func SendDesktopNotice(
+	ctx context.Context,
+	clt client.Client,
+	req *helper.AdminFlushDebtResourceStatusReq,
+	namespaces []string,
+) error {
+	if req.IsBasicUser && req.CurrentDebtStatus != types.DebtPeriod &&
+		req.CurrentDebtStatus != types.DebtDeletionPeriod &&
+		req.CurrentDebtStatus != types.FinalDeletionPeriod &&
+		req.CurrentDebtStatus != types.CriticalBalancePeriod {
 		return nil
 	}
 	if err := sendDesktopNotice(ctx, clt, req.CurrentDebtStatus, namespaces); err != nil {
@@ -196,7 +247,12 @@ func SendDesktopNotice(ctx context.Context, clt client.Client, req *helper.Admin
 	return nil
 }
 
-func sendDesktopNotice(ctx context.Context, clt client.Client, noticeType types.DebtStatusType, namespaces []string) error {
+func sendDesktopNotice(
+	ctx context.Context,
+	clt client.Client,
+	noticeType types.DebtStatusType,
+	namespaces []string,
+) error {
 	now := time.Now().UTC().Unix()
 	ntfTmp := &v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
@@ -246,11 +302,18 @@ func getAllGtStatus(currentStatus types.DebtStatusType) []types.DebtStatusType {
 	return lessStatus
 }
 
-func readNotice(ctx context.Context, clt client.Client, namespaces []string, noticeTypes ...types.DebtStatusType) error {
+func readNotice(
+	ctx context.Context,
+	clt client.Client,
+	namespaces []string,
+	noticeTypes ...types.DebtStatusType,
+) error {
 	for i := range namespaces {
 		for _, noticeStatus := range noticeTypes {
 			ntf := &v1.Notification{}
-			if err := clt.Get(ctx, types2.NamespacedName{Name: debtChoicePrefix + strings.ToLower(string(noticeStatus)), Namespace: namespaces[i]}, ntf); client.IgnoreNotFound(err) != nil {
+			if err := clt.Get(ctx, types2.NamespacedName{Name: debtChoicePrefix + strings.ToLower(string(noticeStatus)), Namespace: namespaces[i]}, ntf); client.IgnoreNotFound(
+				err,
+			) != nil {
 				return err
 			} else if err != nil {
 				continue
@@ -272,17 +335,26 @@ func readNotice(ctx context.Context, clt client.Client, namespaces []string, not
 func AdminFlushSubscriptionQuota(c *gin.Context) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
 		return
 	}
 	req, err := helper.ParseAdminFlushSubscriptionQuotaReq(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)},
+		)
 		return
 	}
 	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: req.UserUID})
-	if err != nil && err != gorm.ErrRecordNotFound {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)},
+		)
 		return
 	}
 	if owner == "" {
@@ -291,24 +363,40 @@ func AdminFlushSubscriptionQuota(c *gin.Context) {
 	}
 	nsList, err := getOwnNsListWithClt(dao.K8sManager.GetClient(), owner)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)},
+		)
 		return
 	}
 
 	rs, ok := dao.SubPlanResourceQuota[req.PlanName]
 	if !ok {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("plan name is not in plan resource quota: %v", req.PlanName)})
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("plan name is not in plan resource quota: %v", req.PlanName),
+			},
+		)
 		return
 	}
 	for _, ns := range nsList {
 		quota := getDefaultResourceQuota(ns, "quota-"+ns, rs)
 		hard := quota.Spec.Hard.DeepCopy()
-		_, err = controllerutil.CreateOrUpdate(context.Background(), dao.K8sManager.GetClient(), quota, func() error {
-			quota.Spec.Hard = hard
-			return nil
-		})
+		_, err = controllerutil.CreateOrUpdate(
+			context.Background(),
+			dao.K8sManager.GetClient(),
+			quota,
+			func() error {
+				quota.Spec.Hard = hard
+				return nil
+			},
+		)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)})
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)},
+			)
 			return
 		}
 	}
@@ -332,7 +420,12 @@ func FlushSubscriptionQuota(c *gin.Context) {
 	logWithDuration := func(message string) {
 		now := time.Now().UTC()
 		duration := now.Sub(lastTime)
-		log.Printf("%s (took %v since last step, %v since start)", message, duration, now.Sub(startTime))
+		log.Printf(
+			"%s (took %v since last step, %v since start)",
+			message,
+			duration,
+			now.Sub(startTime),
+		)
 		lastTime = now
 	}
 
@@ -340,7 +433,10 @@ func FlushSubscriptionQuota(c *gin.Context) {
 
 	req := &helper.AuthBase{}
 	if err := authenticateRequest(c, req); err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)})
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)},
+		)
 		return
 	}
 	logWithDuration("Authentication completed")
@@ -353,22 +449,32 @@ func FlushSubscriptionQuota(c *gin.Context) {
 
 	nsList, err := getOwnNsListWithClt(dao.K8sManager.GetClient(), req.Owner)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)},
+		)
 		return
 	}
 	logWithDuration(fmt.Sprintf("Retrieved namespace list: %v", nsList))
 
 	userSub, err := dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: req.UserUID})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get user subscription failed: %v", err)})
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("get user subscription failed: %v", err)},
+		)
 		return
 	}
 	logWithDuration("User subscription retrieved")
 
 	for _, ns := range nsList {
-		logWithDuration(fmt.Sprintf("Starting quota flush for namespace: %s", ns))
+		logWithDuration("Starting quota flush for namespace: " + ns)
 
-		quota := getDefaultResourceQuota(ns, "quota-"+ns, dao.SubPlanResourceQuota[userSub.PlanName])
+		quota := getDefaultResourceQuota(
+			ns,
+			"quota-"+ns,
+			dao.SubPlanResourceQuota[userSub.PlanName],
+		)
 		err = Retry(2, time.Second, func() error {
 			fErr := dao.K8sManager.GetClient().Update(context.Background(), quota)
 			if err != nil {
@@ -378,10 +484,13 @@ func FlushSubscriptionQuota(c *gin.Context) {
 			return nil
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)})
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)},
+			)
 			return
 		}
-		logWithDuration(fmt.Sprintf("Quota updated for namespace: %s", ns))
+		logWithDuration("Quota updated for namespace: " + ns)
 	}
 
 	logWithDuration("FlushSubscriptionQuota completed")

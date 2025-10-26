@@ -15,7 +15,7 @@
 package main
 
 //
-//import (
+// import (
 //	"fmt"
 //	"os"
 //	"path"
@@ -26,7 +26,7 @@ package main
 //	"github.com/gin-gonic/gin"
 //)
 //
-//func main() {
+// func main() {
 //	router := gin.Default()
 //	// 获取当前文件运行的路径
 //	_, filename, _, _ := runtime.Caller(0)

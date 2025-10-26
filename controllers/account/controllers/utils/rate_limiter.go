@@ -4,10 +4,9 @@ import (
 	"flag"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	"golang.org/x/time/rate"
 	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -30,17 +29,35 @@ type LimiterOptions struct {
 }
 
 func (o *LimiterOptions) BindFlags(fs *flag.FlagSet) {
-	fs.DurationVar(&o.MinRetryDelay, flagMinRetryDelay, defaultMinRetryDelay,
-		"The minimum amount of time for which an object being reconciled will have to wait before a retry.")
-	fs.DurationVar(&o.MaxRetryDelay, flagMaxRetryDelay, defaultMaxRetryDelay,
-		"The maximum amount of time for which an object being reconciled will have to wait before a retry.")
+	fs.DurationVar(
+		&o.MinRetryDelay,
+		flagMinRetryDelay,
+		defaultMinRetryDelay,
+		"The minimum amount of time for which an object being reconciled will have to wait before a retry.",
+	)
+	fs.DurationVar(
+		&o.MaxRetryDelay,
+		flagMaxRetryDelay,
+		defaultMaxRetryDelay,
+		"The maximum amount of time for which an object being reconciled will have to wait before a retry.",
+	)
 	fs.Float64Var(&o.QPS, flagQPS, defaultQPS, "The maximum number of batches per second to allow.")
-	fs.IntVar(&o.Burst, flagBurst, defaultBurst, "The maximum number of batches to allow in a short period of time.")
+	fs.IntVar(
+		&o.Burst,
+		flagBurst,
+		defaultBurst,
+		"The maximum number of batches to allow in a short period of time.",
+	)
 }
 
 func GetRateLimiter(opts *LimiterOptions) workqueue.TypedRateLimiter[reconcile.Request] {
 	return workqueue.NewTypedMaxOfRateLimiter[reconcile.Request](
-		workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](opts.MinRetryDelay, opts.MaxRetryDelay),
-		&workqueue.TypedBucketRateLimiter[reconcile.Request]{Limiter: rate.NewLimiter(rate.Limit(opts.QPS), opts.Burst)},
+		workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](
+			opts.MinRetryDelay,
+			opts.MaxRetryDelay,
+		),
+		&workqueue.TypedBucketRateLimiter[reconcile.Request]{
+			Limiter: rate.NewLimiter(rate.Limit(opts.QPS), opts.Burst),
+		},
 	)
 }

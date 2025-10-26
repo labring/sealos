@@ -3,7 +3,9 @@ package helper
 const (
 	GROUP                         = "/account/v1alpha1"
 	GetAccount                    = "/account"
+	DeleteAccount                 = "/delete"
 	GetPayment                    = "/payment"
+	GetPaymentStatus              = "/payment/status"
 	GetHistoryNamespaces          = "/namespaces"
 	GetProperties                 = "/properties"
 	GetRechargeAmount             = "/costs/recharge"
@@ -11,6 +13,8 @@ const (
 	GetAllRegionConsumptionAmount = "/costs/all-region-consumption"
 	GetPropertiesUsed             = "/costs/properties"
 	GetAPPCosts                   = "/costs/app"
+	GetWorkspaceAppCosts          = "/costs/workspace/app"
+	GetWorkspaceConsumptionAmount = "/costs/workspace/consumption"
 	GetAppTypeCosts               = "/costs/app-type"
 	SetPaymentInvoice             = "/payment/set-invoice"
 	GetUserCosts                  = "/costs"
@@ -44,6 +48,11 @@ const (
 	AdminSuspendUserTraffic      = "/suspend-user-traffic"
 	AdminResumeUserTraffic       = "/resume-user-traffic"
 
+	AdminWorkspaceSubscriptionProcessExpired = "/workspace-subscription/process-expired"
+	AdminWorkspaceSubscriptionAdd            = "/workspace-subscription/add"
+	AdminWorkspaceSubscriptionList           = "/workspace-subscription/list"
+	AdminSubscriptionPlans                   = "/subscription-plans"
+
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"
 )
@@ -65,6 +74,20 @@ const (
 	CardSetDefault              = "/card/set-default"
 	CreditsList                 = "/credits/list"
 	CreditsInfo                 = "/credits/info"
+
+	// WorkspaceSubscription routes
+	WorkspaceSubscriptionInfo            = "/workspace-subscription/info"
+	WorkspaceSubscriptionList            = "/workspace-subscription/list"
+	WorkspaceSubscriptionPaymentList     = "/workspace-subscription/payment-list"
+	WorkspaceGetResourceQuota            = "/workspace/get-resource-quota"
+	WorkspaceSubscriptionPlanList        = "/workspace-subscription/plan-list"
+	WorkspaceSubscriptionPay             = "/workspace-subscription/pay"
+	WorkspaceSubscriptionDelete          = "/workspace-subscription/delete"
+	WorkspaceSubscriptionNotify          = "/workspace-subscription/notify"
+	WorkspaceSubscriptionLastTransaction = "/workspace-subscription/last-transaction"
+	WorkspaceSubscriptionUpgradeAmount   = "/workspace-subscription/upgrade-amount"
+	WorkspaceSubscriptionPortalSession   = "/workspace-subscription/portal-session"
+	WorkspaceSubscriptionPlans           = "/workspace-subscription/plans"
 )
 
 const PayNotificationPath = PaymentGroup + Notify
@@ -91,4 +114,6 @@ const (
 	EnvAlipayPrivateKey = "ALIPAY_PRIVATE_KEY"
 
 	EnvPaymentCurrency = "PAYMENT_CURRENCY"
+
+	EnvNotifyConfig = "NOTIFY_CONFIG"
 )
