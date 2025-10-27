@@ -73,6 +73,11 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		logger.Error(err, "Failed to get devbox", "devbox", devboxRelease.Spec.DevboxName)
 		return ctrl.Result{}, err
 	}
+	// if devboxRelease.Status.Phase is success, skip release
+	if devboxRelease.Status.Phase == devboxv1alpha2.DevBoxReleasePhaseSuccess {
+		logger.Info("DevBoxRelease is already released, skipping release", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+		return ctrl.Result{}, nil
+	}
 
 	// if devbox is running, skip release
 	if devbox.Status.State == devboxv1alpha2.DevboxStateRunning || devbox.Status.State == devboxv1alpha2.DevboxStatePaused {
