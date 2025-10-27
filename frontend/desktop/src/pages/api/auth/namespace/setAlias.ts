@@ -1,9 +1,8 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { prisma } from '@/services/backend/db/init';
 import { jsonRes } from '@/services/backend/response';
-import { modifyBinding, modifyWorkspaceRole } from '@/services/backend/team';
 import { UserRole } from '@/types/team';
-import { isUserRole, roleToUserRole, vaildManage } from '@/utils/tools';
+import { roleToUserRole } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { validate } from 'uuid';
@@ -18,10 +17,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       targetUserCrUid?: string;
       alias?: string | null;
     };
+
+    const sanitizedAlias = alias?.trim() ?? null;
+
     if (!targetUserCrUid || !validate(targetUserCrUid))
       return jsonRes(res, { code: 400, message: 'tUserId is invalid' });
-    if (typeof alias !== 'string' && alias !== null)
+    if (typeof sanitizedAlias !== 'string' && sanitizedAlias !== null)
       return jsonRes(res, { code: 400, message: 'alias is required' });
+    if (typeof sanitizedAlias === 'string' && sanitizedAlias.length > 128)
+      return jsonRes(res, { code: 400, message: 'alias can have a maximum length of 128' });
+
     if (!ns_uid || !validate(ns_uid))
       return jsonRes(res, { code: 400, message: 'ns_uid is invalid' });
 
@@ -47,14 +52,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 403, message: 'you do not have sufficient permissions' });
 
     // if role is same, do nothing
-    if (targetUser.alias === alias) return jsonRes(res, { code: 200, message: 'Successfully' });
+    if (targetUser.alias === sanitizedAlias)
+      return jsonRes(res, { code: 200, message: 'Successfully' });
 
     const updateResult = await prisma.userWorkspace.update({
       where: {
         uid: targetUser.uid
       },
       data: {
-        alias: alias
+        alias: sanitizedAlias
       }
     });
 
