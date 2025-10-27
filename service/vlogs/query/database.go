@@ -49,7 +49,7 @@ func (v *DBLogsQuery) generateTypeQuery(req *api.DBLogsRequest) {
 		return
 	}
 	containerList := `"` + strings.Join(req.Type, `","`) + `"`
-	v.query += fmt.Sprintf(`container:in(%s) `, containerList)
+	v.query += fmt.Sprintf(`log_type:in(%s) `, containerList)
 }
 
 func (v *DBLogsQuery) generateCommonQuery(req *api.DBLogsRequest) {
