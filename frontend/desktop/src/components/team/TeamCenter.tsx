@@ -16,7 +16,6 @@ import {
   Circle,
   HStack,
   StackProps,
-  Portal,
   Button
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
@@ -35,7 +34,7 @@ import { useTranslation } from 'next-i18next';
 import { AddIcon, CopyIcon, StorageIcon } from '@sealos/ui';
 import NsListItem from '@/components/team/NsListItem';
 import RenameTeam from './RenameTeam';
-import { Plus, Settings } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import useAppStore from '@/stores/app';
 import { track } from '@sealos/gtm';
 

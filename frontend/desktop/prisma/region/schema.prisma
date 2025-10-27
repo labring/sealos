@@ -1,7 +1,7 @@
 generator regionClient {
-  provider = "prisma-client-js"
-  output   = "./generated/client"
-	binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -24,14 +24,15 @@ model UserCr {
   crName        String          @unique
   userUid       String          @unique @db.Uuid
   createdAt     DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime        @db.Timestamptz(3) @updatedAt
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
   userWorkspace UserWorkspace[]
 }
 
 model UserWorkspace {
   uid          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alias        String?
   createdAt    DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime   @db.Timestamptz(3) @updatedAt
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
   workspaceUid String     @db.Uuid
   userCrUid    String     @db.Uuid
   handlerUid   String?    @db.Uuid
