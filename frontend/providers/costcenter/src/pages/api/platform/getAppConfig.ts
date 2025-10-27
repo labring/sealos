@@ -21,6 +21,7 @@ export type Response = {
     contactLines: string[];
   };
   INVOICE_DIRECT_DOWNLOAD: boolean;
+  SUBSCRIPTION_ENABLED: boolean;
 };
 
 function getAppConfig(defaultConfig: AppConfigType, initConfig: AppConfigType): AppConfigType {
@@ -65,12 +66,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         STRIPE_PUB: global.AppConfig.costCenter.recharge.payMethods.stripe.publicKey,
         WECHAT_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.wechat?.enabled || false,
         ALIPAY_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.alipay?.enabled || false,
-        CURRENCY: global.AppConfig.costCenter.currencyType,
+        // Hope we can have schema validation one day.
+        CURRENCY: global.AppConfig.costCenter.currencyType as 'shellCoin' | 'cny' | 'usd',
         INVOICE_ENABLED: global.AppConfig.costCenter?.invoice?.enabled || false,
         GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false,
         BILLING_INFO: global.AppConfig.costCenter.invoice.billingInfo,
-        INVOICE_DIRECT_DOWNLOAD: global.AppConfig.costCenter.invoice.directDownload
-      } as Response
+        INVOICE_DIRECT_DOWNLOAD: global.AppConfig.costCenter.invoice.directDownload,
+        SUBSCRIPTION_ENABLED: global.AppConfig.costCenter.subscriptionEnabled
+      } satisfies Response
     });
   } catch (error) {
     console.log('error: /api/platform/getAppConfig', error);

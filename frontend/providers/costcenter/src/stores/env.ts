@@ -11,6 +11,7 @@ type EnvState = {
   stripeEnabled: boolean;
   openRecharge: boolean;
   i18nIsInitialized: boolean;
+  subscriptionEnabled: boolean;
   currency: 'shellCoin' | 'cny' | 'usd';
   billingInfo: {
     companyName: string;
@@ -37,6 +38,7 @@ const useEnvStore = create<EnvState>((set, get) => ({
   gpuEnabled: false,
   openRecharge: false,
   i18nIsInitialized: false,
+  subscriptionEnabled: false,
   currency: 'shellCoin',
   billingInfo: {
     companyName: '',

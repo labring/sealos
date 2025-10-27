@@ -23,9 +23,7 @@ export function BalanceSection({ balance, rechargeEnabled, onTopUpClick }: Balan
         </div>
 
         <div className="flex gap-4 items-center">
-          <div className="w-20">
-            <GiftCode />
-          </div>
+          <GiftCode />
           {rechargeEnabled && (
             <Button
               variant="outline"

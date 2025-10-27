@@ -76,6 +76,7 @@ export type AppConfigType = {
     transferEnabled: boolean;
     giftCodeEnabled: boolean;
     currencyType: string;
+    subscriptionEnabled: boolean;
     layout: {
       meta: {
         noscripts: any[];
@@ -101,6 +102,7 @@ export var DefaultAppConfig: AppConfigType = {
     giftCodeEnabled: true,
     transferEnabled: true,
     currencyType: 'shellCoin',
+    subscriptionEnabled: false,
     invoice: {
       enabled: false,
       directDownload: true,
