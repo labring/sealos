@@ -288,7 +288,8 @@
   "verification_code": "验证码",
   "billing_page": {
     "billing": "账单",
-    "cost_and_revenue_trends": "成本与收入趋势"
+    "cost_and_revenue_trends": "成本与收入趋势",
+    "recharge": "充值记录"
   },
   "pay_with_alipay": "支付宝支付",
   "pay_with_stripe": "Stripe 支付",

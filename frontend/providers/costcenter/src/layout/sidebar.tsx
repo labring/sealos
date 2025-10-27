@@ -17,13 +17,22 @@ export default function SideBar() {
   const router = useRouter();
   const { t, ready } = useTranslation();
   const invoiceEnabled = useEnvStore((state) => state.invoiceEnabled);
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+
   const menus: Menu[] = [
+    {
+      id: 'Cost',
+      url: '/cost',
+      value: 'SideBar.Cost',
+      icon: Dock,
+      display: !subscriptionEnabled
+    },
     {
       id: 'Plan',
       url: '/plan',
       value: 'sidebar.plan',
       icon: Dock,
-      display: true
+      display: subscriptionEnabled
     },
     {
       id: 'Billing',

@@ -21,6 +21,8 @@ import { CostPanel } from '@/components/billing/CostPanel';
 import { AppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
 import { PaymentRecord } from '@/types/plan';
 import { getWorkspacesConsumptions } from '@/api/billing';
+import useEnvStore from '@/stores/env';
+import RechargePanel from '@/components/billing/RechargePanel';
 
 /**
  * Billing page container.
@@ -35,6 +37,8 @@ function Billing() {
     setRegion,
     setNamespace
   } = useBillingStore();
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+
   const { startTime, endTime } = useOverviewStore();
 
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
@@ -344,7 +348,7 @@ function Billing() {
             time: data.Time,
             plan: data.PlanName,
             cost: data.Amount
-          }) satisfies SubscriptionData
+          } satisfies SubscriptionData)
       );
   }, [allPaymentsData, selectedWorkspace, allNamespaces, selectedRegion]);
 
@@ -411,11 +415,17 @@ function Billing() {
           <TabsTrigger variant="cleanUnderline" value="listing">
             {t('common:billing_page.billing')}
           </TabsTrigger>
-          <TabsTrigger variant="cleanUnderline" value="trends">
-            {t('common:billing_page.cost_and_revenue_trends')}
-          </TabsTrigger>
-        </TabsList>
 
+          {subscriptionEnabled ? (
+            <TabsTrigger variant="cleanUnderline" value="trends">
+              {t('common:billing_page.cost_and_revenue_trends')}
+            </TabsTrigger>
+          ) : (
+            <TabsTrigger variant="cleanUnderline" value="recharge">
+              {t('common:billing_page.recharge')}
+            </TabsTrigger>
+          )}
+        </TabsList>
         <TabsContent value="listing" className="h-full overflow-hidden">
           <div className="flex flex-col h-full border rounded-2xl overflow-hidden">
             <div className="border-b bg-white px-6 py-3">
@@ -435,7 +445,7 @@ function Billing() {
                 totalCost={displayCost}
                 className="w-full"
               >
-                <SubscriptionCostTable data={subscriptionData} />
+                {subscriptionEnabled && <SubscriptionCostTable data={subscriptionData} />}
 
                 {selectedRegion && (
                   <PAYGCostTable
@@ -466,10 +476,18 @@ function Billing() {
           </div>
         </TabsContent>
 
-        <TabsContent value="trends" className="flex flex-col gap-4 overflow-auto">
-          <OverviewTrend />
-          <TrendOverviewBar />
-        </TabsContent>
+        {!subscriptionEnabled && (
+          <TabsContent value="recharge" className="h-full overflow-hidden">
+            <RechargePanel />
+          </TabsContent>
+        )}
+
+        {subscriptionEnabled && (
+          <TabsContent value="trends" className="flex flex-col gap-4 overflow-auto">
+            <OverviewTrend />
+            <TrendOverviewBar />
+          </TabsContent>
+        )}
       </Tabs>
     </>
   );

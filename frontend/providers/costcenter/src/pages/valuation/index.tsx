@@ -17,6 +17,7 @@ import { FC, useMemo, useState } from 'react';
 import { LucideIcon } from 'lucide-react';
 import CalculatorPanel from '@/components/valuation/CalculatorPanel';
 import usePlanStore from '@/stores/plan';
+import useEnvStore from '@/stores/env';
 
 type CardItem = {
   title: string;
@@ -43,12 +44,12 @@ export default function Valuation() {
   const { data: _data } = useQuery(['valuation', regionUid], () => getValuation(regionUid), {
     // staleTime: 1000 * 60 * 60 * 24
   });
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
 
   const { data: plansData } = useQuery(['plans'], () => getPlanList(), {
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
   const isPaygType = usePlanStore((state) => state.isPaygType)();
-  console.log(isPaygType, 'isPaygType');
 
   const data = useMemo(
     () =>
@@ -126,24 +127,33 @@ export default function Valuation() {
       }}
     >
       <TabList mx={'24px'}>
-        <Tab>{t('common:subscription_plans')}</Tab>
-        {!!isPaygType && (
+        {subscriptionEnabled && <Tab>{t('common:subscription_plans Plans')}</Tab>}
+        {(subscriptionEnabled ? !!isPaygType : true) && (
           <>
             <Tab>{t('common:price_table')}</Tab>
             <Tab>{t('common:price_calculator')}</Tab>
           </>
         )}
         <Flex ml="auto" gap={'12px'}>
-          {(tabIdx === 1 || tabIdx === 2) && <RegionMenu isDisabled={false} />}
-          {tabIdx === 1 && <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} />}
+          {/* Show region selector in PriceTablePanel and CalculatorPanel */}
+          {(subscriptionEnabled ? tabIdx === 1 || tabIdx === 2 : tabIdx === 0 || tabIdx === 1) && (
+            <RegionMenu isDisabled={false} />
+          )}
+          {/* Show duration selector in PriceTablePanel */}
+          {(subscriptionEnabled ? tabIdx === 1 : tabIdx === 0) && (
+            <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} />
+          )}
         </Flex>
       </TabList>
       <TabPanels minW={'max-content'}>
-        <TabPanel>
-          <div className="border rounded-2xl bg-zinc-50 overflow-hidden">
-            <SubscriptionPlansPanel plansData={plansData?.data?.plans} />
-          </div>
-        </TabPanel>
+        {subscriptionEnabled && (
+          <TabPanel>
+            <div className="border rounded-2xl bg-zinc-50 overflow-hidden">
+              <SubscriptionPlansPanel plansData={plansData?.data?.plans} />
+            </div>
+          </TabPanel>
+        )}
+
         <TabPanel>
           <PriceTablePanel priceData={PriceTableData} />
         </TabPanel>
