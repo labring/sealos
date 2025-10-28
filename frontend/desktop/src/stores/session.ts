@@ -117,16 +117,7 @@ const useSessionStore = create<SessionState>()(
             isGuest: true,
             guestId,
             token: '',
-            user: {
-              k8s_username: 'guest',
-              name: 'Guest User',
-              avatar: '',
-              nsid: 'ns-guest',
-              ns_uid: guestId,
-              userUid: guestId,
-              userId: 'guest',
-              userCrUid: guestId
-            },
+            user: null,
             kubeconfig: ''
           }
         });

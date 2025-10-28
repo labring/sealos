@@ -32,7 +32,7 @@ export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 
 export default function GuestDesktop() {
   const router = useRouter();
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const {
     isUserLogin,
     setGuestSession,
@@ -64,6 +64,12 @@ export default function GuestDesktop() {
 
   useEffect(() => {
     const initGuest = async () => {
+      // Redirect to home page if user is already logged in
+      if (isUserLogin()) {
+        router.replace('/');
+        return;
+      }
+
       const { query } = router;
 
       setGuestSession();
@@ -81,7 +87,7 @@ export default function GuestDesktop() {
     };
 
     initGuest();
-  }, [closeGuestLoginModal, init, router, router.query?.openapp, setGuestSession]);
+  }, [isUserLogin, closeGuestLoginModal, init, router, setGuestSession]);
 
   // Initialize masterApp for iframe communication
   useEffect(() => {
