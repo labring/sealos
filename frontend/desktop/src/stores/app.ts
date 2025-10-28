@@ -8,7 +8,6 @@ import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { useDesktopConfigStore } from './desktopConfig';
 import { track } from '@sealos/gtm';
-import { MOCK_APPS } from '@/constants/app';
 import useSessionStore from './session';
 
 export class AppInfo {
@@ -73,7 +72,8 @@ const useAppStore = create<TOSState>()(
           const { isGuest } = useSessionStore.getState();
           let apps: TApp[] = [];
           if (isGuest()) {
-            apps = MOCK_APPS as any as TApp[];
+            const res = await request('/api/desktop/getDefaultApps');
+            apps = res?.data || [];
           } else {
             const res = await request('/api/desktop/getInstalledApps');
             apps = res?.data || [];
