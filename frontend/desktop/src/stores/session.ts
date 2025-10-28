@@ -3,6 +3,7 @@ import { OauthProvider } from '@/types/user';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { nanoid } from 'nanoid';
 
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 
@@ -17,9 +18,7 @@ type SessionState = {
   delSession: () => void;
   setFirstUse: (d: Date | null) => void;
   isUserLogin: () => boolean;
-  /*
-			when proxy oauth2.0 ,the domainState need to be used
-	*/
+
   generateState: (action?: OauthAction, domainState?: string) => string;
   compareState: (state: string) => {
     isSuccess: boolean;
@@ -32,6 +31,11 @@ type SessionState = {
   setToken: (token: string, rememberMe?: boolean) => void;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
+  setGuestSession: () => void;
+  isGuest: () => boolean;
+  showGuestLoginModal: boolean;
+  openGuestLoginModal: () => void;
+  closeGuestLoginModal: () => void;
 };
 
 const useSessionStore = create<SessionState>()(
@@ -44,6 +48,7 @@ const useSessionStore = create<SessionState>()(
       oauth_state: '',
       token: '',
       lastWorkSpaceId: '',
+      showGuestLoginModal: false,
       setFirstUse(d) {
         set({
           firstUse: d
@@ -53,7 +58,7 @@ const useSessionStore = create<SessionState>()(
         set({ lastSigninProvier: provider });
       },
       setSession: (ss: Session) => set({ session: ss }),
-      setSessionProp: (key: keyof Session, value: any) => {
+      setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => {
         set((state) => {
           if (state.session) {
             state.session[key] = value;
@@ -104,10 +109,42 @@ const useSessionStore = create<SessionState>()(
       },
       setWorkSpaceId: (id) => {
         set({ lastWorkSpaceId: id });
+      },
+      setGuestSession: () => {
+        const guestId = `guest_${nanoid()}`;
+        set({
+          session: {
+            isGuest: true,
+            guestId,
+            token: '',
+            user: {
+              k8s_username: 'guest',
+              name: 'Guest User',
+              avatar: '',
+              nsid: 'ns-guest',
+              ns_uid: guestId,
+              userUid: guestId,
+              userId: 'guest',
+              userCrUid: guestId
+            },
+            kubeconfig: ''
+          }
+        });
+      },
+      isGuest: () => get().session?.isGuest || false,
+      openGuestLoginModal: () => {
+        set({ showGuestLoginModal: true });
+      },
+      closeGuestLoginModal: () => {
+        set({ showGuestLoginModal: false });
       }
     })),
     {
-      name: sessionKey
+      name: sessionKey,
+      partialize: (state) => {
+        const { showGuestLoginModal, ...rest } = state;
+        return rest;
+      }
     }
   )
 );

@@ -91,7 +91,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       // clear firstusetime
       setFirstUse(null);
 
-      const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
+      const { appkey, appQuery, appPath } = parseOpenappQuery((query?.openapp as string) || '');
       // Invited new user
       if (query?.uid && typeof query?.uid === 'string') {
         setInviterId(query.uid);
@@ -106,8 +106,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       }
       let workspaceUid: string | undefined;
       if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
-      if (appkey && typeof appQuery === 'string')
-        setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
+      if (appkey && (appQuery || appPath))
+        setAutoLaunch(appkey, { raw: appQuery, pathname: appPath }, workspaceUid);
 
       router.replace(destination);
     } else {
@@ -204,10 +204,12 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
             const result = parseOpenappQuery((query?.openapp as string) || '');
             appQuery = result.appQuery;
             appkey = result.appkey;
+            appRoute = result.appPath || '';
             if (!!query.openapp) router.replace(router.pathname);
           } else {
             appkey = state.autolaunch;
-            appQuery = state.launchQuery.raw;
+            appQuery = state.launchQuery.raw || '';
+            appRoute = state.launchQuery.pathname || '';
           }
 
           if (!appkey) return;

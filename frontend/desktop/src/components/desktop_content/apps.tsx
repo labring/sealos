@@ -520,6 +520,7 @@ export default function Apps() {
   });
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
+  const { isGuest, openGuestLoginModal } = useSessionStore();
 
   const { openGuideModal } = useGuideModalStore();
   const desktopRef = useRef<HTMLDivElement>(null);
@@ -606,6 +607,15 @@ export default function Apps() {
   const { isDriverActive } = useGuideModalStore();
 
   const handleAppClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
+    if (isGuest()) {
+      const guestAllowedApps = ['system-brain'];
+      if (!guestAllowedApps.includes(item.key)) {
+        e.preventDefault();
+        openGuestLoginModal();
+        return;
+      }
+    }
+
     if (commonConfig?.licenseCheckEnabled && hasLicense === false && item.key !== 'user-license') {
       message({
         title: t('license_required'),
@@ -620,7 +630,6 @@ export default function Apps() {
       return;
     }
 
-    console.log(item, 'item', isDriverActive);
     if (isDriverActive) {
       const guidedElements = [
         'system-devbox',
@@ -658,6 +667,11 @@ export default function Apps() {
   };
 
   const handleMoreAppsClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (isGuest()) {
+      e.preventDefault();
+      openGuestLoginModal();
+      return;
+    }
     e.stopPropagation();
 
     if (e.currentTarget) {

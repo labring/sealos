@@ -43,8 +43,8 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   const router = useRouter();
   const { t } = useTranslation();
   const toast = useToast();
-  const { setToken } = useSessionStore();
-
+  const { setToken, setSession } = useSessionStore();
+  const isGuest = useSessionStore((state) => state.isGuest);
   const [showPassword, setShowPassword] = useState(false);
 
   const bg = useColorModeValue('white', 'gray.700');
@@ -131,7 +131,13 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
+    <Flex
+      minH={isGuest() ? '60vh' : '100vh'}
+      align="center"
+      justify="center"
+      bg={bg}
+      direction={'column'}
+    >
       <Stack mx="auto" maxW="lg" px={4} gap={'16px'} width="360px" minW={'352px'}>
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
           {t('v2:sign_in')}

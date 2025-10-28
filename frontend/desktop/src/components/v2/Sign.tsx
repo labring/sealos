@@ -3,7 +3,6 @@ import useProtocol from '@/components/signin/auth/useProtocol';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-
 import { GoogleIcon, GithubIcon } from '../icons';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
@@ -15,7 +14,11 @@ import UsernamePasswordSignin from './UsernamePasswordSignin';
 import { EmailSigninForm } from './EmailSigninForm';
 import { PhoneSigninForm } from './PhoneSigninForm';
 
-export default function SigninComponent() {
+interface SigninComponentProps {
+  isModal?: boolean;
+}
+
+export default function SigninComponent({ isModal = false }: SigninComponentProps) {
   const { t, i18n } = useTranslation();
   const conf = useConfigStore();
   const router = useRouter();
@@ -159,9 +162,21 @@ export default function SigninComponent() {
     return <UsernamePasswordSignin onBack={() => setIsPasswordMode(false)} />;
   }
 
+  const ContentWrapper = isModal ? Box : Flex;
+  const wrapperProps = isModal
+    ? { p: 6 }
+    : { minH: '100vh', align: 'center', justify: 'center', bg, direction: 'column' as const };
+
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
-      <Stack mx="auto" maxW="lg" px={4} gap={'16px'} width="360px" minW={'352px'}>
+    <ContentWrapper {...wrapperProps}>
+      <Stack
+        mx="auto"
+        maxW="lg"
+        px={isModal ? 0 : 4}
+        gap={'16px'}
+        width={isModal ? '328px' : '360px'}
+        minW={'328px'}
+      >
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
           {t('v2:workspace_welcome')}
         </Text>
@@ -295,6 +310,6 @@ export default function SigninComponent() {
           </>
         )}
       </Stack>
-    </Flex>
+    </ContentWrapper>
   );
 }

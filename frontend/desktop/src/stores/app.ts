@@ -8,6 +8,8 @@ import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { useDesktopConfigStore } from './desktopConfig';
 import { track } from '@sealos/gtm';
+import { MOCK_APPS } from '@/constants/app';
+import useSessionStore from './session';
 
 export class AppInfo {
   pid: number;
@@ -68,9 +70,17 @@ const useAppStore = create<TOSState>()(
         autolaunchWorkspaceUid: '',
         runner: new AppStateManager([]),
         async init() {
-          const res = await request('/api/desktop/getInstalledApps');
+          const { isGuest } = useSessionStore.getState();
+          let apps: TApp[] = [];
+          if (isGuest()) {
+            apps = MOCK_APPS as any as TApp[];
+          } else {
+            const res = await request('/api/desktop/getInstalledApps');
+            apps = res?.data || [];
+          }
+
           set((state) => {
-            state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
+            state.installedApps = apps.map((app: TApp) => new AppInfo(app, -1));
             state.runner.loadApps(state.installedApps.map((app) => app.key));
             state.maxZIndex = 10;
           });
@@ -153,12 +163,24 @@ const useAppStore = create<TOSState>()(
           _app.zIndex = zIndex;
           _app.size = appSize;
           _app.isShow = true;
-          // add query to url
+
           if (_app.data?.url) {
-            if (query) _app.data.url = formatUrl(_app.data.url + pathname, query);
-            else if (raw) {
-              _app.data.url += `?${raw}`;
+            let finalUrl = _app.data.url;
+
+            if (pathname && pathname !== '/') {
+              const baseUrl = finalUrl.endsWith('/') ? finalUrl.slice(0, -1) : finalUrl;
+              const normalizedPath = pathname.startsWith('/') ? pathname : '/' + pathname;
+              finalUrl = baseUrl + normalizedPath;
             }
+
+            if (raw) {
+              finalUrl += finalUrl.includes('?') ? '&' : '?';
+              finalUrl += raw;
+            } else if (query) {
+              finalUrl = formatUrl(finalUrl, query);
+            }
+
+            _app.data.url = finalUrl;
           }
 
           set((state) => {
