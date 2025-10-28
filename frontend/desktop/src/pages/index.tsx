@@ -277,13 +277,14 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       try {
         if (
           commonConfig?.trackingEnabled &&
+          session?.user &&
           (!firstUse || !dayjs(firstUse).isSame(dayjs(), 'day'))
         ) {
           const umami = window.umami;
           if (!!umami) {
             const result = await umami.track(trackEventName.dailyLoginFirst, {
-              userId: session?.user.userId!,
-              userUid: session?.user.userUid!
+              userId: session?.user?.userId!,
+              userUid: session?.user?.userUid!
             });
             if (result.ok && result.status === 200) {
               setFirstUse(new Date());

@@ -209,10 +209,10 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                 {pagestatus === PageStatus.IDLE ? (
                   <>
                     {' '}
-                    <FormControl isInvalid={nickname !== session?.user.name} mb={'12px'}>
+                    <FormControl isInvalid={nickname !== session?.user?.name} mb={'12px'}>
                       <HStack fontWeight={400} mb={'10px'}>
                         <Text>{t('common:please_enter_username')}</Text>
-                        <Text fontWeight={600}>{session?.user.name}</Text>
+                        <Text fontWeight={600}>{session?.user?.name}</Text>
                         <Text>{t('common:confirm')}</Text>
                       </HStack>
                       <SettingInputGroup>

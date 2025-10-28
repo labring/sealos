@@ -49,8 +49,8 @@ export default function UserTable({
   ];
   const status = [t('common:waiting'), t('common:added')];
   const session = useSessionStore((s) => s.session);
-  const userCrUid = session?.user.userCrUid;
-  const k8s_username = session?.user.k8s_username;
+  const userCrUid = session?.user?.userCrUid;
+  const k8s_username = session?.user?.k8s_username;
   const userSelf = users.find(
     (user) => user.crUid === userCrUid && user.k8s_username === k8s_username
   );
