@@ -43,8 +43,6 @@ export default function InviteMember({
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
-  const k8s_username = session?.user.k8s_username;
-  const [userId, setUserId] = useState('');
   const [role, setRole] = useState(UserRole.Developer);
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -68,7 +66,7 @@ export default function InviteMember({
   const { copyData } = useCopyData();
   const getLinkCode = useMutation({
     mutationFn: getInviteCodeRequest,
-    mutationKey: [session?.user.ns_uid],
+    mutationKey: [session?.user?.ns_uid],
     onSuccess(_data, variables) {
       track('workspace_invite', {
         module: 'workspace',
@@ -155,6 +153,7 @@ export default function InviteMember({
                         w="16px"
                         h="16px"
                         transform={'rotate(90deg)'}
+                        alt="expand more"
                       />
                     </Flex>
                   </MenuButton>
