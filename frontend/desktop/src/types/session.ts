@@ -24,11 +24,8 @@ export type KubeConfig = string;
 
 export type Session = {
   token: string; // jwt token
-  // 提供一些简单的信息
-  user: UserInfo;
-  // 帮忙导出用的
+  user: UserInfo | null;
   kubeconfig: KubeConfig;
-  // 游客模式相关
   isGuest?: boolean;
   guestId?: string;
 };
