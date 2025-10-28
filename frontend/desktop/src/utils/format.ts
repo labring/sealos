@@ -30,19 +30,19 @@ export const parseOpenappQuery = (openapp: string) => {
   let appQuery = '';
 
   if (firstQuestionMarkIndex === -1) {
-    // 格式: system-brain
+    // example: system-brain
     appkey = param;
   } else {
-    // 格式: system-brain?/test/a/b?trialToken=xxxx 或 system-brain?trialToken=xxxx
+    // example: system-brain?/test/a/b?trialToken=xxxx or system-brain?trialToken=xxxx
     appkey = param.substring(0, firstQuestionMarkIndex);
     const remainingPart = param.substring(firstQuestionMarkIndex + 1);
 
     const secondQuestionMarkIndex = remainingPart.indexOf('?');
     if (secondQuestionMarkIndex === -1) {
-      // 格式: system-brain?trialToken=xxxx
+      // example: system-brain?trialToken=xxxx
       appQuery = remainingPart;
     } else {
-      // 格式: system-brain?/test/a/b?trialToken=xxxx
+      // example: system-brain?/test/a/b?trialToken=xxxx
       appPath = remainingPart.substring(0, secondQuestionMarkIndex);
       appQuery = remainingPart.substring(secondQuestionMarkIndex + 1);
     }
