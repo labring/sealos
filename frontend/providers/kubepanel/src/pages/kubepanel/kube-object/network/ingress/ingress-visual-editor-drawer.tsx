@@ -1,13 +1,8 @@
-import { Form, Input, Button, Select, Space, message, Modal, Divider } from 'antd';
+import { Form, Input, Button, Select, Space, message, Modal, Typography, Divider } from 'antd';
 import { Drawer } from '@/components/common/drawer/drawer';
 import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
 import { DrawerTitle } from '@/components/common/drawer/drawer-title';
-import {
-  Ingress,
-  IngressBackend,
-  ExtensionsBackend,
-  NetworkingBackend
-} from '@/k8slens/kube-object';
+import { Ingress } from '@/k8slens/kube-object';
 import { updateResource } from '@/api/kubernetes';
 import { buildErrorResponse } from '@/services/backend/response';
 import { dumpKubeObject } from '@/utils/yaml';
@@ -37,6 +32,19 @@ interface Props {
   onOk: () => void;
 }
 
+const PathTypeSelect = (
+  <Select
+    allowClear
+    size="middle"
+    style={{ width: 180 }}
+    options={[
+      { label: 'Prefix', value: 'Prefix' },
+      { label: 'Exact', value: 'Exact' },
+      { label: 'ImplementationSpecific', value: 'ImplementationSpecific' }
+    ]}
+  />
+);
+
 export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Props) => {
   if (!ingress) return null;
 
@@ -51,14 +59,11 @@ export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Pro
         paths: (rule.http?.paths || []).map((p) => ({
           path: p.path || '/',
           pathType: p.pathType || 'Prefix',
-          serviceName:
-            (p.backend as NetworkingBackend)?.service?.name ??
-            (p.backend as ExtensionsBackend)?.serviceName ??
-            '',
+          serviceName: (p.backend as any)?.service?.name ?? (p.backend as any)?.serviceName ?? '',
           servicePort:
-            (p.backend as NetworkingBackend)?.service?.port?.number ??
-            (p.backend as NetworkingBackend)?.service?.port?.name ??
-            (p.backend as ExtensionsBackend)?.servicePort
+            (p.backend as any)?.service?.port?.number ??
+            (p.backend as any)?.service?.port?.name ??
+            (p.backend as any)?.servicePort
         }))
       })) || [],
     tls: []
@@ -110,7 +115,7 @@ export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Pro
       };
 
       msgApi.loading({ content: 'Updating Ingress...', key: msgKey }, 0);
-      const yaml = dumpKubeObject(updated);
+      const yaml = dumpKubeObject(updated as any);
       const res = await updateResource(ingress.kind, ingress.getName(), yaml);
       msgApi.success({
         content: `Updated ${res.data.kind} ${res.data.metadata.name}`,
