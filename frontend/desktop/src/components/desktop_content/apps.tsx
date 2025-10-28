@@ -36,6 +36,7 @@ import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
 import { track } from '@sealos/gtm';
 import { throttle } from 'lodash';
+import useSessionStore from '@/stores/session';
 
 const AppItem = ({
   app,
@@ -512,6 +513,7 @@ export default function Apps() {
   const { layoutConfig } = useConfigStore();
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
+  const { isGuest, openGuestLoginModal } = useSessionStore();
 
   const { openGuideModal } = useGuideModalStore();
   const desktopRef = useRef<HTMLDivElement>(null);
@@ -598,7 +600,15 @@ export default function Apps() {
   const { isDriverActive } = useGuideModalStore();
 
   const handleAppClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
-    console.log(item, 'item', isDriverActive);
+    if (isGuest()) {
+      const guestAllowedApps = ['system-brain'];
+      if (!guestAllowedApps.includes(item.key)) {
+        e.preventDefault();
+        openGuestLoginModal();
+        return;
+      }
+    }
+
     if (isDriverActive) {
       const guidedElements = [
         'system-devbox',
@@ -636,6 +646,11 @@ export default function Apps() {
   };
 
   const handleMoreAppsClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (isGuest()) {
+      e.preventDefault();
+      openGuestLoginModal();
+      return;
+    }
     e.stopPropagation();
 
     if (e.currentTarget) {
