@@ -154,6 +154,19 @@ export default function SecondaryLinks() {
                   h={'8px'}
                   borderRadius={'full'}
                 ></Center>
+
+                {!layoutConfig?.common.subscriptionEnabled && (
+                  <>
+                    <span>{t('common:nav_links.balance')}</span>
+                    <Divider
+                      orientation="vertical"
+                      mx={'12px'}
+                      borderColor={'rgba(0, 0, 0, 0.08)'}
+                      height={'16px'}
+                    />
+                  </>
+                )}
+
                 <div
                   className={cn('flex justify-center', { 'mr-1': currencySymbol === 'shellCoin' })}
                 >
@@ -169,7 +182,7 @@ export default function SecondaryLinks() {
                       borderColor={'rgba(0, 0, 0, 0.08)'}
                       height={'16px'}
                     />
-                    <span>Subscribe</span>
+                    <span>{t('common:nav_links.subscribe')}</span>
                     <Sparkles className="ml-[2px]" size={16} />
                   </>
                 )}
@@ -184,11 +197,12 @@ export default function SecondaryLinks() {
                   borderRadius={'full'}
                 ></Center>
                 <Text textTransform="capitalize">
-                  {subscriptionInfo?.subscription?.PlanName || 'Free'} Plan
+                  {subscriptionInfo?.subscription?.PlanName || 'Free'}{' '}
+                  {t('common:nav_links.plan_suffix')}
                 </Text>
                 {subscriptionInfo?.subscription?.Status === 'Debt' && (
                   <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
-                    Expired
+                    {t('common:nav_links.plan_expired')}
                   </div>
                 )}
                 <Divider
@@ -197,7 +211,7 @@ export default function SecondaryLinks() {
                   borderColor={'rgba(0, 0, 0, 0.08)'}
                   height={'16px'}
                 />
-                <span>Upgrade</span>
+                <span>{t('common:nav_links.upgrade_plan')}</span>
                 <Sparkles className="ml-[2px]" size={16} />
               </>
             )}
@@ -296,7 +310,7 @@ export default function SecondaryLinks() {
           onClick={() => openCostCenterApp()}
         >
           <Flex height={'16px'} alignItems="center" my="8px" px="12px">
-            <Text>{t('common:balance')}</Text>
+            <Text>{t('common:nav_links.balance')}</Text>
             <Divider orientation="vertical" mx="8px" />
             <CurrencySymbol type={currencySymbol} />
             <Text ml="4px">{formatMoney(balance).toFixed(2)}</Text>

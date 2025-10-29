@@ -121,7 +121,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
                         color={'brightBlue.600'}
                         fontSize={'12px'}
                       >
-                        {t('common:balance')} +{formatMoney(Number(task.reward) || 0)}
+                        {t('common:balance_text')} +{formatMoney(Number(task.reward) || 0)}
                       </Text>
 
                       {task.isCompleted ? (

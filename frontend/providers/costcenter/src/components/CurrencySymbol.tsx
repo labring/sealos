@@ -33,7 +33,7 @@ export default function CurrencySymbol({
         alt={t('common:sealos_coin_alt')}
         aria-label={t('common:sealos_coin_text')}
         role="img"
-        className="inline box-border size-[inherit] leading-0"
+        className="inline box-border size-[1em] leading-0"
         width={16}
         height={16}
       />
