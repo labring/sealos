@@ -1,0 +1,34 @@
+// date picker
+div.rdp {
+  --rdp-cell-size: 30px;
+  --rdp-accent-color: black;
+  --rdp-background-color: #f4f6f8;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid rgba(0, 0, 0, 0.75);
+  margin: 12px 16px 8px 16px;
+}
+
+button.rdp-button_reset.rdp-button.rdp-day {
+  border-radius: 6px;
+}
+
+button.rdp-day_today {
+  background-color: #dbf3ff;
+  color: #0884dd;
+}
+
+button.rdp-button.rdp-day.rdp-day_range_middle {
+  border-radius: 0px;
+  background-color: #f4f4f7;
+  color: #111824;
+}
+
+button.rdp-button.rdp-day.rdp-day_range_start {
+  background-color: #111824;
+  color: white;
+}
+
+button.rdp-button.rdp-day.rdp-day_range_end {
+  background-color: #111824;
+  color: white;
+}

@@ -156,6 +156,7 @@ export const getVlogsDatabaseLogs = (payload: {
   timeRange?: string;
   keyword?: string;
   pageSize?: number;
+  timeZone?: 'local' | 'utc';
 }) => POST<LogResult>(`/api/vlogs/database-logs`, payload);
 
 export const getVlogsDatabasePods = (payload: {
@@ -164,6 +165,7 @@ export const getVlogsDatabasePods = (payload: {
   startTime?: number;
   endTime?: number;
   timeRange?: string;
+  timeZone?: 'local' | 'utc';
 }) =>
   POST<{
     pods: { podName: string; alias: string; pvcUids: string[] }[];
@@ -179,4 +181,5 @@ export const getVlogsDatabaseLogCounts = (payload: {
   endTime?: number;
   timeRange?: string;
   keyword?: string;
+  timeZone?: 'local' | 'utc';
 }) => POST<{ logs_total: string; _time: string }[]>(`/api/vlogs/database-log-counts`, payload);

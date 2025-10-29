@@ -16,7 +16,7 @@ import {
 import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
-import { ChangeEventHandler, useMemo, useState } from 'react';
+import { ChangeEventHandler, useEffect, useMemo, useState } from 'react';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import useDateTimeStore from '@/store/date';
@@ -57,10 +57,13 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     }
   };
 
-  const initState = {
-    from: startDateTime,
-    to: endDateTime
-  };
+  const initState = useMemo(
+    () => ({
+      from: startDateTime,
+      to: endDateTime
+    }),
+    [startDateTime, endDateTime]
+  );
 
   const recentDateList = useMemo(
     () => [
@@ -128,12 +131,12 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   }, [startDateTime, endDateTime, recentDateList]);
 
   const [inputState, setInputState] = useState<0 | 1>(0);
-  const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
+  const [recentDate, setRecentDate] = useState<RecentDate | null>(null);
 
-  const [fromDateString, setFromDateString] = useState<string>(format(initState.from, 'y-MM-dd'));
-  const [toDateString, setToDateString] = useState<string>(format(initState.to, 'y-MM-dd'));
-  const [fromTimeString, setFromTimeString] = useState<string>(format(initState.from, 'HH:mm:ss'));
-  const [toTimeString, setToTimeString] = useState<string>(format(initState.to, 'HH:mm:ss'));
+  const [fromDateString, setFromDateString] = useState<string>('');
+  const [toDateString, setToDateString] = useState<string>('');
+  const [fromTimeString, setFromTimeString] = useState<string>('');
+  const [toTimeString, setToTimeString] = useState<string>('');
 
   const [fromDateError, setFromDateError] = useState<string | null>(null);
   const [toDateError, setToDateError] = useState<string | null>(null);
@@ -144,7 +147,17 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const [fromTimeShake, setFromTimeShake] = useState(false);
   const [toTimeShake, setToTimeShake] = useState(false);
 
-  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(undefined);
+
+  // 客户端挂载后初始化状态，避免 hydration 错误
+  useEffect(() => {
+    setRecentDate(defaultRecentDate);
+    setFromDateString(format(initState.from, 'y-MM-dd'));
+    setToDateString(format(initState.to, 'y-MM-dd'));
+    setFromTimeString(format(initState.from, 'HH:mm:ss'));
+    setToTimeString(format(initState.to, 'HH:mm:ss'));
+    setSelectedRange(initState);
+  }, [defaultRecentDate, initState.from, initState.to]);
 
   const onSubmit = () => {
     if (fromDateError || fromTimeError || toDateError || toTimeError) {
@@ -258,9 +271,11 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       } else {
         setInputState(0);
       }
+      // 对结束日期使用 endOfDay，确保捕获完整的一天
+      const adjustedTo = to ? endOfDay(to) : undefined;
       setSelectedRange({
         from,
-        to
+        to: adjustedTo
       });
       if (from) {
         setFromDateString(format(startOfDay(from), 'y-MM-dd'));
@@ -439,7 +454,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                     fontSize={'12px'}
                     fontWeight={'400'}
                     justifyContent={'flex-start'}
-                    {...(recentDate.compareValue === item.compareValue && {
+                    {...(recentDate?.compareValue === item.compareValue && {
                       bg: 'brightBlue.50',
                       color: 'brightBlue.600'
                     })}
@@ -476,8 +491,9 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                 borderColor={'grayModern.250'}
                 borderRadius={'6px'}
                 onClick={() => {
-                  setRecentDate(defaultRecentDate);
-                  handleRecentDateClick(defaultRecentDate);
+                  const resetDate = defaultRecentDate;
+                  setRecentDate(resetDate);
+                  handleRecentDateClick(resetDate);
                 }}
               >
                 <MyIcon name="restore" w={'16px'} h={'16px'} color={'grayModern.500'} />
