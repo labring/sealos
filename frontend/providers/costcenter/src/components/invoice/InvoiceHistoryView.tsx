@@ -18,6 +18,7 @@ import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
 import { formatMoney } from '@/utils/format';
 import { format as formatDate } from 'date-fns';
 import { InvoicePayload } from '@/types/invoice';
+import CurrencySymbol from '../CurrencySymbol';
 
 function formatDateTime(iso: Date | string) {
   return formatDate(new Date(iso), 'yyyy-MM-dd HH:mm');
@@ -110,7 +111,10 @@ export default function InvoiceHistoryView({
                 <TableCell>
                   <span className={statusDisplay.className}>{statusDisplay.text}</span>
                 </TableCell>
-                <TableCell>${formatMoney(invoice.totalAmount).toFixed(2)}</TableCell>
+                <TableCell>
+                  <CurrencySymbol />
+                  <span>{formatMoney(invoice.totalAmount).toFixed(2)}</span>
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     {isCompleted && (

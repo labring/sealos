@@ -27,6 +27,7 @@ import { format, addHours } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
+import CurrencySymbol from '../CurrencySymbol';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -188,7 +189,15 @@ export function PAYGAppBillingDrawerView({
         return null;
       case 'data': {
         const usage = row.data.usage[resourceType];
-        return usage ? `-$${formatMoney(usage.cost).toFixed(6)}` : '-';
+        return usage ? (
+          <span>
+            <span>-</span>
+            <CurrencySymbol />
+            <span>{formatMoney(usage.cost).toFixed(6)}</span>
+          </span>
+        ) : (
+          '-'
+        );
       }
       default:
         return null;
@@ -333,7 +342,13 @@ export function PAYGAppBillingDrawerView({
           case 'separator':
             return null;
           case 'data':
-            return `-$${formatMoney(row.data.amount).toFixed(6)}`;
+            return (
+              <span>
+                <span>-</span>
+                <CurrencySymbol />
+                <span>{formatMoney(row.data.amount).toFixed(6)}</span>
+              </span>
+            );
           default:
             return null;
         }

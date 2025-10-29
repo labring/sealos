@@ -41,7 +41,6 @@ const MEMORY_RANGE = [1, 16, 32, 64, 128];
 export default function CalculatorPanel({ priceData }: { priceData: PricePayload[] }) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
-  const currencyType = useEnvStore((state) => state.currency);
   const [config, setConfig] = useState({
     resources: {
       cpu: {
@@ -227,7 +226,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
         <CardHeader className="gap-0 p-5 bg-blue-50">
           <CardTitle className="font-semibold text-xl flex items-center justify-center">
             <span className="text-foreground mr-3">{t('common:total_amount')}: </span>
-            <CurrencySymbol type={currencyType} className="w-5 h-5 mr-1 text-blue-600" />
+            <CurrencySymbol className="text-blue-600" />
             <span className="text-blue-600">{totalAmount}</span>
           </CardTitle>
         </CardHeader>

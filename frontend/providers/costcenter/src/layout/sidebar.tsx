@@ -23,7 +23,7 @@ export default function SideBar() {
     {
       id: 'Cost',
       url: '/cost',
-      value: 'SideBar.Cost',
+      value: 'sidebar.cost',
       icon: Dock,
       display: !subscriptionEnabled
     },

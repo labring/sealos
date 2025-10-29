@@ -16,6 +16,7 @@ import { formatMoney } from '@/utils/format';
 import { getPlanBackgroundClass } from './PlanHeader';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 export function AllPlansSection() {
   const { t } = useTranslation();
@@ -201,7 +202,16 @@ export function AllPlansSection() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
-                        <span>{workspace.price ? `$${formatMoney(workspace.price)}` : '---'}</span>
+                        <span>
+                          {workspace.price ? (
+                            <>
+                              <CurrencySymbol />
+                              <span>{formatMoney(workspace.price)}</span>
+                            </>
+                          ) : (
+                            '---'
+                          )}
+                        </span>
                       </div>
                     </TableCell>
                   </TableRow>

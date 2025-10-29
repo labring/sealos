@@ -17,7 +17,6 @@ import { formatMoney } from '@/utils/format';
 import { format as formatDate } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '@/components/CurrencySymbol';
-import useEnvStore from '@/stores/env';
 
 function formatDateTime(iso: string) {
   return formatDate(new Date(iso), 'MM-dd HH:mm');
@@ -47,7 +46,6 @@ export default function RechargePanelView({
   isLoading: boolean;
 }) {
   const { t } = useTranslation();
-  const currency = useEnvStore((s) => s.currency);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
@@ -88,7 +86,7 @@ export default function RechargePanelView({
           />
           <Input
             icon={<Search size={16} />}
-            placeholder={t('Order Number') || 'Order Number'}
+            placeholder={t('common:order_number')}
             className="w-[15rem]"
             value={orderIdFilter}
             onChange={(e) => onOrderIdFilterChange(e.target.value)}
@@ -97,8 +95,8 @@ export default function RechargePanelView({
 
         <div className="flex items-center gap-3 font-medium">
           <div className="text-blue-600 text-base inline-flex items-center gap-1 whitespace-nowrap">
-            <span>{t('Total Amount')}:</span>
-            <CurrencySymbol type={currency} />
+            <span>{t('common:total_amount')}:</span>
+            <CurrencySymbol />
             <span>{formatMoney(totalAmount).toFixed(2)}</span>
           </div>
         </div>
@@ -106,21 +104,21 @@ export default function RechargePanelView({
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead>{t('Order Number')}</TableHead>
-          <TableHead>{t('Transaction Time')}</TableHead>
+          <TableHead>{t('common:order_number')}</TableHead>
+          <TableHead>{t('common:orders.transaction_time')}</TableHead>
           <TableHead>
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
-              <span>{t('Gift')}</span>
+              <span>{t('common:bonus_amount')}</span>
               <span>(</span>
-              <CurrencySymbol type={currency} />
+              <CurrencySymbol />
               <span>)</span>
             </span>
           </TableHead>
           <TableHead>
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
-              <span>{t('Total Amount')}</span>
+              <span>{t('common:total_amount')}</span>
               <span>(</span>
-              <CurrencySymbol type={currency} />
+              <CurrencySymbol />
               <span>)</span>
             </span>
           </TableHead>
@@ -141,7 +139,7 @@ export default function RechargePanelView({
       <TableLayoutFooter>
         <div className="px-4 py-3 flex justify-between">
           <div className="flex items-center text-zinc-500">
-            {t('Total')}: {isLoading ? '...' : filteredRows.length}
+            {t('common:total')}: {isLoading ? '...' : filteredRows.length}
           </div>
           <div className="flex items-center gap-3">
             <Pagination
@@ -151,7 +149,7 @@ export default function RechargePanelView({
             />
             <span>
               <span>{pageSize}</span>
-              <span className="text-zinc-500"> / {t('Page')}</span>
+              <span className="text-zinc-500"> / {t('common:page')}</span>
             </span>
           </div>
         </div>

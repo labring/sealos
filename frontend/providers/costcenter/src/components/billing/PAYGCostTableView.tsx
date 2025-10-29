@@ -16,6 +16,7 @@ import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
+import CurrencySymbol from '../CurrencySymbol';
 
 export type PAYGData = {
   appName: string;
@@ -51,7 +52,7 @@ export function PAYGCostTableView({
   onPageChange,
   isLoading = false
 }: PAYGCostTableViewProps) {
-  const { t } = useTranslation('applist');
+  const { t } = useTranslation();
 
   const PAYGRow = ({ item }: { item: PAYGData }) => (
     <TableRow>
@@ -69,13 +70,16 @@ export function PAYGCostTableView({
       </TableCell>
       <TableCell>
         <Badge variant="secondary" className={cn('font-medium')}>
-          {t(item.appType)}
+          {t('applist:' + item.appType)}
         </Badge>
       </TableCell>
-      <TableCell>${formatMoney(item.cost)}</TableCell>
+      <TableCell>
+        <CurrencySymbol />
+        <span>{formatMoney(item.cost)}</span>
+      </TableCell>
       <TableCell>
         <Button variant="outline" size="sm" onClick={() => onUsageClick?.(item)}>
-          {t('common:usage')}
+          {t('common:payg_cost_table.view_app_usage_button')}
         </Button>
       </TableCell>
     </TableRow>
@@ -105,7 +109,7 @@ export function PAYGCostTableView({
     <TableLayout className="border-r-0 rounded-r-none">
       <TableLayoutCaption className="font-medium text-sm bg-zinc-50">
         <div className="flex items-center gap-3">
-          <h3>PAYG</h3>
+          <h3>{t('common:payg_cost_table.title')}</h3>
           {timeRange && <div className="font-normal text-zinc-500">{timeRange}</div>}
         </div>
       </TableLayoutCaption>

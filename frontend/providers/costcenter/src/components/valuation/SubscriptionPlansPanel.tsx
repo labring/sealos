@@ -3,6 +3,7 @@ import { StaticPlanCard } from './StaticPlanCard';
 import { useMemo } from 'react';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 interface SubscriptionPlansPanelProps {
   plansData?: SubscriptionPlan[];
@@ -69,7 +70,9 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                     <div className="text-xs text-gray-500 mt-1">
                       {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +{' '}
                       {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport +{' '}
-                      {formatMoney(plan.AIQuota * 100)} AI Credits - ${monthlyPrice.toFixed(0)}
+                      {formatMoney(plan.AIQuota * 100)} AI Credits -
+                      <CurrencySymbol />
+                      {monthlyPrice.toFixed(0)}
                     </div>
                   </div>
                 </div>

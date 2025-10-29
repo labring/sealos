@@ -19,6 +19,7 @@ import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
 import { formatMoney } from '@/utils/format';
 import { format as formatDate } from 'date-fns';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 function formatDateTime(iso: string) {
   return formatDate(new Date(iso), 'yyyy-MM-dd HH:mm:ss');
@@ -130,7 +131,11 @@ export default function OrderListView({
 
         <div className="flex items-center gap-3 font-medium">
           <div className="text-blue-600 text-base">
-            {t('common:total_amount')}: ${formatMoney(selectedAmount).toFixed(2)}
+            <span>
+              <span>{t('common:total_amount')}:</span>
+              <CurrencySymbol />
+              <span>{formatMoney(selectedAmount).toFixed(2)}</span>
+            </span>
           </div>
           <Button disabled={selectedRows.length <= 0} onClick={onObtainInvoice}>
             <ReceiptText size={16} />
@@ -178,7 +183,10 @@ export default function OrderListView({
                   '-'
                 )}
               </TableCell>
-              <TableCell>${formatMoney(row.amount).toFixed(2)}</TableCell>
+              <TableCell>
+                <CurrencySymbol />
+                <span>{formatMoney(row.amount).toFixed(2)}</span>
+              </TableCell>
             </TableRow>
           ))}
         </TableLayoutBody>

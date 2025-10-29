@@ -29,7 +29,6 @@ export type PricePayload = {
 
 export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
   const { t } = useTranslation();
-  const currency = useEnvStore((s) => s.currency);
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
 
   const gpuData = priceData.filter((x) => x.isGpu);
@@ -44,7 +43,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
         return (
           <div className="flex items-center">
             <span className="mr-1">{header.id}</span>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && <CurrencySymbol />}
           </div>
         );
       };
@@ -82,7 +81,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
         }
       })
     ];
-  }, [t, currency]);
+  }, [t]);
 
   const table = useReactTable({
     data: [], // We'll render data manually
