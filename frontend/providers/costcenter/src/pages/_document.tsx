@@ -35,7 +35,7 @@ class MyDocument extends Document<MyDocumentProps> {
             );
           })}
         </Head>
-        <body>
+        <body className="max-w-screen overflow-x-hidden">
           {noscripts?.map((item, i) => {
             return <noscript key={i} {...item} />;
           })}

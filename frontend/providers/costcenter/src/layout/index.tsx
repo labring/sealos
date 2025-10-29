@@ -37,7 +37,6 @@ export default function Layout({ children }: any) {
   return (
     <Flex
       w="100vw"
-      h="100vh"
       position="relative"
       pt={'4px'}
       pb="10px"
@@ -60,8 +59,17 @@ export default function Layout({ children }: any) {
           )}
         </Flex>
       ) : (
-        <Flex width="full" height="full" maxWidth="1600px" justify={'center'} gap={'1.5rem'}>
-          <div className="pt-10 min-w-[12rem]">
+        <Flex
+          position={'relative'}
+          width="full"
+          height={'auto'}
+          maxWidth="1600px"
+          minHeight={'100vh'}
+          justify={'center'}
+          alignItems={'start'}
+          gap={'1.5rem'}
+        >
+          <div className="pt-10 min-w-[12rem] sticky top-0">
             <SideBar />
           </div>
           <Box flexGrow={1} borderRadius="8px" overflow={'hidden'} w={0} className="pt-10">
