@@ -71,11 +71,18 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 		return
 	}
 	if _, exist = ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; exist {
-		totalQuota, remainQuota, err := dao.DBClient.GetWorkspaceRemainingAIQuota(workspace)
+		totalQuota, remainQuota, err := dao.DBClient.GetWorkspaceRemainingAIQuota(
+			workspace,
+		)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,
-				gin.H{"error": fmt.Sprintf("failed to get workspace remaining quota: %v", err)},
+				gin.H{
+					"error": fmt.Sprintf(
+						"failed to get workspace remaining quota: %v",
+						err,
+					),
+				},
 			)
 			return
 		}
@@ -134,22 +141,33 @@ func AdminChargeBilling(c *gin.Context) {
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
-			helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request : %v", err)},
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to parse request : %v", err),
+			},
 		)
 		return
 	}
-	helper.CallCounter.WithLabelValues("ChargeBilling", billingReq.UserUID.String()).Inc()
+	helper.CallCounter.WithLabelValues("ChargeBilling", billingReq.UserUID.String()).
+		Inc()
 	// if Namespace is workspace subscription, should charge to workspace ai quota
 	isSubscription, err := GetWorkspaceIsSubscription(billingReq.Namespace)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to get workspace subscription status: %v", err)},
+			gin.H{
+				"error": fmt.Sprintf(
+					"failed to get workspace subscription status: %v",
+					err,
+				),
+			},
 		)
 		return
 	}
 	if isSubscription {
-		err = dao.DBClient.ChargeWorkspaceAIQuota(billingReq.Amount, billingReq.Namespace)
+		err = dao.DBClient.ChargeWorkspaceAIQuota(
+			billingReq.Amount,
+			billingReq.Namespace,
+		)
 	} else {
 		err = dao.DBClient.ChargeBilling(billingReq)
 	}
@@ -310,7 +328,9 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "empty userUID"})
 		return
 	}
-	userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{UID: uuid.MustParse(userUID)})
+	userID, err := dao.DBClient.GetUserID(
+		types.UserQueryOpts{UID: uuid.MustParse(userUID)},
+	)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -325,7 +345,9 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(
 			http.StatusInternalServerError,
-			helper.ErrorMessage{Error: fmt.Sprintf("failed to get user real name info: %v", err)},
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to get user real name info: %v", err),
+			},
 		)
 		return
 	}
@@ -406,7 +428,9 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(
 			http.StatusInternalServerError,
-			helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)},
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to get user cr name: %v", err),
+			},
 		)
 		return
 	}
@@ -418,7 +442,9 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
-			helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)},
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("get own namespace list failed: %v", err),
+			},
 		)
 		return
 	}
@@ -552,7 +578,10 @@ func AdminManageSubscriptionPlan(c *gin.Context) {
 	result, err := processPlanUpdate(plan, prices)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
-			Error: fmt.Sprintf("failed to create/update subscription plan with prices: %v", err),
+			Error: fmt.Sprintf(
+				"failed to create/update subscription plan with prices: %v",
+				err,
+			),
 		})
 		return
 	}
@@ -580,8 +609,13 @@ func logPlanDetails(plan types.WorkspaceSubscriptionPlan, prices []types.Product
 		plan.MaxSeats,
 	)
 	for i, price := range prices {
-		logrus.Infof("AdminManageSubscriptionPlan: price[%d].BillingCycle=%s, price[%d].Price=%d",
-			i, price.BillingCycle, i, price.Price)
+		logrus.Infof(
+			"AdminManageSubscriptionPlan: price[%d].BillingCycle=%s, price[%d].Price=%d",
+			i,
+			price.BillingCycle,
+			i,
+			price.Price,
+		)
 	}
 }
 
@@ -643,7 +677,10 @@ func processPlanUpdate(
 }
 
 // findExistingPlan finds an existing plan by ID or name
-func findExistingPlan(tx *gorm.DB, plan types.WorkspaceSubscriptionPlan) (types.WorkspaceSubscriptionPlan, error) {
+func findExistingPlan(
+	tx *gorm.DB,
+	plan types.WorkspaceSubscriptionPlan,
+) (types.WorkspaceSubscriptionPlan, error) {
 	var existingPlan types.WorkspaceSubscriptionPlan
 	var err error
 
@@ -686,10 +723,20 @@ func createNewPlan(tx *gorm.DB, plan *types.WorkspaceSubscriptionPlan) error {
 }
 
 // validatePlanNameUpdate validates that plan name updates are allowed
-func validatePlanNameUpdate(existingPlan, newPlan types.WorkspaceSubscriptionPlan) error {
-	logrus.Infof("Found existing plan: ID=%s, Name='%s'", existingPlan.ID, existingPlan.Name)
+func validatePlanNameUpdate(
+	existingPlan, newPlan types.WorkspaceSubscriptionPlan,
+) error {
+	logrus.Infof(
+		"Found existing plan: ID=%s, Name='%s'",
+		existingPlan.ID,
+		existingPlan.Name,
+	)
 	if newPlan.Name != existingPlan.Name && existingPlan.Name != "" {
-		return fmt.Errorf("cannot change plan name during update. Current name: %s, Requested name: %s", existingPlan.Name, newPlan.Name)
+		return fmt.Errorf(
+			"cannot change plan name during update. Current name: %s, Requested name: %s",
+			existingPlan.Name,
+			newPlan.Name,
+		)
 	}
 	return nil
 }
@@ -708,7 +755,11 @@ func hasPlanChanged(newPlan, existingPlan types.WorkspaceSubscriptionPlan) bool 
 }
 
 // havePricesChanged checks if prices have changed
-func havePricesChanged(tx *gorm.DB, planID uuid.UUID, prices []types.ProductPrice) (bool, error) {
+func havePricesChanged(
+	tx *gorm.DB,
+	planID uuid.UUID,
+	prices []types.ProductPrice,
+) (bool, error) {
 	var existingPrices []types.ProductPrice
 	if err := tx.Where("product_id = ?", planID).Find(&existingPrices).Error; err != nil {
 		return false, fmt.Errorf("failed to get existing prices: %w", err)
@@ -742,21 +793,35 @@ func havePricesChanged(tx *gorm.DB, planID uuid.UUID, prices []types.ProductPric
 }
 
 // updatePlanIfNeeded updates the plan if it has changed
-func updatePlanIfNeeded(tx *gorm.DB, existingPlan, newPlan types.WorkspaceSubscriptionPlan, originalID uuid.UUID, result planUpdateResult) error {
+func updatePlanIfNeeded(
+	tx *gorm.DB,
+	existingPlan, newPlan types.WorkspaceSubscriptionPlan,
+	originalID uuid.UUID,
+	result planUpdateResult,
+) error {
 	if !result.planChanged && !result.pricesChanged {
-		logrus.Infof("No changes detected for plan ID=%s, Name='%s', skipping update (idempotent operation)", originalID, newPlan.Name)
+		logrus.Infof(
+			"No changes detected for plan ID=%s, Name='%s', skipping update (idempotent operation)",
+			originalID,
+			newPlan.Name,
+		)
 		return nil
 	}
 
-	logrus.Infof("Changes detected for plan ID=%s, Name='%s', planChanged=%t, pricesChanged=%t",
-		originalID, newPlan.Name, result.planChanged, result.pricesChanged)
+	logrus.Infof(
+		"Changes detected for plan ID=%s, Name='%s', planChanged=%t, pricesChanged=%t",
+		originalID,
+		newPlan.Name,
+		result.planChanged,
+		result.pricesChanged,
+	)
 
 	if !result.planChanged {
 		return nil
 	}
 
 	logrus.Infof("Updating plan fields for ID=%s", originalID)
-	if err := tx.Model(&existingPlan).Where("id = ?", originalID).Updates(map[string]interface{}{
+	if err := tx.Model(&existingPlan).Where("id = ?", originalID).Updates(map[string]any{
 		"name":                newPlan.Name,
 		"description":         newPlan.Description,
 		"upgrade_plan_list":   newPlan.UpgradePlanList,
@@ -776,13 +841,22 @@ func updatePlanIfNeeded(tx *gorm.DB, existingPlan, newPlan types.WorkspaceSubscr
 }
 
 // updatePricesIfNeeded updates prices if they have changed
-func updatePricesIfNeeded(tx *gorm.DB, plan types.WorkspaceSubscriptionPlan, prices []types.ProductPrice, result planUpdateResult) error {
+func updatePricesIfNeeded(
+	tx *gorm.DB,
+	plan types.WorkspaceSubscriptionPlan,
+	prices []types.ProductPrice,
+	result planUpdateResult,
+) error {
 	if !result.isCreate && !result.pricesChanged {
 		return nil
 	}
 
 	if result.pricesChanged {
-		logrus.Infof("Updating prices for plan ID=%s, new price count=%d", plan.ID, len(prices))
+		logrus.Infof(
+			"Updating prices for plan ID=%s, new price count=%d",
+			plan.ID,
+			len(prices),
+		)
 	}
 
 	requestedCycles := make(map[types.SubscriptionPeriod]bool)
@@ -798,7 +872,11 @@ func updatePricesIfNeeded(tx *gorm.DB, plan types.WorkspaceSubscriptionPlan, pri
 }
 
 // deleteObsoletePrices deletes prices that are not in the request anymore
-func deleteObsoletePrices(tx *gorm.DB, planID uuid.UUID, requestedCycles map[types.SubscriptionPeriod]bool) error {
+func deleteObsoletePrices(
+	tx *gorm.DB,
+	planID uuid.UUID,
+	requestedCycles map[types.SubscriptionPeriod]bool,
+) error {
 	var allExistingPrices []types.ProductPrice
 	if err := tx.Where("product_id = ?", planID).Find(&allExistingPrices).Error; err != nil {
 		return fmt.Errorf("failed to get all existing prices: %w", err)
@@ -807,9 +885,17 @@ func deleteObsoletePrices(tx *gorm.DB, planID uuid.UUID, requestedCycles map[typ
 	for _, existingPrice := range allExistingPrices {
 		if !requestedCycles[existingPrice.BillingCycle] {
 			if err := tx.Delete(&existingPrice).Error; err != nil {
-				return fmt.Errorf("failed to delete obsolete price for billing cycle %s: %w", existingPrice.BillingCycle, err)
+				return fmt.Errorf(
+					"failed to delete obsolete price for billing cycle %s: %w",
+					existingPrice.BillingCycle,
+					err,
+				)
 			}
-			logrus.Infof("Deleted obsolete price for plan ID=%s, billing cycle %s", planID, existingPrice.BillingCycle)
+			logrus.Infof(
+				"Deleted obsolete price for plan ID=%s, billing cycle %s",
+				planID,
+				existingPrice.BillingCycle,
+			)
 		}
 	}
 
@@ -817,7 +903,11 @@ func deleteObsoletePrices(tx *gorm.DB, planID uuid.UUID, requestedCycles map[typ
 }
 
 // createOrUpdatePrices creates or updates prices from the request
-func createOrUpdatePrices(tx *gorm.DB, plan types.WorkspaceSubscriptionPlan, prices []types.ProductPrice) error {
+func createOrUpdatePrices(
+	tx *gorm.DB,
+	plan types.WorkspaceSubscriptionPlan,
+	prices []types.ProductPrice,
+) error {
 	for i := range prices {
 		prices[i].ProductID = plan.ID
 		if prices[i].ID == uuid.Nil {
@@ -831,9 +921,17 @@ func createOrUpdatePrices(tx *gorm.DB, plan types.WorkspaceSubscriptionPlan, pri
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if err := tx.Create(&prices[i]).Error; err != nil {
-				return fmt.Errorf("failed to create product price for billing cycle %s: %w", prices[i].BillingCycle, err)
+				return fmt.Errorf(
+					"failed to create product price for billing cycle %s: %w",
+					prices[i].BillingCycle,
+					err,
+				)
 			}
-			logrus.Infof("Created new price for plan ID=%s, billing cycle %s", plan.ID, prices[i].BillingCycle)
+			logrus.Infof(
+				"Created new price for plan ID=%s, billing cycle %s",
+				plan.ID,
+				prices[i].BillingCycle,
+			)
 			continue
 		}
 
@@ -846,14 +944,23 @@ func createOrUpdatePrices(tx *gorm.DB, plan types.WorkspaceSubscriptionPlan, pri
 }
 
 // findExistingPrice finds an existing price by product ID and billing cycle
-func findExistingPrice(tx *gorm.DB, productID uuid.UUID, billingCycle types.SubscriptionPeriod) (types.ProductPrice, error) {
+func findExistingPrice(
+	tx *gorm.DB,
+	productID uuid.UUID,
+	billingCycle types.SubscriptionPeriod,
+) (types.ProductPrice, error) {
 	var existingPrice types.ProductPrice
-	err := tx.Where("product_id = ? AND billing_cycle = ?", productID, billingCycle).First(&existingPrice).Error
+	err := tx.Where("product_id = ? AND billing_cycle = ?", productID, billingCycle).
+		First(&existingPrice).
+		Error
 	return existingPrice, err
 }
 
 // updateExistingPriceIfNeeded updates an existing price if values changed
-func updateExistingPriceIfNeeded(tx *gorm.DB, existingPrice, newPrice *types.ProductPrice) error {
+func updateExistingPriceIfNeeded(
+	tx *gorm.DB,
+	existingPrice, newPrice *types.ProductPrice,
+) error {
 	if !hasPriceChanged(existingPrice, newPrice) {
 		return nil
 	}
@@ -862,9 +969,17 @@ func updateExistingPriceIfNeeded(tx *gorm.DB, existingPrice, newPrice *types.Pro
 	existingPrice.OriginalPrice = newPrice.OriginalPrice
 	existingPrice.StripePrice = newPrice.StripePrice
 	if err := tx.Save(existingPrice).Error; err != nil {
-		return fmt.Errorf("failed to update product price for billing cycle %s: %w", newPrice.BillingCycle, err)
+		return fmt.Errorf(
+			"failed to update product price for billing cycle %s: %w",
+			newPrice.BillingCycle,
+			err,
+		)
 	}
-	logrus.Infof("Updated existing price for plan ID=%s, billing cycle %s", existingPrice.ProductID, newPrice.BillingCycle)
+	logrus.Infof(
+		"Updated existing price for plan ID=%s, billing cycle %s",
+		existingPrice.ProductID,
+		newPrice.BillingCycle,
+	)
 	return nil
 }
 
@@ -957,7 +1072,6 @@ func AdminDeleteSubscriptionPlan(c *gin.Context) {
 
 		return nil
 	})
-
 	if err != nil {
 		switch err.Error() {
 		case "subscription plan not found":
@@ -972,3 +1086,14 @@ func AdminDeleteSubscriptionPlan(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
+
+// The following functions and constants are defined in other files within the same package:
+// - SuspendNetworkNamespaceAnnoStatus, ResumeNetworkNamespaceAnnoStatus: defined in flush.go
+// - updateNetworkNamespaceStatus: defined in flush.go
+// - getOwnNsListWithClt: defined in subscription.go
+// These declarations help with golangci-lint cross-file type checking
+
+// Note: The following functions and constants are defined in other files within the same package:
+// - SuspendNetworkNamespaceAnnoStatus, ResumeNetworkNamespaceAnnoStatus: defined in flush.go
+// - updateNetworkNamespaceStatus: defined in flush.go
+// - getOwnNsListWithClt: defined in subscription.go
