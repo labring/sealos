@@ -592,7 +592,10 @@ type planUpdateResult struct {
 	pricesChanged bool
 }
 
-func processPlanUpdate(plan types.WorkspaceSubscriptionPlan, prices []types.ProductPrice) (*planUpdateResult, error) {
+func processPlanUpdate(
+	plan types.WorkspaceSubscriptionPlan,
+	prices []types.ProductPrice,
+) (*planUpdateResult, error) {
 	var result planUpdateResult
 
 	err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -753,7 +756,7 @@ func updatePlanIfNeeded(tx *gorm.DB, existingPlan, newPlan types.WorkspaceSubscr
 	}
 
 	logrus.Infof("Updating plan fields for ID=%s", originalID)
-	updates := map[string]interface{}{
+	if err := tx.Model(&existingPlan).Where("id = ?", originalID).Updates(map[string]interface{}{
 		"name":                newPlan.Name,
 		"description":         newPlan.Description,
 		"upgrade_plan_list":   newPlan.UpgradePlanList,
@@ -765,8 +768,7 @@ func updatePlanIfNeeded(tx *gorm.DB, existingPlan, newPlan types.WorkspaceSubscr
 		"order":               newPlan.Order,
 		"tags":                newPlan.Tags,
 		"updated_at":          time.Now(),
-	}
-	if err := tx.Model(&existingPlan).Where("id = ?", originalID).Updates(updates).Error; err != nil {
+	}).Error; err != nil {
 		return fmt.Errorf("failed to update subscription plan: %w", err)
 	}
 
