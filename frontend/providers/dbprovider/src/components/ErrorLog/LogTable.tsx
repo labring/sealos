@@ -37,7 +37,7 @@ export const LogTable = ({
   onExportLogs,
   pvcMap = {}
 }: LogTableProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('common');
 
   const FieldLabel = ({ children }: { children: ReactNode }) => (
     <Box
@@ -64,6 +64,7 @@ export const LogTable = ({
     () => [
       {
         accessorKey: 'timestamp',
+        size: 150,
         cell: ({ row }) => {
           return (
             <Box
@@ -90,11 +91,12 @@ export const LogTable = ({
             </Box>
           );
         },
-        header: () => <FieldLabel>time</FieldLabel>
+        header: () => <FieldLabel>Time</FieldLabel>
       },
       {
         accessorKey: 'content',
-        header: () => <FieldLabel>message</FieldLabel>,
+        size: 350,
+        header: () => <FieldLabel>Message</FieldLabel>,
         cell: ({ row }) => {
           return (
             <Box
@@ -108,6 +110,7 @@ export const LogTable = ({
               fontWeight={'var(--font-weight-normal, 400)'}
               lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
               whiteSpace={'pre-wrap'}
+              pr={'20px'}
               sx={{
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word'
@@ -120,7 +123,8 @@ export const LogTable = ({
       },
       {
         accessorKey: 'container',
-        header: () => <FieldLabel>container</FieldLabel>,
+        size: 150,
+        header: () => <FieldLabel>Container</FieldLabel>,
         cell: ({ row }) => {
           return (
             <Box
@@ -135,7 +139,8 @@ export const LogTable = ({
               lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
               display={'flex'}
               width={'100%'}
-              pl={'0px'}
+              pl={'20px'}
+              pr={'20px'}
               p={'0'}
               alignItems={'flex-start'}
               gap={'0px'}
@@ -149,9 +154,9 @@ export const LogTable = ({
       },
       {
         accessorKey: 'pod',
-        header: () => <FieldLabel>pod</FieldLabel>,
+        size: 250,
+        header: () => <FieldLabel>Pod</FieldLabel>,
         cell: ({ row }) => {
-          // 使用PVC映射将PVC UID转换为Pod名称
           const podDisplay = pvcMap[row.original.pod || ''] || row.original.pod || '-';
           return (
             <Box
@@ -166,7 +171,7 @@ export const LogTable = ({
               lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
               display={'flex'}
               width={'100%'}
-              pl={'0px'}
+              pl={'20px'}
               p={'0'}
               alignItems={'flex-start'}
               gap={'0px'}
@@ -191,6 +196,7 @@ export const LogTable = ({
       globalFilter
     },
     onGlobalFilterChange,
+    columnResizeMode: 'onChange',
     globalFilterFn: (row, columnId, filterValue) => {
       const timestamp = formatTime(row.original.timestamp, 'YYYY-MM-DD HH:mm:ss.SSS')
         .toLowerCase()
@@ -217,7 +223,7 @@ export const LogTable = ({
               fontStyle: 'normal'
             }}
           >
-            Logs
+            {t('Logs')}
           </Text>
         </Flex>
         {onExportLogs && (
@@ -253,7 +259,7 @@ export const LogTable = ({
               }
             }}
           >
-            Export
+            {t('Export')}
           </Button>
         )}
       </Flex>
@@ -282,53 +288,8 @@ export const LogTable = ({
             }}
             sx={{
               '& table': {
-                tableLayout: 'fixed !important',
-                width: '100% !important'
-              },
-              '& td:first-child': {
-                width: '15% !important',
-                minWidth: '100px !important',
-                maxWidth: '15% !important'
-              },
-              '& td:nth-child(2)': {
-                width: '55% !important',
-                maxWidth: '55% !important',
-                overflow: 'hidden',
-                wordWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                paddingRight: '20px'
-              },
-              '& td:nth-child(3)': {
-                width: '15% !important',
-                minWidth: '100px !important',
-                maxWidth: '15% !important',
-                paddingLeft: '20px',
-                paddingRight: '20px'
-              },
-              '& td:nth-child(4)': {
-                width: '15% !important',
-                minWidth: '100px !important',
-                maxWidth: '15% !important',
-                paddingLeft: '20px'
-              },
-              '& th:first-child': {
-                width: '15% !important',
-                minWidth: '100px !important',
-                maxWidth: '15% !important'
-              },
-              '& th:nth-child(2)': {
-                width: '55% !important',
-                maxWidth: '55% !important'
-              },
-              '& th:nth-child(3)': {
-                width: '15% !important',
-                minWidth: '100px !important',
-                maxWidth: '15% !important'
-              },
-              '& th:nth-child(4)': {
-                width: '15% !important',
-                minWidth: '100px !important',
-                maxWidth: '15% !important'
+                tableLayout: 'fixed',
+                width: '100%'
               }
             }}
           />

@@ -72,11 +72,10 @@ export const LogFilter = ({
   onRefreshIntervalChange,
   onLogCountChange
 }: LogFilterProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('common');
   const [isLargerThan1440] = useMediaQuery('(min-width: 1440px)');
 
   // Local multi-select states (UI only for now)
-  // 使用带 checked 属性的列表，类似 applaunchpad
   const [podList, setPodList] = useState<Array<{ value: string; label: string; checked: boolean }>>(
     []
   );
@@ -87,7 +86,6 @@ export const LogFilter = ({
 
   // initialize from single-select props
   useEffect(() => {
-    // 初始化 pod 列表
     const initialPods = dbPods.map((p) => ({
       value: p.podName,
       label: p.podName,
@@ -97,7 +95,6 @@ export const LogFilter = ({
   }, [podName, dbPods]);
 
   useEffect(() => {
-    // 初始化 container 列表，默认全部选中
     const containerOptions = (() => {
       if (!db?.dbType) return [];
       const typeMap: Record<string, string> = {
@@ -129,7 +126,7 @@ export const LogFilter = ({
   }, [logCount]);
 
   const refreshIntervalOptions = [
-    { value: 0, label: 'close' },
+    { value: 0, label: t('close') },
     { value: 5, label: '5s' },
     { value: 10, label: '10s' },
     { value: 30, label: '30s' },
@@ -173,17 +170,16 @@ export const LogFilter = ({
         {/* Log Type Tabs */}
         <Flex gap={'32px'}>
           {filteredSubNavList?.map((item) => {
-            // 直接根据日志类型显示中文
-            const getChineseLabel = (logType: LogTypeEnum) => {
+            const getLabel = (logType: LogTypeEnum) => {
               switch (logType) {
                 case LogTypeEnum.ErrorLog:
-                  return '错误日志';
+                  return t('error_log.error_log');
                 case LogTypeEnum.RuntimeLog:
-                  return '运行日志';
+                  return t('error_log.runtime_log');
                 case LogTypeEnum.SlowQuery:
-                  return '慢日志';
+                  return t('error_log.slow_query');
                 default:
-                  return '日志';
+                  return t('Logs');
               }
             };
 
@@ -201,7 +197,7 @@ export const LogFilter = ({
                 onClick={() => item.value !== logType && onLogTypeChange(item.value)}
                 fontWeight={'500'}
               >
-                {getChineseLabel(item.value)}
+                {getLabel(item.value)}
               </Box>
             );
           })}
@@ -221,7 +217,7 @@ export const LogFilter = ({
             background={'#F5F5F5'}
           >
             <Input
-              placeholder="Keywords"
+              placeholder={t('Keywords')}
               value={globalFilter}
               onChange={(e) => onFilterChange(e.target.value)}
               h={'100%'}
@@ -350,9 +346,9 @@ export const LogFilter = ({
                   const selectedCount = podList.filter((p) => p.checked).length;
                   const isPlaceholder = selectedCount === 0;
                   const displayText = isPlaceholder
-                    ? 'Please select'
+                    ? t('Please select')
                     : selectedCount === podList.length
-                      ? 'All'
+                      ? t('All')
                       : (() => {
                           const firstSelected = podList.find((p) => p.checked);
                           return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
@@ -409,7 +405,6 @@ export const LogFilter = ({
                       checked: !allChecked
                     }));
                     setPodList(newList);
-                    // 当全选时传递空字符串，部分选中时传递第一个选中的，全未选中时传递null
                     const selectedPods = newList.filter((p) => p.checked);
                     if (selectedPods.length === newList.length) {
                       onPodChange('');
@@ -434,7 +429,7 @@ export const LogFilter = ({
                     }
                   }}
                 >
-                  All
+                  {t('All')}
                 </Checkbox>
               </MenuItem>
 
@@ -456,7 +451,6 @@ export const LogFilter = ({
                         item.value === pod.value ? { ...item, checked: !item.checked } : item
                       );
                       setPodList(newList);
-                      // 当全选时传递空字符串，部分选中时传递第一个选中的，全未选中时传递null
                       const selectedPods = newList.filter((p) => p.checked);
                       if (selectedPods.length === newList.length) {
                         onPodChange('');
@@ -538,9 +532,9 @@ export const LogFilter = ({
                     const selectedCount = containerList.filter((c) => c.checked).length;
                     const isPlaceholder = selectedCount === 0;
                     const displayText = isPlaceholder
-                      ? 'Please select'
+                      ? t('Please select')
                       : selectedCount === containerList.length
-                        ? 'All'
+                        ? t('All')
                         : (() => {
                             const firstSelected = containerList.find((c) => c.checked);
                             return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
@@ -597,7 +591,6 @@ export const LogFilter = ({
                         checked: !allChecked
                       }));
                       setContainerList(newList);
-                      // 当全选时传递 undefined，否则传递第一个选中的
                       const selectedContainers = newList.filter((c) => c.checked);
                       onLogFileChange(
                         selectedContainers.length === 0
@@ -606,7 +599,6 @@ export const LogFilter = ({
                             ? (undefined as any)
                             : ({ name: selectedContainers[0]?.value } as TFile)
                       );
-                      // 延迟刷新，确保父组件状态先更新
                       setTimeout(() => onRefresh(), 0);
                     }}
                     sx={{
@@ -624,7 +616,7 @@ export const LogFilter = ({
                       }
                     }}
                   >
-                    All
+                    {t('All')}
                   </Checkbox>
                 </MenuItem>
 
@@ -648,7 +640,6 @@ export const LogFilter = ({
                             : item
                         );
                         setContainerList(newList);
-                        // 当全选时传递 undefined，否则传递第一个选中的
                         const selectedContainers = newList.filter((c) => c.checked);
                         onLogFileChange(
                           selectedContainers.length === 0
@@ -657,7 +648,6 @@ export const LogFilter = ({
                               ? (undefined as any)
                               : ({ name: selectedContainers[0]?.value } as TFile)
                         );
-                        // 延迟刷新，确保父组件状态先更新
                         setTimeout(() => onRefresh(), 0);
                       }}
                       sx={{
@@ -707,7 +697,7 @@ export const LogFilter = ({
               lineHeight={'20px'}
               flexShrink={'0'}
             >
-              Refresh
+              {t('Refresh')}
             </Text>
             <Box width={'1px'} height={'12px'} background={'#D4D4D8'} flexShrink={'0'} />
             <Input

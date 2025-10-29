@@ -133,27 +133,6 @@ export const getLogFiles = (payload: {
   logType: LogTypeEnum;
 }) => POST<TFile[]>(`/api/logs/getFiles`, payload);
 
-export const getLogContent = (payload: {
-  logPath: string;
-  page: number;
-  pageSize: number;
-  dbType: SupportReconfigureDBType;
-  logType: LogTypeEnum;
-  podName: string;
-  startTime?: number;
-  endTime?: number;
-}) => POST<LogResult>(`/api/logs/get`, payload);
-
-export const getLogCounts = (payload: {
-  podName: string;
-  dbType: SupportReconfigureDBType;
-  logType: LogTypeEnum;
-  logPath?: string;
-  startTime?: number;
-  endTime?: number;
-  timeRange?: string;
-}) => POST<{ logs_total: string; _time: string }[]>(`/api/logs/getCounts`, payload);
-
 export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
   POST<Array<string>>(`/api/db/getDatabases`, payload);
 
@@ -167,43 +146,6 @@ export const setDBRemark = (payload: { dbName: string; remark: string }) =>
 
 // ========== Vlogs API Functions ==========
 
-// 通用日志查询API (对应 queryLogsByParams)
-export const getVlogsLogContent = (payload: {
-  podName: string;
-  dbType: SupportReconfigureDBType;
-  logType: LogTypeEnum;
-  logPath?: string;
-  page?: number;
-  pageSize?: number;
-  startTime?: number;
-  endTime?: number;
-  namespace?: string;
-  app?: string;
-}) => POST<LogResult>(`/api/vlogs/logs`, payload);
-
-// 日志统计查询API (对应 queryLogsByParams 统计)
-export const getVlogsLogCounts = (payload: {
-  podName: string;
-  dbType: SupportReconfigureDBType;
-  logType: LogTypeEnum;
-  logPath?: string;
-  startTime?: number;
-  endTime?: number;
-  timeRange?: string;
-  namespace?: string;
-  app?: string;
-}) => POST<{ logs_total: string; _time: string }[]>(`/api/vlogs/counts`, payload);
-
-// Pod列表查询API (对应 queryPodList)
-export const getVlogsPodList = (payload: {
-  namespace: string;
-  app: string;
-  startTime?: number;
-  endTime?: number;
-  timeRange?: string;
-}) => POST<string[]>(`/api/vlogs/pods`, payload);
-
-// 数据库专用日志查询API (对应 queryLogsByPod)
 export const getVlogsDatabaseLogs = (payload: {
   namespace: string;
   pvc: string[];
@@ -216,7 +158,6 @@ export const getVlogsDatabaseLogs = (payload: {
   pageSize?: number;
 }) => POST<LogResult>(`/api/vlogs/database-logs`, payload);
 
-// 获取数据库Pod和PVC信息API
 export const getVlogsDatabasePods = (payload: {
   dbName: string;
   dbType: SupportReconfigureDBType;
@@ -229,7 +170,6 @@ export const getVlogsDatabasePods = (payload: {
     pvcMap: Record<string, string>; // pvcUid -> podName 映射
   }>(`/api/vlogs/database-pods`, payload);
 
-// 数据库日志统计查询API
 export const getVlogsDatabaseLogCounts = (payload: {
   namespace: string;
   pvc: string[];

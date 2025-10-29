@@ -68,6 +68,8 @@ spec:
               value: {{ .billingUrl }}
             - name: MANAGED_DB_ENABLED
               value: "false"
+            - name: VLOGS_BASE_URL
+              value: {{ .vlogsBaseUrl }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

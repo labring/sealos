@@ -326,9 +326,7 @@ const Header = ({
 
       <Box flex={1} />
 
-      {/* 按钮组 */}
       <Flex width={'471px'} height={'40px'} gap={'12px'} alignItems={'center'}>
-        {/* 第一组：删除按钮（只有图标） */}
         <Button
           display={'flex'}
           width={'40px'}
@@ -351,7 +349,6 @@ const Header = ({
           <Trash2 size={16} color="#71717A" />
         </Button>
 
-        {/* 第二组：Pause/Update/Restart按钮组（紧密连接） */}
         <Flex>
           {db.status.value === 'Stopped' ? (
             <Button
@@ -473,7 +470,6 @@ const Header = ({
           )}
         </Flex>
 
-        {/* 第三组：Manage Data按钮 */}
         {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
           <Button
             display={'flex'}

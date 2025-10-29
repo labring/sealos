@@ -24,6 +24,11 @@ const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties =
   };
 };
 
+const getCommonWidthStyles = <T,>(column: Column<T, unknown>): CSSProperties => {
+  const size = column.getSize();
+  return size ? { width: `${size}px` } : {};
+};
+
 export function BaseTable<T extends unknown>({
   table,
   isLoading,
@@ -58,6 +63,7 @@ export function BaseTable<T extends unknown>({
                         borderRightRadius: '6px'
                       }}
                       {...(getCommonPinningStyles(header.column) as HTMLChakraProps<'th'>)}
+                      {...(getCommonWidthStyles(header.column) as HTMLChakraProps<'th'>)}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Th>
@@ -95,6 +101,7 @@ export function BaseTable<T extends unknown>({
                         p={'var(--spacing-4, 16px) 24px'}
                         bg={isPinned ? 'white' : ''}
                         {...(getCommonPinningStyles(cell.column) as HTMLChakraProps<'td'>)}
+                        {...(getCommonWidthStyles(cell.column) as HTMLChakraProps<'td'>)}
                         {...tdStyle}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

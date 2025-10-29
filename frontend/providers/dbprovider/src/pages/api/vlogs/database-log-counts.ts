@@ -28,27 +28,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
     }
 
-    // 验证PVC列表不为空
     if (!Array.isArray(pvc) || pvc.length === 0) {
       return jsonRes(res, {
         data: []
       });
     }
 
-    // 构建vlogs请求参数 - 统计模式
-    const vlogsParams: any = {
+    const vlogsParams: Record<string, string | number | string[]> = {
       namespace: namespace,
       pvc: pvc,
       containers: containers,
       type: Array.isArray(type) ? type : [type],
-      limit: '1000', // 统计模式需要较大的limit来覆盖所有时间点
-      numberMode: 'true', // 启用统计模式
-      numberLevel: 'h', // 按小时统计
+      limit: '1000',
+      numberMode: 'true',
+      numberLevel: 'h',
       keyword: keyword || '',
       app: ''
     };
 
-    // 时间参数处理
     if (startTime && endTime) {
       vlogsParams.startTime = new Date(startTime).toISOString();
       vlogsParams.endTime = new Date(endTime).toISOString();
@@ -59,7 +56,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     console.log('Calling vlogs API for counts:', VLOGS_CONFIG.QUERY_LOGS_URL);
     console.log('Request params:', vlogsParams);
 
-    // 调用vlogs接口
     const vlogsResponse = await fetch(VLOGS_CONFIG.QUERY_LOGS_URL, {
       method: 'POST',
       headers: {
@@ -77,7 +73,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
     }
 
-    // 解析响应
     const responseText = await vlogsResponse.text();
     console.log('Vlogs response text:', responseText);
 
@@ -86,7 +81,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return jsonRes(res, { data: [] });
     }
 
-    // vlogs API 返回的是 NDJSON 格式（每行一个 JSON 对象）
     const lines = responseText
       .trim()
       .split('\n')
@@ -104,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     console.log('Vlogs counts data:', vlogsData);
 
-    // 转换为统计数据结构
     const result = vlogsData.map((item: any) => ({
       logs_total: item.logs_total || '0',
       _time: item._time || ''

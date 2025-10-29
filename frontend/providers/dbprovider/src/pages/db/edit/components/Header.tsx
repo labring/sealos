@@ -48,7 +48,6 @@ const Header = ({
 
   const { createCompleted, _hasHydrated } = useGuideStore();
 
-  // 只在客户端 hydration 完成后才显示 guide 相关的内容
   const shouldShowGuide = isClientSide && _hasHydrated;
 
   return (

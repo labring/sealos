@@ -9,7 +9,6 @@ import { DatabaseLogService } from '@/utils/logParsers/LogParser';
 import { DBTypeEnum } from '@/constants/db';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// Convert SupportReconfigureDBType to DBTypeEnum
 const convertToDBTypeEnum = (dbType: SupportReconfigureDBType): DBTypeEnum => {
   switch (dbType) {
     case 'postgresql':
@@ -63,11 +62,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    // Initialize file system and log service
     const kubeFileSystem = new KubeFileSystem(k8sExec);
     const logService = new DatabaseLogService(k8sExec, k8sCore, namespace);
 
-    // Get log counts data
     const logCountsData = await logService.getLogCounts({
       podName,
       dbType: convertToDBTypeEnum(dbType),

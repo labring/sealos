@@ -19,7 +19,7 @@ export const LogCounts = ({
   isLogCountsLoading = false,
   totalLogs = 0
 }: LogCountsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('common');
   const [onOpenChart, setOnOpenChart] = useState(true);
 
   const processChartData = (rawData: Array<{ _time: string; logs_total: string }>) => {
@@ -71,7 +71,7 @@ export const LogCounts = ({
             }
           }}
         >
-          Log Counts
+          {t('Log Counts')}
         </Button>
       </Box>
       {/* charts */}

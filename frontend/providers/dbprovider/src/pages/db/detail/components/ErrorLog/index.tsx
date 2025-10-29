@@ -12,10 +12,10 @@ export type ComponentRef = {
 };
 
 const DB_LOG_TYPES: Record<SupportReconfigureDBType, LogTypeEnum[]> = {
-  postgresql: [LogTypeEnum.RuntimeLog], // 其他数据库只显示运行时日志
-  mongodb: [LogTypeEnum.RuntimeLog], // 其他数据库只显示运行时日志
-  'apecloud-mysql': [LogTypeEnum.ErrorLog, LogTypeEnum.SlowQuery], // MySQL 特殊处理：支持 error 和 slow
-  redis: [LogTypeEnum.RuntimeLog] // 其他数据库只显示运行时日志
+  postgresql: [LogTypeEnum.RuntimeLog],
+  mongodb: [LogTypeEnum.RuntimeLog],
+  'apecloud-mysql': [LogTypeEnum.ErrorLog, LogTypeEnum.SlowQuery],
+  redis: [LogTypeEnum.RuntimeLog]
 };
 
 const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
@@ -35,7 +35,6 @@ const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>
       const dbType = db?.dbType as SupportReconfigureDBType;
       const availableMenus = DB_LOG_TYPES[dbType] || [];
 
-      // 优先返回 ErrorLog，如果没有则返回第一个可用的日志类型
       if (availableMenus.includes(LogTypeEnum.ErrorLog)) {
         return LogTypeEnum.ErrorLog;
       }

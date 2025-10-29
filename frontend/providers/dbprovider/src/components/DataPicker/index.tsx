@@ -18,6 +18,7 @@ import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
 import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import useDateTimeStore from '@/store/date';
 import { parseTimeRange, formatTimeRange } from '@/utils/timeRange';
 import { MySelect } from '@sealos/ui';
@@ -341,123 +342,159 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         </Flex>
       </PopoverTrigger>
       <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
-        <Flex w={'402px'} height={'382px'}>
-          <Flex w={'242px'} flexDir={'column'}>
-            <DayPicker
-              mode="range"
-              selected={selectedRange}
-              onSelect={handleRangeSelect}
-              locale={currentLang === 'zh' ? zhCN : enUS}
-              weekStartsOn={0}
-            />
-            <Divider />
-            <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
-              <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                {t('Start')}
-              </Text>
-              <Flex w={'100%'} justify={'center'} gap={'4px'}>
-                <DatePickerInput
-                  value={fromDateString}
-                  onChange={(e) => handleFromChange(e.target.value, 'date')}
-                  error={!!fromDateError}
-                  showError={fromDateShake}
-                />
-                <DatePickerInput
-                  value={fromTimeString}
-                  onChange={(e) => handleFromChange(e.target.value, 'time')}
-                  error={!!fromTimeError}
-                  showError={fromTimeShake}
+        <Flex w={'402px'} flexDir={'column'}>
+          <Flex flex={1} minH={'420px'}>
+            <Flex w={'242px'} flexDir={'column'}>
+              <Flex
+                sx={{
+                  '.rdp': {
+                    margin: 0,
+                    fontFamily: 'inherit'
+                  },
+                  '.rdp-table': {
+                    borderCollapse: 'separate',
+                    borderSpacing: '2px',
+                    width: '100%'
+                  },
+                  '.rdp-cell': {
+                    padding: 0,
+                    textAlign: 'center',
+                    verticalAlign: 'middle'
+                  },
+                  '.rdp-day': {
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto'
+                  },
+                  '.rdp-day_number': {
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }
+                }}
+              >
+                <DayPicker
+                  mode="range"
+                  selected={selectedRange}
+                  onSelect={handleRangeSelect}
+                  locale={currentLang === 'zh' ? zhCN : enUS}
+                  weekStartsOn={0}
                 />
               </Flex>
-            </Flex>
+              <Divider />
+              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
+                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
+                  {t('Start')}
+                </Text>
+                <Flex w={'100%'} justify={'center'} gap={'4px'}>
+                  <DatePickerInput
+                    value={fromDateString}
+                    onChange={(e) => handleFromChange(e.target.value, 'date')}
+                    error={!!fromDateError}
+                    showError={fromDateShake}
+                  />
+                  <DatePickerInput
+                    value={fromTimeString}
+                    onChange={(e) => handleFromChange(e.target.value, 'time')}
+                    error={!!fromTimeError}
+                    showError={fromTimeShake}
+                  />
+                </Flex>
+              </Flex>
 
-            <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'} pb={'12px'}>
-              <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                {t('End')}
-              </Text>
-              <Flex w={'100%'} justify={'center'} gap={'4px'}>
-                <DatePickerInput
-                  value={toDateString}
-                  onChange={(e) => handleToChange(e.target.value, 'date')}
-                  error={!!toDateError}
-                  showError={toDateShake}
-                />
-                <DatePickerInput
-                  value={toTimeString}
-                  onChange={(e) => handleToChange(e.target.value, 'time')}
-                  error={!!toTimeError}
-                  showError={toTimeShake}
-                />
+              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'} pb={'12px'}>
+                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
+                  {t('End')}
+                </Text>
+                <Flex w={'100%'} justify={'center'} gap={'4px'}>
+                  <DatePickerInput
+                    value={toDateString}
+                    onChange={(e) => handleToChange(e.target.value, 'date')}
+                    error={!!toDateError}
+                    showError={toTimeShake}
+                  />
+                  <DatePickerInput
+                    value={toTimeString}
+                    onChange={(e) => handleToChange(e.target.value, 'time')}
+                    error={!!toTimeError}
+                    showError={toTimeShake}
+                  />
+                </Flex>
+              </Flex>
+            </Flex>
+            <Divider orientation="vertical" flexShrink={0} />
+            <Flex flex={1}>
+              <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
+                {recentDateList.map((item) => (
+                  <Button
+                    height={'32px'}
+                    key={JSON.stringify(item.value)}
+                    variant={'ghost'}
+                    color={'grayModern.900'}
+                    fontSize={'12px'}
+                    fontWeight={'400'}
+                    justifyContent={'flex-start'}
+                    {...(recentDate.compareValue === item.compareValue && {
+                      bg: 'brightBlue.50',
+                      color: 'brightBlue.600'
+                    })}
+                    _hover={{
+                      bg: 'rgba(17, 24, 36, 0.05)'
+                    }}
+                    onClick={() => handleRecentDateClick(item)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
               </Flex>
             </Flex>
           </Flex>
-          <Divider orientation="vertical" flexShrink={0} />
-          <Flex flex={1}>
-            <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
-              {recentDateList.map((item) => (
-                <Button
-                  height={'32px'}
-                  key={JSON.stringify(item.value)}
-                  variant={'ghost'}
-                  color={'grayModern.900'}
-                  fontSize={'12px'}
-                  fontWeight={'400'}
-                  justifyContent={'flex-start'}
-                  {...(recentDate.compareValue === item.compareValue && {
-                    bg: 'brightBlue.50',
-                    color: 'brightBlue.600'
-                  })}
-                  _hover={{
-                    bg: 'rgba(17, 24, 36, 0.05)'
-                  }}
-                  onClick={() => handleRecentDateClick(item)}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Flex>
+          <Divider />
+          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
+            <MySelect
+              height="32px"
+              width={'fit-content'}
+              border={'none'}
+              boxShadow={'none'}
+              backgroundColor={'transparent'}
+              color={'grayModern.600'}
+              value={timeZone}
+              list={[
+                { value: 'local', label: 'Local (Asia/Shanghai)' },
+                { value: 'utc', label: 'UTC' }
+              ]}
+              onchange={(val: any) => setTimeZone(val)}
+            />
+            <ButtonGroup variant="outline" spacing="2" px={'10px'}>
+              <Button
+                border={'1px solid'}
+                borderColor={'grayModern.250'}
+                borderRadius={'6px'}
+                onClick={() => {
+                  setRecentDate(defaultRecentDate);
+                  handleRecentDateClick(defaultRecentDate);
+                }}
+              >
+                <MyIcon name="restore" w={'16px'} h={'16px'} color={'grayModern.500'} />
+              </Button>
+              <Button
+                border={'1px solid'}
+                borderColor={'grayModern.250'}
+                borderRadius={'6px'}
+                onClick={() => onClose()}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button onClick={() => onSubmit()} variant={'solid'}>
+                {t('confirm')}
+              </Button>
+            </ButtonGroup>
           </Flex>
-        </Flex>
-        <Divider />
-        <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
-          <MySelect
-            height="32px"
-            width={'fit-content'}
-            border={'none'}
-            boxShadow={'none'}
-            backgroundColor={'transparent'}
-            color={'grayModern.600'}
-            value={timeZone}
-            list={[
-              { value: 'local', label: 'Local (Asia/Shanghai)' },
-              { value: 'utc', label: 'UTC' }
-            ]}
-            onchange={(val: any) => setTimeZone(val)}
-          />
-          <ButtonGroup variant="outline" spacing="2" px={'10px'}>
-            <Button
-              border={'1px solid'}
-              borderColor={'grayModern.250'}
-              borderRadius={'6px'}
-              onClick={() => {
-                setRecentDate(defaultRecentDate);
-                handleRecentDateClick(defaultRecentDate);
-              }}
-            >
-              <MyIcon name="restore" color={'grayModern.500'} />
-            </Button>
-            <Button
-              border={'1px solid'}
-              borderColor={'grayModern.250'}
-              borderRadius={'6px'}
-              onClick={() => onClose()}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button onClick={() => onSubmit()} variant={'solid'}>
-              {t('confirm')}
-            </Button>
-          </ButtonGroup>
         </Flex>
       </PopoverContent>
     </Popover>
