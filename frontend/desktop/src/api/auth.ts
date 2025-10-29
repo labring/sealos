@@ -232,10 +232,16 @@ export const _initRegionToken = (request: AxiosInstance) => (data: InitRegionTok
     data
   );
 
+export const _autoInitRegionToken = (request: AxiosInstance) => () =>
+  request.post<never, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
+    '/api/auth/autoInitRegionToken'
+  );
+
 export const EmailSignIn = _EmailSignIn(request);
 export const EmailSignUp = _EmailSignUp(request);
 export const EmailSignUpCheck = _EmailSignUpCheck(request);
 export const initRegionToken = _initRegionToken(request);
+export const autoInitRegionToken = _autoInitRegionToken(request);
 
 export const passwordLoginRequest = _passwordLoginRequest(request);
 

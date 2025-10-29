@@ -580,3 +580,24 @@ export async function initRegionToken({
     appToken: generateAppToken(payload)
   };
 }
+
+export async function autoInitRegionToken({
+  userUid,
+  userId
+}: {
+  userUid: string;
+  userId: string;
+}): Promise<{
+  kubeconfig: string;
+  token: string;
+  appToken: string;
+} | null> {
+  const defaultWorkspaceName = 'My Workspace';
+
+  return await initRegionToken({
+    userUid,
+    userId,
+    regionUid: getRegionUid(),
+    workspaceName: defaultWorkspaceName
+  });
+}
