@@ -76,7 +76,11 @@ const useSessionStore = create<SessionState>()(
       delSession: () => {
         set({ session: undefined });
       },
-      isUserLogin: () => !!get().session?.user,
+      isUserLogin: () => {
+        const state = get();
+        if (state.session?.isGuest) return false;
+        return !!state.session?.user;
+      },
       // [LOGIN/UNBIND/BIND]_STATE
       // PROXY_DOMAINSTATE, DOMAINSTATE = URL_[LOGIN/UNBIND/BIND]_STATE
       generateState: (action = 'LOGIN', domainState) => {

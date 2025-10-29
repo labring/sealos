@@ -151,6 +151,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           }
           return;
         }
+      } else {
+        useSessionStore.getState().setHasEverLoggedIn(true);
       }
 
       // logged in user logic
@@ -286,6 +288,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       }
     })();
   }, [commonConfig, firstUse]);
+
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>
@@ -294,9 +297,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
         <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
-      {/* {layoutConfig?.meta.scripts?.map((item, i) => {
-        return <Script key={i} {...item} />;
-      })} */}
       {authConfig?.captcha.ali.enabled && (
         <Script
           src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"
