@@ -5,7 +5,13 @@ import useSigninPageStore from '@/stores/signinPageStore';
 import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
-import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
+import {
+  bindRequest,
+  getRegionToken,
+  signInRequest,
+  unBindRequest,
+  autoInitRegionToken
+} from '@/api/auth';
 import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
@@ -14,6 +20,7 @@ import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
+import { useGuideModalStore } from '@/stores/guideModal';
 
 export default function Callback() {
   const router = useRouter();
@@ -98,12 +105,29 @@ export default function Callback() {
               const needInit = data.data.needInit;
 
               if (needInit) {
-                gtmLoginSuccess({
-                  user_type: 'new',
-                  method: 'oauth2',
-                  oauth2Provider: provider
-                });
-                await router.push('/workspace');
+                try {
+                  const initResult = await autoInitRegionToken();
+
+                  if (initResult?.data) {
+                    gtmLoginSuccess({
+                      user_type: 'new',
+                      method: 'oauth2',
+                      oauth2Provider: provider
+                    });
+                    await sessionConfig(initResult.data);
+                    const { setInitGuide } = useGuideModalStore.getState();
+                    setInitGuide(true);
+                    await router.replace('/');
+                  }
+                } catch (error) {
+                  console.error('Auto init failed, fallback to manual:', error);
+                  gtmLoginSuccess({
+                    user_type: 'new',
+                    method: 'oauth2',
+                    oauth2Provider: provider
+                  });
+                  await router.push('/workspace');
+                }
                 return;
               }
               gtmLoginSuccess({

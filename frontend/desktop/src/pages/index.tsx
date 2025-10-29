@@ -157,6 +157,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           }
           return;
         }
+      } else {
+        useSessionStore.getState().setHasEverLoggedIn(true);
       }
       // Check for Stripe callback with workspace switch
       const isStripeCallback = query?.stripeState === 'success' && query?.payId;
@@ -264,7 +266,17 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           if (appkey === 'system-fastdeploy') {
             appkey = 'system-template';
           }
+          if (appkey === 'system-brain' && appRoute === '/trial') {
+            appRoute = '/';
+            // Remove sessionId from appQuery but keep other parameters
+            if (appQuery) {
+              const params = new URLSearchParams(appQuery);
+              params.delete('sessionId');
+              appQuery = params.toString();
+            }
+          }
           const app = state.installedApps.find((item) => item.key === appkey);
+
           if (!app) return;
           setCanShowGuide(false);
           state.openApp(app, { raw: appQuery, pathname: appRoute }).then(() => {
@@ -355,9 +367,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
         <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
-      {/* {layoutConfig?.meta.scripts?.map((item, i) => {
-        return <Script key={i} {...item} />;
-      })} */}
       {authConfig?.captcha.ali.enabled && (
         <Script
           src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"

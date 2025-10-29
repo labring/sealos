@@ -13,10 +13,14 @@ import { gtmLoginStart } from '@/utils/gtm';
 import UsernamePasswordSignin from './UsernamePasswordSignin';
 import { EmailSigninForm } from './EmailSigninForm';
 import { PhoneSigninForm } from './PhoneSigninForm';
+import { EmailCheckForm } from './EmailCheckForm';
+import { PhoneCheckForm } from './PhoneCheckForm';
 
 interface SigninComponentProps {
   isModal?: boolean;
 }
+
+type LoginStep = 'select' | 'email-verify' | 'phone-verify';
 
 export default function SigninComponent({ isModal = false }: SigninComponentProps) {
   const { t, i18n } = useTranslation();
@@ -30,6 +34,8 @@ export default function SigninComponent({ isModal = false }: SigninComponentProp
 
   // State to control password login mode
   const [isPasswordMode, setIsPasswordMode] = useState(false);
+  // State to control login step in modal mode
+  const [loginStep, setLoginStep] = useState<LoginStep>('select');
 
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -167,6 +173,19 @@ export default function SigninComponent({ isModal = false }: SigninComponentProp
     ? { p: 6 }
     : { minH: '100vh', align: 'center', justify: 'center', bg, direction: 'column' as const };
 
+  // If in modal mode and in verification step, render the verification form
+  if (isModal && loginStep === 'email-verify') {
+    return (
+      <ContentWrapper {...wrapperProps}>
+        <EmailCheckForm isModal onBack={() => setLoginStep('select')} />
+      </ContentWrapper>
+    );
+  }
+
+  if (isModal && loginStep === 'phone-verify') {
+    return <PhoneCheckForm isModal onBack={() => setLoginStep('select')} />;
+  }
+
   return (
     <ContentWrapper {...wrapperProps}>
       <Stack
@@ -184,11 +203,16 @@ export default function SigninComponent({ isModal = false }: SigninComponentProp
         {conf.layoutConfig?.version === 'cn' ? (
           needPhone && (
             <>
-              <PhoneSigninForm />
+              <PhoneSigninForm
+                isModal={isModal}
+                onVerifyStep={() => setLoginStep('phone-verify')}
+              />
             </>
           )
         ) : conf.layoutConfig?.version === 'en' ? (
-          needEmail && <EmailSigninForm />
+          needEmail && (
+            <EmailSigninForm isModal={isModal} onVerifyStep={() => setLoginStep('email-verify')} />
+          )
         ) : (
           <></>
         )}
