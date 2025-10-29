@@ -35,6 +35,9 @@ export const sessionConfig = async ({
     },
     kubeconfig
   });
+
+  const sessionStore = useSessionStore.getState();
+  sessionStore.setHasEverLoggedIn(true);
 };
 
 export const getInviterId = () => localStorage.getItem('inviterId');
