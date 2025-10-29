@@ -1,7 +1,6 @@
 import vector from '@/assert/Vector.svg';
-import Currencysymbol from '@/components/CurrencySymbol';
+import CurrencySymbol from '@/components/CurrencySymbol';
 import request from '@/service/request';
-import useEnvStore from '@/stores/env';
 import { TransferState, transferStatus } from '@/types/Transfer';
 import { ApiResp } from '@/types/api';
 import { deFormatMoney, formatMoney } from '@/utils/format';
@@ -51,7 +50,6 @@ const TransferModal = forwardRef(
       }),
       []
     );
-    const currency = useEnvStore((s) => s.currency);
     const { t } = useTranslation();
     const { isOpen, onOpen, onClose: _onClose } = useDisclosure();
     const [to, setTo] = useState('');
@@ -245,7 +243,7 @@ const TransferModal = forwardRef(
               onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
             >
               <NumberInputField color={'grayModern.900'} />
-              <Currencysymbol boxSize="14px" mr={'32px'} type={currency} />
+              <CurrencySymbol className="mr-8" />
 
               <NumberInputStepper borderColor={'grayModern.200'}>
                 <NumberIncrementStepper width={'24px'} borderColor={'grayModern.200'}>
@@ -260,7 +258,7 @@ const TransferModal = forwardRef(
               <Text fontSize="12px" mr={'12px'} color={'grayModern.900'}>
                 {t('common:balance')}
               </Text>
-              <Currencysymbol w="16px" type={currency} color="rgba(33, 155, 244, 1)" mr={'6px'} />
+              <CurrencySymbol className="mr-1.5 text-sky-500" />
               <Text color="brightBlue.600" fontSize={'16px'}>
                 {formatMoney(balance).toFixed(2)}
               </Text>

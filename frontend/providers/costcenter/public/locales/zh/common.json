@@ -323,5 +323,13 @@
     "disk": "磁盘",
     "nodeport": "Nodeport",
     "ai_credits": "AI 额度"
-  }
+  },
+  "cost_tree_tip": "选中卡片查看费用详情",
+  "payg_cost_table": {
+    "title": "按量付费",
+    "view_app_usage_button": "查看用量"
+  },
+  "bonus_amount": "赠送余额",
+  "sealos_coin_text": "Sealos 币图标",
+  "sealos_coin_alt": "指示货币的硬币图标."
 }

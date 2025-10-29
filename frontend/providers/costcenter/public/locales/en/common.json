@@ -322,5 +322,13 @@
     "disk": "Disk",
     "nodeport": "Nodeport",
     "ai_credits": "AI Credits"
-  }
+  },
+  "cost_tree_tip": "Select a card to view cost details",
+  "payg_cost_table": {
+    "title": "PAYG",
+    "view_app_usage_button": "Usage"
+  },
+  "bonus_amount": "Bonus Amount",
+  "sealos_coin_text": "Sealos Coin icon",
+  "sealos_coin_alt": "A coin icon that indicates some type of currency."
 }

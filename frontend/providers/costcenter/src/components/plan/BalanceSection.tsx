@@ -2,6 +2,7 @@ import { Button } from '@sealos/shadcn-ui';
 import { displayMoney, formatMoney } from '@/utils/format';
 import GiftCode from '@/components/cost_overview/components/GiftCode';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 interface BalanceSectionProps {
   balance: number;
@@ -18,7 +19,8 @@ export function BalanceSection({ balance, rechargeEnabled, onTopUpClick }: Balan
         <div className="flex flex-col gap-1">
           <span className="text-sm text-slate-500">{t('common:balance')}</span>
           <span className="text-foreground text-2xl font-semibold leading-none">
-            ${displayMoney(formatMoney(balance))}
+            <CurrencySymbol className="size-5" />
+            <span>{displayMoney(formatMoney(balance))}</span>
           </span>
         </div>
 

@@ -3,6 +3,7 @@ import { CircleCheck } from 'lucide-react';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 interface StaticPlanCardProps {
   plan: SubscriptionPlan;
@@ -52,11 +53,13 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           <div className="flex items-baseline">
             {originalPrice > 0 && (
               <span className="text-4xl font-bold text-gray-400 line-through">
-                ${formatMoney(originalPrice).toFixed(0)}
+                <CurrencySymbol />
+                <span>{formatMoney(originalPrice).toFixed(0)}</span>
               </span>
             )}
             <span className="text-4xl font-bold text-gray-900">
-              ${formatMoney(monthlyPrice).toFixed(0)}
+              <CurrencySymbol />
+              <span>{formatMoney(monthlyPrice).toFixed(0)}</span>
             </span>
             <span className="text-gray-600 ml-1">/{t('common:month')}</span>
           </div>

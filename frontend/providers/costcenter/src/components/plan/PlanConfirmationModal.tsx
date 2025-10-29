@@ -9,6 +9,7 @@ import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
@@ -120,7 +121,10 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
               {plan.Name} {t('common:plan')}
             </span>
             <span className="text-base font-medium text-gray-900">
-              ${displayMoney(formatMoney(monthlyPrice))}/{t('common:month')}
+              <CurrencySymbol />
+              <span>
+                {displayMoney(formatMoney(monthlyPrice))}/{t('common:month')}
+              </span>
             </span>
           </div>
 
@@ -169,17 +173,28 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
                 {t('common:total_billed_monthly')}
               </span>
               <span className="text-sm font-medium text-gray-900">
-                ${displayMoney(formatMoney(monthlyPrice))}
+                <CurrencySymbol />
+                <span>{displayMoney(formatMoney(monthlyPrice))}</span>
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-900">{t('common:due_today')}</span>
               <span className="text-sm font-semibold text-gray-900">
-                {isCreateMode || isPaygUser || amountLoading
-                  ? isCreateMode || isPaygUser
-                    ? `$${displayMoney(formatMoney(dueToday))}`
-                    : t('common:calculating')
-                  : `$${displayMoney(formatMoney(dueToday))}`}
+                {isCreateMode || isPaygUser || amountLoading ? (
+                  isCreateMode || isPaygUser ? (
+                    <>
+                      <CurrencySymbol />
+                      <span>{formatMoney(dueToday)}</span>
+                    </>
+                  ) : (
+                    t('common:calculating')
+                  )
+                ) : (
+                  <>
+                    <CurrencySymbol />
+                    <span>{formatMoney(dueToday)}</span>
+                  </>
+                )}
               </span>
             </div>
           </div>

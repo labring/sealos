@@ -3,6 +3,7 @@ import { CircleCheck, Sparkles } from 'lucide-react';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
   if (isPayg) return 'bg-plan-payg';
@@ -155,7 +156,8 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         <div className="flex gap-2 flex-col">
           <span className="text-sm text-muted-foreground">{t('common:price_per_month')}</span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
-            ${displayMoney(formatMoney(monthlyPrice))}
+            <CurrencySymbol />
+            <span>{displayMoney(formatMoney(monthlyPrice))}</span>
           </span>
         </div>
 

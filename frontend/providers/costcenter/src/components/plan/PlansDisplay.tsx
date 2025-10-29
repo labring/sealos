@@ -7,6 +7,7 @@ import { UpgradePlanCard } from './UpgradePlanCard';
 import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 interface PlansDisplayProps {
   isSubscribing?: boolean;
@@ -224,7 +225,10 @@ export function PlansDisplay({
                           margin: '0 12px'
                         }}
                       />
-                      <span className="text-xs text-gray-500">${monthlyPrice.toFixed(0)}</span>
+                      <span className="text-xs text-gray-500">
+                        <CurrencySymbol />
+                        <span>{monthlyPrice.toFixed(0)}</span>
+                      </span>
                       {isCurrentPlanInSelect && (
                         <span className="bg-blue-100 text-blue-600 font-medium text-xs px-2 py-1 rounded-full ml-2">
                           {t('common:your_current_plan')}

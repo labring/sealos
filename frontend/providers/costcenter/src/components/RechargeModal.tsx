@@ -38,8 +38,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import useRechargeStore from '@/stores/recharge';
 import { gtmOpenTopup, gtmTopupCheckout } from '@/utils/gtm';
-import { Gift, CircleHelp, Minus, Plus, Loader } from 'lucide-react';
-import MyTooltip from './MyTooltip';
+import { Minus, Plus, Loader } from 'lucide-react';
 
 const StripeForm = (props: {
   tradeNO?: string;
@@ -179,8 +178,6 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
   );
 }
 const BonusBox = (props: { onClick: () => void; selected: boolean; amount: number }) => {
-  const currency = useEnvStore((s) => s.currency);
-
   return (
     <Flex
       width="100%"
@@ -208,7 +205,7 @@ const BonusBox = (props: { onClick: () => void; selected: boolean; amount: numbe
       }}
     >
       <div className="flex gap-1 items-center font-medium">
-        <CurrencySymbol boxSize="20px" type={currency} />
+        <CurrencySymbol />
         <span>{props.amount}</span>
       </div>
     </Flex>
@@ -455,7 +452,7 @@ const RechargeModal = forwardRef(
                           {t('common:remaining_balance')}
                         </span>
                         <span className="text-2xl font-semibold leading-none flex gap-1 items-center">
-                          <CurrencySymbol boxSize="20px" type={currency} fontSize="24px" />
+                          <CurrencySymbol />
                           <span>{formatMoney(balance).toFixed(2)}</span>
                         </span>
                       </section>
@@ -541,7 +538,7 @@ const RechargeModal = forwardRef(
                         </NumberDecrementStepper>
                       </NumberInputStepper>
 
-                      <CurrencySymbol boxSize="14px" type={currency} mx={'4px'} />
+                      <CurrencySymbol className="mx-2" />
                       <NumberInputField bg={'transparent'} />
 
                       <NumberInputStepper

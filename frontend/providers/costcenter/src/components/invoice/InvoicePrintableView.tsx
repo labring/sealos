@@ -2,6 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@sealos/shadcn-ui/table';
 import Image from 'next/image';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 export type InvoiceItem = {
   description: string;
@@ -114,8 +115,14 @@ export const InvoicePrintableView = React.forwardRef<HTMLDivElement, InvoicePrin
                     <div className="font-normal text-gray-600">{item.period}</div>
                   </TableCell>
                   <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{item.unitPrice}</TableCell>
-                  <TableCell>{item.amount}</TableCell>
+                  <TableCell>
+                    <CurrencySymbol useRealCurrency={true} />
+                    <span>{item.unitPrice}</span>
+                  </TableCell>
+                  <TableCell>
+                    <CurrencySymbol useRealCurrency={true} />
+                    <span>{item.amount}</span>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -125,11 +132,17 @@ export const InvoicePrintableView = React.forwardRef<HTMLDivElement, InvoicePrin
         <section className="mt-16 flex flex-col items-end">
           <div className="flex border-y py-1.5 w-60">
             <span>{t('common:orders.subtotal')}</span>
-            <span className="flex-1 text-end">{subtotal}</span>
+            <span className="flex-1 text-end">
+              <CurrencySymbol useRealCurrency={true} />
+              <span>{subtotal}</span>
+            </span>
           </div>
           <div className="flex border-b py-1.5 font-semibold w-60">
             <span>{t('common:orders.total')}</span>
-            <span className="flex-1 text-end">{total}</span>
+            <span className="flex-1 text-end">
+              <CurrencySymbol useRealCurrency={true} />
+              <span>{total}</span>
+            </span>
           </div>
         </section>
       </div>

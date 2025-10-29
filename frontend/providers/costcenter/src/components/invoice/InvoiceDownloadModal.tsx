@@ -33,11 +33,11 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
   const billingItems = useMemo(() => {
     return items.map(
       (item): InvoiceItem => ({
-        amount: '$' + formatMoney(item.amount),
+        amount: formatMoney(item.amount).toString(),
         period: '',
         description: item.id,
         quantity: 1,
-        unitPrice: '$' + formatMoney(item.amount)
+        unitPrice: formatMoney(item.amount).toString()
       })
     );
   }, [items]);
@@ -97,8 +97,8 @@ export function InvoiceDownloadModal({ open, onOpenChange, items }: InvoiceDownl
               dateOfIssue={dateOfIssue}
               billTo={billTo}
               items={billingItems}
-              subtotal={'$' + formatMoney(invoiceAmount)}
-              total={'$' + formatMoney(invoiceAmount)}
+              subtotal={formatMoney(invoiceAmount).toString()}
+              total={formatMoney(invoiceAmount).toString()}
             />
           </div>
         </div>

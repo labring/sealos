@@ -3,6 +3,8 @@ import { TransformComponent, TransformWrapper, useTransformContext } from 'react
 import { useMemo, useState } from 'react';
 import { getSmoothStepPath } from '@/utils/smooth-step-path';
 import { formatMoney } from '@/utils/format';
+import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 const GRID_SIZE = '2.5rem';
 
@@ -57,7 +59,8 @@ function CostCard({
         className="text-gray-900 font-bold data-[selected=true]:text-blue-600"
         data-selected={selected}
       >
-        ${formatMoney(cost).toFixed(2)}
+        <CurrencySymbol />
+        <span>{formatMoney(cost).toFixed(2)}</span>
       </span>
     </button>
   );
@@ -314,6 +317,7 @@ export function CostTree({
   onRegionSelect,
   onWorkspaceSelect
 }: CostTreeProps) {
+  const { t } = useTranslation();
   return (
     <div className="mx-auto overflow-hidden relative h-full w-full">
       <TransformWrapper
@@ -340,7 +344,7 @@ export function CostTree({
         }}
       >
         <span className="absolute z-20 text-sm pointer-events-none top-5 left-5 text-zinc-600">
-          Select a card to view cost details
+          {t('common:cost_tree_tip')}
         </span>
         <div className="absolute top-0 right-0 z-20 overflow-y-auto p-0 w-[clamp(22.5rem,50%,36.5rem)] h-full overflow-scroll pointer-events-none">
           <div className="pointer-events-auto">{children}</div>

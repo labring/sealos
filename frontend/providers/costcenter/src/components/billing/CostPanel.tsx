@@ -1,6 +1,7 @@
 import { cn } from '@sealos/shadcn-ui';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import CurrencySymbol from '../CurrencySymbol';
 
 type CostPanelProps = {
   children: React.ReactNode;
@@ -30,7 +31,10 @@ export function CostPanel({ children, region, workspace, totalCost, className }:
       <div className="shadow-sm border border-r-0 border-t-0 bg-blue-50 text-sm flex p-4 justify-between rounded-xl rounded-r-none rounded-t-none items-center gap-16 sticky top-0 z-10">
         <div className="font-semibold">
           <span>{displayTitle}: </span>
-          <span className="text-blue-600">${formatMoney(totalCost).toFixed(2)}</span>
+          <span className="text-blue-600">
+            <CurrencySymbol />
+            <span>{formatMoney(totalCost).toFixed(2)}</span>
+          </span>
         </div>
 
         {/* // [TODO] AI is currently not available */}

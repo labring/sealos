@@ -10,6 +10,7 @@ import {
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
+import CurrencySymbol from '../CurrencySymbol';
 
 export type SubscriptionData = {
   time: string;
@@ -43,7 +44,10 @@ export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
       <TableCell>
         <Badge className={cn('font-medium', 'bg-plan-starter text-blue-600')}>{item.plan}</Badge>
       </TableCell>
-      <TableCell>${formatMoney(item.cost)}</TableCell>
+      <TableCell>
+        <CurrencySymbol />
+        <span>{formatMoney(item.cost)}</span>
+      </TableCell>
     </TableRow>
   );
 
