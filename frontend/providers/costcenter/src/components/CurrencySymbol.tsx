@@ -26,17 +26,14 @@ export default function CurrencySymbol({
   return currencyType === 'shellCoin' ? (
     <span
       {...props}
-      className={cn(
-        'inline [font-size:inherit] leading-0 align-baseline mx-1 aspect-square',
-        props.className
-      )}
+      className={cn('inline [font-size:inherit] leading-0 align-[0.0875em] mx-1', props.className)}
     >
       <Image
         src={SealosCoinImage.src}
         alt={t('common:sealos_coin_alt')}
         aria-label={t('common:sealos_coin_text')}
         role="img"
-        className="inline box-border size-[inherit] leading-0 mb-0.5"
+        className="inline box-border size-[inherit] leading-0"
         width={16}
         height={16}
       />
