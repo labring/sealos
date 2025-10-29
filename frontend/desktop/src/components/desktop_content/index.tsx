@@ -4,7 +4,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Flex, Image } from '@chakra-ui/react';
+import { Box, Flex, Image, Button, Text } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -17,6 +17,7 @@ import styles from './index.module.css';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
+import LoginModal from '@/components/LoginModal';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount, UserInfo } from '@/api/auth';
 import OnlineServiceButton from './serviceButton';
@@ -39,19 +40,23 @@ export const blurBackgroundStyles = {
 };
 
 export default function Desktop() {
+  const { i18n, t } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
     runningInfo,
     openApp,
     setToHighestLayerById,
-    closeAppById
+    closeAppById,
+    setAutoLaunch
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const { layoutConfig, cloudConfig } = useConfigStore();
   const { session } = useSessionStore();
+  const { isGuest, openGuestLoginModal, showGuestLoginModal, closeGuestLoginModal } =
+    useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
@@ -162,6 +167,22 @@ export default function Desktop() {
   }, [closeDesktopApp]);
 
   useEffect(() => {
+    const cleanup = masterApp?.addEventListen('request_login', (data: any) => {
+      console.log('Guest Mode: Received request_login from Brain:', data);
+      if (data?.appName) {
+        const launchQuery = {
+          pathname: data.pathname || '/',
+          raw: data.query || ''
+        };
+        console.log('Guest Mode: Saving autolaunch state:', data.appName, launchQuery);
+        setAutoLaunch(data.appName, launchQuery, undefined);
+      }
+      openGuestLoginModal();
+    });
+    return cleanup;
+  }, [openGuestLoginModal, setAutoLaunch]);
+
+  useEffect(() => {
     const cleanup = masterApp?.addEventListen('quitGuide', quitGuide);
     return cleanup;
   }, [quitGuide]);
@@ -214,9 +235,35 @@ export default function Desktop() {
 
       <GlobalNotification />
 
-      <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
-        <Account />
-      </Flex>
+      {isClient && !isGuest() && (
+        <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
+          <Account />
+        </Flex>
+      )}
+
+      {isClient && isGuest() && (
+        <Flex
+          height="68px"
+          px={{ base: '16px', md: '32px' }}
+          alignItems="center"
+          justifyContent="space-between"
+          borderBottom="1px solid"
+          borderColor="gray.200"
+          bg="white"
+        >
+          <Flex alignItems="center" gap="12px">
+            <Text fontSize="18px" fontWeight="600" color="gray.800">
+              {t('v2:guest_mode')}
+            </Text>
+            <Text fontSize="14px" color="gray.500">
+              {t('v2:guest_mode_login_tip')}
+            </Text>
+          </Flex>
+          <Button onClick={openGuestLoginModal} colorScheme="blue">
+            {t('v2:login_sign_up')}
+          </Button>
+        </Flex>
+      )}
 
       <Flex
         width={'100%'}
@@ -244,8 +291,10 @@ export default function Desktop() {
           </AppWindow>
         );
       })}
-      {/* modal */}
+
       <NeedToMerge />
+
+      {isGuest() && <LoginModal isOpen={showGuestLoginModal} onClose={closeGuestLoginModal} />}
     </Box>
   );
 }
