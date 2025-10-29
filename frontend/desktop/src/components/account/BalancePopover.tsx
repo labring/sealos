@@ -21,6 +21,7 @@ import { getAmount } from '@/api/auth';
 import { formatMoney } from '@/utils/format';
 import { CurrencySymbol } from '@sealos/ui';
 import { useConfigStore } from '@/stores/config';
+import { useTranslation } from 'next-i18next';
 
 interface BalancePopoverProps {
   openCostCenterApp: () => void;
@@ -50,6 +51,7 @@ export function BalancePopover({
   openCostCenterTopup,
   children
 }: BalancePopoverProps) {
+  const { t } = useTranslation();
   const { session } = useSessionStore();
   const subscriptionEnabled = useConfigStore(
     (state) => state.layoutConfig?.common.subscriptionEnabled
@@ -129,16 +131,18 @@ export function BalancePopover({
                 <>
                   <div className="flex items-center gap-2">
                     <span className="text-base font-semibold capitalize">
-                      {subscription?.PlanName ? `${subscription?.PlanName} Plan` : 'PAYG'}
+                      {subscription?.PlanName
+                        ? `${subscription?.PlanName} ${t('common:balance_popover.plan_suffix')}`
+                        : t('common:balance_popover.payg_plan')}
                     </span>
                     {subscriptionInfo?.subscription?.Status === 'Debt' && (
                       <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
-                        Expired
+                        {t('common:balance_popover.subscription_status.expired')}
                       </div>
                     )}
                     {subscription?.PlanName === 'Free' && (
                       <div className="border text-sm font-normal leading-3.5 bg-[#FFEDD5CC] border-none text-orange-500 rounded-full px-2 py-1">
-                        Limited Trial
+                        {t('common:balance_popover.subscription_status.limited_trial')}
                       </div>
                     )}
                   </div>
@@ -149,7 +153,9 @@ export function BalancePopover({
               {!subscription?.PlanName && (
                 <div className="flex items-center gap-2 justify-between">
                   <div className="flex items-start flex-col">
-                    <div className="text-sm text-zinc-500">Balance</div>
+                    <div className="text-sm text-zinc-500">
+                      {t('common:balance_popover.balance')}
+                    </div>
                     <div className="text-2xl font-semibold text-zinc-900 flex">
                       <span
                         className={cn(
@@ -166,7 +172,7 @@ export function BalancePopover({
                   {/* Show topup button if subscription is enabled */}
                   {!subscriptionEnabled && (
                     <Button variant="outline" onClick={openCostCenterTopup}>
-                      Top Up
+                      {t('common:balance_popover.top_up')}
                     </Button>
                   )}
                 </div>
@@ -176,7 +182,9 @@ export function BalancePopover({
                 subscriptionInfo?.subscription?.Status === 'Debt' &&
                 subscription?.ExpireAt ? (
                   <HStack>
-                    <span className="text-sm text-zinc-600">Expired on:</span>
+                    <span className="text-sm text-zinc-600">
+                      {t('common:balance_popover.expired_at')}
+                    </span>
                     <span className="text-sm text-zinc-600">
                       {formatDate(subscription?.ExpireAt)}
                     </span>
@@ -186,7 +194,7 @@ export function BalancePopover({
                 ))}
               {subscription?.PlanName === 'Free' && (
                 <div className="text-zinc-600 text-sm font-normal mt-2">
-                  Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
+                  {t('common:balance_popover.trial_expiry_tip', { count: remainingDays })}
                 </div>
               )}
             </Box>
@@ -195,18 +203,17 @@ export function BalancePopover({
               <>
                 {subscription?.PlanName !== 'Free' ? (
                   <div className="text-sm text-zinc-900 font-normal">
-                    To upgrade your plan, you can visit the Cost Center.
+                    {t('common:balance_popover.upgrade_tip')}
                   </div>
                 ) : (
                   <div className="text-sm text-zinc-900 font-normal">
-                    Your trial will expire in {remainingDays} day{remainingDays !== 1 ? 's' : ''}.
-                    Upgrade to keep your services online.
+                    {t('common:balance_popover.trial_expiry_upgrade_tip', { count: remainingDays })}
                   </div>
                 )}
 
                 <Button variant="outline" onClick={openCostCenterApp}>
                   <Sparkles size={16} />
-                  Upgrade Plan
+                  {t('common:balance_popover.upgrade_button')}
                 </Button>
               </>
             )}
@@ -220,7 +227,7 @@ export function BalancePopover({
                 fontWeight={400}
                 onClick={openCostCenterApp}
               >
-                <Text>Check more details in Cost Center</Text>
+                <Text>{t('common:balance_popover.check_costcenter_tip')}</Text>
                 <Text>→</Text>
               </Flex>
             </HStack>

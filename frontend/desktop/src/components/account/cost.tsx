@@ -123,7 +123,7 @@ export default function Cost() {
           >
             <Box flex={1}>
               <Text color={'rgba(255, 255, 255, 0.90)'} fontSize={'11px'}>
-                {t('common:balance')}
+                {t('common:balance_popover.balance')}
               </Text>
               <Flex alignItems={'center'} gap={'8px'}>
                 <Text fontSize={'20px'} color={'#7CE7FF'}>
