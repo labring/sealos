@@ -1892,9 +1892,11 @@ func finalizeWorkspaceSubscriptionSuccess(
 	if workspaceSubscription != nil {
 		workspaceSubscriptionID = workspaceSubscription.ID
 		workspaceSubscription.CancelAtPeriodEnd = false
+		wsTransaction.OldPlanStatus = workspaceSubscription.Status
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
 	} else {
 		workspaceSubscriptionID = uuid.New()
+		wsTransaction.OldPlanStatus = types.SubscriptionStatusNormal
 	}
 	payment.WorkspaceSubscriptionID = &workspaceSubscriptionID
 	wsTransaction.Status = types.SubscriptionTransactionStatusCompleted
