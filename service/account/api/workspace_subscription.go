@@ -1752,8 +1752,9 @@ func NewWorkspaceSubscriptionNotifyHandler(c *gin.Context) {
 	if err != nil {
 		// logrus.Errorf("Failed to process workspace subscription webhook event %s: %v", event.Type, err)
 		dao.Logger.Errorf(
-			"Failed to process workspace subscription webhook event %s: %v",
+			"Failed to process workspace subscription webhook %s event : %v, err: %v",
 			event.Type,
+			event,
 			err,
 		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process webhook"})

@@ -52,6 +52,8 @@ const (
 	AdminWorkspaceSubscriptionAdd            = "/workspace-subscription/add"
 	AdminWorkspaceSubscriptionList           = "/workspace-subscription/list"
 	AdminSubscriptionPlans                   = "/subscription-plans"
+	AdminSubscriptionPlanManage              = "/subscription-plan/manage"
+	AdminSubscriptionPlanDelete              = "/subscription-plan/delete"
 
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"
