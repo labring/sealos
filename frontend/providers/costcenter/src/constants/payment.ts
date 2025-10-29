@@ -93,7 +93,7 @@ export const valuationMap = new Map([
     'cpu',
     {
       icon: Cpu,
-      unit: 'Core',
+      unit: 'cpu_core',
       scale: 1000,
       idx: 0
     }
@@ -102,7 +102,7 @@ export const valuationMap = new Map([
     'memory',
     {
       icon: MemoryStick,
-      unit: 'GB',
+      unit: 'memory_gb',
       scale: 1024,
       idx: 1
     }
@@ -111,7 +111,7 @@ export const valuationMap = new Map([
     'storage',
     {
       icon: HardDrive,
-      unit: 'GB',
+      unit: 'storage_gb',
       scale: 1024,
       idx: 2
     }
@@ -120,7 +120,7 @@ export const valuationMap = new Map([
     'gpu',
     {
       icon: CircuitBoard,
-      unit: 'GPU Unit',
+      unit: 'gpu',
       scale: 1,
       idx: 3
     }
@@ -129,7 +129,7 @@ export const valuationMap = new Map([
     'network',
     {
       icon: Network,
-      unit: 'M',
+      unit: 'network_m',
       scale: 1,
       idx: 4
     }
@@ -138,7 +138,7 @@ export const valuationMap = new Map([
     'nodeport',
     {
       icon: HdmiPort,
-      unit: 'port_unit',
+      unit: 'port',
       scale: 1,
       idx: 5
     }
@@ -147,7 +147,7 @@ export const valuationMap = new Map([
     'traffic',
     {
       icon: Network,
-      unit: 'GB',
+      unit: 'traffic_gb',
       scale: 1024 * 1024 * 1024,
       idx: 6
     }

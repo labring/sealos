@@ -71,10 +71,13 @@ export default function Valuation() {
 
           let isGpu = x.name.startsWith('gpu-');
           let title = x.name;
-          let unit = [t(props.unit), t(CYCLE[cycleIdx])].join('/');
+          let unit = [
+            t('units.' + props.unit, { count: 1 }),
+            t('time_units.' + CYCLE[cycleIdx])
+          ].join(' / ');
 
           if (x.name === 'network') {
-            unit = '/' + t(props.unit);
+            unit = '/' + t('units.' + props.unit, { count: 1 });
           } else if (x.name === 'services.nodeports') {
             title = 'Port';
           } else if (x.name.startsWith('gpu-')) {

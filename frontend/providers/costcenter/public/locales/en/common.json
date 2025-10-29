@@ -106,8 +106,42 @@
   "scan_with_wechat": "Scan with WeChat",
   "select_amount": "Select Amount",
   "sidebar": {
-    "createinvoice": "Create Invoice"
+    "cost": "Overview",
+    "plan": "Plan",
+    "usage": "Usage",
+    "valuation": "Pricing Standard",
+    "invoice": "Invoice",
+    "billing": "Billing"
   },
+  "createinvoice": {
+    "title": "Create Invoice"
+  },
+  "units": {
+    "cpu_core_one": "Core",
+    "cpu_core_other": "Cores",
+    "memory_gb_one": "GB",
+    "memory_gb_other": "GB",
+    "storage_gb_one": "GB",
+    "storage_gb_other": "GB",
+    "gpu_one": "GPU",
+    "gpu_other": "GPUs",
+    "network_m_one": "M",
+    "network_m_other": "M",
+    "port_one": "Port",
+    "port_other": "Ports",
+    "traffic_gb_one": "GB",
+    "traffic_gb_other": "GB"
+  },
+  "time_units": {
+    "Hour": "Hour",
+    "Day": "Day",
+    "Week": "Week",
+    "Month": "Month",
+    "Year": "Year"
+  },
+  "Port": "Port",
+  "traffic": "Traffic",
+  "nodeport": "Ports",
   "storage": "Storage",
   "the_payee_cannot_be_oneself": "The payee cannot be oneself",
   "total": "Total",
@@ -119,7 +153,9 @@
   "transfer_amount_must_be_a_integer": "Transfer Amount must be a integer",
   "transfer_amount_must_be_less_than_balance": "The balance after the transfer must not be less than 10",
   "transfer_success": "Transfer Success",
-  "usage": "usage",
+  "usage": {
+    "title": "Usage"
+  },
   "used": "Used",
   "common_valuation": "Basic Pricing",
   "credit_purchase": "Credit Purchase",
