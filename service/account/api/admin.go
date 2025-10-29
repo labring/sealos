@@ -15,6 +15,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	types2 "k8s.io/apimachinery/pkg/types"
@@ -522,3 +523,242 @@ func AdminCreateCorporate(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
+
+// AdminManageSubscriptionPlan manages WorkspaceSubscriptionPlan with prices
+type SubscriptionPlanManageRequest struct {
+	Plan    types.WorkspaceSubscriptionPlan `json:"plan"`
+	Prices  []types.ProductPrice            `json:"prices"`
+}
+
+// AdminManageSubscriptionPlan Create or update WorkspaceSubscriptionPlan with prices
+// @Summary Create or update WorkspaceSubscriptionPlan with prices
+// @Description Create a new WorkspaceSubscriptionPlan with prices or update existing one with prices. Manages plan and prices as a single unit.
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Param request body SubscriptionPlanManageRequest true "Subscription plan with prices data"
+// @Success 200 {object} map[string]interface{} "successfully created/updated subscription plan with prices"
+// @Failure 400 {object} helper.ErrorMessage "invalid request body"
+// @Failure 401 {object} helper.ErrorMessage "authenticate error"
+// @Failure 500 {object} helper.ErrorMessage "failed to create/update subscription plan with prices"
+// @Router /admin/v1alpha1/subscription-plan/manage [post]
+func AdminManageSubscriptionPlan(c *gin.Context) {
+	err := authenticateAdminRequest(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{
+			Error: fmt.Sprintf("authenticate error: %v", err),
+		})
+		return
+	}
+
+	var request SubscriptionPlanManageRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: fmt.Sprintf("invalid request body: %v", err),
+		})
+		return
+	}
+
+	plan := request.Plan
+	prices := request.Prices
+
+	// Debug logging
+	logrus.Infof("AdminManageSubscriptionPlan: plan.Name=%s, plan.AIQuota=%d, plan.MaxResources=%s, plan.MaxSeats=%d",
+		plan.Name, plan.AIQuota, plan.MaxResources, plan.MaxSeats)
+	for i, price := range prices {
+		logrus.Infof("AdminManageSubscriptionPlan: price[%d].BillingCycle=%s, price[%d].Price=%d",
+			i, price.BillingCycle, i, price.Price)
+	}
+
+	var isCreate bool
+	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		var existingPlan types.WorkspaceSubscriptionPlan
+		var err error
+
+		// If ID is provided, try to find by ID first
+		if plan.ID != uuid.Nil {
+			err = tx.Where("id = ?", plan.ID).First(&existingPlan).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("failed to check existing plan by ID: %w", err)
+			}
+		}
+
+		// If not found by ID, try to find by name
+		if errors.Is(err, gorm.ErrRecordNotFound) && plan.Name != "" {
+			err = tx.Where("name = ?", plan.Name).First(&existingPlan).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("failed to check existing plan by name: %w", err)
+			}
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Create new plan
+			isCreate = true
+			if plan.ID == uuid.Nil {
+				plan.ID = uuid.New()
+			}
+			if err := tx.Create(&plan).Error; err != nil {
+				return fmt.Errorf("failed to create subscription plan: %w", err)
+			}
+		} else {
+			// Update existing plan - merge with existing data
+			isCreate = false
+			plan.ID = existingPlan.ID
+
+			logrus.Infof("Updating existing plan: ID=%s, CurrentName='%s', RequestedName='%s'",
+				existingPlan.ID, existingPlan.Name, plan.Name)
+
+			// Handle name updates - allow setting name if current name is empty
+			if plan.Name != "" && plan.Name != existingPlan.Name {
+				// Allow setting name if current name is empty (data fix scenario)
+				if existingPlan.Name == "" {
+					logrus.Infof("Setting empty plan name to: %s", plan.Name)
+					existingPlan.Name = plan.Name
+				} else {
+					return fmt.Errorf("cannot change plan name during update. Current name: %s, Requested name: %s", existingPlan.Name, plan.Name)
+				}
+			}
+
+			// Keep the original name if not provided in update
+			if plan.Name == "" {
+				plan.Name = existingPlan.Name
+			}
+
+			// Update other fields
+			existingPlan.Description = plan.Description
+			existingPlan.UpgradePlanList = plan.UpgradePlanList
+			existingPlan.DowngradePlanList = plan.DowngradePlanList
+			existingPlan.MaxSeats = plan.MaxSeats
+			existingPlan.MaxResources = plan.MaxResources
+			existingPlan.Traffic = plan.Traffic
+			existingPlan.AIQuota = plan.AIQuota
+			existingPlan.Order = plan.Order
+			existingPlan.Tags = plan.Tags
+
+			if err := tx.Save(&existingPlan).Error; err != nil {
+				return fmt.Errorf("failed to update subscription plan: %w", err)
+			}
+
+			// Delete existing prices for this plan
+			if err := tx.Where("product_id = ?", plan.ID).Delete(&types.ProductPrice{}).Error; err != nil {
+				return fmt.Errorf("failed to delete existing prices: %w", err)
+			}
+		}
+
+		// Create new prices
+		for i := range prices {
+			prices[i].ProductID = plan.ID
+			prices[i].ID = uuid.New() // Always create new price IDs
+			if err := tx.Create(&prices[i]).Error; err != nil {
+				return fmt.Errorf("failed to create product price for billing cycle %s: %w", prices[i].BillingCycle, err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
+			Error: fmt.Sprintf("failed to create/update subscription plan with prices: %v", err),
+		})
+		return
+	}
+
+	operation := "updated"
+	if isCreate {
+		operation = "created"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":      true,
+		"plan_id":      plan.ID,
+		"prices_count": len(prices),
+		"operation":    operation,
+	})
+}
+
+// AdminDeleteSubscriptionPlan Delete WorkspaceSubscriptionPlan
+// @Summary Delete WorkspaceSubscriptionPlan
+// @Description Delete a WorkspaceSubscriptionPlan by ID or name
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Param request body map[string]interface{} true "Delete request (id or name required)"
+// @Success 200 {object} map[string]interface{} "successfully deleted subscription plan"
+// @Failure 400 {object} helper.ErrorMessage "invalid request body"
+// @Failure 401 {object} helper.ErrorMessage "authenticate error"
+// @Failure 404 {object} helper.ErrorMessage "subscription plan not found"
+// @Failure 500 {object} helper.ErrorMessage "failed to delete subscription plan"
+// @Router /admin/v1alpha1/subscription-plan/delete [post]
+func AdminDeleteSubscriptionPlan(c *gin.Context) {
+	err := authenticateAdminRequest(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{
+			Error: fmt.Sprintf("authenticate error: %v", err),
+		})
+		return
+	}
+
+	var request struct {
+		ID   uuid.UUID `json:"id,omitempty"`
+		Name string    `json:"name,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: fmt.Sprintf("invalid request body: %v", err),
+		})
+		return
+	}
+
+	if request.ID == uuid.Nil && request.Name == "" {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: "either plan ID or name is required",
+		})
+		return
+	}
+
+	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		var plan types.WorkspaceSubscriptionPlan
+		var err error
+
+		if request.ID != uuid.Nil {
+			err = tx.Where("id = ?", request.ID).First(&plan).Error
+		} else {
+			err = tx.Where("name = ?", request.Name).First(&plan).Error
+		}
+
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("subscription plan not found")
+			}
+			return fmt.Errorf("failed to get subscription plan: %w", err)
+		}
+
+		// Delete associated product prices first
+		if err := tx.Where("product_id = ?", plan.ID).Delete(&types.ProductPrice{}).Error; err != nil {
+			return fmt.Errorf("failed to delete associated product prices: %w", err)
+		}
+
+		// Delete the plan
+		if err := tx.Delete(&plan).Error; err != nil {
+			return fmt.Errorf("failed to delete subscription plan: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		if err.Error() == "subscription plan not found" {
+			c.JSON(http.StatusNotFound, helper.ErrorMessage{Error: err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to delete subscription plan: %v", err),
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
