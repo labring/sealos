@@ -29,7 +29,8 @@ func RegisterPayRouter() {
 		SkipPaths: []string{"/health", "/health/"}, // 包含可能的路径变体
 		Skip: func(c *gin.Context) bool {
 			// If the returned status code is 200: /admin/v1alpha1/flush-debt-resource-status request, skip the log
-			if c.Request.URL.Path == helper.AdminGroup+helper.AdminFlushDebtResourceStatus && c.Writer.Status() == http.StatusOK {
+			if c.Request.URL.Path == helper.AdminGroup+helper.AdminFlushDebtResourceStatus &&
+				c.Writer.Status() == http.StatusOK {
 				return true
 			}
 			return false
