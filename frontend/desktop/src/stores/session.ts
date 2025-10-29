@@ -13,10 +13,12 @@ type SessionState = {
   provider?: OauthProvider;
   oauth_state: string;
   firstUse: Date | null;
+  hasEverLoggedIn: boolean;
   setSession: (ss: Session) => void;
   setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => void;
   delSession: () => void;
   setFirstUse: (d: Date | null) => void;
+  setHasEverLoggedIn: (value: boolean) => void;
   isUserLogin: () => boolean;
 
   generateState: (action?: OauthAction, domainState?: string) => string;
@@ -45,6 +47,7 @@ const useSessionStore = create<SessionState>()(
       provider: undefined,
       lastSigninProvier: undefined,
       firstUse: null,
+      hasEverLoggedIn: false,
       oauth_state: '',
       token: '',
       lastWorkSpaceId: '',
@@ -52,6 +55,11 @@ const useSessionStore = create<SessionState>()(
       setFirstUse(d) {
         set({
           firstUse: d
+        });
+      },
+      setHasEverLoggedIn(value) {
+        set({
+          hasEverLoggedIn: value
         });
       },
       setLastSigninProvider(provider?: string) {
