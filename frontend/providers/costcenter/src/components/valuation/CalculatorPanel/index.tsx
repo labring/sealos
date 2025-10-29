@@ -393,7 +393,7 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
 
         <CardHeader className="border-y gap-0 p-4 font-medium text-sm rounded-none">
           <CardTitle>
-            <span>{t('common:usage')}</span>
+            <span>{t('common:usage.title')}</span>
           </CardTitle>
         </CardHeader>
 

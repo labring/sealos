@@ -69,7 +69,7 @@ const InvoiceFormView = ({
         <Button type="button" variant="ghost" onClick={onBack} className="hover:bg-gray-100">
           <div className="flex items-center gap-3">
             {onBack && <ArrowLeft size={20} className="size-5" />}
-            <h1 className="text-xl font-semibold">{t('common:sidebar.createinvoice')}</h1>
+            <h1 className="text-xl font-semibold">{t('common:createinvoice.title')}</h1>
           </div>
         </Button>
         <div className="flex items-center gap-3">
@@ -84,7 +84,9 @@ const InvoiceFormView = ({
           >
             {isSubmitting
               ? t('common:orders.submitting')
-              : `${t('common:orders.apply_invoice')} ${invoiceCount > 0 ? `(${invoiceCount})` : ''}`}
+              : `${t('common:orders.apply_invoice')} ${
+                  invoiceCount > 0 ? `(${invoiceCount})` : ''
+                }`}
           </Button>
         </div>
       </div>

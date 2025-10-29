@@ -106,8 +106,40 @@
   "scan_with_wechat": "微信扫码支付",
   "select_amount": "选择金额",
   "sidebar": {
-    "createinvoice": "开具发票"
+    "cost": "首页",
+    "plan": "套餐",
+    "usage": "用量",
+    "valuation": "计价标准",
+    "invoice": "发票",
+    "billing": "账单"
   },
+  "createinvoice": {
+    "title": "开具发票"
+  },
+  "units": {
+    "cpu_core_one": "核",
+    "cpu_core_other": "核",
+    "memory_gb_one": "GB",
+    "memory_gb_other": "GB",
+    "storage_gb_one": "GB",
+    "storage_gb_other": "GB",
+    "gpu_one": "GPU",
+    "gpu_other": "GPUs",
+    "network_m_one": "M",
+    "network_m_other": "M",
+    "port_one": "个",
+    "port_other": "个",
+    "traffic_gb_one": "GB",
+    "traffic_gb_other": "GB"
+  },
+  "time_units": {
+    "Hour": "小时",
+    "Day": "天",
+    "Week": "周",
+    "Month": "月",
+    "Year": "年"
+  },
+  "Port": "端口",
   "storage": "存储卷",
   "the_payee_cannot_be_oneself": "收款人不能是本人",
   "total": "总数",
@@ -119,7 +151,9 @@
   "transfer_amount_must_be_a_integer": "转账金额必须为整数",
   "transfer_amount_must_be_less_than_balance": "转账后的账户余额不能小于 10",
   "transfer_success": "转账成功",
-  "usage": "用量",
+  "usage": {
+    "title": "用量"
+  },
   "used": "已用",
   "common_valuation": "基础计价",
   "credit_purchase": "余额充值",

@@ -21,35 +21,35 @@ export default function SideBar() {
     {
       id: 'Plan',
       url: '/plan',
-      value: 'SideBar.Plan',
+      value: 'sidebar.plan',
       icon: Dock,
       display: true
     },
     {
       id: 'Billing',
       url: '/billing',
-      value: 'SideBar.Billing',
+      value: 'sidebar.billing',
       icon: ReceiptText,
       display: true
     },
     {
       id: 'Invoice',
       url: '/create_invoice',
-      value: 'SideBar.Invoice',
+      value: 'sidebar.invoice',
       icon: TicketMinus,
       display: invoiceEnabled
     },
     {
       id: 'Usage',
       url: '/usage',
-      value: 'SideBar.Usage',
+      value: 'sidebar.usage',
       icon: ChartPie,
       display: true
     },
     {
       id: 'Pricing Standard',
       url: '/valuation',
-      value: 'SideBar.PricingStandard',
+      value: 'sidebar.valuation',
       icon: Calculator,
       display: true
     }

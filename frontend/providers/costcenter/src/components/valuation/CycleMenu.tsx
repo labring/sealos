@@ -40,7 +40,7 @@ export default function CycleMenu({
       <SelectContent>
         {CYCLE.map((item, idx) => (
           <SelectItem key={idx} value={idx.toString()}>
-            {t(item)}
+            {t('time_units.' + item)}
           </SelectItem>
         ))}
       </SelectContent>

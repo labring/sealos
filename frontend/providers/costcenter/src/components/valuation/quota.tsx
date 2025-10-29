@@ -43,14 +43,14 @@ export default function Quota() {
         remain: item.limit - item.used,
         scale: mapping?.scale ?? 1,
         title: t(item.type),
-        unit: mapping?.unit ? t(mapping?.unit) : ''
+        unitKey: mapping?.unit ? 'units.' + mapping.unit : ''
       };
     });
 
   return (
     <TableLayout>
       <TableLayoutCaption className="text-sm">
-        <div>{t('common:usage')}</div>
+        <div>{t('common:usage.title')}</div>
         <div className="flex">
           <RegionMenu className={{ trigger: 'w-36 rounded-r-none' }} />
           <NamespaceMenu className={{ trigger: 'w-36 rounded-l-none border-l-0' }} />
@@ -88,17 +88,17 @@ export default function Quota() {
                 <TableCell>
                   <span>{(item.limit / item.scale).toFixed(2)}</span>
                   <span> </span>
-                  <span>{item.unit}</span>
+                  <span>{t(item.unitKey, { count: item.limit / item.scale })}</span>
                 </TableCell>
                 <TableCell>
                   <span>{(item.used / item.scale).toFixed(2)}</span>
                   <span> </span>
-                  <span>{item.unit}</span>
+                  <span>{t(item.unitKey, { count: item.used / item.scale })}</span>
                 </TableCell>
                 <TableCell>
                   <span>{(item.remain / item.scale).toFixed(2)}</span>
                   <span> </span>
-                  <span>{item.unit}</span>
+                  <span>{t(item.unitKey, { count: item.remain / item.scale })}</span>
                 </TableCell>
               </TableRow>
             ))
