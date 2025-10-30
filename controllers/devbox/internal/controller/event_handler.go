@@ -28,6 +28,7 @@ type EventHandler struct {
 	Committer           commit.Committer
 	CommitImageRegistry string
 	NodeName            string
+	DefaultBaseImage    string
 
 	Logger   logr.Logger
 	Client   client.Client
@@ -259,12 +260,12 @@ func (h *EventHandler) removeStorage(ctx context.Context, event *corev1.Event) e
 }
 
 func (h *EventHandler) cleanupStorage(ctx context.Context, devboxName, contentID, baseImage string) error {
-	h.Logger.Info("Starting Storage cleanup", "devbox", devboxName, "contentID", contentID, "baseImage", baseImage)
+	h.Logger.Info("Starting Storage cleanup", "devbox", devboxName, "contentID", contentID, "baseImage", baseImage, "defaultBaseImage", h.DefaultBaseImage)
 
 	// create temp container
-	containerID, err := h.Committer.CreateContainer(ctx, fmt.Sprintf("temp-%s-%d", devboxName, time.Now().UnixMicro()), contentID, baseImage)
+	containerID, err := h.Committer.CreateContainer(ctx, fmt.Sprintf("temp-%s-%d", devboxName, time.Now().UnixMicro()), contentID, h.DefaultBaseImage)
 	if err != nil {
-		h.Logger.Error(err, "failed to create temp container", "devbox", devboxName, "contentID", contentID, "baseImage", baseImage)
+		h.Logger.Error(err, "failed to create temp container", "devbox", devboxName, "contentID", contentID, "defaultBaseImage", h.DefaultBaseImage)
 		return err
 	}
 

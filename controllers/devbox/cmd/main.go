@@ -102,6 +102,9 @@ func main() {
 	var acceptanceThreshold int
 	// merge base image layers flag
 	var mergeBaseImageTopLayer bool
+	// default base image flag for setLvRemovable's temp container
+	var defaultBaseImage string
+	flag.StringVar(&defaultBaseImage, "default-base-image", "alpine:3.19", "The default base image for setLvRemovable's temp container")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -302,6 +305,7 @@ func main() {
 		CommitImageRegistry: registryAddr,
 		NodeName:            nodes.GetNodeName(),
 		Logger:              ctrl.Log.WithName("state-change-handler"),
+		DefaultBaseImage:    defaultBaseImage,
 	}
 
 	setupLog.Info("StateChangeHandler initialized", "nodeName", nodes.GetNodeName())
