@@ -538,7 +538,7 @@ const RechargeModal = forwardRef(
                         </NumberDecrementStepper>
                       </NumberInputStepper>
 
-                      <CurrencySymbol className="mx-2" />
+                      <CurrencySymbol className="mx-2 size-4 aspect-square" />
                       <NumberInputField bg={'transparent'} />
 
                       <NumberInputStepper

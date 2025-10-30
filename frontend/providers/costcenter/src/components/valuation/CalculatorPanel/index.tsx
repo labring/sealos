@@ -38,7 +38,15 @@ const rangeValToIdx = (val: number, range: number[]) => {
 const CPU_RANGE = [1, 8, 16, 24, 32];
 const MEMORY_RANGE = [1, 16, 32, 64, 128];
 
-export default function CalculatorPanel({ priceData }: { priceData: PricePayload[] }) {
+export default function CalculatorPanel({
+  priceData,
+  cycleIdx,
+  setCycleIdx
+}: {
+  priceData: PricePayload[];
+  cycleIdx: number;
+  setCycleIdx: (x: number) => void;
+}) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const [config, setConfig] = useState({
@@ -431,8 +439,10 @@ export default function CalculatorPanel({ priceData }: { priceData: PricePayload
                 max={1000000}
               />
               <CycleMenu
-                cycleIdx={config.usage.timeUnit}
+                // Ensure linkage with parent component (workaround for state management)
+                cycleIdx={cycleIdx}
                 setCycleIdx={(x) => {
+                  setCycleIdx(x);
                   updateTimeUnit(x);
                 }}
               />
