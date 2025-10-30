@@ -343,7 +343,7 @@ export function CostTree({
           wheelPanning: true
         }}
       >
-        <span className="absolute z-20 text-sm pointer-events-none top-5 left-5 text-zinc-600">
+        <span className="absolute z-20 text-sm pointer-events-none top-5 left-5 text-zinc-600 backdrop-blur-md px-2 py-1 rounded-full">
           {t('common:cost_tree_tip')}
         </span>
         <div className="absolute top-0 right-0 z-20 overflow-y-auto p-0 w-[clamp(22.5rem,50%,36.5rem)] h-full overflow-scroll pointer-events-none">

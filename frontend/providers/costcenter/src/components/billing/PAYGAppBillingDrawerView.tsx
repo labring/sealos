@@ -174,12 +174,12 @@ export function PAYGAppBillingDrawerView({
         const valuation = valuationMap.get(resourceType === 'port' ? 'nodeport' : resourceType);
         if (!valuation) return `${usage.amount.toFixed(6)}`;
 
-        return `${(usage.amount / valuation.scale).toFixed(6)} ${t(
-          'common:units.' + valuation.unit,
-          {
-            count: usage.amount / valuation.scale
-          }
-        )}`;
+        // special handling for nodeport scale (legacy use 1000 as scale)
+        return `${(usage.amount / (resourceType === 'port' ? 1000 : valuation.scale)).toFixed(
+          6
+        )} ${t('common:units.' + valuation.unit, {
+          count: usage.amount / valuation.scale
+        })}`;
       }
       default:
         return null;

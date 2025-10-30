@@ -158,7 +158,11 @@ export default function Valuation() {
           <PriceTablePanel priceData={PriceTableData} />
         </TabPanel>
         <TabPanel>
-          <CalculatorPanel priceData={PriceTableData} />
+          <CalculatorPanel
+            priceData={PriceTableData}
+            cycleIdx={cycleIdx}
+            setCycleIdx={setCycleIdx}
+          />
         </TabPanel>
       </TabPanels>
     </Tabs>
