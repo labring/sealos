@@ -26,10 +26,7 @@ export type BillingSpec =
   | {
       orderID: string; //如果给定orderId，则查找该id的值，该值为唯一值，因此当orderId给定时忽略其他查找限定值
     };
-export type RawCosts = Record<
-  'network' | 'cpu' | 'memory' | 'storage' | `gpu-${string}` | 'services.nodeports',
-  number
->;
+
 export type Costs = {
   cpu: number;
   memory: number;
