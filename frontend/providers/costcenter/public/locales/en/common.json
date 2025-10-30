@@ -328,6 +328,10 @@
     "title": "PAYG",
     "view_app_usage_button": "Usage"
   },
+  "payg_cost_drawer": {
+    "amount": "Amount",
+    "total_amount": "Total Amount"
+  },
   "bonus_amount": "Bonus Amount",
   "sealos_coin_text": "Sealos Coin icon",
   "sealos_coin_alt": "A coin icon that indicates some type of currency."

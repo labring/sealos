@@ -329,6 +329,10 @@
     "title": "按量付费",
     "view_app_usage_button": "查看用量"
   },
+  "payg_cost_drawer": {
+    "amount": "金额",
+    "total_amount": "总金额"
+  },
   "bonus_amount": "赠送余额",
   "sealos_coin_text": "Sealos 币图标",
   "sealos_coin_alt": "指示货币的硬币图标."

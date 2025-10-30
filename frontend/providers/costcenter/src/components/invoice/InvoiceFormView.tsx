@@ -94,7 +94,7 @@ const InvoiceFormView = ({
       {/* Invoice details Section */}
       <section className="flex flex-col border rounded-2xl mb-4 shadow-sm">
         <div className="border-b text-base font-medium p-6 flex items-center justify-between">
-          <span>Invoice Details</span>
+          <span>{t('common:orders.invoice_details')}</span>
           <span className="text-sm font-normal">
             {t('common:orders.invoice_amount')}:{' '}
             <span className="text-blue-600">￥ {formatMoney(invoiceAmount)}</span>
@@ -111,13 +111,13 @@ const InvoiceFormView = ({
           )}
         >
           <label>
-            <span>Invoice Items</span>
+            <span>{t('common:orders.invoice_items')}</span>
             <span className="font-normal text-zinc-600 leading-[2.5rem]">
               {t('common:orders.electronic_computer_service_fee')}
             </span>
           </label>
           <label>
-            <span>Invoice Type</span>
+            <span>{t('common:orders.invoice_type')}</span>
             <div>
               <Select
                 value={formData.invoiceType}
@@ -137,11 +137,11 @@ const InvoiceFormView = ({
                   ))}
                 </SelectContent>
               </Select>
-              <p>{errors.invoiceType || 'No error'}</p>
+              <p aria-hidden={!errors.invoiceType}>{errors.invoiceType || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Invoice Title</span>
+            <span>{t('common:orders.invoice_title')}</span>
             <div>
               <Input
                 type="text"
@@ -151,11 +151,11 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.invoice_title.placeholder')}
                 aria-invalid={!!errors.invoiceTitle}
               />
-              <p>{errors.invoiceTitle || 'No error'}</p>
+              <p aria-hidden={!errors.invoiceTitle}>{errors.invoiceTitle || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Tax ID</span>
+            <span>{t('common:orders.tax_id')}</span>
             <div>
               <Input
                 type="text"
@@ -165,11 +165,11 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.tax_registration_number.placeholder')}
                 aria-invalid={!!errors.taxId}
               />
-              <p>{errors.taxId || 'No error'}</p>
+              <p aria-hidden={!errors.taxId}>{errors.taxId || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Bank Name</span>
+            <span>{t('common:orders.bank_name')}</span>
             <div>
               <Input
                 type="text"
@@ -179,11 +179,11 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.bank_name.placeholder')}
                 aria-invalid={!!errors.bankName}
               />
-              <p>{errors.bankName || 'No error'}</p>
+              <p aria-hidden={!errors.bankName}>{errors.bankName || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Bank Account No.</span>
+            <span>{t('common:orders.bank_account')}</span>
             <div>
               <Input
                 type="text"
@@ -193,11 +193,11 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.bank_account.placeholder')}
                 aria-invalid={!!errors.bankAccount}
               />
-              <p>{errors.bankAccount || 'No error'}</p>
+              <p aria-hidden={!errors.bankAccount}>{errors.bankAccount || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Address</span>
+            <span>{t('common:orders.address')}</span>
             <div>
               <Input
                 type="text"
@@ -207,11 +207,11 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.address.placeholder')}
                 aria-invalid={!!errors.address}
               />
-              <p>{errors.address || 'No error'}</p>
+              <p aria-hidden={!errors.address}>{errors.address || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Tel</span>
+            <span>{t('common:orders.tel')}</span>
             <div>
               <Input
                 type="text"
@@ -221,11 +221,11 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.phone.placeholder')}
                 aria-invalid={!!errors.phone}
               />
-              <p>{errors.phone || 'No error'}</p>
+              <p aria-hidden={!errors.phone}>{errors.phone || 'No error'}</p>
             </div>
           </label>
           <label>
-            <span>Fax</span>
+            <span>{t('common:orders.fax')}</span>
             <div>
               <Input
                 type="text"
@@ -235,7 +235,7 @@ const InvoiceFormView = ({
                 placeholder={t('common:orders.details.fax.placeholder')}
                 aria-invalid={!!errors.fax}
               />
-              <p>{errors.fax || 'No error'}</p>
+              <p aria-hidden={!errors.fax}>{errors.fax || 'No error'}</p>
             </div>
           </label>
         </div>

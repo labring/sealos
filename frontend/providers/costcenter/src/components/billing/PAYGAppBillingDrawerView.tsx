@@ -28,6 +28,7 @@ import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
 import CurrencySymbol from '../CurrencySymbol';
+import { valuationMap } from '@/constants/payment';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -158,8 +159,7 @@ export function PAYGAppBillingDrawerView({
   // Helper function to render usage cells
   const renderUsageCell = (
     row: TableRowData,
-    resourceType: 'cpu' | 'memory' | 'storage' | 'network' | 'port' | 'gpu',
-    unitTransform?: (amount: number) => string
+    resourceType: 'cpu' | 'memory' | 'storage' | 'network' | 'port' | 'gpu'
   ) => {
     switch (row.type) {
       case 'skeleton':
@@ -169,8 +169,17 @@ export function PAYGAppBillingDrawerView({
       case 'data': {
         const usage = row.data.usage[resourceType];
         if (!usage) return '-';
-        const amount = unitTransform ? unitTransform(usage.amount) : usage.amount.toFixed(6);
-        return `${amount}`;
+
+        // special handling for nodeport naming ('port' is from the legacy accounting api)
+        const valuation = valuationMap.get(resourceType === 'port' ? 'nodeport' : resourceType);
+        if (!valuation) return `${usage.amount.toFixed(6)}`;
+
+        return `${(usage.amount / valuation.scale).toFixed(6)} ${t(
+          'common:units.' + valuation.unit,
+          {
+            count: usage.amount / valuation.scale
+          }
+        )}`;
       }
       default:
         return null;
@@ -255,85 +264,67 @@ export function PAYGAppBillingDrawerView({
     }),
     columnHelper.display({
       id: 'cpu-usage',
-      header: 'CPU',
-      cell: (info) =>
-        renderUsageCell(info.row.original, 'cpu', (amount) => `${(amount / 1000).toFixed(6)} Cores`)
+      header: t('common:cpu'),
+      cell: (info) => renderUsageCell(info.row.original, 'cpu')
     }),
     columnHelper.display({
       id: 'cpu-amount',
-      header: 'Amount',
+      header: t('common:payg_cost_drawer.amount'),
       cell: (info) => renderAmountCell(info.row.original, 'cpu')
     }),
     columnHelper.display({
       id: 'memory-usage',
-      header: 'Memory',
-      cell: (info) =>
-        renderUsageCell(info.row.original, 'memory', (amount) => `${(amount / 1024).toFixed(6)} Gi`)
+      header: t('common:memory'),
+      cell: (info) => renderUsageCell(info.row.original, 'memory')
     }),
     columnHelper.display({
       id: 'memory-amount',
-      header: 'Amount',
+      header: t('common:payg_cost_drawer.amount'),
       cell: (info) => renderAmountCell(info.row.original, 'memory')
     }),
     columnHelper.display({
       id: 'storage-usage',
-      header: 'Storage',
-      cell: (info) =>
-        renderUsageCell(
-          info.row.original,
-          'storage',
-          (amount) => `${(amount / 1024).toFixed(6)} Gi`
-        )
+      header: t('common:storage'),
+      cell: (info) => renderUsageCell(info.row.original, 'storage')
     }),
     columnHelper.display({
       id: 'storage-amount',
-      header: 'Amount',
+      header: t('common:payg_cost_drawer.amount'),
       cell: (info) => renderAmountCell(info.row.original, 'storage')
     }),
     columnHelper.display({
       id: 'network-usage',
       header: t('common:network'),
-      cell: (info) =>
-        renderUsageCell(
-          info.row.original,
-          'network',
-          (amount) => `${(amount / 1024).toFixed(6)} Gi`
-        )
+      cell: (info) => renderUsageCell(info.row.original, 'network')
     }),
     columnHelper.display({
       id: 'network-amount',
-      header: 'Amount',
+      header: t('common:payg_cost_drawer.amount'),
       cell: (info) => renderAmountCell(info.row.original, 'network')
     }),
     columnHelper.display({
       id: 'port-usage',
-      header: 'Port',
-      cell: (info) =>
-        renderUsageCell(
-          info.row.original,
-          'port',
-          (amount) => `${(amount / 1000).toFixed(6)} Ports`
-        )
+      header: t('common:port'),
+      cell: (info) => renderUsageCell(info.row.original, 'port')
     }),
     columnHelper.display({
       id: 'port-amount',
-      header: 'Amount',
+      header: t('common:payg_cost_drawer.amount'),
       cell: (info) => renderAmountCell(info.row.original, 'port')
     }),
     columnHelper.display({
       id: 'gpu-usage',
-      header: 'GPU',
-      cell: (info) =>
-        renderUsageCell(info.row.original, 'gpu', (amount) => `${amount.toFixed(6)} GPUs`)
+      header: t('common:gpu'),
+      cell: (info) => renderUsageCell(info.row.original, 'gpu')
     }),
     columnHelper.display({
       id: 'gpu-amount',
-      header: 'Amount',
+      header: t('common:payg_cost_drawer.amount'),
       cell: (info) => renderAmountCell(info.row.original, 'gpu')
     }),
     columnHelper.display({
       id: 'total-amount',
-      header: 'Total Amount',
+      header: t('common:payg_cost_drawer.total_amount'),
       cell: (info) => {
         const row = info.row.original;
         switch (row.type) {
