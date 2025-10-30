@@ -400,3 +400,5 @@ export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Pro
     </>
   );
 };
+
+export default IngressVisualEditorDrawer;
