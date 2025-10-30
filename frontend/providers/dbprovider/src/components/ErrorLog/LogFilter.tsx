@@ -33,7 +33,7 @@ const DatePicker = dynamic(() => import('@/components/DataPicker'), { ssr: false
 interface LogFilterProps {
   db: DBDetailType;
   logType: LogTypeEnum;
-  podName: string | null;
+  podName: string[] | '' | null;
   logFile?: TFile | null;
   logFiles: TFile[];
   dbPods: { podName: string; alias: string }[];
@@ -44,7 +44,7 @@ interface LogFilterProps {
   globalFilter: string;
   refreshInterval: number;
   logCount: number;
-  onPodChange: (podName: string | null) => void;
+  onPodChange: (podNames: string[] | '' | null) => void;
   onLogFileChange: (logFile: TFile | null) => void;
   onLogTypeChange: (logType: LogTypeEnum) => void;
   onFilterChange: (filter: string) => void;
@@ -86,12 +86,23 @@ export const LogFilter = ({
 
   // initialize from single-select props
   useEffect(() => {
-    const initialPods = dbPods.map((p) => ({
-      value: p.podName,
-      label: p.podName,
-      checked: podName === null ? false : podName ? p.podName === podName : true
-    }));
-    setPodList(initialPods);
+    const filteredDbPods = dbPods.filter((p) => !/sentinel/i.test(p.podName));
+    setPodList((prev) => {
+      const prevChecked = new Map(prev.map((i) => [i.value, i.checked]));
+      return filteredDbPods.map((p) => {
+        const fallback =
+          podName === null
+            ? false
+            : podName === ''
+              ? true
+              : (podName as string[]).includes(p.podName);
+        return {
+          value: p.podName,
+          label: p.podName,
+          checked: prevChecked.has(p.podName) ? !!prevChecked.get(p.podName) : fallback
+        };
+      });
+    });
   }, [podName, dbPods]);
 
   useEffect(() => {
@@ -409,9 +420,9 @@ export const LogFilter = ({
                     if (selectedPods.length === newList.length) {
                       onPodChange('');
                     } else if (selectedPods.length === 0) {
-                      onPodChange(null as any);
+                      onPodChange(null);
                     } else {
-                      onPodChange(selectedPods[0]?.value || '');
+                      onPodChange(selectedPods.map((p) => p.value));
                     }
                   }}
                   sx={{
@@ -455,9 +466,9 @@ export const LogFilter = ({
                       if (selectedPods.length === newList.length) {
                         onPodChange('');
                       } else if (selectedPods.length === 0) {
-                        onPodChange(null as any);
+                        onPodChange(null);
                       } else {
-                        onPodChange(selectedPods[0]?.value || '');
+                        onPodChange(selectedPods.map((p) => p.value));
                       }
                     }}
                     sx={{
@@ -693,7 +704,7 @@ export const LogFilter = ({
               lineHeight={'20px'}
               flexShrink={'0'}
             >
-              {t('Refresh')}
+              {t('log_number')}
             </Text>
             <Box width={'1px'} height={'12px'} background={'#D4D4D8'} flexShrink={'0'} />
             <Input
@@ -709,11 +720,14 @@ export const LogFilter = ({
               fontFamily={'Geist'}
               value={logCountInput}
               onChange={(e) => {
-                const v = e.target.value.replace(/[^0-9]/g, '');
-                setLogCountInput(v);
-                if (v !== '') {
-                  onLogCountChange(Math.max(0, parseInt(v, 10)));
+                const raw = e.target.value.replace(/[^0-9]/g, '');
+                if (raw === '') {
+                  setLogCountInput('');
+                  return;
                 }
+                const clamped = Math.max(0, Math.min(1000, parseInt(raw, 10)));
+                setLogCountInput(String(clamped));
+                onLogCountChange(clamped);
               }}
               placeholder={'100'}
               _placeholder={{ color: '#71717A' }}

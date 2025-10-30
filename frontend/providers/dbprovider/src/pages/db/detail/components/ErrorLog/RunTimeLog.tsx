@@ -77,7 +77,7 @@ export default function RunTimeLog({
     dbType: db?.dbType,
     routeDbName
   });
-  const [podName, setPodName] = useState<string | null>('');
+  const [podName, setPodName] = useState<string[] | '' | null>('');
   const [logFile, setLogFile] = useState<TFile | null>();
   const [data, setData] = useState<LogContent[]>([]);
   const [logCountsData, setLogCountsData] = useState<{ logs_total: string; _time: string }[]>([]);
@@ -97,7 +97,7 @@ export default function RunTimeLog({
 
   useQuery(['intervalLoadPods', db?.dbName], () => db?.dbName && intervalLoadPods(db?.dbName), {
     onSuccess: () => {
-      !podName && setPodName(dbPods[0]?.podName);
+      podName === null && setPodName(dbPods[0]?.podName ? [dbPods[0].podName] : null);
     }
   });
 
@@ -144,7 +144,12 @@ export default function RunTimeLog({
         return [];
       }
 
-      const targetPodName = podName || dbPods[0]?.podName;
+      const targetPodName =
+        podName === ''
+          ? dbPods[0]?.podName
+          : Array.isArray(podName) && podName.length > 0
+            ? podName[0]
+            : undefined;
       if (!targetPodName) return [];
 
       return await getLogFiles({
@@ -200,9 +205,15 @@ export default function RunTimeLog({
 
       if (podName === '') {
         pvc = databasePodsData?.pods.flatMap((pod) => pod.pvcUids || []) || [];
+      } else if (Array.isArray(podName)) {
+        const set = new Set<string>();
+        for (const name of podName) {
+          const found = databasePodsData?.pods.find((pod) => pod.podName === name);
+          (found?.pvcUids || []).forEach((id) => set.add(id));
+        }
+        pvc = Array.from(set);
       } else {
-        const selectedPod = databasePodsData?.pods.find((pod) => pod.podName === podName);
-        pvc = selectedPod?.pvcUids || [];
+        pvc = [];
       }
 
       if (pvc.length === 0) {
@@ -282,7 +293,11 @@ export default function RunTimeLog({
       const content = data.map((item) => `${item.timestamp}\t${item.content}`).join('\n');
 
       const safe = (s: string) => (s || '').replace(/[^a-zA-Z0-9-_]/g, '_');
-      const parts = [safe(db?.dbName || 'db'), safe(podName || 'pod'), safe(logType)];
+      const parts = [
+        safe(db?.dbName || 'db'),
+        safe(Array.isArray(podName) ? 'multi' : podName || 'pod'),
+        safe(logType)
+      ];
       if (logFile?.name) parts.push(safe(logFile.name));
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `${parts.join('_')}_${ts}.log`;
@@ -323,9 +338,15 @@ export default function RunTimeLog({
 
       if (podName === '') {
         pvc = databasePodsData.pods.flatMap((pod) => pod.pvcUids || []);
+      } else if (Array.isArray(podName)) {
+        const set = new Set<string>();
+        for (const name of podName) {
+          const found = databasePodsData.pods.find((pod) => pod.podName === name);
+          (found?.pvcUids || []).forEach((id) => set.add(id));
+        }
+        pvc = Array.from(set);
       } else {
-        const selectedPod = databasePodsData.pods.find((pod) => pod.podName === podName);
-        pvc = selectedPod?.pvcUids || [];
+        pvc = [];
       }
 
       if (pvc.length === 0) {

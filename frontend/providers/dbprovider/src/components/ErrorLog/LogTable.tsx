@@ -80,12 +80,12 @@ export const LogTable = ({
             </Box>
           );
         },
-        header: () => <FieldLabel>time</FieldLabel>
+        header: () => <FieldLabel>Time</FieldLabel>
       },
       {
         accessorKey: 'content',
         size: 350,
-        header: () => <FieldLabel>message</FieldLabel>,
+        header: () => <FieldLabel>Message</FieldLabel>,
         cell: ({ row }) => {
           return (
             <Box
@@ -109,7 +109,7 @@ export const LogTable = ({
       {
         accessorKey: 'container',
         size: 150,
-        header: () => <FieldLabel>container</FieldLabel>,
+        header: () => <FieldLabel>Container</FieldLabel>,
         cell: ({ row }) => {
           return (
             <Box
@@ -133,7 +133,7 @@ export const LogTable = ({
       {
         accessorKey: 'pod',
         size: 250,
-        header: () => <FieldLabel>pod</FieldLabel>,
+        header: () => <FieldLabel>Pod</FieldLabel>,
         cell: ({ row }) => {
           const podDisplay = pvcMap[row.original.pod || ''] || row.original.pod || '-';
           return (
