@@ -290,16 +290,7 @@ const Header = ({
     <Flex h={'60px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
         <ArrowLeft size={24} color="#18181B" />
-        <Box
-          ml={'12px'}
-          mr={'12px'}
-          fontWeight={'600'}
-          color={'#000'}
-          fontSize={'20px'}
-          lineHeight={'100%'}
-          fontFamily={'Geist, sans-serif'}
-          height={'20px'}
-        >
+        <Box ml={'12px'} mr={'12px'} fontWeight={'600'} fontSize={'20px'}>
           {router.query.name || db.dbName}
         </Box>
       </Flex>

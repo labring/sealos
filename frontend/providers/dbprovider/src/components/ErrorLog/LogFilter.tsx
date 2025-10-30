@@ -482,114 +482,160 @@ export const LogFilter = ({
             </MenuList>
           </Menu>
 
-          {/* Container Selector (only for non-mongodb) */}
-          {db?.dbType !== 'mongodb' && (
-            <Menu closeOnSelect={false}>
-              <MenuButton
-                as={Button}
-                variant={'unstyled'}
-                display={'flex'}
-                width={'222px'}
-                height={'42px'}
-                padding={'8px 16px'}
-                justifyContent={'space-between'}
-                alignItems={'center'}
-                alignSelf={'stretch'}
-                borderRadius={'8px'}
-                border={'1px solid #E4E4E7'}
-                background={'#FFF'}
-                color={'#18181B'}
-                fontFamily={'Geist'}
-                fontSize={'14px'}
-                fontWeight={'400'}
-                lineHeight={'20px'}
-                fontStyle={'normal'}
-                cursor={'pointer'}
-                _hover={{}}
-                _active={{}}
-                _focus={{}}
-              >
-                <Flex alignItems={'center'} width={'100%'}>
-                  <Text
-                    color={'#71717A'}
-                    fontFamily={'Geist'}
-                    fontSize={'14px'}
-                    fontStyle={'normal'}
-                    fontWeight={'400'}
-                    lineHeight={'20px'}
-                    flexShrink={'0'}
-                  >
-                    Container
-                  </Text>
-                  <Box
-                    width={'1px'}
-                    height={'12px'}
-                    background={'#D4D4D8'}
-                    margin={'0 8px'}
-                    flexShrink={'0'}
-                  />
-                  {(() => {
-                    const selectedCount = containerList.filter((c) => c.checked).length;
-                    const isPlaceholder = selectedCount === 0;
-                    const displayText = isPlaceholder
-                      ? t('Please select')
-                      : selectedCount === containerList.length
-                        ? t('All')
-                        : (() => {
-                            const firstSelected = containerList.find((c) => c.checked);
-                            return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
-                          })();
+          {/* Container Selector */}
+          <Menu closeOnSelect={false}>
+            <MenuButton
+              as={Button}
+              variant={'unstyled'}
+              display={'flex'}
+              width={'222px'}
+              height={'42px'}
+              padding={'8px 16px'}
+              justifyContent={'space-between'}
+              alignItems={'center'}
+              alignSelf={'stretch'}
+              borderRadius={'8px'}
+              border={'1px solid #E4E4E7'}
+              background={'#FFF'}
+              color={'#18181B'}
+              fontFamily={'Geist'}
+              fontSize={'14px'}
+              fontWeight={'400'}
+              lineHeight={'20px'}
+              fontStyle={'normal'}
+              cursor={'pointer'}
+              _hover={{}}
+              _active={{}}
+              _focus={{}}
+            >
+              <Flex alignItems={'center'} width={'100%'}>
+                <Text
+                  color={'#71717A'}
+                  fontFamily={'Geist'}
+                  fontSize={'14px'}
+                  fontStyle={'normal'}
+                  fontWeight={'400'}
+                  lineHeight={'20px'}
+                  flexShrink={'0'}
+                >
+                  Container
+                </Text>
+                <Box
+                  width={'1px'}
+                  height={'12px'}
+                  background={'#D4D4D8'}
+                  margin={'0 8px'}
+                  flexShrink={'0'}
+                />
+                {(() => {
+                  const selectedCount = containerList.filter((c) => c.checked).length;
+                  const isPlaceholder = selectedCount === 0;
+                  const displayText = isPlaceholder
+                    ? t('Please select')
+                    : selectedCount === containerList.length
+                      ? t('All')
+                      : (() => {
+                          const firstSelected = containerList.find((c) => c.checked);
+                          return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
+                        })();
 
-                    return (
-                      <Text
-                        color={isPlaceholder ? '#A3A3A3' : '#18181B'}
-                        fontFamily={'Geist'}
-                        fontSize={isPlaceholder ? '12px' : '14px'}
-                        fontStyle={'normal'}
-                        fontWeight={'400'}
-                        lineHeight={'20px'}
-                        sx={{
-                          display: '-webkit-box',
-                          WebkitBoxOrient: 'vertical',
-                          WebkitLineClamp: 1,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                        flexShrink={'1'}
-                        minWidth={'0'}
-                      >
-                        {displayText}
-                      </Text>
+                  return (
+                    <Text
+                      color={isPlaceholder ? '#A3A3A3' : '#18181B'}
+                      fontFamily={'Geist'}
+                      fontSize={isPlaceholder ? '12px' : '14px'}
+                      fontStyle={'normal'}
+                      fontWeight={'400'}
+                      lineHeight={'20px'}
+                      sx={{
+                        display: '-webkit-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                      flexShrink={'1'}
+                      minWidth={'0'}
+                    >
+                      {displayText}
+                    </Text>
+                  );
+                })()}
+                <Box flex={'1'} />
+                <ChevronDown
+                  size={16}
+                  color="#A3A3A3"
+                  style={{ strokeWidth: '2', flexShrink: '0', marginLeft: '4px' }}
+                />
+              </Flex>
+            </MenuButton>
+            <MenuList p={'6px'}>
+              {/* All Checkbox - 独立于其他选项 */}
+              <MenuItem
+                borderRadius={'4px'}
+                _hover={{
+                  bg: 'rgba(17, 24, 36, 0.05)',
+                  color: 'brightBlue.600'
+                }}
+                p={'6px'}
+                w={'100%'}
+              >
+                <Checkbox
+                  w={'100%'}
+                  isChecked={containerList.every((item) => item.checked)}
+                  onChange={() => {
+                    const allChecked = containerList.every((item) => item.checked);
+                    const newList = containerList.map((item) => ({
+                      ...item,
+                      checked: !allChecked
+                    }));
+                    setContainerList(newList);
+                    const selectedContainers = newList.filter((c) => c.checked);
+                    onLogFileChange(
+                      selectedContainers.length === 0
+                        ? (null as any)
+                        : selectedContainers.length === newList.length
+                          ? (undefined as any)
+                          : ({ name: selectedContainers[0]?.value } as TFile)
                     );
-                  })()}
-                  <Box flex={'1'} />
-                  <ChevronDown
-                    size={16}
-                    color="#A3A3A3"
-                    style={{ strokeWidth: '2', flexShrink: '0', marginLeft: '4px' }}
-                  />
-                </Flex>
-              </MenuButton>
-              <MenuList p={'6px'}>
-                {/* All Checkbox - 独立于其他选项 */}
+                    setTimeout(() => onRefresh(), 0);
+                  }}
+                  sx={{
+                    'span.chakra-checkbox__control[data-checked]': {
+                      background: '#f0f4ff',
+                      border: '1px solid #219bf4',
+                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                      color: '#219bf4',
+                      borderRadius: '4px'
+                    },
+                    'span.chakra-checkbox__control': {
+                      background: 'white',
+                      border: '1px solid #E8EBF0',
+                      borderRadius: '4px'
+                    }
+                  }}
+                >
+                  {t('All')}
+                </Checkbox>
+              </MenuItem>
+
+              {/* Individual Container Options */}
+              {containerList.map((container) => (
                 <MenuItem
+                  key={container.value}
                   borderRadius={'4px'}
                   _hover={{
                     bg: 'rgba(17, 24, 36, 0.05)',
                     color: 'brightBlue.600'
                   }}
                   p={'6px'}
-                  w={'100%'}
                 >
                   <Checkbox
-                    w={'100%'}
-                    isChecked={containerList.every((item) => item.checked)}
+                    isChecked={container.checked}
                     onChange={() => {
-                      const allChecked = containerList.every((item) => item.checked);
-                      const newList = containerList.map((item) => ({
-                        ...item,
-                        checked: !allChecked
-                      }));
+                      const newList = containerList.map((item) =>
+                        item.value === container.value ? { ...item, checked: !item.checked } : item
+                      );
                       setContainerList(newList);
                       const selectedContainers = newList.filter((c) => c.checked);
                       onLogFileChange(
@@ -616,62 +662,12 @@ export const LogFilter = ({
                       }
                     }}
                   >
-                    {t('All')}
+                    {container.label}
                   </Checkbox>
                 </MenuItem>
-
-                {/* Individual Container Options */}
-                {containerList.map((container) => (
-                  <MenuItem
-                    key={container.value}
-                    borderRadius={'4px'}
-                    _hover={{
-                      bg: 'rgba(17, 24, 36, 0.05)',
-                      color: 'brightBlue.600'
-                    }}
-                    p={'6px'}
-                  >
-                    <Checkbox
-                      isChecked={container.checked}
-                      onChange={() => {
-                        const newList = containerList.map((item) =>
-                          item.value === container.value
-                            ? { ...item, checked: !item.checked }
-                            : item
-                        );
-                        setContainerList(newList);
-                        const selectedContainers = newList.filter((c) => c.checked);
-                        onLogFileChange(
-                          selectedContainers.length === 0
-                            ? (null as any)
-                            : selectedContainers.length === newList.length
-                              ? (undefined as any)
-                              : ({ name: selectedContainers[0]?.value } as TFile)
-                        );
-                        setTimeout(() => onRefresh(), 0);
-                      }}
-                      sx={{
-                        'span.chakra-checkbox__control[data-checked]': {
-                          background: '#f0f4ff',
-                          border: '1px solid #219bf4',
-                          boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                          color: '#219bf4',
-                          borderRadius: '4px'
-                        },
-                        'span.chakra-checkbox__control': {
-                          background: 'white',
-                          border: '1px solid #E8EBF0',
-                          borderRadius: '4px'
-                        }
-                      }}
-                    >
-                      {container.label}
-                    </Checkbox>
-                  </MenuItem>
-                ))}
-              </MenuList>
-            </Menu>
-          )}
+              ))}
+            </MenuList>
+          </Menu>
         </Flex>
 
         {/* Log Count and Refresh Controls */}

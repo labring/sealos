@@ -47,13 +47,9 @@ export const LogTable = ({
       flex={'1 0 0'}
       alignSelf={'stretch'}
       color={'#71717A'}
-      fontFamily={'var( --typography-font-family-font-sans )'}
-      fontWeight={'var( --font-weight-normal )'}
-      fontStyle={'normal'}
-      fontSize={'var( --typography-base-sizes-small-font-size )'}
-      lineHeight={'var( --typography-base-sizes-small-line-height )'}
-      letterSpacing={'0%'}
-      verticalAlign={'middle'}
+      fontWeight={'400'}
+      fontSize={'14px'}
+      lineHeight={'20px'}
       textTransform={'none'}
     >
       {children}
@@ -70,45 +66,34 @@ export const LogTable = ({
             <Box
               flexShrink={0}
               overflow={'hidden'}
-              color={'var(--base-foreground, #18181B)'}
-              textOverflow={'ellipsis'}
-              fontFamily={'Geist'}
-              fontSize={'var(--typography-base-sizes-small-font-size, 14px)'}
-              fontStyle={'normal'}
-              fontWeight={'var(--font-weight-normal, 400)'}
-              lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
+              color={'#18181B'}
+              fontSize={'14px'}
+              lineHeight={'20px'}
               display={'flex'}
               width={'100%'}
               minW={'85px'}
               pl={'0px'}
-              p={'0'}
               alignItems={'flex-start'}
-              gap={'0px'}
               alignSelf={'stretch'}
-              borderBottom={'none'}
             >
               {formatTime(row.original.timestamp, 'YYYY/MM/DD HH:mm:ss')}
             </Box>
           );
         },
-        header: () => <FieldLabel>Time</FieldLabel>
+        header: () => <FieldLabel>time</FieldLabel>
       },
       {
         accessorKey: 'content',
         size: 350,
-        header: () => <FieldLabel>Message</FieldLabel>,
+        header: () => <FieldLabel>message</FieldLabel>,
         cell: ({ row }) => {
           return (
             <Box
               width={'100%'}
-              maxWidth={'100%'}
               overflow={'hidden'}
-              color={'var(--base-foreground, #18181B)'}
-              fontFamily={'var(--typography-font-family-font-sans, Geist)'}
-              fontSize={'var(--typography-base-sizes-small-font-size, 14px)'}
-              fontStyle={'normal'}
-              fontWeight={'var(--font-weight-normal, 400)'}
-              lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
+              color={'#18181B'}
+              fontSize={'14px'}
+              lineHeight={'20px'}
               whiteSpace={'pre-wrap'}
               pr={'20px'}
               sx={{
@@ -124,28 +109,21 @@ export const LogTable = ({
       {
         accessorKey: 'container',
         size: 150,
-        header: () => <FieldLabel>Container</FieldLabel>,
+        header: () => <FieldLabel>container</FieldLabel>,
         cell: ({ row }) => {
           return (
             <Box
               flexShrink={0}
               overflow={'hidden'}
-              color={'var(--base-foreground, #18181B)'}
-              textOverflow={'ellipsis'}
-              fontFamily={'Geist'}
-              fontSize={'var(--typography-base-sizes-small-font-size, 14px)'}
-              fontStyle={'normal'}
-              fontWeight={'var(--font-weight-normal, 400)'}
-              lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
+              color={'#18181B'}
+              fontSize={'14px'}
+              lineHeight={'20px'}
               display={'flex'}
               width={'100%'}
-              pl={'20px'}
+              pl={'0px'}
               pr={'20px'}
-              p={'0'}
               alignItems={'flex-start'}
-              gap={'0px'}
               alignSelf={'stretch'}
-              borderBottom={'none'}
             >
               {row.original.container || '-'}
             </Box>
@@ -155,28 +133,22 @@ export const LogTable = ({
       {
         accessorKey: 'pod',
         size: 250,
-        header: () => <FieldLabel>Pod</FieldLabel>,
+        header: () => <FieldLabel>pod</FieldLabel>,
         cell: ({ row }) => {
           const podDisplay = pvcMap[row.original.pod || ''] || row.original.pod || '-';
           return (
             <Box
               flexShrink={0}
               overflow={'hidden'}
-              color={'var(--base-foreground, #18181B)'}
-              textOverflow={'ellipsis'}
-              fontFamily={'Geist'}
-              fontSize={'var(--typography-base-sizes-small-font-size, 14px)'}
-              fontStyle={'normal'}
-              fontWeight={'var(--font-weight-normal, 400)'}
-              lineHeight={'var(--typography-base-sizes-small-line-height, 20px)'}
+              color={'#18181B'}
+              fontSize={'14px'}
+              lineHeight={'20px'}
               display={'flex'}
               width={'100%'}
               pl={'20px'}
               p={'0'}
               alignItems={'flex-start'}
-              gap={'0px'}
               alignSelf={'stretch'}
-              borderBottom={'none'}
             >
               {podDisplay}
             </Box>
@@ -216,7 +188,6 @@ export const LogTable = ({
               border: 'none',
               boxShadow: 'none',
               color: '#000',
-              fontFamily: 'Geist',
               fontWeight: 500,
               fontSize: '18px',
               lineHeight: '28px',
@@ -240,9 +211,7 @@ export const LogTable = ({
               borderRadius: '8px',
               border: '1px solid #E4E4E7',
               background: '#FFF',
-              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
               color: '#18181B',
-              fontFamily: 'Geist',
               fontSize: '14px',
               fontWeight: 500,
               lineHeight: '20px',
@@ -251,10 +220,10 @@ export const LogTable = ({
                 color: '#737373'
               },
               '&:hover': {
-                backgroundColor: '#000 !important',
-                color: '#FFF !important',
+                backgroundColor: '#000',
+                color: '#FFF',
                 '& svg': {
-                  color: '#FFF !important'
+                  color: '#FFF'
                 }
               }
             }}
@@ -290,6 +259,16 @@ export const LogTable = ({
               '& table': {
                 tableLayout: 'fixed',
                 width: '100%'
+              },
+              '& thead th': {
+                position: 'sticky',
+                top: 0,
+                zIndex: 1
+              },
+              '& thead': {
+                position: 'sticky',
+                top: 0,
+                zIndex: 1
               }
             }}
           />
