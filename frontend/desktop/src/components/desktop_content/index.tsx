@@ -145,41 +145,44 @@ export default function Desktop() {
 
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
 
-  useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
-    return cleanup;
-  }, [cloudConfig?.allowedOrigins]);
-
-  useEffect(() => {
-    const cleanup = masterApp?.addEventListen('openDesktopApp', openDesktopApp);
-    return cleanup;
-  }, [openDesktopApp]);
-
-  useEffect(() => {
-    const cleanup = masterApp?.addEventListen('closeDesktopApp', closeDesktopApp);
-    return cleanup;
-  }, [closeDesktopApp]);
-
-  useEffect(() => {
-    const cleanup = masterApp?.addEventListen('request_login', (data: any) => {
+  const handleRequestLogin = useCallback(
+    (data: { appKey: string; pathname: string; query: Record<string, string> }) => {
       console.log('Guest Mode: Received request_login from Brain:', data);
-      if (data?.appName) {
+      if (data?.appKey) {
         const launchQuery = {
           pathname: data.pathname || '/',
-          raw: data.query || ''
+          raw: JSON.stringify(data.query) || ''
         };
-        console.log('Guest Mode: Saving autolaunch state:', data.appName, launchQuery);
-        setAutoLaunch(data.appName, launchQuery, undefined);
+        console.log('Guest Mode: Saving autolaunch state:', data.appKey, launchQuery);
+        setAutoLaunch(data.appKey, launchQuery, undefined);
       }
       openGuestLoginModal();
-    });
-    return cleanup;
-  }, [openGuestLoginModal, setAutoLaunch]);
+    },
+    [openGuestLoginModal, setAutoLaunch]
+  );
 
   useEffect(() => {
-    const cleanup = masterApp?.addEventListen('quitGuide', quitGuide);
-    return cleanup;
-  }, [quitGuide]);
+    const cleanupMaster = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
+    const cleanups = [
+      masterApp?.addEventListen('openDesktopApp', openDesktopApp),
+      masterApp?.addEventListen('closeDesktopApp', closeDesktopApp),
+      masterApp?.addEventListen('requestLogin', handleRequestLogin),
+      masterApp?.addEventListen('quitGuide', quitGuide)
+    ].filter(Boolean) as Array<() => void>;
+
+    return () => {
+      cleanups.forEach((fn) => fn());
+      cleanupMaster?.();
+    };
+  }, [
+    cloudConfig?.allowedOrigins,
+    openDesktopApp,
+    closeDesktopApp,
+    openGuestLoginModal,
+    setAutoLaunch,
+    quitGuide,
+    handleRequestLogin
+  ]);
 
   useEffect(() => {
     if (infoData.isSuccess && commonConfig?.realNameAuthEnabled && account?.data?.balance) {
