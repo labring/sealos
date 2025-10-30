@@ -77,7 +77,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
     [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
     [
       DBTypeEnum.kafka,
-      `kafka-controller 50%, kafka-metrics-exp, kafka-broker ${t('each', { perc: '25%' })}`
+      `controller 50%, kafka-broker, kafka-exporter ${t('each', { perc: '25%' })}`
     ],
     [
       DBTypeEnum.milvus,
@@ -167,7 +167,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                         <Td w="190px">{keyName}</Td>
                         <Td>{value.cpuMemory.limits.cpu}</Td>
                         <Td>{value.cpuMemory.limits.memory}</Td>
-                        <Td>{value.storage} G</Td>
+                        <Td>{value.storage === 0 ? '-' : `${value.storage} G`}</Td>
                         <Td>{value.other?.replicas ?? data.replicas}</Td>
                       </Tr>
                     );
@@ -343,6 +343,9 @@ const Form = ({
         [minStorageChange, minCPU, minMemory] = [4, 2, 2]; // 4的倍数，从4开始
         specialUse = 4;
         break;
+      case DBTypeEnum.clickhouse:
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2]; // 4的倍数，从4开始
+        specialUse = 4;
       default:
         break;
     }
