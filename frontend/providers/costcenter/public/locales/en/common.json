@@ -290,7 +290,7 @@
   "billing_page": {
     "billing": "Billing",
     "cost_and_revenue_trends": "Cost & Revenue Trends",
-    "recharge": "充值记录"
+    "recharge": "Recharge History"
   },
   "pay_with_alipay": "Pay With Alipay",
   "pay_with_stripe": "Pay With Stripe",
