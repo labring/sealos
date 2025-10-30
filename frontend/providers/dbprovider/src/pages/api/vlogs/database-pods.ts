@@ -62,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             pvcPodMap[claimName] = podName;
           }
         } catch (error) {
-          console.warn(`Failed to get PVC UID for ${claimName}:`, error);
           pvcUids.push(claimName);
           pvcPodMap[claimName] = podName;
         }
