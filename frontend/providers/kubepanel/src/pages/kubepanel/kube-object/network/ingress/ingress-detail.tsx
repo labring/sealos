@@ -12,7 +12,7 @@ import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { Button, Table } from 'antd';
 import { ColumnsType } from 'antd/lib/table';
 import { useState } from 'react';
-import IngressVisualEditorDrawer from './ingress-visual-editor-drawer';
+import { IngressVisualEditorDrawer } from './ingress-visual-editor-drawer';
 import { useIngressStore } from '@/store/kube';
 
 const rulesColumns: ColumnsType<ComputedIngressRoute> = [

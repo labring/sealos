@@ -101,6 +101,11 @@ export default function RunTimeLog({
     }
   });
 
+  useEffect(() => {
+    setPodName('');
+    setLogFile(undefined as any);
+  }, [routeDbName, db?.dbType]);
+
   const { data: databasePodsData } = useQuery(
     ['getVlogsDatabasePods', db?.dbName, db?.dbType, startDateTime, endDateTime],
     async () => {
@@ -160,8 +165,8 @@ export default function RunTimeLog({
     },
     {
       enabled: !!db?.dbType && db?.dbType !== 'mongodb' && !!dbPods.length,
-      onSuccess: (data) => {
-        !logFile && setLogFile(data[0]);
+      onSuccess: () => {
+        if (logFile === null) setLogFile(undefined as any);
       }
     }
   );

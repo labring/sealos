@@ -127,10 +127,10 @@ export const LogFilter = ({
     const initialContainers = containerOptions.map((container) => ({
       value: container,
       label: container,
-      checked: logFile === null ? false : logFile?.name ? logFile.name === container : true
+      checked: logFile !== null
     }));
     setContainerList(initialContainers);
-  }, [logFile?.name, db?.dbType]);
+  }, [logFile === null, db?.dbType]);
 
   useEffect(() => {
     setLogCountInput(typeof logCount === 'number' ? String(logCount) : '');

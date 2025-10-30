@@ -356,7 +356,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
           <Text>{formatTimeRange(startDateTime, endDateTime)}</Text>
         </Flex>
       </PopoverTrigger>
-      <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
+      <PopoverContent zIndex={99} w={'420px'} borderRadius={'12px'}>
         <Flex w={'402px'} flexDir={'column'}>
           <Flex flex={1} minH={'420px'}>
             <Flex w={'242px'} flexDir={'column'}>
@@ -470,7 +470,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
             </Flex>
           </Flex>
           <Divider />
-          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
+          <Flex justify={'flex-start'} pl={'12px'} pr={'12px'} alignItems={'center'} py={'8px'}>
             <MySelect
               height="32px"
               width={'fit-content'}
@@ -485,7 +485,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
               ]}
               onchange={(val: any) => setTimeZone(val)}
             />
-            <ButtonGroup variant="outline" spacing="2" px={'10px'}>
+            <ButtonGroup variant="outline" spacing="2" px={0} ml={'auto'}>
               <Button
                 border={'1px solid'}
                 borderColor={'grayModern.250'}
