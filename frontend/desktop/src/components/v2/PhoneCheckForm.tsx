@@ -1,10 +1,11 @@
-import { getRegionToken } from '@/api/auth';
+import { getRegionToken, autoInitRegionToken } from '@/api/auth';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { useGuideModalStore } from '@/stores/guideModal';
 import {
   Flex,
   Stack,
@@ -66,11 +67,28 @@ export function PhoneCheckForm() {
       if (!globalToken) throw Error();
       setToken(globalToken);
       if (result.data?.needInit) {
-        gtmLoginSuccess({
-          user_type: 'new',
-          method: 'phone'
-        });
-        await router.push('/workspace');
+        try {
+          // 自动初始化工作空间
+          const initResult = await autoInitRegionToken();
+
+          if (initResult?.data) {
+            gtmLoginSuccess({
+              user_type: 'new',
+              method: 'phone'
+            });
+            await sessionConfig(initResult.data);
+            const { setInitGuide } = useGuideModalStore.getState();
+            setInitGuide(true);
+            await router.replace('/');
+          }
+        } catch (error) {
+          console.error('Auto init failed, fallback to manual:', error);
+          gtmLoginSuccess({
+            user_type: 'new',
+            method: 'phone'
+          });
+          await router.push('/workspace');
+        }
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {

@@ -67,11 +67,17 @@ export type TOSState = {
   currentAppPid: number;
   autolaunch: string;
   autolaunchWorkspaceUid?: string;
-  launchQuery: Record<string, string>;
+  launchQuery: {
+    raw?: string;
+    pathname?: string;
+  };
   // store deploy template
   setAutoLaunch: (
     autolaunch: string,
-    launchQuery: Record<string, string>,
+    launchQuery: {
+      raw?: string;
+      pathname?: string;
+    },
     autolaunchWorkspaceId?: string
   ) => void;
   cancelAutoLaunch: () => void;
