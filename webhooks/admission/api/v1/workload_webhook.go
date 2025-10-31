@@ -21,6 +21,7 @@ import (
 
 	kbappsv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,12 +114,18 @@ func (r *WorkloadMutator) Default(ctx context.Context, obj runtime.Object) error
 		return r.mutateStatefulSet(ctx, o)
 	case *appsv1.ReplicaSet:
 		return r.mutateReplicaSet(ctx, o)
+	case *appsv1.DaemonSet:
+		return r.mutateDaemonSet(ctx, o)
+	case *batchv1.Job:
+		return r.mutateJob(ctx, o)
+	case *batchv1.CronJob:
+		return r.mutateCronJob(ctx, o)
 	case *corev1.Pod:
 		return r.mutatePod(ctx, o)
 	case *kbappsv1alpha1.Cluster:
 		return r.mutateCluster(ctx, o)
 	default:
-		return fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, Pod or Cluster but got a %T", obj)
+		return fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, DaemonSet, Job, CronJob, Pod or Cluster but got a %T", obj)
 	}
 }
 
@@ -163,12 +170,18 @@ func (r *WorkloadMutator) ValidateCreate(
 		return nil, r.validateStatefulSet(ctx, o)
 	case *appsv1.ReplicaSet:
 		return nil, r.validateReplicaSet(ctx, o)
+	case *appsv1.DaemonSet:
+		return nil, r.validateDaemonSet(ctx, o)
+	case *batchv1.Job:
+		return nil, r.validateJob(ctx, o)
+	case *batchv1.CronJob:
+		return nil, r.validateCronJob(ctx, o)
 	case *corev1.Pod:
 		return nil, r.validatePod(ctx, o)
 	case *kbappsv1alpha1.Cluster:
 		return nil, r.validateCluster(ctx, o)
 	default:
-		return nil, fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, Pod or Cluster but got a %T", obj)
+		return nil, fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, DaemonSet, Job, CronJob, Pod or Cluster but got a %T", obj)
 	}
 }
 
@@ -213,12 +226,18 @@ func (r *WorkloadMutator) ValidateUpdate(
 		return nil, r.validateStatefulSet(ctx, o)
 	case *appsv1.ReplicaSet:
 		return nil, r.validateReplicaSet(ctx, o)
+	case *appsv1.DaemonSet:
+		return nil, r.validateDaemonSet(ctx, o)
+	case *batchv1.Job:
+		return nil, r.validateJob(ctx, o)
+	case *batchv1.CronJob:
+		return nil, r.validateCronJob(ctx, o)
 	case *corev1.Pod:
 		return nil, r.validatePod(ctx, o)
 	case *kbappsv1alpha1.Cluster:
 		return nil, r.validateCluster(ctx, o)
 	default:
-		return nil, fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, Pod or Cluster but got a %T", newObj)
+		return nil, fmt.Errorf("expected a Deployment, StatefulSet, ReplicaSet, DaemonSet, Job, CronJob, Pod or Cluster but got a %T", newObj)
 	}
 }
 
@@ -261,6 +280,51 @@ func (r *WorkloadMutator) mutateReplicaSet(
 		Info("Mutating replicaset", "name", replicaSet.Name, "namespace", replicaSet.Namespace)
 
 	r.mutatePodSpec(&replicaSet.Spec.Template.Spec, replicaSet.Labels)
+	return nil
+}
+
+func (r *WorkloadMutator) mutateDaemonSet(
+	_ context.Context,
+	daemonSet *appsv1.DaemonSet,
+) error {
+	ctrl.Log.WithName("workload-mutator").
+		Info("Mutating daemonset", "name", daemonSet.Name, "namespace", daemonSet.Namespace)
+
+	// DaemonSet is never a database workload, use default oversell ratio
+	oversellRatio := r.DefaultOversellRatio
+
+	// Mutate all containers
+	for i := range daemonSet.Spec.Template.Spec.Containers {
+		r.mutateContainerResources(&daemonSet.Spec.Template.Spec.Containers[i], oversellRatio)
+	}
+
+	// Mutate init containers
+	for i := range daemonSet.Spec.Template.Spec.InitContainers {
+		r.mutateContainerResources(&daemonSet.Spec.Template.Spec.InitContainers[i], oversellRatio)
+	}
+
+	return nil
+}
+
+func (r *WorkloadMutator) mutateJob(
+	_ context.Context,
+	job *batchv1.Job,
+) error {
+	ctrl.Log.WithName("workload-mutator").
+		Info("Mutating job", "name", job.Name, "namespace", job.Namespace)
+
+	r.mutatePodSpec(&job.Spec.Template.Spec, job.Labels)
+	return nil
+}
+
+func (r *WorkloadMutator) mutateCronJob(
+	_ context.Context,
+	cronJob *batchv1.CronJob,
+) error {
+	ctrl.Log.WithName("workload-mutator").
+		Info("Mutating cronjob", "name", cronJob.Name, "namespace", cronJob.Namespace)
+
+	r.mutatePodSpec(&cronJob.Spec.JobTemplate.Spec.Template.Spec, cronJob.Labels)
 	return nil
 }
 
@@ -371,6 +435,103 @@ func (r *WorkloadMutator) validateReplicaSet(
 	// Validate init containers (skip for database workloads)
 	if !isDatabaseWorkload {
 		for i, container := range replicaSet.Spec.Template.Spec.InitContainers {
+			if err := r.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *WorkloadMutator) validateDaemonSet(
+	_ context.Context,
+	daemonSet *appsv1.DaemonSet,
+) error {
+	ctrl.Log.WithName("workload-validator").Info("Validating daemonset",
+		"name", daemonSet.Name,
+		"namespace", daemonSet.Namespace)
+
+	// DaemonSet is never a database workload, validate all containers
+	for i, container := range daemonSet.Spec.Template.Spec.Containers {
+		if err := r.validateContainerResources(&container, fmt.Sprintf("container[%d]", i)); err != nil {
+			return err
+		}
+	}
+
+	// Validate init containers
+	for i, container := range daemonSet.Spec.Template.Spec.InitContainers {
+		if err := r.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *WorkloadMutator) validateJob(
+	_ context.Context,
+	job *batchv1.Job,
+) error {
+	ctrl.Log.WithName("workload-validator").Info("Validating job",
+		"name", job.Name,
+		"namespace", job.Namespace)
+
+	isDatabaseWorkload := isDatabasePodFromLabels(job.Labels)
+
+	// For database workloads, only validate the first container
+	if isDatabaseWorkload && len(job.Spec.Template.Spec.Containers) > 0 {
+		if err := r.validateContainerResources(&job.Spec.Template.Spec.Containers[0], "container[0]"); err != nil {
+			return err
+		}
+	} else {
+		// For non-database workloads, validate all containers
+		for i, container := range job.Spec.Template.Spec.Containers {
+			if err := r.validateContainerResources(&container, fmt.Sprintf("container[%d]", i)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Validate init containers (skip for database workloads)
+	if !isDatabaseWorkload {
+		for i, container := range job.Spec.Template.Spec.InitContainers {
+			if err := r.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *WorkloadMutator) validateCronJob(
+	_ context.Context,
+	cronJob *batchv1.CronJob,
+) error {
+	ctrl.Log.WithName("workload-validator").Info("Validating cronjob",
+		"name", cronJob.Name,
+		"namespace", cronJob.Namespace)
+
+	isDatabaseWorkload := isDatabasePodFromLabels(cronJob.Labels)
+
+	// For database workloads, only validate the first container
+	if isDatabaseWorkload && len(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers) > 0 {
+		if err := r.validateContainerResources(&cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0], "container[0]"); err != nil {
+			return err
+		}
+	} else {
+		// For non-database workloads, validate all containers
+		for i, container := range cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers {
+			if err := r.validateContainerResources(&container, fmt.Sprintf("container[%d]", i)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Validate init containers (skip for database workloads)
+	if !isDatabaseWorkload {
+		for i, container := range cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers {
 			if err := r.validateContainerResources(&container, fmt.Sprintf("initContainer[%d]", i)); err != nil {
 				return err
 			}
@@ -667,6 +828,12 @@ func getNamespace(obj runtime.Object) string {
 		return o.Namespace
 	case *appsv1.ReplicaSet:
 		return o.Namespace
+	case *appsv1.DaemonSet:
+		return o.Namespace
+	case *batchv1.Job:
+		return o.Namespace
+	case *batchv1.CronJob:
+		return o.Namespace
 	case *corev1.Pod:
 		return o.Namespace
 	case *kbappsv1alpha1.Cluster:
@@ -685,6 +852,12 @@ func shouldSkipMutation(obj runtime.Object) bool {
 	case *appsv1.StatefulSet:
 		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
 	case *appsv1.ReplicaSet:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *appsv1.DaemonSet:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *batchv1.Job:
+		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+	case *batchv1.CronJob:
 		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
 	case *corev1.Pod:
 		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
@@ -794,6 +967,12 @@ func (r *WorkloadMutator) validateClusterComponentResources(
 
 //+kubebuilder:webhook:path=/mutate-apps-v1-replicaset,mutating=true,failurePolicy=ignore,sideEffects=None,groups=apps,resources=replicasets,verbs=create;update,versions=v1,name=mreplicaset.sealos.io,admissionReviewVersions=v1
 
+//+kubebuilder:webhook:path=/mutate-apps-v1-daemonset,mutating=true,failurePolicy=ignore,sideEffects=None,groups=apps,resources=daemonsets,verbs=create;update,versions=v1,name=mdaemonset.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:webhook:path=/mutate-batch-v1-job,mutating=true,failurePolicy=ignore,sideEffects=None,groups=batch,resources=jobs,verbs=create;update,versions=v1,name=mjob.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:webhook:path=/mutate-batch-v1-cronjob,mutating=true,failurePolicy=ignore,sideEffects=None,groups=batch,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.sealos.io,admissionReviewVersions=v1
+
 //+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mpod.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:webhook:path=/mutate-apps-kubeblocks-io-v1alpha1-cluster,mutating=true,failurePolicy=ignore,sideEffects=None,groups=apps.kubeblocks.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.sealos.io,admissionReviewVersions=v1
@@ -803,6 +982,12 @@ func (r *WorkloadMutator) validateClusterComponentResources(
 //+kubebuilder:webhook:path=/validate-apps-v1-statefulset,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps,resources=statefulsets,verbs=create;update,versions=v1,name=vstatefulset.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:webhook:path=/validate-apps-v1-replicaset,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps,resources=replicasets,verbs=create;update,versions=v1,name=vreplicaset.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:webhook:path=/validate-apps-v1-daemonset,mutating=false,failurePolicy=ignore,sideEffects=None,groups=apps,resources=daemonsets,verbs=create;update,versions=v1,name=vdaemonset.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:webhook:path=/validate-batch-v1-job,mutating=false,failurePolicy=ignore,sideEffects=None,groups=batch,resources=jobs,verbs=create;update,versions=v1,name=vjob.sealos.io,admissionReviewVersions=v1
+
+//+kubebuilder:webhook:path=/validate-batch-v1-cronjob,mutating=false,failurePolicy=ignore,sideEffects=None,groups=batch,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:webhook:path=/validate--v1-pod,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=vpod.sealos.io,admissionReviewVersions=v1
 
