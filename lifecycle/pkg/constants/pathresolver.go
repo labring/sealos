@@ -17,7 +17,6 @@ limitations under the License.
 package constants
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -68,7 +67,7 @@ func GetRuntimeRootDir(name string) string {
 	if v, ok := os.LookupEnv(strings.ToUpper(name) + "_RUNTIME_ROOT"); ok {
 		return v
 	}
-	return path.Join(homedir.Get(), fmt.Sprintf(".%s", name))
+	return path.Join(homedir.Get(), "."+name)
 }
 
 func LogPath() string {

@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/checker"
@@ -34,6 +32,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
 )
 
 type CreateProcessor struct {
@@ -85,7 +84,13 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	// the order doesn't matter
 	ips = append(ips, cluster.GetMasterIPAndPortList()...)
 	ips = append(ips, cluster.GetNodeIPAndPortList()...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(ips)}, cluster, checker.PhasePre))
+	return NewCheckError(
+		checker.RunCheckList(
+			[]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(ips)},
+			cluster,
+			checker.PhasePre,
+		),
+	)
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
@@ -106,7 +111,7 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 
 	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
+		return fmt.Errorf("failed to init runtime, %w", err)
 	}
 	c.Runtime = rt
 	return nil
@@ -115,10 +120,14 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunConfig in CreateProcessor.")
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range cluster.Status.Mounts {
-		manifest := cManifest
+	for i := range cluster.Status.Mounts {
+		cManifest := cluster.Status.Mounts[i]
 		eg.Go(func() error {
-			cfg := config.NewConfiguration(manifest.ImageName, manifest.MountPoint, c.ClusterFile.GetConfigs())
+			cfg := config.NewConfiguration(
+				cManifest.ImageName,
+				cManifest.MountPoint,
+				c.ClusterFile.GetConfigs(),
+			)
 			return cfg.Dump()
 		})
 	}
@@ -175,7 +184,11 @@ func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	return nil
 }
 
-func NewCreateProcessor(ctx context.Context, name string, clusterFile clusterfile.Interface) (Interface, error) {
+func NewCreateProcessor(
+	ctx context.Context,
+	name string,
+	clusterFile clusterfile.Interface,
+) (Interface, error) {
 	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err

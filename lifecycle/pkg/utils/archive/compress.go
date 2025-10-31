@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,11 +29,17 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sys/unix"
 )
 
 const compressionBufSize = 32768
+
+func sanitizeFileMode(mode int64, name string) (os.FileMode, error) {
+	if mode < 0 || mode > math.MaxUint32 {
+		return 0, fmt.Errorf("invalid file mode %d for %s", mode, name)
+	}
+	return os.FileMode(mode), nil
+}
 
 type Options struct {
 	Compress    bool
@@ -41,7 +48,7 @@ type Options struct {
 
 func validatePath(path string) error {
 	if _, err := os.Stat(path); err != nil {
-		return fmt.Errorf("dir %s does not exist, err: %s", path, err)
+		return fmt.Errorf("dir %s does not exist, err: %w", path, err)
 	}
 	return nil
 }
@@ -92,7 +99,7 @@ func writeWhiteout(header *tar.Header, fi os.FileInfo, path string) *tar.Header 
 	if fi.Mode()&os.ModeCharDevice != 0 && header.Devminor == 0 && header.Devmajor == 0 {
 		hName := header.Name
 		header.Name = filepath.Join(filepath.Dir(hName), WhiteoutPrefix+filepath.Base(hName))
-		header.Mode = 0600
+		header.Mode = 0o600
 		header.Typeflag = tar.TypeReg
 		header.Size = 0
 	}
@@ -101,7 +108,11 @@ func writeWhiteout(header *tar.Header, fi os.FileInfo, path string) *tar.Header 
 	if fi.Mode()&os.ModeDir != 0 {
 		opaque, walkErr := file.Lgetxattr(path, "trusted.overlay.opaque")
 		if walkErr != nil {
-			logger.Debug("failed to get trusted.overlay.opaque for %s at opaque, err: %v", path, walkErr)
+			logger.Debug(
+				"failed to get trusted.overlay.opaque for %s at opaque, err: %v",
+				path,
+				walkErr,
+			)
 		}
 
 		if len(opaque) == 1 && opaque[0] == 'y' {
@@ -153,7 +164,12 @@ func readWhiteout(hdr *tar.Header, path string) (bool, error) {
 	return true, nil
 }
 
-func writeToTarWriter(path string, tarWriter *tar.Writer, bufWriter *bufio.Writer, options Options) error {
+func writeToTarWriter(
+	path string,
+	tarWriter *tar.Writer,
+	bufWriter *bufio.Writer,
+	options Options,
+) error {
 	var newFolder string
 	if options.KeepRootDir {
 		fi, err := os.Stat(path)
@@ -196,14 +212,14 @@ func writeToTarWriter(path string, tarWriter *tar.Writer, bufWriter *bufio.Write
 		woh := writeWhiteout(header, fi, file)
 		walkErr = tarWriter.WriteHeader(header)
 		if walkErr != nil {
-			return fmt.Errorf("failed to write original header, path: %s, err: %v", file, walkErr)
+			return fmt.Errorf("failed to write original header, path: %s, err: %w", file, walkErr)
 		}
 		// this is a opaque, write the opaque header, in order to set header.PAXRecords with trusted.overlay.opaque:y
 		// when decompress the tar stream.
 		if woh != nil {
 			walkErr = tarWriter.WriteHeader(woh)
 			if walkErr != nil {
-				return fmt.Errorf("failed to write opaque header, path: %s, err: %v", file, walkErr)
+				return fmt.Errorf("failed to write opaque header, path: %s, err: %w", file, walkErr)
 			}
 		}
 		// if not a dir && size > 0, write file content
@@ -261,7 +277,7 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 	oldMask := syscall.Umask(0)
 	defer syscall.Umask(oldMask)
 
-	err := os.MkdirAll(dst, 0755)
+	err := os.MkdirAll(dst, 0o755)
 	if err != nil {
 		return 0, err
 	}
@@ -281,7 +297,7 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 	)
 	for {
 		header, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -312,7 +328,11 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if _, err = os.Stat(target); err != nil {
-				if err = os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
+				mode, modeErr := sanitizeFileMode(header.Mode, header.Name)
+				if modeErr != nil {
+					return 0, modeErr
+				}
+				if err = os.MkdirAll(target, mode); err != nil {
 					return 0, err
 				}
 				dirs = append(dirs, header)
@@ -321,12 +341,20 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 		case tar.TypeReg:
 			err = func() error {
 				// regularly won't mkdir, unless add newFolder on compressing
-				inErr := os.MkdirAll(filepath.Dir(target), 0700|0055)
+				inErr := os.MkdirAll(filepath.Dir(target), 0o700|0o055)
 				if inErr != nil {
 					return inErr
 				}
 				// #nosec
-				fileToWrite, inErr := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(header.Mode))
+				mode, modeErr := sanitizeFileMode(header.Mode, header.Name)
+				if modeErr != nil {
+					return modeErr
+				}
+				fileToWrite, inErr := os.OpenFile(
+					target,
+					os.O_CREATE|os.O_TRUNC|os.O_RDWR,
+					mode,
+				)
 				if inErr != nil {
 					return inErr
 				}
@@ -343,7 +371,6 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 				// for not changing
 				return os.Chtimes(target, header.AccessTime, header.ModTime)
 			}()
-
 			if err != nil {
 				return 0, err
 			}
@@ -364,7 +391,8 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 
 // check for path traversal and correct forward slashes
 func validRelPath(p string) bool {
-	if p == "" || strings.Contains(p, `\`) || strings.HasPrefix(p, "/") || strings.Contains(p, "../") {
+	if p == "" || strings.Contains(p, `\`) || strings.HasPrefix(p, "/") ||
+		strings.Contains(p, "../") {
 		return false
 	}
 	return true

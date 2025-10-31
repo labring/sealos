@@ -19,14 +19,13 @@ import (
 	"errors"
 	"os"
 
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -34,8 +33,7 @@ const (
 	NotReadyNodeStatus = "NotReady"
 )
 
-type NodeChecker struct {
-}
+type NodeChecker struct{}
 
 type NodeClusterStatus struct {
 	ReadyCount       uint32
@@ -102,29 +100,29 @@ Cluster Node Status
 	return tpl.Execute(os.Stdout, nodeCLusterStatus)
 }
 
-func getNodeStatus(node corev1.Node) (IP string, Phase string) {
+func getNodeStatus(node corev1.Node) (ip, phase string) {
 	if len(node.Status.Addresses) < 1 {
 		return "", ""
 	}
 	for _, address := range node.Status.Addresses {
 		if address.Type == "InternalIP" {
-			IP = address.Address
+			ip = address.Address
 		}
 	}
-	if IP == "" {
-		IP = node.Status.Addresses[0].Address
+	if ip == "" {
+		ip = node.Status.Addresses[0].Address
 	}
-	Phase = NotReadyNodeStatus
+	phase = NotReadyNodeStatus
 	for _, condition := range node.Status.Conditions {
 		if condition.Type == ReadyNodeStatus {
 			if condition.Status == "True" {
-				Phase = ReadyNodeStatus
+				phase = ReadyNodeStatus
 			} else {
-				Phase = NotReadyNodeStatus
+				phase = NotReadyNodeStatus
 			}
 		}
 	}
-	return IP, Phase
+	return ip, phase
 }
 
 func NewNodeChecker() Interface {

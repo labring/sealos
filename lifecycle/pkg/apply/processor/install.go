@@ -20,9 +20,6 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
@@ -36,6 +33,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var ForceOverride bool
@@ -110,7 +109,10 @@ func (c *InstallProcessor) ConfirmOverrideApps(_ *v2.Cluster) error {
 		return nil
 	}
 
-	prompt := fmt.Sprintf("are you sure to override these following apps? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
+	prompt := fmt.Sprintf(
+		"are you sure to override these following apps? \n%s\t",
+		strings.Join(c.imagesToOverride, "\n"),
+	)
 	cancelledMsg := "you have canceled to override these apps"
 	pass, err := confirm.Confirm(prompt, cancelledMsg)
 	if err != nil {
@@ -189,7 +191,9 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		mount.Env = maps.Merge(mount.Env, c.ExtraEnvs)
 		// This code ensures that `cluster.Status.Mounts` always contains the latest `MountImage` instances
 		if index >= 0 {
-			cluster.Status.Mounts = append(cluster.Status.Mounts[:index], cluster.Status.Mounts[index+1:]...)
+			cluster.Status.Mounts = append(
+				cluster.Status.Mounts[:index],
+				cluster.Status.Mounts[index+1:]...)
 		}
 		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 		c.NewMounts = append(c.NewMounts, *mount)
@@ -197,7 +201,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 
 	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
+		return fmt.Errorf("failed to init runtime, %w", err)
 	}
 	c.Runtime = rt
 	return nil
@@ -215,7 +219,7 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 			logger.Error("upgrade cluster failed")
 			return err
 		}
-		//upgrade success; replace the old cluster mount
+		// upgrade success; replace the old cluster mount
 		cluster.ReplaceRootfsImage()
 	}
 	return nil
@@ -235,10 +239,14 @@ func (c *InstallProcessor) RunConfig(_ *v2.Cluster) error {
 		return nil
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range c.NewMounts {
-		manifest := cManifest
+	for i := range c.NewMounts {
+		cManifest := c.NewMounts[i]
 		eg.Go(func() error {
-			cfg := config.NewConfiguration(manifest.ImageName, manifest.MountPoint, c.ClusterFile.GetConfigs())
+			cfg := config.NewConfiguration(
+				cManifest.ImageName,
+				cManifest.MountPoint,
+				c.ClusterFile.GetConfigs(),
+			)
 			return cfg.Dump()
 		})
 	}
@@ -270,7 +278,11 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster, c.NewMounts, cluster.GetAllIPS())
 }
 
-func NewInstallProcessor(ctx context.Context, clusterFile clusterfile.Interface, images []string) (Interface, error) {
+func NewInstallProcessor(
+	ctx context.Context,
+	clusterFile clusterfile.Interface,
+	images []string,
+) (Interface, error) {
 	bder, err := buildah.New(clusterFile.GetCluster().Name)
 	if err != nil {
 		return nil, err

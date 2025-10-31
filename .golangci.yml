@@ -4,6 +4,7 @@ run:
   go: "1.23"
   relative-path-mode: gomod
   modules-download-mode: readonly
+  timeout: 5m
 
 issues:
   max-issues-per-linter: 0

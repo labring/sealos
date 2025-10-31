@@ -18,16 +18,14 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/runtime"
-
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/runtime/factory"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func newCertCmd() *cobra.Command {
@@ -70,7 +68,10 @@ func newCertCmd() *cobra.Command {
 			}
 			var opts []clusterfile.OptionFunc
 			if runtimeConfigPath != "" {
-				opts = append(opts, clusterfile.WithCustomRuntimeConfigFiles([]string{runtimeConfigPath}))
+				opts = append(
+					opts,
+					clusterfile.WithCustomRuntimeConfigFiles([]string{runtimeConfigPath}),
+				)
 			}
 			cf := clusterfile.NewClusterFile(clusterPath, opts...)
 			if err := cf.Process(); err != nil {
@@ -81,7 +82,7 @@ func newCertCmd() *cobra.Command {
 
 			rt, err := factory.New(cf.GetCluster(), cf.GetRuntimeConfig())
 			if err != nil {
-				return fmt.Errorf("create runtime failed: %v", err)
+				return fmt.Errorf("create runtime failed: %w", err)
 			}
 			if cm, ok := rt.(runtime.CertManager); ok {
 				logger.Info("using %s cert update implement", cf.GetCluster().GetDistribution())
@@ -90,8 +91,10 @@ func newCertCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
-	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
+	cmd.Flags().
+		StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
+	cmd.Flags().
+		StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
 	_ = cmd.MarkFlagRequired("alt-names")
 
 	return cmd

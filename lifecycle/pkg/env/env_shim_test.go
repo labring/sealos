@@ -23,7 +23,12 @@ import (
 func getShimCluster1() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env: []string{"registryDomain=sealos.hub", "registryPort=5000", "registryUsername=admin", "registryPassword=passw0rd"},
+			Env: []string{
+				"registryDomain=sealos.hub",
+				"registryPort=5000",
+				"registryUsername=admin",
+				"registryPassword=passw0rd",
+			},
 			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
@@ -51,10 +56,16 @@ func getShimCluster1() *v2.Cluster {
 		},
 	}
 }
+
 func getShimCluster2() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env: []string{"registryDomain=sealos.hub", "registryPort=5000", "registryUsername=admin", "registryPassword=passw0rd"},
+			Env: []string{
+				"registryDomain=sealos.hub",
+				"registryPort=5000",
+				"registryUsername=admin",
+				"registryPassword=passw0rd",
+			},
 			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
@@ -82,10 +93,16 @@ func getShimCluster2() *v2.Cluster {
 		},
 	}
 }
+
 func getShimCluster3() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env: []string{"registryDomain=sealos.hub", "registryPort=5000", "registryUsername=admin", "registryPassword=passw0rd"},
+			Env: []string{
+				"registryDomain=sealos.hub",
+				"registryPort=5000",
+				"registryUsername=admin",
+				"registryPassword=passw0rd",
+			},
 			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},

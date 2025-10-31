@@ -17,8 +17,8 @@ limitations under the License.
 package consts
 
 const (
-	FileMode0755 = 0755
-	FileMode0644 = 0644
+	FileMode0755 = 0o755
+	FileMode0644 = 0o644
 )
 
 const (

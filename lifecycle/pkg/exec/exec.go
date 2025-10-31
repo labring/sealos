@@ -23,14 +23,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/unshare"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	netutil "github.com/labring/sealos/pkg/utils/net"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Interface ssh.Interface
@@ -43,7 +42,7 @@ type wrap struct {
 func New(inner ssh.Interface) (Interface, error) {
 	addr, err := net.InterfaceAddrs()
 	if err != nil {
-		return nil, fmt.Errorf("could not get local addresses: %v", err)
+		return nil, fmt.Errorf("could not get local addresses: %w", err)
 	}
 	return &wrap{
 		inner:          inner,
@@ -59,7 +58,7 @@ func (w *wrap) Ping(host string) error {
 	return w.inner.Ping(host)
 }
 
-func (w *wrap) Cmd(host string, command string) ([]byte, error) {
+func (w *wrap) Cmd(host, command string) ([]byte, error) {
 	if w.isLocal(host) {
 		// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 		b, err := exec.Command("/bin/bash", "-c", command).CombinedOutput()
@@ -72,7 +71,7 @@ func (w *wrap) CmdAsyncWithContext(ctx context.Context, host string, commands ..
 	if w.isLocal(host) {
 		for i := range commands {
 			// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-			cmd := exec.CommandContext(ctx, "/bin/bash", "-c", commands[i])
+			cmd := exec.CommandContext(ctx, "/bin/bash", "-c", commands[i]) // #nosec G204
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
@@ -96,7 +95,7 @@ func warnIfNotAbs(path string) {
 	}
 }
 
-func (w *wrap) Copy(host string, src string, dest string) error {
+func (w *wrap) Copy(host, src, dest string) error {
 	if w.isLocal(host) {
 		warnIfNotAbs(src)
 		warnIfNotAbs(dest)
@@ -106,7 +105,7 @@ func (w *wrap) Copy(host string, src string, dest string) error {
 	return w.inner.Copy(host, src, dest)
 }
 
-func (w *wrap) Fetch(host string, src string, dest string) error {
+func (w *wrap) Fetch(host, src, dest string) error {
 	if w.isLocal(host) {
 		warnIfNotAbs(src)
 		warnIfNotAbs(dest)
@@ -127,7 +126,7 @@ func (w *wrap) CmdToString(host, cmd, sep string) (string, error) {
 	return getOnelineResult(string(output), sep), nil
 }
 
-func getOnelineResult(output string, sep string) string {
+func getOnelineResult(output, sep string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(output, "\r\n", sep), "\n", sep)
 }
 

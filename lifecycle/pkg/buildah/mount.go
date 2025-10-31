@@ -35,11 +35,9 @@ type mountOptions struct {
 
 func newMountCommand() *cobra.Command {
 	var (
-		mountDescription = fmt.Sprintf(`%[1]s mount
-  mounts a working container's root filesystem for manipulation.
-`, rootCmd.CommandPath())
-		opts       mountOptions
-		noTruncate bool
+		mountDescription = rootCmd.CommandPath() + " mount\n  mounts a working container's root filesystem for manipulation.\n"
+		opts             mountOptions
+		noTruncate       bool
 	)
 	mountCommand := &cobra.Command{
 		Use:    "mount",
@@ -100,7 +98,10 @@ func doMounts(store storage.Store, args []string) ([]jsonMount, error) {
 		// Differently, allow the mount if we are already in a userns, as the mount point will still
 		// be accessible once "buildah mount" exits.
 		if os.Geteuid() != 0 && store.GraphDriverName() != "vfs" {
-			return nil, fmt.Errorf("cannot mount using driver %s in rootless mode. You need to run it in a `buildah unshare` session", store.GraphDriverName())
+			return nil, fmt.Errorf(
+				"cannot mount using driver %s in rootless mode. You need to run it in a `buildah unshare` session",
+				store.GraphDriverName(),
+			)
 		}
 
 		for _, name := range args {
