@@ -105,38 +105,94 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
       router.replace(destination);
     } else {
+      // Check for Stripe callback with workspace switch
+      const isStripeCallback = query?.stripeState === 'success' && query?.payId;
       let workspaceUid: string | undefined;
-      // Check if there's no autolaunch workspace UID
-      if (!autolaunchWorkspaceUid) {
-        // Use workspace UID from query if no autolaunch
+
+      // For Stripe callback, convert namespace (ns-xxx) to workspace UID
+      if (isStripeCallback && isString(query?.workspaceId)) {
+        // query.workspaceId contains the namespace (e.g., "ns-abc123")
+        // Find the corresponding workspace object to get the UID
+        const targetWorkspace = workspaces.find((w) => w.id === query.workspaceId);
+        workspaceUid = targetWorkspace?.uid;
+      } else if (!autolaunchWorkspaceUid) {
+        // Use workspace UID from query if no autolaunch (backwards compatibility)
         if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
       } else {
         // Use autolaunch workspace UID if available
         workspaceUid = autolaunchWorkspaceUid;
       }
+
       Promise.resolve()
         .then(() => {
-          if (!workspaceUid) {
-            return Promise.resolve();
+          // Handle Stripe callback - workspace switch required
+          if (isStripeCallback && workspaceUid) {
+            // Create callback action to execute after workspace switch
+            const afterSwitchAction = async () => {
+              const state = await init();
+
+              // Build query parameters for costcenter
+              const callbackParams = new URLSearchParams();
+              callbackParams.set('stripeState', 'success');
+              callbackParams.set('payId', query.payId as string);
+              if (query.workspaceId) {
+                callbackParams.set('workspaceId', query.workspaceId as string);
+              }
+
+              // Open costcenter with callback parameters
+              const app = state.installedApps.find((item) => item.key === 'system-costcenter');
+              if (app) {
+                setCanShowGuide(false);
+                await state.openApp(app, { raw: callbackParams.toString() });
+              }
+
+              // Clear the URL parameters to avoid re-triggering
+              router.replace(router.pathname, undefined, { shallow: true });
+            };
+
+            // Switch workspace with callback action
+            return swtichWorksapceMutation
+              .mutateAsync(workspaceUid)
+              .then(() => {
+                // Execute callback action after workspace switch completes
+                return afterSwitchAction();
+              })
+              .catch((err) => {
+                console.error(err);
+                return Promise.resolve();
+              });
           }
-          return swtichWorksapceMutation
-            .mutateAsync(workspaceUid)
-            .then((data) => {
-              return Promise.resolve();
-            })
-            .catch((err) => {
-              // workspace not found or other error
-              console.error(err);
-              return Promise.resolve();
-            });
+
+          // Handle normal workspace switch (non-Stripe)
+          if (workspaceUid) {
+            return swtichWorksapceMutation
+              .mutateAsync(workspaceUid)
+              .then(() => {
+                return Promise.resolve();
+              })
+              .catch((err) => {
+                // workspace not found or other error
+                console.error(err);
+                return Promise.resolve();
+              });
+          }
+
+          return Promise.resolve();
         })
         .then(() => {
+          // Skip normal app opening logic if this is a Stripe callback
+          if (isStripeCallback) return;
+
           return init();
         })
         .then((state) => {
+          // Skip normal app opening logic if this is a Stripe callback
+          if (isStripeCallback || !state) return;
+
           let appQuery = '';
           let appkey = '';
           let appRoute = '';
+
           if (!state.autolaunch) {
             setCanShowGuide(true);
             const result = parseOpenappQuery((query?.openapp as string) || '');
@@ -147,6 +203,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
             appkey = state.autolaunch;
             appQuery = state.launchQuery.raw;
           }
+
           if (!appkey) return;
           if (appkey === 'system-fastdeploy') {
             appkey = 'system-template';
@@ -159,7 +216,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           });
         });
     }
-  }, [router, sealos_cloud_domain]);
+  }, [router, sealos_cloud_domain, workspaces]);
 
   // check workspace
   useEffect(() => {

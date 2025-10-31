@@ -43,7 +43,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   const router = useRouter();
   const { t } = useTranslation();
   const toast = useToast();
-  const { setToken, setSession } = useSessionStore();
+  const { setToken } = useSessionStore();
 
   const [showPassword, setShowPassword] = useState(false);
 

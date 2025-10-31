@@ -70,7 +70,7 @@ export const verifyAppToken = async (header: IncomingHttpHeaders) => {
     if (!header?.authorization) {
       throw new Error('缺少凭证');
     }
-    const token = decodeURIComponent(header.authorization);
+    const token = header.authorization;
     const payload = await verifyJWT<AccessTokenPayload>(token, internalJwtSecret());
     return payload;
   } catch (err) {
@@ -98,3 +98,33 @@ export const generateOnceToken = (props: OnceTokenPayload) =>
 
 export const generateCronJobToken = (props: CronJobTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '60000' });
+
+export const callBillingService = async (
+  endpoint: string,
+  payload: { userUid: string; userId: string },
+  body: Record<string, any>
+) => {
+  const billingUrl = global.AppConfig.desktop.auth.billingUrl;
+  if (!billingUrl) {
+    throw new Error('Billing service not configured');
+  }
+
+  const billingToken = generateBillingToken(payload);
+  const regionDomain = global.AppConfig.cloud.domain;
+
+  const response = await fetch(`${billingUrl}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${billingToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...body,
+      regionDomain
+    })
+  });
+  if (!response.ok) {
+    throw new Error('Failed to call billing service');
+  }
+  return response.json();
+};

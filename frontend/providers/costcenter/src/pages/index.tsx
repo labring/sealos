@@ -1,15 +1,45 @@
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import useEnvStore from '@/stores/env';
 
-export default function Index() {
+export default function Home() {
   const router = useRouter();
-  const config: Parameters<typeof router.push>[0] = {
-    pathname: 'cost_overview'
-  };
-  if (Object.keys(router.query).length > 0) config.query = router.query;
-  router.replace(config, config);
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
 
-  return <div></div>;
+  useEffect(() => {
+    // Only redirect if we're actually on the root path
+    if (router.isReady && (router.asPath === '/' || router.asPath.startsWith('/?'))) {
+      console.log('router.index', router.query);
+      // Forward all query parameters to /plan page
+      const { query } = router;
+      const params = new URLSearchParams();
+
+      // Add all query parameters to the URL
+      Object.entries(query).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          params.set(key, value);
+        } else if (Array.isArray(value)) {
+          params.set(key, value[0]);
+        }
+      });
+
+      const indexPage = subscriptionEnabled ? '/plan' : '/cost';
+      const queryString = params.toString();
+      const targetUrl = queryString ? `${indexPage}?${queryString}` : indexPage;
+
+      // Replace current route to avoid adding to history
+      router.replace(targetUrl);
+    }
+  }, [router, router.query, subscriptionEnabled]);
+
+  // Show minimal loading state while redirecting
+  return <div className="flex items-center justify-center min-h-screen"></div>;
 }
-export async function getServerSideProps() {
-  return { props: {} };
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      locale
+    }
+  };
 }

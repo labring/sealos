@@ -1,188 +1,145 @@
-import receipt_icon from '@/assert/invoice-active.svg';
-import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
-import PaymentPanel from '@/components/invoice/PaymentPanel';
-import RecordPanel from '@/components/invoice/RecordPanel';
-import { RechargeBillingItem } from '@/types';
-import { formatMoney } from '@/utils/format';
-import {
-  Button,
-  Flex,
-  Heading,
-  IconButton,
-  Img,
-  Input,
-  InputGroup,
-  InputRightElement,
-  Tab,
-  TabList,
-  TabPanels,
-  Tabs,
-  Text
-} from '@chakra-ui/react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
-import InvoicdForm from './InvoicdForm';
-import InvoicdFormDetail from './InvoicdFormDetail';
+import InvoiceForm from '@/components/invoice/InvoiceForm';
+import InvoiceInspection from '@/components/invoice/InvoiceInspection';
+import { DateRange } from 'react-day-picker';
+import OrderList from '@/components/invoice/OrderList';
+import InvoiceHistory from '@/components/invoice/InvoiceHistory';
+import useInvoiceStore from '@/stores/invoce';
+import { InvoicePayload } from '@/types/invoice';
+import { OrderListRow } from '@/components/invoice/OrderListView';
+import { InvoiceDownloadModal } from '@/components/invoice/InvoiceDownloadModal';
+import useEnvStore from '@/stores/env';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
-  const [selectBillings, setSelectBillings] = useState<RechargeBillingItem[]>([]);
+  const { data: invoiceInspectionData, setData: setInvoiceInspectionData } = useInvoiceStore();
+  const [selectdBillings, setSelectdBillings] = useState<OrderListRow[]>([]);
   const [searchValue, setSearch] = useState('');
   const [orderID, setOrderID] = useState('');
+  const [historySearchValue, setHistorySearchValue] = useState('');
+  const [historyDateRange, setHistoryDateRange] = useState<DateRange | undefined>();
   const queryClient = useQueryClient();
-  const [tabIdx, setTabIdx] = useState(0);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const invoiceDirectDownload = useEnvStore((state) => state.invoiceDirectDownload);
 
   const [processState, setProcessState] = useState(0);
-  const invoiceAmount = selectBillings.reduce((acc, cur) => acc + cur.Amount, 0);
-  const invoiceCount = selectBillings.length;
-  const isLoading = false;
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const invoiceAmount = selectdBillings.reduce((acc, cur) => acc + cur.amount, 0);
+  const invoiceCount = selectdBillings.length;
+
+  const handleInvoiceClick = (invoice: InvoicePayload) => {
+    setInvoiceInspectionData(invoice);
+  };
+
   return (
-    <Flex
-      flexDirection="column"
-      w="100%"
-      h="100%"
-      bg={'white'}
-      px="24px"
-      py={'24px'}
-      overflow={'auto'}
-    >
+    <>
       {processState === 0 ? (
-        <>
-          <Flex alignItems={'center'} flexWrap={'wrap'} mb={'24px'}>
-            <Flex mr="24px" align={'center'}>
-              <Img
-                src={receipt_icon.src}
-                w={'24px'}
-                h={'24px'}
-                mr={'18px'}
-                dropShadow={'#24282C'}
-              ></Img>
-              <Heading size="lg">{t('SideBar.CreateInvoice')}</Heading>
-            </Flex>
-            <InputGroup
-              ml={'auto'}
-              variant={'outline'}
-              width={'260px'}
-              // mb={'24px'}
-            >
-              <Input
-                isDisabled={isLoading}
-                placeholder={t('Order Number') as string}
-                value={searchValue}
-                onChange={(v) => setSearch(v.target.value)}
-              />
-              <InputRightElement>
-                <IconButton
-                  minW={'auto'}
-                  height={'auto'}
-                  boxSize={'16px'}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOrderID(searchValue.trim());
-                  }}
-                  variant={'unstyled'}
-                  icon={<Img src={magnifyingGlass_icon.src} boxSize={'16px'} />}
-                  aria-label={'search orderId'}
-                ></IconButton>
-              </InputRightElement>
-            </InputGroup>
-          </Flex>
-          <Tabs
-            variant={'primary'}
-            tabIndex={tabIdx}
-            onChange={(idx) => {
-              setTabIdx(idx);
-            }}
-          >
-            <TabList>
-              <Tab>
-                <Text>{t('orders.list')}</Text>
-              </Tab>
-              <Tab>
-                <Text>{t('orders.invoiceRecord')}</Text>
-              </Tab>
-              {tabIdx === 0 && (
-                <Flex ml={'auto'} align="center">
-                  <Flex>
-                    <Text>{t('orders.invoiceAmount')}:</Text>
-                    <Text color="rgba(29, 140, 220, 1)">￥ {formatMoney(invoiceAmount)}</Text>
-                  </Flex>
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setProcessState(1);
-                    }}
-                    isDisabled={invoiceCount === 0}
-                    ml="19px"
-                    color="#FFFFFF"
-                    bg={'#24282C'}
-                    variant={'unstyled'}
-                    _hover={{
-                      opacity: '0.5'
-                    }}
-                    py="6px"
-                    px="30px"
-                  >
-                    {t('orders.invoice')} {invoiceCount > 0 ? <>({invoiceCount})</> : <></>}
-                  </Button>
-                </Flex>
+        <section>
+          <Tabs defaultValue="listing">
+            <TabsList variant="underline" className="w-fit">
+              <TabsTrigger variant="cleanUnderline" value="listing">
+                {t('common:orders.order_list')}
+              </TabsTrigger>
+              {!invoiceDirectDownload && (
+                <TabsTrigger variant="cleanUnderline" value="history">
+                  {t('common:orders.invoice_history')}
+                </TabsTrigger>
               )}
-            </TabList>
-            <TabPanels>
-              <PaymentPanel
-                selectbillings={selectBillings}
-                setSelectBillings={setSelectBillings}
-                orderID={orderID}
-              ></PaymentPanel>
-              <RecordPanel
-                toInvoiceDetail={() => {
-                  setProcessState(2);
+            </TabsList>
+
+            <TabsContent value="listing">
+              <OrderList
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                orderIdFilter={searchValue}
+                onOrderIdFilterChange={(v) => {
+                  setSearch(v);
+                  setOrderID(v.trim());
+                }}
+                onSelectionChange={(items) => {
+                  setSelectdBillings(items);
+                }}
+                onObtainInvoice={() => {
+                  if (invoiceDirectDownload) {
+                    setShowDownloadModal(true);
+                  } else {
+                    setProcessState(1);
+                  }
                 }}
               />
-            </TabPanels>
+            </TabsContent>
+
+            {!invoiceDirectDownload && (
+              <TabsContent value="history">
+                <InvoiceHistory
+                  dateRange={historyDateRange}
+                  onDateRangeChange={setHistoryDateRange}
+                  orderIdFilter={historySearchValue}
+                  onOrderIdFilterChange={setHistorySearchValue}
+                  toInvoiceDetail={() => {
+                    setProcessState(2);
+                  }}
+                  onInvoiceClick={handleInvoiceClick}
+                />
+              </TabsContent>
+            )}
           </Tabs>
-        </>
+        </section>
       ) : processState === 1 ? (
-        <InvoicdForm
-          onSuccess={() => {
-            setSelectBillings([]);
-            queryClient.invalidateQueries({
-              queryKey: ['billing'],
-              exact: false
-            });
-          }}
-          invoiceAmount={invoiceAmount}
-          invoiceCount={invoiceCount}
-          billings={selectBillings}
-          backcb={() => {
-            setProcessState(0);
-          }}
-        ></InvoicdForm>
+        <section>
+          <InvoiceForm
+            invoiceAmount={invoiceAmount}
+            invoiceCount={invoiceCount}
+            billings={selectdBillings.map((item) => ({
+              order_id: item.id,
+              regionUID: item.region,
+              createdTime: item.time,
+              amount: item.amount
+            }))}
+            onSuccess={() => {
+              setSelectdBillings([]);
+              queryClient.invalidateQueries({
+                queryKey: ['billing'],
+                exact: false
+              });
+              setProcessState(0); // Return to main page after success
+            }}
+            onBack={() => {
+              setProcessState(0); // Return to main page
+            }}
+          />
+        </section>
       ) : processState === 2 ? (
-        <InvoicdFormDetail
-          onSuccess={() => {
-            setSelectBillings([]);
-            queryClient.invalidateQueries({
-              queryKey: ['billing'],
-              exact: false
-            });
-          }}
-          backcb={() => {
-            setProcessState(0);
-          }}
-        ></InvoicdFormDetail>
-      ) : (
-        <></>
-      )}
-    </Flex>
+        <section>
+          <InvoiceInspection
+            invoiceData={invoiceInspectionData ?? null}
+            onBack={() => {
+              setInvoiceInspectionData();
+              setProcessState(0);
+            }}
+          />
+        </section>
+      ) : null}
+
+      {/* Invoice Download Modal */}
+      <InvoiceDownloadModal
+        open={showDownloadModal}
+        onOpenChange={setShowDownloadModal}
+        items={selectdBillings}
+      />
+    </>
   );
 }
 
 export default Invoice;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
+  console.log(global.AppConfig);
   if (!global.AppConfig.costCenter.invoice.enabled) {
     return {
       redirect: {

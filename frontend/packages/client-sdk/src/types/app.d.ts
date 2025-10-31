@@ -1,3 +1,5 @@
+import { WorkspaceQuotaItem } from './user';
+
 export type Method =
   | 'get'
   | 'GET'
@@ -19,3 +21,8 @@ export type Method =
   | 'LINK'
   | 'unlink'
   | 'UNLINK';
+
+export type MasterOptions = {
+  allowedOrigins: string[];
+  getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
+};

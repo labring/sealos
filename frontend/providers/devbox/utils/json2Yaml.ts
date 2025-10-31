@@ -110,6 +110,12 @@ export const json2DevboxV2 = (
           protocol: 'TCP',
           targetPort: str2Num(item.port)
         }));
+        if (data.env && data.env.length > 0) {
+          if (!draft.env) {
+            draft.env = [];
+          }
+          draft.env = [...draft.env, ...data.env];
+        }
       }),
       state: 'Running'
     }
