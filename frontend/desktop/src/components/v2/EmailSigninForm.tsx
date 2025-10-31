@@ -32,6 +32,15 @@ export function EmailSigninForm() {
 
   const [captchaSolved, setCaptchaSolved] = useState(false);
 
+  // If captcha is disabled, automatically set captchaSolved to true
+  useEffect(() => {
+    if (!authConfig?.captcha.turnstile.enabled) {
+      setCaptchaSolved(true);
+    } else {
+      setCaptchaSolved(false);
+    }
+  }, [authConfig?.captcha.turnstile.enabled]);
+
   // Countdown
   const getRemainingTime = useCallback(
     () => Math.max(0, 60000 - (new Date().getTime() - startTime)),

@@ -33,6 +33,15 @@ export function PhoneSigninForm() {
 
   const [captchaSolved, setCaptchaSolved] = useState(false);
 
+  // If captcha is disabled, automatically set captchaSolved to true
+  useEffect(() => {
+    if (!authConfig?.captcha.ali.enabled) {
+      setCaptchaSolved(true);
+    } else {
+      setCaptchaSolved(false);
+    }
+  }, [authConfig?.captcha.ali.enabled]);
+
   // Countdown
   const getRemainingTime = useCallback(
     () => Math.max(0, 60000 - (new Date().getTime() - startTime)),
