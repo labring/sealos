@@ -20,12 +20,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 
-import { passwordLoginRequest } from '@/api/auth';
+import { passwordLoginRequest, autoInitRegionToken } from '@/api/auth';
 import useSessionStore from '@/stores/session';
 import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
 import { getRegionToken } from '@/api/auth';
+import { useGuideModalStore } from '@/stores/guideModal';
 
 // Form validation schema - simplified for login only
 const loginSchema = z.object({
@@ -80,7 +81,19 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
       if (result?.data?.token) {
         setToken(result.data.token);
         if (result.data.needInit) {
-          await router.replace('/workspace');
+          try {
+            const initResult = await autoInitRegionToken();
+
+            if (initResult?.data) {
+              await sessionConfig(initResult.data);
+              const { setInitGuide } = useGuideModalStore.getState();
+              setInitGuide(true);
+              await router.replace('/');
+            }
+          } catch (error) {
+            console.error('Auto init failed, fallback to manual:', error);
+            await router.replace('/workspace');
+          }
         } else {
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
