@@ -151,7 +151,7 @@ export default function Desktop() {
       if (data?.appKey) {
         const launchQuery = {
           pathname: data.pathname || '/',
-          raw: JSON.stringify(data.query) || ''
+          raw: new URLSearchParams(data.query || {}).toString() || ''
         };
         console.log('Guest Mode: Saving autolaunch state:', data.appKey, launchQuery);
         setAutoLaunch(data.appKey, launchQuery, undefined);
