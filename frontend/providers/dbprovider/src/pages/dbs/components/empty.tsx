@@ -14,9 +14,9 @@ const Empty = () => {
   const router = useRouter();
   const isClientSide = useClientSideValue(true);
 
-  const { applistCompleted } = useGuideStore();
+  const { applistCompleted, _hasHydrated } = useGuideStore();
   useEffect(() => {
-    if (!applistCompleted && isClientSide) {
+    if (!applistCompleted && isClientSide && _hasHydrated) {
       startDriver(
         applistDriverObj(t, () => {
           track('module_view', {
@@ -27,7 +27,7 @@ const Empty = () => {
         })
       );
     }
-  }, [applistCompleted, t, router, isClientSide]);
+  }, [applistCompleted, t, router, isClientSide, _hasHydrated]);
 
   return (
     <Box

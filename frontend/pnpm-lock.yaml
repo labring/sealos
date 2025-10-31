@@ -1568,8 +1568,8 @@ importers:
         specifier: ^1.5.1
         version: 1.6.2
       date-fns:
-        specifier: ^2.30.0
-        version: 2.30.0
+        specifier: ^3.0.0
+        version: 3.6.0
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
@@ -1635,7 +1635,7 @@ importers:
         version: 18.2.0
       react-day-picker:
         specifier: ^8.8.2
-        version: 8.9.1(date-fns@2.30.0)(react@18.2.0)
+        version: 8.9.1(date-fns@3.6.0)(react@18.2.0)
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
@@ -16932,6 +16932,10 @@ packages:
       '@babel/runtime': 7.24.0
     dev: false
 
+  /date-fns@3.6.0:
+    resolution: {integrity: sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==}
+    dev: false
+
   /date-fns@4.1.0:
     resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
     dev: false
@@ -27187,6 +27191,16 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       date-fns: 2.30.0
+      react: 18.2.0
+    dev: false
+
+  /react-day-picker@8.9.1(date-fns@3.6.0)(react@18.2.0):
+    resolution: {integrity: sha512-W0SPApKIsYq+XCtfGeMYDoU0KbsG3wfkYtlw8l+vZp6KoBXGOlhzBUp4tNx1XiwiOZwhfdGOlj7NGSCKGSlg5Q==}
+    peerDependencies:
+      date-fns: ^2.28.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      date-fns: 3.6.0
       react: 18.2.0
     dev: false
 

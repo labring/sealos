@@ -133,15 +133,6 @@ export const getLogFiles = (payload: {
   logType: LogTypeEnum;
 }) => POST<TFile[]>(`/api/logs/getFiles`, payload);
 
-export const getLogContent = (payload: {
-  logPath: string;
-  page: number;
-  pageSize: number;
-  dbType: SupportReconfigureDBType;
-  logType: LogTypeEnum;
-  podName: string;
-}) => POST<LogResult>(`/api/logs/get`, payload);
-
 export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
   POST<Array<string>>(`/api/db/getDatabases`, payload);
 
@@ -152,3 +143,43 @@ export const editPassword = (payload: EditPasswordReq) => POST('/api/db/editPass
 
 export const setDBRemark = (payload: { dbName: string; remark: string }) =>
   POST('/api/remark', payload);
+
+// ========== Vlogs API Functions ==========
+
+export const getVlogsDatabaseLogs = (payload: {
+  namespace: string;
+  pvc: string[];
+  containers: string[];
+  type: Array<'run' | 'slow' | 'error'>;
+  startTime?: number;
+  endTime?: number;
+  timeRange?: string;
+  keyword?: string;
+  pageSize?: number;
+  timeZone?: 'local' | 'utc';
+}) => POST<LogResult>(`/api/vlogs/database-logs`, payload);
+
+export const getVlogsDatabasePods = (payload: {
+  dbName: string;
+  dbType: SupportReconfigureDBType;
+  startTime?: number;
+  endTime?: number;
+  timeRange?: string;
+  timeZone?: 'local' | 'utc';
+}) =>
+  POST<{
+    pods: { podName: string; alias: string; pvcUids: string[] }[];
+    pvcMap: Record<string, string>; // pvcUid -> podName 映射
+  }>(`/api/vlogs/database-pods`, payload);
+
+export const getVlogsDatabaseLogCounts = (payload: {
+  namespace: string;
+  pvc: string[];
+  containers: string[];
+  type: Array<'run' | 'slow' | 'error'>;
+  startTime?: number;
+  endTime?: number;
+  timeRange?: string;
+  keyword?: string;
+  timeZone?: 'local' | 'utc';
+}) => POST<{ logs_total: string; _time: string }[]>(`/api/vlogs/database-log-counts`, payload);

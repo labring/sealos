@@ -55,11 +55,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await response.json();
     jsonRes(res, data);
   } catch (error) {
-    console.error('Database alerts proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     jsonRes(res, {
       code: 500,
       error: 'Failed to fetch database alerts',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: errorMessage
     });
   }
 }

@@ -35,6 +35,7 @@ import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
 import { getDBSecret } from '@/api/db';
 import useEnvStore from '@/store/env';
+import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
@@ -288,8 +289,8 @@ const Header = ({
   return (
     <Flex h={'60px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
-        <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
-        <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'24px'}>
+        <ArrowLeft size={24} color="#18181B" />
+        <Box ml={'12px'} mr={'12px'} fontWeight={'600'} fontSize={'20px'}>
           {router.query.name || db.dbName}
         </Box>
       </Flex>
@@ -316,123 +317,175 @@ const Header = ({
 
       <Box flex={1} />
 
-      {/* btns */}
-      {/* Migrate */}
-      {/* <Button
-        mr={'12px'}
-        h={'36px'}
-        borderColor={'myGray.200'}
-        leftIcon={<MyIcon name={'change'} w={'16px'} />}
-        isLoading={loading}
-        variant={'base'}
-        bg={'white'}
-        onClick={() => {
-          router.push(`/db/migrate?name=${db.dbName}&dbType=${db.dbType}`);
-        }}
-      >
-        {t('Migrate')}
-      </Button> */}
-
-      {db.status.value !== 'Stopped' && (
+      <Flex width={'471px'} height={'40px'} gap={'12px'} alignItems={'center'}>
         <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'16px'} />}
-          isLoading={loading}
-          isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
-          onClick={() => {
-            if (db.source.hasSource && db.source.sourceType === 'sealaf') {
-              setUpdateAppName(db.dbName);
-              onOpenUpdateModal();
-            } else {
-              router.push(`/db/edit?name=${db.dbName}`);
-            }
-          }}
-        >
-          {t('update')}
-        </Button>
-      )}
-      {db.status.value === 'Stopped' ? (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="continue" w={'16px'} />}
-          isLoading={loading}
-          onClick={handleStartApp}
-        >
-          {t('Continue')}
-        </Button>
-      ) : (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="pause" w={'16px'} />}
-          isLoading={loading}
-          isDisabled={db.status.value === 'Updating'}
-          onClick={onOpenPause(handlePauseApp)}
-        >
-          {t('Pause')}
-        </Button>
-      )}
-
-      {db.status.value !== 'Stopped' && (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'16px'} />}
-          isDisabled={db.status.value === 'Updating'}
-          onClick={openRestartConfirm(handleRestartApp)}
-          isLoading={loading}
-        >
-          {t('Restart')}
-        </Button>
-      )}
-
-      <Button
-        mr={'12px'}
-        minW={'75px'}
-        h={'32px'}
-        fontSize={'12px'}
-        variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'16px'} />}
-        isLoading={loading}
-        isDisabled={db.status.value === 'Updating'}
-        _hover={{
-          color: '#FF324A'
-        }}
-        onClick={onOpenDelModal}
-      >
-        {t('Delete')}
-      </Button>
-
-      {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
-        <Button
-          className="create-app-btn"
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'solid'}
-          leftIcon={<MyIcon name="settings" w={'16px'} />}
-          isLoading={loading}
-          isDisabled={db.status.value !== 'Running'}
-          onClick={handleManageData}
+          display={'flex'}
+          width={'40px'}
+          height={'40px'}
+          padding={'0 12px'}
+          justifyContent={'center'}
           alignItems={'center'}
+          gap={'8px'}
+          borderRadius={'8px'}
+          border={'1px solid #E4E4E7'}
+          background={'#FFF'}
+          boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
+          isLoading={loading}
+          isDisabled={db.status.value === 'Updating'}
+          _hover={{
+            color: '#71717A'
+          }}
+          onClick={onOpenDelModal}
         >
-          {t('manage_data')}
+          <Trash2 size={16} color="#71717A" />
         </Button>
-      )}
+
+        <Flex>
+          {db.status.value === 'Stopped' ? (
+            <Button
+              display={'flex'}
+              width={'88px'}
+              height={'40px'}
+              padding={'8px 16px'}
+              justifyContent={'center'}
+              alignItems={'center'}
+              gap={'8px'}
+              borderRight={'1px solid #E4E4E7'}
+              background={'#FFF'}
+              color={'#18181B'}
+              fontFamily={'Geist, sans-serif'}
+              fontSize={'14px'}
+              fontWeight={'500'}
+              lineHeight={'20px'}
+              borderRadius={'8px 0 0 8px'}
+              isLoading={loading}
+              _hover={{
+                color: '#FFF',
+                bg: '#000'
+              }}
+              onClick={handleStartApp}
+            >
+              {t('Continue')}
+            </Button>
+          ) : (
+            <Button
+              display={'flex'}
+              width={'88px'}
+              height={'40px'}
+              padding={'8px 16px'}
+              justifyContent={'center'}
+              alignItems={'center'}
+              gap={'8px'}
+              borderRight={'1px solid #E4E4E7'}
+              background={'#FFF'}
+              color={'#18181B'}
+              fontFamily={'Geist, sans-serif'}
+              fontSize={'14px'}
+              fontWeight={'500'}
+              lineHeight={'20px'}
+              borderRadius={'8px 0 0 8px'}
+              isLoading={loading}
+              isDisabled={db.status.value === 'Updating'}
+              _hover={{
+                color: '#FFF',
+                bg: '#000'
+              }}
+              onClick={onOpenPause(handlePauseApp)}
+            >
+              {t('Pause')}
+            </Button>
+          )}
+
+          {db.status.value !== 'Stopped' && (
+            <>
+              <Button
+                display={'flex'}
+                width={'88px'}
+                height={'40px'}
+                padding={'8px 16px'}
+                justifyContent={'center'}
+                alignItems={'center'}
+                gap={'8px'}
+                borderRight={'1px solid #E4E4E7'}
+                background={'#FFF'}
+                color={'#18181B'}
+                fontFamily={'Geist, sans-serif'}
+                fontSize={'14px'}
+                fontWeight={'500'}
+                lineHeight={'20px'}
+                borderRadius={'0'}
+                isLoading={loading}
+                isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
+                _hover={{
+                  color: '#FFF',
+                  bg: '#000'
+                }}
+                onClick={() => {
+                  if (db.source.hasSource && db.source.sourceType === 'sealaf') {
+                    setUpdateAppName(db.dbName);
+                    onOpenUpdateModal();
+                  } else {
+                    router.push(`/db/edit?name=${db.dbName}`);
+                  }
+                }}
+              >
+                {t('update')}
+              </Button>
+
+              <Button
+                display={'flex'}
+                width={'88px'}
+                height={'40px'}
+                padding={'8px 16px'}
+                justifyContent={'center'}
+                alignItems={'center'}
+                gap={'8px'}
+                background={'#FFF'}
+                color={'#18181B'}
+                fontFamily={'Geist, sans-serif'}
+                fontSize={'14px'}
+                fontWeight={'500'}
+                lineHeight={'20px'}
+                borderRadius={'0 8px 8px 0'}
+                isDisabled={db.status.value === 'Updating'}
+                onClick={openRestartConfirm(handleRestartApp)}
+                isLoading={loading}
+                _hover={{
+                  color: '#FFF',
+                  bg: '#000'
+                }}
+              >
+                {t('Restart')}
+              </Button>
+            </>
+          )}
+        </Flex>
+
+        {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
+          <Button
+            display={'flex'}
+            height={'40px'}
+            padding={'8px 16px'}
+            justifyContent={'center'}
+            alignItems={'center'}
+            gap={'8px'}
+            borderRadius={'8px'}
+            background={'#0A0A0A'}
+            boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
+            isLoading={loading}
+            isDisabled={db.status.value !== 'Running'}
+            onClick={handleManageData}
+            leftIcon={<Settings size={16} color="#FFF" />}
+            color={'#FFF'}
+            fontFamily={'Geist, sans-serif'}
+            fontSize={'14px'}
+            fontWeight={'500'}
+            lineHeight={'20px'}
+          >
+            {t('manage_data')}
+          </Button>
+        )}
+      </Flex>
 
       {/* modal */}
       <RestartConfirmChild />

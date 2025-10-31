@@ -21,7 +21,15 @@ export type LoggingConfiguration = {
 
 export const ServiceLogConfigs: Record<SupportReconfigureDBType, LoggingConfiguration> = {
   redis: {
-    [LogTypeEnum.RuntimeLog]: {
+    [LogTypeEnum.ErrorLog]: {
+      path: '/data/running.log',
+      containerNames: ['redis', 'lorry'],
+      filter: (files: TFile[]) =>
+        files
+          .filter((f) => f.size > 0 && f.name.toLowerCase().endsWith('.log'))
+          .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime())
+    },
+    [LogTypeEnum.SlowQuery]: {
       path: '/data/running.log',
       containerNames: ['redis', 'lorry'],
       filter: (files: TFile[]) =>
@@ -31,7 +39,15 @@ export const ServiceLogConfigs: Record<SupportReconfigureDBType, LoggingConfigur
     }
   },
   postgresql: {
-    [LogTypeEnum.RuntimeLog]: {
+    [LogTypeEnum.ErrorLog]: {
+      path: '/home/postgres/pgdata/pgroot/pg_log',
+      containerNames: ['postgresql', 'lorry'],
+      filter: (files: TFile[]) =>
+        files
+          .filter((f) => f.size > 0 && f.name.toLowerCase().endsWith('.csv'))
+          .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime())
+    },
+    [LogTypeEnum.SlowQuery]: {
       path: '/home/postgres/pgdata/pgroot/pg_log',
       containerNames: ['postgresql', 'lorry'],
       filter: (files: TFile[]) =>
@@ -41,7 +57,14 @@ export const ServiceLogConfigs: Record<SupportReconfigureDBType, LoggingConfigur
     }
   },
   mongodb: {
-    [LogTypeEnum.RuntimeLog]: {
+    [LogTypeEnum.ErrorLog]: {
+      path: '/data/mongodb/mongodb.log',
+      containerNames: ['mongodb'],
+      filter: (files: TFile[]) => {
+        return files;
+      }
+    },
+    [LogTypeEnum.SlowQuery]: {
       path: '/data/mongodb/mongodb.log',
       containerNames: ['mongodb'],
       filter: (files: TFile[]) => {
@@ -50,23 +73,18 @@ export const ServiceLogConfigs: Record<SupportReconfigureDBType, LoggingConfigur
     }
   },
   'apecloud-mysql': {
-    [LogTypeEnum.ErrorLog]: {
+    [LogTypeEnum.RuntimeLog]: {
       path: '/data/mysql/log',
       containerNames: ['mysql', 'lorry'],
       filter: (files: TFile[]) =>
         files
-          .filter((f) => f.size > 0 && f.name.toLowerCase().includes('mysqld-error'))
+          .filter(
+            (f) =>
+              f.size > 0 &&
+              (f.name.toLowerCase().includes('mysqld-error') ||
+                f.name.toLowerCase().includes('slow-query'))
+          )
           .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime())
-    },
-    [LogTypeEnum.SlowQuery]: {
-      path: '/data/mysql/log',
-      containerNames: ['mysql', 'lorry'],
-      filter: (files: TFile[]) => {
-        console.log('slow query files:', files);
-        return files
-          .filter((f) => f.size > 1024 && f.name.toLowerCase().includes('slow-query'))
-          .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime());
-      }
     }
   }
 };

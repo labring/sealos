@@ -24,7 +24,7 @@ const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>
   const { t } = useTranslation();
 
   const router = useRouter();
-  const [subMenu, setSubMenu] = useState<LogTypeEnum>(LogTypeEnum.RuntimeLog);
+  const [subMenu, setSubMenu] = useState<LogTypeEnum>(LogTypeEnum.ErrorLog);
 
   const parsedSubMenu = useMemo(() => {
     const parseSubMenu = (subMenu: string): LogTypeEnum => {
@@ -38,8 +38,7 @@ const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>
       if (availableMenus.includes(LogTypeEnum.ErrorLog)) {
         return LogTypeEnum.ErrorLog;
       }
-
-      return LogTypeEnum.RuntimeLog;
+      return availableMenus[0] || LogTypeEnum.ErrorLog;
     };
 
     return parseSubMenu(router.query.subMenu as string);
