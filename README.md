@@ -116,13 +116,6 @@ https://github.com/user-attachments/assets/cc8599da-6c3e-4503-bb53-55e13bf61ef6
 
    <img width="1016" alt="image" src="https://github.com/user-attachments/assets/a54884cf-a1e8-4178-88af-655234ec7eef">
 
-## Self hosting
-
-- Install Sealos cloud: 
-   - Self host guide (coming soon) | Chinese: [集群部署](https://sealos.run/docs/self-hosting/install)
-- Install Kubernetes and kubernetes lifecycle managemant: 
-   - One command install kubernetes HA cluster (coming soon) | Chinese: [安装K8s集群](https://sealos.run/docs/k8s/quick-start/deploy-kubernetes)
-
 ## 💡 Core features
 
 - 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the templates marketplace.
