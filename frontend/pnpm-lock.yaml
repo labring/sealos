@@ -147,6 +147,9 @@ importers:
       disposable-email-domains-js:
         specifier: ^1.11.0
         version: 1.11.0
+      dompurify:
+        specifier: ^3.3.0
+        version: 3.3.0
       eslint:
         specifier: 8.38.0
         version: 8.38.0
@@ -17333,6 +17336,12 @@ packages:
 
   /dompurify@3.0.5:
     resolution: {integrity: sha512-F9e6wPGtY+8KNMRAVfxeCOHU0/NPWMSENNq4pQctuXRqqdEPW7q3CrLbR5Nse044WwacyjHGOMlvNsBe1y6z9A==}
+    dev: false
+
+  /dompurify@3.3.0:
+    resolution: {integrity: sha512-r+f6MYR1gGN1eJv0TVQbhA7if/U7P87cdPl3HN5rikqaBSBxLiCb/b9O+2eG0cxz0ghyU+mU1QkbsOwERMYlWQ==}
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
     dev: false
 
   /domutils@2.8.0:
