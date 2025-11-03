@@ -158,7 +158,10 @@ func DeleteWorkspaceSubscription(c *gin.Context) {
 				sub, err := services.StripeServiceInstance.CancelSubscription(
 					subscription.Stripe.SubscriptionID)
 				if err != nil {
-					if sub == nil || sub.Status != stripe.SubscriptionStatusCanceled {
+					if sub == nil {
+						return err
+					}
+					if sub.Status != stripe.SubscriptionStatusCanceled {
 						return err
 					}
 				}
