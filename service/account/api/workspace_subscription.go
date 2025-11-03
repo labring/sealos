@@ -2886,8 +2886,11 @@ func validatePlanAndPrice(
 	// since admin operations don't require actual payment processing
 	if price == nil {
 		// Log a warning instead of returning an error for admin operations
-		logrus.Warnf("No price found for plan %s with period %s, using zero price for admin operation",
-			req.PlanName, req.Period)
+		logrus.Warnf(
+			"No price found for plan %s with period %s, using zero price for admin operation",
+			req.PlanName,
+			req.Period,
+		)
 
 		// Create a zero-price entry for admin operations
 		price = &types.ProductPrice{
@@ -3058,7 +3061,9 @@ func createOrUpdateWorkspaceSubscription(
 				// Fallback to monthly if parsing fails
 				workspaceSubscription.CurrentPeriodStartAt = now
 				workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0)
-				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+				workspaceSubscription.ExpireAt = stripe.Time(
+					workspaceSubscription.CurrentPeriodEndAt,
+				)
 			} else {
 				// Extend from current end time
 				workspaceSubscription.CurrentPeriodStartAt = existingSubscription.CurrentPeriodEndAt
@@ -3110,8 +3115,10 @@ func addTrafficAndAIPackages(
 	if req.Operator == types.SubscriptionTransactionTypeRenewed &&
 		existingSubscription != nil &&
 		existingSubscription.CurrentPeriodEndAt.After(time.Now()) {
-		logrus.Infof("Skipping traffic/AI package addition for renewal: current period still valid until %s",
-			existingSubscription.CurrentPeriodEndAt.Format("2006-01-02 15:04:05"))
+		logrus.Infof(
+			"Skipping traffic/AI package addition for renewal: current period still valid until %s",
+			existingSubscription.CurrentPeriodEndAt.Format(time.DateTime),
+		)
 		return nil
 	}
 
