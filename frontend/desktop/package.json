@@ -46,6 +46,7 @@
     "dayjs": "^1.11.10",
     "decimal.js": "^10.4.3",
     "disposable-email-domains-js": "^1.11.0",
+    "dompurify": "^3.3.0",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "framer-motion": "^10.16.4",
