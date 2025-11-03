@@ -1,7 +1,7 @@
 import { getGlobalNotification } from '@/api/platform';
 import { Alert, AlertIcon, AlertDescription, CloseButton, Box } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
-import { Info } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -57,7 +57,7 @@ export function GlobalNotification() {
   };
 
   return (
-    <Box padding={'8px'} paddingBlockEnd={'0'}>
+    <Box padding={'8px'} paddingBlockEnd={'0'} marginBottom={'-6px'}>
       <Alert
         status="warning"
         variant="subtle"
@@ -71,7 +71,9 @@ export function GlobalNotification() {
           <Info />
         </AlertIcon>
         <AlertDescription width={'full'} dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
-        <CloseButton alignSelf="center" position="relative" onClick={handleClose} />
+        <CloseButton size={'24px'} alignSelf="center" position="relative" onClick={handleClose}>
+          <X size={16} />
+        </CloseButton>
       </Alert>
     </Box>
   );
