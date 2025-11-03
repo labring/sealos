@@ -59,20 +59,20 @@ type WorkspaceSubscriptionTransaction struct {
 }
 
 type WorkspaceSubscriptionPlan struct {
-	ID                uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id" json:"id"`                  // 计划 ID
-	Name              string         `gorm:"unique;not null;column:name;type:text"                    json:"name"`                // 计划名称
-	Description       string         `gorm:"type:text;column:description"                             json:"description"`         // 描述
-	UpgradePlanList   pq.StringArray `gorm:"type:text[];column:upgrade_plan_list"                     json:"upgrade_plan_list"`   // 可升级的计划列表
-	DowngradePlanList pq.StringArray `gorm:"type:text[];column:downgrade_plan_list"                   json:"downgrade_plan_list"` // 可降级的计划列表
-	MaxSeats          int            `gorm:"not null;column:max_seats"                                json:"max_seats"`           // 最大席位数
-	MaxResources      string         `gorm:"column:max_resources"                                     json:"max_resources"`       // 最大资源数: map[string]string: {"cpu": "4", "memory": "8Gi", "storage": "100Gi"}
-	Traffic           int64          `gorm:"type:bigint;column:traffic"                               json:"traffic"`             // 包含流量包大小, 单位: MB
-	AIQuota           int64          `gorm:"type:bigint;column:ai_quota"                              json:"ai_quota"`            // 包含AI配额大小
-	CreatedAt         time.Time      `gorm:"column:created_at;autoCreateTime"                         json:"created_at"`          // 创建时间
-	UpdatedAt         time.Time      `gorm:"column:updated_at;autoUpdateTime"                         json:"updated_at"`          // 更新时间
-	Order             int            `gorm:"column:order"                                             json:"order"`               // 排序号
-	Tags              pq.StringArray `gorm:"type:text[];column:tags"                                  json:"tags"`                // 标签分类
-	Prices            []ProductPrice `gorm:"foreignKey:ProductID;references:ID"                       json:"prices"`              // 一对多关联
+	ID                uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 计划 ID
+	Name              string         `gorm:"unique;not null;column:name;type:text"`                    // 计划名称
+	Description       string         `gorm:"type:text;column:description"`                             // 描述
+	UpgradePlanList   pq.StringArray `gorm:"type:text[];column:upgrade_plan_list"`                     // 可升级的计划列表
+	DowngradePlanList pq.StringArray `gorm:"type:text[];column:downgrade_plan_list"`                   // 可降级的计划列表
+	MaxSeats          int            `gorm:"not null;column:max_seats"`                                // 最大席位数
+	MaxResources      string         `gorm:"column:max_resources"`                                     // 最大资源数: map[string]string: {"cpu": "4", "memory": "8Gi", "storage": "100Gi"}
+	Traffic           int64          `gorm:"type:bigint;column:traffic"`                               // 包含流量包大小, 单位: MB
+	AIQuota           int64          `gorm:"type:bigint;column:ai_quota"`                              // 包含AI配额大小
+	CreatedAt         time.Time      `gorm:"column:created_at;autoCreateTime"`                         // 创建时间
+	UpdatedAt         time.Time      `gorm:"column:updated_at;autoUpdateTime"`                         // 更新时间
+	Order             int            `gorm:"column:order"`                                             // 排序号
+	Tags              pq.StringArray `gorm:"type:text[];column:tags"`                                  // 标签分类
+	Prices            []ProductPrice `gorm:"foreignKey:ProductID;references:ID"`                       // 一对多关联
 }
 
 func (p WorkspaceSubscriptionPlan) GetName() string {
