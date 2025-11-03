@@ -14,7 +14,7 @@ import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Search } from 'lucide-react';
+import { Search, TriangleAlert } from 'lucide-react';
 import {
   Box,
   Button,
@@ -25,7 +25,8 @@ import {
   InputGroup,
   Text,
   useDisclosure,
-  useTheme
+  useTheme,
+  Badge
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
@@ -485,7 +486,26 @@ const DBList = ({
       {
         accessorKey: 'storage',
         header: () => t('storage'),
-        cell: ({ row }) => <>{row.original.totalStorage}Gi</>
+        cell: ({ row }) => (
+          <Flex alignItems={'center'}>
+            <Text>{row.original.totalStorage}Gi</Text>
+            {alerts[row.original.name]?.reason === 'disk is full' && (
+              <Flex
+                alignItems={'center'}
+                ml={'8px'}
+                borderRadius={'8px'}
+                px={'6px'}
+                py={'4px'}
+                bg={'#FEE4E2'}
+              >
+                <TriangleAlert size={12} color={'#991B1B'} />
+                <Text ml={'4px'} color={'#991B1B'}>
+                  {t('disk_is_full')}
+                </Text>
+              </Flex>
+            )}
+          </Flex>
+        )
       },
       {
         id: 'actions',
@@ -658,18 +678,16 @@ const DBList = ({
     ],
     [
       t,
+      onOpenRemarkModal,
       alerts,
-      SystemEnv,
-      theme,
-      router,
-      handleManageData,
-      handleStartApp,
-      handleRestartApp,
-      handlePauseApp,
+      SystemEnv?.MANAGED_DB_ENABLED,
       onOpenPause,
+      handleManageData,
+      router,
+      handleStartApp,
       onOpenUpdateModal,
-      setUpdateAppName,
-      setDelAppName
+      handleRestartApp,
+      handlePauseApp
     ]
   );
 
