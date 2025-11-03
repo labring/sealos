@@ -1,4 +1,3 @@
-import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
@@ -23,6 +22,7 @@ import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import { useGuideModalStore } from '@/stores/guideModal';
 import GuideModal from '../account/GuideModal';
+import { GlobalNotification } from './GlobalNotification';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -37,7 +37,6 @@ export const blurBackgroundStyles = {
 };
 
 export default function Desktop() {
-  const { i18n } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
@@ -48,7 +47,6 @@ export default function Desktop() {
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
-  const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const { layoutConfig, cloudConfig } = useConfigStore();
   const { session } = useSessionStore();
@@ -178,37 +176,6 @@ export default function Desktop() {
     };
   }, [infoData.data, commonConfig?.realNameAuthEnabled]);
 
-  useEffect(() => {
-    const globalNotification = async () => {
-      try {
-        const { data: notification } = await getGlobalNotification();
-        if (!notification) return;
-        const newID = notification?.uid;
-        const title = notification?.i18n[i18n?.language]?.title;
-
-        if (notification.licenseFrontend) {
-          message({
-            title: title,
-            status: 'info',
-            isClosable: true
-          });
-        } else {
-          if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
-          localStorage.setItem('GlobalNotification', newID);
-          message({
-            title: title,
-            status: 'info',
-            isClosable: true
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    globalNotification();
-  }, []);
-
   const [isBannerVisible, setIsBannerVisible] = useState(false);
   useEffect(() => {
     const lastClosedTimestamp = localStorage.getItem('bannerLastClosed');
@@ -237,6 +204,9 @@ export default function Desktop() {
       {layoutConfig?.common?.bannerEnabled && (
         <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
       )}
+
+      <GlobalNotification />
+
       <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
         <Account />
       </Flex>
