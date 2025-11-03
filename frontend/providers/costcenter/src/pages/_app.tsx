@@ -85,6 +85,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     };
 
     // eslint-disable-next-line
+    // nosem
     window.addEventListener('message', handlePostMessage);
 
     return () => {
