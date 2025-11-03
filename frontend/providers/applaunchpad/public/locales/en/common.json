@@ -426,5 +426,12 @@
     "quota_in_use": "In use: ",
     "quota_total": "Total: ",
     "title": "Insufficient Resources"
+  },
+  "log_table": {
+    "_time": "Time",
+    "_msg": "Message",
+    "container": "Container",
+    "pod": "Pod",
+    "stream": "Stream"
   }
 }
