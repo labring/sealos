@@ -1268,7 +1268,7 @@ export const json2NetworkService = ({
             name: dbStatefulSet?.metadata?.name,
             uid: dbStatefulSet?.metadata?.uid,
             blockOwnerDeletion: true,
-            controller: true
+            controller: false
           }
         ]
       })
