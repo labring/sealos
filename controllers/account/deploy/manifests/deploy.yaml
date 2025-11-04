@@ -564,6 +564,7 @@ rules:
   - users
   verbs:
   - create
+  - update
   - get
   - list
   - watch
