@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -203,6 +204,12 @@ func main() {
 	if err = database.InitRegionEnv(v2Account.GetGlobalDB(), v2Account.GetLocalRegion().Domain); err != nil {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
+	}
+	if os.Getenv(cockroach.EnvBaseBalance) != "" {
+		balance, err := strconv.ParseInt(os.Getenv(cockroach.EnvBaseBalance), 10, 64)
+		if err == nil {
+			v2Account.ZeroAccount.Balance = balance
+		}
 	}
 	skipExpiredUserTimeDuration := time.Hour * 24 * 2
 	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
