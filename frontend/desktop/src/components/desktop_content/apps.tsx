@@ -30,7 +30,7 @@ import {
   useState
 } from 'react';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
@@ -577,9 +577,7 @@ export default function Apps() {
   }, [dynamicApps, moreApps]);
 
   const desktopPages = useMemo(() => {
-    // One page desktop
     const firstPageApps = itemsPerPageInGrid > 0 ? normalApps.slice(0, itemsPerPageInGrid - 1) : [];
-    console.log([firstPageApps], 'desktop pages');
     return [firstPageApps];
   }, [normalApps, itemsPerPageInGrid]);
 
@@ -593,7 +591,7 @@ export default function Apps() {
     const pages = Array.from({ length: totalPagesInFolder }).map((_, index) =>
       getPageInFolder(index)
     );
-    console.log(pages, 'folder pages');
+
     return pages;
   }, [folderApps, itemsPerPageInFolder, totalPagesInFolder]);
 

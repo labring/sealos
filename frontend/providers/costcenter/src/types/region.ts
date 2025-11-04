@@ -7,6 +7,7 @@ export type Region = {
   domain: string;
   uid: string;
 };
+
 export type RegionClient = {
   name: {
     zh: string;

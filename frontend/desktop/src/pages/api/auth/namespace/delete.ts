@@ -5,7 +5,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { validate } from 'uuid';
 import { Role } from 'prisma/region/generated/client';
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAccessToken, callBillingService } from '@/services/backend/auth';
 import { getRegionUid } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -37,11 +37,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     if (!queryResult) return jsonRes(res, { code: 404, message: 'the namespace is not found' });
     const creator = queryResult.workspace.id.replace('ns-', '');
+    const workspaceNS = queryResult.workspace.id;
 
     const regionUid = getRegionUid();
     // sync status, user add 1,
 
-    // try {
+    try {
+      await callBillingService(
+        '/account/v1alpha1/workspace-subscription/delete',
+        {
+          userUid: payload.userUid,
+          userId: payload.userId
+        },
+        {
+          workspace: workspaceNS
+        }
+      );
+    } catch (e) {
+      console.log('delete workspace subscription error', e);
+      return jsonRes(res, {
+        code: 500,
+        message: 'delete workspace subscription error calling billing service'
+      });
+    }
+
     const res1 = await setUserTeamDelete(creator);
     if (!res1) throw new Error('fail to update user ');
     const res2 = await applyDeleteRequest(creator);

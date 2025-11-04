@@ -30,7 +30,7 @@ export default function CostChart({ data }: { data: number[]; appName: string })
   const title = t('All APP', { ns: 'applist' }) + '\n' + t('Cost Form');
   const source = useMemo(() => [['name', 'cost'], ...result], [result]);
   const publicOption = {
-    name: t('Cost Form'),
+    name: t('common:cost_form'),
     radius: radius || ['45%', '70%'],
     avoidLabelOverlap: false,
     center: ['50%', '60%'],

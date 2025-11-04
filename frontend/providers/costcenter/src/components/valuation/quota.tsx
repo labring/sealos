@@ -1,97 +1,110 @@
 import { valuationMap } from '@/constants/payment';
-import { UserQuotaItemType } from '@/pages/api/getQuota';
-import request from '@/service/request';
+import { getWorkspaceQuota } from '@/api/workspace';
+import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
-import { ApiResp } from '@/types';
-import { Box, Divider, HStack, Stack, StackProps, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import dynamic from 'next/dynamic';
-import { useTranslation } from 'react-i18next';
-import CpuIcon from '../icons/CpuIcon';
-import GpuIcon from '../icons/GpuIcon';
-import { MemoryIcon } from '../icons/MemoryIcon';
-import { StorageIcon } from '../icons/StorageIcon';
-const QuotaPie = dynamic(() => import('../cost_overview/components/quotaPieChart'), { ssr: false });
-export default function Quota(props: StackProps) {
+import { useTranslation } from 'next-i18next';
+import { TableCell, TableRow, TableHead } from '@sealos/shadcn-ui/table';
+import { Progress } from '@sealos/shadcn-ui/progress';
+import {
+  TableLayout,
+  TableLayoutBody,
+  TableLayoutCaption,
+  TableLayoutContent,
+  TableLayoutHeadRow
+} from '@sealos/shadcn-ui/table-layout';
+import RegionMenu from '../menu/RegionMenu';
+import NamespaceMenu from '../menu/NamespaceMenu';
+
+export default function Quota() {
   const { t } = useTranslation();
-  const { data } = useQuery(['quota'], () =>
-    request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota')
+  const region = useBillingStore((s) => s.getRegion());
+  const namespace = useBillingStore((s) => s.getNamespace());
+  const regionUid = region?.uid || '';
+  const workspace = namespace?.[0] || '';
+  const filtersSelected = Boolean(regionUid) && Boolean(workspace);
+  const { data } = useQuery(
+    ['quota', regionUid, workspace],
+    () => getWorkspaceQuota({ regionUid, workspace }),
+    { enabled: filtersSelected }
   );
   const { gpuEnabled } = useEnvStore();
-  const quota = (data?.data?.quota || [])
-    .filter((d) => gpuEnabled || d.type !== 'gpu')
-    .flatMap((d) => {
-      const entity = valuationMap.get(d.type);
-      if (!entity) {
-        return [];
-      }
-      const _limit = Number.parseInt(d.limit * 1000 + '');
-      const _used = Number.parseInt(d.used * 1000 + '');
-      return [
-        {
-          ...d,
-          limit: _limit / 1000,
-          used: _used / 1000,
-          remain: (_limit - _used) / 1000,
-          title: t(d.type),
-          unit: t(entity.unit),
-          bg: entity.bg
-        }
-      ];
+
+  const quota = (filtersSelected ? (data?.data?.quota ?? []) : [])
+    .filter((item) => gpuEnabled || item.type !== 'gpu')
+    .map((item) => {
+      const mapping = valuationMap.get(item.type);
+
+      return {
+        type: item.type,
+        icon: mapping?.icon,
+        limit: item.limit,
+        used: item.used,
+        remain: item.limit - item.used,
+        scale: mapping?.scale ?? 1,
+        title: t(item.type),
+        unitKey: mapping?.unit ? 'units.' + mapping.unit : ''
+      };
     });
+
   return (
-    <Stack {...props}>
-      {quota.map((item) => (
-        <HStack key={item.type} gap={'30px'}>
-          <QuotaPie data={item} color={item.bg} />
-          <Box>
-            <HStack>
-              {item.type === 'cpu' ? (
-                <CpuIcon color={'grayModern.600'} boxSize={'20px'} />
-              ) : item.type === 'memory' ? (
-                <MemoryIcon color={'grayModern.600'} boxSize={'20px'} />
-              ) : item.type === 'storage' ? (
-                <StorageIcon color={'grayModern.600'} boxSize={'20px'} />
-              ) : item.type === 'gpu' ? (
-                <GpuIcon color={'grayModern.600'} boxSize={'20px'} />
-              ) : (
-                <></>
-              )}
-              <Text fontSize={'16px'} fontWeight="500" color={'grayModern.900'}>
-                {t(item.type)}
-              </Text>
-            </HStack>
-            <HStack fontSize={'14px'} gap="10px">
-              <Text size={'sm'} color={'grayModern.600'}>
-                {t('Used')}: {item.used}
-                {item.unit}
-              </Text>
-              <Divider
-                orientation={'vertical'}
-                borderColor={'grayModern.600'}
-                bgColor={'grayModern.500'}
-                h={'10px'}
-                borderWidth={'1px'}
-              />
-              <Text size={'sm'} color={'grayModern.600'}>
-                {t('Remain')}: {item.remain}
-                {item.unit}
-              </Text>
-              <Divider
-                orientation={'vertical'}
-                borderColor={'grayModern.600'}
-                bgColor={'grayModern.500'}
-                h={'10px'}
-                borderWidth={'1px'}
-              />
-              <Text size={'sm'} color={'grayModern.600'}>
-                {t('Total')}: {item.limit}
-                {item.unit}
-              </Text>
-            </HStack>
-          </Box>
-        </HStack>
-      ))}
-    </Stack>
+    <TableLayout>
+      <TableLayoutCaption className="text-sm">
+        <div>{t('common:usage.title')}</div>
+        <div className="flex">
+          <RegionMenu className={{ trigger: 'w-36 rounded-r-none' }} />
+          <NamespaceMenu className={{ trigger: 'w-36 rounded-l-none border-l-0' }} />
+        </div>
+      </TableLayoutCaption>
+
+      <TableLayoutContent>
+        <TableLayoutHeadRow>
+          <TableHead className="bg-transparent">{t('common:resource_name')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:chart')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:total')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:used')}</TableHead>
+          <TableHead className="bg-transparent">{t('common:remain')}</TableHead>
+        </TableLayoutHeadRow>
+
+        <TableLayoutBody>
+          {quota.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-sm text-muted-foreground h-20">
+                {t('common:please_select_a_specific_workspace')}
+              </TableCell>
+            </TableRow>
+          ) : (
+            quota.map((item) => (
+              <TableRow key={item.type}>
+                <TableCell className="h-14">
+                  <div className="flex items-center gap-2">
+                    {item.icon && <item.icon size={20} strokeWidth={1} className="text-gray-400" />}
+                    <span>{t(item.type)}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Progress value={100 * (item.used / item.limit)} className="h-1" />
+                </TableCell>
+                <TableCell>
+                  <span>{(item.limit / item.scale).toFixed(2)}</span>
+                  <span> </span>
+                  <span>{t(item.unitKey, { count: item.limit / item.scale })}</span>
+                </TableCell>
+                <TableCell>
+                  <span>{(item.used / item.scale).toFixed(2)}</span>
+                  <span> </span>
+                  <span>{t(item.unitKey, { count: item.used / item.scale })}</span>
+                </TableCell>
+                <TableCell>
+                  <span>{(item.remain / item.scale).toFixed(2)}</span>
+                  <span> </span>
+                  <span>{t(item.unitKey, { count: item.remain / item.scale })}</span>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableLayoutBody>
+      </TableLayoutContent>
+    </TableLayout>
   );
 }

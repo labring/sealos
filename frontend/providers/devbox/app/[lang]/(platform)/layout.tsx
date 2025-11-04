@@ -31,9 +31,9 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const queryClient = useQueryClient();
 
   const { setEnv, env } = useEnvStore();
-  const { loadUserDebt } = useUserStore();
+  const { loadUserDebt, setSession } = useUserStore();
   const { setSourcePrice } = usePriceStore();
-  const { setScreenWidth, setLastRoute } = useGlobalStore();
+  const { setScreenWidth, setLastRoute, setInitialized } = useGlobalStore();
 
   const [init, setInit] = useState(false);
   const [refresh, setRefresh] = useState(false);
@@ -43,17 +43,14 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     (async () => {
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
-        const oldSession = sessionStorage.getItem('session');
-        if (newSession && newSession !== oldSession) {
-          sessionStorage.setItem('session', newSession);
-          return window.location.reload();
-        }
+        setSession(JSON.parse(newSession));
         // init user
         console.log('devbox: app init success');
         const token = await initUser();
         if (!!token) {
           setSessionToSessionStorage(token);
           setInit(true);
+          setInitialized(true);
         }
         queryClient.clear();
       } catch (err) {

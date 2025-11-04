@@ -36,7 +36,25 @@
   "apps_running_title": "Confirm closing the page?",
   "attachment": "appendix",
   "avatar": "Avatar",
-  "balance": "Balance",
+  "balance_popover": {
+    "balance": "Balance",
+    "check_costcenter_tip": "Check more details in Cost Center",
+    "expired_at": "Expired At:",
+    "payg_plan": "PAYG",
+    "plan_suffix": "Plan",
+    "subscription_status": {
+      "expired": "Expired",
+      "limited_trial": "Limited Trial"
+    },
+    "top_up": "Top Up",
+    "trial_expiry_tip_one": "Your trial will expire in {{count}} day.",
+    "trial_expiry_tip_other": "Your trial will expire in {{count}} days.",
+    "trial_expiry_upgrade_tip_one": "Your trial will expire in {{count}} day. Upgrade to keep your services online.",
+    "trial_expiry_upgrade_tip_other": "Your trial will expire in {{count}} days. Upgrade to keep your services online.",
+    "upgrade_button": "Upgrade Plan",
+    "upgrade_tip": "To upgrade your plan, you can visit the Cost Center."
+  },
+  "balance_text": "Balance",
   "bank_name": "Bank",
   "banner": {
     "button": "check the details",
@@ -195,6 +213,13 @@
   "more_apps": "More Apps",
   "name": "Name",
   "name_of_team": "Name of Workspace",
+  "nav_links": {
+    "balance": "Balance",
+    "plan_expired": "Expired",
+    "plan_suffix": "Plan",
+    "subscribe": "Subscribe",
+    "upgrade_plan": "Upgrade"
+  },
   "new_email": "New email",
   "new_phone": "New mobile number",
   "newpassword": "New Password",

@@ -14,6 +14,7 @@ import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
 import { parseTemplateConfig } from '@/utils/tools';
+import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,7 +137,6 @@ async function waitForDevboxReady(
   return false;
 }
 
-
 class ServiceManager {
   private k8sCore: any;
   private namespace: string;
@@ -171,7 +171,6 @@ class ServiceManager {
             }))
           ];
           
-          // 使用 JSON Merge Patch 原子更新
           await this.k8sCore.patchNamespacedService(
             devboxName,
             this.namespace,
@@ -285,7 +284,6 @@ async function createPortsAndNetworks(
     return [];
   }
 
-
   const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
   const serviceManager = new ServiceManager(k8sCore, namespace, applyYamlList);
   const ingressManager = INGRESS_SECRET ? new IngressManager(applyYamlList, INGRESS_SECRET, INGRESS_DOMAIN!) : null;
@@ -339,7 +337,7 @@ async function createPortsAndNetworks(
           number: portConfig.number,
           protocol: portConfig.protocol || 'HTTP',
           networkName: '',
-          exposesPublicDomain: portConfig.exposesPublicDomain || false, // ✅ 保持原始值
+          exposesPublicDomain: portConfig.exposesPublicDomain || false, 
           publicDomain: '',
           customDomain: portConfig.customDomain || '',
           serviceName: devboxName,
@@ -368,6 +366,29 @@ async function createPortsAndNetworks(
       privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`,
       error: `Service creation failed: ${error.message}`
     }));
+  }
+}
+
+async function handleAutostart(
+  devboxName: string,
+  namespace: string,
+  devboxUID: string,
+  applyYamlList: any,
+  execCommand?: string
+): Promise<boolean> {
+  try {
+    const rbacJobYamls = generateDevboxRbacAndJob({
+      devboxName,
+      devboxNamespace: namespace,
+      devboxUID,
+      execCommand
+    });
+    
+    await applyYamlList(rbacJobYamls, 'create');
+    return true;
+  } catch (error: any) {
+    console.error('Failed to create autostart resources:', error);
+    return false;
   }
 }
 
@@ -482,12 +503,12 @@ export async function POST(req: NextRequest) {
         templateConfig: template.config,
         image: template.image,
         templateUid: template.uid,
-        networks: [] 
+        networks: [], 
+        env: devboxForm.env || []
       },
       DEVBOX_AFFINITY_ENABLE,
       SQUASH_ENABLE
     );
-
 
     const [devboxBody, createdPorts] = await Promise.all([
 
@@ -510,6 +531,22 @@ export async function POST(req: NextRequest) {
         return [];
       })()
     ]);
+
+    let autostartSuccess = false;
+    if (devboxForm.autostart && devboxBody.metadata?.uid) {
+      const config = parseTemplateConfig(template.config);
+      const execCommand = config.releaseCommand && config.releaseArgs 
+        ? `${config.releaseCommand.join(' ')} ${config.releaseArgs.join(' ')}`
+        : '/bin/bash /home/devbox/project/entrypoint.sh';
+        
+      autostartSuccess = await handleAutostart(
+        devboxForm.name,
+        namespace,
+        devboxBody.metadata.uid,
+        applyYamlList,
+        execCommand
+      );
+    }
 
     const resp = [devboxBody, [], template] as [KBDevboxTypeV2, [], typeof template];
     const adaptedData = adaptDevboxDetailV2(resp);
@@ -534,7 +571,7 @@ export async function POST(req: NextRequest) {
     if (failedPorts.length > 0) {
       return jsonRes({
         code: 201, 
-        message: `DevBox created successfully, but ${failedPorts.length} port(s) had issues`,
+        message: `DevBox created successfully, but ${failedPorts.length} port(s) had issues${devboxForm.autostart ? (autostartSuccess ? ', autostart succeeded' : ', autostart failed') : ''}`,
         data: {
           name: adaptedData.name,
           sshPort: adaptedData.sshPort,
@@ -544,6 +581,7 @@ export async function POST(req: NextRequest) {
           domain,
           ports: createdPorts,
           portErrors: failedPorts.map((p: any) => ({ port: p.number, error: p.error })),
+          autostarted: devboxForm.autostart ? autostartSuccess : undefined,
           summary: {
             totalPorts: createdPorts.length,
             successfulPorts: successfulPorts.length,
@@ -562,6 +600,7 @@ export async function POST(req: NextRequest) {
         workingDir,
         domain,
         ports: createdPorts,
+        autostarted: devboxForm.autostart ? autostartSuccess : undefined,
         summary: {
           totalPorts: createdPorts.length,
           successfulPorts: successfulPorts.length,

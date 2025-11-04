@@ -1,0 +1,65 @@
+cloud:
+  domain: ''
+  port: ''
+  regionUID: ''
+  certSecretName: ''
+  proxyDomain: ''
+
+costCenter:
+  realNameRechargeLimit: false
+  giftCodeEnabled: true
+  gpuEnabled: false
+  transferEnabled: true
+  currencyType: 'shellCoin'
+  subscriptionEnabled: false
+  layout:
+    meta:
+      scripts: []
+      noscripts: []
+  auth:
+    jwt:
+      internal: ''
+      billing: ''
+  invoice:
+    enabled: true
+    directDownload: false
+    feishApp:
+      appId: ''
+      appSecret: ''
+      feiShuBotURL: ''
+      chatId: ''
+      token: ''
+      template:
+        id: ''
+        version: ''
+    serviceToken: ''
+    aliSms:
+      endpoint: ''
+      accessKeyID: ''
+      accessKeySecret: ''
+      templateCode: ''
+      signName: ''
+      invoiceCompletedTemplateCode: ''
+    billingInfo:
+      companyName: 'Labring'
+      addressLines:
+        - 'Billing to here'
+      contactLines:
+        - 'contact@sealos.io'
+    mongo:
+      uri: ''
+  recharge:
+    enabled: true
+    payMethods:
+      wechat:
+        enabled: true
+      stripe:
+        enabled: false
+        publicKey: ''
+      alipay:
+        enabled: true
+  components:
+    accountService:
+      url: ''
+    desktopService:
+      url: ''

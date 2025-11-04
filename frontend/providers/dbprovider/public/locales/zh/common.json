@@ -444,5 +444,31 @@
   "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
   "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用",
   "log_count": "日志条数",
-  "disk_is_full": "磁盘已满"
+  "disk_is_full": "磁盘已满",
+  "nodeport": "端口",
+  "traffic": "流量",
+  "gpu": "GPU",
+  "nodeport_exceeds_quota": "端口资源不足：你设置的 {{requested}} 个端口超出工作空间可用 {{limit}} 个端口限制（已使用 {{used}} 个端口）。",
+  "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
+  "memory_exceeds_quota": "内存资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
+  "storage_exceeds_quota": "存储资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
+  "please_upgrade_plan": {
+    "0": "请 ",
+    "1": "升级您的计划",
+    "2": " 或调整设置"
+  },
+  "insufficient_quota_dialog": {
+    "alert-title": "现在无法创建数据库，您已经用尽了全部资源。",
+    "cancel": "取消",
+    "confirm": "确认",
+    "please_upgrade_plan": {
+      "1": "请 ",
+      "2": "升级您的计划",
+      "3": "或删除使用上述资源的应用。"
+    },
+    "quota_available": "可用: ",
+    "quota_in_use": "使用中: ",
+    "quota_total": "总计: ",
+    "title": "资源不足"
+  }
 }

@@ -1,5 +1,3 @@
-import { RechargeBillingItem } from '@/types/billing';
-
 export type TInvoiceDetail = {
   title: string;
   tax: string;
@@ -18,9 +16,17 @@ export type TInvoiceContract = {
 export type ReqGenInvoice = {
   detail: TInvoiceDetail;
   contract: TInvoiceContract & { code: string };
-  billings: RechargeBillingItem[];
+  billings: InvoiceBillingItem[];
   token: string;
 };
+
+export type InvoiceBillingItem = {
+  order_id: string;
+  amount: number;
+  regionUID: string;
+  createdTime: string;
+};
+
 export type Tbilling = {
   order_id: string;
   amount: number;

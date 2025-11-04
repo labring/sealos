@@ -10,6 +10,7 @@ import {
 } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { UserTask } from '@/types/task';
+import { WorkspaceQuotaResponse } from '@/types/workspace';
 
 /**
  * Upload advertisement conversion data to the platform.
@@ -119,3 +120,6 @@ export const getRunningApps = () => {
     }>
   >('/api/desktop/getRunningApps');
 };
+
+export const getWorkspaceQuota = () =>
+  request.get<any, ApiResp<WorkspaceQuotaResponse>>('/api/workspace/getQuota');

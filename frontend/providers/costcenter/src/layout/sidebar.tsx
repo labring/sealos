@@ -1,27 +1,15 @@
-import dashbordIcon from '@/assert/dashboard.svg';
-import dashboard_a_icon from '@/assert/dashboard_black.svg';
-import letter_icon from '@/assert/format_letter_spacing_standard.svg';
-import letter_a_icon from '@/assert/format_letter_spacing_standard_black.svg';
-import invoice_a_icon from '@/assert/invoice-active.svg';
-import invoice_icon from '@/assert/invoice.svg';
-import layers_icon from '@/assert/layers.svg';
-import layers_a_icon from '@/assert/layers_black.svg';
-import linechart_icon from '@/assert/lineChart.svg';
-import linechart_a_icon from '@/assert/lineChart_black.svg';
-import receipt_icon from '@/assert/receipt_long.svg';
-import receipt_a_icon from '@/assert/receipt_long_black.svg';
+import { Calculator, ChartPie, Dock, ReceiptText, LucideIcon, TicketMinus } from 'lucide-react';
 import useEnvStore from '@/stores/env';
-import { Box, Divider, Flex, Img, Text } from '@chakra-ui/react';
+import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
-import type { StaticImageData } from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 type Menu = {
   id: string;
   url: string;
   value: string;
-  icon: StaticImageData;
-  aicon: StaticImageData;
+  icon: LucideIcon;
   display: boolean;
 };
 
@@ -29,98 +17,77 @@ export default function SideBar() {
   const router = useRouter();
   const { t, ready } = useTranslation();
   const invoiceEnabled = useEnvStore((state) => state.invoiceEnabled);
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+
   const menus: Menu[] = [
     {
-      id: 'CostOverview',
-      url: '/cost_overview',
-      value: 'SideBar.Index',
-      icon: dashbordIcon,
-      aicon: dashboard_a_icon,
-      display: true
+      id: 'Cost',
+      url: '/cost',
+      value: 'sidebar.cost',
+      icon: Dock,
+      display: !subscriptionEnabled
     },
     {
-      id: 'BillingOverview',
-      url: '/app_overview',
-      value: 'SideBar.CostOverview',
-      icon: linechart_icon,
-      aicon: linechart_a_icon,
-      display: true
+      id: 'Plan',
+      url: '/plan',
+      value: 'sidebar.plan',
+      icon: Dock,
+      display: subscriptionEnabled
     },
     {
-      id: 'BillingDetails',
+      id: 'Billing',
       url: '/billing',
-      value: 'SideBar.BillingDetails',
-      icon: receipt_icon,
-      aicon: receipt_a_icon,
+      value: 'sidebar.billing',
+      icon: ReceiptText,
       display: true
     },
     {
-      id: 'ResourceAnalysis',
-      url: '/resource_analysis',
-      value: 'SideBar.resource_analysis',
-      icon: layers_icon,
-      aicon: layers_a_icon,
-      display: true
-    },
-    {
-      id: 'ValuationStandard',
-      url: '/valuation',
-      value: 'SideBar.ValuationStandard',
-      icon: letter_icon,
-      aicon: letter_a_icon,
-      display: true
-    },
-    {
-      id: 'CreateInvoice',
+      id: 'Invoice',
       url: '/create_invoice',
-      value: 'SideBar.CreateInvoice',
-      icon: invoice_icon,
-      aicon: invoice_a_icon,
+      value: 'sidebar.invoice',
+      icon: TicketMinus,
       display: invoiceEnabled
+    },
+    {
+      id: 'Usage',
+      url: '/usage',
+      value: 'sidebar.usage',
+      icon: ChartPie,
+      display: true
+    },
+    {
+      id: 'Pricing Standard',
+      url: '/valuation',
+      value: 'sidebar.valuation',
+      icon: Calculator,
+      display: true
     }
   ];
+
   return (
-    <Flex flexDirection="column" py={'22px'} px="16px">
+    <nav className="flex flex-col gap-1">
       {ready &&
         menus
           .filter((item) => item.display)
-          .map((item, idx) => {
+          .map((item) => {
             return (
-              <Box key={item.value}>
-                <Flex
-                  {...([1, 3, 5].includes(idx)
-                    ? {
-                        mb: '32px'
-                      }
-                    : {})}
-                  alignItems={'center'}
-                  onClick={() => {
-                    router.push(item.url);
-                  }}
-                  as="button"
-                  fontWeight={500}
-                  fontSize={'14px'}
-                >
-                  <Flex h={4} alignItems={'center'}>
-                    <Img
-                      src={router.route == item.url ? item.aicon.src : item.icon.src}
-                      width={'20px'}
-                      alt="icon of module"
-                    />
-                  </Flex>
-                  <Text
-                    color={router.route === item.url ? 'grayModern.900' : 'grayModern.500'}
-                    ml="8px"
-                  >
-                    {t(item.value)}
-                  </Text>
-                </Flex>
-                {([0, 2].includes(idx) || (idx === 4 && invoiceEnabled)) && (
-                  <Divider my="20px" borderColor={'grayModern.250'} />
-                )}
-              </Box>
+              <Button
+                variant="ghost"
+                className="data-[is-current-page=true]:bg-zinc-100 data-[is-current-page=true]:font-medium font-normal rounded-lg text-sm flex justify-start py-5 px-4"
+                asChild
+                key={item.id}
+                data-is-current-page={router.route === item.url}
+              >
+                <Link href={item.url} className="flex items-center gap-2">
+                  <item.icon
+                    size={16}
+                    className={router.route === item.url ? 'text-zinc-900' : 'text-zinc-600'}
+                  />
+                  <span className="leading-normal">{t(item.value)}</span>
+                </Link>
+              </Button>
             );
           })}
-    </Flex>
+    </nav>
   );
 }

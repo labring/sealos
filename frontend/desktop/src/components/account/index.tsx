@@ -28,17 +28,22 @@ import {
   ArrowLeftRight,
   Bell,
   Copy,
-  CreditCard,
+  Dock,
   FileCode,
   Gift,
   Globe,
   LogOut,
+  ReceiptText,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
+import { useSubscriptionStore } from '@/stores/subscription';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { cn } from '@sealos/shadcn-ui';
+import { getPlanBackgroundClass } from '@/utils/styling';
 
 const baseItemStyle = {
   minW: '36px',
@@ -76,10 +81,14 @@ export default function Account() {
     setToken('');
   };
 
-  const openCostcenterApp = () => {
+  const openCostcenterApp = ({ page = 'plan', mode = '' }: { page?: string; mode?: string }) => {
     openDesktopApp({
       appKey: 'system-costcenter',
-      pathname: '/'
+      pathname: '/',
+      query: {
+        page: page,
+        mode: mode
+      }
     });
   };
 
@@ -108,6 +117,7 @@ export default function Account() {
       openGuideModal();
     }
   }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
+  const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>
@@ -254,6 +264,38 @@ export default function Account() {
                     </MenuItem>
                   </AccountCenter>
                 )}
+                {layoutConfig?.common.subscriptionEnabled && (
+                  <MenuItem
+                    mt="0px"
+                    py="6px"
+                    px="8px"
+                    borderRadius="8px"
+                    _hover={{ bg: '#F4F4F5' }}
+                    onClick={() => openCostcenterApp({ page: 'plan' })}
+                  >
+                    <Flex alignItems="center" gap="8px">
+                      <Center w="20px" h="20px">
+                        <Dock size={16} color="#737373" />
+                      </Center>
+                      <Text fontSize="14px" fontWeight="400">
+                        {t('common:plan')}
+                      </Text>
+                      <Badge
+                        variant="subscription"
+                        className={cn(
+                          'px-1 text-xs',
+                          getPlanBackgroundClass(
+                            subscriptionInfo?.subscription.PlanName ?? '',
+                            !!subscriptionInfo?.subscription,
+                            subscriptionInfo?.subscription.Status === 'Debt'
+                          )
+                        )}
+                      >
+                        {subscriptionInfo?.subscription?.PlanName || 'payg'}
+                      </Badge>
+                    </Flex>
+                  </MenuItem>
+                )}
 
                 <MenuItem
                   mt="0px"
@@ -261,11 +303,11 @@ export default function Account() {
                   px="8px"
                   borderRadius="8px"
                   _hover={{ bg: '#F4F4F5' }}
-                  onClick={openCostcenterApp}
+                  onClick={() => openCostcenterApp({ page: 'billing' })}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
-                      <CreditCard size={16} color="#737373" />
+                      <ReceiptText size={16} color="#737373" />
                     </Center>
                     <Text fontSize="14px" fontWeight="400">
                       {t('common:billing')}

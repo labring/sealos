@@ -1,6 +1,12 @@
 import { v4 } from 'uuid';
 import { API_NAME } from './constants';
-import { AppMessageType, AppSendMessageType, MasterReplyMessageType, SessionV1 } from './types';
+import {
+  AppMessageType,
+  AppSendMessageType,
+  MasterReplyMessageType,
+  SessionV1,
+  WorkspaceQuotaItem
+} from './types';
 import { isBrowser } from './utils';
 
 class ClientSDK {
@@ -102,6 +108,10 @@ class ClientSDK {
 
   getLanguage(): Promise<{ lng: string }> {
     return this.sendMessageToMaster(API_NAME.GET_LANGUAGE);
+  }
+
+  getWorkspaceQuota(): Promise<{ quota: WorkspaceQuotaItem[] }> {
+    return this.sendMessageToMaster(API_NAME.GET_WORKSPACE_QUOTA);
   }
 
   /**

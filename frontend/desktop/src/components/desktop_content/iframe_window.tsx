@@ -1,6 +1,6 @@
 import useAppStore from '@/stores/app';
 import { useMemo } from 'react';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 
 export default function Iframe_window({ pid }: { pid: number }) {
   const findAppInfo = useAppStore((state) => state.findAppInfoById);

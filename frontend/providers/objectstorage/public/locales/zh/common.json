@@ -27,5 +27,21 @@
   "Unable to Access": "无法访问",
   "reset_error": "重置错误",
   "userNotRealName": "对象存储服务需要实名",
-  "openHostFailed": "开启站点托管失败"
+  "openHostFailed": "开启站点托管失败",
+  "cpu": "CPU",
+  "gpu": "GPU",
+  "memory": "内存",
+  "storage": "存储",
+  "nodeport": "端口",
+  "traffic": "流量",
+  "insufficient_quota_dialog.alert-title": "现在无法创建应用，您已经用尽了全部资源。",
+  "insufficient_quota_dialog.cancel": "取消",
+  "insufficient_quota_dialog.confirm": "确认",
+  "insufficient_quota_dialog.please_upgrade_plan.1": "请 ",
+  "insufficient_quota_dialog.please_upgrade_plan.2": "升级您的计划",
+  "insufficient_quota_dialog.please_upgrade_plan.3": "或删除使用上述资源的应用。",
+  "insufficient_quota_dialog.quota_available": "可用: ",
+  "insufficient_quota_dialog.quota_in_use": "使用中: ",
+  "insufficient_quota_dialog.quota_total": "总计: ",
+  "insufficient_quota_dialog.title": "资源不足"
 }

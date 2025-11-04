@@ -76,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
     const bodyRaw = {
       // kubeConfig: kc.exportConfig(),
-      paymentIDList: billings.map((item) => item.ID),
+      billings,
       detail: JSON.stringify(invoiceDetail)
     };
     const message_id = (await retrySerially<string>(
@@ -93,6 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
+
     const result = await client.post('/account/v1alpha1/invoice/apply', bodyRaw);
     const invoiceRes = result.data as {
       data: {
@@ -118,9 +119,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const invoice = invoiceRes.data.invoice;
     const payments = await getInvoicePayments(invoice.id);
+    const paymentItems = payments.map((payment) => ({
+      order_id: payment.ID,
+      amount: payment.Amount,
+      regionUID: payment.RegionUID,
+      createdTime: payment.CreatedAt
+    }));
     const botResult = await sendToUpdateBot({
       invoice,
-      payments,
+      payments: paymentItems,
       message_id
     });
     if (!botResult) throw Error('botResult is null');

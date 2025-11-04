@@ -1,15 +1,15 @@
 {
-	"TERMINAL": "终端",
-	"JOB":"任务",
-	"OTHER": "其他",
-	"OBJECT-STORAGE": "对象存储",
-	"CLOUD-VM":"云主机",
-	"DB": "数据库",
-	"APP": "应用",
-	"All APP": "所有应用",
-	"APP-STORE": "应用商店",
-	"DB-BACKUP":"数据库备份",
-	"all_app_type": "所有应用类型",
-	"DEV-BOX": "Devbox",
-	"LLM-TOKEN": "AI Proxy"
+  "TERMINAL": "终端",
+  "JOB": "定时任务",
+  "OTHER": "其他",
+  "OBJECT-STORAGE": "对象存储",
+  "CLOUD-VM": "云主机",
+  "DB": "数据库",
+  "APP": "应用",
+  "All APP": "所有应用",
+  "APP-STORE": "应用商店",
+  "DB-BACKUP": "数据库备份",
+  "all_app_type": "所有应用类型",
+  "DEV-BOX": "DevBox",
+  "LLM-TOKEN": "AI Proxy"
 }

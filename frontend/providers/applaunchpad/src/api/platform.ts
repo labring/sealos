@@ -1,5 +1,5 @@
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
+import type { UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
@@ -7,11 +7,6 @@ import type { EnvResponse } from '@/types';
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
 export const getInitData = () => GET<EnvResponse>('/api/platform/getInitData');
-
-export const getUserQuota = () =>
-  GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
 
@@ -36,13 +31,6 @@ export const getUserTasks = () =>
 
 export const checkUserTask = () =>
   GET('/api/guide/checkTask', undefined, {
-    headers: {
-      Authorization: getUserSession()?.token
-    }
-  });
-
-export const getPriceBonus = () =>
-  GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
     headers: {
       Authorization: getUserSession()?.token
     }

@@ -28,5 +28,21 @@
   "Unable to Access": "Unable to Access",
   "reset_error": "Reset Error",
   "userNotRealName": "Object storage service requires real-name authentication",
-  "openHostFailed": "Failed to enable site hosting"
+  "openHostFailed": "Failed to enable site hosting",
+  "cpu": "CPU",
+  "gpu": "GPU",
+  "memory": "Memory",
+  "storage": "Storage",
+  "nodeport": "Port",
+  "traffic": "Traffic",
+  "insufficient_quota_dialog.alert-title": "We can't create your app right now. You've used all of your available resources.",
+  "insufficient_quota_dialog.cancel": "Cancel",
+  "insufficient_quota_dialog.confirm": "Confirm",
+  "insufficient_quota_dialog.please_upgrade_plan.1": "Please ",
+  "insufficient_quota_dialog.please_upgrade_plan.2": "upgrade your plan",
+  "insufficient_quota_dialog.please_upgrade_plan.3": " or delete unused apps occupying resources.",
+  "insufficient_quota_dialog.quota_available": "Available: ",
+  "insufficient_quota_dialog.quota_in_use": "In use: ",
+  "insufficient_quota_dialog.quota_total": "Total: ",
+  "insufficient_quota_dialog.title": "Insufficient Resources"
 }
