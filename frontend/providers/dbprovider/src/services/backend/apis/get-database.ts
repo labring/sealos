@@ -22,7 +22,7 @@ const getSecretNames = (dbName: string, dbType: DBType): string[] => {
   } as any;
   return secretMap[dbType] || [`${dbName}-conn-credential`];
 };
-
+//database transform to schema
 export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> => {
   const dbEditSchemaFromRaw: z.Infer<typeof dbDetailSchema> = {
     terminationPolicy: raw.terminationPolicy,
@@ -69,6 +69,7 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
   return dbEditSchemaFromRaw;
 };
 
+//get database details
 export async function getDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
   request: {
@@ -86,7 +87,7 @@ export async function getDatabase(
     dbName
   )) as { body: KbPgClusterType };
 
-  const dbDetail = adaptDBDetail(cluster);
+  //get database type
   const rawDbType =
     cluster.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
   const dbType = ((rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType) as DBType;
