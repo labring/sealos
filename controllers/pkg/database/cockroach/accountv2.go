@@ -2143,7 +2143,7 @@ func (c *Cockroach) InitTables() error {
 }
 
 func migrateColumns(c *gorm.DB) error {
-	// 处理 encryptBalance 列
+	// TODO Processing encryptBalance column，to be deleted in the future
 	if c.Migrator().HasColumn(&types.Account{}, "encryptBalance") {
 		// 将现有 NULL 值更新为 ''
 		// fmt.Println("updating NULL values to '' for encryptBalance")
