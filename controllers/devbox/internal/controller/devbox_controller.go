@@ -174,7 +174,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				devbox.Status.Node = r.NodeName
 				if err := r.Status().Update(ctx, devbox); err != nil {
 					logger.Info("try to schedule devbox to node failed. This devbox may have already been scheduled to another node", "error", err)
-					return ctrl.Result{}, err
+					return ctrl.Result{}, nil
 				}
 				logger.Info("devbox scheduled to node", "node", r.NodeName)
 				r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
@@ -230,7 +230,9 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 
 	// sync devbox state
-	if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName && r.syncDevboxState(ctx, devbox) {
+	if (devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName ||
+		((devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown) && devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "")) &&
+		r.syncDevboxState(ctx, devbox) {
 		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
 		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
 
@@ -256,21 +258,28 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxSecret)
 	if err == nil {
-		// Secret already exists, no need to create
-		// update controller reference
-		if err := controllerutil.SetControllerReference(devbox, devboxSecret, r.Scheme); err != nil {
-			return fmt.Errorf("failed to update owner reference: %w", err)
-		}
-		// TODO: delete this code after we have a way to sync secret to devbox
-		// check if SEALOS_DEVBOX_JWT_SECRET is exist, if not exist, create it
-		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"]; !ok {
-			devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"] = []byte(rand.String(32))
-		}
-		// check if SEALOS_DEVBOX_AUTHORIZED_KEYS is exist, if not exist, set it to SEALOS_DEVBOX_PUBLIC_KEY
-		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
-			devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = devboxSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
-		}
-		return r.Update(ctx, devboxSecret)
+		// Secret already exists, update with retry
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestSecret := &corev1.Secret{}
+			if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestSecret); err != nil {
+				return err
+			}
+			// update controller reference
+			if err := controllerutil.SetControllerReference(devbox, latestSecret, r.Scheme); err != nil {
+				return fmt.Errorf("failed to update owner reference: %w", err)
+			}
+			// TODO: delete this code after we have a way to sync secret to devbox
+			// check if SEALOS_DEVBOX_JWT_SECRET is exist, if not exist, create it
+			if _, ok := latestSecret.Data["SEALOS_DEVBOX_JWT_SECRET"]; !ok {
+				latestSecret.Data["SEALOS_DEVBOX_JWT_SECRET"] = []byte(rand.String(32))
+			}
+			// check if SEALOS_DEVBOX_AUTHORIZED_KEYS is exist, if not exist, set it to SEALOS_DEVBOX_PUBLIC_KEY
+			if _, ok := latestSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
+				latestSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = latestSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
+			}
+			return r.Update(ctx, latestSecret)
+		})
+		return err
 	}
 	if client.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
@@ -405,11 +414,18 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
-		devbox.Status.Network = devboxv1alpha2.NetworkStatus{
-			Type:     devboxv1alpha2.NetworkTypeNodePort,
-			NodePort: int32(0),
-		}
-		return r.Status().Update(ctx, devbox)
+		// Update devbox status with retry
+		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.Network = devboxv1alpha2.NetworkStatus{
+				Type:     devboxv1alpha2.NetworkTypeNodePort,
+				NodePort: int32(0),
+			}
+			return r.Status().Update(ctx, latestDevbox)
+		})
 	case devboxv1alpha2.DevboxStateRunning, devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped:
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
@@ -450,9 +466,16 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		if nodePort == 0 {
 			return fmt.Errorf("NodePort not found for service %s", service.Name)
 		}
-		devbox.Status.Network.Type = devboxv1alpha2.NetworkTypeNodePort
-		devbox.Status.Network.NodePort = nodePort
-		return r.Status().Update(ctx, devbox)
+		// Update devbox status with retry
+		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.Network.Type = devboxv1alpha2.NetworkTypeNodePort
+			latestDevbox.Status.Network.NodePort = nodePort
+			return r.Status().Update(ctx, latestDevbox)
+		})
 	}
 	return nil
 }
@@ -539,8 +562,15 @@ func (r *DevboxReconciler) syncDevboxPhase(ctx context.Context, devbox *devboxv1
 		return nil
 	}
 	logger.Info("updating devbox phase", "from", devbox.Status.Phase, "to", newPhase)
-	devbox.Status.Phase = newPhase
-	return r.Status().Update(ctx, devbox)
+	// Update devbox phase with retry
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.Phase = newPhase
+		return r.Status().Update(ctx, latestDevbox)
+	})
 }
 
 // sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
@@ -567,46 +597,123 @@ func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1
 
 func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha2.Devbox, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: pod.Namespace, Name: pod.Name}, devbox)
+	originalPodUID := pod.UID
+
+	// Get latest devbox
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox)
 	if err != nil {
 		logger.Error(err, "failed to get devbox")
 		return err
 	}
+
+	// Update devbox status with container status if available
 	if len(pod.Status.ContainerStatuses) > 0 {
-		devbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
-		if err := r.Status().Update(ctx, devbox); err != nil {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
+			return r.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
 			logger.Error(err, "failed to update devbox status")
 			return err
 		}
 	}
-	// remove finalizer and delete pod
-	controllerutil.RemoveFinalizer(pod, devboxv1alpha2.FinalizerName)
-	if err := r.Update(ctx, pod); err != nil {
+
+	// Remove finalizer and delete pod with retry and UID check
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestPod := &corev1.Pod{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(pod), latestPod); err != nil {
+			if errors.IsNotFound(err) {
+				// Pod already deleted
+				logger.Info("pod already deleted", "pod", pod.Name)
+				return nil
+			}
+			return err
+		}
+
+		// Check if UID matches
+		if latestPod.UID != originalPodUID {
+			logger.Info("pod UID changed, skip finalizer removal",
+				"pod", pod.Name,
+				"originalUID", originalPodUID,
+				"currentUID", latestPod.UID)
+			return nil
+		}
+
+		// Remove finalizer
+		controllerutil.RemoveFinalizer(latestPod, devboxv1alpha2.FinalizerName)
+		return r.Update(ctx, latestPod)
+	})
+	if err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
 	}
+
+	// Delete pod
 	if err := r.Delete(ctx, pod, client.GracePeriodSeconds(0), client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
-		logger.Error(err, "delete pod failed")
-		return err
+		if !errors.IsNotFound(err) {
+			logger.Error(err, "delete pod failed")
+			return err
+		}
+		logger.Info("pod already deleted", "pod", pod.Name)
 	}
 	return nil
 }
 
 func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv1alpha2.Devbox, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
-	controllerutil.RemoveFinalizer(pod, devboxv1alpha2.FinalizerName)
-	if err := r.Update(ctx, pod); err != nil {
+	originalPodUID := pod.UID
+
+	// Remove finalizer with retry and UID check
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestPod := &corev1.Pod{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(pod), latestPod); err != nil {
+			if errors.IsNotFound(err) {
+				// Pod already deleted
+				logger.Info("pod already deleted, skip finalizer removal", "pod", pod.Name)
+				return nil
+			}
+			return err
+		}
+
+		// Check if UID matches
+		if latestPod.UID != originalPodUID {
+			logger.Info("pod UID changed, skip finalizer removal",
+				"pod", pod.Name,
+				"originalUID", originalPodUID,
+				"currentUID", latestPod.UID)
+			return nil
+		}
+
+		controllerutil.RemoveFinalizer(latestPod, devboxv1alpha2.FinalizerName)
+		return r.Update(ctx, latestPod)
+	})
+	if err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
 	}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: pod.Namespace, Name: pod.Name}, devbox)
+
+	// Get latest devbox
+	err = r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox)
 	if err != nil {
 		logger.Error(err, "failed to get devbox")
 		return err
 	}
+
+	// Update devbox status with container status if available
 	if len(pod.Status.ContainerStatuses) > 0 {
-		devbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
-		if err := r.Status().Update(ctx, devbox); err != nil {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
+			return r.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
 			logger.Error(err, "failed to update devbox status")
 			return err
 		}
@@ -703,16 +810,46 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha2.Devbox) stri
 }
 
 func (r *DevboxReconciler) handleSubResourceDelete(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	logger := log.FromContext(ctx)
+
 	// Delete Pod
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
 	}
-	for _, pod := range podList.Items {
-		if controllerutil.RemoveFinalizer(&pod, devboxv1alpha2.FinalizerName) {
-			if err := r.Update(ctx, &pod); err != nil {
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		originalPodUID := pod.UID
+
+		// Remove finalizer with retry and UID check
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestPod := &corev1.Pod{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(pod), latestPod); err != nil {
+				if errors.IsNotFound(err) {
+					// Pod already deleted
+					logger.Info("pod already deleted, skip finalizer removal", "pod", pod.Name)
+					return nil
+				}
 				return err
 			}
+
+			// Check if UID matches
+			if latestPod.UID != originalPodUID {
+				logger.Info("pod UID changed, skip finalizer removal",
+					"pod", pod.Name,
+					"originalUID", originalPodUID,
+					"currentUID", latestPod.UID)
+				return nil
+			}
+
+			if controllerutil.RemoveFinalizer(latestPod, devboxv1alpha2.FinalizerName) {
+				return r.Update(ctx, latestPod)
+			}
+			return nil
+		})
+		if err != nil {
+			logger.Error(err, "failed to remove finalizer from pod", "pod", pod.Name)
+			return err
 		}
 	}
 	if err := r.deleteResourcesByLabels(ctx, &corev1.Pod{}, devbox.Namespace, recLabels); err != nil {

@@ -105,10 +105,17 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 		}
 		h.Logger.Info("commit devbox success", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", time.Since(start))
 	} else if currentState != targetState {
-		// Handle simple state transitions without commit
-		devbox.Status.State = targetState
+		// Handle simple state transitions without commit with retry
 		h.Logger.Info("update devbox status", "devbox", devbox.Name, "from", currentState, "to", targetState)
-		if err := h.Client.Status().Update(ctx, devbox); err != nil {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.State = targetState
+			return h.Client.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
 			h.Logger.Error(err, "failed to update devbox status", "devbox", devbox.Name)
 			return err
 		}
@@ -145,10 +152,16 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 		return err
 	}
 	// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
-	// step 0: set commit status to committing to prevent duplicate requests
-	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusCommitting
-	devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
-	if err := h.Client.Status().Update(ctx, devbox); err != nil {
+	// step 0: set commit status to committing to prevent duplicate requests with retry
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusCommitting
+		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
+		return h.Client.Status().Update(ctx, latestDevbox)
+	}); err != nil {
 		h.Logger.Error(err, "failed to update commit status to committing", "devbox", devbox.Name)
 		return err
 	}
@@ -164,22 +177,29 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 	oldContentID := devbox.Status.ContentID
 	h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
 	var containerID string
-	var err error
+	var commitErr error
 	defer func() {
 		// remove container whether commit success or not
 		if err := h.Committer.RemoveContainer(ctx, containerID); err != nil {
 			h.Logger.Error(err, "failed to remove container", "containerID", containerID)
 		}
 	}()
-	if containerID, err = h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
-		h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
-		// Update commit status to failed on commit error
-		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
-		devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
-		if updateErr := h.Client.Status().Update(ctx, devbox); updateErr != nil {
+	if containerID, commitErr = h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); commitErr != nil {
+		h.Logger.Error(commitErr, "failed to commit devbox", "devbox", devbox.Name)
+		// Update commit status to failed on commit error with retry
+		updateErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
+			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
+			return h.Client.Status().Update(ctx, latestDevbox)
+		})
+		if updateErr != nil {
 			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
 		}
-		return err
+		return commitErr
 	}
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
@@ -187,10 +207,17 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 	}
 	if err := h.Committer.Push(ctx, commitImage); err != nil {
 		h.Logger.Error(err, "failed to push commit image", "commitImage", commitImage)
-		// Update commit status to failed on push error
-		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
-		devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
-		if updateErr := h.Client.Status().Update(ctx, devbox); updateErr != nil {
+		// Update commit status to failed on push error with retry
+		updateErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
+			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
+			return h.Client.Status().Update(ctx, latestDevbox)
+		})
+		if updateErr != nil {
 			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
 		}
 		return err
@@ -200,24 +227,30 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 		h.Logger.Error(err, "failed to remove image", "commitImage", commitImage)
 	}
 	// step 2: update devbox commit record
-	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusSuccess
-	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitTime = metav1.Now()
 	// step 3: update devbox status state to shutdown
-	devbox.Status.State = targetState
 	// step 4: add a new commit record for the new content id
 	// make sure that always have a new commit record for shutdown state
-	devbox.Status.ContentID = uuid.New().String()
-	devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha2.CommitRecord{
-		CommitStatus: devboxv1alpha2.CommitStatusPending,
-		Node:         "",
-		BaseImage:    commitImage,
-		CommitImage:  h.generateImageName(devbox),
-		GenerateTime: metav1.Now(),
-	}
-	devbox.Status.Node = ""
+	newContentID := uuid.New().String()
+	newCommitImage := h.generateImageName(devbox)
 	h.Logger.Info("update devbox status to shutdown", "devbox", devbox.Name)
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return h.Client.Status().Update(ctx, devbox)
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusSuccess
+		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitTime = metav1.Now()
+		latestDevbox.Status.State = targetState
+		latestDevbox.Status.ContentID = newContentID
+		latestDevbox.Status.CommitRecords[newContentID] = &devboxv1alpha2.CommitRecord{
+			CommitStatus: devboxv1alpha2.CommitStatusPending,
+			Node:         "",
+			BaseImage:    commitImage,
+			CommitImage:  newCommitImage,
+			GenerateTime: metav1.Now(),
+		}
+		latestDevbox.Status.Node = ""
+		return h.Client.Status().Update(ctx, latestDevbox)
 	}); err != nil {
 		h.Logger.Error(err, "failed to update devbox status", "devbox", devbox.Name)
 		return err

@@ -52,16 +52,34 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	if devboxRelease.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.AddFinalizer(devboxRelease, devboxv1alpha2.FinalizerName) {
-			if err := r.Update(ctx, devboxRelease); err != nil {
-				return ctrl.Result{}, err
+		// Add finalizer with retry
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestRelease := &devboxv1alpha2.DevBoxRelease{}
+			if err := r.Get(ctx, req.NamespacedName, latestRelease); err != nil {
+				return err
 			}
+			if controllerutil.AddFinalizer(latestRelease, devboxv1alpha2.FinalizerName) {
+				return r.Update(ctx, latestRelease)
+			}
+			return nil
+		})
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	} else {
-		if controllerutil.RemoveFinalizer(devboxRelease, devboxv1alpha2.FinalizerName) {
-			if err := r.Update(ctx, devboxRelease); err != nil {
-				return ctrl.Result{}, err
+		// Remove finalizer with retry
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestRelease := &devboxv1alpha2.DevBoxRelease{}
+			if err := r.Get(ctx, req.NamespacedName, latestRelease); err != nil {
+				return client.IgnoreNotFound(err)
 			}
+			if controllerutil.RemoveFinalizer(latestRelease, devboxv1alpha2.FinalizerName) {
+				return r.Update(ctx, latestRelease)
+			}
+			return nil
+		})
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
 	}
@@ -85,11 +103,21 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	if devboxRelease.Status.Phase == "" {
-		devboxRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhasePending
-		devboxRelease.Status.OriginalDevboxState = devbox.Spec.State
-		devboxRelease.Status.SourceImage = devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
-		devboxRelease.Status.TargetImage = fmt.Sprintf("%s/%s/%s:%s", r.Registry.Host, devboxRelease.Namespace, devboxRelease.Spec.DevboxName, devboxRelease.Spec.Version)
-		if err := r.Status().Update(ctx, devboxRelease); err != nil {
+		// Initialize release phase with retry
+		sourceImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
+		targetImage := fmt.Sprintf("%s/%s/%s:%s", r.Registry.Host, devboxRelease.Namespace, devboxRelease.Spec.DevboxName, devboxRelease.Spec.Version)
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestRelease := &devboxv1alpha2.DevBoxRelease{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
+				return err
+			}
+			latestRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhasePending
+			latestRelease.Status.OriginalDevboxState = devbox.Spec.State
+			latestRelease.Status.SourceImage = sourceImage
+			latestRelease.Status.TargetImage = targetImage
+			return r.Status().Update(ctx, latestRelease)
+		})
+		if err != nil {
 			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
 			return ctrl.Result{}, err
 		}
@@ -103,13 +131,28 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		} else if err != nil {
 			logger.Error(err, "Failed to create release tag", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
-			devboxRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhaseFailed
-			_ = r.Status().Update(ctx, devboxRelease)
+			// Update status to failed with retry
+			_ = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				latestRelease := &devboxv1alpha2.DevBoxRelease{}
+				if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
+					return err
+				}
+				latestRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhaseFailed
+				return r.Status().Update(ctx, latestRelease)
+			})
 			return ctrl.Result{}, err
 		}
 		logger.Info("Release tag created", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
-		devboxRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhaseSuccess
-		if err = r.Status().Update(ctx, devboxRelease); err != nil {
+		// Update status to success with retry
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestRelease := &devboxv1alpha2.DevBoxRelease{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
+				return err
+			}
+			latestRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhaseSuccess
+			return r.Status().Update(ctx, latestRelease)
+		})
+		if err != nil {
 			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
 			return ctrl.Result{}, err
 		}
