@@ -509,6 +509,9 @@ func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subsc
 	})
 	if err != nil && !strings.Contains(err.Error(), "No such subscription") {
 		sub, _ = subscription.Get(subscriptionID, nil)
+		if sub != nil && sub.Status == stripe.SubscriptionStatusCanceled {
+			return sub, nil
+		}
 		return sub, fmt.Errorf("subscription.Cancel: %v", err)
 	}
 	return sub, nil
