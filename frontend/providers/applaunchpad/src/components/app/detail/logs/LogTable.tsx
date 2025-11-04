@@ -65,10 +65,13 @@ export const LogTable = ({
       });
     });
 
-    const prevFieldStates = prevFieldList.reduce((acc, field) => {
-      acc[field.value] = field.checked;
-      return acc;
-    }, {} as Record<string, boolean>);
+    const prevFieldStates = prevFieldList.reduce(
+      (acc, field) => {
+        acc[field.value] = field.checked;
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
 
     return Array.from(uniqueKeys).map((key) => ({
       value: key,
@@ -103,10 +106,7 @@ export const LogTable = ({
       .map((field) => ({
         accessorKey: field.accessorKey,
         header: () => {
-          if (field.label === '_time' || field.label === '_msg') {
-            return field.label.substring(1);
-          }
-          return field.label;
+          return t('common.log_table.' + field.label) || field.label;
         },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');

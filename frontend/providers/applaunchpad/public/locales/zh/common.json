@@ -426,5 +426,12 @@
     "quota_in_use": "使用中: ",
     "quota_total": "总计: ",
     "title": "资源不足"
+  },
+  "log_table": {
+    "_time": "时间",
+    "_msg": "日志内容",
+    "container": "容器",
+    "pod": "Pod",
+    "stream": "输出流"
   }
 }
