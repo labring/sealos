@@ -91,11 +91,10 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 
 	if needsCommit {
 		// Check if commit is already in progress to prevent duplicate requests
-		if _, ok := commitMap.Load(devbox.Status.ContentID); ok {
+		if _, loaded := commitMap.LoadOrStore(devbox.Status.ContentID, true); loaded {
 			h.Logger.Info("commit already in progress, skipping duplicate request", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
 			return nil
 		}
-		commitMap.Store(devbox.Status.ContentID, true)
 		start := time.Now()
 		h.Logger.Info("start commit devbox", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", start)
 		if err := h.commitDevbox(ctx, devbox, targetState); err != nil {
