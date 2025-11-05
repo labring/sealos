@@ -163,7 +163,12 @@ export default function Desktop() {
   );
 
   useEffect(() => {
-    const cleanupMaster = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
+    const cleanupMaster = createMasterAPP({
+      allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
+      getWorkspaceQuotaApi: async () => {
+        return getWorkspaceQuota().then((res) => res.data?.quota ?? []);
+      }
+    });
     const cleanups = [
       masterApp?.addEventListen('openDesktopApp', openDesktopApp),
       masterApp?.addEventListen('closeDesktopApp', closeDesktopApp),

@@ -26,7 +26,7 @@ export type KubeConfig = string;
 
 export type Session = {
   token: string;
-  subscription: WorkspaceSubscription;
+  subscription: WorkspaceSubscription | null;
   user: UserInfo | null;
   kubeconfig: KubeConfig;
   isGuest?: boolean;
