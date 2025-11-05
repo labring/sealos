@@ -42,6 +42,9 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
   if (!devboxDetail) return null;
 
   const isStopping = devboxDetail.status.value === DevboxStatusEnum.Stopping;
+  const isStopped =
+    devboxDetail.status.value === DevboxStatusEnum.Stopped ||
+    devboxDetail.status.value === DevboxStatusEnum.Shutdown;
 
   return (
     <div className="flex min-h-20 w-full items-center justify-between gap-5">
@@ -112,7 +115,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             variant="outline"
             size="lg"
             onClick={() => handleRestartDevbox(devboxDetail)}
-            disabled={isStopping}
+            disabled={isStopping || isStopped}
           >
             {t('restart')}
           </Button>
