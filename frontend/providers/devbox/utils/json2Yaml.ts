@@ -11,8 +11,7 @@ import { RuntimeNamespaceMap } from '@/types/static';
 export const json2Devbox = (
   data: DevboxEditType,
   runtimeNamespaceMap: RuntimeNamespaceMap,
-  devboxAffinityEnable: string = 'true',
-  squashEnable: string = 'false'
+  devboxAffinityEnable: string = 'true'
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
@@ -31,7 +30,6 @@ export const json2Devbox = (
       name: data.name
     },
     spec: {
-      squash: squashEnable === 'true',
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
@@ -84,7 +82,6 @@ export const json2Devbox = (
 export const json2DevboxV2 = (
   data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
-  squashEnable: string = 'false',
   storageLimit: string = '1Gi'
 ) => {
   let json: any = {
@@ -94,7 +91,6 @@ export const json2DevboxV2 = (
       name: data.name
     },
     spec: {
-      squash: squashEnable === 'true',
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
@@ -370,14 +366,13 @@ export const generateYamlList = (
   data: json2DevboxV2Data,
   env: {
     devboxAffinityEnable?: string;
-    squashEnable?: string;
     ingressSecret: string;
   }
 ) => {
   return [
     {
       filename: 'devbox.yaml',
-      value: json2DevboxV2(data, env.devboxAffinityEnable, env.squashEnable)
+      value: json2DevboxV2(data, env.devboxAffinityEnable)
     },
     ...(data.networks.length > 0
       ? [

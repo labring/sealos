@@ -77,7 +77,6 @@ export type KBDevboxTypeV2 = {
 export interface KBDevboxSpecV2 {
   runtimeClassName?: string; // devbox-runtime
   storageLimit?: string; // 1Gi
-  squash?: boolean;
   config: object;
   image: string;
   templateID: string;

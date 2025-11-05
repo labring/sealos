@@ -73,9 +73,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE, STORAGE_LIMIT } = process.env;
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
     // TODO: this function can remove env params,because it is only backend
-    const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE, STORAGE_LIMIT);
+    const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT);
     const service = json2Service(devboxForm);
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
     await applyYamlList([devbox, service, ingress], 'create');

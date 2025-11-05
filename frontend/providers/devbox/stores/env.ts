@@ -12,7 +12,6 @@ export const defaultEnv: Env = {
   ingressSecret: 'wildcard-cert',
   registryAddr: 'hub.dev.sealos.plus',
   devboxAffinityEnable: 'true',
-  squashEnable: 'false',
   namespace: 'default',
   privacyUrlZH: 'https://sealos.run/docs/msa/privacy-policy',
   privacyUrlEN: 'https://sealos.io/docs/msa/privacy-policy',

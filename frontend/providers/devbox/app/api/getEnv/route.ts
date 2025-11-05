@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
         registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
         devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || defaultEnv.devboxAffinityEnable,
-        squashEnable: process.env.SQUASH_ENABLE || defaultEnv.squashEnable,
         namespace: namespace || defaultEnv.namespace,
         rootRuntimeNamespace: process.env.ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
         ingressDomain: process.env.INGRESS_DOMAIN || defaultEnv.ingressDomain,
