@@ -65,9 +65,12 @@ export const adaptDevboxDetailV2 = ([
   template
 ]: GetDevboxByNameReturn): DevboxDetailTypeV2 => {
   const status =
-    devbox.status?.phase && devboxStatusMap[devbox.status.phase]
-      ? devboxStatusMap[devbox.status.phase]
-      : devboxStatusMap.Pending;
+    devbox.status?.state === 'Running' &&
+    (devbox.spec.state === 'Stopped' || devbox.spec.state === 'Shutdown')
+      ? devboxStatusMap.Stopping
+      : devbox.status?.state && devboxStatusMap[devbox.status.state]
+        ? devboxStatusMap[devbox.status.state]
+        : devboxStatusMap.Pending;
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',

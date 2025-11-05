@@ -30,22 +30,7 @@ export type KBDevboxTypeV2 = {
     //     startedAt: string;
     //   };
     // };
-    // state: {
-    //   running?: {
-    //     startedAt: string;
-    //   };
-    //   waiting?: {
-    //     message: string;
-    //     reason: string;
-    //   };
-    //   terminated?: {
-    //     containerID: string;
-    //     exitCode: number;
-    //     finishedAt: string;
-    //     reason: string;
-    //     startedAt: string;
-    //   };
-    // };
+    state: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown' | 'Shutdown';
     phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown' | 'Shutdown';
     contentID: string; // first item sha of commitRecords
     commitRecords: {
@@ -76,7 +61,7 @@ export type KBDevboxTypeV2 = {
 };
 export interface KBDevboxSpecV2 {
   runtimeClassName?: string; // devbox-runtime
-  storageLimit?: string; // 1Gi
+  storageLimit?: string; // 10Gi
   config: object;
   image: string;
   templateID: string;
