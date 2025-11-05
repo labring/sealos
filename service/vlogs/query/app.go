@@ -30,6 +30,7 @@ func (v *VLogsQuery) GetQuery(req *api.VlogsRequest) (string, error) {
 	}
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
+	v.generateSortQuery(req)
 	return v.query, nil
 }
 
@@ -172,5 +173,11 @@ func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 			v.query += item
 		}
 		// else: invalid NumberLevel, do not add to query
+	}
+}
+
+func (v *VLogsQuery) generateSortQuery(req *api.VlogsRequest) {
+	if req.NumberMode != modeTrue {
+		v.query += ` | sort by (_time) desc`
 	}
 }

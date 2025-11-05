@@ -19,6 +19,7 @@ func (v *DBLogsQuery) GetDBQuery(req *api.DBLogsRequest) (string, error) {
 	v.generateTypeQuery(req)
 	v.generateCommonQuery(req)
 	v.generateNumberQuery(req)
+	v.generateSortQuery(req)
 	return v.query, nil
 }
 
@@ -74,5 +75,11 @@ func (v *DBLogsQuery) generateNumberQuery(req *api.DBLogsRequest) {
 		if isValidNumberLevel(req.NumberLevel) {
 			v.query += fmt.Sprintf(` | stats by (_time:1%s) count() logs_total`, req.NumberLevel)
 		}
+	}
+}
+
+func (v *DBLogsQuery) generateSortQuery(req *api.DBLogsRequest) {
+	if req.NumberMode != modeTrue {
+		v.query += ` | sort by (_time) desc`
 	}
 }
