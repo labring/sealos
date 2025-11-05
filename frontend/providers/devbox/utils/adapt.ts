@@ -33,15 +33,19 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     name: string;
   }
 ]): DevboxListItemTypeV2 => {
+  const status =
+    devbox.status?.state === 'Running' &&
+    (devbox.spec.state === 'Stopped' || devbox.spec.state === 'Shutdown')
+      ? devboxStatusMap.Stopping
+      : devbox.status?.state && devboxStatusMap[devbox.status.state]
+        ? devboxStatusMap[devbox.status.state]
+        : devboxStatusMap.Pending;
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
     template,
     remark: devbox.metadata?.annotations?.[devboxRemarkKey] || '',
-    status:
-      devbox.status?.phase && devboxStatusMap[devbox.status.phase]
-        ? devboxStatusMap[devbox.status.phase]
-        : devboxStatusMap.Pending,
+    status,
     sshPort: devbox.status?.network.nodePort || 65535,
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
