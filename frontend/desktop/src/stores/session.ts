@@ -130,7 +130,8 @@ const useSessionStore = create<SessionState>()(
             guestId,
             token: '',
             user: null,
-            kubeconfig: ''
+            kubeconfig: '',
+            subscription: null
           }
         });
       },
