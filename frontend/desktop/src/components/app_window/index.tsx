@@ -7,6 +7,7 @@ import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.css';
 import { useTranslation } from 'next-i18next';
 import { useConfigStore } from '@/stores/config';
+import useSessionStore from '@/stores/session';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -26,6 +27,7 @@ export default function AppWindow(props: {
   const logo = useConfigStore().layoutConfig?.logo;
   const { t, i18n } = useTranslation();
   const wnapp = findAppInfoById(pid);
+  const isGuest = useSessionStore((state) => state.isGuest);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragDom = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -206,12 +208,20 @@ export default function AppWindow(props: {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                handleClose();
+                if (isGuest()) {
+                  handleMinimize();
+                } else {
+                  handleClose();
+                }
               }}
               onTouchEnd={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                handleClose();
+                if (isGuest()) {
+                  handleMinimize();
+                } else {
+                  handleClose();
+                }
               }}
             >
               <Image

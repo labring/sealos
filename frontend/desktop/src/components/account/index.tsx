@@ -117,7 +117,7 @@ export default function Account() {
       openGuideModal();
     }
   }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
-  const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
+  const { subscriptionInfo } = useSubscriptionStore();
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>

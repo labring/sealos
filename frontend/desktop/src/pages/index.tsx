@@ -1,3 +1,4 @@
+import { getPlanInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { trackEventName } from '@/constants/account';
@@ -55,12 +56,12 @@ export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 
 export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
-  const { firstUse, setFirstUse, isUserLogin, setGuestSession } = useSessionStore();
+  const { firstUse, setFirstUse, isUserLogin, setGuestSession, setSessionProp } = useSessionStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const { autolaunchWorkspaceUid } = useAppStore();
-  const { session } = useSessionStore();
+  const { session, token } = useSessionStore();
   const { layoutConfig, commonConfig, trackingConfig, authConfig, cloudConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
@@ -333,6 +334,33 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       return;
     }
   }, [workspaceInviteCode]);
+
+  // Refresh subscription for logged-in users if missing
+  useEffect(() => {
+    const refreshSubscription = async () => {
+      if (!isUserLogin() || !session?.user || !token) {
+        return;
+      }
+      if (session.subscription === undefined || session.subscription === null) {
+        try {
+          const payload = jwtDecode<AccessTokenPayload>(token);
+          const workspaceId = payload.workspaceId;
+
+          if (workspaceId) {
+            const planInfo = await getPlanInfo(workspaceId);
+            if (planInfo?.data?.subscription) {
+              setSessionProp('subscription', planInfo.data.subscription);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh subscription:', error);
+        }
+      }
+    };
+
+    refreshSubscription();
+  }, [session, token, setSessionProp, isUserLogin]);
+
   useEffect(() => {
     (async (state) => {
       try {
