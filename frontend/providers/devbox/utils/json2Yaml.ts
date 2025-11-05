@@ -366,13 +366,14 @@ export const generateYamlList = (
   data: json2DevboxV2Data,
   env: {
     devboxAffinityEnable?: string;
+    storageLimit?: string;
     ingressSecret: string;
   }
 ) => {
   return [
     {
       filename: 'devbox.yaml',
-      value: json2DevboxV2(data, env.devboxAffinityEnable)
+      value: json2DevboxV2(data, env.devboxAffinityEnable, env.storageLimit)
     },
     ...(data.networks.length > 0
       ? [
