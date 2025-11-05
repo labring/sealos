@@ -13,6 +13,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	// kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -85,15 +86,16 @@ func (r *NamespaceReconciler) Reconcile(
 		return ctrl.Result{}, nil
 	}
 
+	if ns.Annotations == nil {
+		logger.V(1).Info("No debt or network status annotations found")
+		return ctrl.Result{}, nil
+	}
+
 	debtStatus, debtExists := ns.Annotations[types.DebtNamespaceAnnoStatusKey]
 	networkStatus, networkExists := ns.Annotations[types.NetworkStatusAnnoKey]
 	if !debtExists && !networkExists {
 		logger.V(1).Info("No debt or network status annotations found")
 		return ctrl.Result{}, nil
-	}
-
-	if ns.Annotations == nil {
-		ns.Annotations = make(map[string]string)
 	}
 
 	debtCompletedStates := map[string]bool{
@@ -329,13 +331,22 @@ func (r *NamespaceReconciler) Reconcile(
 }
 
 func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
+	// IMPORTANT: The order of operations matters!
+	// 1. suspendOrphanPod must run FIRST because it needs to recreate pods with the debt scheduler,
+	//    which requires pod creation permissions.
+	// 2. limitResourceQuotaCreate runs immediately after to quickly block all new resource creation,
+	//    preventing any new workloads from being created during the suspension process.
 	pipelines := []func(context.Context, string) error{
-		r.suspendKBCluster,
-		r.suspendOrphanPod,
-		r.limitResourceQuotaCreate,
-		r.deleteControlledPod,
-		r.suspendCronJob,
-		r.suspendObjectStorage,
+		r.suspendOrphanPod,          // Recreate orphan pods with debt scheduler (requires pod creation)
+		r.limitResourceQuotaCreate,  // Create resource quota to block all new resources (must be after suspendOrphanPod)
+		r.suspendKBCluster,          // Stop KubeBlocks clusters and disable backup
+		r.suspendCertificates,       // Disable cert-manager certificate renewal
+		r.suspendOrphanDeployments,  // Scale orphan deployments to 0 replicas
+		r.suspendOrphanStatefulSets, // Scale orphan statefulsets to 0 replicas
+		r.suspendOrphanReplicaSets,  // Scale orphan replicasets to 0 replicas
+		r.suspendOrphanCronJob,      // Suspend orphan cronjobs
+		r.deleteControlledPod,       // Delete controlled pods
+		r.suspendObjectStorage,      // Disable object storage access
 	}
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
@@ -368,9 +379,15 @@ func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace st
 
 func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace string) error {
 	pipelines := []func(context.Context, string) error{
-		r.limitResourceQuotaDelete,
-		r.resumePod,
-		r.resumeObjectStorage,
+		r.limitResourceQuotaDelete, // Remove resource quota
+		r.resumeOrphanPod,          // Resume orphan pods
+		r.resumeKBCluster,          // Start KubeBlocks clusters and restore backup
+		r.resumeOrphanReplicaSets,  // Restore orphan replicaset replicas
+		r.resumeOrphanDeployments,  // Restore orphan deployment replicas
+		r.resumeOrphanStatefulSets, // Restore orphan statefulset replicas
+		r.resumeOrphanCronJob,      // Restore orphan cronjob suspend state
+		r.resumeCertificates,       // Restore certificate renewal
+		r.resumeObjectStorage,      // Enable object storage access
 	}
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
@@ -445,18 +462,104 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		clusterName := cluster.GetName()
 		logger.V(1).Info("Processing cluster", "Cluster", clusterName)
 
-		// Check if the cluster is already stopped or stopping
+		annotations := cluster.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Check if cluster is already stopped
+		isAlreadyStopped := false
 		status, exists := cluster.Object["status"]
 		if exists && status != nil {
 			phase, _ := status.(map[string]any)["phase"].(string)
 			if phase == "Stopped" || phase == "Stopping" {
+				isAlreadyStopped = true
 				logger.V(1).
-					Info("Cluster already stopped or stopping, skipping", "Cluster", clusterName)
-				continue
+					Info("Cluster already stopped or stopping", "Cluster", clusterName)
 			}
 		}
 
-		// Create OpsRequest resource
+		// Get current backup configuration (only once, used for both saving state and disabling backup)
+		backupEnabled := false
+		backup, hasBackup, err := unstructured.NestedMap(cluster.Object, "spec", "backup")
+		if err != nil {
+			logger.Error(err, "failed to get backup config", "cluster", clusterName)
+		} else if hasBackup && backup != nil {
+			enabled, found, _ := unstructured.NestedBool(cluster.Object, "spec", "backup", "enabled")
+			if found {
+				backupEnabled = enabled
+			}
+			// If enabled field doesn't exist, default is false (backup disabled)
+		}
+
+		// Track if cluster needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			// Determine if cluster was running (not Stopped or Stopping)
+			wasRunning := !isAlreadyStopped
+
+			originalState := &KBClusterOriginalState{
+				WasRunning:    wasRunning,
+				BackupEnabled: backupEnabled,
+			}
+			stateJSON, err := encodeKBClusterState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode cluster state", "cluster", clusterName)
+				return fmt.Errorf("failed to encode cluster state for %s: %w", clusterName, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			cluster.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved cluster state",
+				"cluster",
+				clusterName,
+				"wasRunning",
+				wasRunning,
+				"backupEnabled",
+				backupEnabled,
+			)
+		} else {
+			logger.V(1).Info("Cluster already has original state, skipping state save", "Cluster", clusterName)
+		}
+
+		// Disable backup if it exists and is enabled
+		if hasBackup && backup != nil && backupEnabled {
+			if err := unstructured.SetNestedField(cluster.Object, false, "spec", "backup", "enabled"); err != nil {
+				logger.Error(err, "failed to set backup.enabled=false", "cluster", clusterName)
+			} else {
+				logger.Info("Disabled backup for cluster", "cluster", clusterName)
+				needsUpdate = true
+			}
+		}
+
+		// Update cluster only if there are actual changes
+		if needsUpdate {
+			_, err = r.dynamicClient.Resource(clusterGVR).
+				Namespace(namespace).
+				Update(ctx, &cluster, v12.UpdateOptions{})
+			if err != nil {
+				logger.Error(err, "failed to update cluster", "cluster", clusterName)
+				return fmt.Errorf("failed to update cluster %s: %w", clusterName, err)
+			}
+		} else {
+			logger.V(1).Info("No changes needed for cluster, skipping update", "Cluster", clusterName)
+		}
+
+		// Skip OpsRequest creation if cluster is already stopped or stopping
+		if isAlreadyStopped {
+			logger.V(1).
+				Info("Skipping OpsRequest creation for already stopped cluster", "Cluster", clusterName)
+			continue
+		}
+
+		// Create OpsRequest resource to stop the cluster
 		opsName := fmt.Sprintf("stop-%s-%s", clusterName, time.Now().Format("2006-01-02-15"))
 		opsRequest := &unstructured.Unstructured{}
 		opsRequest.SetGroupVersionKind(schema.GroupVersionKind{
@@ -528,13 +631,23 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 //	return nil
 //}
 
+// hasController checks if a resource has a controller owner reference
+func hasController(ownerRefs []v12.OwnerReference) bool {
+	for _, ref := range ownerRefs {
+		if ref.Controller != nil && *ref.Controller {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace string) error {
 	podList := corev1.PodList{}
 	if err := r.Client.List(ctx, &podList, client.InNamespace(namespace)); err != nil {
 		return err
 	}
 	for _, pod := range podList.Items {
-		if pod.Spec.SchedulerName == v1.DebtSchedulerName || len(pod.OwnerReferences) > 0 {
+		if pod.Spec.SchedulerName == v1.DebtSchedulerName || hasController(pod.OwnerReferences) {
 			continue
 		}
 		clone := pod.DeepCopy()
@@ -573,7 +686,7 @@ func (r *NamespaceReconciler) deleteControlledPod(ctx context.Context, namespace
 	return nil
 }
 
-func (r *NamespaceReconciler) resumePod(ctx context.Context, namespace string) error {
+func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace string) error {
 	var list corev1.PodList
 	if err := r.Client.List(ctx, &list, client.InNamespace(namespace)); err != nil {
 		return err
@@ -585,26 +698,26 @@ func (r *NamespaceReconciler) resumePod(ctx context.Context, namespace string) e
 			pod.Spec.SchedulerName != v1.DebtSchedulerName {
 			continue
 		}
-		if len(pod.OwnerReferences) > 0 {
-			err := r.Client.Delete(deleteCtx, &pod)
-			if err != nil {
-				return fmt.Errorf("delete pod %s failed: %w", pod.Name, err)
-			}
+
+		// Skip if this pod has a controller (not an orphan)
+		if hasController(pod.OwnerReferences) {
+			continue
+		}
+
+		// Only resume orphan pods
+		clone := pod.DeepCopy()
+		clone.ResourceVersion = ""
+		clone.Spec.NodeName = ""
+		clone.Status = corev1.PodStatus{}
+		if scheduler, ok := clone.Annotations[v1.PreviousSchedulerName]; ok {
+			clone.Spec.SchedulerName = scheduler
+			delete(clone.Annotations, v1.PreviousSchedulerName)
 		} else {
-			clone := pod.DeepCopy()
-			clone.ResourceVersion = ""
-			clone.Spec.NodeName = ""
-			clone.Status = corev1.PodStatus{}
-			if scheduler, ok := clone.Annotations[v1.PreviousSchedulerName]; ok {
-				clone.Spec.SchedulerName = scheduler
-				delete(clone.Annotations, v1.PreviousSchedulerName)
-			} else {
-				clone.Spec.SchedulerName = ""
-			}
-			err := r.recreatePod(deleteCtx, pod, clone)
-			if err != nil {
-				return fmt.Errorf("recreate unowned pod %s failed: %w", pod.Name, err)
-			}
+			clone.Spec.SchedulerName = ""
+		}
+		err := r.recreatePod(deleteCtx, pod, clone)
+		if err != nil {
+			return fmt.Errorf("recreate orphan pod %s failed: %w", pod.Name, err)
 		}
 	}
 	return nil
@@ -634,6 +747,159 @@ func (r *NamespaceReconciler) recreatePod(
 				}
 				watcher.Stop()
 				break
+			}
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeKBCluster")
+
+	clusterGVR := schema.GroupVersionResource{
+		Group:    "apps.kubeblocks.io",
+		Version:  "v1alpha1",
+		Resource: "clusters",
+	}
+
+	clusterList, err := r.dynamicClient.Resource(clusterGVR).
+		Namespace(namespace).
+		List(ctx, v12.ListOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list clusters in namespace %s: %w", namespace, err)
+	}
+
+	opsGVR := schema.GroupVersionResource{
+		Group:    "apps.kubeblocks.io",
+		Version:  "v1alpha1",
+		Resource: "opsrequests",
+	}
+
+	for _, cluster := range clusterList.Items {
+		clusterName := cluster.GetName()
+		annotations := cluster.GetAnnotations()
+
+		// Get or create original state with defaults
+		var originalState *KBClusterOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore to running state
+			logger.Info(
+				"Cluster has no suspend state, using defaults to restore",
+				"Cluster",
+				clusterName,
+			)
+			originalState = &KBClusterOriginalState{
+				WasRunning:    true,  // Default: restore to running
+				BackupEnabled: false, // Default: don't modify backup
+			}
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeKBClusterState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode cluster state", "cluster", clusterName)
+				return fmt.Errorf("failed to decode cluster state for %s: %w", clusterName, err)
+			}
+		}
+
+		logger.Info(
+			"Resuming cluster",
+			"cluster",
+			clusterName,
+			"wasRunning",
+			originalState.WasRunning,
+			"originalBackupEnabled",
+			originalState.BackupEnabled,
+		)
+
+		// Track if cluster needs update
+		needsUpdate := false
+
+		// Restore backup configuration only if it was originally enabled
+		if originalState.BackupEnabled {
+			backup, hasBackup, err := unstructured.NestedMap(cluster.Object, "spec", "backup")
+			if err != nil {
+				logger.Error(err, "failed to get backup config", "cluster", clusterName)
+			} else if hasBackup && backup != nil {
+				if err := unstructured.SetNestedField(cluster.Object, true, "spec", "backup", "enabled"); err != nil {
+					logger.Error(err, "failed to restore backup.enabled", "cluster", clusterName)
+				} else {
+					logger.Info("Restored backup enabled state", "cluster", clusterName, "enabled", true)
+					needsUpdate = true
+				}
+			}
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			cluster.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update cluster only if there are actual changes
+		if needsUpdate {
+			_, err := r.dynamicClient.Resource(clusterGVR).
+				Namespace(namespace).
+				Update(ctx, &cluster, v12.UpdateOptions{})
+			if err != nil {
+				logger.Error(err, "failed to update cluster", "cluster", clusterName)
+				return fmt.Errorf("failed to update cluster %s: %w", clusterName, err)
+			}
+		}
+
+		// Start the cluster if it was running before suspension
+		// No need to check current phase since we're resuming from suspended state
+		if originalState.WasRunning {
+			opsName := fmt.Sprintf(
+				"start-%s-%s",
+				clusterName,
+				time.Now().Format("2006-01-02-15"),
+			)
+			opsRequest := &unstructured.Unstructured{}
+			opsRequest.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   "apps.kubeblocks.io",
+				Version: "v1alpha1",
+				Kind:    "OpsRequest",
+			})
+			opsRequest.SetNamespace(namespace)
+			opsRequest.SetName(opsName)
+
+			opsSpec := map[string]any{
+				"clusterRef":             clusterName,
+				"type":                   "Start",
+				"ttlSecondsAfterSucceed": int64(1),
+				"ttlSecondsBeforeAbort":  int64(60 * 60),
+			}
+			if err := unstructured.SetNestedField(opsRequest.Object, opsSpec, "spec"); err != nil {
+				return fmt.Errorf(
+					"failed to set spec for OpsRequest %s in namespace %s: %w",
+					opsName,
+					namespace,
+					err,
+				)
+			}
+
+			_, err := r.dynamicClient.Resource(opsGVR).
+				Namespace(namespace).
+				Create(ctx, opsRequest, v12.CreateOptions{})
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return fmt.Errorf(
+					"failed to create OpsRequest %s in namespace %s: %w",
+					opsName,
+					namespace,
+					err,
+				)
+			}
+			if errors.IsAlreadyExists(err) {
+				logger.V(1).
+					Info("OpsRequest already exists, skipping creation", "OpsRequest", opsName)
+			} else {
+				logger.Info("Created start OpsRequest for cluster", "cluster", clusterName, "opsRequest", opsName)
 			}
 		}
 	}
@@ -780,18 +1046,807 @@ func isNetworkCompleted(status string) bool {
 	return status == types.NetworkSuspendCompleted || status == types.NetworkResumeCompleted
 }
 
-func (r *NamespaceReconciler) suspendCronJob(ctx context.Context, namespace string) error {
+func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendOrphanCronJob")
+
 	cronJobList := batchv1.CronJobList{}
 	if err := r.Client.List(ctx, &cronJobList, client.InNamespace(namespace)); err != nil {
 		return err
 	}
+
 	for _, cronJob := range cronJobList.Items {
-		if cronJob.Spec.Suspend != nil && *cronJob.Spec.Suspend {
+		// Skip if this cronjob has a controller (not an orphan)
+		if hasController(cronJob.OwnerReferences) {
+			logger.V(1).Info("CronJob has controller, skipping", "CronJob", cronJob.Name)
 			continue
 		}
-		cronJob.Spec.Suspend = ptr.To(true)
-		if err := r.Client.Update(ctx, &cronJob); err != nil {
-			return fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err)
+
+		annotations := cronJob.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current suspend state
+		currentlySuspended := cronJob.Spec.Suspend != nil && *cronJob.Spec.Suspend
+
+		// Track if cronjob needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			originalState := &CronJobOriginalState{
+				Suspend: currentlySuspended,
+			}
+			stateJSON, err := encodeCronJobState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode cronjob state", "cronjob", cronJob.Name)
+				return fmt.Errorf("failed to encode cronjob state for %s: %w", cronJob.Name, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			cronJob.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved cronjob state",
+				"cronjob",
+				cronJob.Name,
+				"originalSuspend",
+				currentlySuspended,
+			)
+		} else {
+			logger.V(1).Info("CronJob already has original state, skipping state save", "CronJob", cronJob.Name)
+		}
+
+		// Set suspend to true if not already suspended
+		if !currentlySuspended {
+			cronJob.Spec.Suspend = ptr.To(true)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &cronJob); err != nil {
+				return fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err)
+			}
+			logger.V(1).Info("Suspended cronjob", "cronjob", cronJob.Name)
+		} else {
+			logger.V(1).Info("CronJob already suspended, skipping update", "cronjob", cronJob.Name)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeOrphanCronJob")
+
+	cronJobList := batchv1.CronJobList{}
+	if err := r.Client.List(ctx, &cronJobList, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+
+	for _, cronJob := range cronJobList.Items {
+		// Skip if this cronjob has a controller (not an orphan)
+		if hasController(cronJob.OwnerReferences) {
+			logger.V(1).Info("CronJob has controller, skipping", "CronJob", cronJob.Name)
+			continue
+		}
+
+		annotations := cronJob.GetAnnotations()
+
+		// Get or create original state with defaults
+		var originalState *CronJobOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: resume to not suspended
+			logger.Info(
+				"CronJob has no suspend state, using defaults to restore",
+				"CronJob",
+				cronJob.Name,
+			)
+			originalState = &CronJobOriginalState{
+				Suspend: false, // Default: resume to not suspended
+			}
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeCronJobState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode cronjob state", "cronjob", cronJob.Name)
+				return fmt.Errorf("failed to decode cronjob state for %s: %w", cronJob.Name, err)
+			}
+		}
+
+		logger.Info(
+			"Resuming cronjob",
+			"cronjob",
+			cronJob.Name,
+			"originalSuspend",
+			originalState.Suspend,
+		)
+
+		// Track if cronjob needs update
+		needsUpdate := false
+
+		// Restore original suspend state
+		if !originalState.Suspend {
+			cronJob.Spec.Suspend = ptr.To(originalState.Suspend)
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			cronJob.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &cronJob); err != nil {
+				return fmt.Errorf("failed to resume cronjob %s: %w", cronJob.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendOrphanDeployments(
+	ctx context.Context,
+	namespace string,
+) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendOrphanDeployments")
+
+	deployList := appsv1.DeploymentList{}
+	if err := r.Client.List(ctx, &deployList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list deployments: %w", err)
+	}
+
+	for _, deploy := range deployList.Items {
+		// Skip if this deployment has a controller (not an orphan)
+		if hasController(deploy.OwnerReferences) {
+			logger.V(1).Info("Deployment has controller, skipping", "Deployment", deploy.Name)
+			continue
+		}
+
+		annotations := deploy.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current replicas
+		var replicas int32
+		if deploy.Spec.Replicas != nil {
+			replicas = *deploy.Spec.Replicas
+		} else {
+			// If replicas not specified, Kubernetes defaults to 1
+			replicas = 1
+		}
+
+		// Skip if already 0 replicas and state already saved
+		if replicas == 0 && hasOriginalState {
+			logger.V(1).Info("Deployment already suspended, skipping", "Deployment", deploy.Name)
+			continue
+		}
+
+		// Track if deployment needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			originalState := &DeploymentOriginalState{
+				Replicas: replicas,
+			}
+			stateJSON, err := encodeDeploymentState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode deployment state", "deployment", deploy.Name)
+				return fmt.Errorf("failed to encode deployment state for %s: %w", deploy.Name, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			deploy.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved orphan deployment state",
+				"deployment",
+				deploy.Name,
+				"originalReplicas",
+				replicas,
+			)
+		} else {
+			logger.V(1).Info("Deployment already has original state, skipping state save", "Deployment", deploy.Name)
+		}
+
+		// Set replicas to 0 if not already 0
+		if replicas != 0 {
+			deploy.Spec.Replicas = ptr.To(int32(0))
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &deploy); err != nil {
+				return fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err)
+			}
+			logger.V(1).Info("Suspended orphan deployment", "deployment", deploy.Name)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeOrphanDeployments")
+
+	deployList := appsv1.DeploymentList{}
+	if err := r.Client.List(ctx, &deployList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list deployments: %w", err)
+	}
+
+	for _, deploy := range deployList.Items {
+		// Skip if this deployment has a controller (not an orphan)
+		if hasController(deploy.OwnerReferences) {
+			logger.V(1).Info("Deployment has controller, skipping", "Deployment", deploy.Name)
+			continue
+		}
+
+		annotations := deploy.GetAnnotations()
+
+		// Get or create original state with defaults
+		var originalState *DeploymentOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore to 1 replica
+			logger.Info(
+				"Deployment has no suspend state, using defaults to restore",
+				"Deployment",
+				deploy.Name,
+			)
+			originalState = &DeploymentOriginalState{
+				Replicas: 1, // Default: restore to 1 replica
+			}
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeDeploymentState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode deployment state", "deployment", deploy.Name)
+				return fmt.Errorf("failed to decode deployment state for %s: %w", deploy.Name, err)
+			}
+		}
+
+		logger.Info(
+			"Resuming deployment",
+			"deployment",
+			deploy.Name,
+			"originalReplicas",
+			originalState.Replicas,
+		)
+
+		// Track if deployment needs update
+		needsUpdate := false
+
+		// Restore original replicas only if not 0
+		if originalState.Replicas != 0 {
+			deploy.Spec.Replicas = ptr.To(originalState.Replicas)
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			deploy.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &deploy); err != nil {
+				return fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendOrphanStatefulSets(
+	ctx context.Context,
+	namespace string,
+) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendOrphanStatefulSets")
+
+	stsList := appsv1.StatefulSetList{}
+	if err := r.Client.List(ctx, &stsList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list statefulsets: %w", err)
+	}
+
+	for _, sts := range stsList.Items {
+		// Skip if this statefulset has a controller (not an orphan)
+		if hasController(sts.OwnerReferences) {
+			logger.V(1).Info("StatefulSet has controller, skipping", "StatefulSet", sts.Name)
+			continue
+		}
+
+		annotations := sts.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current replicas
+		var replicas int32
+		if sts.Spec.Replicas != nil {
+			replicas = *sts.Spec.Replicas
+		} else {
+			// If replicas not specified, Kubernetes defaults to 1
+			replicas = 1
+		}
+
+		// Skip if already 0 replicas and state already saved
+		if replicas == 0 && hasOriginalState {
+			logger.V(1).Info("StatefulSet already suspended, skipping", "StatefulSet", sts.Name)
+			continue
+		}
+
+		// Track if statefulset needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			originalState := &DeploymentOriginalState{
+				Replicas: replicas,
+			}
+			stateJSON, err := encodeDeploymentState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode statefulset state", "statefulset", sts.Name)
+				return fmt.Errorf("failed to encode statefulset state for %s: %w", sts.Name, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			sts.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved orphan statefulset state",
+				"statefulset",
+				sts.Name,
+				"originalReplicas",
+				replicas,
+			)
+		} else {
+			logger.V(1).Info("StatefulSet already has original state, skipping state save", "StatefulSet", sts.Name)
+		}
+
+		// Set replicas to 0 if not already 0
+		if replicas != 0 {
+			sts.Spec.Replicas = ptr.To(int32(0))
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &sts); err != nil {
+				return fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err)
+			}
+			logger.V(1).Info("Suspended orphan statefulset", "statefulset", sts.Name)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeOrphanStatefulSets(
+	ctx context.Context,
+	namespace string,
+) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeOrphanStatefulSets")
+
+	stsList := appsv1.StatefulSetList{}
+	if err := r.Client.List(ctx, &stsList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list statefulsets: %w", err)
+	}
+
+	for _, sts := range stsList.Items {
+		// Skip if this statefulset has a controller (not an orphan)
+		if hasController(sts.OwnerReferences) {
+			logger.V(1).Info("StatefulSet has controller, skipping", "StatefulSet", sts.Name)
+			continue
+		}
+
+		annotations := sts.GetAnnotations()
+
+		// Get or create original state with defaults
+		var originalState *DeploymentOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore to 1 replica
+			logger.Info(
+				"StatefulSet has no suspend state, using defaults to restore",
+				"StatefulSet",
+				sts.Name,
+			)
+			originalState = &DeploymentOriginalState{
+				Replicas: 1, // Default: restore to 1 replica
+			}
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeDeploymentState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode statefulset state", "statefulset", sts.Name)
+				return fmt.Errorf("failed to decode statefulset state for %s: %w", sts.Name, err)
+			}
+		}
+
+		logger.Info(
+			"Resuming statefulset",
+			"statefulset",
+			sts.Name,
+			"originalReplicas",
+			originalState.Replicas,
+		)
+
+		// Track if statefulset needs update
+		needsUpdate := false
+
+		// Restore original replicas only if not 0
+		if originalState.Replicas != 0 {
+			sts.Spec.Replicas = ptr.To(originalState.Replicas)
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			sts.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &sts); err != nil {
+				return fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendOrphanReplicaSets(
+	ctx context.Context,
+	namespace string,
+) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendOrphanReplicaSets")
+
+	rsList := appsv1.ReplicaSetList{}
+	if err := r.Client.List(ctx, &rsList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list replicasets: %w", err)
+	}
+
+	for _, rs := range rsList.Items {
+		// Skip if this replicaset has a controller (not an orphan)
+		if hasController(rs.OwnerReferences) {
+			logger.V(1).Info("ReplicaSet has controller, skipping", "ReplicaSet", rs.Name)
+			continue
+		}
+
+		annotations := rs.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current replicas
+		var replicas int32
+		if rs.Spec.Replicas != nil {
+			replicas = *rs.Spec.Replicas
+		} else {
+			// If replicas not specified, Kubernetes defaults to 1
+			replicas = 1
+		}
+
+		// Skip if already 0 replicas and state already saved
+		if replicas == 0 && hasOriginalState {
+			logger.V(1).Info("ReplicaSet already suspended, skipping", "ReplicaSet", rs.Name)
+			continue
+		}
+
+		// Track if replicaset needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			originalState := &DeploymentOriginalState{
+				Replicas: replicas,
+			}
+			stateJSON, err := encodeDeploymentState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode replicaset state", "replicaset", rs.Name)
+				return fmt.Errorf("failed to encode replicaset state for %s: %w", rs.Name, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			rs.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved orphan replicaset state",
+				"replicaset",
+				rs.Name,
+				"originalReplicas",
+				replicas,
+			)
+		} else {
+			logger.V(1).Info("ReplicaSet already has original state, skipping state save", "ReplicaSet", rs.Name)
+		}
+
+		// Set replicas to 0 if not already 0
+		if replicas != 0 {
+			rs.Spec.Replicas = ptr.To(int32(0))
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &rs); err != nil {
+				return fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err)
+			}
+			logger.V(1).Info("Suspended orphan replicaset", "replicaset", rs.Name)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeOrphanReplicaSets")
+
+	rsList := appsv1.ReplicaSetList{}
+	if err := r.Client.List(ctx, &rsList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list replicasets: %w", err)
+	}
+
+	for _, rs := range rsList.Items {
+		// Skip if this replicaset has a controller (not an orphan)
+		if hasController(rs.OwnerReferences) {
+			logger.V(1).Info("ReplicaSet has controller, skipping", "ReplicaSet", rs.Name)
+			continue
+		}
+
+		annotations := rs.GetAnnotations()
+
+		// Get or create original state with defaults
+		var originalState *DeploymentOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore to 1 replica
+			logger.Info(
+				"ReplicaSet has no suspend state, using defaults to restore",
+				"ReplicaSet",
+				rs.Name,
+			)
+			originalState = &DeploymentOriginalState{
+				Replicas: 1, // Default: restore to 1 replica
+			}
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeDeploymentState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode replicaset state", "replicaset", rs.Name)
+				return fmt.Errorf("failed to decode replicaset state for %s: %w", rs.Name, err)
+			}
+		}
+
+		logger.Info(
+			"Resuming replicaset",
+			"replicaset",
+			rs.Name,
+			"originalReplicas",
+			originalState.Replicas,
+		)
+
+		// Track if replicaset needs update
+		needsUpdate := false
+
+		// Restore original replicas only if not 0
+		if originalState.Replicas != 0 {
+			rs.Spec.Replicas = ptr.To(originalState.Replicas)
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			rs.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &rs); err != nil {
+				return fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendCertificates")
+
+	certGVR := schema.GroupVersionResource{
+		Group:    "cert-manager.io",
+		Version:  "v1",
+		Resource: "certificates",
+	}
+
+	certList, err := r.dynamicClient.Resource(certGVR).
+		Namespace(namespace).
+		List(ctx, v12.ListOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list certificates: %w", err)
+	}
+
+	for _, cert := range certList.Items {
+		certName := cert.GetName()
+		annotations := cert.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current disable-reissue annotation value
+		currentDisableReissue, _ := annotations[CertManagerDisableReissueAnnotation]
+
+		// Skip if already suspended (has state and disable-reissue is true)
+		if hasOriginalState && currentDisableReissue == "true" {
+			logger.V(1).Info("Certificate already suspended, skipping", "Certificate", certName)
+			continue
+		}
+
+		// Track if certificate needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			// Check if disable-reissue was originally enabled (annotation exists and is "true")
+			wasDisabled := currentDisableReissue == "true"
+
+			originalState := &CertificateOriginalState{
+				DisableReissue: wasDisabled,
+			}
+			stateJSON, err := encodeCertificateState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode certificate state", "certificate", certName)
+				return fmt.Errorf("failed to encode certificate state for %s: %w", certName, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			needsUpdate = true
+
+			logger.Info(
+				"Saved certificate state",
+				"certificate",
+				certName,
+				"wasDisabled",
+				wasDisabled,
+			)
+		} else {
+			logger.V(1).Info("Certificate already has original state, skipping state save", "Certificate", certName)
+		}
+
+		// Disable certificate reissue if not already set to true
+		if currentDisableReissue != "true" {
+			annotations[CertManagerDisableReissueAnnotation] = "true"
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			cert.SetAnnotations(annotations)
+
+			_, err := r.dynamicClient.Resource(certGVR).
+				Namespace(namespace).
+				Update(ctx, &cert, v12.UpdateOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to suspend certificate %s: %w", certName, err)
+			}
+
+			logger.V(1).Info("Suspended certificate reissue", "certificate", certName)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeCertificates")
+
+	certGVR := schema.GroupVersionResource{
+		Group:    "cert-manager.io",
+		Version:  "v1",
+		Resource: "certificates",
+	}
+
+	certList, err := r.dynamicClient.Resource(certGVR).
+		Namespace(namespace).
+		List(ctx, v12.ListOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list certificates: %w", err)
+	}
+
+	for _, cert := range certList.Items {
+		certName := cert.GetName()
+		annotations := cert.GetAnnotations()
+
+		// Get or create original state with defaults
+		var originalState *CertificateOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore without the annotation
+			logger.Info(
+				"Certificate has no suspend state, using defaults to restore",
+				"Certificate",
+				certName,
+			)
+			originalState = &CertificateOriginalState{
+				DisableReissue: false, // Default: wasn't disabled
+			}
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeCertificateState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode certificate state", "certificate", certName)
+				return fmt.Errorf("failed to decode certificate state for %s: %w", certName, err)
+			}
+		}
+
+		logger.Info(
+			"Resuming certificate",
+			"certificate",
+			certName,
+			"wasDisabled",
+			originalState.DisableReissue,
+		)
+
+		// Track if certificate needs update
+		needsUpdate := false
+
+		// Remove the annotation if it wasn't disabled before
+		if !originalState.DisableReissue {
+			if _, hasDisableReissue := annotations[CertManagerDisableReissueAnnotation]; hasDisableReissue {
+				delete(annotations, CertManagerDisableReissueAnnotation)
+				needsUpdate = true
+			}
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			cert.SetAnnotations(annotations)
+			_, err = r.dynamicClient.Resource(certGVR).
+				Namespace(namespace).
+				Update(ctx, &cert, v12.UpdateOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to resume certificate %s: %w", certName, err)
+			}
 		}
 	}
 	return nil
