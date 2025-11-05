@@ -1752,8 +1752,9 @@ func NewWorkspaceSubscriptionNotifyHandler(c *gin.Context) {
 	if err != nil {
 		// logrus.Errorf("Failed to process workspace subscription webhook event %s: %v", event.Type, err)
 		dao.Logger.Errorf(
-			"Failed to process workspace subscription webhook event %s: %v",
+			"Failed to process workspace subscription webhook %s event : %v, err: %v",
 			event.Type,
+			event,
 			err,
 		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process webhook"})
@@ -1893,9 +1894,11 @@ func finalizeWorkspaceSubscriptionSuccess(
 	if workspaceSubscription != nil {
 		workspaceSubscriptionID = workspaceSubscription.ID
 		workspaceSubscription.CancelAtPeriodEnd = false
+		wsTransaction.OldPlanStatus = workspaceSubscription.Status
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
 	} else {
 		workspaceSubscriptionID = uuid.New()
+		wsTransaction.OldPlanStatus = types.SubscriptionStatusNormal
 	}
 	payment.WorkspaceSubscriptionID = &workspaceSubscriptionID
 	wsTransaction.Status = types.SubscriptionTransactionStatusCompleted
@@ -2869,7 +2872,7 @@ func validatePlanAndPrice(
 		return nil, nil, err
 	}
 
-	// Get plan price
+	// Get plan price - for admin operations, we can be more flexible
 	var price *types.ProductPrice
 	for _, p := range plan.Prices {
 		if string(p.BillingCycle) == string(req.Period) {
@@ -2877,20 +2880,25 @@ func validatePlanAndPrice(
 			break
 		}
 	}
+
+	// For admin operations, if no exact price is found for the period,
+	// we can either use a default price or create a zero-price entry
+	// since admin operations don't require actual payment processing
 	if price == nil {
-		SetErrorResp(
-			c,
-			http.StatusBadRequest,
-			gin.H{
-				"error": fmt.Sprintf(
-					"no price found for plan %s with period %s",
-					req.PlanName,
-					req.Period,
-				),
-			},
+		// Log a warning instead of returning an error for admin operations
+		logrus.Warnf(
+			"No price found for plan %s with period %s, using zero price for admin operation",
+			req.PlanName,
+			req.Period,
 		)
-		return nil, nil, fmt.Errorf("no price found for plan %s with period %s",
-			req.PlanName, req.Period)
+
+		// Create a zero-price entry for admin operations
+		price = &types.ProductPrice{
+			ProductID:     plan.ID, // Set the product ID from the plan
+			BillingCycle:  req.Period,
+			Price:         0, // Admin operations don't need payment
+			OriginalPrice: 0,
+		}
 	}
 
 	return plan, price, nil
@@ -2918,8 +2926,14 @@ func validateExistingSubscription(
 	if req.Operator == "" {
 		if existingSubscription != nil &&
 			existingSubscription.Status != types.SubscriptionStatusDeleted {
-			// If subscription exists and not deleted, default to upgrade
-			req.Operator = types.SubscriptionTransactionTypeUpgraded
+			// Check if it's the same plan (renewal) or different plan (upgrade)
+			if existingSubscription.PlanName == req.PlanName {
+				// Same plan - this is a renewal
+				req.Operator = types.SubscriptionTransactionTypeRenewed
+			} else {
+				// Different plan - this is an upgrade
+				req.Operator = types.SubscriptionTransactionTypeUpgraded
+			}
 		} else {
 			// No existing subscription or deleted, default to create
 			req.Operator = types.SubscriptionTransactionTypeCreated
@@ -3036,17 +3050,38 @@ func createOrUpdateWorkspaceSubscription(
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
 		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
+		workspaceSubscription.PayMethod = types.PaymentMethodBalance // Admin operations use balance payment
 
-		// Update period for renewals
-		if req.Operator == types.SubscriptionTransactionTypeRenewed {
-			workspaceSubscription.CurrentPeriodStartAt = now
-			workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0) // Monthly
-			workspaceSubscription.ExpireAt = stripe.Time(
-				workspaceSubscription.CurrentPeriodEndAt,
-			)
+		// Update period for renewals or extensions
+		if req.Operator == types.SubscriptionTransactionTypeRenewed ||
+			req.Operator == types.SubscriptionTransactionTypeUpgraded {
+			// Parse the period and add to current end time
+			periodDuration, err := types.ParsePeriod(req.Period)
+			if err != nil {
+				// Fallback to monthly if parsing fails
+				workspaceSubscription.CurrentPeriodStartAt = now
+				workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0)
+				workspaceSubscription.ExpireAt = stripe.Time(
+					workspaceSubscription.CurrentPeriodEndAt,
+				)
+			} else {
+				// Extend from current end time
+				workspaceSubscription.CurrentPeriodStartAt = existingSubscription.CurrentPeriodEndAt
+				workspaceSubscription.CurrentPeriodEndAt = existingSubscription.CurrentPeriodEndAt.Add(periodDuration)
+				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+			}
 		}
 	} else {
-		// Create new subscription
+		// Create new subscription - parse period for correct end time
+		periodDuration, err := types.ParsePeriod(req.Period)
+		var endTime time.Time
+		if err != nil {
+			// Fallback to monthly if parsing fails
+			endTime = now.AddDate(0, 1, 0)
+		} else {
+			endTime = now.Add(periodDuration)
+		}
+
 		workspaceSubscription = &types.WorkspaceSubscription{
 			ID:                   uuid.New(),
 			PlanName:             req.PlanName,
@@ -3056,11 +3091,11 @@ func createOrUpdateWorkspaceSubscription(
 			Status:               types.SubscriptionStatusNormal,
 			TrafficStatus:        types.WorkspaceTrafficStatusActive,
 			PayStatus:            types.SubscriptionPayStatusNoNeed,
-			PayMethod:            types.PaymentMethodErrAndUseBalance, // Internal admin method
+			PayMethod:            types.PaymentMethodBalance, // Internal admin method
 			CurrentPeriodStartAt: now,
-			CurrentPeriodEndAt:   now.AddDate(0, 1, 0), // Monthly
+			CurrentPeriodEndAt:   endTime,
 			CreateAt:             now,
-			ExpireAt:             stripe.Time(now.AddDate(0, 1, 0)),
+			ExpireAt:             stripe.Time(endTime),
 		}
 	}
 
@@ -3075,6 +3110,18 @@ func addTrafficAndAIPackages(
 	existingSubscription, workspaceSubscription *types.WorkspaceSubscription,
 	transactionID string,
 ) error {
+	// For renewal operations, check if current period is still valid
+	// If current period hasn't expired, don't add traffic/AI packages for renewals
+	if req.Operator == types.SubscriptionTransactionTypeRenewed &&
+		existingSubscription != nil &&
+		existingSubscription.CurrentPeriodEndAt.After(time.Now()) {
+		logrus.Infof(
+			"Skipping traffic/AI package addition for renewal: current period still valid until %s",
+			existingSubscription.CurrentPeriodEndAt.Format(time.DateTime),
+		)
+		return nil
+	}
+
 	// Add traffic package
 	if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
 		period, err := types.ParsePeriod(req.Period)

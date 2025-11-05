@@ -1694,7 +1694,8 @@ func (m *MongoDB) GetCostAppList(
 		}}})
 
 		var countPipeline mongo.Pipeline
-		copy(countPipeline, pipeline[:])
+		// Fix: Manual copy to avoid copy() issues with complex types
+		countPipeline = append(countPipeline, pipeline...)
 		countPipeline = append(countPipeline, bson.D{{Key: "$count", Value: "total"}})
 		countCursor, err := m.getBillingCollection().Aggregate(context.Background(), countPipeline)
 		if err != nil {
@@ -2055,7 +2056,8 @@ func (m *MongoDB) getAppStoreList(
 	pipeline := m.getAppPipeLine(req)
 	skipStage := bson.M{"$skip": skip}
 	limitStage := bson.M{"$limit": pageSize}
-	var limitPipeline []bson.M
+	// Fix: Manual copy to avoid copy() issues
+	limitPipeline := make([]bson.M, len(pipeline))
 	copy(limitPipeline, pipeline)
 	limitPipeline = append(limitPipeline, skipStage, limitStage)
 
