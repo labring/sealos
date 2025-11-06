@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/service/pkg/api"
 	"net/http"
 	"net/url"
+
+	"github.com/labring/sealos/service/pkg/api"
 )
 
 func (vl *VLogsServer) extractKubeConfig(req *http.Request) (string, error) {

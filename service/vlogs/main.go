@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/labring/sealos/service/vlogs/config"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/labring/sealos/service/vlogs/config"
 	vlogsServer "github.com/labring/sealos/service/vlogs/server"
 )
 

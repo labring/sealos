@@ -3,9 +3,10 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/service/vlogs/config"
 	"log/slog"
 	"net/http"
+
+	"github.com/labring/sealos/service/vlogs/config"
 )
 
 type VLogsServer struct {
