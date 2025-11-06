@@ -350,7 +350,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         status: 'error'
       });
     }
-  }, [onClose, refetchAll, db, dbStatefulSet, t, toast]);
+  }, [onClose, refetchAll, db, t, toast]);
 
   const closeNetWorkService = async () => {
     try {
