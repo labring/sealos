@@ -11,6 +11,13 @@ const (
 	CertManagerDisableReissueAnnotation = "cert-manager.io/disable-reissue"
 )
 
+// Ingress class constants
+const (
+	IngressClassAnnotation = "kubernetes.io/ingress.class"
+	IngressClassPause      = "pause"
+	IngressClassNginx      = "nginx"
+)
+
 // DeploymentOriginalState stores the original state of Deployment/StatefulSet/ReplicaSet
 type DeploymentOriginalState struct {
 	Replicas int32 `json:"replicas"`
@@ -30,6 +37,11 @@ type KBClusterOriginalState struct {
 // CertificateOriginalState stores the original state of cert-manager Certificate
 type CertificateOriginalState struct {
 	DisableReissue bool `json:"disableReissue"` // Whether reissue was disabled (annotation existed and was "true")
+}
+
+// IngressOriginalState stores the original state of Ingress
+type IngressOriginalState struct {
+	IngressClass string `json:"ingressClass"` // Original ingress class (e.g., "nginx")
 }
 
 // Encoding functions for each type
@@ -96,4 +108,53 @@ func decodeCertificateState(data string) (*CertificateOriginalState, error) {
 		return nil, err
 	}
 	return &state, nil
+}
+
+func encodeIngressState(state *IngressOriginalState) (string, error) {
+	data, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func decodeIngressState(data string) (*IngressOriginalState, error) {
+	var state IngressOriginalState
+	if err := json.Unmarshal([]byte(data), &state); err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+// Default state constructors - used when original state is missing or decode fails
+
+func getDefaultDeploymentState() *DeploymentOriginalState {
+	return &DeploymentOriginalState{
+		Replicas: 1, // Default: restore to 1 replica
+	}
+}
+
+func getDefaultCronJobState() *CronJobOriginalState {
+	return &CronJobOriginalState{
+		Suspend: false, // Default: resume to not suspended
+	}
+}
+
+func getDefaultKBClusterState() *KBClusterOriginalState {
+	return &KBClusterOriginalState{
+		WasRunning:    true,  // Default: restore to running
+		BackupEnabled: false, // Default: don't modify backup
+	}
+}
+
+func getDefaultCertificateState() *CertificateOriginalState {
+	return &CertificateOriginalState{
+		DisableReissue: false, // Default: wasn't disabled
+	}
+}
+
+func getDefaultIngressState() *IngressOriginalState {
+	return &IngressOriginalState{
+		IngressClass: IngressClassNginx, // Default: restore to nginx
+	}
 }
