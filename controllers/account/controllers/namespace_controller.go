@@ -347,6 +347,7 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 		r.suspendOrphanStatefulSets, // Scale orphan statefulsets to 0 replicas
 		r.suspendOrphanReplicaSets,  // Scale orphan replicasets to 0 replicas
 		r.suspendOrphanCronJob,      // Suspend orphan cronjobs
+		r.suspendOrphanJob,          // Suspend orphan jobs
 		r.deleteControlledPod,       // Delete controlled pods
 		r.suspendObjectStorage,      // Disable object storage access
 	}
@@ -388,6 +389,7 @@ func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace 
 		r.resumeOrphanDeployments,  // Restore orphan deployment replicas
 		r.resumeOrphanStatefulSets, // Restore orphan statefulset replicas
 		r.resumeOrphanCronJob,      // Restore orphan cronjob suspend state
+		r.resumeOrphanJob,          // Restore orphan job suspend state
 		r.resumeCertificates,       // Restore certificate renewal
 		r.resumeIngresses,          // Restore ingresses by changing ingress class back
 		r.resumeObjectStorage,      // Enable object storage access
@@ -2113,6 +2115,155 @@ func (r *NamespaceReconciler) resumeIngresses(ctx context.Context, namespace str
 		if needsUpdate {
 			if err := r.Client.Update(ctx, &ingress); err != nil {
 				return fmt.Errorf("failed to resume ingress %s: %w", ingressName, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendOrphanJob")
+
+	jobList := batchv1.JobList{}
+	if err := r.Client.List(ctx, &jobList, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+
+	for _, job := range jobList.Items {
+		// Skip if this job has a controller (not an orphan)
+		if hasController(job.OwnerReferences) {
+			logger.V(1).Info("Job has controller, skipping", "Job", job.Name)
+			continue
+		}
+
+		annotations := job.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current suspend state
+		currentlySuspended := job.Spec.Suspend != nil && *job.Spec.Suspend
+
+		// Track if job needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			originalState := &JobOriginalState{
+				Suspend: currentlySuspended,
+			}
+			stateJSON, err := encodeJobState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode job state", "job", job.Name)
+				return fmt.Errorf("failed to encode job state for %s: %w", job.Name, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			job.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved job state",
+				"job",
+				job.Name,
+				"originalSuspend",
+				currentlySuspended,
+			)
+		} else {
+			logger.V(1).Info("Job already has original state, skipping state save", "Job", job.Name)
+		}
+
+		// Set suspend to true if not already suspended
+		if !currentlySuspended {
+			job.Spec.Suspend = ptr.To(true)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &job); err != nil {
+				return fmt.Errorf("failed to suspend job %s: %w", job.Name, err)
+			}
+			logger.V(1).Info("Suspended job", "job", job.Name)
+		} else {
+			logger.V(1).Info("Job already suspended, skipping update", "job", job.Name)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeOrphanJob")
+
+	jobList := batchv1.JobList{}
+	if err := r.Client.List(ctx, &jobList, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+
+	for _, job := range jobList.Items {
+		// Skip if this job has a controller (not an orphan)
+		if hasController(job.OwnerReferences) {
+			logger.V(1).Info("Job has controller, skipping", "Job", job.Name)
+			continue
+		}
+
+		annotations := job.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Get or create original state with defaults
+		var originalState *JobOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: resume to not suspended
+			logger.Info(
+				"Job has no suspend state, using defaults to restore",
+				"Job",
+				job.Name,
+			)
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeJobState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode job state", "job", job.Name)
+			}
+		}
+		if originalState == nil {
+			originalState = getDefaultJobState()
+		}
+
+		logger.Info(
+			"Resuming job",
+			"job",
+			job.Name,
+			"originalSuspend",
+			originalState.Suspend,
+		)
+
+		// Track if job needs update
+		needsUpdate := false
+
+		// Restore original suspend state
+		if !originalState.Suspend {
+			job.Spec.Suspend = ptr.To(originalState.Suspend)
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			job.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &job); err != nil {
+				return fmt.Errorf("failed to resume job %s: %w", job.Name, err)
 			}
 		}
 	}
