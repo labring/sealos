@@ -16,6 +16,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -341,6 +342,7 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 		r.limitResourceQuotaCreate,  // Create resource quota to block all new resources (must be after suspendOrphanPod)
 		r.suspendKBCluster,          // Stop KubeBlocks clusters and disable backup
 		r.suspendCertificates,       // Disable cert-manager certificate renewal
+		r.suspendIngresses,          // Pause ingresses by changing ingress class to "pause"
 		r.suspendOrphanDeployments,  // Scale orphan deployments to 0 replicas
 		r.suspendOrphanStatefulSets, // Scale orphan statefulsets to 0 replicas
 		r.suspendOrphanReplicaSets,  // Scale orphan replicasets to 0 replicas
@@ -387,6 +389,7 @@ func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace 
 		r.resumeOrphanStatefulSets, // Restore orphan statefulset replicas
 		r.resumeOrphanCronJob,      // Restore orphan cronjob suspend state
 		r.resumeCertificates,       // Restore certificate renewal
+		r.resumeIngresses,          // Restore ingresses by changing ingress class back
 		r.resumeObjectStorage,      // Enable object storage access
 	}
 	for _, fn := range pipelines {
@@ -781,6 +784,9 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 	for _, cluster := range clusterList.Items {
 		clusterName := cluster.GetName()
 		annotations := cluster.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
 		// Get or create original state with defaults
 		var originalState *KBClusterOriginalState
@@ -792,18 +798,16 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 				"Cluster",
 				clusterName,
 			)
-			originalState = &KBClusterOriginalState{
-				WasRunning:    true,  // Default: restore to running
-				BackupEnabled: false, // Default: don't modify backup
-			}
 		} else {
 			// Decode original state
 			var err error
 			originalState, err = decodeKBClusterState(stateJSON)
 			if err != nil {
 				logger.Error(err, "failed to decode cluster state", "cluster", clusterName)
-				return fmt.Errorf("failed to decode cluster state for %s: %w", clusterName, err)
 			}
+		}
+		if originalState == nil {
+			originalState = getDefaultKBClusterState()
 		}
 
 		logger.Info(
@@ -1135,6 +1139,9 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 		}
 
 		annotations := cronJob.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
 		// Get or create original state with defaults
 		var originalState *CronJobOriginalState
@@ -1146,17 +1153,16 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 				"CronJob",
 				cronJob.Name,
 			)
-			originalState = &CronJobOriginalState{
-				Suspend: false, // Default: resume to not suspended
-			}
 		} else {
 			// Decode original state
 			var err error
 			originalState, err = decodeCronJobState(stateJSON)
 			if err != nil {
 				logger.Error(err, "failed to decode cronjob state", "cronjob", cronJob.Name)
-				return fmt.Errorf("failed to decode cronjob state for %s: %w", cronJob.Name, err)
 			}
+		}
+		if originalState == nil {
+			originalState = getDefaultCronJobState()
 		}
 
 		logger.Info(
@@ -1295,6 +1301,9 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 		}
 
 		annotations := deploy.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
 		// Get or create original state with defaults
 		var originalState *DeploymentOriginalState
@@ -1306,17 +1315,16 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 				"Deployment",
 				deploy.Name,
 			)
-			originalState = &DeploymentOriginalState{
-				Replicas: 1, // Default: restore to 1 replica
-			}
 		} else {
 			// Decode original state
 			var err error
 			originalState, err = decodeDeploymentState(stateJSON)
 			if err != nil {
 				logger.Error(err, "failed to decode deployment state", "deployment", deploy.Name)
-				return fmt.Errorf("failed to decode deployment state for %s: %w", deploy.Name, err)
 			}
+		}
+		if originalState == nil {
+			originalState = getDefaultDeploymentState()
 		}
 
 		logger.Info(
@@ -1458,6 +1466,9 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 		}
 
 		annotations := sts.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
 		// Get or create original state with defaults
 		var originalState *DeploymentOriginalState
@@ -1469,17 +1480,16 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 				"StatefulSet",
 				sts.Name,
 			)
-			originalState = &DeploymentOriginalState{
-				Replicas: 1, // Default: restore to 1 replica
-			}
 		} else {
 			// Decode original state
 			var err error
 			originalState, err = decodeDeploymentState(stateJSON)
 			if err != nil {
 				logger.Error(err, "failed to decode statefulset state", "statefulset", sts.Name)
-				return fmt.Errorf("failed to decode statefulset state for %s: %w", sts.Name, err)
 			}
+		}
+		if originalState == nil {
+			originalState = getDefaultDeploymentState()
 		}
 
 		logger.Info(
@@ -1618,6 +1628,9 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 		}
 
 		annotations := rs.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
 		// Get or create original state with defaults
 		var originalState *DeploymentOriginalState
@@ -1629,17 +1642,16 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 				"ReplicaSet",
 				rs.Name,
 			)
-			originalState = &DeploymentOriginalState{
-				Replicas: 1, // Default: restore to 1 replica
-			}
 		} else {
 			// Decode original state
 			var err error
 			originalState, err = decodeDeploymentState(stateJSON)
 			if err != nil {
 				logger.Error(err, "failed to decode replicaset state", "replicaset", rs.Name)
-				return fmt.Errorf("failed to decode replicaset state for %s: %w", rs.Name, err)
 			}
+		}
+		if originalState == nil {
+			originalState = getDefaultDeploymentState()
 		}
 
 		logger.Info(
@@ -1706,7 +1718,7 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
 
 		// Get current disable-reissue annotation value
-		currentDisableReissue, _ := annotations[CertManagerDisableReissueAnnotation]
+		currentDisableReissue := annotations[CertManagerDisableReissueAnnotation]
 
 		// Skip if already suspended (has state and disable-reissue is true)
 		if hasOriginalState && currentDisableReissue == "true" {
@@ -1731,6 +1743,7 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 				return fmt.Errorf("failed to encode certificate state for %s: %w", certName, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			cert.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -1747,13 +1760,12 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 		// Disable certificate reissue if not already set to true
 		if currentDisableReissue != "true" {
 			annotations[CertManagerDisableReissueAnnotation] = "true"
+			cert.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
-			cert.SetAnnotations(annotations)
-
 			_, err := r.dynamicClient.Resource(certGVR).
 				Namespace(namespace).
 				Update(ctx, &cert, v12.UpdateOptions{})
@@ -1789,6 +1801,9 @@ func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace 
 	for _, cert := range certList.Items {
 		certName := cert.GetName()
 		annotations := cert.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
 		// Get or create original state with defaults
 		var originalState *CertificateOriginalState
@@ -1800,17 +1815,16 @@ func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace 
 				"Certificate",
 				certName,
 			)
-			originalState = &CertificateOriginalState{
-				DisableReissue: false, // Default: wasn't disabled
-			}
 		} else {
 			// Decode original state
 			var err error
 			originalState, err = decodeCertificateState(stateJSON)
 			if err != nil {
 				logger.Error(err, "failed to decode certificate state", "certificate", certName)
-				return fmt.Errorf("failed to decode certificate state for %s: %w", certName, err)
 			}
+		}
+		if originalState == nil {
+			originalState = getDefaultCertificateState()
 		}
 
 		logger.Info(
@@ -1826,21 +1840,20 @@ func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace 
 
 		// Remove the annotation if it wasn't disabled before
 		if !originalState.DisableReissue {
-			if _, hasDisableReissue := annotations[CertManagerDisableReissueAnnotation]; hasDisableReissue {
-				delete(annotations, CertManagerDisableReissueAnnotation)
-				needsUpdate = true
-			}
+			delete(annotations, CertManagerDisableReissueAnnotation)
+			cert.SetAnnotations(annotations)
+			needsUpdate = true
 		}
 
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
+			cert.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
-			cert.SetAnnotations(annotations)
 			_, err = r.dynamicClient.Resource(certGVR).
 				Namespace(namespace).
 				Update(ctx, &cert, v12.UpdateOptions{})
@@ -1949,6 +1962,159 @@ func deleteResource(dynamicClient dynamic.Interface, resource, namespace string)
 	}, v12.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete %s: %w", resource, err)
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendIngresses")
+
+	ingressList := networkingv1.IngressList{}
+	if err := r.Client.List(ctx, &ingressList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list ingresses: %w", err)
+	}
+
+	for _, ingress := range ingressList.Items {
+		ingressName := ingress.Name
+		annotations := ingress.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current ingress class
+		currentIngressClass, hasIngressClass := annotations[IngressClassAnnotation]
+
+		// Skip if already suspended (has state and ingress class is "pause")
+		if hasOriginalState && currentIngressClass == IngressClassPause {
+			logger.V(1).Info("Ingress already suspended, skipping", "Ingress", ingressName)
+			continue
+		}
+
+		// Track if ingress needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			// Save the original ingress class (empty string if not set)
+			originalIngressClass := ""
+			if hasIngressClass {
+				originalIngressClass = currentIngressClass
+			}
+
+			originalState := &IngressOriginalState{
+				IngressClass: originalIngressClass,
+			}
+			stateJSON, err := encodeIngressState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode ingress state", "ingress", ingressName)
+				return fmt.Errorf("failed to encode ingress state for %s: %w", ingressName, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			ingress.SetAnnotations(annotations)
+			needsUpdate = true
+
+			logger.Info(
+				"Saved ingress state",
+				"ingress",
+				ingressName,
+				"originalIngressClass",
+				originalIngressClass,
+			)
+		} else {
+			logger.V(1).Info("Ingress already has original state, skipping state save", "Ingress", ingressName)
+		}
+
+		// Change ingress class to "pause" if not already set
+		if currentIngressClass != IngressClassPause {
+			annotations[IngressClassAnnotation] = IngressClassPause
+			ingress.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &ingress); err != nil {
+				return fmt.Errorf("failed to suspend ingress %s: %w", ingressName, err)
+			}
+
+			logger.V(1).Info("Suspended ingress", "ingress", ingressName)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeIngresses(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeIngresses")
+
+	ingressList := networkingv1.IngressList{}
+	if err := r.Client.List(ctx, &ingressList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("failed to list ingresses: %w", err)
+	}
+
+	for _, ingress := range ingressList.Items {
+		ingressName := ingress.Name
+		annotations := ingress.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Get or create original state with defaults
+		var originalState *IngressOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default: restore to nginx
+			logger.Info(
+				"Ingress has no suspend state, using defaults to restore",
+				"Ingress",
+				ingressName,
+			)
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeIngressState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode ingress state", "ingress", ingressName)
+			}
+		}
+		if originalState == nil {
+			originalState = getDefaultIngressState()
+		}
+
+		logger.Info(
+			"Resuming ingress",
+			"ingress",
+			ingressName,
+			"originalIngressClass",
+			originalState.IngressClass,
+		)
+
+		// Track if ingress needs update
+		needsUpdate := false
+
+		// Restore original ingress class
+		if originalState.IngressClass != IngressClassPause {
+			// Restore to original ingress class
+			annotations[IngressClassAnnotation] = originalState.IngressClass
+			ingress.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			ingress.SetAnnotations(annotations)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			if err := r.Client.Update(ctx, &ingress); err != nil {
+				return fmt.Errorf("failed to resume ingress %s: %w", ingressName, err)
+			}
+		}
 	}
 	return nil
 }
