@@ -56,7 +56,7 @@ func (v *DBLogsQuery) generateTypeQuery(req *api.DBLogsRequest) {
 func (v *DBLogsQuery) generateCommonQuery(req *api.DBLogsRequest) {
 	var filters []string
 	if req.Time != "" {
-		filters = append(filters, fmt.Sprintf(`_time:%s`, req.Time))
+		filters = append(filters, "_time:"+req.Time)
 	}
 	if len(filters) > 0 {
 		v.query += strings.Join(filters, " ")
@@ -66,7 +66,7 @@ func (v *DBLogsQuery) generateCommonQuery(req *api.DBLogsRequest) {
 		if limit == "" {
 			limit = "100"
 		}
-		v.query += fmt.Sprintf(` | limit %s`, limit)
+		v.query += " | limit " + limit
 	}
 }
 
