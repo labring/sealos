@@ -2,7 +2,6 @@ import { updateDatabaseSchemas } from '@/types/apis';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
 import { KbPgClusterType } from '@/types/cluster';
-import { adaptDBDetail } from '@/utils/adapt';
 import { dbDetailSchema, ClusterObjectSchema } from '@/types/schemas/db';
 import {
   CPUResourceEnum,
@@ -13,18 +12,135 @@ import {
 } from '@/types/db';
 import { cpuFormatToM, memoryFormatToMi, storageFormatToNum } from '@/utils/tools';
 
-// connection secret names
-const getSecretNames = (dbName: string, dbType: DBType): string[] => {
-  const secretMap: Record<DBType, string[]> = {
-    mongodb: [`${dbName}-mongodb-account-root`, `${dbName}-mongo-conn-credential`],
-    redis: [`${dbName}-redis-account-default`, `${dbName}-redis-conn-credential`],
-    kafka: [`${dbName}-broker-account-admin`, `${dbName}-conn-credential`]
-  } as any;
-  return secretMap[dbType] || [`${dbName}-conn-credential`];
+const CONSTANTS = {
+  CPU_DIVISOR: 1000,
+  MEMORY_DIVISOR: 1024,
+  MILLISECONDS_PER_SECOND: 1000,
+  SECONDS_PER_DAY: 86400,
+  SECONDS_PER_HOUR: 3600,
+  SECONDS_PER_MINUTE: 60
+} as const;
+
+//three types secret
+const SECRET_NAME_MAP: Partial<Record<DBType, string[]>> = {
+  mongodb: ['{dbName}-mongodb-account-root', '{dbName}-mongo-conn-credential'],
+  redis: ['{dbName}-redis-account-default', '{dbName}-redis-conn-credential'],
+  kafka: ['{dbName}-broker-account-admin', '{dbName}-conn-credential']
 };
-//database transform to schema
+
+//connection string
+const CONNECTION_PROTOCOLS: Partial<Record<DBType, string>> = {
+  kafka: '{endpoint}',
+  milvus: '{endpoint}',
+  mongodb: 'mongodb://{username}:{password}@{host}:{port}',
+  postgresql: 'postgresql://{username}:{password}@{host}:{port}',
+  'apecloud-mysql': 'mysql://{username}:{password}@{host}:{port}',
+  redis: 'redis://{username}:{password}@{host}:{port}'
+};
+
+//default secret names
+const getSecretNames = (dbName: string, dbType: DBType): string[] => {
+  const baseSecrets = SECRET_NAME_MAP[dbType] || ['{dbName}-conn-credential'];
+  return baseSecrets.map((name) => name.replace('{dbName}', dbName));
+};
+
+//decode secret data
+const decodeSecretData = (data: Record<string, string> | undefined, key: string): string | null => {
+  return data?.[key] ? Buffer.from(data[key], 'base64').toString('utf-8').trim() : null;
+};
+
+//extract all secret data at once
+const extractSecretData = (data: Record<string, string> | undefined) => ({
+  endpoint: decodeSecretData(data, 'endpoint'),
+  host: decodeSecretData(data, 'host'),
+  port: decodeSecretData(data, 'port'),
+  username: decodeSecretData(data, 'username'),
+  password: decodeSecretData(data, 'password')
+});
+
+//connection
+const buildConnectionString = (
+  dbType: DBType,
+  { endpoint, host, port, username, password }: ReturnType<typeof extractSecretData>
+): string | null => {
+  if (!host || !port || !username || !password) return null;
+
+  const protocol = CONNECTION_PROTOCOLS[dbType];
+  if (!protocol) return null;
+
+  return protocol
+    .replace('{endpoint}', endpoint || `${host}:${port}`)
+    .replace('{host}', host)
+    .replace('{port}', port)
+    .replace('{username}', username)
+    .replace('{password}', password);
+};
+
+//format uptime
+const formatUptime = (startTime: string | Date): string | null => {
+  const seconds = Math.floor(
+    (Date.now() - new Date(startTime).getTime()) / CONSTANTS.MILLISECONDS_PER_SECOND
+  );
+  const d = Math.floor(seconds / CONSTANTS.SECONDS_PER_DAY);
+  const h = Math.floor((seconds % CONSTANTS.SECONDS_PER_DAY) / CONSTANTS.SECONDS_PER_HOUR);
+  const m = Math.floor((seconds % CONSTANTS.SECONDS_PER_HOUR) / CONSTANTS.SECONDS_PER_MINUTE);
+  return d > 0 ? `${d}d${h}h` : h > 0 ? `${h}h${m}m` : `${m}m`;
+};
+
+//calculate component resources
+const calculateComponentResources = (spec: any) => {
+  const cpu = cpuFormatToM(spec.resources?.limits?.cpu || '0') / CONSTANTS.CPU_DIVISOR;
+  const memory = memoryFormatToMi(spec.resources?.limits?.memory || '0') / CONSTANTS.MEMORY_DIVISOR;
+  const storage = storageFormatToNum(
+    spec.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
+  );
+
+  return {
+    name: spec.name,
+    status: (spec as any).status?.phase || 'unknown',
+    resource: {
+      cpu,
+      memory,
+      storage,
+      replicas: spec.replicas || 0
+    }
+  };
+};
+
+//calculate resource totals
+const calculateResourceTotals = (components: ReturnType<typeof calculateComponentResources>[]) => {
+  return components.reduce(
+    (acc, component) => {
+      const replicas = component.resource?.replicas || 0;
+      acc.totalReplicas += replicas;
+      acc.totalCpu += (component.resource?.cpu || 0) * replicas;
+      acc.totalMemory += (component.resource?.memory || 0) * replicas;
+      acc.totalStorage += (component.resource?.storage || 0) * replicas;
+      return acc;
+    },
+    { totalReplicas: 0, totalCpu: 0, totalMemory: 0, totalStorage: 0 }
+  );
+};
+
+//convert raw data to schema
 export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> => {
-  const dbEditSchemaFromRaw: z.Infer<typeof dbDetailSchema> = {
+  const autoBackup = raw.autoBackup
+    ? {
+        ...raw.autoBackup,
+        week: raw.autoBackup.week as (
+          | 'monday'
+          | 'tuesday'
+          | 'wednesday'
+          | 'thursday'
+          | 'friday'
+          | 'saturday'
+          | 'sunday'
+        )[],
+        saveType: raw.autoBackup.saveType as 'days' | 'weeks' | 'months' | 'hours'
+      }
+    : undefined;
+
+  return {
     terminationPolicy: raw.terminationPolicy,
     name: raw.dbName,
     type: raw.dbType,
@@ -49,33 +165,17 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
       sourceName: raw.source.sourceName,
       sourceType: raw.source.sourceType
     },
-    autoBackup: raw.autoBackup
-      ? {
-          ...raw.autoBackup,
-          week: raw.autoBackup.week as (
-            | 'monday'
-            | 'tuesday'
-            | 'wednesday'
-            | 'thursday'
-            | 'friday'
-            | 'saturday'
-            | 'sunday'
-          )[],
-          saveType: raw.autoBackup.saveType as 'days' | 'weeks' | 'months' | 'hours'
-        }
-      : undefined
+    autoBackup
   };
-
-  return dbEditSchemaFromRaw;
 };
 
-//get database details
+//get database
 export async function getDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
   request: {
     params: z.infer<typeof updateDatabaseSchemas.pathParams>;
   }
-): Promise<z.infer<typeof ClusterObjectSchema>> {
+): Promise<z.Infer<typeof ClusterObjectSchema>> {
   const { namespace, k8sCustomObjects, k8sCore } = k8s;
   const dbName = request.params.databaseName;
 
@@ -87,53 +187,32 @@ export async function getDatabase(
     dbName
   )) as { body: KbPgClusterType };
 
-  //get database type
   const rawDbType =
     cluster.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
   const dbType = ((rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType) as DBType;
 
-  // Fetch connection - try new naming format first, fallback to old
-  const getConnection = async () => {
+  const fetchConnection = async () => {
     const secretNames = getSecretNames(dbName, dbType);
+
     for (const secretName of secretNames) {
       try {
         const secret = await k8sCore.readNamespacedSecret(secretName, namespace);
         if (!secret.body?.data) continue;
 
-        const decode = (key: string) =>
-          secret.body.data?.[key]
-            ? Buffer.from(secret.body.data[key], 'base64').toString('utf-8').trim()
-            : null;
+        const secretData = extractSecretData(secret.body.data);
+        const connectionString = buildConnectionString(dbType, secretData);
 
-        const [endpoint, host, port, username, password] = [
-          decode('endpoint'),
-          decode('host'),
-          decode('port'),
-          decode('username'),
-          decode('password')
-        ];
-
-        let connectionString = null;
-        if (host && port && username && password) {
-          const protocols: Record<string, string> = {
-            kafka: endpoint || `${host}:${port}`,
-            milvus: endpoint || `${host}:${port}`,
-            mongodb: `mongodb://${username}:${password}@${host}:${port}`,
-            postgresql: `postgresql://${username}:${password}@${host}:${port}`,
-            'apecloud-mysql': `mysql://${username}:${password}@${host}:${port}`,
-            redis: `redis://${username}:${password}@${host}:${port}`
-          };
-          connectionString = protocols[dbType] || null;
+        if (connectionString) {
+          return { ...secretData, connectionString };
         }
-
-        return { endpoint, host, port, username, password, connectionString };
-      } catch {}
+      } catch {
+        continue;
+      }
     }
     return null;
   };
 
-  // Fetch public connection
-  const getPublicConnection = async () => {
+  const fetchPublicConnection = async () => {
     try {
       const service = await k8sCore.readNamespacedService(`${dbName}-export`, namespace);
       const nodePort = service.body?.spec?.ports?.[0]?.nodePort;
@@ -143,8 +222,7 @@ export async function getDatabase(
     }
   };
 
-  // Fetch pods
-  const getPods = async () => {
+  const fetchPods = async () => {
     try {
       const { body } = await k8sCore.listNamespacedPod(
         namespace,
@@ -155,70 +233,38 @@ export async function getDatabase(
         `app.kubernetes.io/instance=${dbName}`
       );
 
-      return body.items.map((pod) => {
-        let upTime = null;
-        if (pod.status?.startTime) {
-          const seconds = Math.floor(
-            (Date.now() - new Date(pod.status.startTime).getTime()) / 1000
-          );
-          const d = Math.floor(seconds / 86400);
-          const h = Math.floor((seconds % 86400) / 3600);
-          const m = Math.floor((seconds % 3600) / 60);
-          upTime = d > 0 ? `${d}d${h}h` : h > 0 ? `${h}h${m}m` : `${m}m`;
-        }
-
-        return {
-          name: pod.metadata?.name || null,
-          status: pod.status?.phase || null,
-          upTime,
-          containers:
-            pod.status?.containerStatuses?.map((c) => ({
-              name: c.name,
-              ready: c.ready,
-              state: c.state,
-              restartCount: c.restartCount
-            })) || null
-        };
-      });
+      return body.items.map((pod) => ({
+        name: pod.metadata?.name || null,
+        status: pod.status?.phase || null,
+        upTime: pod.status?.startTime ? formatUptime(pod.status.startTime) : null,
+        containers:
+          pod.status?.containerStatuses?.map((c) => ({
+            name: c.name,
+            ready: c.ready,
+            state: c.state,
+            restartCount: c.restartCount
+          })) || null
+      }));
     } catch {
       return [];
     }
   };
 
-  // Extract components
   const components = (cluster.spec?.componentSpecs || []).map((spec) => {
-    const cpu = cpuFormatToM(spec.resources?.limits?.cpu || '0') / 1000;
-    const memory = memoryFormatToMi(spec.resources?.limits?.memory || '0') / 1024;
-    const storage = storageFormatToNum(
-      spec.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
-    );
-
+    const resourceData = calculateComponentResources(spec);
     return {
-      name: spec.name,
-      status: (cluster.status?.components as any)?.[spec.name]?.phase || 'unknown',
-      resource: { cpu, memory, storage, replicas: spec.replicas || 0 }
+      ...resourceData,
+      status: (cluster.status?.components as any)?.[spec.name]?.phase || 'unknown'
     };
   });
 
-  // Calculate total resources
-  const totalReplicas = components.reduce((sum, c) => sum + (c.resource?.replicas || 0), 0);
-  const totalCpu = components.reduce(
-    (sum, c) => sum + (c.resource?.cpu || 0) * (c.resource?.replicas || 0),
-    0
-  );
-  const totalMemory = components.reduce(
-    (sum, c) => sum + (c.resource?.memory || 0) * (c.resource?.replicas || 0),
-    0
-  );
-  const totalStorage = components.reduce(
-    (sum, c) => sum + (c.resource?.storage || 0) * (c.resource?.replicas || 0),
-    0
-  );
+  const resourceTotals = calculateResourceTotals(components);
+  const { totalReplicas, totalCpu, totalMemory, totalStorage } = resourceTotals;
 
   const [privateConnection, publicConnection, pods] = await Promise.all([
-    getConnection(),
-    getPublicConnection(),
-    getPods()
+    fetchConnection(),
+    fetchPublicConnection(),
+    fetchPods()
   ]);
 
   return {

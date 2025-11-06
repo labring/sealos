@@ -434,41 +434,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const organization = await devboxDB.organization.findUnique({
-      where: {
-        id: 'labring'
-      }
-    });
-    
-    if (!organization) throw Error('organization not found');
-    
     const regionUid = getRegionUid();
     
-    const templateRepository = await devboxDB.templateRepository.findFirst({
-      where: {
-        isPublic: true,
-        isDeleted: false,
-        organizationUid: organization.uid,
-        regionUid,
-        iconId: devboxForm.runtime  
-      },
-      select: {
-        name: true,
-        uid: true
-      }
-    });
-
-    if (!templateRepository) {
-      return jsonRes({
-        code: 404,
-        message: `Runtime '${devboxForm.runtime}' not found`
-      });
-    }
-
     const template = await devboxDB.template.findFirst({
       where: {
-        templateRepositoryUid: templateRepository.uid,
-        isDeleted: false
+        isDeleted: false,
+        templateRepository: {
+          isDeleted: false,
+          regionUid,
+          isPublic: true,
+          iconId: devboxForm.runtime,
+          templateRepositoryTags: {
+            some: {
+              tag: {
+                type: 'OFFICIAL_CONTENT'
+              }
+            }
+          }
+        }
       },
       select: {
         templateRepository: {
@@ -490,7 +473,7 @@ export async function POST(req: NextRequest) {
     if (!template) {
       return jsonRes({
         code: 404,
-        message: 'Template not found for runtime'
+        message: `Runtime devboxForm.runtime not found`
       });
     }
 
