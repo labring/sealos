@@ -1,14 +1,9 @@
 import { GET, POST } from '@/services/request';
-import type { UserQuotaItemType, UserTask } from '@/types/user';
+import type { UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
 import { AuthCnamePrams, AuthDomainChallengeParams } from '@/types/params';
-import { getDesktopSessionFromSessionStorage } from '@/utils/user';
+import { useUserStore } from '@/stores/user';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
-
-export const getUserQuota = () =>
-  GET<{
-    quota: UserQuotaItemType[];
-  }>('/api/platform/getQuota');
 
 export const getUserIsOutStandingPayment = () =>
   GET<{
@@ -35,12 +30,12 @@ export const postAuthDomainChallenge = (data: AuthDomainChallengeParams) =>
 
 export const getUserTasks = () =>
   POST<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', {
-    desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
+    desktopToAppToken: useUserStore.getState()?.session?.token
   });
 
 export const checkUserTask = () =>
   POST('/api/guide/checkTask', {
-    desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
+    desktopToAppToken: useUserStore.getState()?.session?.token
   });
 
 export const checkReady = (devboxName: string) =>

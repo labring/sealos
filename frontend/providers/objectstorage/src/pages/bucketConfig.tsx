@@ -9,6 +9,10 @@ import { QueryClient, dehydrate, useMutation, useQueryClient } from '@tanstack/r
 import { createBucket, listBucket } from '@/api/bucket';
 import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/router';
+import { useUserStore } from '@/store/user';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { useState, useEffect } from 'react';
+import useSessionStore from '@/store/session';
 const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const methods = useForm<FormSchema>({
     defaultValues: {
@@ -19,6 +23,22 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const { toast } = useToast();
   const client = useQueryClient();
   const router = useRouter();
+  const { checkExceededQuotas, loadUserQuota } = useUserStore();
+  const { session } = useSessionStore();
+  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
+
+  // Load user quota when session is available and has required properties
+  useEffect(() => {
+    if (session?.user && session?.kubeconfig) {
+      loadUserQuota();
+    }
+  }, [session, loadUserQuota]);
+
+  // Check quota before submission
+  const exceededQuotas = checkExceededQuotas({
+    traffic: session?.subscription.type === 'PAYG' ? 0 : 1
+  });
+
   const mutation = useMutation({
     mutationFn: createBucket,
     async onSuccess(data) {
@@ -47,15 +67,28 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
       });
     }
   });
+  const handleSubmit = () => {
+    if (exceededQuotas.length <= 0) {
+      // No quota exceeded, proceed with submission
+      methods.handleSubmit((data) => {
+        mutation.mutate({
+          bucketName: data.bucketName,
+          bucketPolicy: data.bucketAuthority
+        });
+      })();
+    } else {
+      // Quota exceeded, show dialog
+      setIsInsufficientQuotaDialogOpen(true);
+    }
+  };
+
   return (
     <FormProvider {...methods}>
       <form
-        onSubmit={methods.handleSubmit((data) => {
-          mutation.mutate({
-            bucketName: data.bucketName,
-            bucketPolicy: data.bucketAuthority
-          });
-        })}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
       >
         <Flex
           minW={'1024px'}
@@ -71,6 +104,13 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
           </Box>
         </Flex>
       </form>
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        onOpenChange={setIsInsufficientQuotaDialogOpen}
+        open={isInsufficientQuotaDialogOpen}
+        onConfirm={() => {}}
+        showControls={false}
+      />
     </FormProvider>
   );
 };

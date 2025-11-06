@@ -34,6 +34,17 @@ export type GpuType = {
   amount: number;
 };
 
+export interface DevboxEnvType {
+  name: string;
+  value?: string;
+  valueFrom?: {
+    secretKeyRef: {
+      name: string;
+      key: string;
+    };
+  };
+}
+
 export interface DevboxEditType {
   name: string;
   runtimeType: string;
@@ -50,7 +61,9 @@ export interface DevboxEditType {
     publicDomain: string; // default domain
     customDomain: string; // custom domain
   }[];
+  env?: DevboxEnvType[];
 }
+
 export interface DevboxEditTypeV2 {
   name: string;
   templateUid: string;
@@ -61,7 +74,9 @@ export interface DevboxEditTypeV2 {
   memory: number;
   gpu?: GpuType;
   networks: PortInfos;
+  env?: DevboxEnvType[];
 }
+
 export interface DevboxStatusMapType {
   label: string;
   value: DevboxStatusValueType;

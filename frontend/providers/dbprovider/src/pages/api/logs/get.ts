@@ -21,7 +21,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       logType,
       logPath,
       page = 1,
-      pageSize = 100
+      pageSize = 100,
+      startTime,
+      endTime
     } = req.body as {
       podName: string;
       dbType: SupportReconfigureDBType;
@@ -29,6 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       logPath: string;
       page?: number;
       pageSize?: number;
+      startTime?: number;
+      endTime?: number;
     };
 
     if (!podName || !dbType || !logType || !logPath) {
@@ -50,8 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       page,
       pageSize,
       dbType: dbType as DBTypeEnum,
-      logType
-    });
+      logType,
+      startTime,
+      endTime
+    } as any);
 
     jsonRes(res, { data: result });
   } catch (err: any) {

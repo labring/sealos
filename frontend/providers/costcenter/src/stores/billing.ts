@@ -1,9 +1,10 @@
 import { CYCLE } from '@/constants/valuation';
 import { Cycle } from '@/types/cycle';
-import { RegionClient } from '@/types/region';
+import { Region } from '@/types/region';
 import { formatMoney } from '@/utils/format';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 type BillingState = {
   cpu: number;
   memory: number;
@@ -17,14 +18,14 @@ type BillingState = {
   appNameIdx: number;
   namespaceList: [string, string][];
   appTypeList: string[];
-  regionList: RegionClient[];
+  regionList: Region[];
   appNameList: string[];
   setAppType: (appType: number) => void;
   setAppName: (appName: number) => void;
   setNamespace: (namespace: number) => void;
   setAppNameList: (appNameList: string[]) => void;
   setAppTypeList: (appTypeList: string[]) => void;
-  setRegionList: (regionList: RegionClient[]) => void;
+  setRegionList: (regionList: Region[]) => void;
   setNamespaceList: (namespaceList: [string, string][]) => void;
   setRegion: (region: number) => void;
   setCycle: (cycle: number) => void;
@@ -36,13 +37,14 @@ type BillingState = {
   closeBillingDetail: () => void;
   // [id, name]
   getNamespace: () => [string, string] | null;
-  getRegion: () => RegionClient | null;
+  getRegion: () => Region | null;
   updateCpu: (cpu: number) => void;
   updateMemory: (memory: number) => void;
   updateStorage: (storage: number) => void;
   updateNetwork: (network: number) => void;
   updateGpu: (gpu: number) => void;
 };
+
 const useBillingStore = create<BillingState>()(
   persist(
     (set, get) => ({
@@ -56,10 +58,10 @@ const useBillingStore = create<BillingState>()(
       cycleIdx: 0,
       regionIdx: 0,
       appNameIdx: 0,
-      namespaceList: [['', 'All Workspace']],
-      appTypeList: ['all_app_type'],
+      namespaceList: [],
+      appTypeList: [],
       regionList: [],
-      appNameList: ['All APP'],
+      appNameList: [],
       detailIsOpen: false,
       openBillingDetail: () => set({ detailIsOpen: true }),
       closeBillingDetail: () => set({ detailIsOpen: false }),
@@ -73,7 +75,7 @@ const useBillingStore = create<BillingState>()(
       setAppTypeList(appTypeList: string[]) {
         set({ appTypeList });
       },
-      setRegionList(regionList: RegionClient[]) {
+      setRegionList(regionList: Region[]) {
         const { getRegion } = get();
         const region = getRegion();
         const newRegionIdx = regionList.findIndex((item) => item.uid === region?.uid);
@@ -108,13 +110,15 @@ const useBillingStore = create<BillingState>()(
       },
       getAppName() {
         const { appNameIdx, appNameList } = get();
-        if (appNameIdx === -1 || appNameIdx === 0 || appNameList.length === 0) return '';
+        if (appNameIdx === -1 || appNameIdx >= appNameList.length || appNameList.length === 0)
+          return '';
         return appNameList[appNameIdx];
       },
       getAppType() {
-        if (get().appTypeIdx === -1 || get().appTypeIdx === 0 || get().appTypeList.length === 0)
+        const { appTypeIdx, appTypeList } = get();
+        if (appTypeIdx === -1 || appTypeIdx >= appTypeList.length || appTypeList.length === 0)
           return '';
-        return get().appTypeList[get().appTypeIdx];
+        return appTypeList[appTypeIdx];
       },
       getRegion() {
         if (get().regionIdx === -1 || get().regionList.length === 0) return null;
@@ -135,4 +139,5 @@ const useBillingStore = create<BillingState>()(
     }
   )
 );
+
 export default useBillingStore;

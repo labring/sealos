@@ -52,7 +52,7 @@ const (
 )
 
 type EmailRenderBuilder interface {
-	Build() map[string]interface{}
+	Build() map[string]any
 	GetType() string
 	SetUserInfo(userInfo *types.UserInfo)
 	GetSubject() string
@@ -66,8 +66,8 @@ type EmailPayRender struct {
 	AccountBalance int64
 }
 
-func (e *EmailPayRender) Build() map[string]interface{} {
-	return map[string]interface{}{
+func (e *EmailPayRender) Build() map[string]any {
+	return map[string]any{
 		"FirstName":      e.userInfo.FirstName,
 		"LastName":       e.userInfo.LastName,
 		"Domain":         e.Domain,
@@ -88,14 +88,14 @@ func (e *EmailPayRender) SetUserInfo(userInfo *types.UserInfo) {
 	e.userInfo = userInfo
 }
 
-func (e *EmailSubRender) Build() map[string]interface{} {
-	build := map[string]interface{}{
+func (e *EmailSubRender) Build() map[string]any {
+	build := map[string]any{
 		"FirstName":            e.userInfo.FirstName,
 		"LastName":             e.userInfo.LastName,
 		"Domain":               e.Domain,
 		"SubscriptionPlanName": e.SubscriptionPlanName,
-		"StartDate":            e.StartDate.Format("2006-01-02"),
-		"EndDate":              e.EndDate.Format("2006-01-02"),
+		"StartDate":            e.StartDate.Format(time.DateOnly),
+		"EndDate":              e.EndDate.Format(time.DateOnly),
 	}
 	switch e.SubscriptionPlanName {
 	case "Hobby":
@@ -189,8 +189,8 @@ func (e *EmailDebtRender) GetSubject() string {
 	return "Low Account Balance Reminder"
 }
 
-func (e *EmailDebtRender) Build() map[string]interface{} {
-	build := map[string]interface{}{
+func (e *EmailDebtRender) Build() map[string]any {
+	build := map[string]any{
 		"FirstName":   e.userInfo.FirstName,
 		"LastName":    e.userInfo.LastName,
 		"Domain":      e.Domain,

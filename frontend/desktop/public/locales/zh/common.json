@@ -25,17 +25,35 @@
   "apps_running_app_devbox": "DevBox",
   "apps_running_desc_devbox_one": "{{count}} 个开发环境正在运行",
   "apps_running_desc_devbox_other": "{{count}} 个开发环境正在运行",
+  "apps_running_do_not_show_again": "不再显示此提示",
   "apps_running_prompt_desc_applaunchpad_one": "{{count}} 个应用运行中",
   "apps_running_prompt_desc_applaunchpad_other": "{{count}} 个应用运行中",
   "apps_running_prompt_desc_devbox_one": "{{count}} 个数据库服务运行中",
   "apps_running_prompt_desc_devbox_other": "{{count}} 个数据库服务运行中",
-  "apps_running_do_not_show_again": "不再显示此提示",
   "apps_running_running_badge": "运行中",
   "apps_running_shutdown": "去关机",
   "apps_running_title": "确认关闭页面？",
   "attachment": "附件",
   "avatar": "头像",
-  "balance": "余额",
+  "balance_popover": {
+    "balance": "余额",
+    "check_costcenter_tip": "到费用中心查看详细信息",
+    "expired_at": "过期时间：",
+    "payg_plan": "按量付费",
+    "plan_suffix": "套餐",
+    "subscription_status": {
+      "expired": "过期",
+      "limited_trial": "限时试用"
+    },
+    "top_up": "充值",
+    "trial_expiry_tip_one": "你的试用将在 {{count}} 天后过期.",
+    "trial_expiry_tip_other": "你的试用将在 {{count}} 天后过期.",
+    "trial_expiry_upgrade_tip_one": "你的试用将在 {{count}} 天后过期. 升级套餐以保证服务在线.",
+    "trial_expiry_upgrade_tip_other": "你的试用将在 {{count}} 天后过期. 升级套餐以保证服务在线.",
+    "upgrade_button": "升级套餐",
+    "upgrade_tip": "跳转到费用中心以升级套餐"
+  },
+  "balance_text": "余额",
   "bank_name": "开户银行",
   "banner": {
     "button": "查看详情",
@@ -190,6 +208,13 @@
   "more_apps": "更多应用",
   "name": "姓名",
   "name_of_team": "工作空间名称",
+  "nav_links": {
+    "balance": "余额",
+    "plan_expired": "已过期",
+    "plan_suffix": "套餐",
+    "subscribe": "订阅套餐",
+    "upgrade_plan": "升级"
+  },
   "new_email": "新电子邮箱",
   "new_phone": "新手机号",
   "newpassword": "新密码",
@@ -276,6 +301,11 @@
   "search_apps": "搜索应用",
   "select_amount": "选择金额",
   "service_agreement": "服务协议",
+  "set_alias_prompt": {
+    "cancel": "取消",
+    "confirm": "确认",
+    "title": "设置别名"
+  },
   "spend": "花",
   "start_immediately": "立即开始",
   "start_now": "立即前往",
@@ -301,6 +331,7 @@
   "used_resources": "已用资源",
   "user_name": "用户名",
   "user_name_required": "请输入正确的企业法人姓名",
+  "user_table_set_alias": "设置别名",
   "username": "用户名",
   "username_tips": "用户名为3-16位的英文或数字的字符",
   "usertask": {

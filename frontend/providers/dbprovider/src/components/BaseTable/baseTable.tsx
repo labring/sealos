@@ -24,6 +24,11 @@ const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties =
   };
 };
 
+const getCommonWidthStyles = <T,>(column: Column<T, unknown>): CSSProperties => {
+  const size = column.getSize();
+  return size ? { width: `${size}px` } : {};
+};
+
 export function BaseTable<T extends unknown>({
   table,
   isLoading,
@@ -48,7 +53,7 @@ export function BaseTable<T extends unknown>({
                       py="13px"
                       px={'24px'}
                       key={header.id}
-                      bg={'grayModern.100'}
+                      bg={'#FAFAFA'}
                       color={'grayModern.600'}
                       border={'none'}
                       _first={{
@@ -58,6 +63,7 @@ export function BaseTable<T extends unknown>({
                         borderRightRadius: '6px'
                       }}
                       {...(getCommonPinningStyles(header.column) as HTMLChakraProps<'th'>)}
+                      {...(getCommonWidthStyles(header.column) as HTMLChakraProps<'th'>)}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Th>
@@ -77,19 +83,25 @@ export function BaseTable<T extends unknown>({
           ) : (
             table.getRowModel().rows.map((item, index) => {
               return (
-                <Tr key={item.id} fontSize={'12px'}>
+                <Tr
+                  key={item.id}
+                  fontSize={'12px'}
+                  borderBottom={'1px solid'}
+                  borderBottomColor={
+                    index !== table.getRowModel().rows.length - 1
+                      ? 'var(--border-lighter, #F1F1F3)'
+                      : 'transparent'
+                  }
+                >
                   {item.getAllCells().map((cell, i) => {
                     const isPinned = cell.column.getIsPinned();
                     return (
                       <Td
                         key={cell.id}
-                        p={'10px 24px'}
+                        p={'var(--spacing-4, 16px) 24px'}
                         bg={isPinned ? 'white' : ''}
-                        borderBottom={'1px solid'}
-                        borderBottomColor={
-                          index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
-                        }
                         {...(getCommonPinningStyles(cell.column) as HTMLChakraProps<'td'>)}
+                        {...(getCommonWidthStyles(cell.column) as HTMLChakraProps<'td'>)}
                         {...tdStyle}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

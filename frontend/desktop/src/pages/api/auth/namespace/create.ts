@@ -1,13 +1,12 @@
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAccessToken, verifyAppToken } from '@/services/backend/auth';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { get_k8s_username } from '@/services/backend/regionAuth';
 import { jsonRes } from '@/services/backend/response';
-import { bindingRole, modifyWorkspaceRole } from '@/services/backend/team';
-import { getRegionUid, getTeamLimit } from '@/services/enable';
+import { modifyWorkspaceRole } from '@/services/backend/team';
+import { getRegionUid } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
-import { UserRoleToRole } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 import { v4 } from 'uuid';
@@ -15,9 +14,14 @@ import { v4 } from 'uuid';
 // const TEAM_LIMIT = getTeamLimit();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await verifyAccessToken(req.headers);
+    const payload = (await verifyAccessToken(req.headers)) || (await verifyAppToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const { teamName } = req.body as { teamName?: string };
+    const { teamName, userType } = req.body as {
+      teamName?: string;
+      userType: 'subscription' | 'payg';
+    };
+    console.log('create team workspace', userType, teamName, payload);
+
     if (!teamName) return jsonRes(res, { code: 400, message: 'teamName is required' });
     const currentNamespaces = await prisma.userWorkspace.findMany({
       where: {
@@ -50,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const workspace_creater = await get_k8s_username();
     if (!workspace_creater) throw new Error('fail to get workspace_creater');
+
     const workspaceId = GetUserDefaultNameSpace(workspace_creater);
 
     const workspaceUid = v4();
@@ -86,32 +91,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       return 'success';
     });
+    console.log('user workspace status', status);
+
     if (status !== 'success') {
       if (status === 'user_not_found')
-        jsonRes(res, {
+        return jsonRes(res, {
           code: 404,
           message: 'User not found'
         });
       else if (status === 'max_workspaces_reached')
-        jsonRes(res, {
+        return jsonRes(res, {
           code: 403,
           message: 'The targetUser has reached the maximum number of workspaces'
         });
       else if (status === 'subscription_not_found')
-        jsonRes(res, { code: 403, message: 'The targetUser is not subscribed' });
+        return jsonRes(res, { code: 403, message: 'The targetUser is not subscribed' });
       else throw Error('Unknown error');
-      return;
     }
+
     try {
       // 创建伪user
-      const creater_kc_str = await getTeamKubeconfig(workspace_creater, payload.userCrName);
+      const creater_kc_str = await getTeamKubeconfig(
+        workspace_creater,
+        payload.userCrName,
+        userType
+      );
       if (!creater_kc_str) throw new Error('fail to get kubeconfig');
+
       await modifyWorkspaceRole({
         role: UserRole.Owner,
         action: 'Create',
         workspaceId,
         k8s_username: payload.userCrName
       });
+
       const result = await prisma.$transaction([
         prisma.workspace.create({
           data: {
@@ -131,6 +144,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         })
       ]);
+
       const workspace = result[0];
       return jsonRes<{ namespace: NamespaceDto }>(res, {
         code: 200,
@@ -147,20 +161,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     } catch (e) {
+      console.log('workspace创建过程发生错误:', e);
+      console.error('modifyWorkspaceRole error:', e);
       // 补偿事务
-      await globalPrisma.workspaceUsage.delete({
-        where: {
-          regionUid_userUid_workspaceUid: {
-            userUid: payload.userUid,
-            workspaceUid,
-            regionUid
+      try {
+        await globalPrisma.workspaceUsage.delete({
+          where: {
+            regionUid_userUid_workspaceUid: {
+              userUid: payload.userUid,
+              workspaceUid,
+              regionUid
+            }
           }
-        }
-      });
+        });
+      } catch (rollbackError) {
+        console.log('workspaceUsage回滚失败:', rollbackError);
+      }
       throw Error(String(e));
     }
   } catch (e) {
-    console.log(e);
+    console.log('failed to create team', e);
     jsonRes(res, { code: 500, message: 'failed to create team' });
   }
 }

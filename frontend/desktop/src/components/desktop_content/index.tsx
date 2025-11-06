@@ -1,37 +1,30 @@
-import { getGlobalNotification } from '@/api/platform';
+import { getWorkspaceQuota } from '@/api/platform';
 import AppWindow from '@/components/app_window';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Center, Flex, Image, Text } from '@chakra-ui/react';
+import { Box, Flex, Image } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
-import Cost from '../account/cost';
 import { ChakraIndicator } from './ChakraIndicator';
 // import Apps from './apps';
-import Assistant from './assistant';
 import IframeWindow from './iframe_window';
-import styles from './index.module.scss';
-import Monitor from './monitor';
-import SearchBox from './searchBox';
-import Warn from './warn';
+import styles from './index.module.css';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount, UserInfo } from '@/api/auth';
-import TaskModal from '../task/taskModal';
-import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import { useGuideModalStore } from '@/stores/guideModal';
 import GuideModal from '../account/GuideModal';
-import AppsRunningPrompt from './AppsRunningPrompt';
+import { GlobalNotification } from './GlobalNotification';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -45,8 +38,7 @@ export const blurBackgroundStyles = {
   borderRadius: '12px'
 };
 
-export default function Desktop(props: any) {
-  const { i18n } = useTranslation();
+export default function Desktop() {
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
@@ -57,9 +49,7 @@ export default function Desktop(props: any) {
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
-  const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
-  const [showAccount, setShowAccount] = useState(false);
   const { layoutConfig, cloudConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
@@ -149,10 +139,15 @@ export default function Desktop(props: any) {
     [closeDesktopApp, guideModal]
   );
 
-  const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
-
   useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
+    // Initialize client SDK
+    const cleanup = createMasterAPP({
+      allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
+      getWorkspaceQuotaApi: () => {
+        console.log('getWorkspaceQuotaApi called via SDK');
+        return getWorkspaceQuota().then((res) => res.data?.quota ?? []);
+      }
+    });
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
 
@@ -188,37 +183,6 @@ export default function Desktop(props: any) {
     };
   }, [infoData.data, commonConfig?.realNameAuthEnabled]);
 
-  useEffect(() => {
-    const globalNotification = async () => {
-      try {
-        const { data: notification } = await getGlobalNotification();
-        if (!notification) return;
-        const newID = notification?.uid;
-        const title = notification?.i18n[i18n?.language]?.title;
-
-        if (notification.licenseFrontend) {
-          message({
-            title: title,
-            status: 'info',
-            isClosable: true
-          });
-        } else {
-          if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
-          localStorage.setItem('GlobalNotification', newID);
-          message({
-            title: title,
-            status: 'info',
-            isClosable: true
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    globalNotification();
-  }, []);
-
   const [isBannerVisible, setIsBannerVisible] = useState(false);
   useEffect(() => {
     const lastClosedTimestamp = localStorage.getItem('bannerLastClosed');
@@ -247,6 +211,9 @@ export default function Desktop(props: any) {
       {layoutConfig?.common?.bannerEnabled && (
         <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
       )}
+
+      <GlobalNotification />
+
       <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
         <Account />
       </Flex>
@@ -382,9 +349,6 @@ export default function Desktop(props: any) {
       })}
       {/* modal */}
       <NeedToMerge />
-
-      {/* AppsRunningPrompt is disabled as it conflicts with Stripe payment. */}
-      {/* <AppsRunningPrompt /> */}
     </Box>
   );
 }

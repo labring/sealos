@@ -1,5 +1,4 @@
-import { ListCheckIcon, MySelect } from '@sealos/ui';
-import { ArrowRight, Check, ChevronDown } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import {
   Box,
@@ -15,16 +14,12 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-  PopoverHeader,
-  PopoverBody,
   Img,
   Icon,
   Portal
 } from '@chakra-ui/react';
-// import { ClawCloudIcon } from '../icons';
 import { useMemo, useState } from 'react';
-import { Region } from '@/types';
-import { Mutation, useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { regionList as getRegionList, initRegionToken } from '@/api/auth';
 import { sessionConfig } from '@/utils/sessionConfig';
 import { useRouter } from 'next/router';
@@ -34,7 +29,7 @@ import useSessionStore from '@/stores/session';
 import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import { SwitchRegionType } from '@/constants/account';
 import { I18nCloudProvidersKey } from '@/types/i18next';
-import { CheckIcon, ChevronDownIcon } from '@chakra-ui/icons';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useGuideModalStore } from '@/stores/guideModal';
 
 export default function Workspace() {
@@ -42,7 +37,6 @@ export default function Workspace() {
   const router = useRouter();
   const { toast } = useCustomToast();
   const bg = useColorModeValue('white', 'gray.700');
-  const provider = useSessionStore((s) => s.lastSigninProvier);
   const { workspaceName, setWorkspaceName, setSelectedRegionUid, selectedRegionUid } =
     useInitWorkspaceStore();
   const [workspaceNameFieldDirty, setWorkspaceNameFieldDirty] = useState(false);

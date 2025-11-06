@@ -1,6 +1,12 @@
 @import '@sealos/shadcn-ui/shadcn.css';
 @import '@sealos/shadcn-ui/styles.css';
 
+/* New designs uses white color for background. It's different from the default theme in shadcn-ui package (previously used by DevBox). */
+:root {
+  --background: #ffffff;
+  --alert-bg: #ffffff;
+}
+
 body {
   height: 100vh;
   width: 100vw;
@@ -16,19 +22,19 @@ iframe {
 
 ::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-  border-radius: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
   background: transparent;
-  border-radius: 6px;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: #bfbfbf;
-  border-radius: 6px;
+  background: #c9c8c8;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
@@ -37,6 +43,18 @@ iframe {
 
 ::-webkit-scrollbar-corner {
   background-color: transparent;
+}
+
+/* Hide spin button in inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  display: none;
+  -webkit-appearance: none;
+  margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+input[type='number'] {
+  -moz-appearance: textfield; /* Firefox */
 }
 
 div.rdp {

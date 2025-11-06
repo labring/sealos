@@ -3,12 +3,19 @@ export type TemplateType = {
   kind: string;
   metadata: {
     name: string;
+    uid?: string;
   };
   spec: {
     // local json data
     fileName: string;
     filePath: string;
     deployCount?: number;
+    requirements?: {
+      cpu: string | null;
+      memory: string | null;
+      storage: string | null;
+      nodeport: number;
+    } | null;
     // instance
     categories?: string[];
     templateType: 'inline';
@@ -182,14 +189,4 @@ export type SideBarMenuType = {
 export type SystemConfigType = {
   showCarousel: boolean;
   slideData: SlideDataType[];
-};
-
-export type CheckQuotaType = {
-  cpu: number;
-  memory: number;
-  storage: number;
-  gpu?: {
-    type: string;
-    amount: number;
-  };
 };

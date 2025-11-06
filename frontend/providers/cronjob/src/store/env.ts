@@ -15,7 +15,9 @@ const useEnvStore = create<EnvState>()(
       domain: '',
       applaunchpadUrl: '',
       successfulJobsHistoryLimit: 3,
-      failedJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 3,
+      podCpuRequest: 50,
+      podMemoryRequest: 64
     },
     initSystemEnv: async () => {
       const data = await getPlatformEnv();

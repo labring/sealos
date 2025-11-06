@@ -10,6 +10,8 @@ import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
+import { resourcePropertyMap } from '@/constants/resource';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Accordion,
@@ -46,6 +48,7 @@ import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
 import { useQuery } from '@tanstack/react-query';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -64,8 +67,8 @@ const Form = ({
   pxVal,
   refresh,
   isAdvancedOpen,
-
-  onDomainVerified
+  onDomainVerified,
+  exceededQuotas
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -75,6 +78,7 @@ const Form = ({
   refresh: boolean;
   isAdvancedOpen: boolean;
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
+  exceededQuotas: WorkspaceQuotaItem[];
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -92,7 +96,6 @@ const Form = ({
     control,
     setValue,
     getValues,
-    watch,
     formState: { errors }
   } = formHook;
 
@@ -181,7 +184,10 @@ const Form = ({
       storeList.reduce((sum, item) => sum + item.value, 0) -
       existingStores.reduce((sum, item) => sum + item.value, 0);
 
-    return storageQuota.limit - storageQuota.used - newlyUsedStorage;
+    return (
+      (storageQuota.limit - storageQuota.used) / resourcePropertyMap.storage.scale -
+      newlyUsedStorage
+    );
   }, [userQuota, existingStores, storeList]);
 
   // listen scroll and set activeNav
@@ -309,14 +315,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-        : cpuList;
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -358,6 +364,20 @@ const Form = ({
         []
       );
   }, [getValues, refresh]);
+
+  const handleOpenCostcenter = () => {
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-costcenter',
+      pathname: '/',
+      query: {
+        mode: 'upgrade'
+      },
+      messageData: {
+        type: 'InternalAppCall',
+        mode: 'upgrade'
+      }
+    });
+  };
 
   return (
     <>
@@ -793,6 +813,31 @@ const Form = ({
                   )}
                 </Box>
               )}
+              {userSourcePrice?.gpu && exceededQuotas.some(({ type }) => type === 'gpu') && (
+                <Box mb={4} pl={`${labelWidth}px`}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('gpu_exceeds_quota', {
+                      requested: getValues('gpu.amount') || 0,
+                      limit: exceededQuotas.find(({ type }) => type === 'gpu')?.limit ?? 0,
+                      used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
 
               {/* cpu && memory */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
@@ -811,6 +856,35 @@ const Form = ({
                   (Core)
                 </Box>
               </Flex>
+              {exceededQuotas.some(({ type }) => type === 'cpu') && (
+                <Box mb={4} pl={`${labelWidth}px`}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('cpu_exceeds_quota', {
+                      requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
+                        resourcePropertyMap.cpu.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'cpu')?.used ?? 0) /
+                        resourcePropertyMap.cpu.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
               <Flex mb={8} pr={3} alignItems={'center'}>
                 <Label mr={'7px'}>{t('Memory')}</Label>
                 <MySlider
@@ -824,6 +898,35 @@ const Form = ({
                   step={1}
                 />
               </Flex>
+              {exceededQuotas.some(({ type }) => type === 'memory') && (
+                <Box mb={4} pl={`${labelWidth}px`}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('memory_exceeds_quota', {
+                      requested: getValues('memory') / resourcePropertyMap.memory.scale,
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
+                        resourcePropertyMap.memory.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'memory')?.used ?? 0) /
+                        resourcePropertyMap.memory.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
             </Box>
           </Box>
 
@@ -955,8 +1058,8 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                  ? network.protocol
-                                  : 'HTTP'
+                                ? network.protocol
+                                : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
@@ -1006,14 +1109,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                    ? network?.nodePort
-                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                          network.nodePort
-                                        }`
-                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                          'pending_to_allocated'
-                                        )}`
-                                    : `${network.publicDomain}.${network.domain}`}
+                                  ? network?.nodePort
+                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                        network.nodePort
+                                      }`
+                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                        'pending_to_allocated'
+                                      )}`
+                                  : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1062,6 +1165,32 @@ const Form = ({
                   )}
                 </Flex>
               ))}
+              {exceededQuotas.some(({ type }) => type === 'nodeport') && (
+                <Box pt={'16px'}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('nodeport_exceeds_quota', {
+                      requested:
+                        getValues('networks').filter((item) => item.openNodePort)?.length || 0,
+                      limit: exceededQuotas.find(({ type }) => type === 'nodeport')?.limit ?? 0,
+                      used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
             </Box>
           </Box>
           {/* settings */}
@@ -1154,8 +1283,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                                ? 'value from | ***'
-                                : '';
+                              ? 'value from | ***'
+                              : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

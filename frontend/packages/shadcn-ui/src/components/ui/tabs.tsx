@@ -62,6 +62,10 @@ const tabsTriggerVariants = cva(
           'border-b-1 border-transparent border-b-zinc-200',
           'data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground'
         ],
+        cleanUnderline: [
+          'font-normal border-b-1 border-transparent py-2 px-3 text-md',
+          'data-[state=active]:font-medium data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground'
+        ],
         ghost: [
           'font-semibold text-zinc-600 data-[state=active]:rounded-lg data-[state=active]:bg-[rgba(0,0,0,0.04)] data-[state=active]:text-zinc-900'
         ]

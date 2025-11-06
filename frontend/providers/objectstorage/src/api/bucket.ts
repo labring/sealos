@@ -2,6 +2,7 @@ import { Authority, QuotaData, TBucket, UserSecretData } from '@/consts';
 import request from '@/services/request';
 import { AxiosInstance } from 'axios';
 import { ApiResp } from '@/services/backend/response';
+import { EnvResponse } from '@/pages/api/env';
 
 export const _createBucket =
   (request: AxiosInstance) => (data: { bucketName: string; bucketPolicy: Authority }) =>
@@ -41,3 +42,7 @@ export const openHost = _openHost(request);
 export const _closeHost = (request: AxiosInstance) => (data: { bucket: string }) =>
   request.post<any>('/api/site/closeHost', data);
 export const closeHost = _closeHost(request);
+
+export function getEnv() {
+  return request.get<any, EnvResponse>('/api/env');
+}

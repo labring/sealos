@@ -29,6 +29,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const reslistRaw = await Promise.all(
       clientList.map((client) => client.post('/account/v1alpha1/costs', body))
     );
+
+    console.log(reslistRaw);
     const resultList = reslistRaw.map((res) => res.data);
     const someArr = resultList
       .map<{ data: [number, string][]; region: { name: { zh: string; en: string } } }>(

@@ -1,7 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
 import * as JsYaml from 'js-yaml';
-import { memoryFormatToMi, cpuFormatToM } from '@/utils/tools';
-import { UserQuotaItemType } from '@/types/user';
 
 // Load default kc
 export function K8sApiDefault(): k8s.KubeConfig {
@@ -202,40 +200,6 @@ export function GetUserDefaultNameSpace(user: string): string {
   return 'ns-' + user;
 }
 
-export async function getUserQuota(
-  kc: k8s.KubeConfig,
-  namespace: string
-): Promise<UserQuotaItemType[]> {
-  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-
-  const {
-    body: { status }
-  } = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
-
-  return [
-    {
-      type: 'cpu',
-      limit: cpuFormatToM(status?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(status?.used?.['limits.cpu'] || '') / 1000
-    },
-    {
-      type: 'memory',
-      limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
-    },
-    {
-      type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
-    },
-    {
-      type: 'gpu',
-      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
-    }
-  ];
-}
-
 export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
@@ -284,7 +248,6 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     k8sApiextensions: kc.makeApiClient(k8s.ApiextensionsV1Api),
     kube_user,
     namespace,
-    applyYamlList,
-    getUserQuota: () => getUserQuota(kc, namespace)
+    applyYamlList
   });
 }

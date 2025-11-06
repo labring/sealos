@@ -3,10 +3,7 @@ import { OauthProvider } from '@/types/user';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-type StatePayload = {
-  rad: string;
-  action: OauthAction;
-};
+
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 
 type SessionState = {

@@ -17,5 +17,6 @@ ENV migrateFileImage=""
 ENV minioBucketName=""
 ENV guideEnabled="true"
 ENV billingUrl="http://account-service.account-system.svc:2333"
+ENV vlogsBaseUrl="http://service-vlogs.sealos.svc.cluster.local:8428"
 
 CMD ["kubectl apply -f manifests"]

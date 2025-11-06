@@ -31,8 +31,8 @@ export default function App({ Component, pageProps }: AppProps) {
   const { setScreenWidth, setLastRoute } = useGlobalStore();
   // const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: '跳转提示',
-    content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
+    title: 'Redirect Notice',
+    content: 'This app cannot run standalone. Click confirm to open Sealos Desktop.'
   });
 
   // app init
