@@ -65,11 +65,6 @@ export default function InvoiceHistoryView({
     }
   };
 
-  const handleDownload = (invoice: InvoicePayload) => {
-    // TODO: Implement download logic
-    console.log('Download invoice:', invoice.id);
-  };
-
   return (
     <TableLayout>
       <TableLayoutCaption>
@@ -117,11 +112,6 @@ export default function InvoiceHistoryView({
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    {isCompleted && (
-                      <Button variant="outline" size="sm" onClick={() => handleDownload(invoice)}>
-                        {t('common:orders.download')}
-                      </Button>
-                    )}
                     {toInvoiceDetail && (
                       <Button
                         variant="outline"
@@ -131,7 +121,7 @@ export default function InvoiceHistoryView({
                           toInvoiceDetail();
                         }}
                       >
-                        {t('common:orders.details')}
+                        {t('common:orders.invoice_details_button')}
                       </Button>
                     )}
                   </div>

@@ -202,6 +202,7 @@
     "page": "/ 页",
     "invoice_request_time": "申请开票时间",
     "invoice_issued_time": "开票完成时间",
+    "invoice_details_button": "详情",
     "action": "操作",
     "download": "下载",
     "status_label": "状态",

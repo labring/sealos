@@ -204,6 +204,7 @@
     "page": "/ Page",
     "invoice_request_time": "Invoice Request Time",
     "invoice_issued_time": "Invoice Issued Time",
+    "invoice_details_button": "Details",
     "action": "Action",
     "download": "Download",
     "status_label": "Status",
