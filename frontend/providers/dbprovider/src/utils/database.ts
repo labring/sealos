@@ -83,36 +83,36 @@ export const buildConnectionInfo = (
   }
 };
 
+// Define primary and backup secret names based on database type
+export const getSecretNames = (dbType: DBType, dbName: string) => {
+  const backupSecretName = `${dbName}-conn-credential`;
+
+  switch (dbType) {
+    case DBTypeEnum.mysql: // apecloud-mysql
+      return { primary: backupSecretName, backup: null }; // Same for old and new
+    case DBTypeEnum.clickhouse:
+      return { primary: backupSecretName, backup: null }; // Same for old and new
+    case DBTypeEnum.milvus:
+      return { primary: backupSecretName, backup: null }; // Same for old and new
+    case DBTypeEnum.postgresql:
+      return { primary: backupSecretName, backup: null }; // Same for old and new
+    case DBTypeEnum.kafka:
+      return { primary: `${dbName}-broker-account-admin`, backup: backupSecretName };
+    case DBTypeEnum.redis:
+      return { primary: `${dbName}-redis-account-default`, backup: backupSecretName };
+    case DBTypeEnum.mongodb:
+      return { primary: `${dbName}-mongodb-account-root`, backup: backupSecretName };
+    default:
+      return { primary: backupSecretName, backup: null };
+  }
+};
+
 export async function fetchDBSecret(
   k8sCore: k8s.CoreV1Api,
   dbName: string,
   dbType: DBType,
   namespace: string
 ) {
-  // Define primary and backup secret names based on database type
-  const getSecretNames = (dbType: DBType, dbName: string) => {
-    const backupSecretName = `${dbName}-conn-credential`;
-
-    switch (dbType) {
-      case DBTypeEnum.mysql: // apecloud-mysql
-        return { primary: backupSecretName, backup: null }; // Same for old and new
-      case DBTypeEnum.clickhouse:
-        return { primary: backupSecretName, backup: null }; // Same for old and new
-      case DBTypeEnum.milvus:
-        return { primary: backupSecretName, backup: null }; // Same for old and new
-      case DBTypeEnum.postgresql:
-        return { primary: backupSecretName, backup: null }; // Same for old and new
-      case DBTypeEnum.kafka:
-        return { primary: `${dbName}-broker-account-admin`, backup: backupSecretName };
-      case DBTypeEnum.redis:
-        return { primary: `${dbName}-redis-account-default`, backup: backupSecretName };
-      case DBTypeEnum.mongodb:
-        return { primary: `${dbName}-mongodb-account-root`, backup: backupSecretName };
-      default:
-        return { primary: backupSecretName, backup: null };
-    }
-  };
-
   const { primary: primarySecretName, backup: backupSecretName } = getSecretNames(dbType, dbName);
   let secretName = primarySecretName;
 
