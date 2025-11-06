@@ -20,11 +20,11 @@ import (
 // Test suspendOrphanDeployments and resumeOrphanDeployments
 func TestSuspendResumeOrphanDeployments(t *testing.T) {
 	tests := []struct {
-		name             string
-		initialReplicas  int32
-		expectSuspended  bool
-		expectResumed    int32
-		skipIfZero       bool
+		name            string
+		initialReplicas int32
+		expectSuspended bool
+		expectResumed   int32
+		skipIfZero      bool
 	}{
 		{
 			name:            "deployment with 3 replicas",
@@ -82,7 +82,11 @@ func TestSuspendResumeOrphanDeployments(t *testing.T) {
 
 			// Verify suspended state
 			var suspendedDeploy appsv1.Deployment
-			err = fakeClient.Get(ctx, client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"}, &suspendedDeploy)
+			err = fakeClient.Get(
+				ctx,
+				client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+				&suspendedDeploy,
+			)
 			if err != nil {
 				t.Fatalf("failed to get suspended deployment: %v", err)
 			}
@@ -107,7 +111,11 @@ func TestSuspendResumeOrphanDeployments(t *testing.T) {
 
 			// Verify resumed state
 			var resumedDeploy appsv1.Deployment
-			err = fakeClient.Get(ctx, client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"}, &resumedDeploy)
+			err = fakeClient.Get(
+				ctx,
+				client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+				&resumedDeploy,
+			)
 			if err != nil {
 				t.Fatalf("failed to get resumed deployment: %v", err)
 			}
@@ -168,7 +176,11 @@ func TestSuspendResumeOrphanStatefulSets(t *testing.T) {
 
 	// Verify suspended
 	var suspendedSts appsv1.StatefulSet
-	err = fakeClient.Get(ctx, client.ObjectKey{Name: "test-sts", Namespace: "test-ns"}, &suspendedSts)
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-sts", Namespace: "test-ns"},
+		&suspendedSts,
+	)
 	if err != nil {
 		t.Fatalf("failed to get suspended statefulset: %v", err)
 	}
@@ -260,19 +272,19 @@ func TestSuspendResumeOrphanReplicaSets(t *testing.T) {
 // Test suspendOrphanCronJob and resumeOrphanCronJob
 func TestSuspendResumeOrphanCronJob(t *testing.T) {
 	tests := []struct {
-		name            string
+		name               string
 		initiallySuspended bool
-		expectSuspended bool
+		expectSuspended    bool
 	}{
 		{
-			name:            "active cronjob",
+			name:               "active cronjob",
 			initiallySuspended: false,
-			expectSuspended: true,
+			expectSuspended:    true,
 		},
 		{
-			name:            "already suspended cronjob",
+			name:               "already suspended cronjob",
 			initiallySuspended: true,
-			expectSuspended: true,
+			expectSuspended:    true,
 		},
 	}
 
@@ -312,7 +324,11 @@ func TestSuspendResumeOrphanCronJob(t *testing.T) {
 
 			// Verify suspended
 			var suspendedCronJob batchv1.CronJob
-			err = fakeClient.Get(ctx, client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"}, &suspendedCronJob)
+			err = fakeClient.Get(
+				ctx,
+				client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"},
+				&suspendedCronJob,
+			)
 			if err != nil {
 				t.Fatalf("failed to get suspended cronjob: %v", err)
 			}
@@ -329,14 +345,22 @@ func TestSuspendResumeOrphanCronJob(t *testing.T) {
 
 			// Verify resumed
 			var resumedCronJob batchv1.CronJob
-			err = fakeClient.Get(ctx, client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"}, &resumedCronJob)
+			err = fakeClient.Get(
+				ctx,
+				client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"},
+				&resumedCronJob,
+			)
 			if err != nil {
 				t.Fatalf("failed to get resumed cronjob: %v", err)
 			}
 
 			// Should restore to original state
 			if *resumedCronJob.Spec.Suspend != tt.initiallySuspended {
-				t.Errorf("expected suspend to be %v, got %v", tt.initiallySuspended, *resumedCronJob.Spec.Suspend)
+				t.Errorf(
+					"expected suspend to be %v, got %v",
+					tt.initiallySuspended,
+					*resumedCronJob.Spec.Suspend,
+				)
 			}
 		})
 	}
@@ -345,32 +369,32 @@ func TestSuspendResumeOrphanCronJob(t *testing.T) {
 // Test suspendKBCluster and resumeKBCluster
 func TestSuspendResumeKBCluster(t *testing.T) {
 	tests := []struct {
-		name              string
-		clusterPhase      string
-		backupEnabled     bool
+		name                 string
+		clusterPhase         string
+		backupEnabled        bool
 		expectBackupDisabled bool
-		shouldCreateOps   bool
+		shouldCreateOps      bool
 	}{
 		{
-			name:              "running cluster with backup",
-			clusterPhase:      "Running",
-			backupEnabled:     true,
+			name:                 "running cluster with backup",
+			clusterPhase:         "Running",
+			backupEnabled:        true,
 			expectBackupDisabled: true,
-			shouldCreateOps:   true,
+			shouldCreateOps:      true,
 		},
 		{
-			name:              "running cluster without backup",
-			clusterPhase:      "Running",
-			backupEnabled:     false,
+			name:                 "running cluster without backup",
+			clusterPhase:         "Running",
+			backupEnabled:        false,
 			expectBackupDisabled: false,
-			shouldCreateOps:   true,
+			shouldCreateOps:      true,
 		},
 		{
-			name:              "stopped cluster with backup",
-			clusterPhase:      "Stopped",
-			backupEnabled:     true,
+			name:                 "stopped cluster with backup",
+			clusterPhase:         "Stopped",
+			backupEnabled:        true,
 			expectBackupDisabled: true,
-			shouldCreateOps:   false,
+			shouldCreateOps:      false,
 		},
 	}
 
@@ -379,15 +403,15 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 			scheme := runtime.NewScheme()
 
 			cluster := &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "apps.kubeblocks.io/v1alpha1",
 					"kind":       "Cluster",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-cluster",
 						"namespace": "test-ns",
 					},
-					"spec": map[string]interface{}{},
-					"status": map[string]interface{}{
+					"spec": map[string]any{},
+					"status": map[string]any{
 						"phase": tt.clusterPhase,
 					},
 				},
@@ -450,7 +474,12 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 
 			// Check if backup was disabled
 			if tt.expectBackupDisabled {
-				enabled, found, _ := unstructured.NestedBool(suspendedCluster.Object, "spec", "backup", "enabled")
+				enabled, found, _ := unstructured.NestedBool(
+					suspendedCluster.Object,
+					"spec",
+					"backup",
+					"enabled",
+				)
 				if !found {
 					t.Error("backup.enabled field not found")
 				} else if enabled {
@@ -489,7 +518,12 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 
 			// Check if backup was restored
 			if tt.backupEnabled {
-				enabled, found, _ := unstructured.NestedBool(resumedCluster.Object, "spec", "backup", "enabled")
+				enabled, found, _ := unstructured.NestedBool(
+					resumedCluster.Object,
+					"spec",
+					"backup",
+					"enabled",
+				)
 				if !found {
 					t.Error("backup.enabled field not found after resume")
 				} else if !enabled {
@@ -503,27 +537,27 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 // Test suspendCertificates and resumeCertificates
 func TestSuspendResumeCertificates(t *testing.T) {
 	tests := []struct {
-		name                   string
-		initialDisableReissue  string
-		hasInitialAnnotation   bool
+		name                       string
+		initialDisableReissue      string
+		hasInitialAnnotation       bool
 		expectDisabledAfterSuspend bool
 	}{
 		{
-			name:                   "certificate without disable annotation",
-			initialDisableReissue:  "",
-			hasInitialAnnotation:   false,
+			name:                       "certificate without disable annotation",
+			initialDisableReissue:      "",
+			hasInitialAnnotation:       false,
 			expectDisabledAfterSuspend: true,
 		},
 		{
-			name:                   "certificate with disable=true",
-			initialDisableReissue:  "true",
-			hasInitialAnnotation:   true,
+			name:                       "certificate with disable=true",
+			initialDisableReissue:      "true",
+			hasInitialAnnotation:       true,
 			expectDisabledAfterSuspend: true,
 		},
 		{
-			name:                   "certificate with disable=false",
-			initialDisableReissue:  "false",
-			hasInitialAnnotation:   true,
+			name:                       "certificate with disable=false",
+			initialDisableReissue:      "false",
+			hasInitialAnnotation:       true,
 			expectDisabledAfterSuspend: true,
 		},
 	}
@@ -533,22 +567,22 @@ func TestSuspendResumeCertificates(t *testing.T) {
 			scheme := runtime.NewScheme()
 
 			cert := &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "cert-manager.io/v1",
 					"kind":       "Certificate",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "test-cert",
 						"namespace": "test-ns",
 					},
-					"spec": map[string]interface{}{
+					"spec": map[string]any{
 						"secretName": "test-secret",
-						"dnsNames":   []interface{}{"example.com"},
+						"dnsNames":   []any{"example.com"},
 					},
 				},
 			}
 
 			if tt.hasInitialAnnotation {
-				annotations := map[string]interface{}{
+				annotations := map[string]any{
 					CertManagerDisableReissueAnnotation: tt.initialDisableReissue,
 				}
 				_ = unstructured.SetNestedMap(cert.Object, annotations, "metadata", "annotations")
@@ -683,13 +717,21 @@ func TestSuspendResumeRoundtrip(t *testing.T) {
 
 	// Verify all suspended
 	var suspendedDeploy appsv1.Deployment
-	fakeClient.Get(ctx, client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"}, &suspendedDeploy)
+	_ = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+		&suspendedDeploy,
+	)
 	if *suspendedDeploy.Spec.Replicas != 0 {
 		t.Error("deployment should be suspended")
 	}
 
 	var suspendedCronJob batchv1.CronJob
-	fakeClient.Get(ctx, client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"}, &suspendedCronJob)
+	_ = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"},
+		&suspendedCronJob,
+	)
 	if !*suspendedCronJob.Spec.Suspend {
 		t.Error("cronjob should be suspended")
 	}
@@ -704,13 +746,21 @@ func TestSuspendResumeRoundtrip(t *testing.T) {
 
 	// Verify all resumed
 	var resumedDeploy appsv1.Deployment
-	fakeClient.Get(ctx, client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"}, &resumedDeploy)
+	_ = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+		&resumedDeploy,
+	)
 	if *resumedDeploy.Spec.Replicas != 3 {
 		t.Error("deployment should be resumed to 3 replicas")
 	}
 
 	var resumedCronJob batchv1.CronJob
-	fakeClient.Get(ctx, client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"}, &resumedCronJob)
+	_ = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-cronjob", Namespace: "test-ns"},
+		&resumedCronJob,
+	)
 	if *resumedCronJob.Spec.Suspend {
 		t.Error("cronjob should be resumed")
 	}
