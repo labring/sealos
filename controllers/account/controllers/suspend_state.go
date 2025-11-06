@@ -28,6 +28,11 @@ type CronJobOriginalState struct {
 	Suspend bool `json:"suspend"`
 }
 
+// JobOriginalState stores the original suspend state of Job
+type JobOriginalState struct {
+	Suspend bool `json:"suspend"`
+}
+
 // KBClusterOriginalState stores the original state of KubeBlocks Cluster
 type KBClusterOriginalState struct {
 	WasRunning    bool `json:"wasRunning"`    // Whether the cluster was running before suspension
@@ -72,6 +77,22 @@ func encodeCronJobState(state *CronJobOriginalState) (string, error) {
 
 func decodeCronJobState(data string) (*CronJobOriginalState, error) {
 	var state CronJobOriginalState
+	if err := json.Unmarshal([]byte(data), &state); err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+func encodeJobState(state *JobOriginalState) (string, error) {
+	data, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func decodeJobState(data string) (*JobOriginalState, error) {
+	var state JobOriginalState
 	if err := json.Unmarshal([]byte(data), &state); err != nil {
 		return nil, err
 	}
@@ -136,6 +157,12 @@ func getDefaultDeploymentState() *DeploymentOriginalState {
 
 func getDefaultCronJobState() *CronJobOriginalState {
 	return &CronJobOriginalState{
+		Suspend: false, // Default: resume to not suspended
+	}
+}
+
+func getDefaultJobState() *JobOriginalState {
+	return &JobOriginalState{
 		Suspend: false, // Default: resume to not suspended
 	}
 }
