@@ -103,7 +103,11 @@ func TestEncodeDecodeKBClusterState(t *testing.T) {
 			}
 
 			if decoded.BackupEnabled != tt.backupEnabled {
-				t.Errorf("expected backupEnabled %v, got %v", tt.backupEnabled, decoded.BackupEnabled)
+				t.Errorf(
+					"expected backupEnabled %v, got %v",
+					tt.backupEnabled,
+					decoded.BackupEnabled,
+				)
 			}
 		})
 	}
@@ -135,7 +139,11 @@ func TestEncodeDecodeCertificateState(t *testing.T) {
 			}
 
 			if decoded.DisableReissue != tt.disableReissue {
-				t.Errorf("expected disableReissue %v, got %v", tt.disableReissue, decoded.DisableReissue)
+				t.Errorf(
+					"expected disableReissue %v, got %v",
+					tt.disableReissue,
+					decoded.DisableReissue,
+				)
 			}
 		})
 	}
