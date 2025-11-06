@@ -7,6 +7,7 @@ import { DBType } from '@/types/db';
 import { dbTypeMap, fetchDBSecret, getSecretNames } from '@/utils/database';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
+import { CoreV1Api } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type EditPasswordReq = {
@@ -16,7 +17,7 @@ export type EditPasswordReq = {
 };
 
 const updateSecretPassword = async (
-  k8sCore: any,
+  k8sCore: CoreV1Api,
   secretName: string,
   namespace: string,
   newPassword: string,
@@ -170,7 +171,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     if (backupSecretName && backupSecretName !== primarySecretName) {
       try {
-        await k8sCore.readNamespacedSecret(backupSecretName, namespace);
         await updateSecretPassword(k8sCore, backupSecretName, namespace, newPassword, dbType, true);
         updatedSecrets.push(backupSecretName);
       } catch (error: any) {
