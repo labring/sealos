@@ -141,8 +141,22 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           // logged in user (logged out) → redirect to login page
           router.replace('/signin');
         } else {
-          console.log('setGuestSession');
-          setGuestSession();
+          // Set guest session by default to prevent requests from being blocked while the config is loading
+          const isGuest = useSessionStore.getState().isGuest();
+          if (!isGuest) {
+            console.log('Setting guest session by default');
+            setGuestSession();
+          }
+          if (!layoutConfig?.common) return;
+
+          // If guest mode is disabled in the config, clear the guest session and redirect to login page
+          if (layoutConfig.common.guestModeEnabled !== true) {
+            // Clear guest session
+            useSessionStore.getState().delSession();
+            return router.replace('/signin');
+          }
+
+          // Guest mode enabled, continue guest session process
           const state = await init();
           if (appkey) {
             const guestAllowedApps = ['system-brain'];
@@ -286,7 +300,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         });
     };
     handleInit();
-  }, [router, sealos_cloud_domain, workspaces]);
+  }, [router, sealos_cloud_domain, workspaces, layoutConfig?.common]);
 
   // check workspace
   useEffect(() => {
