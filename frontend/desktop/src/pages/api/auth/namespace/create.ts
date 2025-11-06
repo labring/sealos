@@ -18,9 +18,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { teamName, userType } = req.body as {
       teamName?: string;
-      userType: 'subscription' | 'payg';
+      userType?: 'subscription' | 'payg';
     };
-    console.log('create team workspace', userType, teamName, payload);
+
+    const finalUserType: 'subscription' | 'payg' =
+      global.AppConfig?.desktop?.layout?.common?.subscriptionEnabled === true
+        ? userType || 'subscription'
+        : 'payg';
+
+    console.log('create team workspace', finalUserType, teamName, payload);
 
     if (!teamName) return jsonRes(res, { code: 400, message: 'teamName is required' });
     const currentNamespaces = await prisma.userWorkspace.findMany({
@@ -114,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const creater_kc_str = await getTeamKubeconfig(
         workspace_creater,
         payload.userCrName,
-        userType
+        finalUserType
       );
       if (!creater_kc_str) throw new Error('fail to get kubeconfig');
 
