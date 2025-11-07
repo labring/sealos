@@ -1471,3 +1471,523 @@ func TestSuspendResumeNonFrontendStatefulSet(t *testing.T) {
 		t.Error("HPA should still exist after resume for non-frontend statefulset")
 	}
 }
+
+// Test that originally paused deployments (replicas=0) don't restore HPA
+func TestResumeAlreadyPausedDeploymentWithHPA(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+	_ = autoscalingv2.AddToScheme(scheme)
+
+	// Create deployment that was originally paused (replicas=0) with frontend annotations
+	originalState := &DeploymentOriginalState{
+		Replicas: 0, // Originally paused
+	}
+	stateJSON, _ := encodeDeploymentState(originalState)
+
+	pauseData := &PauseData{
+		Target: "cpu",
+		Value:  "80",
+	}
+	//nolint:errchkjson
+	pauseJSON, _ := json.Marshal(pauseData)
+
+	deploy := &appsv1.Deployment{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-deploy",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				MinReplicasKey:                 "1",
+				MaxReplicasKey:                 "5",
+				OriginalSuspendStateAnnotation: stateJSON,
+				PauseKey:                       string(pauseJSON),
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(deploy).
+		Build()
+
+	reconciler := &NamespaceReconciler{
+		Client: fakeClient,
+		Log:    logr.Discard(),
+	}
+
+	ctx := context.Background()
+
+	// Test resume
+	err := reconciler.resumeOrphanDeployments(ctx, "test-ns")
+	if err != nil {
+		t.Fatalf("resumeOrphanDeployments failed: %v", err)
+	}
+
+	// Verify resumed deployment
+	var resumedDeploy appsv1.Deployment
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+		&resumedDeploy,
+	)
+	if err != nil {
+		t.Fatalf("failed to get resumed deployment: %v", err)
+	}
+
+	// Check replicas should remain 0 (since original was 0)
+	if *resumedDeploy.Spec.Replicas != 0 {
+		t.Errorf("expected replicas to remain 0, got %d", *resumedDeploy.Spec.Replicas)
+	}
+
+	// Check original state annotation was removed
+	annotations := resumedDeploy.GetAnnotations()
+	if _, hasState := annotations[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("original suspend state annotation should be removed")
+	}
+
+	// Check pause annotation was NOT removed (since replicas was 0)
+	if _, hasPause := annotations[PauseKey]; !hasPause {
+		t.Error("pause annotation should NOT be removed when original replicas was 0")
+	}
+
+	// Verify HPA was NOT created (since original replicas was 0)
+	var hpa autoscalingv2.HorizontalPodAutoscaler
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+		&hpa,
+	)
+	if err == nil {
+		t.Error("HPA should NOT be created when original replicas was 0")
+	}
+}
+
+// Test that originally paused statefulsets (replicas=0) don't restore HPA
+func TestResumeAlreadyPausedStatefulSetWithHPA(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+	_ = autoscalingv2.AddToScheme(scheme)
+
+	// Create statefulset that was originally paused (replicas=0) with frontend annotations
+	originalState := &DeploymentOriginalState{
+		Replicas: 0, // Originally paused
+	}
+	stateJSON, _ := encodeDeploymentState(originalState)
+
+	pauseData := &PauseData{
+		Target: "memory",
+		Value:  "70",
+	}
+	//nolint:errchkjson
+	pauseJSON, _ := json.Marshal(pauseData)
+
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-sts",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				MinReplicasKey:                 "2",
+				MaxReplicasKey:                 "10",
+				OriginalSuspendStateAnnotation: stateJSON,
+				PauseKey:                       string(pauseJSON),
+			},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(sts).
+		Build()
+
+	reconciler := &NamespaceReconciler{
+		Client: fakeClient,
+		Log:    logr.Discard(),
+	}
+
+	ctx := context.Background()
+
+	// Test resume
+	err := reconciler.resumeOrphanStatefulSets(ctx, "test-ns")
+	if err != nil {
+		t.Fatalf("resumeOrphanStatefulSets failed: %v", err)
+	}
+
+	// Verify resumed statefulset
+	var resumedSts appsv1.StatefulSet
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-sts", Namespace: "test-ns"},
+		&resumedSts,
+	)
+	if err != nil {
+		t.Fatalf("failed to get resumed statefulset: %v", err)
+	}
+
+	// Check replicas should remain 0 (since original was 0)
+	if *resumedSts.Spec.Replicas != 0 {
+		t.Errorf("expected replicas to remain 0, got %d", *resumedSts.Spec.Replicas)
+	}
+
+	// Check original state annotation was removed
+	annotations := resumedSts.GetAnnotations()
+	if _, hasState := annotations[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("original suspend state annotation should be removed")
+	}
+
+	// Check pause annotation was NOT removed (since replicas was 0)
+	if _, hasPause := annotations[PauseKey]; !hasPause {
+		t.Error("pause annotation should NOT be removed when original replicas was 0")
+	}
+
+	// Verify HPA was NOT created (since original replicas was 0)
+	var hpa autoscalingv2.HorizontalPodAutoscaler
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-sts", Namespace: "test-ns"},
+		&hpa,
+	)
+	if err == nil {
+		t.Error("HPA should NOT be created when original replicas was 0")
+	}
+}
+
+// Test that HPA restore errors don't block other deployments from being resumed
+func TestResumeDeploymentContinuesOnHPAError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+
+	// Create first deployment with original replicas > 0 and invalid pause data
+	originalState1 := &DeploymentOriginalState{
+		Replicas: 3,
+	}
+	stateJSON1, _ := encodeDeploymentState(originalState1)
+
+	// Invalid pause data that will cause error during HPA restoration
+	invalidPauseData := `{invalid json}`
+
+	deploy1 := &appsv1.Deployment{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-deploy-1",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				MinReplicasKey:                 "2",
+				MaxReplicasKey:                 "8",
+				OriginalSuspendStateAnnotation: stateJSON1,
+				PauseKey:                       invalidPauseData, // Invalid JSON
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	// Create second deployment with valid data
+	originalState2 := &DeploymentOriginalState{
+		Replicas: 2,
+	}
+	stateJSON2, _ := encodeDeploymentState(originalState2)
+
+	deploy2 := &appsv1.Deployment{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-deploy-2",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				OriginalSuspendStateAnnotation: stateJSON2,
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(deploy1, deploy2).
+		Build()
+
+	reconciler := &NamespaceReconciler{
+		Client: fakeClient,
+		Log:    logr.Discard(),
+	}
+
+	ctx := context.Background()
+
+	// Test resume - should not fail even though first deployment has invalid pause data
+	err := reconciler.resumeOrphanDeployments(ctx, "test-ns")
+	if err != nil {
+		t.Fatalf("resumeOrphanDeployments should not fail on HPA error, got: %v", err)
+	}
+
+	// Verify first deployment was still updated (replicas restored despite HPA error)
+	var resumedDeploy1 appsv1.Deployment
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy-1", Namespace: "test-ns"},
+		&resumedDeploy1,
+	)
+	if err != nil {
+		t.Fatalf("failed to get first deployment: %v", err)
+	}
+
+	if *resumedDeploy1.Spec.Replicas != 3 {
+		t.Errorf(
+			"expected first deployment replicas to be 3, got %d",
+			*resumedDeploy1.Spec.Replicas,
+		)
+	}
+
+	// Verify second deployment was also updated
+	var resumedDeploy2 appsv1.Deployment
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy-2", Namespace: "test-ns"},
+		&resumedDeploy2,
+	)
+	if err != nil {
+		t.Fatalf("failed to get second deployment: %v", err)
+	}
+
+	if *resumedDeploy2.Spec.Replicas != 2 {
+		t.Errorf(
+			"expected second deployment replicas to be 2, got %d",
+			*resumedDeploy2.Spec.Replicas,
+		)
+	}
+
+	// Verify both original state annotations were removed
+	annotations1 := resumedDeploy1.GetAnnotations()
+	if _, hasState := annotations1[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("first deployment should have state annotation removed")
+	}
+
+	annotations2 := resumedDeploy2.GetAnnotations()
+	if _, hasState := annotations2[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("second deployment should have state annotation removed")
+	}
+}
+
+// Test that HPA restore errors don't block other statefulsets from being resumed
+func TestResumeStatefulSetContinuesOnHPAError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+
+	// Create first statefulset with original replicas > 0 and invalid pause data
+	originalState1 := &DeploymentOriginalState{
+		Replicas: 5,
+	}
+	stateJSON1, _ := encodeDeploymentState(originalState1)
+
+	invalidPauseData := `{invalid json}`
+
+	sts1 := &appsv1.StatefulSet{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-sts-1",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				MinReplicasKey:                 "3",
+				MaxReplicasKey:                 "10",
+				OriginalSuspendStateAnnotation: stateJSON1,
+				PauseKey:                       invalidPauseData, // Invalid JSON
+			},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	// Create second statefulset with valid data
+	originalState2 := &DeploymentOriginalState{
+		Replicas: 3,
+	}
+	stateJSON2, _ := encodeDeploymentState(originalState2)
+
+	sts2 := &appsv1.StatefulSet{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-sts-2",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				OriginalSuspendStateAnnotation: stateJSON2,
+			},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(sts1, sts2).
+		Build()
+
+	reconciler := &NamespaceReconciler{
+		Client: fakeClient,
+		Log:    logr.Discard(),
+	}
+
+	ctx := context.Background()
+
+	// Test resume - should not fail even though first statefulset has invalid pause data
+	err := reconciler.resumeOrphanStatefulSets(ctx, "test-ns")
+	if err != nil {
+		t.Fatalf("resumeOrphanStatefulSets should not fail on HPA error, got: %v", err)
+	}
+
+	// Verify first statefulset was still updated (replicas restored despite HPA error)
+	var resumedSts1 appsv1.StatefulSet
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-sts-1", Namespace: "test-ns"},
+		&resumedSts1,
+	)
+	if err != nil {
+		t.Fatalf("failed to get first statefulset: %v", err)
+	}
+
+	if *resumedSts1.Spec.Replicas != 5 {
+		t.Errorf("expected first statefulset replicas to be 5, got %d", *resumedSts1.Spec.Replicas)
+	}
+
+	// Verify second statefulset was also updated
+	var resumedSts2 appsv1.StatefulSet
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-sts-2", Namespace: "test-ns"},
+		&resumedSts2,
+	)
+	if err != nil {
+		t.Fatalf("failed to get second statefulset: %v", err)
+	}
+
+	if *resumedSts2.Spec.Replicas != 3 {
+		t.Errorf("expected second statefulset replicas to be 3, got %d", *resumedSts2.Spec.Replicas)
+	}
+
+	// Verify both original state annotations were removed
+	annotations1 := resumedSts1.GetAnnotations()
+	if _, hasState := annotations1[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("first statefulset should have state annotation removed")
+	}
+
+	annotations2 := resumedSts2.GetAnnotations()
+	if _, hasState := annotations2[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("second statefulset should have state annotation removed")
+	}
+}
+
+// Test HPA is restored AFTER deployment is updated
+func TestHPARestoredAfterDeploymentUpdate(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+	_ = autoscalingv2.AddToScheme(scheme)
+
+	// Create deployment with original replicas > 0
+	originalState := &DeploymentOriginalState{
+		Replicas: 3, // Originally running
+	}
+	//nolint:errchkjson
+	stateJSON, _ := encodeDeploymentState(originalState)
+
+	pauseData := &PauseData{
+		Target: "cpu",
+		Value:  "75",
+	}
+	pauseJSON, _ := json.Marshal(pauseData)
+
+	deploy := &appsv1.Deployment{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-deploy",
+			Namespace: "test-ns",
+			Annotations: map[string]string{
+				MinReplicasKey:                 "2",
+				MaxReplicasKey:                 "8",
+				OriginalSuspendStateAnnotation: stateJSON,
+				PauseKey:                       string(pauseJSON),
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To(int32(0)),
+		},
+	}
+
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(deploy).
+		Build()
+
+	reconciler := &NamespaceReconciler{
+		Client: fakeClient,
+		Log:    logr.Discard(),
+	}
+
+	ctx := context.Background()
+
+	// Test resume
+	err := reconciler.resumeOrphanDeployments(ctx, "test-ns")
+	if err != nil {
+		t.Fatalf("resumeOrphanDeployments failed: %v", err)
+	}
+
+	// Verify deployment was updated with correct replicas
+	var resumedDeploy appsv1.Deployment
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+		&resumedDeploy,
+	)
+	if err != nil {
+		t.Fatalf("failed to get resumed deployment: %v", err)
+	}
+
+	// Check replicas restored to original value
+	if *resumedDeploy.Spec.Replicas != 3 {
+		t.Errorf("expected replicas to be 3, got %d", *resumedDeploy.Spec.Replicas)
+	}
+
+	// Check original state annotation was removed
+	annotations := resumedDeploy.GetAnnotations()
+	if _, hasState := annotations[OriginalSuspendStateAnnotation]; hasState {
+		t.Error("original suspend state annotation should be removed")
+	}
+
+	// Check pause annotation was removed (since replicas > 0)
+	if _, hasPause := annotations[PauseKey]; hasPause {
+		t.Error("pause annotation should be removed when original replicas was > 0")
+	}
+
+	// Verify HPA was created (since original replicas > 0)
+	var hpa autoscalingv2.HorizontalPodAutoscaler
+	err = fakeClient.Get(
+		ctx,
+		client.ObjectKey{Name: "test-deploy", Namespace: "test-ns"},
+		&hpa,
+	)
+	if err != nil {
+		t.Fatalf("HPA should be created when original replicas was > 0, got error: %v", err)
+	}
+
+	// Verify HPA configuration
+	if *hpa.Spec.MinReplicas != 2 {
+		t.Errorf("expected HPA minReplicas to be 2, got %d", *hpa.Spec.MinReplicas)
+	}
+	if hpa.Spec.MaxReplicas != 8 {
+		t.Errorf("expected HPA maxReplicas to be 8, got %d", hpa.Spec.MaxReplicas)
+	}
+	if len(hpa.Spec.Metrics) > 0 && hpa.Spec.Metrics[0].Resource != nil {
+		if string(hpa.Spec.Metrics[0].Resource.Name) != "cpu" {
+			t.Errorf("expected HPA target to be cpu, got %s", hpa.Spec.Metrics[0].Resource.Name)
+		}
+		if hpa.Spec.Metrics[0].Resource.Target.AverageUtilization != nil {
+			if *hpa.Spec.Metrics[0].Resource.Target.AverageUtilization != 75 {
+				t.Errorf(
+					"expected HPA value to be 75, got %d",
+					*hpa.Spec.Metrics[0].Resource.Target.AverageUtilization,
+				)
+			}
+		}
+	}
+}
