@@ -109,6 +109,7 @@ export type RechargeBillingItem = {
   CodeURL: string;
   InvoicedAt: boolean;
   Status?: 'PAID' | 'REFUNDED';
+  ChargeSource: string;
 };
 export type RechargeBillingData = {
   payments: RechargeBillingItem[];

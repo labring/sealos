@@ -22,7 +22,6 @@ costCenter:
       billing: ''
   invoice:
     enabled: true
-    directDownload: false
     feishApp:
       appId: ''
       appSecret: ''

@@ -26,7 +26,6 @@ function Invoice() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
-  const invoiceDirectDownload = useEnvStore((state) => state.invoiceDirectDownload);
 
   const [processState, setProcessState] = useState(0);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -46,7 +45,7 @@ function Invoice() {
               <TabsTrigger variant="cleanUnderline" value="listing">
                 {t('common:orders.order_list')}
               </TabsTrigger>
-              {!invoiceDirectDownload && (
+              {!subscriptionEnabled && (
                 <TabsTrigger variant="cleanUnderline" value="history">
                   {t('common:orders.invoice_history')}
                 </TabsTrigger>
@@ -66,11 +65,7 @@ function Invoice() {
                     setSelectdBillings(items);
                   }}
                   onObtainInvoice={() => {
-                    if (invoiceDirectDownload) {
-                      setShowDownloadModal(true);
-                    } else {
-                      setProcessState(1);
-                    }
+                    setShowDownloadModal(true);
                   }}
                 />
               ) : (
@@ -85,17 +80,13 @@ function Invoice() {
                     setSelectdBillings(items);
                   }}
                   onObtainInvoice={() => {
-                    if (invoiceDirectDownload) {
-                      setShowDownloadModal(true);
-                    } else {
-                      setProcessState(1);
-                    }
+                    setProcessState(1);
                   }}
                 />
               )}
             </TabsContent>
 
-            {!invoiceDirectDownload && (
+            {!subscriptionEnabled && (
               <TabsContent value="history">
                 <InvoiceHistory
                   dateRange={historyDateRange}

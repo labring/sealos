@@ -20,7 +20,6 @@ export type Response = {
     addressLines: string[];
     contactLines: string[];
   };
-  INVOICE_DIRECT_DOWNLOAD: boolean;
   SUBSCRIPTION_ENABLED: boolean;
 };
 
@@ -71,7 +70,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         INVOICE_ENABLED: global.AppConfig.costCenter?.invoice?.enabled || false,
         GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false,
         BILLING_INFO: global.AppConfig.costCenter.invoice.billingInfo,
-        INVOICE_DIRECT_DOWNLOAD: global.AppConfig.costCenter.invoice.directDownload,
         SUBSCRIPTION_ENABLED: global.AppConfig.costCenter.subscriptionEnabled
       } satisfies Response
     });
