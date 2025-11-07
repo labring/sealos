@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types';
 import { Region } from '@/types/region';
 import { getPaymentList } from '@/api/plan';
-import { PaymentRecord } from '@/types/plan';
 import OrderListView, { OrderListRow } from './OrderListView';
 
 interface OrderListProps {
@@ -17,7 +16,7 @@ interface OrderListProps {
   onObtainInvoice?: () => void;
 }
 
-export default function OrderList({
+export function WithSubscriptionOrderList({
   dateRange,
   onDateRangeChange,
   orderIdFilter,
@@ -25,6 +24,8 @@ export default function OrderList({
   onSelectionChange,
   onObtainInvoice
 }: OrderListProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const effectiveStartTime = useMemo(() => {
     return dateRange?.from
       ? new Date(dateRange.from).toISOString()
@@ -101,7 +102,7 @@ export default function OrderList({
   const { data: allPaymentsData } = useQuery({
     queryFn: () =>
       getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
-    queryKey: ['paymentList', paymentListQueryBodyBase]
+    queryKey: ['withSubscriptionPaymentList', paymentListQueryBodyBase]
   });
 
   // Merged rows with data processing logic
@@ -118,7 +119,7 @@ export default function OrderList({
         time: p.Time,
         amount: p.Amount,
         type: p.Type === 'SUBSCRIPTION' ? 'subscription' : 'recharge',
-        raw: p
+        selectable: true
       };
     });
 
@@ -127,6 +128,28 @@ export default function OrderList({
     );
   }, [allPaymentsData, regionUidToName, allNamespaces]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [orderIdFilter, effectiveStartTime, effectiveEndTime]);
+
+  // Frontend pagination: filter and slice rows
+  const filteredRows = useMemo(() => {
+    const keyword = orderIdFilter.trim();
+    if (!keyword) return rows;
+    return rows.filter((r) => r.id.includes(keyword));
+  }, [rows, orderIdFilter]);
+
+  const totalItems = filteredRows.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  // Get current page rows
+  const currentPageRows = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredRows.slice(startIndex, endIndex);
+  }, [filteredRows, page, pageSize]);
+
   return (
     <OrderListView
       dateRange={dateRange}
@@ -134,8 +157,13 @@ export default function OrderList({
       orderIdFilter={orderIdFilter}
       onOrderIdFilterChange={onOrderIdFilterChange}
       onSelectionChange={onSelectionChange}
-      rows={rows}
+      rows={currentPageRows}
       onObtainInvoice={onObtainInvoice}
+      page={page}
+      totalPages={totalPages}
+      totalItems={totalItems}
+      pageSize={pageSize}
+      onPageChange={setPage}
     />
   );
 }

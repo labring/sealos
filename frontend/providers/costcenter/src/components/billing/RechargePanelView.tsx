@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { Input } from '@sealos/shadcn-ui/input';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
@@ -36,7 +36,12 @@ export default function RechargePanelView({
   orderIdFilter,
   onOrderIdFilterChange,
   rows,
-  isLoading
+  isLoading,
+  page,
+  totalPages,
+  totalItems,
+  pageSize,
+  onPageChange
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
@@ -44,10 +49,13 @@ export default function RechargePanelView({
   onOrderIdFilterChange: (v: string) => void;
   rows: RechargeRow[];
   isLoading: boolean;
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }) {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
 
   // Client-side filter by order ID
   const filteredRows: RechargeRow[] = useMemo(() => {
@@ -56,19 +64,7 @@ export default function RechargePanelView({
     return rows.filter((r) => r.id.includes(keyword));
   }, [rows, orderIdFilter]);
 
-  // Pagination
-  const currentPageRows = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredRows.slice(startIndex, endIndex);
-  }, [filteredRows, page, pageSize]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [orderIdFilter, rows]);
-
-  // Calculate total amount for display
+  // Calculate total amount for display (only from filtered rows on current page)
   const totalAmount = useMemo(
     () => filteredRows.reduce((sum, row) => sum + row.amount, 0),
     [filteredRows]
@@ -125,7 +121,7 @@ export default function RechargePanelView({
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
-          {currentPageRows.map((row, idx) => (
+          {filteredRows.map((row, idx) => (
             <TableRow key={`${row.id}-${idx}`} className="h-14">
               <TableCell>{row.id}</TableCell>
               <TableCell>{formatDateTime(row.createdAt)}</TableCell>
@@ -139,13 +135,13 @@ export default function RechargePanelView({
       <TableLayoutFooter>
         <div className="px-4 py-3 flex justify-between">
           <div className="flex items-center text-zinc-500">
-            {t('common:total')}: {isLoading ? '...' : filteredRows.length}
+            {t('common:total')}: {isLoading ? '...' : totalItems}
           </div>
           <div className="flex items-center gap-3">
             <Pagination
               currentPage={page}
-              totalPages={Math.max(1, Math.ceil(filteredRows.length / pageSize))}
-              onPageChange={setPage}
+              totalPages={Math.max(1, totalPages)}
+              onPageChange={onPageChange}
             />
             <span>
               <span>{pageSize}</span>

@@ -32,7 +32,7 @@ export type OrderListRow = {
   time: string;
   amount: number;
   type: 'recharge' | 'subscription';
-  raw?: any;
+  selectable: boolean;
 };
 
 export default function OrderListView({
@@ -42,7 +42,12 @@ export default function OrderListView({
   onOrderIdFilterChange,
   onSelectionChange,
   rows,
-  onObtainInvoice
+  onObtainInvoice,
+  page,
+  totalPages,
+  totalItems,
+  pageSize,
+  onPageChange
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
@@ -51,10 +56,13 @@ export default function OrderListView({
   onSelectionChange: (selected: OrderListRow[], amount: number, count: number) => void;
   rows: OrderListRow[];
   onObtainInvoice?: () => void;
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }) {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
 
   // client-side filter by orderId (only recharge rows carry orderId)
   const filteredRows: OrderListRow[] = useMemo(() => {
@@ -65,28 +73,26 @@ export default function OrderListView({
 
   // selection (both recharge & subscription selectable)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const currentPageRows = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredRows.slice(startIndex, endIndex);
-  }, [filteredRows, page, pageSize]);
 
   const allSelectedOnPage = useMemo(() => {
-    if (currentPageRows.length === 0) return false;
-    return currentPageRows.every((r) => selectedIds.has(r.id));
-  }, [currentPageRows, selectedIds]);
+    if (filteredRows.length === 0) return false;
+    return filteredRows.every((r) => selectedIds.has(r.id));
+  }, [filteredRows, selectedIds]);
 
   const toggleSelectAllOnPage = () => {
     const next = new Set(selectedIds);
-    if (allSelectedOnPage) currentPageRows.forEach((r) => next.delete(r.id));
-    else currentPageRows.forEach((r) => next.add(r.id));
+    if (allSelectedOnPage) filteredRows.forEach((r) => next.delete(r.id));
+    else
+      filteredRows.forEach((r) => {
+        if (r.selectable) next.add(r.id);
+      });
     setSelectedIds(next);
   };
 
   const toggleSelect = (row: OrderListRow) => {
     const next = new Set(selectedIds);
     if (next.has(row.id)) next.delete(row.id);
-    else next.add(row.id);
+    else if (row.selectable) next.add(row.id);
     setSelectedIds(next);
   };
 
@@ -105,10 +111,10 @@ export default function OrderListView({
     onSelectionChange(selectedRows, selectedAmount, selectedRows.length);
   }, [selectedRows, selectedAmount, onSelectionChange]);
 
-  // reset page when filters change
+  // reset page when orderIdFilter changes (rows change is handled by parent)
   useEffect(() => {
-    setPage(1);
-  }, [orderIdFilter, rows]);
+    onPageChange(1);
+  }, [orderIdFilter, onPageChange]);
 
   return (
     <TableLayout>
@@ -160,11 +166,12 @@ export default function OrderListView({
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
-          {currentPageRows.map((row, idx) => (
+          {filteredRows.map((row, idx) => (
             <TableRow key={`${row.id}-${idx}`} className="h-14">
               <TableCell>
                 <Checkbox
                   checked={selectedIds.has(row.id)}
+                  disabled={!row.selectable}
                   onCheckedChange={() => toggleSelect(row)}
                 />
               </TableCell>
@@ -195,13 +202,13 @@ export default function OrderListView({
       <TableLayoutFooter>
         <div className="px-4 py-3 flex justify-between">
           <div className="flex items-center text-zinc-500">
-            {t('common:total')}: {filteredRows.length}
+            {t('common:total')}: {totalItems}
           </div>
           <div className="flex items-center gap-3">
             <Pagination
               currentPage={page}
-              totalPages={Math.max(1, Math.ceil(filteredRows.length / pageSize))}
-              onPageChange={setPage}
+              totalPages={Math.max(1, totalPages)}
+              onPageChange={onPageChange}
             />
             <span>
               <span>{pageSize}</span>

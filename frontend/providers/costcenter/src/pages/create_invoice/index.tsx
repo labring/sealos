@@ -2,29 +2,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import InvoiceForm from '@/components/invoice/InvoiceForm';
 import InvoiceInspection from '@/components/invoice/InvoiceInspection';
 import { DateRange } from 'react-day-picker';
-import OrderList from '@/components/invoice/OrderList';
+import { WithSubscriptionOrderList } from '@/components/invoice/WithSubscriptionOrderList';
 import InvoiceHistory from '@/components/invoice/InvoiceHistory';
 import useInvoiceStore from '@/stores/invoce';
 import { InvoicePayload } from '@/types/invoice';
 import { OrderListRow } from '@/components/invoice/OrderListView';
 import { InvoiceDownloadModal } from '@/components/invoice/InvoiceDownloadModal';
 import useEnvStore from '@/stores/env';
+import { NoSubscriptionOrderList } from '@/components/invoice/NoSubscriptionOrderList';
 
 function Invoice() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { data: invoiceInspectionData, setData: setInvoiceInspectionData } = useInvoiceStore();
   const [selectdBillings, setSelectdBillings] = useState<OrderListRow[]>([]);
   const [searchValue, setSearch] = useState('');
-  const [orderID, setOrderID] = useState('');
   const [historySearchValue, setHistorySearchValue] = useState('');
   const [historyDateRange, setHistoryDateRange] = useState<DateRange | undefined>();
   const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
   const invoiceDirectDownload = useEnvStore((state) => state.invoiceDirectDownload);
 
   const [processState, setProcessState] = useState(0);
@@ -53,25 +54,45 @@ function Invoice() {
             </TabsList>
 
             <TabsContent value="listing">
-              <OrderList
-                dateRange={dateRange}
-                onDateRangeChange={setDateRange}
-                orderIdFilter={searchValue}
-                onOrderIdFilterChange={(v) => {
-                  setSearch(v);
-                  setOrderID(v.trim());
-                }}
-                onSelectionChange={(items) => {
-                  setSelectdBillings(items);
-                }}
-                onObtainInvoice={() => {
-                  if (invoiceDirectDownload) {
-                    setShowDownloadModal(true);
-                  } else {
-                    setProcessState(1);
-                  }
-                }}
-              />
+              {subscriptionEnabled ? (
+                <WithSubscriptionOrderList
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                  orderIdFilter={searchValue}
+                  onOrderIdFilterChange={(v) => {
+                    setSearch(v);
+                  }}
+                  onSelectionChange={(items) => {
+                    setSelectdBillings(items);
+                  }}
+                  onObtainInvoice={() => {
+                    if (invoiceDirectDownload) {
+                      setShowDownloadModal(true);
+                    } else {
+                      setProcessState(1);
+                    }
+                  }}
+                />
+              ) : (
+                <NoSubscriptionOrderList
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                  orderIdFilter={searchValue}
+                  onOrderIdFilterChange={(v) => {
+                    setSearch(v);
+                  }}
+                  onSelectionChange={(items) => {
+                    setSelectdBillings(items);
+                  }}
+                  onObtainInvoice={() => {
+                    if (invoiceDirectDownload) {
+                      setShowDownloadModal(true);
+                    } else {
+                      setProcessState(1);
+                    }
+                  }}
+                />
+              )}
             </TabsContent>
 
             {!invoiceDirectDownload && (
@@ -139,15 +160,6 @@ function Invoice() {
 export default Invoice;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
-  console.log(global.AppConfig);
-  if (!global.AppConfig.costCenter.invoice.enabled) {
-    return {
-      redirect: {
-        destination: '/cost_overview',
-        permanent: false
-      }
-    };
-  }
   return {
     props: {
       ...(await serverSideTranslations(locale, undefined, null, ['zh', 'en']))
