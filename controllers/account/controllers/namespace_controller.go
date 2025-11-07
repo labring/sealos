@@ -3,10 +3,12 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	errors2 "errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -26,9 +28,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -323,10 +327,14 @@ func (r *NamespaceReconciler) Reconcile(
 				}
 			}
 			if t.newDebt != "" || t.newNetwork != "" {
-				logger.Info(
+				r.Log.Info(
 					"update namespace anno ",
-					"debt status",
+					"old debt status",
+					debtStatus,
+					"new debt status",
 					t.newDebt,
+					"old network status",
+					networkStatus,
 					"network status",
 					t.newNetwork,
 				)
@@ -370,8 +378,12 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 }
 
 func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace string) error {
+	err := deleteResource(r.dynamicClient, "backup", namespace)
+	if err != nil {
+		return err
+	}
 	deleteResources := []string{
-		"backup", "cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
+		"cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
 		"objectstorageuser", "deploy", "sts", "pvc", "Service", "Ingress",
 		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
 		"job", "app",
@@ -2139,6 +2151,7 @@ func deleteResource(dynamicClient dynamic.Interface, resource, namespace string)
 			Version:  "v1alpha1",
 			Resource: "backups",
 		}
+		return deleteResourceListAndWait(dynamicClient, gvr, namespace)
 	case "cluster.apps.kubeblocks.io":
 		gvr = schema.GroupVersionResource{
 			Group:    "apps.kubeblocks.io",
@@ -2525,6 +2538,112 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 				return fmt.Errorf("failed to resume job %s: %w", job.Name, err)
 			}
 		}
+	}
+	return nil
+}
+
+func deleteResourceListAndWait(
+	dynamicClient dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	namespace string,
+) error {
+	ctx := context.Background()
+	// 列出所有资源
+	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, v12.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list %s in namespace %s: %w", gvr, namespace, err)
+	}
+
+	if len(list.Items) == 0 {
+		return nil // 无资源需要删除
+	}
+
+	// 并发删除：使用WaitGroup和error channel收集错误
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(list.Items)) // 缓冲channel，避免阻塞
+	allErrors := []error{}
+
+	for _, item := range list.Items {
+		name := item.GetName()
+		wg.Add(1)
+		go func(resName string) {
+			defer wg.Done()
+			if deleteErr := deleteResourceAndWait(dynamicClient, gvr, namespace, resName); deleteErr != nil {
+				errCh <- fmt.Errorf("failed to delete %s/%s: %w", gvr, resName, deleteErr)
+			}
+		}(name)
+	}
+
+	// 等待所有Goroutine完成，并收集错误
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	for deleteErr := range errCh {
+		allErrors = append(allErrors, deleteErr)
+	}
+
+	if len(allErrors) > 0 {
+		return fmt.Errorf("failed to delete some %s resources: %v", gvr, allErrors)
+	}
+
+	return nil
+}
+
+func deleteResourceAndWait(
+	dynamicClient dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	namespace, name string,
+) error {
+	ctx := context.Background()
+	deletePolicy := v12.DeletePropagationForeground // 前台删除，等待子资源
+
+	// 执行删除（针对单个资源）
+	err := dynamicClient.Resource(gvr).Namespace(namespace).Delete(ctx, name, v12.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	})
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete %s/%s: %w", gvr, name, err)
+	}
+	if errors.IsNotFound(err) {
+		return nil // 已不存在，无需等待
+	}
+
+	// 等待删除完成：轮询Get直到NotFound
+	pollInterval := 5 * time.Second
+	timeout := 5 * time.Minute // 根据finalizer复杂度调整
+	err = wait.PollUntilContextTimeout(ctx, pollInterval, timeout, true,
+		func(ctx context.Context) (bool, error) {
+			// 使用retry.Backoff可选重试Get（处理临时错误）
+			dErr := retry.OnError(wait.Backoff{
+				Steps:    5,
+				Duration: 10 * time.Second,
+				Factor:   1.0,
+				Jitter:   0.1,
+			}, func(err error) bool {
+				return errors.IsServerTimeout(err) || errors.IsServiceUnavailable(err)
+			}, func() error {
+				_, getErr := dynamicClient.Resource(gvr).
+					Namespace(namespace).
+					Get(ctx, name, v12.GetOptions{})
+				if errors.IsNotFound(getErr) {
+					return nil // 成功：资源已删除
+				}
+				if getErr != nil {
+					// 其它错误：继续轮询
+					return getErr
+				}
+				// 资源仍存在：继续轮询
+				return errors2.New("resource still exists")
+			})
+			return dErr == nil, dErr
+		})
+	if err != nil {
+		if errors2.Is(ctx.Err(), context.DeadlineExceeded) {
+			return fmt.Errorf("timeout waiting for %s/%s to delete after %v", gvr, name, timeout)
+		}
+		return fmt.Errorf("error waiting for %s/%s to delete: %w", gvr, name, err)
 	}
 	return nil
 }
