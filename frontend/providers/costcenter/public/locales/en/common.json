@@ -164,6 +164,9 @@
   "first_recharge_tips": "Earn credits when making a first-time purchase for some tiers.",
   "free_plan": "Free Plan",
   "orders": {
+    "invoiced": "Invoiced",
+    "refunded": "Refunded",
+    "source_balance": "Paid with balance",
     "apply_inovice_tips": "Apply for an invoice need to 3 to 5 days",
     "apply_invoice": "Apply Invoice",
     "transaction_time": "Transaction Time",

@@ -1,12 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types';
 import { Region } from '@/types/region';
 import { getPaymentList } from '@/api/plan';
-import { PaymentRecord } from '@/types/plan';
 import OrderListView, { OrderListRow } from './OrderListView';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { useTranslation } from 'next-i18next';
 
 interface OrderListProps {
   dateRange: DateRange | undefined;
@@ -17,7 +18,7 @@ interface OrderListProps {
   onObtainInvoice?: () => void;
 }
 
-export default function OrderList({
+export function WithSubscriptionOrderList({
   dateRange,
   onDateRangeChange,
   orderIdFilter,
@@ -25,6 +26,10 @@ export default function OrderList({
   onSelectionChange,
   onObtainInvoice
 }: OrderListProps) {
+  const { t } = useTranslation();
+
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const effectiveStartTime = useMemo(() => {
     return dateRange?.from
       ? new Date(dateRange.from).toISOString()
@@ -101,7 +106,7 @@ export default function OrderList({
   const { data: allPaymentsData } = useQuery({
     queryFn: () =>
       getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
-    queryKey: ['paymentList', paymentListQueryBodyBase]
+    queryKey: ['withSubscriptionPaymentList', paymentListQueryBodyBase]
   });
 
   // Merged rows with data processing logic
@@ -117,8 +122,15 @@ export default function OrderList({
           allNamespaces?.find(({ namespace }) => p.Workspace === namespace)?.workspaceName ?? '-',
         time: p.Time,
         amount: p.Amount,
-        type: p.Type === 'SUBSCRIPTION' ? 'subscription' : 'recharge',
-        raw: p
+        typeTag:
+          p.Type === 'SUBSCRIPTION' ? (
+            <Badge className="bg-blue-50 text-blue-600">
+              {t('common:orders.subscription_charge')}
+            </Badge>
+          ) : (
+            <Badge className="bg-zinc-50 text-zinc-700">{t('common:top_up')}</Badge>
+          ),
+        selectable: true
       };
     });
 
@@ -127,15 +139,88 @@ export default function OrderList({
     );
   }, [allPaymentsData, regionUidToName, allNamespaces]);
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [orderIdFilter, effectiveStartTime, effectiveEndTime]);
+
+  // Frontend pagination: filter and slice rows
+  const filteredRows = useMemo(() => {
+    const keyword = orderIdFilter.trim();
+    if (!keyword) return rows;
+    return rows.filter((r) => r.id.includes(keyword));
+  }, [rows, orderIdFilter]);
+
+  const totalItems = filteredRows.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  // Get current page rows
+  const currentPageRows = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredRows.slice(startIndex, endIndex);
+  }, [filteredRows, page, pageSize]);
+
+  // Calculate global selection state (from all rows, not just current page)
+  const selectedRows = useMemo(
+    () => rows.filter((r) => selectedIds.has(r.id)),
+    [rows, selectedIds]
+  );
+
+  const selectedAmount = useMemo(
+    () => selectedRows.reduce((s, it) => s + (it.amount || 0), 0),
+    [selectedRows]
+  );
+
+  useEffect(() => {
+    onSelectionChange(selectedRows, selectedAmount, selectedRows.length);
+  }, [selectedRows, selectedAmount, onSelectionChange]);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = (ids: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const allSelected = ids.every((id) => next.has(id));
+      if (allSelected) {
+        ids.forEach((id) => next.delete(id));
+      } else {
+        ids.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
   return (
     <OrderListView
       dateRange={dateRange}
       onDateRangeChange={onDateRangeChange}
       orderIdFilter={orderIdFilter}
       onOrderIdFilterChange={onOrderIdFilterChange}
-      onSelectionChange={onSelectionChange}
-      rows={rows}
+      rows={currentPageRows}
       onObtainInvoice={onObtainInvoice}
+      page={page}
+      totalPages={totalPages}
+      totalItems={totalItems}
+      pageSize={pageSize}
+      onPageChange={setPage}
+      selectedIds={selectedIds}
+      onToggleSelect={handleToggleSelect}
+      onToggleSelectAll={handleToggleSelectAll}
+      selectedCount={selectedRows.length}
+      selectedAmount={selectedAmount}
     />
   );
 }

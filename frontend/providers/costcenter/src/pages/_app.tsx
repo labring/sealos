@@ -130,7 +130,6 @@ const App = ({ Component, pageProps }: AppProps) => {
           'billingInfo',
           data?.BILLING_INFO ?? { companyName: '', addressLines: [], contactLines: [] }
         );
-        state.setEnv('invoiceDirectDownload', !!data?.INVOICE_DIRECT_DOWNLOAD);
         state.setEnv('subscriptionEnabled', !!data?.SUBSCRIPTION_ENABLED);
       } catch (error) {
         console.error('get init config error');

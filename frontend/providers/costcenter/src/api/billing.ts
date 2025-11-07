@@ -1,6 +1,10 @@
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
-import { WorkspaceConsumptionRequest, WorkspaceConsumptionResponse } from '@/types/billing';
+import {
+  WorkspaceConsumptionRequest,
+  WorkspaceConsumptionResponse,
+  RechargeBillingData
+} from '@/types/billing';
 
 export interface AppListResponse {
   appMap: Record<string, string>;
@@ -17,6 +21,23 @@ export const getAppList = () => request<any, ApiResp<AppListResponse>>('/api/bil
  */
 export const getWorkspacesConsumptions = (data: WorkspaceConsumptionRequest) =>
   request<any, ApiResp<WorkspaceConsumptionResponse>>('/api/billing/workspace-consumption', {
+    method: 'POST',
+    data
+  });
+
+/**
+ * Get recharge billing list (the legacy one).
+ * Returns recharge payment records within the specified time range.
+ * @param data - Request parameters including startTime, endTime (ISO string format), and optional pagination
+ * @returns Promise resolving to recharge billing data
+ */
+export const getRechargeBillingList = (data: {
+  startTime: string;
+  endTime: string;
+  page?: number;
+  pageSize?: number;
+}) =>
+  request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
     method: 'POST',
     data
   });

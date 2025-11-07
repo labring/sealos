@@ -23,7 +23,7 @@ export type ReqGenInvoice = {
 export type InvoiceBillingItem = {
   order_id: string;
   amount: number;
-  regionUID: string;
+  regionUID?: string;
   createdTime: string;
 };
 
