@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
+	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
 	// kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
@@ -359,6 +360,7 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 		r.suspendOrphanPod,          // Recreate orphan pods with debt scheduler (requires pod creation)
 		r.limitResourceQuotaCreate,  // Create resource quota to block all new resources (must be after suspendOrphanPod)
 		r.suspendKBCluster,          // Stop KubeBlocks clusters and disable backup
+		r.suspendDevboxes,           // Stop devboxes and save original state
 		r.suspendCertificates,       // Disable cert-manager certificate renewal
 		r.suspendIngresses,          // Pause ingresses by changing ingress class to "pause"
 		r.suspendOrphanDeployments,  // Scale orphan deployments to 0 replicas
@@ -407,6 +409,7 @@ func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace 
 		r.limitResourceQuotaDelete, // Remove resource quota
 		r.resumeOrphanPod,          // Resume orphan pods
 		r.resumeKBCluster,          // Start KubeBlocks clusters and restore backup
+		r.resumeDevboxes,           // Restore devboxes to original state
 		r.resumeOrphanReplicaSets,  // Restore orphan replicaset replicas
 		r.resumeOrphanDeployments,  // Restore orphan deployment replicas
 		r.resumeOrphanStatefulSets, // Restore orphan statefulset replicas
@@ -2662,6 +2665,160 @@ func deleteResourceAndWait(
 			return fmt.Errorf("timeout waiting for %s/%s to delete after %v", gvr, name, timeout)
 		}
 		return fmt.Errorf("error waiting for %s/%s to delete: %w", gvr, name, err)
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendDevboxes")
+
+	devboxList := devboxv1alpha1.DevboxList{}
+	if err := r.Client.List(ctx, &devboxList, client.InNamespace(namespace)); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
+	}
+
+	for _, devbox := range devboxList.Items {
+		devboxName := devbox.Name
+		logger.V(1).Info("Processing devbox", "Devbox", devboxName)
+
+		annotations := devbox.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+
+		// Get current state
+		currentState := string(devbox.Spec.State)
+
+		// Skip if already not running and state already saved
+		if currentState != "Running" && hasOriginalState {
+			logger.V(1).Info("Devbox already suspended, skipping", "Devbox", devboxName)
+			continue
+		}
+
+		// Track if devbox needs update
+		needsUpdate := false
+
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			// Determine if devbox was running (state is "Running")
+			wasRunning := currentState == "Running"
+
+			originalState := &DevboxOriginalState{
+				WasRunning: wasRunning,
+			}
+			stateJSON, err := encodeDevboxState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode devbox state", "devbox", devboxName)
+				return fmt.Errorf("failed to encode devbox state for %s: %w", devboxName, err)
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			needsUpdate = true
+
+			logger.Info(
+				"Saved devbox state",
+				"devbox",
+				devboxName,
+				"wasRunning",
+				wasRunning,
+			)
+		} else {
+			logger.V(1).Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
+		}
+
+		// Set state to Stopped if currently running
+		if currentState == "Running" {
+			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			devbox.SetAnnotations(annotations)
+			if err := r.Client.Update(ctx, &devbox); err != nil {
+				return fmt.Errorf("failed to suspend devbox %s: %w", devboxName, err)
+			}
+			logger.V(1).Info("Suspended devbox", "devbox", devboxName)
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace string) error {
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeDevboxes")
+
+	devboxList := devboxv1alpha1.DevboxList{}
+	if err := r.Client.List(ctx, &devboxList, client.InNamespace(namespace)); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
+	}
+
+	for _, devbox := range devboxList.Items {
+		devboxName := devbox.Name
+		annotations := devbox.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Get or create original state with defaults
+		var originalState *DevboxOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore to Running
+			logger.Info(
+				"Devbox has no suspend state, using defaults to restore",
+				"Devbox",
+				devboxName,
+			)
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeDevboxState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode devbox state", "devbox", devboxName)
+			}
+		}
+		if originalState == nil {
+			originalState = getDefaultDevboxState()
+		}
+
+		logger.Info(
+			"Resuming devbox",
+			"devbox",
+			devboxName,
+			"wasRunning",
+			originalState.WasRunning,
+		)
+
+		// Track if devbox needs update
+		needsUpdate := false
+
+		// Restore devbox to Running state only if it was running before suspension
+		if originalState.WasRunning {
+			devbox.Spec.State = devboxv1alpha1.DevboxStateRunning
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			devbox.SetAnnotations(annotations)
+			if err := r.Client.Update(ctx, &devbox); err != nil {
+				return fmt.Errorf("failed to resume devbox %s: %w", devboxName, err)
+			}
+		}
 	}
 	return nil
 }

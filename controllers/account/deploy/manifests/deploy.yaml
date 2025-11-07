@@ -602,6 +602,9 @@ rules:
   resources: ["instances", "apps"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["devbox.sealos.io"]
+  resources: ["devboxes"]
+  verbs: ["get", "list", "watch", "update"]
+- apiGroups: ["devbox.sealos.io"]
   resources: ["devboxes", "devboxreleases"]
   verbs: ["delete", "deletecollection"]
 ---
