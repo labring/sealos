@@ -22,6 +22,7 @@ const MemoryOptions = z.union([
 const RuntimeName = z.enum([
 'nuxt3',
 'angular',
+'spring-boot',
 'quarkus',
 'ubuntu',
 'flask',
@@ -30,6 +31,7 @@ const RuntimeName = z.enum([
 'net',
 'iris',
 'hexo',
+'hugo',
 'python',
 'docusaurus',
 'vitepress',
@@ -51,9 +53,12 @@ const RuntimeName = z.enum([
 'astro',
 'umi',
 'gin',
+'mcp',
 'node.js',
 'echo',
-'rust'
+'rust',
+'claude-code'
+
 ]).openapi({
   description: 'Runtime environment name (lowercase)'
 });
@@ -197,4 +202,36 @@ export const ErrorResponseSchema = z.object({
   error: z.any().optional().openapi({
     description: 'Detailed error information'
   })
+});
+
+export const DevboxListItemSchemaV1 = z.object({
+  name: z.string().openapi({
+    description: 'Devbox name'
+  }),
+  uid: z.string().openapi({
+    description: 'Devbox UID'
+  }),
+  resourceType: z.string().default('devbox').openapi({
+    description: 'Resource type'
+  }),
+  runtime: z.string().openapi({
+    description: 'Runtime environment (e.g., go, python, node.js)'
+  }),
+  status: z.string().openapi({
+    description: 'Devbox status (Pending, Running, Stopped, etc.)'
+  }),
+  resources: z.object({
+    cpu: z.number().openapi({
+      description: 'CPU in millicores (e.g., 1000 = 1 core)'
+    }),
+    memory: z.number().openapi({
+      description: 'Memory in Mi (e.g., 2048 = 2Gi)'
+    })
+  }).openapi({
+    description: 'Resource allocation'
+  })
+});
+
+export const DevboxListResponseSchemaV1 = z.object({
+  data: z.array(DevboxListItemSchemaV1)
 });

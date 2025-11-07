@@ -13,7 +13,7 @@ import { ProtocolType } from '@/types/devbox';
 import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
-import { parseTemplateConfig } from '@/utils/tools';
+import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 
 export const dynamic = 'force-dynamic';
@@ -434,41 +434,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const organization = await devboxDB.organization.findUnique({
-      where: {
-        id: 'labring'
-      }
-    });
-    
-    if (!organization) throw Error('organization not found');
-    
     const regionUid = getRegionUid();
-    
-    const templateRepository = await devboxDB.templateRepository.findFirst({
-      where: {
-        isPublic: true,
-        isDeleted: false,
-        organizationUid: organization.uid,
-        regionUid,
-        iconId: devboxForm.runtime  
-      },
-      select: {
-        name: true,
-        uid: true
-      }
-    });
-
-    if (!templateRepository) {
-      return jsonRes({
-        code: 404,
-        message: `Runtime '${devboxForm.runtime}' not found`
-      });
-    }
 
     const template = await devboxDB.template.findFirst({
       where: {
-        templateRepositoryUid: templateRepository.uid,
-        isDeleted: false
+        isDeleted: false,
+        templateRepository: {
+          isDeleted: false,
+          regionUid,
+          isPublic: true,
+          iconId: devboxForm.runtime,
+          templateRepositoryTags: {
+            some: {
+              tag: {
+                type: 'OFFICIAL_CONTENT'
+              }
+            }
+          }
+        }
       },
       select: {
         templateRepository: {
@@ -490,11 +473,20 @@ export async function POST(req: NextRequest) {
     if (!template) {
       return jsonRes({
         code: 404,
-        message: 'Template not found for runtime'
+        message: `Runtime not found or not available`
       });
     }
 
-    const resourceConfig = convertResourceConfig(devboxForm.resource);
+    const resourceSource = (devboxForm as any).quota ?? devboxForm.resource;
+
+    if (!resourceSource) {
+      return jsonRes({
+        code: 400,
+        message: 'Resource configuration is required'
+      });
+    }
+
+    const resourceConfig = convertResourceConfig(resourceSource);
     const { DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
     const devbox = json2DevboxV2(
       {
@@ -609,6 +601,77 @@ export async function POST(req: NextRequest) {
       }
     });
 
+  } catch (err: any) {
+    return jsonRes({
+      code: 500,
+      message: err?.message || 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err : undefined
+    });
+  }
+}
+
+
+export async function GET(req: NextRequest) {
+  try {
+    const { k8sCustomObjects, namespace } = await getK8s({
+      kubeconfig: await authSession(req.headers)
+    });
+    //1.Kubernetes get DevBox-list
+    const devboxResponse = await k8sCustomObjects.listNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes'
+    );
+
+    const devboxBody = devboxResponse.body as { items: KBDevboxTypeV2[] };
+    //2.get-template-uid
+    const uidList = devboxBody.items
+      .map(item => item.spec.templateID)
+      .filter((uid): uid is string => typeof uid === 'string' && uid.length > 0);
+  //3.uid to database search template
+    const templateResultList = uidList.length
+      ? await devboxDB.template.findMany({
+          where: {
+            uid: {
+              in: uidList
+            }
+          },
+          select: {
+            uid: true,
+            templateRepository: {
+              select: {
+                iconId: true
+              }
+            }
+          }
+        })
+      : [];
+
+    const templateMap = new Map(
+      templateResultList.map(template => [template.uid, template.templateRepository.iconId])
+    );
+
+    const data = devboxBody.items
+      .map(item => {
+        const runtime = templateMap.get(item.spec.templateID);
+        if (!runtime) return null;
+
+        return {
+          name: item.metadata.name,
+          uid: item.metadata.uid,
+          resourceType: 'devbox' as const,
+          runtime,
+          status: item.status?.phase || 'Pending',
+          resources: {
+            cpu: cpuFormatToM(item.spec?.resource?.cpu || '0'),
+            memory: memoryFormatToMi(item.spec?.resource?.memory || '0')
+          }
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    return jsonRes({ data });
   } catch (err: any) {
     return jsonRes({
       code: 500,
