@@ -1530,26 +1530,6 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 			annotations = make(map[string]string)
 		}
 
-		// Track if deployment needs update
-		needsUpdate := false
-
-		// Check if pause annotation exists (indicates HPA needs to be restored)
-		hpaModified, err := r.resumeHPA(
-			ctx,
-			namespace,
-			deploy.Name,
-			"deployment",
-			"Deployment",
-			annotations,
-			logger,
-		)
-		if err != nil {
-			return err
-		}
-		if hpaModified {
-			needsUpdate = true
-		}
-
 		// Get or create original state with defaults
 		var originalState *DeploymentOriginalState
 		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
@@ -1580,6 +1560,9 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 			originalState.Replicas,
 		)
 
+		// Track if deployment needs update
+		needsUpdate := false
+
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
 			deploy.Spec.Replicas = ptr.To(originalState.Replicas)
@@ -1592,7 +1575,33 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 			needsUpdate = true
 		}
 
-		// Update only if there are actual changes
+		// Restore HPA only if original replicas was not 0 (meaning it was actually running before suspension)
+		// Call resumeHPA before update to modify annotations in one go
+		if originalState.Replicas != 0 {
+			hpaModified, err := r.resumeHPA(
+				ctx,
+				namespace,
+				deploy.Name,
+				"deployment",
+				"Deployment",
+				annotations,
+				logger,
+			)
+			if err != nil {
+				logger.Error(
+					err,
+					"failed to resume HPA, continuing with next resource",
+					"deployment",
+					deploy.Name,
+				)
+				continue
+			}
+			if hpaModified {
+				needsUpdate = true
+			}
+		}
+
+		// Update only if there are actual changes (single update with all changes)
 		if needsUpdate {
 			deploy.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &deploy); err != nil {
@@ -1730,26 +1739,6 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			annotations = make(map[string]string)
 		}
 
-		// Track if statefulset needs update
-		needsUpdate := false
-
-		// Check if pause annotation exists (indicates HPA needs to be restored)
-		hpaModified, err := r.resumeHPA(
-			ctx,
-			namespace,
-			sts.Name,
-			"statefulset",
-			"StatefulSet",
-			annotations,
-			logger,
-		)
-		if err != nil {
-			return err
-		}
-		if hpaModified {
-			needsUpdate = true
-		}
-
 		// Get or create original state with defaults
 		var originalState *DeploymentOriginalState
 		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
@@ -1780,6 +1769,9 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			originalState.Replicas,
 		)
 
+		// Track if statefulset needs update
+		needsUpdate := false
+
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
 			sts.Spec.Replicas = ptr.To(originalState.Replicas)
@@ -1792,7 +1784,33 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			needsUpdate = true
 		}
 
-		// Update only if there are actual changes
+		// Restore HPA only if original replicas was not 0 (meaning it was actually running before suspension)
+		// Call resumeHPA before update to modify annotations in one go
+		if originalState.Replicas != 0 {
+			hpaModified, err := r.resumeHPA(
+				ctx,
+				namespace,
+				sts.Name,
+				"statefulset",
+				"StatefulSet",
+				annotations,
+				logger,
+			)
+			if err != nil {
+				logger.Error(
+					err,
+					"failed to resume HPA, continuing with next resource",
+					"statefulset",
+					sts.Name,
+				)
+				continue
+			}
+			if hpaModified {
+				needsUpdate = true
+			}
+		}
+
+		// Update only if there are actual changes (single update with all changes)
 		if needsUpdate {
 			sts.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &sts); err != nil {
