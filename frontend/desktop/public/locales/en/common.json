@@ -237,11 +237,6 @@
   "online_service": "Help",
   "operating": "Operating",
   "order_number": "Order Number",
-  "orders": {
-    "invoiced": "Invoiced",
-    "refunded": "Refunded",
-    "source_balance": "Paid with balance"
-  },
   "password": "Password",
   "password_login": "with Password",
   "password_mis_match": "Passwords do not match",
