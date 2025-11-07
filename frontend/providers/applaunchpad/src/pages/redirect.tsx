@@ -57,7 +57,7 @@ const RedirectPage = () => {
       handleRedirect(formData);
     };
 
-    // 等待 router 就绪且 session 已加载，且还没处理过
+    // wait session
     if (router.isReady && session && !hasHandledRef.current) {
       hasHandledRef.current = true;
       handleUrlParams();
