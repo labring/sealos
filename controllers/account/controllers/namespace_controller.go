@@ -371,12 +371,13 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 		r.deleteControlledPod,       // Delete controlled pods
 		r.suspendObjectStorage,      // Disable object storage access
 	}
+	var errs []error
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace string) error {
@@ -419,12 +420,13 @@ func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace 
 		r.resumeIngresses,          // Restore ingresses by changing ingress class back
 		r.resumeObjectStorage,      // Enable object storage access
 	}
+	var errs []error
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) limitResourceQuotaCreate(
@@ -1268,6 +1270,7 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 		return err
 	}
 
+	var errs []error
 	for _, cronJob := range cronJobList.Items {
 		// Skip if this cronjob has a controller (not an orphan)
 		if hasController(cronJob.OwnerReferences) {
@@ -1297,7 +1300,11 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 			stateJSON, err := encodeCronJobState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode cronjob state", "cronjob", cronJob.Name)
-				return fmt.Errorf("failed to encode cronjob state for %s: %w", cronJob.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode cronjob state for %s: %w", cronJob.Name, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -1323,14 +1330,18 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 		if needsUpdate {
 			cronJob.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &cronJob); err != nil {
-				return fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err),
+				)
+				continue
 			}
 			logger.V(1).Info("Suspended cronjob", "cronjob", cronJob.Name)
 		} else {
 			logger.V(1).Info("CronJob already suspended, skipping update", "cronjob", cronJob.Name)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace string) error {
@@ -1341,6 +1352,7 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 		return err
 	}
 
+	var errs []error
 	for _, cronJob := range cronJobList.Items {
 		// Skip if this cronjob has a controller (not an orphan)
 		if hasController(cronJob.OwnerReferences) {
@@ -1402,11 +1414,15 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 		if needsUpdate {
 			cronJob.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &cronJob); err != nil {
-				return fmt.Errorf("failed to resume cronjob %s: %w", cronJob.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to resume cronjob %s: %w", cronJob.Name, err),
+				)
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) suspendOrphanDeployments(
@@ -1420,6 +1436,7 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
 
+	var errs []error
 	for _, deploy := range deployList.Items {
 		// Skip if this deployment has a controller (not an orphan)
 		if hasController(deploy.OwnerReferences) {
@@ -1464,7 +1481,13 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 				logger,
 			)
 			if err != nil {
-				return err
+				logger.Error(
+					err,
+					"failed to suspend HPA, continuing with next deployment",
+					"deployment",
+					deploy.Name,
+				)
+				continue
 			}
 			if hpaModified {
 				needsUpdate = true
@@ -1479,7 +1502,11 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 			stateJSON, err := encodeDeploymentState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode deployment state", "deployment", deploy.Name)
-				return fmt.Errorf("failed to encode deployment state for %s: %w", deploy.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode deployment state for %s: %w", deploy.Name, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -1505,12 +1532,16 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 		if needsUpdate {
 			deploy.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &deploy); err != nil {
-				return fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err),
+				)
+				continue
 			}
 			logger.V(1).Info("Suspended orphan deployment", "deployment", deploy.Name)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, namespace string) error {
@@ -1521,6 +1552,7 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
 
+	var errs []error
 	for _, deploy := range deployList.Items {
 		// Skip if this deployment has a controller (not an orphan)
 		if hasController(deploy.OwnerReferences) {
@@ -1608,11 +1640,15 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 		if needsUpdate {
 			deploy.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &deploy); err != nil {
-				return fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err),
+				)
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) suspendOrphanStatefulSets(
@@ -1626,6 +1662,7 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 		return fmt.Errorf("failed to list statefulsets: %w", err)
 	}
 
+	var errs []error
 	for _, sts := range stsList.Items {
 		// Skip if this statefulset has a controller (not an orphan)
 		if hasController(sts.OwnerReferences) {
@@ -1670,7 +1707,13 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 				logger,
 			)
 			if err != nil {
-				return err
+				logger.Error(
+					err,
+					"failed to suspend HPA, continuing with next statefulset",
+					"statefulset",
+					sts.Name,
+				)
+				continue
 			}
 			if hpaModified {
 				needsUpdate = true
@@ -1685,7 +1728,11 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 			stateJSON, err := encodeDeploymentState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode statefulset state", "statefulset", sts.Name)
-				return fmt.Errorf("failed to encode statefulset state for %s: %w", sts.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode statefulset state for %s: %w", sts.Name, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -1711,12 +1758,16 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 		if needsUpdate {
 			sts.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &sts); err != nil {
-				return fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err),
+				)
+				continue
 			}
 			logger.V(1).Info("Suspended orphan statefulset", "statefulset", sts.Name)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeOrphanStatefulSets(
@@ -1730,6 +1781,7 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 		return fmt.Errorf("failed to list statefulsets: %w", err)
 	}
 
+	var errs []error
 	for _, sts := range stsList.Items {
 		// Skip if this statefulset has a controller (not an orphan)
 		if hasController(sts.OwnerReferences) {
@@ -1817,11 +1869,15 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 		if needsUpdate {
 			sts.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &sts); err != nil {
-				return fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err),
+				)
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) suspendOrphanReplicaSets(
@@ -1835,6 +1891,7 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 		return fmt.Errorf("failed to list replicasets: %w", err)
 	}
 
+	var errs []error
 	for _, rs := range rsList.Items {
 		// Skip if this replicaset has a controller (not an orphan)
 		if hasController(rs.OwnerReferences) {
@@ -1876,7 +1933,11 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 			stateJSON, err := encodeDeploymentState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode replicaset state", "replicaset", rs.Name)
-				return fmt.Errorf("failed to encode replicaset state for %s: %w", rs.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode replicaset state for %s: %w", rs.Name, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -1902,12 +1963,13 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 		if needsUpdate {
 			rs.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &rs); err != nil {
-				return fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err)
+				errs = append(errs, fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err))
+				continue
 			}
 			logger.V(1).Info("Suspended orphan replicaset", "replicaset", rs.Name)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, namespace string) error {
@@ -1918,6 +1980,7 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 		return fmt.Errorf("failed to list replicasets: %w", err)
 	}
 
+	var errs []error
 	for _, rs := range rsList.Items {
 		// Skip if this replicaset has a controller (not an orphan)
 		if hasController(rs.OwnerReferences) {
@@ -1979,11 +2042,12 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 		if needsUpdate {
 			rs.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &rs); err != nil {
-				return fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err)
+				errs = append(errs, fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err))
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace string) error {
@@ -2271,6 +2335,7 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 		return fmt.Errorf("failed to list ingresses: %w", err)
 	}
 
+	var errs []error
 	for _, ingress := range ingressList.Items {
 		ingressName := ingress.Name
 		annotations := ingress.GetAnnotations()
@@ -2307,7 +2372,11 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 			stateJSON, err := encodeIngressState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode ingress state", "ingress", ingressName)
-				return fmt.Errorf("failed to encode ingress state for %s: %w", ingressName, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode ingress state for %s: %w", ingressName, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -2333,13 +2402,17 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 		if needsUpdate {
 			ingress.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &ingress); err != nil {
-				return fmt.Errorf("failed to suspend ingress %s: %w", ingressName, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to suspend ingress %s: %w", ingressName, err),
+				)
+				continue
 			}
 
 			logger.V(1).Info("Suspended ingress", "ingress", ingressName)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeIngresses(ctx context.Context, namespace string) error {
@@ -2350,6 +2423,7 @@ func (r *NamespaceReconciler) resumeIngresses(ctx context.Context, namespace str
 		return fmt.Errorf("failed to list ingresses: %w", err)
 	}
 
+	var errs []error
 	for _, ingress := range ingressList.Items {
 		ingressName := ingress.Name
 		annotations := ingress.GetAnnotations()
@@ -2407,11 +2481,12 @@ func (r *NamespaceReconciler) resumeIngresses(ctx context.Context, namespace str
 		if needsUpdate {
 			ingress.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &ingress); err != nil {
-				return fmt.Errorf("failed to resume ingress %s: %w", ingressName, err)
+				errs = append(errs, fmt.Errorf("failed to resume ingress %s: %w", ingressName, err))
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace string) error {
@@ -2422,6 +2497,7 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 		return err
 	}
 
+	var errs []error
 	for _, job := range jobList.Items {
 		// Skip if this job has a controller (not an orphan)
 		if hasController(job.OwnerReferences) {
@@ -2451,7 +2527,11 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 			stateJSON, err := encodeJobState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode job state", "job", job.Name)
-				return fmt.Errorf("failed to encode job state for %s: %w", job.Name, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode job state for %s: %w", job.Name, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -2477,14 +2557,15 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 		if needsUpdate {
 			job.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &job); err != nil {
-				return fmt.Errorf("failed to suspend job %s: %w", job.Name, err)
+				errs = append(errs, fmt.Errorf("failed to suspend job %s: %w", job.Name, err))
+				continue
 			}
 			logger.V(1).Info("Suspended job", "job", job.Name)
 		} else {
 			logger.V(1).Info("Job already suspended, skipping update", "job", job.Name)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace string) error {
@@ -2495,6 +2576,7 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 		return err
 	}
 
+	var errs []error
 	for _, job := range jobList.Items {
 		// Skip if this job has a controller (not an orphan)
 		if hasController(job.OwnerReferences) {
@@ -2556,11 +2638,12 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 		if needsUpdate {
 			job.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &job); err != nil {
-				return fmt.Errorf("failed to resume job %s: %w", job.Name, err)
+				errs = append(errs, fmt.Errorf("failed to resume job %s: %w", job.Name, err))
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func deleteResourceListAndWait(
@@ -2680,6 +2763,7 @@ func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace str
 		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
 	}
 
+	var errs []error
 	for _, devbox := range devboxList.Items {
 		devboxName := devbox.Name
 		logger.V(1).Info("Processing devbox", "Devbox", devboxName)
@@ -2715,7 +2799,11 @@ func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace str
 			stateJSON, err := encodeDevboxState(originalState)
 			if err != nil {
 				logger.Error(err, "failed to encode devbox state", "devbox", devboxName)
-				return fmt.Errorf("failed to encode devbox state for %s: %w", devboxName, err)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode devbox state for %s: %w", devboxName, err),
+				)
+				continue
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
 			needsUpdate = true
@@ -2741,12 +2829,13 @@ func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace str
 		if needsUpdate {
 			devbox.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &devbox); err != nil {
-				return fmt.Errorf("failed to suspend devbox %s: %w", devboxName, err)
+				errs = append(errs, fmt.Errorf("failed to suspend devbox %s: %w", devboxName, err))
+				continue
 			}
 			logger.V(1).Info("Suspended devbox", "devbox", devboxName)
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
 
 func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace string) error {
@@ -2760,6 +2849,7 @@ func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace stri
 		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
 	}
 
+	var errs []error
 	for _, devbox := range devboxList.Items {
 		devboxName := devbox.Name
 		annotations := devbox.GetAnnotations()
@@ -2816,9 +2906,10 @@ func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace stri
 		if needsUpdate {
 			devbox.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &devbox); err != nil {
-				return fmt.Errorf("failed to resume devbox %s: %w", devboxName, err)
+				errs = append(errs, fmt.Errorf("failed to resume devbox %s: %w", devboxName, err))
+				continue
 			}
 		}
 	}
-	return nil
+	return errors2.Join(errs...)
 }
