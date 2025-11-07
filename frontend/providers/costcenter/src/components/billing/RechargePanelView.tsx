@@ -19,7 +19,7 @@ import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '@/components/CurrencySymbol';
 
 function formatDateTime(iso: string) {
-  return formatDate(new Date(iso), 'MM-dd HH:mm');
+  return formatDate(new Date(iso), 'yyyy-MM-dd HH:mm');
 }
 
 export type RechargeRow = {
