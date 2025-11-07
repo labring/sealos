@@ -55,6 +55,11 @@ type PauseData struct {
 	Value  string `json:"value"`  // Target utilization value
 }
 
+// DevboxOriginalState stores the original state of Devbox
+type DevboxOriginalState struct {
+	WasRunning bool `json:"wasRunning"` // Whether the devbox was running before suspension
+}
+
 // Encoding functions for each type
 
 func encodeDeploymentState(state *DeploymentOriginalState) (string, error) {
@@ -189,5 +194,27 @@ func getDefaultCertificateState() *CertificateOriginalState {
 func getDefaultIngressState() *IngressOriginalState {
 	return &IngressOriginalState{
 		IngressClass: IngressClassNginx, // Default: restore to nginx
+	}
+}
+
+func encodeDevboxState(state *DevboxOriginalState) (string, error) {
+	data, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func decodeDevboxState(data string) (*DevboxOriginalState, error) {
+	var state DevboxOriginalState
+	if err := json.Unmarshal([]byte(data), &state); err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+func getDefaultDevboxState() *DevboxOriginalState {
+	return &DevboxOriginalState{
+		WasRunning: true, // Default: was running, restore to running
 	}
 }
