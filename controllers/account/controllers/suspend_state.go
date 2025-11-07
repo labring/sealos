@@ -49,6 +49,12 @@ type IngressOriginalState struct {
 	IngressClass string `json:"ingressClass"` // Original ingress class (e.g., "nginx")
 }
 
+// PauseData stores HPA configuration when pausing deployment/statefulset
+type PauseData struct {
+	Target string `json:"target"` // Resource target (e.g., "cpu", "memory")
+	Value  string `json:"value"`  // Target utilization value
+}
+
 // Encoding functions for each type
 
 func encodeDeploymentState(state *DeploymentOriginalState) (string, error) {

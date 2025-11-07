@@ -582,7 +582,7 @@ rules:
   verbs: ["list", "update", "delete", "deletecollection"]
 - apiGroups: ["autoscaling"]
   resources: ["horizontalpodautoscalers"]
-  verbs: ["delete", "deletecollection"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["cert-manager.io"]
   resources: ["issuers"]
   verbs: ["delete", "deletecollection"]

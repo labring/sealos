@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	// kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -56,6 +59,12 @@ const (
 	OSInternalEndpointEnv = "OSInternalEndpoint"
 	OSNamespace           = "OSNamespace"
 	OSAdminSecret         = "OSAdminSecret"
+
+	// App deploy annotations
+	PauseKey           = "deploy.cloud.sealos.io/pause"
+	MinReplicasKey     = "deploy.cloud.sealos.io/minReplicas"
+	MaxReplicasKey     = "deploy.cloud.sealos.io/maxReplicas"
+	DeployPVCResizeKey = "deploy.cloud.sealos.io/resize"
 )
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -70,6 +79,7 @@ const (
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;watch
 //+kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 //nolint:gocyclo
 func (r *NamespaceReconciler) Reconcile(
@@ -518,7 +528,6 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 				return fmt.Errorf("failed to encode cluster state for %s: %w", clusterName, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			cluster.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -546,6 +555,7 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 
 		// Update cluster only if there are actual changes
 		if needsUpdate {
+			cluster.SetAnnotations(annotations)
 			_, err = r.dynamicClient.Resource(clusterGVR).
 				Namespace(namespace).
 				Update(ctx, &cluster, v12.UpdateOptions{})
@@ -644,6 +654,189 @@ func hasController(ownerRefs []v12.OwnerReference) bool {
 		}
 	}
 	return false
+}
+
+// deployViaFrontend checks if a deployment/statefulset was created via frontend
+// by checking for the presence of frontend-specific annotations
+func deployViaFrontend(annotations map[string]string) bool {
+	if annotations == nil {
+		return false
+	}
+	hasMinReplicas := annotations[MinReplicasKey] != ""
+	hasMaxReplicas := annotations[MaxReplicasKey] != ""
+	hasResize := annotations[DeployPVCResizeKey] != ""
+	return hasMinReplicas || hasMaxReplicas || hasResize
+}
+
+// suspendHPA handles HPA suspension logic: reads HPA config, saves to pause annotation, and deletes HPA
+// Returns true if annotations were modified, false otherwise
+func (r *NamespaceReconciler) suspendHPA(
+	ctx context.Context,
+	namespace string,
+	resourceName string,
+	resourceType string,
+	annotations map[string]string,
+	logger logr.Logger,
+) (bool, error) {
+	// Try to read HPA
+	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
+	hpaKey := client.ObjectKey{Name: resourceName, Namespace: namespace}
+	err := r.Client.Get(ctx, hpaKey, hpa)
+
+	if err == nil {
+		// HPA exists, save its configuration and delete it
+		pauseData := &PauseData{
+			Target: "",
+			Value:  "",
+		}
+
+		// Extract HPA configuration
+		if len(hpa.Spec.Metrics) > 0 && hpa.Spec.Metrics[0].Resource != nil {
+			pauseData.Target = string(hpa.Spec.Metrics[0].Resource.Name)
+			if hpa.Spec.Metrics[0].Resource.Target.AverageUtilization != nil {
+				pauseData.Value = strconv.Itoa(
+					int(*hpa.Spec.Metrics[0].Resource.Target.AverageUtilization),
+				)
+			}
+		}
+
+		// Save pause data to annotation
+		pauseJSON, err := json.Marshal(pauseData)
+		if err != nil {
+			logger.Error(err, "failed to marshal pause data", resourceType, resourceName)
+			return false, fmt.Errorf("failed to marshal pause data for %s: %w", resourceName, err)
+		}
+		annotations[PauseKey] = string(pauseJSON)
+
+		// Delete HPA
+		if err := r.Client.Delete(ctx, hpa); err != nil && !errors.IsNotFound(err) {
+			logger.Error(err, "failed to delete HPA", resourceType, resourceName)
+			return false, fmt.Errorf("failed to delete HPA for %s: %w", resourceName, err)
+		}
+		logger.Info(
+			"Deleted HPA and saved pause data",
+			resourceType,
+			resourceName,
+			"pauseData",
+			string(pauseJSON),
+		)
+		return true, nil
+	} else if !errors.IsNotFound(err) {
+		// Error reading HPA (not just not found)
+		logger.Error(err, "failed to get HPA", resourceType, resourceName)
+		return false, fmt.Errorf("failed to get HPA for %s: %w", resourceName, err)
+	}
+
+	// HPA not found, set empty pause annotation
+	pauseData := &PauseData{
+		Target: "",
+		Value:  "",
+	}
+	//nolint:errchkjson
+	pauseJSON, _ := json.Marshal(pauseData)
+	annotations[PauseKey] = string(pauseJSON)
+	logger.V(1).Info("HPA not found, setting empty pause annotation", resourceType, resourceName)
+	return true, nil
+}
+
+// resumeHPA handles HPA restoration logic: reads pause annotation and creates HPA if needed
+// Returns true if annotations were modified, false otherwise
+func (r *NamespaceReconciler) resumeHPA(
+	ctx context.Context,
+	namespace string,
+	resourceName string,
+	resourceType string,
+	resourceKind string,
+	annotations map[string]string,
+	logger logr.Logger,
+) (bool, error) {
+	pauseJSON, hasPause := annotations[PauseKey]
+	if !hasPause {
+		return false, nil
+	}
+
+	var pauseData PauseData
+	if err := json.Unmarshal([]byte(pauseJSON), &pauseData); err != nil {
+		logger.Error(err, "failed to unmarshal pause data", resourceType, resourceName)
+		return false, nil
+	}
+
+	if pauseData.Target == "" {
+		// No HPA config to restore, just remove pause annotation
+		delete(annotations, PauseKey)
+		return true, nil
+	}
+
+	// Restore HPA
+	minReplicasStr := annotations[MinReplicasKey]
+	maxReplicasStr := annotations[MaxReplicasKey]
+
+	if minReplicasStr == "" || maxReplicasStr == "" {
+		// Missing replica configuration, just remove pause annotation
+		delete(annotations, PauseKey)
+		return true, nil
+	}
+
+	var minReplicas, maxReplicas, targetValue int32
+	if val, err := strconv.Atoi(minReplicasStr); err == nil {
+		//nolint:gosec
+		minReplicas = int32(val)
+	}
+	if val, err := strconv.Atoi(maxReplicasStr); err == nil {
+		//nolint:gosec
+		maxReplicas = int32(val)
+	}
+	if val, err := strconv.Atoi(pauseData.Value); err == nil {
+		//nolint:gosec
+		targetValue = int32(val)
+	}
+
+	// Create HPA
+	hpa := &autoscalingv2.HorizontalPodAutoscaler{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      resourceName,
+			Namespace: namespace,
+		},
+		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       resourceKind,
+				Name:       resourceName,
+			},
+			MinReplicas: &minReplicas,
+			MaxReplicas: maxReplicas,
+			Metrics: []autoscalingv2.MetricSpec{
+				{
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: corev1.ResourceName(pauseData.Target),
+						Target: autoscalingv2.MetricTarget{
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: &targetValue,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := r.Client.Create(ctx, hpa); err != nil && !errors.IsAlreadyExists(err) {
+		logger.Error(err, "failed to create HPA", resourceType, resourceName)
+		return false, fmt.Errorf("failed to create HPA for %s: %w", resourceName, err)
+	}
+	logger.Info(
+		"Restored HPA",
+		resourceType,
+		resourceName,
+		"target",
+		pauseData.Target,
+		"value",
+		pauseData.Value,
+	)
+
+	// Remove pause annotation
+	delete(annotations, PauseKey)
+	return true, nil
 }
 
 func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace string) error {
@@ -843,12 +1036,12 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			cluster.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update cluster only if there are actual changes
 		if needsUpdate {
+			cluster.SetAnnotations(annotations)
 			_, err := r.dynamicClient.Resource(clusterGVR).
 				Namespace(namespace).
 				Update(ctx, &cluster, v12.UpdateOptions{})
@@ -1092,7 +1285,6 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 				return fmt.Errorf("failed to encode cronjob state for %s: %w", cronJob.Name, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			cronJob.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -1114,6 +1306,7 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			cronJob.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &cronJob); err != nil {
 				return fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err)
 			}
@@ -1187,12 +1380,12 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			cronJob.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			cronJob.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &cronJob); err != nil {
 				return fmt.Errorf("failed to resume cronjob %s: %w", cronJob.Name, err)
 			}
@@ -1245,6 +1438,24 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 		// Track if deployment needs update
 		needsUpdate := false
 
+		// Handle HPA if this deployment was created via frontend
+		if deployViaFrontend(annotations) {
+			hpaModified, err := r.suspendHPA(
+				ctx,
+				namespace,
+				deploy.Name,
+				"deployment",
+				annotations,
+				logger,
+			)
+			if err != nil {
+				return err
+			}
+			if hpaModified {
+				needsUpdate = true
+			}
+		}
+
 		// Save original state only if not already saved
 		if !hasOriginalState {
 			originalState := &DeploymentOriginalState{
@@ -1256,7 +1467,6 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 				return fmt.Errorf("failed to encode deployment state for %s: %w", deploy.Name, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			deploy.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -1278,6 +1488,7 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			deploy.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &deploy); err != nil {
 				return fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err)
 			}
@@ -1305,6 +1516,26 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 		annotations := deploy.GetAnnotations()
 		if annotations == nil {
 			annotations = make(map[string]string)
+		}
+
+		// Track if deployment needs update
+		needsUpdate := false
+
+		// Check if pause annotation exists (indicates HPA needs to be restored)
+		hpaModified, err := r.resumeHPA(
+			ctx,
+			namespace,
+			deploy.Name,
+			"deployment",
+			"Deployment",
+			annotations,
+			logger,
+		)
+		if err != nil {
+			return err
+		}
+		if hpaModified {
+			needsUpdate = true
 		}
 
 		// Get or create original state with defaults
@@ -1337,9 +1568,6 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 			originalState.Replicas,
 		)
 
-		// Track if deployment needs update
-		needsUpdate := false
-
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
 			deploy.Spec.Replicas = ptr.To(originalState.Replicas)
@@ -1349,12 +1577,12 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			deploy.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			deploy.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &deploy); err != nil {
 				return fmt.Errorf("failed to update deployment %s: %w", deploy.Name, err)
 			}
@@ -1407,6 +1635,24 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 		// Track if statefulset needs update
 		needsUpdate := false
 
+		// Handle HPA if this statefulset was created via frontend
+		if deployViaFrontend(annotations) {
+			hpaModified, err := r.suspendHPA(
+				ctx,
+				namespace,
+				sts.Name,
+				"statefulset",
+				annotations,
+				logger,
+			)
+			if err != nil {
+				return err
+			}
+			if hpaModified {
+				needsUpdate = true
+			}
+		}
+
 		// Save original state only if not already saved
 		if !hasOriginalState {
 			originalState := &DeploymentOriginalState{
@@ -1418,7 +1664,6 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 				return fmt.Errorf("failed to encode statefulset state for %s: %w", sts.Name, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			sts.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -1440,6 +1685,7 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			sts.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &sts); err != nil {
 				return fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err)
 			}
@@ -1472,6 +1718,26 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			annotations = make(map[string]string)
 		}
 
+		// Track if statefulset needs update
+		needsUpdate := false
+
+		// Check if pause annotation exists (indicates HPA needs to be restored)
+		hpaModified, err := r.resumeHPA(
+			ctx,
+			namespace,
+			sts.Name,
+			"statefulset",
+			"StatefulSet",
+			annotations,
+			logger,
+		)
+		if err != nil {
+			return err
+		}
+		if hpaModified {
+			needsUpdate = true
+		}
+
 		// Get or create original state with defaults
 		var originalState *DeploymentOriginalState
 		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
@@ -1502,9 +1768,6 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			originalState.Replicas,
 		)
 
-		// Track if statefulset needs update
-		needsUpdate := false
-
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
 			sts.Spec.Replicas = ptr.To(originalState.Replicas)
@@ -1514,12 +1777,12 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			sts.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			sts.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &sts); err != nil {
 				return fmt.Errorf("failed to update statefulset %s: %w", sts.Name, err)
 			}
@@ -1583,7 +1846,6 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 				return fmt.Errorf("failed to encode replicaset state for %s: %w", rs.Name, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			rs.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -1605,6 +1867,7 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			rs.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &rs); err != nil {
 				return fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err)
 			}
@@ -1676,12 +1939,12 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			rs.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			rs.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &rs); err != nil {
 				return fmt.Errorf("failed to update replicaset %s: %w", rs.Name, err)
 			}
@@ -1745,7 +2008,6 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 				return fmt.Errorf("failed to encode certificate state for %s: %w", certName, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			cert.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -1762,12 +2024,12 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 		// Disable certificate reissue if not already set to true
 		if currentDisableReissue != "true" {
 			annotations[CertManagerDisableReissueAnnotation] = "true"
-			cert.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			cert.SetAnnotations(annotations)
 			_, err := r.dynamicClient.Resource(certGVR).
 				Namespace(namespace).
 				Update(ctx, &cert, v12.UpdateOptions{})
@@ -1843,19 +2105,18 @@ func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace 
 		// Remove the annotation if it wasn't disabled before
 		if !originalState.DisableReissue {
 			delete(annotations, CertManagerDisableReissueAnnotation)
-			cert.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			cert.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			cert.SetAnnotations(annotations)
 			_, err = r.dynamicClient.Resource(certGVR).
 				Namespace(namespace).
 				Update(ctx, &cert, v12.UpdateOptions{})
@@ -2015,7 +2276,6 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 				return fmt.Errorf("failed to encode ingress state for %s: %w", ingressName, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			ingress.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -2032,12 +2292,12 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 		// Change ingress class to "pause" if not already set
 		if currentIngressClass != IngressClassPause {
 			annotations[IngressClassAnnotation] = IngressClassPause
-			ingress.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			ingress.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &ingress); err != nil {
 				return fmt.Errorf("failed to suspend ingress %s: %w", ingressName, err)
 			}
@@ -2100,19 +2360,18 @@ func (r *NamespaceReconciler) resumeIngresses(ctx context.Context, namespace str
 		if originalState.IngressClass != IngressClassPause {
 			// Restore to original ingress class
 			annotations[IngressClassAnnotation] = originalState.IngressClass
-			ingress.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			ingress.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			ingress.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &ingress); err != nil {
 				return fmt.Errorf("failed to resume ingress %s: %w", ingressName, err)
 			}
@@ -2161,7 +2420,6 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 				return fmt.Errorf("failed to encode job state for %s: %w", job.Name, err)
 			}
 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-			job.SetAnnotations(annotations)
 			needsUpdate = true
 
 			logger.Info(
@@ -2183,6 +2441,7 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			job.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &job); err != nil {
 				return fmt.Errorf("failed to suspend job %s: %w", job.Name, err)
 			}
@@ -2256,12 +2515,12 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 		// Remove original state annotation if it existed
 		if exists {
 			delete(annotations, OriginalSuspendStateAnnotation)
-			job.SetAnnotations(annotations)
 			needsUpdate = true
 		}
 
 		// Update only if there are actual changes
 		if needsUpdate {
+			job.SetAnnotations(annotations)
 			if err := r.Client.Update(ctx, &job); err != nil {
 				return fmt.Errorf("failed to resume job %s: %w", job.Name, err)
 			}
