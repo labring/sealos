@@ -24,7 +24,7 @@ export const useDesktopConfigStore = create<State>()(
   persist(
     immer((set, get) => ({
       isAppBar: true,
-      isNavbarVisible: true,
+      isNavbarVisible: false,
       isAnimationEnabled: true,
       taskComponentState: 'none',
       canShowGuide: false,
