@@ -271,7 +271,7 @@ install_pull_images() {
     pull_image "${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version}"
 }
 
-COMMERCIAL_PROMPT_EN="This copy of Sealos Cloud is unlicensed and has feature limitations. \nFor a commercial license with full functionality, please contact us: https://sealos.io/contact"
+COMMERCIAL_PROMPT_EN="This copy of Sealos Cloud is under the community license with feature limitations. \nFor a commercial license with full functionality, please contact us: https://sealos.io/contact"
 
 show_commercial_notice() {
   echo "=========================================================================================================="
