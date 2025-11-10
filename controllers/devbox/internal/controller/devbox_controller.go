@@ -138,6 +138,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		return ctrl.Result{}, nil
 	}
+
 	// init devbox status network type
 	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	// init devbox status content id
@@ -147,7 +148,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// init devbox status commit record
 	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
 		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha2.CommitRecord)
-		devbox.Status.State = devboxv1alpha2.DevboxStateRunning
+		devbox.Status.State = devbox.Spec.State
 		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha2.CommitRecord{
 			Node:         "",
 			BaseImage:    devbox.Spec.Image,
@@ -155,6 +156,16 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			CommitStatus: devboxv1alpha2.CommitStatusPending,
 			GenerateTime: metav1.Now(),
 		}
+	}
+	// update devbox status, and do not return error to avoid infinite loop because multiple controller will reconcile this devbox
+	if err := r.Status().Update(ctx, devbox); err != nil {
+		logger.Info("failed to initialize devbox status, skip and return empty result", "error", err)
+		return ctrl.Result{Requeue: false}, nil
+	}
+
+	// re-get devbox to get the latest status
+	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	// todo: implement the schedule logic to replace the current logic
