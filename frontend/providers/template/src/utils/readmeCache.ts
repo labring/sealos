@@ -43,4 +43,4 @@ class ReadmeCache {
   }
 }
 
-export const readmeCache = new ReadmeCache(10);
+export const readmeCache = new ReadmeCache(20);
