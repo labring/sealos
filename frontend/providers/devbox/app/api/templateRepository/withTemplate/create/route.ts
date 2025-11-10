@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       devboxName
     )) as { body: KBDevboxTypeV2 };
 
-    const devboxReleaseImage = releaseBody.status.originalImage;
+    const devboxReleaseImage = releaseBody.status.sourceImage;
     if (!devboxReleaseImage) {
       return jsonRes({
         code: 409,

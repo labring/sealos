@@ -131,7 +131,7 @@ export type KBDevboxReleaseType = {
     startDevboxAfterRelease: boolean;
   };
   status: {
-    originalImage?: string;
+    sourceImage?: string;
     phase: 'Pending' | 'Success' | 'Failed';
   };
 };
