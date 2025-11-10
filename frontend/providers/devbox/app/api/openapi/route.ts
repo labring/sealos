@@ -3,7 +3,8 @@ import { createDocument } from 'zod-openapi';
 import { NextResponse } from 'next/server';
 import {
   RequestSchema as CreateDevboxRequestSchema,
-  SuccessResponseSchema as CreateDevboxSuccessResponseSchema
+  SuccessResponseSchema as CreateDevboxSuccessResponseSchema,
+  DevboxListResponseSchemaV1 as GetDevboxListSuccessResponseSchema
 } from '../v1/devbox/schema';
 
 import {
@@ -77,6 +78,18 @@ import {
   SuccessResponseSchema as GetDevboxTemplatesSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxTemplatesErrorResponseSchema
 } from '../v1/devbox/templates/schema';
+
+import {
+  GetSuccessResponseSchema as GetDevboxDeploymentsSuccessResponseSchema,
+  ErrorResponseSchema as GetDevboxDeploymentsErrorResponseSchema
+} from '../v1/devbox/[name]/deploy/schema';
+
+import { MonitorSuccessResponseSchema } from '../v1/devbox/[name]/monitor/schema';
+
+import {
+  GetPrivateKeyResponseSchema,
+  GetPrivateKeyErrorResponseSchema
+} from '../v1/devbox/[name]/privatekey/schema';
 
 const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -160,9 +173,83 @@ APIs are organized into two main groups following GraphQL conventions:
     ],
     paths: {
       '/api/v1/devbox': {
+        get: {
+          tags: ['Query'],
+          summary: 'List Namespace Devboxes',
+          description: `Retrieve all Devbox instances the authenticated user can access within the current namespace.
+
+**Key Features:**
+- **Unified Inventory**: Returns every Devbox with status, runtime, and resource allocation
+- **Template Awareness**: Enriches each item with runtime icon information from the template repository
+- **Ready for Dashboards**: Response structure matches the Devbox list view used in the console
+
+**Authentication:**
+- Requires kubeconfig/JWT headers used across Devbox APIs
+
+**Error Codes:**
+- \`500\`: Internal server error while querying Kubernetes or metadata database`,
+          responses: {
+            '200': {
+              description: 'Successfully retrieved devbox list. Returns an empty array when no devboxes are present.',
+              content: {
+                'application/json': {
+                  schema: GetDevboxListSuccessResponseSchema,
+                  examples: {
+                    success: {
+                      summary: 'Two devboxes in namespace',
+                      value: {
+                        data: [
+                          {
+                            name: 'my-devbox',
+                            uid: '123e4567-e89b-12d3-a456-426614174000',
+                            resourceType: 'devbox',
+                            runtime: 'node.js',
+                            status: 'Running',
+                            resources: {
+                              cpu: 1000,
+                              memory: 2048
+                            }
+                          },
+                          {
+                            name: 'python-service',
+                            uid: '223e4567-e89b-12d3-a456-426614174001',
+                            resourceType: 'devbox',
+                            runtime: 'python',
+                            status: 'Paused',
+                            resources: {
+                              cpu: 500,
+                              memory: 1024
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '500': {
+              description: 'Internal Server Error - Failed to fetch devbox list.',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema,
+                  examples: {
+                    server_error: {
+                      summary: 'Kubernetes request failed',
+                      value: {
+                        code: 500,
+                        message: 'Internal server error'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         post: {
           tags: ['Mutation'],
-          summary: 'Create a new devbox with runtime and port configuration',
+          summary: 'Create Devbox Instance',
           description: `Create a new Devbox development environment instance with customizable runtime, resource allocation, and port configurations.
 
 **Key Features:**
@@ -358,7 +445,7 @@ Returns Devbox connection information including SSH port and private key, userna
       '/api/v1/devbox/{name}': {
         patch: {
           tags: ['Mutation'],
-          summary: 'Update devbox configuration',
+          summary: 'Update Devbox Config',
           description: `Update an existing Devbox configuration including resource allocation and port management.
 
 **Key Features:**
@@ -609,7 +696,7 @@ Returns Devbox connection information including SSH port and private key, userna
       '/api/v1/devbox/{name}/delete': {
       delete: {
           tags: ['Mutation'],
-        summary: 'Delete a devbox by name',
+        summary: 'Delete Devbox Instance',
           description: `Delete a Devbox and all its associated resources including services, ingress, certificates, and persistent volumes.
 
 **Key Features:**
@@ -717,7 +804,7 @@ Returns a success message confirming the deletion.
     '/api/v1/devbox/{name}/autostart': {
       post: {
         tags: ['Mutation'],
-        summary: 'Configure autostart for a devbox',
+        summary: 'Configure Devbox Autostart',
         description: `Configure automatic command execution when the Devbox starts. Creates RBAC and Job resources for autostart functionality.
 
 **Key Features:**
@@ -859,7 +946,7 @@ Returns autostart configuration status including whether resources were created 
       '/api/v1/devbox/{name}/start': {
       post: {
         tags: ['Mutation'],
-        summary: 'Start a devbox',
+        summary: 'Start Devbox Environment',
         description: `Start a paused or stopped Devbox and restore its services to active state.
 
 **Key Features:**
@@ -985,7 +1072,7 @@ Returns a success message confirming the Devbox has been started.
 '/api/v1/devbox/{name}/pause': {
   post: {
     tags: ['Mutation'],
-    summary: 'Pause a devbox',
+    summary: 'Pause Devbox Runtime',
     description: `Temporarily pause a Devbox while maintaining port allocations and configurations.
 
 **Key Features:**
@@ -1112,7 +1199,7 @@ Returns a success message confirming the Devbox has been paused.
 '/api/v1/devbox/{name}/shutdown': {
   post: {
     tags: ['Mutation'],
-    summary: 'Shutdown a devbox',
+    summary: 'Shutdown Devbox Resources',
     description: `Completely shutdown a Devbox and release all port allocations to minimize costs.
 
 **Key Features:**
@@ -1243,7 +1330,7 @@ Returns a success message confirming the Devbox has been shut down.
 '/api/v1/devbox/{name}/restart': {
   post: {
     tags: ['Mutation'],
-    summary: 'Restart a devbox',
+    summary: 'Restart Devbox Workloads',
     description: `Perform a complete restart cycle of a Devbox, useful for applying configuration changes or recovering from errors.
 
 **Key Features:**
@@ -1386,10 +1473,10 @@ Returns a success message confirming the Devbox has been restarted.
         }
       }
     },
-    '/api/v1/devbox/{name}/ports': {
+      '/api/v1/devbox/{name}/ports': {
     put: {
     tags: ['Mutation'],
-    summary: 'Update devbox port configurations',
+    summary: 'Update Devbox Ports',
     description: `Manage Devbox port configurations with support for adding, updating, and removing ports.
 
 **Key Features:**
@@ -1587,10 +1674,349 @@ Returns the complete list of port configurations after the update operation, inc
           }
         }
       },
+      '/api/v1/devbox/{name}/deploy': {
+        get: {
+          tags: ['Query'],
+          summary: 'List Devbox Deployments',
+          description: `Retrieve Kubernetes Deployments and StatefulSets linked to a Devbox instance. Use this endpoint to inspect which workloads are currently deployed and which release tag each workload is running.
+
+**Key Features:**
+- **Unified Workload View**: Combines Deployments and StatefulSets that belong to the Devbox
+- **Release Tag Tracking**: Extracts the release tag directly from the container image
+- **Troubleshooting Aid**: Quickly verify that workloads have the expected tag after a deployment
+
+**Path Parameters:**
+- \`name\`: Devbox name (must comply with DNS naming conventions)
+
+**Response Data:**
+- Kubernetes resource name (Deployment/StatefulSet)
+- Resource type
+- Release tag parsed from the workload image
+
+**Error Codes:**
+- \`400\`: Invalid devbox name format
+- \`404\`: Devbox not found
+- \`500\`: Internal server error when querying Kubernetes`,
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Successfully retrieved workloads related to the Devbox.',
+              content: {
+                'application/json': {
+                  schema: GetDevboxDeploymentsSuccessResponseSchema,
+                  examples: {
+                    success: {
+                      summary: 'Deployment list retrieved',
+                      value: {
+                        data: [
+                          {
+                            name: 'my-devbox-deployment',
+                            resourceType: 'deployment',
+                            tag: 'v1.0.0'
+                          },
+                          {
+                            name: 'my-devbox-cache',
+                            resourceType: 'statefulset',
+                            tag: 'v1.0.0'
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '400': {
+              description: 'Bad Request - Invalid devbox name format.',
+              content: {
+                'application/json': {
+                  schema: GetDevboxDeploymentsErrorResponseSchema,
+                  examples: {
+                    invalid_name: {
+                      summary: 'Invalid devbox name',
+                      value: {
+                        code: 400,
+                        message: 'Invalid devbox name format'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '404': {
+              description: 'Not Found - The specified Devbox does not exist.',
+              content: {
+                'application/json': {
+                  schema: GetDevboxDeploymentsErrorResponseSchema,
+                  examples: {
+                    not_found: {
+                      summary: 'Devbox not found',
+                      value: {
+                        code: 404,
+                        message: 'Devbox not found'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '500': {
+              description: 'Internal Server Error - Failed to query workloads from Kubernetes.',
+              content: {
+                'application/json': {
+                  schema: GetDevboxDeploymentsErrorResponseSchema,
+                  examples: {
+                    server_error: {
+                      summary: 'Unexpected server error',
+                      value: {
+                        code: 500,
+                        message: 'Internal server error'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}/monitor': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get Devbox Monitor',
+          description: `Fetch CPU and memory utilisation metrics for a Devbox over a given time range. Returns a merged series that aligns CPU and memory readings by timestamp.
+
+**Key Features:**
+- **Time-Series Metrics**: Returns CPU and memory usage percentages
+- **Custom Range**: Optional start/end timestamps (milliseconds) and Prometheus-style \`step\`
+- **Chronological Order**: Results are sorted by timestamp for chart rendering
+- **Graceful Degradation**: Unexpected errors return an empty array so charts remain functional
+
+**Path Parameters:**
+- \`name\`: Devbox name (must comply with DNS naming conventions)
+
+**Query Parameters:**
+- \`start\` (optional): Start time in milliseconds. Defaults to three hours before \`end\`.
+- \`end\` (optional): End time in milliseconds. Defaults to the current time on the server.
+- \`step\` (optional): Prometheus query step (e.g. \`2m\`). Defaults to \`2m\`.
+
+**Error Codes:**
+- \`400\`: Devbox name missing or invalid`,
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            },
+            {
+              name: 'start',
+              in: 'query',
+              required: false,
+              description: 'Start time in milliseconds (Unix epoch). Defaults to end time minus three hours.',
+              schema: {
+                type: 'integer',
+                format: 'int64',
+                minimum: 0
+              }
+            },
+            {
+              name: 'end',
+              in: 'query',
+              required: false,
+              description: 'End time in milliseconds (Unix epoch). Defaults to current server time.',
+              schema: {
+                type: 'integer',
+                format: 'int64',
+                minimum: 0
+              }
+            },
+            {
+              name: 'step',
+              in: 'query',
+              required: false,
+              description: 'Prometheus query step interval (e.g. 30s, 2m). Defaults to 2m.',
+              schema: {
+                type: 'string',
+                default: '2m'
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Devbox monitor data retrieved successfully.',
+              content: {
+                'application/json': {
+                  schema: MonitorSuccessResponseSchema,
+                  examples: {
+                    success: {
+                      summary: 'Metrics retrieved',
+                      value: [
+                        {
+                          timestamp: 1760510280,
+                          readableTime: '2025/10/15 14:38',
+                          cpu: 1.08,
+                          memory: 10.32
+                        },
+                        {
+                          timestamp: 1760510340,
+                          readableTime: '2025/10/15 14:39',
+                          cpu: 1.18,
+                          memory: 10.37
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            '400': {
+              description: 'Bad Request - Devbox name missing or invalid. Returns an empty array.',
+              content: {
+                'application/json': {
+                  schema: MonitorSuccessResponseSchema,
+                  examples: {
+                    invalid_request: {
+                      summary: 'Missing devbox name',
+                      value: []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/devbox/{name}/privatekey': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get Devbox Key',
+          description: `Retrieve the base64-encoded SSH private key generated for the Devbox. Use this to establish SSH connections from local tooling.
+
+**Key Features:**
+- **Secure Delivery**: Returns the private key stored in the Devbox Kubernetes Secret
+- **Encoding Metadata**: Indicates that the key is base64 encoded
+- **Error Handling**: Differentiates between missing Devbox and missing secret
+
+**Path Parameters:**
+- \`name\`: Devbox name (must comply with DNS naming conventions)
+
+**Error Codes:**
+- \`400\`: Missing devbox name
+- \`404\`: Devbox or secret not found
+- \`500\`: Internal server error retrieving the secret`,
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Private key retrieved successfully.',
+              content: {
+                'application/json': {
+                  schema: GetPrivateKeyResponseSchema,
+                  examples: {
+                    success: {
+                      summary: 'Private key returned',
+                      value: {
+                        code: 200,
+                        data: {
+                          privateKey: 'LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K...',
+                          encoding: 'base64'
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '400': {
+              description: 'Bad Request - Devbox name is required.',
+              content: {
+                'application/json': {
+                  schema: GetPrivateKeyErrorResponseSchema,
+                  examples: {
+                    missing_name: {
+                      summary: 'Missing devbox name',
+                      value: {
+                        code: 400,
+                        message: 'Devbox name is required'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '404': {
+              description: 'Not Found - Devbox or associated secret not found.',
+              content: {
+                'application/json': {
+                  schema: GetPrivateKeyErrorResponseSchema,
+                  examples: {
+                    not_found: {
+                      summary: 'Private key not found',
+                      value: {
+                        code: 404,
+                        message: 'Devbox or secret not found'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '500': {
+              description: 'Internal Server Error - Failed to retrieve the private key.',
+              content: {
+                'application/json': {
+                  schema: GetPrivateKeyErrorResponseSchema,
+                  examples: {
+                    internal_error: {
+                      summary: 'Unexpected server error',
+                      value: {
+                        code: 500,
+                        message: 'Internal server error occurred while retrieving private key'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       '/api/v1/devbox/{name}/release': {
         get: {
       tags: ['Query'],
-          summary: 'Get devbox release list by name',
+          summary: 'List Devbox Releases',
       description: `Retrieve all release versions for a specific Devbox, including version history and status information.
 
 **Key Features:**
@@ -1710,7 +2136,7 @@ Returns an array of release objects, each containing:
     },
         post: {
           tags: ['Mutation'],
-          summary: 'Release a specific devbox version',
+          summary: 'Create Devbox Release',
           description: `Create a new release version by snapshotting the current Devbox state and building a container image.
 
 **Key Features:**
@@ -1878,7 +2304,7 @@ Returns release creation information including the assigned tag, description, an
       '/api/v1/devbox/{name}/release/{tag}': {
       delete: {
         tags: ['Mutation'],
-        summary: 'Delete a specific devbox release',
+        summary: 'Delete Devbox Release',
         description: `Delete a specific release version and its associated container image.
 
 **Key Features:**
@@ -2005,7 +2431,7 @@ Returns deletion confirmation with the devbox name, deleted tag, and timestamp.
       '/api/v1/devbox/{name}/release/{tag}/deploy': {
         post: {
           tags: ['Mutation'],
-          summary: 'Deploy a specific devbox release version',
+          summary: 'Deploy Devbox Release',
           description: `Deploy a release version to AppLaunchpad as a production application.
 
 **Key Features:**
@@ -2185,7 +2611,7 @@ Returns deployment information including:
       '/api/v1/devbox/templates': {
         get: {
           tags: ['Query'],
-          summary: 'Get devbox configuration and runtime information',
+          summary: 'List Devbox Templates',
           description: `Retrieve available runtime environments and template configurations for creating Devboxes.
 
 **Key Features:**
