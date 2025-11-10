@@ -53,7 +53,8 @@ const RuntimeName = z.enum([
 'gin',
 'node.js',
 'echo',
-'rust'
+'claude-code',
+'rust',
 ]).openapi({
   description: 'Runtime environment name (lowercase)'
 });
