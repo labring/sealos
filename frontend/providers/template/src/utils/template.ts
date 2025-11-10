@@ -51,8 +51,10 @@ export const generateYamlData = (
   isDevelop: boolean = false
 ): YamlItemType[] => {
   if (!templateSource) return [];
+
   const app_name = templateSource?.source?.defaults?.app_name?.value;
   const { defaults, defaultInputs } = getTemplateValues(templateSource);
+
   const data = {
     ...platformEnvs,
     ...templateSource?.source,
@@ -62,6 +64,7 @@ export const generateYamlData = (
     },
     defaults: defaults
   };
+
   const generateStr = parseTemplateString(templateSource.appYaml, data);
 
   return isDevelop
