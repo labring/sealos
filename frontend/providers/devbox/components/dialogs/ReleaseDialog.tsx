@@ -84,7 +84,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   };
 
   const handleReleaseDevbox = useCallback(
-    async (enableRestartMachine: boolean) => {
+    async (startDevboxAfterRelease: boolean) => {
       try {
         setLoading(true);
 
@@ -102,12 +102,9 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
           devboxName: devbox.name,
           tag,
           releaseDes,
-          devboxUid: devbox.id
+          devboxUid: devbox.id,
+          startDevboxAfterRelease
         });
-        // 3.start devbox
-        if (enableRestartMachine) {
-          await startDevbox({ devboxName: devbox.name });
-        }
         toast.success(t('submit_release_successful'));
         track({
           event: 'release_create',

@@ -21,7 +21,7 @@ export function generateDevboxRbacAndJob({
       namespace: devboxNamespace,
       ownerReferences: [
         {
-          apiVersion: 'devbox.sealos.io/v1alpha1',
+          apiVersion: 'devbox.sealos.io/v1alpha2',
           kind: 'Devbox',
           name: devboxName,
           uid: devboxUID,
@@ -39,7 +39,7 @@ export function generateDevboxRbacAndJob({
       namespace: devboxNamespace,
       ownerReferences: [
         {
-          apiVersion: 'devbox.sealos.io/v1alpha1',
+          apiVersion: 'devbox.sealos.io/v1alpha2',
           kind: 'Devbox',
           name: devboxName,
           uid: devboxUID,
@@ -64,7 +64,7 @@ export function generateDevboxRbacAndJob({
       namespace: devboxNamespace,
       ownerReferences: [
         {
-          apiVersion: 'devbox.sealos.io/v1alpha1',
+          apiVersion: 'devbox.sealos.io/v1alpha2',
           kind: 'Devbox',
           name: devboxName,
           uid: devboxUID,
@@ -95,7 +95,7 @@ export function generateDevboxRbacAndJob({
       namespace: devboxNamespace,
       ownerReferences: [
         {
-          apiVersion: 'devbox.sealos.io/v1alpha1',
+          apiVersion: 'devbox.sealos.io/v1alpha2',
           kind: 'Devbox',
           name: devboxName,
           uid: devboxUID,
@@ -132,10 +132,5 @@ export function generateDevboxRbacAndJob({
     }
   };
 
-  return [
-    yaml.dump(serviceAccount),
-    yaml.dump(role), 
-    yaml.dump(roleBinding),
-    yaml.dump(job)
-  ];
+  return [yaml.dump(serviceAccount), yaml.dump(role), yaml.dump(roleBinding), yaml.dump(job)];
 }

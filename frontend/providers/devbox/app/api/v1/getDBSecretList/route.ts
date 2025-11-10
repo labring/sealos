@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
 
     const clustersResult = await k8sCustomObjects.listNamespacedCustomObject(
       'apps.kubeblocks.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'clusters'
     );

@@ -57,8 +57,6 @@ spec:
               value: 'true'
             - name: MONITOR_URL
               value: http://launchpad-monitor.sealos.svc.cluster.local:8428
-            - name: SQUASH_ENABLE
-              value: 'false'
             - name: ACCOUNT_URL
               value: http://account-service.account-system.svc.cluster.local:2333
             - name: ROOT_RUNTIME_NAMESPACE
@@ -69,6 +67,8 @@ spec:
               value: usd #  'shellCoin' | 'cny' | 'usd'
             - name: GPU_ENABLE
               value: 'false'
+            - name: STORAGE_LIMIT
+              value: 10Gi # default is 10Gi
             - name: PRIVACY_URL
               value: https://sealos.run/docs/msa/privacy-policy
             - name: RETAG_SVC_URL

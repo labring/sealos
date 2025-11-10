@@ -7,11 +7,11 @@ import { parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
 import { RuntimeNamespaceMap } from '@/types/static';
 
+// deprecated
 export const json2Devbox = (
   data: DevboxEditType,
   runtimeNamespaceMap: RuntimeNamespaceMap,
-  devboxAffinityEnable: string = 'true',
-  squashEnable: string = 'false'
+  devboxAffinityEnable: string = 'true'
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
@@ -30,7 +30,6 @@ export const json2Devbox = (
       name: data.name
     },
     spec: {
-      squash: squashEnable === 'true',
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
@@ -78,19 +77,20 @@ export const json2Devbox = (
   }
   return yaml.dump(json);
 };
+
+// TODO: forget gpu support
 export const json2DevboxV2 = (
   data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
-  squashEnable: string = 'false'
+  storageLimit: string = '1Gi'
 ) => {
   let json: any = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
+    apiVersion: 'devbox.sealos.io/v1alpha2',
     kind: 'Devbox',
     metadata: {
       name: data.name
     },
     spec: {
-      squash: squashEnable === 'true',
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
@@ -117,7 +117,9 @@ export const json2DevboxV2 = (
           draft.env = [...draft.env, ...data.env];
         }
       }),
-      state: 'Running'
+      state: 'Running',
+      runtimeClassName: 'devbox-runtime',
+      storageLimit: storageLimit // 1Gi default
     }
   };
   if (devboxAffinityEnable === 'true') {
@@ -147,25 +149,7 @@ export const json2DevboxV2 = (
   }
   return yaml.dump(json);
 };
-export const json2StartOrStop = ({
-  devboxName,
-  type
-}: {
-  devboxName: string;
-  type: 'Paused' | 'Running';
-}) => {
-  const json = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
-    kind: 'Devbox',
-    metadata: {
-      name: devboxName
-    },
-    spec: {
-      state: type
-    }
-  };
-  return yaml.dump(json);
-};
+
 export const getDevboxReleaseName = (devboxName: string, tag: string) => {
   return `${devboxName}-${tag}`;
 };
@@ -174,15 +158,16 @@ export const json2DevboxRelease = (data: {
   tag: string;
   releaseDes: string;
   devboxUid: string;
+  startDevboxAfterRelease: boolean;
 }) => {
   const json = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
+    apiVersion: 'devbox.sealos.io/v1alpha2',
     kind: 'DevBoxRelease',
     metadata: {
       name: getDevboxReleaseName(data.devboxName, data.tag),
       ownerReferences: [
         {
-          apiVersion: 'devbox.sealos.io/v1alpha1',
+          apiVersion: 'devbox.sealos.io/v1alpha2',
           kind: 'Devbox',
           name: data.devboxName,
           blockOwnerDeletion: false,
@@ -193,8 +178,9 @@ export const json2DevboxRelease = (data: {
     },
     spec: {
       devboxName: data.devboxName,
-      newTag: data.tag,
-      notes: data.releaseDes
+      version: data.tag,
+      notes: data.releaseDes,
+      startDevboxAfterRelease: data.startDevboxAfterRelease
     }
   };
   return yaml.dump(json);
@@ -380,14 +366,14 @@ export const generateYamlList = (
   data: json2DevboxV2Data,
   env: {
     devboxAffinityEnable?: string;
-    squashEnable?: string;
+    storageLimit?: string;
     ingressSecret: string;
   }
 ) => {
   return [
     {
       filename: 'devbox.yaml',
-      value: json2DevboxV2(data, env.devboxAffinityEnable, env.squashEnable)
+      value: json2DevboxV2(data, env.devboxAffinityEnable, env.storageLimit)
     },
     ...(data.networks.length > 0
       ? [

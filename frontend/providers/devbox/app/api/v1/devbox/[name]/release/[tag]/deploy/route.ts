@@ -3,9 +3,7 @@ import { NextRequest } from 'next/server';
 
 import { nanoid } from '@/utils/tools';
 import { devboxIdKey, devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
-import { 
-  DeployDevboxPathParamsSchema,
-} from './schema';
+import { DeployDevboxPathParamsSchema } from './schema';
 import { jsonRes } from '@/services/backend/response';
 import { getK8s } from '@/services/backend/kubernetes';
 import { authSession } from '@/services/backend/auth';
@@ -22,14 +20,14 @@ export async function POST(
 ) {
   try {
     const { name: devboxName, tag } = DeployDevboxPathParamsSchema.parse(params);
-    const cpu = 2000; 
-    const memory = 2048; 
+    const cpu = 2000;
+    const memory = 2048;
 
     const headerList = req.headers;
     const headers = {
       Authorization: headerList.get('Authorization') || ''
     };
-    
+
     const { namespace, k8sCore, k8sNetworkingApp, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
@@ -50,7 +48,7 @@ export async function POST(
 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
@@ -75,12 +73,12 @@ export async function POST(
 
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName
     )) as { body: KBDevboxTypeV2 };
-    
+
     const template = await devboxDB.template.findUnique({
       where: {
         uid: devboxBody.spec.templateID
@@ -100,7 +98,7 @@ export async function POST(
         config: true
       }
     });
-    
+
     if (!template) {
       return jsonRes({
         code: 500,
@@ -116,7 +114,7 @@ export async function POST(
         .catch(() => null),
       k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
     ]);
-    
+
     const ingresses = ingressesResponse?.body.items || [];
     const service = serviceResponse?.body;
 
@@ -153,7 +151,7 @@ export async function POST(
       appForm: {
         appName,
         imageName: image,
-        runCMD: '/bin/bash -c', 
+        runCMD: '/bin/bash -c',
         cmdParam: '/home/devbox/project/entrypoint.sh',
         replicas: 1,
         labels: {
@@ -196,14 +194,14 @@ export async function POST(
     if (!fetchResponse.ok) {
       const errorText = await fetchResponse.text();
       console.error('Applaunchpad API error:', errorText);
-      
+
       let errorData;
       try {
         errorData = JSON.parse(errorText);
       } catch {
         errorData = { error: errorText };
       }
-      
+
       return jsonRes({
         code: fetchResponse.status,
         error: errorData.error || `Failed to deploy to applaunchpad: ${fetchResponse.statusText}`
@@ -230,7 +228,7 @@ export async function POST(
     return jsonRes(response);
   } catch (err: any) {
     console.error('Deploy devbox error:', err);
-    
+
     if (err instanceof z.ZodError) {
       return jsonRes({
         code: 400,

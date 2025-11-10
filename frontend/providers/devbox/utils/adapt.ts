@@ -33,15 +33,19 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     name: string;
   }
 ]): DevboxListItemTypeV2 => {
+  const status =
+    devbox.status?.state === 'Running' &&
+    (devbox.spec.state === 'Stopped' || devbox.spec.state === 'Shutdown')
+      ? devboxStatusMap.Stopping
+      : devbox.status?.state && devboxStatusMap[devbox.status.state]
+        ? devboxStatusMap[devbox.status.state]
+        : devboxStatusMap.Pending;
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
     template,
     remark: devbox.metadata?.annotations?.[devboxRemarkKey] || '',
-    status:
-      devbox.status?.phase && devboxStatusMap[devbox.status.phase]
-        ? devboxStatusMap[devbox.status.phase]
-        : devboxStatusMap.Pending,
+    status,
     sshPort: devbox.status?.network.nodePort || 65535,
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
@@ -55,16 +59,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
       name: '',
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
-    },
-    lastTerminatedReason: devbox.status
-      ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
-        : ''
-      : ''
+    }
   };
 };
 
@@ -74,9 +69,12 @@ export const adaptDevboxDetailV2 = ([
   template
 ]: GetDevboxByNameReturn): DevboxDetailTypeV2 => {
   const status =
-    devbox.status?.phase && devboxStatusMap[devbox.status.phase]
-      ? devboxStatusMap[devbox.status.phase]
-      : devboxStatusMap.Pending;
+    devbox.status?.state === 'Running' &&
+    (devbox.spec.state === 'Stopped' || devbox.spec.state === 'Shutdown')
+      ? devboxStatusMap.Stopping
+      : devbox.status?.state && devboxStatusMap[devbox.status.state]
+        ? devboxStatusMap[devbox.status.state]
+        : devboxStatusMap.Pending;
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
@@ -109,16 +107,7 @@ export const adaptDevboxDetailV2 = ([
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: portInfos || [],
-    lastTerminatedReason: devbox.status
-      ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
-        : ''
-      : ''
+    networks: portInfos || []
   };
 };
 export const adaptDevboxVersionListItem = (
@@ -129,7 +118,8 @@ export const adaptDevboxVersionListItem = (
     name: devboxRelease.metadata.name || 'devbox-release-default',
     devboxName: devboxRelease.spec.devboxName || 'devbox',
     createTime: devboxRelease.metadata.creationTimestamp,
-    tag: devboxRelease.spec.newTag || 'v1.0.0',
+    tag: devboxRelease.spec.version || 'v1.0.0',
+    startDevboxAfterRelease: devboxRelease.spec.startDevboxAfterRelease,
     status:
       devboxRelease?.status?.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]

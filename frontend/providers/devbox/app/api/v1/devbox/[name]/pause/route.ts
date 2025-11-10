@@ -24,12 +24,12 @@ async function updateIngressClass(
     await k8sNetworkingApp.patchNamespacedIngress(
       ingressName,
       namespace,
-      { 
-        metadata: { 
-          annotations: { 
-            'kubernetes.io/ingress.class': 'pause' 
-          } 
-        } 
+      {
+        metadata: {
+          annotations: {
+            'kubernetes.io/ingress.class': 'pause'
+          }
+        }
       },
       undefined,
       undefined,
@@ -42,10 +42,10 @@ async function updateIngressClass(
     await k8sNetworkingApp.patchNamespacedIngress(
       ingressName,
       namespace,
-      { 
-        spec: { 
-          ingressClassName: 'pause' 
-        } 
+      {
+        spec: {
+          ingressClassName: 'pause'
+        }
       },
       undefined,
       undefined,
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
   try {
     const body = await req.json();
     const validationResult = RequestSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return jsonRes({
         code: 400,
@@ -84,23 +84,25 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       undefined,
       `${devboxKey}=${devboxName}`
     );
-    
+
     const ingresses = (ingressesResponse.body as { items: any[] }).items;
     console.log(`Found ${ingresses.length} ingresses for devbox: ${devboxName}`);
 
     const ingressUpdatePromises = ingresses
       .filter((ingress: any) => {
-        const annotationsIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+        const annotationsIngressClass =
+          ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
         const specIngressClass = ingress.spec?.ingressClassName;
-        
-        return (annotationsIngressClass === 'nginx') || (specIngressClass === 'nginx');
+
+        return annotationsIngressClass === 'nginx' || specIngressClass === 'nginx';
       })
       .map((ingress: any) => {
-        const annotationsIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+        const annotationsIngressClass =
+          ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
         const specIngressClass = ingress.spec?.ingressClassName;
-        
+
         console.log(`Updating ingress: ${ingress.metadata.name}`);
-        
+
         return updateIngressClass(
           k8sNetworkingApp,
           ingress.metadata.name,
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
 
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName,
@@ -134,17 +136,16 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
 
     console.log(`Successfully paused devbox: ${devboxName}`);
 
-    return jsonRes({ 
+    return jsonRes({
       data: {
         message: 'success pause devbox',
         devboxName,
         updatedIngresses: ingressUpdatePromises.length
       }
     });
-
   } catch (err: any) {
     console.error('Pause devbox error:', err);
-    
+
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',

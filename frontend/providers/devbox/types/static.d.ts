@@ -20,11 +20,11 @@ export interface Env {
   ingressSecret: string;
   registryAddr: string;
   devboxAffinityEnable: string;
-  squashEnable: string;
   namespace: string;
   rootRuntimeNamespace: string;
   ingressDomain: string;
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
+  storageLimit: string;
 }
 
 export interface RuntimeTypeMap {
