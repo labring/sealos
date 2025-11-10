@@ -16,21 +16,22 @@ import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
+import { readmeCache } from '@/utils/readmeCache';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const {
-      templateName,
-      locale = 'en',
-      includeReadme = 'true'
-    } = req.query as {
+    const envEnableReadme = process.env.ENABLE_README_FETCH;
+    const queryIncludeReadme = req.query.includeReadme !== 'false';
+
+    const includeReadme =
+      envEnableReadme === 'false' ? 'false' : queryIncludeReadme ? 'true' : 'true';
+
+    const { templateName, locale = 'en' } = req.query as {
       templateName: string;
       locale: string;
-      includeReadme: string;
     };
 
     let user_namespace = '';
-
     try {
       const { namespace } = await getK8s({
         kubeconfig: await authSession(req.headers)
@@ -109,7 +110,7 @@ export async function GetTemplateByName({
   namespace,
   templateName,
   locale = 'en',
-  includeReadme = 'true'
+  includeReadme = 'false'
 }: {
   namespace: string;
   templateName: string;
@@ -123,7 +124,7 @@ export async function GetTemplateByName({
 
   const originalPath = process.cwd();
   const targetPath = path.resolve(originalPath, 'templates', targetFolder);
-  // Query by file name in template details
+
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
@@ -133,6 +134,7 @@ export async function GetTemplateByName({
     : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
 
   let { appYaml, templateYaml } = getYamlTemplate(yamlString);
+
   if (!templateYaml) {
     return {
       code: 40000,
@@ -140,6 +142,7 @@ export async function GetTemplateByName({
     };
   }
   templateYaml.spec.deployCount = _tempalte?.spec?.deployCount;
+
   if (cdnUrl) {
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
     templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
@@ -158,7 +161,6 @@ export async function GetTemplateByName({
   templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
   const dataSource = getTemplateDataSource(templateYaml);
 
-  // Convert template to instance
   const instanceName = dataSource?.defaults?.['app_name']?.value;
   if (!instanceName) {
     return {
@@ -172,7 +174,7 @@ export async function GetTemplateByName({
   let readmeContent = '';
   let readUrl = '';
 
-  if (includeReadme) {
+  if (includeReadme === 'true') {
     readUrl = templateYaml?.spec?.i18n?.[locale]?.readme || templateYaml?.spec?.readme || '';
     if (readUrl) {
       try {
@@ -198,6 +200,11 @@ export async function GetTemplateByName({
 async function fetchReadmeContentWithRetry(url: string): Promise<string> {
   if (!url) return '';
 
+  const cachedContent = readmeCache.get(url);
+  if (cachedContent !== null) {
+    return cachedContent;
+  }
+
   let retryCount = 0;
   const maxRetries = 3;
 
@@ -218,7 +225,9 @@ async function fetchReadmeContentWithRetry(url: string): Promise<string> {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.text();
+      const content = await response.text();
+      readmeCache.set(url, content);
+      return content;
     } catch (err) {
       retryCount++;
       if (retryCount === maxRetries) {
