@@ -5,7 +5,6 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { DumpForm } from '@/types/migrate';
 import { fetchDBSecret } from '@/utils/database';
-import { Command } from '@/utils/kubeFileSystem';
 import { formatTime } from '@/utils/tools';
 import yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -63,98 +62,7 @@ export const json2DumpCR = async (
   const userNS = data.namespace;
   const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
 
-  const commands = new Command();
-  // Configure MinIO
-  commands.add(`mc alias set migrationTask $MINIO_URL $MINIO_AK $MINIO_SK`);
-  commands.add(`mc cp migrationTask/$BUCKET/${data.fileName} /root`);
-
-  const secretMysql = `--host=$HOST --port=$PORT --user=$USERNAME --password=$PASSWORD`;
-  const secretPg = `--host=$HOST --port=$PORT --user=$USERNAME -w`;
-  const secretMg = `--host $HOST --port $PORT -u $USERNAME -p $PASSWORD`;
-  // 检查并创建数据库
-  if (!data.databaseExist) {
-    commands.echo(`Database ${data.databaseName} does not exist. Creating...`);
-    switch (data.dbType) {
-      case DBTypeEnum.mysql:
-        commands.add(`mysql ${secretMysql} -e "CREATE DATABASE ${data.databaseName};"`);
-        break;
-      case DBTypeEnum.postgresql:
-        commands.add(`psql ${secretPg} -c "CREATE DATABASE ${data.databaseName};"`);
-        break;
-      case DBTypeEnum.mongodb:
-        commands.add(
-          `mongosh ${secretMg} --eval "db.getSiblingDB('${data.databaseName}').createCollection('init_collection');"`
-        );
-        break;
-    }
-  }
-
-  switch (data.dbType) {
-    case DBTypeEnum.mysql:
-      commands.add(`mysql ${secretMysql} ${data.databaseName} `);
-      break;
-    case DBTypeEnum.postgresql:
-      commands.add(`psql ${secretPg} -d ${data.databaseName}`);
-      break;
-    case DBTypeEnum.mongodb:
-      commands.add(
-        `mongoimport ${secretMg} --db=${data.databaseName} --collection=${data.tableName} `
-      );
-      break;
-  }
-
   const filenameExtension = data.fileName.split('.').at(-1);
-  const filePath = `/root/${data.fileName}`;
-
-  switch (filenameExtension) {
-    case 'sql':
-      switch (data.dbType) {
-        case DBTypeEnum.mysql:
-          commands.push(`< ${filePath}`);
-          break;
-        case DBTypeEnum.postgresql:
-          commands.push(`-f ${filePath}`);
-          break;
-        case DBTypeEnum.mongodb:
-          commands.push(`--file=${filePath}`);
-          break;
-      }
-      break;
-    case 'csv':
-      switch (data.dbType) {
-        case DBTypeEnum.mysql:
-          commands.push(
-            `-e "LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE ${data.databaseName} FIELDS TERMINATED BY ',' ENCLOSED BY '\\"' LINES TERMINATED BY '\\n';"`
-          );
-          break;
-        case DBTypeEnum.postgresql:
-          commands.push(`-c "\\COPY $TABLE_NAME FROM '${filePath}' CSV HEADER;"`);
-          break;
-        case DBTypeEnum.mongodb:
-          commands.push(`--type=csv --file=${filePath} --headerline`);
-          break;
-      }
-    case 'json':
-      switch (data.dbType) {
-        case DBTypeEnum.mongodb:
-          commands.push(`--file=${filePath} --jsonArray`);
-          break;
-        default:
-          throw new Error(`Unsupported '${filenameExtension}' for ${data.dbType}`);
-      }
-      break;
-    case 'bson':
-      switch (data.dbType) {
-        case DBTypeEnum.mongodb:
-          commands.push(`--drop --dir=${filePath}`);
-          break;
-        default:
-          throw new Error(`Unsupported '${filenameExtension}' for ${data.dbType}`);
-      }
-      break;
-    default:
-      throw new Error(`Unsupported file extension: ${filenameExtension}`);
-  }
 
   const Obj = {
     apiVersion: 'batch/v1',
@@ -170,42 +78,175 @@ export const json2DumpCR = async (
       template: {
         spec: {
           restartPolicy: 'Never',
-          containers: [
+          volumes: [{ name: 'import-data', emptyDir: { sizeLimit: '6Gi' } }],
+          initContainers: [
             {
-              name: 'import-data',
-              image: process.env.MIGRATE_FILE_IMAGE,
+              name: 'fetch-file',
+              image: process.env.MIGRATE_FILE_FETCH_FILE_IMAGE,
+              resources: {
+                requests: {
+                  cpu: '50m',
+                  memory: '64Mi',
+                  'ephemeral-storage': '2Gi'
+                },
+                limits: {
+                  cpu: '2000m',
+                  memory: '4Gi',
+                  'ephemeral-storage': '6Gi'
+                }
+              },
               env: [
-                {
-                  name: 'MINIO_AK',
-                  value: process.env.MINIO_ACCESS_KEY
-                },
-                {
-                  name: 'MINIO_SK',
-                  value: process.env.MINIO_SECRET_KEY
-                },
                 {
                   name: 'MINIO_URL',
                   value: `http://${process.env.MINIO_URL}`
                 },
                 {
-                  name: 'BUCKET',
+                  name: 'MINIO_ACCESS_KEY',
+                  value: process.env.MINIO_ACCESS_KEY
+                },
+                {
+                  name: 'MINIO_SECRET_KEY',
+                  value: process.env.MINIO_SECRET_KEY
+                },
+                {
+                  name: 'MINIO_BUCKET',
                   value: process.env.MINIO_BUCKET_NAME
                 },
-                { name: 'USERNAME', value: data.username },
                 {
-                  name: data.dbType === DBTypeEnum.postgresql ? 'PGPASSWORD' : 'PASSWORD',
-                  value: data.password
+                  name: 'FILE_NAME',
+                  value: data.fileName
+                }
+              ],
+              command: [
+                '/bin/sh',
+                '-c',
+                `
+mc alias set migrationTask $MINIO_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+mc cp migrationTask/$MINIO_BUCKET/$FILE_NAME /data/$FILE_NAME
+                `
+              ],
+              volumeMounts: [
+                {
+                  name: 'import-data',
+                  mountPath: '/data'
+                }
+              ]
+            }
+          ],
+          containers: [
+            {
+              name: 'import-data',
+              image: process.env.MIGRATE_FILE_IMPORT_DATA_IMAGE,
+              resources: {
+                requests: {
+                  cpu: '50m',
+                  memory: '64Mi',
+                  'ephemeral-storage': '2Gi'
+                },
+                limits: {
+                  cpu: '2000m',
+                  memory: '4Gi',
+                  'ephemeral-storage': '6Gi'
+                }
+              },
+              env: [
+                {
+                  name: 'DB_TYPE',
+                  value: data.dbType
                 },
                 {
-                  name: 'HOST',
+                  name: 'DB_HOST',
                   value: data.host
                 },
                 {
-                  name: 'PORT',
+                  name: 'DB_PORT',
                   value: data.port
+                },
+                {
+                  name: 'DB_USER',
+                  value: data.username
+                },
+                {
+                  name: 'DB_PASS',
+                  value: data.password
+                },
+                {
+                  name: 'DB_NAME',
+                  value: data.databaseName
+                },
+                {
+                  name: 'TABLE_NAME',
+                  value: data.tableName
+                },
+                {
+                  name: 'IMPORT_FORMAT',
+                  value: filenameExtension
+                },
+                {
+                  name: 'FILE_NAME',
+                  value: data.fileName
+                },
+                {
+                  name: 'PGPASSWORD',
+                  value: data.password
                 }
               ],
-              command: commands.get()
+              command: [
+                '/bin/sh',
+                '-c',
+                `
+set -e
+
+IMPORT_DIR="/data"
+FILE="$IMPORT_DIR/$FILE_NAME"
+
+if [ "$DB_TYPE" = "mysql" ] || [ "$DB_TYPE" = "apecloud-mysql" ]; then
+  echo "检查并导入 MySQL..."
+  DB_EXISTS=$(mysql -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS -e "SHOW DATABASES LIKE '$DB_NAME';" | grep "$DB_NAME" || true)
+  if [ -z "$DB_EXISTS" ]; then
+    mysql -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS -e "CREATE DATABASE $DB_NAME;"
+  fi
+
+  if [ "$IMPORT_FORMAT" = "sql" ]; then
+    mysql -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME < $FILE
+  elif [ "$IMPORT_FORMAT" = "csv" ]; then
+    mysql -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -e "LOAD DATA LOCAL INFILE '$FILE' INTO TABLE $TABLE_NAME FIELDS TERMINATED BY ',' ENCLOSED BY '\\\"' LINES TERMINATED BY '\\n';"
+  fi
+
+elif [ "$DB_TYPE" = "postgresql" ]; then
+  echo "检查并导入 PostgreSQL..."
+  DB_EXISTS=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -w -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';")
+  if [ "$DB_EXISTS" != "1" ]; then
+    psql -h $DB_HOST -p $DB_PORT -U $DB_USER -w -c "CREATE DATABASE $DB_NAME;"
+  fi
+
+  if [ "$IMPORT_FORMAT" = "sql" ]; then
+    psql -h $DB_HOST -p $DB_PORT -U $DB_USER -w -d $DB_NAME -f $FILE
+  elif [ "$IMPORT_FORMAT" = "csv" ]; then
+    psql -h $DB_HOST -p $DB_PORT -U $DB_USER -w -d $DB_NAME -c "\\COPY $TABLE_NAME FROM '$FILE' CSV HEADER;"
+  fi
+
+elif [ "$DB_TYPE" = "mongodb" ]; then
+  echo "检查并导入 MongoDB..."
+  if [ "$IMPORT_FORMAT" = "json" ]; then
+    mongoimport --host=$DB_HOST --port=$DB_PORT --username=$DB_USER --password=$DB_PASS --db=$DB_NAME --collection=$TABLE_NAME --file=$FILE --jsonArray
+  elif [ "$IMPORT_FORMAT" = "bson" ]; then
+    mongorestore --host=$DB_HOST --port=$DB_PORT --username=$DB_USER --password=$DB_PASS --db=$DB_NAME --drop --dir=$FILE
+  elif [ "$IMPORT_FORMAT" = "csv" ]; then
+    mongoimport --host=$DB_HOST --port=$DB_PORT --username=$DB_USER --password=$DB_PASS --db=$DB_NAME --collection=$TABLE_NAME --type=csv --file=$FILE --headerline
+  fi
+else
+  echo "Unsupported DB_TYPE: $DB_TYPE"
+  exit 1
+fi
+`
+              ],
+              volumeMounts: [
+                {
+                  name: 'import-data',
+                  mountPath: '/data'
+                }
+              ]
             }
           ]
         }
