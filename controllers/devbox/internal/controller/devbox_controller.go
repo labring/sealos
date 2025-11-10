@@ -249,8 +249,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, events.ReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
 		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, events.ReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
-
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	logger.Info("devbox reconcile success")
@@ -1242,10 +1240,10 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
-		For(&devboxv1alpha2.Devbox{}).
-		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
-		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		For(&devboxv1alpha2.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})). // enqueue request if devbox spec is updated
+		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).      // enqueue request if pod spec/status is updated
+		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).       // enqueue request if service spec is updated
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).        // enqueue request if secret spec is updated
 		WithEventFilter(NewControllerRestartPredicate(r.RestartPredicateDuration)).
 		Complete(r)
 }

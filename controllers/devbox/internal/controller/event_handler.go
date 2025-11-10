@@ -97,11 +97,30 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 		}
 		start := time.Now()
 		h.Logger.Info("start commit devbox", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", start)
-		if err := h.commitDevbox(ctx, devbox, targetState); err != nil {
-			commitMap.Delete(devbox.Status.ContentID)
-			h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
+
+		// retry commit devbox with retry logic
+		// backoff: 2s, 4s, 8s
+		err := retry.OnError(wait.Backoff{
+			Duration: 2 * time.Second,
+			Factor:   1.0,
+			Jitter:   0.1,
+			Steps:    3,
+		}, func(err error) bool {
+			return true
+		}, func() error {
+			err := h.commitDevbox(ctx, devbox, targetState)
+			if err != nil {
+				commitMap.Delete(devbox.Status.ContentID)
+				h.Logger.Error(err, "failed to commit devbox in retry", "devbox", devbox.Name)
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			h.Logger.Error(err, "failed to commit devbox after retries", "devbox", devbox.Name)
 			return err
 		}
+
 		h.Logger.Info("commit devbox success", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", time.Since(start))
 	} else if currentState != targetState {
 		// Handle simple state transitions without commit with retry
