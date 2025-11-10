@@ -42,9 +42,11 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
   if (!devboxDetail) return null;
 
   const isStopping = devboxDetail.status.value === DevboxStatusEnum.Stopping;
+  const isPending = devboxDetail.status.value === DevboxStatusEnum.Pending;
   const isStopped =
     devboxDetail.status.value === DevboxStatusEnum.Stopped ||
     devboxDetail.status.value === DevboxStatusEnum.Shutdown;
+  const isDisabled = isStopping || isPending;
 
   return (
     <div className="flex min-h-20 w-full items-center justify-between gap-5">
@@ -69,7 +71,6 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           variant="outline"
           className="h-10 w-10 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
           onClick={() => setDelDevbox(devboxDetail)}
-          disabled={isStopping}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -77,7 +78,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           variant="outline"
           size="icon"
           className="h-10 w-10 bg-white text-neutral-500 hover:text-neutral-600"
-          disabled={devboxDetail.status.value !== 'Running' || isStopping}
+          disabled={devboxDetail.status.value !== 'Running'}
           onClick={() => handleGoToTerminal(devboxDetail)}
         >
           <Terminal className="h-4 w-4" />
@@ -88,7 +89,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
               variant="outline"
               size="lg"
               onClick={() => handleStartDevbox(devboxDetail)}
-              disabled={isStopping}
+              disabled={isDisabled}
             >
               {t('start')}
             </Button>
@@ -98,7 +99,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
               size="lg"
               className="guide-close-button"
               onClick={() => setOnOpenShutdown(true)}
-              disabled={isStopping}
+              disabled={isDisabled}
             >
               {t('pause')}
             </Button>
@@ -107,7 +108,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             variant="outline"
             size="lg"
             onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}&from=detail`)}
-            disabled={isStopping}
+            disabled={isDisabled}
           >
             {t('update')}
           </Button>
@@ -115,7 +116,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             variant="outline"
             size="lg"
             onClick={() => handleRestartDevbox(devboxDetail)}
-            disabled={isStopping || isStopped}
+            disabled={isDisabled || isStopped}
           >
             {t('restart')}
           </Button>
@@ -129,12 +130,12 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           leftButtonProps={{
             className:
               'h-[39px] border border-r-[0.5px] border-r-[rgba(228,228,231,0.20)] border-l-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-r-none hover:bg-zinc-800',
-            disabled: isStopping
+            disabled: isDisabled
           }}
           rightButtonProps={{
             className:
               'h-[39px] border border-l-[0.5px] border-l-[rgba(228,228,231,0.20)] border-r-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-l-none hover:bg-zinc-800',
-            disabled: isStopping
+            disabled: isDisabled
           }}
         />
       </div>

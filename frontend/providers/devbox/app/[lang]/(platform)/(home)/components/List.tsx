@@ -470,6 +470,10 @@ const DevboxList = ({
         size: 300,
         cell: ({ row }) => {
           const item = row.original;
+          const isStopping = item.status.value === DevboxStatusEnum.Stopping;
+          const isPending = item.status.value === DevboxStatusEnum.Pending;
+          const isDisabled = isStopping || isPending;
+
           return (
             <div className="flex items-center justify-start gap-2">
               <IDEButton
@@ -478,7 +482,11 @@ const DevboxList = ({
                 status={item.status}
                 runtimeType={item.template.templateRepository.iconId as string}
                 leftButtonProps={{
-                  className: 'border-r-1 w-36 rounded-r-none px-2'
+                  className: 'border-r-1 w-36 rounded-r-none px-2',
+                  disabled: isDisabled
+                }}
+                rightButtonProps={{
+                  disabled: isDisabled
                 }}
               />
               <Button
@@ -501,7 +509,11 @@ const DevboxList = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem className="h-9" onClick={() => handleOpenRelease(item)}>
+                  <DropdownMenuItem
+                    className="h-9"
+                    disabled={isDisabled}
+                    onClick={() => handleOpenRelease(item)}
+                  >
                     <ArrowBigUpDash className="h-4 w-4 text-neutral-500" />
                     {t('release')}
                   </DropdownMenuItem>
@@ -516,6 +528,7 @@ const DevboxList = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                    disabled={isDisabled}
                     onClick={() => router.push(`/devbox/create?name=${item.name}&from=list`)}
                   >
                     <PencilLine className="h-4 w-4 text-neutral-500" />
@@ -524,6 +537,7 @@ const DevboxList = ({
                   {(item.status.value === 'Stopped' || item.status.value === 'Shutdown') && (
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                      disabled={isDisabled}
                       onClick={() => handleStartDevbox(item)}
                     >
                       <Play className="h-4 w-4 text-neutral-500" />
@@ -533,6 +547,7 @@ const DevboxList = ({
                   {item.status.value !== 'Stopped' && item.status.value !== 'Shutdown' && (
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                      disabled={isDisabled}
                       onClick={() => handleRestartDevbox(item)}
                     >
                       <IterationCw className="h-4 w-4 text-neutral-500" />
@@ -542,6 +557,7 @@ const DevboxList = ({
                   {item.status.value === 'Running' && (
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                      disabled={isDisabled}
                       onClick={() => {
                         setOnOpenShutdown(true);
                         setCurrentDevboxListItem(item);
@@ -555,6 +571,7 @@ const DevboxList = ({
                   <DropdownMenuItem
                     variant="destructive"
                     className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                    disabled={isDisabled}
                     onClick={() => setDelDevbox(item)}
                   >
                     <Trash2 className="h-4 w-4" />
