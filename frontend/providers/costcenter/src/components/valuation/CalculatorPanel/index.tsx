@@ -182,12 +182,10 @@ export default function CalculatorPanel({
     const memoryAmount = config.resources.memory.val * memoryPrice;
     const storagePrice = priceData.find((x) => x.title === 'storage')?.price || 0;
     const storageAmount = config.resources.storage * storagePrice;
-    const networkPrice = priceData.find((x) => x.title === 'network')?.price || 0;
-    const networkAmount = config.resources.network * networkPrice;
 
     const portPrice = priceData.find((x) => x.title === 'Port')?.price || 0;
     const portAmount = config.resources.ports * portPrice;
-    let amount = cpuAmount + memoryAmount + storageAmount + networkAmount + portAmount;
+    let amount = cpuAmount + memoryAmount + storageAmount + portAmount;
     if (gpuEnabled) {
       const gpuPrice = gpuData[config.resources.gpu.idx]?.price || 0;
       const gpuAmount = config.resources.gpu.count * gpuPrice;
@@ -195,6 +193,7 @@ export default function CalculatorPanel({
     }
     amount = Math.floor(amount);
     const duration_scale = PRICE_CYCLE_SCALE[config.usage.timeUnit] || 1;
+
     console.log(
       'amount: ',
       amount,
@@ -209,7 +208,13 @@ export default function CalculatorPanel({
       'timeUnit: ',
       config.usage.timeUnit
     );
-    amount = amount * config.usage.quantity * duration_scale * config.usage.duration;
+
+    amount = amount * config.usage.quantity * config.usage.duration;
+
+    const networkPrice = priceData.find((x) => x.title === 'network')?.price || 0;
+    const networkAmount = config.resources.network * networkPrice;
+
+    amount = amount + networkAmount;
 
     return formatMoney(amount).toFixed(6);
   }, [
