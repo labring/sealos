@@ -471,5 +471,6 @@
     "quota_in_use": "In use: ",
     "quota_total": "Total: ",
     "title": "Insufficient Resources"
-  }
+  },
+  "need_manual_table_creation": "You need to create the table manually according to the CSV file."
 }

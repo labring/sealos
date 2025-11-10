@@ -1,4 +1,4 @@
-import { CloudMigraionLabel, DBTypeEnum } from '@/constants/db';
+import { CloudMigraionLabel } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -25,7 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           process.env.MINIO_SECRET_KEY &&
           process.env.MINIO_URL &&
           process.env.MINIO_BUCKET_NAME &&
-          process.env.MIGRATE_FILE_IMAGE
+          process.env.MIGRATE_FILE_FETCH_FILE_IMAGE &&
+          process.env.MIGRATE_FILE_IMPORT_DATA_IMAGE
       )
     ) {
       throw new Error('MinIO related environment variables are not configured!');

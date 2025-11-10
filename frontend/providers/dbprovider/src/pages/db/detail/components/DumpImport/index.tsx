@@ -21,6 +21,7 @@ import {
   Button,
   Divider,
   Flex,
+  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -61,7 +62,6 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const [migrateName, setMigrateName] = useState('');
   const [podName, setPodName] = useState('');
   const [fileProgressText, setFileProgressText] = useState('');
-  const [forceUpdate, setForceUpdate] = useState(false);
 
   // Quota related state
   const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
@@ -70,7 +70,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
   const { SystemEnv } = useEnvStore();
 
-  const { getValues, setValue: setValue_ } = formHook;
+  const { getValues, setValue, watch } = formHook;
+  const tableName = watch('tableName');
 
   // Load user quota on component mount
   useEffect(() => {
@@ -79,17 +80,6 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     loadUserQuota();
     setQuotaLoaded(true);
   }, [quotaLoaded, loadUserQuota]);
-
-  const setValue: typeof setValue_ = function (
-    key: Parameters<typeof setValue>[0],
-    value: Parameters<typeof setValue>[1]
-  ) {
-    setValue_(key, value);
-    if (key === 'databaseName') {
-      setValue_('tableName', '');
-    }
-    setForceUpdate(!forceUpdate);
-  };
 
   const checkQuotaAndProceed = () => {
     // Check quota before showing confirmation dialog
@@ -314,7 +304,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                 inputSureToCreate={assembleTranslate(['create', 'database'], language)}
               />
             </Flex>
-            {db?.dbType === 'mongodb' && (
+            {db?.dbType === 'mongodb' ? (
               <Flex alignItems={'center'} mt="22px">
                 <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
                   {t('collection_name')}
@@ -332,6 +322,28 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   )}
                 />
               </Flex>
+            ) : (
+              // [TODO] Temporary solution, only show table name field for CSV files.
+              files[0]?.name.endsWith('.csv') && (
+                <>
+                  <Flex alignItems={'center'} mt="22px">
+                    <Text
+                      fontSize={'base'}
+                      fontWeight={'bold'}
+                      minW={'120px'}
+                      color={'grayModern.900'}
+                    >
+                      {t('table_name')}
+                    </Text>
+                    <Input
+                      value={tableName}
+                      onChange={(e) => setValue('tableName', e.target.value)}
+                    />
+                  </Flex>
+
+                  <Text mt={'8px'}>{t('need_manual_table_creation')}</Text>
+                </>
+              )
             )}
 
             <Flex justifyContent={'end'}>
