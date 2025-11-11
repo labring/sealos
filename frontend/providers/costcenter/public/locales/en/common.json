@@ -334,7 +334,8 @@
   },
   "payg_cost_drawer": {
     "amount": "Amount",
-    "total_amount": "Total Amount"
+    "total_amount": "Total Amount",
+    "unknown_region": "Unknown Region"
   },
   "bonus_amount": "Bonus Amount",
   "sealos_coin_text": "Sealos Coin icon",
