@@ -310,7 +310,8 @@ export default function TeamCenter({
                           </Badge>
                         )}
 
-                        {selectedNsPlan && (
+                        {/* Subscription plan tag */}
+                        {layoutConfig?.common.subscriptionEnabled && selectedNsPlan && (
                           <Badge
                             variant={'subscription'}
                             className={cn(
