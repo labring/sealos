@@ -55,7 +55,7 @@ export function AppBillingDrawer({
       const workspace = nsListData.find(([id]: [string, string]) => id === selectedApp.namespace);
       return workspace?.[1];
     }
-    return selectedApp?.namespace ?? t('common.unknown_workspace');
+    return selectedApp?.namespace ?? t('common:unknown_workspace');
   }, [selectedApp?.namespace, nsListData]);
 
   // App billing query for drawer
