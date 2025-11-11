@@ -380,8 +380,8 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	return errors2.Join(errs...)
 }
 
-func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace string) error {
-	err := deleteResource(r.dynamicClient, "backup", namespace)
+func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace string) error {
+	err := deleteResource(ctx, r.dynamicClient, "backup", namespace)
 	if err != nil {
 		return err
 	}
@@ -394,7 +394,7 @@ func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace st
 	errChan := make(chan error, len(deleteResources))
 	for _, rs := range deleteResources {
 		go func(resource string) {
-			errChan <- deleteResource(r.dynamicClient, resource, namespace)
+			errChan <- deleteResource(ctx, r.dynamicClient, resource, namespace)
 		}(rs)
 	}
 	for range deleteResources {
@@ -2225,8 +2225,11 @@ func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace 
 	return nil
 }
 
-func deleteResource(dynamicClient dynamic.Interface, resource, namespace string) error {
-	ctx := context.Background()
+func deleteResource(
+	ctx context.Context,
+	dynamicClient dynamic.Interface,
+	resource, namespace string,
+) error {
 	deletePolicy := v12.DeletePropagationForeground
 	var gvr schema.GroupVersionResource
 	switch resource {
