@@ -217,7 +217,8 @@
   "pay_with_wechat": "微信支付",
   "payg_cost_drawer": {
     "amount": "金额",
-    "total_amount": "总金额"
+    "total_amount": "总金额",
+    "unknown_region": "未知可用区"
   },
   "payg_cost_table": {
     "title": "按量付费",

@@ -62,9 +62,11 @@ export function PAYGCostTableView({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="w-[12ch] truncate">{item.appName}</div>
+              <div className="w-[12ch] truncate">
+                {item.appName || t('applist:' + item.appType)}
+              </div>
             </TooltipTrigger>
-            <TooltipContent>{item.appName}</TooltipContent>
+            <TooltipContent>{item.appName || t('applist:' + item.appType)}</TooltipContent>
           </Tooltip>
         </div>
       </TableCell>
