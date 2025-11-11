@@ -482,11 +482,7 @@ const DevboxList = ({
                 status={item.status}
                 runtimeType={item.template.templateRepository.iconId as string}
                 leftButtonProps={{
-                  className: 'border-r-1 w-36 rounded-r-none px-2',
-                  disabled: isDisabled
-                }}
-                rightButtonProps={{
-                  disabled: isDisabled
+                  className: 'border-r-1 w-36 rounded-r-none px-2'
                 }}
               />
               <Button
