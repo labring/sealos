@@ -204,25 +204,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     try {
       const doc = yaml.load(yamlString) as any;
       const cpuStr: string | undefined = doc?.spec?.componentSpecs?.[0]?.resources?.limits?.cpu;
-      if (!cpuStr) return 0;
-
-      if (cpuStr.endsWith('m')) {
-        const milli = parseInt(cpuStr.slice(0, -1), 10);
-        return milli / 1000;
-      }
-
-      return parseFloat(cpuStr);
-    } catch (err) {
-      console.error(err);
-      return 0;
+      if (!cpuStr) return 8;
+      const cpu = parseInt(cpuStr.replace('m', ''));
+      return Math.ceil(cpu / 1000);
+    } catch (error) {
+      return 8;
     }
   }
+
   const cpu = useMemo(() => {
+    if (yamlList.length === 0) return 8;
     const clusterYaml = yamlList.find((item) => item.filename === 'cluster.yaml');
-    if (clusterYaml) {
-      return getCpuCores(clusterYaml.value);
-    }
-    return 0;
+    if (!clusterYaml) return 8;
+    return getCpuCores(clusterYaml.value);
   }, [yamlList]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
