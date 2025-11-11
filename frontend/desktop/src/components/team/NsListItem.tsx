@@ -7,6 +7,7 @@ import BoringAvatar from 'boring-avatars';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { cn } from '@sealos/shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
+import { useConfigStore } from '@/stores/config';
 
 const NsListItem = ({
   isSelected,
@@ -29,6 +30,7 @@ const NsListItem = ({
   planName?: string;
 } & FlexProps) => {
   const queryClient = useQueryClient();
+  const { layoutConfig } = useConfigStore();
   const { t } = useTranslation();
 
   return (
@@ -73,7 +75,9 @@ const NsListItem = ({
           {/* {isPrivate ? t('common:default_team') : teamName} */}
           {teamName}
         </Text>
-        {planName && (
+
+        {/* Subscription plan tag */}
+        {layoutConfig?.common.subscriptionEnabled && planName && (
           <Badge
             variant={'subscription'}
             className={cn(getPlanBackgroundClass(planName, planName === 'PAYG', false))}
