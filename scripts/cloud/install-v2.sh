@@ -445,6 +445,7 @@ run_cloud(){
 
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["account"]}:${sealos_cloud_version} \
     --env MONGO_URI=\"${varDatabaseMongodbURI}\" \
+    --env TRAFFIC_MONGO_URI=\"${varDatabaseMongodbURI}\" \
     --env cloudDomain=\"${varCloudDomain}\" \
     --env cloudPort=\"${varCloudPort}\" \
     --env DEFAULT_NAMESPACE=\"account-system\" \
