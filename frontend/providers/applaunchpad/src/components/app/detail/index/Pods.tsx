@@ -86,6 +86,49 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       )
     },
     {
+      title: 'Containers',
+      key: 'containers',
+      render: (item: PodDetailType) => (
+        <Flex gap={'6px'}>
+          {item.containerStatuses.map((container) => {
+            return (
+              <MyTooltip
+                key={container.name}
+                label={
+                  <>
+                    <Box>{container.name}</Box>
+                    <Box color={container.state.color}>
+                      {container.state.label}{' '}
+                      {container.state.reason && <>({container.state.reason})</>}
+                    </Box>
+                    <Flex gap={'8px'}>
+                      {container.cpuLimit && (
+                        <span>
+                          {t('CPU')}: {container.cpuLimit}
+                        </span>
+                      )}{' '}
+                      {container.memoryLimit && (
+                        <span>
+                          {t('Memory')}: {container.memoryLimit}
+                        </span>
+                      )}
+                    </Flex>
+                  </>
+                }
+              >
+                <Box
+                  width={'16px'}
+                  height={'16px'}
+                  backgroundColor={container.state.color}
+                  borderRadius={'4px'}
+                />
+              </MyTooltip>
+            );
+          })}
+        </Flex>
+      )
+    },
+    {
       title: 'Status',
       key: 'status',
       render: (item: PodDetailType) => (
@@ -112,9 +155,9 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       render: (item: PodDetailType) => (
         <Flex alignItems={'center'} fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
           {item.restarts}
-          {!!item.containerStatus.reason && (
-            <Flex alignItems={'center'} color={item.containerStatus?.color}>
-              (<Text>{item.containerStatus?.reason}</Text>)
+          {!!item.containerStatuses[0].state.reason && (
+            <Flex alignItems={'center'} color={item.containerStatuses[0].state.color}>
+              (<Text>{item.containerStatuses[0].state.reason}</Text>)
             </Flex>
           )}
         </Flex>
@@ -286,8 +329,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                      ? `${app[col.dataIndex]}`
-                      : '-'}
+                        ? `${app[col.dataIndex]}`
+                        : '-'}
                   </Td>
                 ))}
               </Tr>

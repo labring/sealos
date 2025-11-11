@@ -212,7 +212,12 @@ export const MOCK_PODS: PodDetailType[] = [
     },
     cpu: 0,
     memory: 0,
-    containerStatus: podStatusMap.running
+    containerStatuses: [
+      {
+        name: 'hello-world',
+        state: podStatusMap.running
+      }
+    ]
   },
   {
     podName: '2',
@@ -233,7 +238,12 @@ export const MOCK_PODS: PodDetailType[] = [
     },
     cpu: 0,
     memory: 0,
-    containerStatus: podStatusMap.running
+    containerStatuses: [
+      {
+        name: 'hello-world',
+        state: podStatusMap.running
+      }
+    ]
   }
 ];
 
