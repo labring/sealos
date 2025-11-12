@@ -326,6 +326,7 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
+// GenerateStartupVolume generates a volume for the startup script configmap
 func GenerateStartupVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	return corev1.Volume{
 		Name: "devbox-startup",
