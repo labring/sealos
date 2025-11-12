@@ -196,7 +196,7 @@ func (r *DevboxReconciler) syncStartupConfigMap(ctx context.Context, devbox *dev
 		return fmt.Errorf("failed to get startup configmap: %w", err)
 	}
 	if startupConfigMap.Data == nil || startupConfigMap.Data["startup.sh"] == "" {
-		return fmt.Errorf("startup configmap is empty")
+		return fmt.Errorf("startup configmap %s/%s is missing the 'startup.sh' key or it is empty", r.StartupConfigMapNamespace, r.StartupConfigMapName)
 	}
 	err = r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxConfigmap)
 	if err == nil {
