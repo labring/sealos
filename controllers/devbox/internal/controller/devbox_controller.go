@@ -201,11 +201,10 @@ func (r *DevboxReconciler) syncStartupConfigMap(ctx context.Context, devbox *dev
 	err = r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxConfigmap)
 	if err == nil {
 		// configmap already exists, no need to create
-
+		if devboxConfigmap.Data == nil {
+			devboxConfigmap.Data = make(map[string]string)
+		}
 		if _, ok := devboxConfigmap.Data["startup.sh"]; !ok || devboxConfigmap.Data["startup.sh"] != startupConfigMap.Data["startup.sh"] {
-			if devboxConfigmap.Data == nil {
-				devboxConfigmap.Data = make(map[string]string)
-			}
 			devboxConfigmap.Data["startup.sh"] = startupConfigMap.Data["startup.sh"]
 			if err := r.Update(ctx, devboxConfigmap); err != nil {
 				return fmt.Errorf("failed to update configmap: %w", err)
