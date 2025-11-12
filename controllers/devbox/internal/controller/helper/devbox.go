@@ -339,6 +339,7 @@ func GenerateStartupVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 		},
 	}
 }
+// GenerateStartupVolumeMounts generates volume mounts for the startup script
 func GenerateStartupVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
