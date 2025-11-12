@@ -250,9 +250,11 @@ func main() {
 			DefaultLimit:   resource.MustParse(limitEphemeralStorage),
 			MaximumLimit:   resource.MustParse(maximumLimitEphemeralStorage),
 		},
-		PodMatchers:              podMatchers,
-		DebugMode:                debugMode,
-		RestartPredicateDuration: restartPredicateDuration,
+		PodMatchers:               podMatchers,
+		DebugMode:                 debugMode,
+		StartupConfigMapName:      os.Getenv("DEVBOX_STARTUP_CM_NAME"),
+		StartupConfigMapNamespace: os.Getenv("DEVBOX_STARTUP_CM_NAMESPACE"),
+		RestartPredicateDuration:  restartPredicateDuration,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
