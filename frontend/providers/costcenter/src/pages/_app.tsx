@@ -21,7 +21,6 @@ import 'react-day-picker/dist/style.css';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { ChakraProvider } from '@chakra-ui/react';
-import useSessionStore from '@/stores/session';
 
 // Make sure to call `loadStripe` outside a component’s render to avoid
 // recreating the `Stripe` object on every render.
@@ -55,7 +54,6 @@ const App = ({ Component, pageProps }: AppProps) => {
     // Add postMessage listener to handle external communication
     const handlePostMessage = ({
       data,
-      origin,
       source
     }: MessageEvent<{
       type: string;
@@ -67,7 +65,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       try {
         if (!source) return;
         if (data && typeof data === 'object' && data.type === 'InternalAppCall') {
-          // Forward parameters to plan page
+          // Forward parameters
           const params = new URLSearchParams();
           if (data.page) params.set('page', data.page);
           if (data.mode) params.set('mode', data.mode);
@@ -75,7 +73,7 @@ const App = ({ Component, pageProps }: AppProps) => {
           if (data.payId) params.set('payId', data.payId);
 
           const queryString = params.toString();
-          const targetUrl = queryString ? `/plan?${queryString}` : '/plan';
+          const targetUrl = queryString ? `/?${queryString}` : '/';
 
           router.replace(targetUrl, undefined, { shallow: false });
         }
