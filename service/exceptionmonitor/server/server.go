@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
-
+	"github.com/labring/sealos/service/exceptionmonitor/helper/monitor"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,7 +62,7 @@ func handleListDatabases(rw http.ResponseWriter, req *http.Request) {
 
 	result := make([]DatabaseInfo, 0, len(clusters.Items))
 	for _, c := range clusters.Items {
-		info := collectDatabaseInfo(ctx, ns, c)
+		info := collectDatabaseInfo(ctx, c)
 		result = append(result, info)
 	}
 
@@ -76,30 +76,43 @@ func handleListDatabases(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func collectDatabaseInfo(ctx context.Context, namespace string, cluster metav1unstructured.Unstructured) DatabaseInfo {
-	name := cluster.GetName()
+func collectDatabaseInfo(ctx context.Context, cluster metav1unstructured.Unstructured) DatabaseInfo {
 	status, _, _ := metav1unstructured.NestedString(cluster.Object, "status", "phase")
+	databaseClusterName, databaseType, namespace := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace()
 
-	// Gather related events as details
-	events, err := api.ClientSet.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("involvedObject.name=%s", name),
-	})
-	details := ""
-	if err == nil {
-		var lines []string
-		for _, e := range events.Items {
-			lines = append(lines, fmt.Sprintf("%s - %s", e.Reason, e.Message))
-		}
-		details = strings.Join(lines, "\n")
+	notificationInfo := api.Info{}
+	notificationInfo.DatabaseClusterName = databaseClusterName
+	notificationInfo.Namespace = namespace
+	notificationInfo.DatabaseType = databaseType
+	maxUsage, err := monitor.CheckPerformance(&notificationInfo, "disk")
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	reason := deriveReason(status, details)
+	// Gather related events as details
+	//events, err := api.ClientSet.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
+	//	FieldSelector: fmt.Sprintf("involvedObject.name=%s", databaseClusterName),
+	//})
+	if maxUsage > api.DatabaseExceptionMonitorThreshold {
+		notificationInfo.Reason = "disk is full"
+	}
+	//fmt.Println(events)
+	//details := ""
+	//if err == nil {
+	//	var lines []string
+	//	for _, e := range events.Items {
+	//		lines = append(lines, fmt.Sprintf("%s - %s", e.Reason, e.Message))
+	//	}
+	//	details = strings.Join(lines, "\n")
+	//}
+	//
+	//reason := deriveReason(status, details)
 
 	return DatabaseInfo{
-		Name:    name,
+		Name:    databaseClusterName,
 		Status:  status,
-		Reason:  reason,
-		Details: details,
+		Reason:  notificationInfo.Reason,
+		Details: notificationInfo.Events,
 	}
 }
 

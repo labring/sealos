@@ -16,7 +16,7 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
-func checkPerformance(notificationInfo *api.Info, checkType string) (float64, error) {
+func CheckPerformance(notificationInfo *api.Info, checkType string) (float64, error) {
 	params := url.Values{}
 	params.Add("namespace", notificationInfo.Namespace)
 	params.Add("app", notificationInfo.DatabaseClusterName)
