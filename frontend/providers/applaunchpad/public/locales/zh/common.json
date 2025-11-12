@@ -433,5 +433,6 @@
     "container": "容器",
     "pod": "Pod",
     "stream": "输出流"
-  }
+  },
+  "Containers": "容器"
 }

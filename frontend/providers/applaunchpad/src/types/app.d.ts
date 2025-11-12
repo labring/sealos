@@ -176,6 +176,14 @@ export interface PodStatusMapType {
   reason?: string;
   message?: string;
 }
+
+export interface ContainerStatusType {
+  name: string;
+  state: PodStatusMapType;
+  cpuLimit?: string;
+  memoryLimit?: string;
+}
+
 export interface PodDetailType extends V1Pod {
   podName: string;
   status: PodStatusMapType;
@@ -189,7 +197,7 @@ export interface PodDetailType extends V1Pod {
   memory: number;
   podReason?: string;
   podMessage?: string;
-  containerStatus: PodStatusMapType;
+  containerStatuses: ContainerStatusType[];
 }
 export interface PodMetrics {
   podName: string;

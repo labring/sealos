@@ -433,5 +433,6 @@
     "container": "Container",
     "pod": "Pod",
     "stream": "Stream"
-  }
+  },
+  "Containers": "Containers"
 }
