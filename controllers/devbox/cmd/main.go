@@ -236,6 +236,13 @@ func main() {
 		podMatchers = append(podMatchers, matcher.EphemeralStorageMatcher{})
 	}
 
+	startupCMName := os.Getenv("DEVBOX_STARTUP_CM_NAME")
+	startupCMNamespace := os.Getenv("DEVBOX_STARTUP_CM_NAMESPACE")
+	if (startupCMName != "" && startupCMNamespace == "") || (startupCMName == "" && startupCMNamespace != "") {
+		setupLog.Error(nil, "both DEVBOX_STARTUP_CM_NAME and DEVBOX_STARTUP_CM_NAMESPACE must be set together")
+		os.Exit(1)
+	}
+
 	if err = (&controller.DevboxReconciler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
@@ -252,8 +259,8 @@ func main() {
 		},
 		PodMatchers:               podMatchers,
 		DebugMode:                 debugMode,
-		StartupConfigMapName:      os.Getenv("DEVBOX_STARTUP_CM_NAME"),
-		StartupConfigMapNamespace: os.Getenv("DEVBOX_STARTUP_CM_NAMESPACE"),
+		StartupConfigMapName:      startupCMName,
+		StartupConfigMapNamespace: startupCMNamespace,
 		RestartPredicateDuration:  restartPredicateDuration,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
