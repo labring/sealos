@@ -21,7 +21,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 		query := v.generatePodListQuery(req)
 		return query, nil
 	}
-	v.generateKeywordQuery(req)
+	// v.generateKeywordQuery(req)
 	v.generateStreamQuery(req)
 	v.generateCommonQuery(req)
 	err := v.generateJSONQuery(req)
