@@ -53,7 +53,7 @@ export function NoSubscriptionOrderList({
 
   // Fetch recharge billing data with pagination
   const { data: billingListData } = useQuery(
-    ['billing', 'recharge', paymentListQueryBodyBase],
+    ['payment-list', 'no-subscription', paymentListQueryBodyBase],
     () => getRechargeBillingList(paymentListQueryBodyBase),
     {
       keepPreviousData: true
