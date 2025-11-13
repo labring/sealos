@@ -178,6 +178,72 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 	})
 }
 
+func TestImageCacheEvictionOrder(t *testing.T) {
+	withManifestStub(t, func(stub *manifestStub) {
+		service := newImageServiceForTest(&types.ShimAuthConfig{
+			CRIConfigs: map[string]rtype.AuthConfig{
+				"registry.example.com": {ServerAddress: "https://registry.example.com"},
+			},
+		})
+		service.setMaxCacheSize(2)
+
+		images := []string{
+			"registry.example.com/app/a:1",
+			"registry.example.com/app/b:1",
+			"registry.example.com/app/c:1",
+		}
+
+		for i := 0; i < 2; i++ {
+			if _, found, _ := service.rewriteImage(images[i], "pull"); !found {
+				t.Fatalf("expected rewrite for %s to succeed", images[i])
+			}
+			if got := stub.callCount(images[i]); got != 1 {
+				t.Fatalf("expected manifest call for %s to be recorded once, got %d", images[i], got)
+			}
+		}
+
+		// Touch the first image so the second one becomes the LRU entry.
+		if _, found, _ := service.rewriteImage(images[0], "pull"); !found {
+			t.Fatalf("expected cache hit for %s", images[0])
+		}
+		if got := stub.callCount(images[0]); got != 1 {
+			t.Fatalf("expected cache hit to avoid manifest call for %s, got %d", images[0], got)
+		}
+
+		if _, found, _ := service.rewriteImage(images[2], "pull"); !found {
+			t.Fatalf("expected rewrite for %s to succeed", images[2])
+		}
+
+		if _, found, _ := service.rewriteImage(images[1], "pull"); !found {
+			t.Fatalf("expected rewrite for %s to succeed", images[1])
+		}
+		if got := stub.callCount(images[1]); got != 2 {
+			t.Fatalf("expected LRU eviction to trigger second manifest call for %s, got %d", images[1], got)
+		}
+	})
+}
+
+func TestDomainCacheExpiry(t *testing.T) {
+	service := newV1ImageService(nil, nil)
+	service.setMaxCacheSize(4)
+	service.domainTTL = 20 * time.Millisecond
+
+	registries := map[string]rtype.AuthConfig{
+		"registry.example.com": {ServerAddress: "https://registry.example.com"},
+	}
+
+	service.cacheDomainMatch("mirror.registry.example.com", "registry.example.com")
+	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg == nil || domain != "registry.example.com" {
+		t.Fatalf("expected domain cache hit, got domain=%s cfg=%v", domain, cfg)
+	}
+
+	time.Sleep(40 * time.Millisecond)
+
+	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg != nil || domain != "" {
+		t.Fatalf("expected domain cache entry to expire, got domain=%s cfg=%v", domain, cfg)
+	}
+}
+
 func TestRewriteImageEdgeCases(t *testing.T) {
 	withManifestStub(t, func(_ *manifestStub) {
 		service := newImageServiceForTest(nil)

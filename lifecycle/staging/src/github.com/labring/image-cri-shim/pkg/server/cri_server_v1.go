@@ -23,6 +23,7 @@ import (
 	"time"
 
 	rtype "github.com/docker/docker/api/types/registry"
+	lru "github.com/hashicorp/golang-lru"
 
 	api "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -33,10 +34,11 @@ type v1ImageService struct {
 	imageClient  api.ImageServiceClient
 	authStore    *AuthStore
 	cacheMutex   sync.RWMutex
-	imageCache   map[string]cacheEntry
-	domainCache  map[string]string
+	imageCache   *lru.Cache
+	domainCache  *lru.Cache
 	maxCacheSize int
 	cacheTTL     time.Duration
+	domainTTL    time.Duration
 }
 
 type cacheEntry struct {
@@ -46,24 +48,26 @@ type cacheEntry struct {
 	expiry   time.Time
 }
 
+type domainEntry struct {
+	registryDomain string
+	expiry         time.Time
+}
+
 const (
 	defaultImageCacheSize = 1024
 	defaultCacheTTL       = 30 * time.Minute
+	defaultDomainCacheTTL = 10 * time.Minute
 	domainCacheRatio      = 10
 )
 
 func newV1ImageService(client api.ImageServiceClient, authStore *AuthStore) *v1ImageService {
 	service := &v1ImageService{
-		imageClient:  client,
-		authStore:    authStore,
-		imageCache:   make(map[string]cacheEntry),
-		domainCache:  make(map[string]string),
-		maxCacheSize: defaultImageCacheSize,
-		cacheTTL:     defaultCacheTTL,
+		imageClient: client,
+		authStore:   authStore,
+		cacheTTL:    defaultCacheTTL,
+		domainTTL:   defaultDomainCacheTTL,
 	}
-	if service.cacheTTL <= 0 {
-		service.cacheTTL = defaultCacheTTL
-	}
+	service.setMaxCacheSize(defaultImageCacheSize)
 	if authStore != nil {
 		authStore.AddObserver(service.invalidateCache)
 	}
@@ -107,37 +111,33 @@ func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtyp
 }
 
 func (s *v1ImageService) getCachedResult(image string) (cacheEntry, bool) {
-	if s.maxCacheSize <= 0 {
+	if s.maxCacheSize <= 0 || image == "" {
 		return cacheEntry{}, false
 	}
-	s.cacheMutex.RLock()
-	entry, ok := s.imageCache[image]
-	s.cacheMutex.RUnlock()
-	if !ok {
+	cache := s.getImageCache()
+	if cache == nil {
 		return cacheEntry{}, false
 	}
-	if time.Now().After(entry.expiry) {
-		s.cacheMutex.Lock()
-		delete(s.imageCache, image)
-		s.cacheMutex.Unlock()
-		return cacheEntry{}, false
+
+	if raw, ok := cache.Get(image); ok {
+		entry, valid := raw.(cacheEntry)
+		if !valid || time.Now().After(entry.expiry) {
+			cache.Remove(image)
+			return cacheEntry{}, false
+		}
+		entry.auth = cloneAuthConfig(entry.auth)
+		return entry, true
 	}
-	entry.auth = cloneAuthConfig(entry.auth)
-	return entry, true
+	return cacheEntry{}, false
 }
 
 func (s *v1ImageService) cacheResult(image, newImage string, found bool, auth *rtype.AuthConfig) {
-	if s.maxCacheSize <= 0 {
+	if s.maxCacheSize <= 0 || image == "" {
 		return
 	}
-	s.cacheMutex.Lock()
-	defer s.cacheMutex.Unlock()
-
-	if s.imageCache == nil {
-		s.imageCache = make(map[string]cacheEntry, s.maxCacheSize)
-	}
-	if len(s.imageCache) >= s.maxCacheSize {
-		s.evictOldestCacheEntryLocked()
+	cache := s.getImageCache()
+	if cache == nil {
+		return
 	}
 
 	ttl := s.cacheTTL
@@ -145,31 +145,54 @@ func (s *v1ImageService) cacheResult(image, newImage string, found bool, auth *r
 		ttl = defaultCacheTTL
 	}
 
-	s.imageCache[image] = cacheEntry{
+	cache.Add(image, cacheEntry{
 		newImage: newImage,
 		auth:     cloneAuthConfig(auth),
 		found:    found,
 		expiry:   time.Now().Add(ttl),
-	}
+	})
 }
 
 func (s *v1ImageService) cacheDomainMatch(imageDomain, registryDomain string) {
 	if imageDomain == "" || registryDomain == "" {
 		return
 	}
-	limit := s.maxDomainCacheSize()
-	if limit == 0 {
+	cache := s.getDomainCache()
+	if cache == nil {
 		return
 	}
-	s.cacheMutex.Lock()
-	defer s.cacheMutex.Unlock()
-	if s.domainCache == nil {
-		s.domainCache = make(map[string]string, limit)
+
+	ttl := s.domainTTL
+	if ttl <= 0 {
+		ttl = defaultDomainCacheTTL
 	}
-	if len(s.domainCache) >= limit {
-		s.trimDomainCache(len(s.domainCache) - limit + 1)
+	cache.Add(imageDomain, domainEntry{
+		registryDomain: registryDomain,
+		expiry:         time.Now().Add(ttl),
+	})
+}
+
+func (s *v1ImageService) getCachedDomainMatch(domain string, registries map[string]rtype.AuthConfig) (string, *rtype.AuthConfig) {
+	cache := s.getDomainCache()
+	if cache == nil {
+		return "", nil
 	}
-	s.domainCache[imageDomain] = registryDomain
+	raw, ok := cache.Get(domain)
+	if !ok {
+		return "", nil
+	}
+	entry, valid := raw.(domainEntry)
+	if !valid || time.Now().After(entry.expiry) {
+		cache.Remove(domain)
+		return "", nil
+	}
+	cfg, exists := registries[entry.registryDomain]
+	if !exists {
+		cache.Remove(domain)
+		return "", nil
+	}
+	cfgCopy := cfg
+	return entry.registryDomain, &cfgCopy
 }
 
 func (s *v1ImageService) maxDomainCacheSize() int {
@@ -183,39 +206,13 @@ func (s *v1ImageService) maxDomainCacheSize() int {
 	return size
 }
 
-func (s *v1ImageService) trimDomainCache(remove int) {
-	if remove <= 0 {
-		return
-	}
-	for key := range s.domainCache {
-		delete(s.domainCache, key)
-		remove--
-		if remove <= 0 {
-			break
-		}
-	}
-}
-
-func (s *v1ImageService) evictOldestCacheEntryLocked() {
-	if len(s.imageCache) == 0 {
-		return
-	}
-	var oldestKey string
-	var oldestExpiry time.Time
-	for key, entry := range s.imageCache {
-		if oldestKey == "" || entry.expiry.Before(oldestExpiry) {
-			oldestKey = key
-			oldestExpiry = entry.expiry
-		}
-	}
-	delete(s.imageCache, oldestKey)
-}
-
 func (s *v1ImageService) invalidateCache() {
-	s.cacheMutex.Lock()
-	defer s.cacheMutex.Unlock()
-	s.imageCache = make(map[string]cacheEntry)
-	s.domainCache = make(map[string]string)
+	if cache := s.getImageCache(); cache != nil {
+		cache.Purge()
+	}
+	if cache := s.getDomainCache(); cache != nil {
+		cache.Purge()
+	}
 }
 
 func (s *v1ImageService) findMatchingRegistry(domain string, registries map[string]rtype.AuthConfig) (string, *rtype.AuthConfig) {
@@ -223,19 +220,8 @@ func (s *v1ImageService) findMatchingRegistry(domain string, registries map[stri
 		return "", nil
 	}
 
-	s.cacheMutex.RLock()
-	if cachedDomain, ok := s.domainCache[domain]; ok {
-		if cfg, exists := registries[cachedDomain]; exists {
-			s.cacheMutex.RUnlock()
-			cfgCopy := cfg
-			return cachedDomain, &cfgCopy
-		}
-		s.cacheMutex.RUnlock()
-		s.cacheMutex.Lock()
-		delete(s.domainCache, domain)
-		s.cacheMutex.Unlock()
-	} else {
-		s.cacheMutex.RUnlock()
+	if cachedDomain, cfg := s.getCachedDomainMatch(domain, registries); cfg != nil {
+		return cachedDomain, cfg
 	}
 
 	for regDomain, cfg := range registries {
@@ -255,6 +241,54 @@ func (s *v1ImageService) findMatchingRegistry(domain string, registries map[stri
 	}
 
 	return "", nil
+}
+
+func (s *v1ImageService) getImageCache() *lru.Cache {
+	s.cacheMutex.RLock()
+	defer s.cacheMutex.RUnlock()
+	return s.imageCache
+}
+
+func (s *v1ImageService) getDomainCache() *lru.Cache {
+	s.cacheMutex.RLock()
+	defer s.cacheMutex.RUnlock()
+	return s.domainCache
+}
+
+func (s *v1ImageService) setMaxCacheSize(size int) {
+	s.cacheMutex.Lock()
+	defer s.cacheMutex.Unlock()
+	s.maxCacheSize = size
+	s.rebuildCachesLocked()
+}
+
+func (s *v1ImageService) rebuildCachesLocked() {
+	if s.maxCacheSize <= 0 {
+		s.imageCache = nil
+		s.domainCache = nil
+		return
+	}
+
+	imageCache, err := lru.New(s.maxCacheSize)
+	if err != nil {
+		logger.Warn("failed to create image cache: %v", err)
+		s.imageCache = nil
+	} else {
+		s.imageCache = imageCache
+	}
+
+	domainSize := s.maxDomainCacheSize()
+	if domainSize <= 0 {
+		s.domainCache = nil
+		return
+	}
+	domainCache, err := lru.New(domainSize)
+	if err != nil {
+		logger.Warn("failed to create domain cache: %v", err)
+		s.domainCache = nil
+		return
+	}
+	s.domainCache = domainCache
 }
 
 func cloneAuthConfig(cfg *rtype.AuthConfig) *rtype.AuthConfig {

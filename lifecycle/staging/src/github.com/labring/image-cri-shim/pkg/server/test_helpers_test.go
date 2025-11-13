@@ -72,7 +72,7 @@ func withManifestStub(tb testing.TB, fn func(*manifestStub)) {
 func newImageServiceForTest(auth *types.ShimAuthConfig) *v1ImageService {
 	store := NewAuthStore(auth)
 	service := newV1ImageService(nil, store)
-	service.maxCacheSize = 32
+	service.setMaxCacheSize(32)
 	service.cacheTTL = 200 * time.Millisecond
 	return service
 }

@@ -15,7 +15,7 @@ func BenchmarkRewriteImageNoCache(b *testing.B) {
 				"registry.example.com": {ServerAddress: "https://registry.example.com"},
 			},
 		})
-		service.maxCacheSize = 0
+		service.setMaxCacheSize(0)
 		image := "registry.example.com/app/nginx:latest"
 
 		b.ResetTimer()
@@ -32,6 +32,7 @@ func BenchmarkRewriteImageCached(b *testing.B) {
 				"registry.example.com": {ServerAddress: "https://registry.example.com"},
 			},
 		})
+		service.setMaxCacheSize(defaultImageCacheSize)
 		image := "registry.example.com/app/nginx:latest"
 		// warm cache
 		service.rewriteImage(image, "pull")

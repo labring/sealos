@@ -7,6 +7,7 @@ toolchain go1.23.1
 require (
 	github.com/docker/docker v25.0.6+incompatible
 	github.com/google/go-containerregistry v0.15.2
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/labring/sealos v0.0.0
 	github.com/labring/sreg v0.1.7-rc3.0.20250728082818-441302dcb159
 	github.com/pelletier/go-toml v1.9.5
@@ -30,6 +31,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
+	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
