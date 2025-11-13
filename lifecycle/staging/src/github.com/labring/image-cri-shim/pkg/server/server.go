@@ -76,10 +76,7 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 		return err
 	}
 
-	k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
-		imageClient: s.imageV1Client,
-		authStore:   s.options.AuthStore,
-	})
+	k8sv1api.RegisterImageServiceServer(s.server, newV1ImageService(s.imageV1Client, s.options.AuthStore))
 
 	return nil
 }

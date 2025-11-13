@@ -28,6 +28,9 @@ import (
 	name "github.com/google/go-containerregistry/pkg/name"
 )
 
+// craneGetImageManifest is declared as a var so tests can replace it with a stub implementation.
+var craneGetImageManifest = crane.GetImageManifestFromAuth
+
 // replaceImage replaces the image name to a new valid image name with the private registry.
 func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
 	isReplace bool, cfg *registry.AuthConfig) {
@@ -47,7 +50,7 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 		return image, false, nil
 	}
 
-	newImage, _, cfg, err = crane.GetImageManifestFromAuth(image, authConfig)
+	newImage, _, cfg, err = craneGetImageManifest(image, authConfig)
 	if err != nil {
 		if strings.Contains(image, "@") {
 			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
@@ -90,4 +93,32 @@ func referenceSuffix(ref name.Reference) string {
 		}
 	}
 	return ""
+}
+
+const defaultDockerRegistry = "docker.io"
+
+func extractDomainFromImage(image string) string {
+	if image == "" {
+		return ""
+	}
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		return normalizeDomainCandidate(registryFromImage(image))
+	}
+	domain := ref.Context().RegistryStr()
+	if domain == "" {
+		return defaultDockerRegistry
+	}
+	return normalizeDomainCandidate(domain)
+}
+
+func normalizeDomainCandidate(domain string) string {
+	switch domain {
+	case "", "library", "docker", "index.docker.io", "registry-1.docker.io":
+		return defaultDockerRegistry
+	}
+	if !strings.Contains(domain, ".") && !strings.Contains(domain, ":") && domain != "localhost" {
+		return defaultDockerRegistry
+	}
+	return domain
 }
