@@ -106,7 +106,7 @@ export function WithSubscriptionOrderList({
   const { data: allPaymentsData } = useQuery({
     queryFn: () =>
       getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
-    queryKey: ['withSubscriptionPaymentList', paymentListQueryBodyBase]
+    queryKey: ['payment-list', 'subscription', paymentListQueryBodyBase]
   });
 
   // Merged rows with data processing logic
