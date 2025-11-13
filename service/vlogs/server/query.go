@@ -21,7 +21,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 		query := v.generatePodListQuery(req)
 		return query, nil
 	}
-	// v.generateKeywordQuery(req)
+	v.generateKeywordQuery(req)
 	v.generateStreamQuery(req)
 	v.generateCommonQuery(req)
 	err := v.generateJSONQuery(req)
@@ -33,24 +33,30 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	return v.query, nil
 }
 
+func EscapeSingleQuoted(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "'", "\\'")
+	return s
+}
+
 func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	var item string
 	if len(req.Time) != 0 {
 		item = fmt.Sprintf(
-			`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`,
-			req.Namespace,
-			req.Time,
-			req.App,
+			`{namespace='%s'} _time:'%s' app:='%s' | Drop _stream_id,_stream,app,job,namespace,node`,
+			EscapeSingleQuoted(req.Namespace),
+			EscapeSingleQuoted(req.Time),
+			EscapeSingleQuoted(req.App),
 		)
 	} else {
-		item = fmt.Sprintf(`{namespace="%s"}  app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.App)
+		item = fmt.Sprintf(`{namespace='%s'}  app:='%s' | Drop _stream_id,_stream,app,job,namespace,node`, EscapeSingleQuoted(req.Namespace), EscapeSingleQuoted(req.App))
 	}
 	v.query += item
 	return v.query
 }
 
 func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
-	v.query += fmt.Sprintf("%s ", req.Keyword)
+	v.query += fmt.Sprintf("'%s' ", EscapeSingleQuoted(req.Keyword))
 }
 
 func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
@@ -61,16 +67,18 @@ func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
 	builder.WriteString(" | unpack_json")
 	if len(req.JSONQuery) > 0 {
 		for _, jsonQuery := range req.JSONQuery {
+			key := EscapeSingleQuoted(jsonQuery.Key)
+			value := EscapeSingleQuoted(jsonQuery.Value)
 			var item string
 			switch jsonQuery.Mode {
 			case "=":
-				item = fmt.Sprintf("| %s:=%s ", jsonQuery.Key, jsonQuery.Value)
+				item = fmt.Sprintf("| '%s':='%s' ", key, value)
 			case "!=":
-				item = fmt.Sprintf("| %s:(!=%s) ", jsonQuery.Key, jsonQuery.Value)
+				item = fmt.Sprintf("| '%s':(!='%s') ", key, value)
 			case "~":
-				item = fmt.Sprintf("| %s:%s ", jsonQuery.Key, jsonQuery.Value)
+				item = fmt.Sprintf("| '%s':'%s' ", key, value)
 			case "!~":
-				item = fmt.Sprintf("| %s:(!~%s) ", jsonQuery.Key, jsonQuery.Value)
+				item = fmt.Sprintf("| '%s':(!~'%s') ", key, value)
 			default:
 				return fmt.Errorf("invalid JSON query mode: %s", jsonQuery.Mode)
 			}
@@ -82,16 +90,18 @@ func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
 }
 
 func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
+	namespace := EscapeSingleQuoted(req.Namespace)
 	var builder strings.Builder
 	switch {
 	case len(req.Pod) == 0 && len(req.Container) == 0:
 		// Generate query based only on namespace
-		builder.WriteString(fmt.Sprintf(`{namespace="%s"}`, req.Namespace))
+		builder.WriteString(fmt.Sprintf(`{namespace='%s''}`, namespace))
 	case len(req.Pod) == 0:
 		// Generate query based on container
 		for i, container := range req.Container {
+			container := EscapeSingleQuoted(container)
 			builder.WriteString(
-				fmt.Sprintf(`{container="%s",namespace="%s"}`, container, req.Namespace),
+				fmt.Sprintf(`{container='%s',namespace='%s'}`, container, namespace),
 			)
 			if i != len(req.Container)-1 {
 				builder.WriteString(" OR ")
@@ -100,7 +110,8 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 	case len(req.Container) == 0:
 		// Generate query based on pod
 		for i, pod := range req.Pod {
-			builder.WriteString(fmt.Sprintf(`{pod="%s",namespace="%s"}`, pod, req.Namespace))
+			pod := EscapeSingleQuoted(pod)
+			builder.WriteString(fmt.Sprintf(`{pod='%s',namespace='%s'}`, pod, namespace))
 			if i != len(req.Pod)-1 {
 				builder.WriteString(" OR ")
 			}
@@ -109,11 +120,13 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 		// Generate query based on both pod and container
 		for i, container := range req.Container {
 			for j, pod := range req.Pod {
+				container := EscapeSingleQuoted(container)
+				pod := EscapeSingleQuoted(pod)
 				builder.WriteString(
 					fmt.Sprintf(
 						`{container="%s",namespace="%s",pod="%s"}`,
 						container,
-						req.Namespace,
+						namespace,
 						pod,
 					),
 				)
@@ -130,9 +143,9 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
 	var item string
 	if len(req.Time) != 0 {
-		item = fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
+		item = fmt.Sprintf(`_time:'%s' app:='%s' `, EscapeSingleQuoted(req.Time), EscapeSingleQuoted(req.App))
 	} else {
-		item = fmt.Sprintf(` app:="%s" `, req.App)
+		item = fmt.Sprintf(` app:='%s' `, EscapeSingleQuoted(req.App))
 	}
 	builder.WriteString(item)
 	// if query stderr and number,using stderr first.
@@ -142,7 +155,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	}
 	// if query number,dont use limit param
 	if req.NumberMode == modeFalse {
-		item := fmt.Sprintf(`  | limit %s  `, req.Limit)
+		item := fmt.Sprintf(`  | limit %s  `, EscapeSingleQuoted(req.Limit))
 		builder.WriteString(item)
 	}
 	v.query += builder.String()
@@ -168,7 +181,7 @@ func isValidNumberLevel(level string) bool {
 func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 	if req.NumberMode == modeTrue {
 		if isValidNumberLevel(req.NumberLevel) {
-			item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", req.NumberLevel)
+			item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", EscapeSingleQuoted(req.NumberLevel))
 			v.query += item
 		}
 		// else: invalid NumberLevel, do not add to query
