@@ -95,7 +95,7 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 	switch {
 	case len(req.Pod) == 0 && len(req.Container) == 0:
 		// Generate query based only on namespace
-		builder.WriteString(fmt.Sprintf(`{namespace='%s''}`, namespace))
+		builder.WriteString(fmt.Sprintf(`{namespace='%s'}`, namespace))
 	case len(req.Pod) == 0:
 		// Generate query based on container
 		for i, container := range req.Container {
@@ -124,7 +124,7 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 				pod := EscapeSingleQuoted(pod)
 				builder.WriteString(
 					fmt.Sprintf(
-						`{container="%s",namespace="%s",pod="%s"}`,
+						`{container='%s',namespace='%s',pod='%s'}`,
 						container,
 						namespace,
 						pod,
