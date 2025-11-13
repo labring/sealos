@@ -11,13 +11,14 @@ env:
 jobs:
   call_ci_workflow:
     uses: ./.github/workflows/import-patch-image.yml
-    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'need-e2e-apply-test' }}
+    if: ${{ github.repository_owner == 'labring' && github.event.action == 'labeled' && github.event.label.name == 'need-e2e-apply-test' }}
     with:
       arch: amd64,arm64
       e2e: true
       image: true
       target_pull: true
   e2e_apply_test:
+    if: github.repository_owner == 'labring'
     needs: [ call_ci_workflow ]
     runs-on: ubuntu-24.04
     permissions:
@@ -83,7 +84,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       issues: write
-    if: ${{ always() && github.event.label.name == 'need-e2e-apply-test' }} #success() || failure()
+    if: ${{ always() && github.repository_owner == 'labring' && github.event.label.name == 'need-e2e-apply-test' }} #success() || failure()
     steps:
       - name: Add comment to PR with test status
         uses: peter-evans/create-or-update-comment@v1
