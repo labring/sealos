@@ -40,7 +40,7 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 
 	ref, err := name.ParseReference(image)
 	if err != nil {
-		logger.Warn("failed to parse image reference %s: %v", image, err)
+		logger.Warn("rewrite skipped: unable to parse image reference %s: %v", image, err)
 		return image, false, nil
 	}
 
@@ -55,11 +55,9 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 		if strings.Contains(image, "@") {
 			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
 		}
-		logger.Warn("get image %s manifest error %s", newImage, err.Error())
-		logger.Debug("image %s not found in registry, skipping", image)
+		logger.Warn("rewrite skipped: failed to fetch manifest for %s (action=%s): %v", image, action, err)
 		return image, false, cfg
 	}
-	logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
 	return newImage, true, cfg
 }
 
