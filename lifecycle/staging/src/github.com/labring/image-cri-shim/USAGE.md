@@ -197,6 +197,12 @@ force: false                                # Force startup mode
 debug: false                                # Debug mode
 timeout: 15m                                # Operation timeout
 reloadInterval: 30s                         # Configuration reload interval
+cache:
+  imageCacheSize: 1024                      # Max cached rewrite entries (set 0 to disable)
+  imageCacheTTL: 30m                        # TTL for rewritten image entries
+  domainCacheTTL: 10m                       # TTL for domain→registry matches
+  statsLogInterval: 60s                     # Periodic cache stats log (set 0 to stop)
+  disableStats: false                       # true disables stats logging entirely
 ```
 
 ### 3.2 ConfigMap Dynamic Configuration
@@ -234,6 +240,12 @@ data:
     force: true
     debug: false
     timeout: "20m"
+    cache:
+      imageCacheSize: 2048
+      imageCacheTTL: "45m"
+      domainCacheTTL: "15m"
+      statsLogInterval: "120s"
+      disableStats: false
 EOF
 
 # Apply to cluster
@@ -288,6 +300,41 @@ sudo journalctl -u image-cri-shim --since="2m ago" | grep -i "reload\|config"
 # 5. Verify if configuration is effective
 sudo systemctl status image-cri-shim
 ```
+
+### 3.5 Cache Configuration & Hot Reload
+
+`cache` is a dedicated block used to tune the in-process LRU cache. All fields support ConfigMap hot updates and are applied without restarting the shim:
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `imageCacheSize` | Max number of rewritten image entries. Set `0` to disable caching completely. | `1024` |
+| `imageCacheTTL` | Time-To-Live for rewritten image entries (e.g. `30m`, `1h`). | `30m` |
+| `domainCacheTTL` | TTL for domain→registry matches. Keeps expensive lookups fast. | `10m` |
+| `statsLogInterval` | Periodic interval for logging cache hit/miss metrics. Set `0` to stop logging. | `60s` |
+| `disableStats` | When `true`, disables metric logging regardless of `statsLogInterval`. | `false` |
+
+**Hot update steps**:
+
+```bash
+# 1. Edit the ConfigMap and update the cache block
+kubectl edit configmap image-cri-shim -n kube-system
+
+# Example change
+cache:
+  imageCacheSize: 2048
+  imageCacheTTL: 45m
+  domainCacheTTL: 15m
+  statsLogInterval: 120s
+  disableStats: false
+
+# 2. Wait for the reload interval (default 30s) or force sooner by patching reloadInterval
+sleep 40
+
+# 3. Confirm new settings are in use (logs contain cache stats / rewrite entries)
+sudo journalctl -u image-cri-shim --since="1m ago" | grep "cache"
+```
+
+When the ConfigMap is updated, the shim automatically calls `UpdateCache` with the new values. Existing cache entries are invalidated as needed, and metric logging switches to the new cadence immediately (or stops if `disableStats: true`). This makes it safe to experiment with cache sizes/TTLs during live traffic without restarting kubelet or containerd.
 
 ## 4. Core Functionality Usage
 
