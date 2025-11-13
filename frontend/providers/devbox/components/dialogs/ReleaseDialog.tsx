@@ -103,8 +103,13 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
           tag,
           releaseDes,
           devboxUid: devbox.id,
-          startDevboxAfterRelease
+          // NOTE: there we do not use backend logic to start devbox,because backend do not support modified ingress annotations
+          startDevboxAfterRelease: false
         });
+        // 3.start devbox
+        if (startDevboxAfterRelease) {
+          await startDevbox({ devboxName: devbox.name });
+        }
         toast.success(t('submit_release_successful'));
         track({
           event: 'release_create',
