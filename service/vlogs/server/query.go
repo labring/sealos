@@ -57,7 +57,11 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 }
 
 func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
-	v.query += fmt.Sprintf("'%s' ", EscapeSingleQuoted(req.Keyword))
+	if len(req.Keyword) == 0 {
+		return
+	} else {
+		v.query += fmt.Sprintf("'%s' ", EscapeSingleQuoted(req.Keyword))
+	}
 }
 
 func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
