@@ -17,7 +17,7 @@ func TestConfigurationUpdateInvalidatesCache(t *testing.T) {
 			},
 		})
 		service := newV1ImageService(nil, store)
-		service.maxCacheSize = 4
+		service.setMaxCacheSize(4)
 		service.cacheTTL = 500 * time.Millisecond
 
 		image := "registry.example.com/app/nginx:1.0"
