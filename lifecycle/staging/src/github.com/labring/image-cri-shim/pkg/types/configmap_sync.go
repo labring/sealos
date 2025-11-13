@@ -51,6 +51,7 @@ type registryConfigSpec struct {
 	Force          *bool           `yaml:"force"`
 	Debug          *bool           `yaml:"debug"`
 	Timeout        string          `yaml:"timeout"`
+	Cache          *cacheSpec      `yaml:"cache"`
 }
 
 type sealedConfig struct {
@@ -66,6 +67,14 @@ type registryEntry struct {
 type registryAuth struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+}
+
+type cacheSpec struct {
+	ImageCacheSize   *int   `yaml:"imageCacheSize"`
+	ImageCacheTTL    string `yaml:"imageCacheTTL"`
+	DomainCacheTTL   string `yaml:"domainCacheTTL"`
+	StatsLogInterval string `yaml:"statsLogInterval"`
+	DisableStats     *bool  `yaml:"disableStats"`
 }
 
 // SyncConfigFromConfigMap reads the kube-system/image-cri-shim ConfigMap and, when available,
@@ -220,6 +229,7 @@ func mergeShimConfig(cfg *Config, spec *registryConfigSpec) {
 	if cfg.ReloadInterval.Duration <= 0 {
 		cfg.ReloadInterval.Duration = DefaultReloadInterval
 	}
+	applyCacheSpec(cfg, spec.Cache)
 }
 
 func buildAuth(username, password string) string {
@@ -229,4 +239,41 @@ func buildAuth(username, password string) string {
 		return ""
 	}
 	return user + ":" + pass
+}
+
+func applyCacheSpec(cfg *Config, spec *cacheSpec) {
+	if cfg == nil || spec == nil {
+		return
+	}
+	if spec.ImageCacheSize != nil {
+		cfg.Cache.ImageCacheSize = *spec.ImageCacheSize
+	}
+	if disable := spec.DisableStats; disable != nil {
+		cfg.Cache.DisableStats = *disable
+	}
+	if ttl := strings.TrimSpace(spec.ImageCacheTTL); ttl != "" {
+		if dur, err := time.ParseDuration(ttl); err != nil {
+			logger.Warn("failed to parse imageCacheTTL %q: %v", ttl, err)
+		} else {
+			cfg.Cache.ImageCacheTTL.Duration = dur
+		}
+	}
+	if ttl := strings.TrimSpace(spec.DomainCacheTTL); ttl != "" {
+		if dur, err := time.ParseDuration(ttl); err != nil {
+			logger.Warn("failed to parse domainCacheTTL %q: %v", ttl, err)
+		} else {
+			cfg.Cache.DomainCacheTTL.Duration = dur
+		}
+	}
+	if interval := strings.TrimSpace(spec.StatsLogInterval); interval != "" || (spec.DisableStats != nil && *spec.DisableStats) {
+		if spec.DisableStats != nil && *spec.DisableStats {
+			cfg.Cache.StatsLogInterval.Duration = 0
+		} else if interval != "" {
+			if dur, err := time.ParseDuration(interval); err != nil {
+				logger.Warn("failed to parse statsLogInterval %q: %v", interval, err)
+			} else {
+				cfg.Cache.StatsLogInterval.Duration = dur
+			}
+		}
+	}
 }
