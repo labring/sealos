@@ -190,7 +190,10 @@ func isValidNumberLevel(level string) bool {
 func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 	if req.NumberMode == modeTrue {
 		if isValidNumberLevel(req.NumberLevel) {
-			item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", EscapeSingleQuoted(req.NumberLevel))
+			item := fmt.Sprintf(
+				" | stats by (_time:1%s) count() logs_total ",
+				EscapeSingleQuoted(req.NumberLevel),
+			)
 			v.query += item
 		}
 		// else: invalid NumberLevel, do not add to query
