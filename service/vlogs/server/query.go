@@ -30,6 +30,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	}
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
+	v.generateDecolorQuery()
 	fmt.Println(v.query)
 	return v.query, nil
 }
@@ -198,4 +199,8 @@ func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 		}
 		// else: invalid NumberLevel, do not add to query
 	}
+}
+
+func (v *VLogsQuery) generateDecolorQuery() {
+	v.query += "| decolorize "
 }
