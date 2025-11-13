@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
@@ -150,7 +151,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var item string
 	if len(req.Time) != 0 {
 		item = fmt.Sprintf(
-			`_time:'%s' app:='%s' `,
+			` _time:'%s' app:='%s' `,
 			EscapeSingleQuoted(req.Time),
 			EscapeSingleQuoted(req.App),
 		)
@@ -165,7 +166,12 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	}
 	// if query number,dont use limit param
 	if req.NumberMode == modeFalse {
-		item := fmt.Sprintf(`  | limit %s  `, EscapeSingleQuoted(req.Limit))
+		var item string
+		if isAllDigits(req.Limit) {
+			item = fmt.Sprintf(`  | limit '100'  `)
+		} else {
+			item = fmt.Sprintf(`  | limit '%s'  `, EscapeSingleQuoted(req.Limit))
+		}
 		builder.WriteString(item)
 	}
 	v.query += builder.String()
@@ -181,6 +187,11 @@ var allowedNumberLevels = map[string]struct{}{
 	"h": {},
 	"d": {},
 	"s": {},
+}
+
+func isAllDigits(s string) bool {
+	matched, _ := regexp.MatchString("^[0-9]+$", s)
+	return !matched
 }
 
 func isValidNumberLevel(level string) bool {
