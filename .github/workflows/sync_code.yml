@@ -5,7 +5,7 @@ on:
       - main
     paths:
       - lifecycle/staging/src/github.com/labring/**
-      - LICENSE
+      - LICENSE.md
       - .github/workflows/sync_code.yml
       - .github/sync_code.yml
   workflow_dispatch:
