@@ -11,6 +11,9 @@ on:
   workflow_dispatch:
 jobs:
   sync:
+    # Only run this workflow when the repository owner is `labring`.
+    # This prevents the sync action from running in forks or mirrors owned by others.
+    if: github.repository_owner == 'labring'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
