@@ -326,6 +326,32 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
+// GenerateStartupVolume generates a volume for the startup script configmap
+func GenerateStartupVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
+	return corev1.Volume{
+		Name: "devbox-startup",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: devbox.Name,
+				},
+				DefaultMode: ptr.To(int32(0755)),
+			},
+		},
+	}
+}
+// GenerateStartupVolumeMounts generates volume mounts for the startup script
+func GenerateStartupVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "devbox-startup",
+			MountPath: "/usr/start/startup.sh",
+			SubPath:   "startup.sh",
+			ReadOnly:  true,
+		},
+	}
+}
+
 // GenerateResourceRequirements generates the resource requirements for the Devbox pod
 func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
