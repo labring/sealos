@@ -168,7 +168,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	if req.NumberMode == modeFalse {
 		var item string
 		if isAllDigits(req.Limit) {
-			item = fmt.Sprintf(`  | limit '100'  `)
+			item = `  | limit '100'  `
 		} else {
 			item = fmt.Sprintf(`  | limit '%s'  `, EscapeSingleQuoted(req.Limit))
 		}
