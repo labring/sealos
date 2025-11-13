@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
@@ -190,8 +190,8 @@ var allowedNumberLevels = map[string]struct{}{
 }
 
 func isAllDigits(s string) bool {
-	matched, _ := regexp.MatchString("^[0-9]+$", s)
-	return !matched
+	_, err := strconv.Atoi(s)
+	return err != nil
 }
 
 func isValidNumberLevel(level string) bool {
