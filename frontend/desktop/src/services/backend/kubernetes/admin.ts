@@ -375,6 +375,24 @@ export const setUserWorkspaceLock = async (namespace: string) => {
   try {
     const kc = K8sApiDefault();
     const client = kc.makeApiClient(k8s.CoreV1Api);
+
+    try {
+      const currentNamespace = await client.readNamespace(namespace);
+      const currentStatus = currentNamespace.body.metadata?.annotations?.['debt.sealos/status'];
+      if (currentStatus === WorkspaceDebtStatus.TerminateSuspendCompleted) {
+        return true;
+      }
+    } catch (readError) {
+      if (
+        readError instanceof k8s.HttpError &&
+        readError.body instanceof k8s.V1Status &&
+        readError.body.code === 404
+      ) {
+        console.log('setUserWorkspaceLock error: namespace not found');
+        return true;
+      }
+    }
+
     const res = await client.patchNamespace(
       namespace,
       {
@@ -413,5 +431,6 @@ enum WorkspaceDebtStatus {
   Normal = 'Normal',
   Suspend = 'Suspend',
   Resume = 'Resume',
-  TerminateSuspend = 'TerminateSuspend'
+  TerminateSuspend = 'TerminateSuspend',
+  TerminateSuspendCompleted = 'TerminateSuspendCompleted'
 }
