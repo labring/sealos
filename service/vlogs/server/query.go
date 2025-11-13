@@ -32,7 +32,6 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
 	v.generateDecolorQuery()
-	fmt.Println(v.query)
 	return v.query, nil
 }
 
@@ -167,7 +166,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	// if query number,dont use limit param
 	if req.NumberMode == modeFalse {
 		var item string
-		if isAllDigits(req.Limit) {
+		if hasNonDigits(req.Limit) {
 			item = `  | limit '100'  `
 		} else {
 			item = fmt.Sprintf(`  | limit '%s'  `, EscapeSingleQuoted(req.Limit))
@@ -189,7 +188,7 @@ var allowedNumberLevels = map[string]struct{}{
 	"s": {},
 }
 
-func isAllDigits(s string) bool {
+func hasNonDigits(s string) bool {
 	_, err := strconv.Atoi(s)
 	return err != nil
 }
