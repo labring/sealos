@@ -116,7 +116,7 @@ function Invoice() {
             onSuccess={() => {
               setSelectdBillings([]);
               queryClient.invalidateQueries({
-                queryKey: ['billing'],
+                queryKey: ['payment-list'],
                 exact: false
               });
               setProcessState(0); // Return to main page after success
