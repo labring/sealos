@@ -148,7 +148,11 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
 	var item string
 	if len(req.Time) != 0 {
-		item = fmt.Sprintf(`_time:'%s' app:='%s' `, EscapeSingleQuoted(req.Time), EscapeSingleQuoted(req.App))
+		item = fmt.Sprintf(
+			`_time:'%s' app:='%s' `,
+			EscapeSingleQuoted(req.Time),
+			EscapeSingleQuoted(req.App),
+		)
 	} else {
 		item = fmt.Sprintf(` app:='%s' `, EscapeSingleQuoted(req.App))
 	}
