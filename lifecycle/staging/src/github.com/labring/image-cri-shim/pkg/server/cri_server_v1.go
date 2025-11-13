@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -191,10 +192,12 @@ func (s *v1ImageService) UpdateCacheOptions(opts CacheOptions) {
 
 func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtype.AuthConfig) {
 	if entry, ok := s.getCachedResult(image); ok {
+		s.logRewriteResult(action, image, entry.newImage, "cache", true, entry.found)
 		return entry.newImage, entry.found, entry.auth
 	}
 
 	if s.authStore == nil {
+		s.logRewriteResult(action, image, image, "authstore-disabled", false, false)
 		return image, false, nil
 	}
 
@@ -204,6 +207,7 @@ func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtyp
 			if matchedDomain, cfg := s.findMatchingRegistry(domain, registries); cfg != nil {
 				newImage, ok, auth := replaceImage(image, action, map[string]rtype.AuthConfig{matchedDomain: *cfg})
 				s.cacheResult(image, newImage, ok, auth)
+				s.logRewriteResult(action, image, newImage, fmt.Sprintf("cri-domain:%s", matchedDomain), false, ok)
 				return newImage, ok, auth
 			}
 		}
@@ -212,16 +216,19 @@ func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtyp
 	newImage, ok, auth := replaceImage(image, action, s.authStore.GetOfflineConfigs())
 	if ok {
 		s.cacheResult(image, newImage, ok, auth)
+		s.logRewriteResult(action, image, newImage, "offline", false, true)
 		return newImage, true, auth
 	}
 
 	registries := s.authStore.GetCRIConfigs()
 	if len(registries) == 0 {
 		s.cacheResult(image, image, false, nil)
+		s.logRewriteResult(action, image, image, "no-registries", false, false)
 		return image, false, nil
 	}
 	newImage, ok, auth = replaceImage(image, action, registries)
 	s.cacheResult(image, newImage, ok, auth)
+	s.logRewriteResult(action, image, newImage, "cri", false, ok)
 	return newImage, ok, auth
 }
 
@@ -372,6 +379,11 @@ func (s *v1ImageService) findMatchingRegistry(domain string, registries map[stri
 	}
 
 	return "", nil
+}
+
+func (s *v1ImageService) logRewriteResult(action, original, rewritten, source string, cacheHit bool, replaced bool) {
+	logger.Info("rewrite action=%s cache_hit=%t source=%s original=%s result=%s replaced=%t",
+		action, cacheHit, source, original, rewritten, replaced)
 }
 
 func (s *v1ImageService) CacheStats() CacheStats {
