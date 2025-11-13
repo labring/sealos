@@ -224,7 +224,7 @@ func TestImageCacheEvictionOrder(t *testing.T) {
 }
 
 func TestDomainCacheExpiry(t *testing.T) {
-	service := newV1ImageService(nil, nil)
+	service := newV1ImageService(nil, nil, CacheOptions{})
 	service.setMaxCacheSize(4)
 	service.domainTTL = 20 * time.Millisecond
 
@@ -242,6 +242,68 @@ func TestDomainCacheExpiry(t *testing.T) {
 	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg != nil || domain != "" {
 		t.Fatalf("expected domain cache entry to expire, got domain=%s cfg=%v", domain, cfg)
 	}
+}
+
+func TestCacheStatsAccounting(t *testing.T) {
+	withManifestStub(t, func(_ *manifestStub) {
+		service := newImageServiceForTest(&types.ShimAuthConfig{
+			CRIConfigs: map[string]rtype.AuthConfig{
+				"registry.example.com": {ServerAddress: "https://registry.example.com"},
+			},
+		})
+		service.cacheTTL = 10 * time.Millisecond
+
+		image := "registry.example.com/app/nginx:latest"
+		// first rewrite should miss cache and populate entries
+		if _, found, _ := service.rewriteImage(image, "pull"); !found {
+			t.Fatalf("expected rewrite to succeed")
+		}
+		stats := service.CacheStats()
+		if stats.ImageMisses == 0 {
+			t.Fatalf("expected image miss to be recorded, got %+v", stats)
+		}
+		if stats.DomainMisses == 0 {
+			t.Fatalf("expected domain miss to be recorded, got %+v", stats)
+		}
+
+		// second rewrite should hit image cache
+		if _, found, _ := service.rewriteImage(image, "pull"); !found {
+			t.Fatalf("expected rewrite to succeed")
+		}
+		stats = service.CacheStats()
+		if stats.ImageHits == 0 {
+			t.Fatalf("expected cache hits to be recorded, got %+v", stats)
+		}
+
+		// simulate domain cache hit by looking up cached mapping directly
+		service.cacheDomainMatch("mirror.registry.example.com", "registry.example.com")
+		if _, cfg := service.getCachedDomainMatch("mirror.registry.example.com", map[string]rtype.AuthConfig{
+			"registry.example.com": {ServerAddress: "https://registry.example.com"},
+		}); cfg == nil {
+			t.Fatalf("expected domain cache hit")
+		}
+		stats = service.CacheStats()
+		if stats.DomainHits == 0 {
+			t.Fatalf("expected domain hit counter to increment, got %+v", stats)
+		}
+
+		// force expiry to trigger eviction counters
+		time.Sleep(20 * time.Millisecond)
+		if _, found, _ := service.rewriteImage(image, "pull"); !found {
+			t.Fatalf("expected rewrite to succeed after expiry")
+		}
+		stats = service.CacheStats()
+		if stats.ImageEvictions == 0 {
+			t.Fatalf("expected eviction counter to increment, got %+v", stats)
+		}
+
+		// invalidation should bump invalidation counter
+		service.invalidateCache()
+		stats = service.CacheStats()
+		if stats.Invalidations == 0 {
+			t.Fatalf("expected invalidation counter to increment, got %+v", stats)
+		}
+	})
 }
 
 func TestRewriteImageEdgeCases(t *testing.T) {
@@ -270,7 +332,7 @@ func TestPullImageInjectsAuthFromCRIConfig(t *testing.T) {
 			},
 		})
 		client := &fakeImageClient{}
-		service := newV1ImageService(client, store)
+		service := newV1ImageService(client, store, CacheOptions{})
 		req := &api.PullImageRequest{
 			Image: &api.ImageSpec{Image: "registry.example.com/app/nginx:latest"},
 		}

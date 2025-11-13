@@ -39,6 +39,10 @@ const (
 	SealosShimSock            = "/var/run/image-cri-shim.sock"
 	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
 	DefaultReloadInterval     = 15 * time.Second
+	defaultCacheStatsInterval = time.Minute
+	defaultImageCacheTTL      = 30 * time.Minute
+	defaultDomainCacheTTL     = 10 * time.Minute
+	defaultImageCacheSize     = 1024
 )
 
 type Registry struct {
@@ -55,7 +59,16 @@ type Config struct {
 	Timeout         metav1.Duration `json:"timeout"`
 	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
+	Cache           CacheConfig     `json:"cache" yaml:"cache"`
 	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
+}
+
+type CacheConfig struct {
+	ImageCacheSize   int             `json:"imageCacheSize" yaml:"imageCacheSize"`
+	ImageCacheTTL    metav1.Duration `json:"imageCacheTTL" yaml:"imageCacheTTL"`
+	DomainCacheTTL   metav1.Duration `json:"domainCacheTTL" yaml:"domainCacheTTL"`
+	StatsLogInterval metav1.Duration `json:"statsLogInterval" yaml:"statsLogInterval"`
+	DisableStats     bool            `json:"disableStats" yaml:"disableStats"`
 }
 
 type ShimAuthConfig struct {
@@ -96,6 +109,9 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	logger.CfgConsoleLogger(c.Debug, false)
 	logger.Info("Timeout: %v", c.Timeout)
 	logger.Info("ReloadInterval: %v", c.ReloadInterval)
+	c.Cache.normalize()
+	logger.Info("CacheConfig: size=%d, imageTTL=%v, domainTTL=%v, statsInterval=%v, disableStats=%v",
+		c.Cache.ImageCacheSize, c.Cache.ImageCacheTTL, c.Cache.DomainCacheTTL, c.Cache.StatsLogInterval, c.Cache.DisableStats)
 	shimAuth := new(ShimAuthConfig)
 
 	splitNameAndPasswd := func(auth string) (string, string) {
@@ -170,6 +186,30 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	return shimAuth, nil
 }
 
+func (c *CacheConfig) normalize() {
+	if c.ImageCacheSize == 0 {
+		c.ImageCacheSize = defaultImageCacheSize
+	}
+	if c.ImageCacheSize < 0 {
+		logger.Warn("received negative cache size %d, disabling cache", c.ImageCacheSize)
+		c.ImageCacheSize = 0
+	}
+
+	if c.ImageCacheTTL.Duration <= 0 {
+		c.ImageCacheTTL = metav1.Duration{Duration: defaultImageCacheTTL}
+	}
+	if c.DomainCacheTTL.Duration <= 0 {
+		c.DomainCacheTTL = metav1.Duration{Duration: defaultDomainCacheTTL}
+	}
+	if c.DisableStats {
+		c.StatsLogInterval = metav1.Duration{}
+		return
+	}
+	if c.StatsLogInterval.Duration <= 0 {
+		c.StatsLogInterval = metav1.Duration{Duration: defaultCacheStatsInterval}
+	}
+}
+
 func Unmarshal(path string) (*Config, error) {
 	metadata, err := fileutil.ReadAll(path)
 	if err != nil {
@@ -179,7 +219,11 @@ func Unmarshal(path string) (*Config, error) {
 }
 
 func UnmarshalData(metadata []byte) (*Config, error) {
-	cfg := &Config{}
+	cfg := &Config{
+		Cache: CacheConfig{
+			StatsLogInterval: metav1.Duration{Duration: defaultCacheStatsInterval},
+		},
+	}
 	if err := yaml.Unmarshal(metadata, cfg); err != nil {
 		return nil, err
 	}

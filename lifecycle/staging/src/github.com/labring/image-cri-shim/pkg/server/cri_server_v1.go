@@ -20,6 +20,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	rtype "github.com/docker/docker/api/types/registry"
@@ -39,6 +40,7 @@ type v1ImageService struct {
 	maxCacheSize int
 	cacheTTL     time.Duration
 	domainTTL    time.Duration
+	metrics      *cacheMetrics
 }
 
 type cacheEntry struct {
@@ -53,6 +55,33 @@ type domainEntry struct {
 	expiry         time.Time
 }
 
+type CacheOptions struct {
+	ImageCacheSize int
+	ImageCacheTTL  time.Duration
+	DomainCacheTTL time.Duration
+}
+
+type CacheStats struct {
+	ImageHits       uint64
+	ImageMisses     uint64
+	DomainHits      uint64
+	DomainMisses    uint64
+	ImageEvictions  uint64
+	DomainEvictions uint64
+	Invalidations   uint64
+	GeneratedAt     time.Time
+}
+
+type cacheMetrics struct {
+	imageHits       atomic.Uint64
+	imageMisses     atomic.Uint64
+	domainHits      atomic.Uint64
+	domainMisses    atomic.Uint64
+	imageEvictions  atomic.Uint64
+	domainEvictions atomic.Uint64
+	invalidations   atomic.Uint64
+}
+
 const (
 	defaultImageCacheSize = 1024
 	defaultCacheTTL       = 30 * time.Minute
@@ -60,18 +89,104 @@ const (
 	domainCacheRatio      = 10
 )
 
-func newV1ImageService(client api.ImageServiceClient, authStore *AuthStore) *v1ImageService {
+func (c CacheOptions) normalize() CacheOptions {
+	if c.ImageCacheSize == 0 {
+		c.ImageCacheSize = defaultImageCacheSize
+	}
+	if c.ImageCacheSize < 0 {
+		c.ImageCacheSize = 0
+	}
+	if c.ImageCacheTTL <= 0 {
+		c.ImageCacheTTL = defaultCacheTTL
+	}
+	if c.DomainCacheTTL <= 0 {
+		c.DomainCacheTTL = defaultDomainCacheTTL
+	}
+	return c
+}
+
+func newCacheMetrics() *cacheMetrics {
+	return &cacheMetrics{}
+}
+
+func (m *cacheMetrics) snapshot() CacheStats {
+	if m == nil {
+		return CacheStats{}
+	}
+	return CacheStats{
+		ImageHits:       m.imageHits.Load(),
+		ImageMisses:     m.imageMisses.Load(),
+		DomainHits:      m.domainHits.Load(),
+		DomainMisses:    m.domainMisses.Load(),
+		ImageEvictions:  m.imageEvictions.Load(),
+		DomainEvictions: m.domainEvictions.Load(),
+		Invalidations:   m.invalidations.Load(),
+		GeneratedAt:     time.Now(),
+	}
+}
+
+func (m *cacheMetrics) recordImageHit() {
+	if m != nil {
+		m.imageHits.Add(1)
+	}
+}
+
+func (m *cacheMetrics) recordImageMiss() {
+	if m != nil {
+		m.imageMisses.Add(1)
+	}
+}
+
+func (m *cacheMetrics) recordDomainHit() {
+	if m != nil {
+		m.domainHits.Add(1)
+	}
+}
+
+func (m *cacheMetrics) recordDomainMiss() {
+	if m != nil {
+		m.domainMisses.Add(1)
+	}
+}
+
+func (m *cacheMetrics) recordImageEviction() {
+	if m != nil {
+		m.imageEvictions.Add(1)
+	}
+}
+
+func (m *cacheMetrics) recordDomainEviction() {
+	if m != nil {
+		m.domainEvictions.Add(1)
+	}
+}
+
+func (m *cacheMetrics) recordInvalidation() {
+	if m != nil {
+		m.invalidations.Add(1)
+	}
+}
+
+func newV1ImageService(client api.ImageServiceClient, authStore *AuthStore, cacheOpts CacheOptions) *v1ImageService {
 	service := &v1ImageService{
 		imageClient: client,
 		authStore:   authStore,
-		cacheTTL:    defaultCacheTTL,
-		domainTTL:   defaultDomainCacheTTL,
+		metrics:     newCacheMetrics(),
 	}
-	service.setMaxCacheSize(defaultImageCacheSize)
+	service.UpdateCacheOptions(cacheOpts)
 	if authStore != nil {
 		authStore.AddObserver(service.invalidateCache)
 	}
 	return service
+}
+
+func (s *v1ImageService) UpdateCacheOptions(opts CacheOptions) {
+	normalized := opts.normalize()
+	s.cacheMutex.Lock()
+	s.cacheTTL = normalized.ImageCacheTTL
+	s.domainTTL = normalized.DomainCacheTTL
+	s.cacheMutex.Unlock()
+	s.setMaxCacheSize(normalized.ImageCacheSize)
 }
 
 func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtype.AuthConfig) {
@@ -123,11 +238,15 @@ func (s *v1ImageService) getCachedResult(image string) (cacheEntry, bool) {
 		entry, valid := raw.(cacheEntry)
 		if !valid || time.Now().After(entry.expiry) {
 			cache.Remove(image)
+			s.metrics.recordImageEviction()
+			s.metrics.recordImageMiss()
 			return cacheEntry{}, false
 		}
+		s.metrics.recordImageHit()
 		entry.auth = cloneAuthConfig(entry.auth)
 		return entry, true
 	}
+	s.metrics.recordImageMiss()
 	return cacheEntry{}, false
 }
 
@@ -179,18 +298,24 @@ func (s *v1ImageService) getCachedDomainMatch(domain string, registries map[stri
 	}
 	raw, ok := cache.Get(domain)
 	if !ok {
+		s.metrics.recordDomainMiss()
 		return "", nil
 	}
 	entry, valid := raw.(domainEntry)
 	if !valid || time.Now().After(entry.expiry) {
 		cache.Remove(domain)
+		s.metrics.recordDomainEviction()
+		s.metrics.recordDomainMiss()
 		return "", nil
 	}
 	cfg, exists := registries[entry.registryDomain]
 	if !exists {
 		cache.Remove(domain)
+		s.metrics.recordDomainEviction()
+		s.metrics.recordDomainMiss()
 		return "", nil
 	}
+	s.metrics.recordDomainHit()
 	cfgCopy := cfg
 	return entry.registryDomain, &cfgCopy
 }
@@ -207,11 +332,17 @@ func (s *v1ImageService) maxDomainCacheSize() int {
 }
 
 func (s *v1ImageService) invalidateCache() {
+	var purged bool
 	if cache := s.getImageCache(); cache != nil {
 		cache.Purge()
+		purged = true
 	}
 	if cache := s.getDomainCache(); cache != nil {
 		cache.Purge()
+		purged = true
+	}
+	if purged {
+		s.metrics.recordInvalidation()
 	}
 }
 
@@ -243,6 +374,10 @@ func (s *v1ImageService) findMatchingRegistry(domain string, registries map[stri
 	return "", nil
 }
 
+func (s *v1ImageService) CacheStats() CacheStats {
+	return s.metrics.snapshot()
+}
+
 func (s *v1ImageService) getImageCache() *lru.Cache {
 	s.cacheMutex.RLock()
 	defer s.cacheMutex.RUnlock()
@@ -258,14 +393,23 @@ func (s *v1ImageService) getDomainCache() *lru.Cache {
 func (s *v1ImageService) setMaxCacheSize(size int) {
 	s.cacheMutex.Lock()
 	defer s.cacheMutex.Unlock()
+	if s.maxCacheSize == size {
+		if size == 0 || s.imageCache != nil {
+			return
+		}
+	}
 	s.maxCacheSize = size
 	s.rebuildCachesLocked()
 }
 
 func (s *v1ImageService) rebuildCachesLocked() {
+	hadCache := s.imageCache != nil || s.domainCache != nil
 	if s.maxCacheSize <= 0 {
 		s.imageCache = nil
 		s.domainCache = nil
+		if hadCache {
+			s.metrics.recordInvalidation()
+		}
 		return
 	}
 
@@ -289,6 +433,9 @@ func (s *v1ImageService) rebuildCachesLocked() {
 		return
 	}
 	s.domainCache = domainCache
+	if hadCache {
+		s.metrics.recordInvalidation()
+	}
 }
 
 func cloneAuthConfig(cfg *rtype.AuthConfig) *rtype.AuthConfig {
