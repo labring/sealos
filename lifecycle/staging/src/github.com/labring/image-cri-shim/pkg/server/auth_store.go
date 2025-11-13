@@ -30,6 +30,7 @@ type AuthStore struct {
 	mu                sync.RWMutex
 	criConfigs        map[string]rtype.AuthConfig
 	offlineCRIConfigs map[string]rtype.AuthConfig
+	observers         []func()
 }
 
 func NewAuthStore(auth *types.ShimAuthConfig) *AuthStore {
@@ -40,18 +41,25 @@ func NewAuthStore(auth *types.ShimAuthConfig) *AuthStore {
 
 func (a *AuthStore) Update(auth *types.ShimAuthConfig) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
 
 	if auth == nil {
 		a.criConfigs = map[string]rtype.AuthConfig{}
 		a.offlineCRIConfigs = map[string]rtype.AuthConfig{}
 		logger.Warn("received empty shim auth config, cleared cached registry credentials")
-		return
+	} else {
+		a.criConfigs = cloneAuthMap(auth.CRIConfigs)
+		a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
+		logger.Info("updated shim auth config, registries: %d, offline: %d", len(a.criConfigs), len(a.offlineCRIConfigs))
 	}
 
-	a.criConfigs = cloneAuthMap(auth.CRIConfigs)
-	a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
-	logger.Info("updated shim auth config, registries: %d, offline: %d", len(a.criConfigs), len(a.offlineCRIConfigs))
+	observers := append([]func(){}, a.observers...)
+	a.mu.Unlock()
+
+	for _, observer := range observers {
+		if observer != nil {
+			observer()
+		}
+	}
 }
 
 func (a *AuthStore) GetCRIConfig(registry string) (rtype.AuthConfig, bool) {
@@ -74,6 +82,15 @@ func (a *AuthStore) GetOfflineConfigs() map[string]rtype.AuthConfig {
 	defer a.mu.RUnlock()
 
 	return cloneAuthMap(a.offlineCRIConfigs)
+}
+
+func (a *AuthStore) AddObserver(observer func()) {
+	if observer == nil {
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.observers = append(a.observers, observer)
 }
 
 func cloneAuthMap(src map[string]rtype.AuthConfig) map[string]rtype.AuthConfig {
