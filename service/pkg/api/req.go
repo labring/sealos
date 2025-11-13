@@ -95,6 +95,20 @@ type VlogsRequest struct {
 	StartTime   string      `json:"startTime,omitempty"`
 	EndTime     string      `json:"endTime,omitempty"`
 }
+type DBLogsRequest struct {
+	Time        string   `json:"time"`
+	Namespace   string   `json:"namespace"`
+	Limit       string   `json:"limit,omitempty"`
+	NumberMode  string   `json:"numberMode,omitempty"`
+	NumberLevel string   `json:"numberLevel,omitempty"`
+	Pvc         []string `json:"pvc,omitempty"`
+	Type        []string `json:"type,omitempty"`
+	Container   []string `json:"container,omitempty"`
+	Keyword     string   `json:"keyword,omitempty"`
+	PodQuery    string   `json:"podQuery,omitempty"`
+	StartTime   string   `json:"startTime,omitempty"`
+	EndTime     string   `json:"endTime,omitempty"`
+}
 
 type VlogsResponse struct {
 	Time      string `json:"_time"`

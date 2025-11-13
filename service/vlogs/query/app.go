@@ -1,4 +1,4 @@
-package server
+package query
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type VLogsQuery struct {
 	query string
 }
 
-func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
+func (v *VLogsQuery) GetQuery(req *api.VlogsRequest) (string, error) {
 	if req.PodQuery == modeTrue {
 		query := v.generatePodListQuery(req)
 		return query, nil
@@ -30,6 +30,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	}
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
+	v.generateSortQuery(req)
 	return v.query, nil
 }
 
@@ -50,7 +51,7 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 }
 
 func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
-	v.query += fmt.Sprintf("%s ", req.Keyword)
+	v.query += req.Keyword + " "
 }
 
 func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
@@ -172,5 +173,11 @@ func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 			v.query += item
 		}
 		// else: invalid NumberLevel, do not add to query
+	}
+}
+
+func (v *VLogsQuery) generateSortQuery(req *api.VlogsRequest) {
+	if req.NumberMode != modeTrue {
+		v.query += ` | sort by (_time) desc`
 	}
 }
