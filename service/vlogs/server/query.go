@@ -30,6 +30,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	}
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
+	fmt.Println(v.query)
 	return v.query, nil
 }
 
