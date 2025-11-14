@@ -54,6 +54,15 @@ func WithPodContentID(contentID string) DevboxPodOptions {
 	}
 }
 
+func WithPodRuntimeHandler(runtime string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+		pod.Annotations[devboxv1alpha2.AnnotationRuntime] = runtime
+	}
+}
+
 func WithPodInit(init string) DevboxPodOptions {
 	return func(pod *corev1.Pod) {
 		if pod.Annotations == nil {

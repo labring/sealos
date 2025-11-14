@@ -39,11 +39,15 @@ const (
 	// Annotate the devbox node with memory request and limit ratio
 	AnnotationMemoryRequestRatio = "devbox.sealos.io/memory-request-ratio"
 	AnnotationMemoryLimitRatio   = "devbox.sealos.io/memory-limit-ratio"
+	// Annotate the devbox pod with the runtime
+	AnnotationRuntime = "io.containerd.cri.runtime-handler"
 
 	// Label the devbox pod with the devbox part of
 	LabelDevBoxPartOf = "devbox"
 	// Index for pod node name
 	PodNodeNameIndex = "spec.nodeName"
+	// Pod runtime handler for devbox pod
+	PodRuntimeHandler = "devbox-runc"
 )
 
 type DevboxState string

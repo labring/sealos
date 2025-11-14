@@ -168,6 +168,11 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	// check content id and commit record is exist
+	if devbox.Status.CommitRecords == nil || devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// todo: implement the schedule logic to replace the current logic
 	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
@@ -341,6 +346,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 				helper.WithPodImage(currentRecord.BaseImage),
 				helper.WithPodContentID(devbox.Status.ContentID),
 				helper.WithPodNodeName(currentRecord.Node),
+				helper.WithPodRuntimeHandler(devboxv1alpha2.PodRuntimeHandler),
 			}
 			if r.MergeBaseImageTopLayer {
 				podOptions = append(podOptions, helper.WithPodInit(commit.AnnotationImageFromValue))
