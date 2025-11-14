@@ -302,7 +302,7 @@ export const defaultDBEditValue: DBEditType = {
   parameterConfig: {
     maxConnections: undefined,
     timeZone: 'UTC',
-    lowerCaseTableNames: '0',
+    lowerCaseTableNames: '1',
     isMaxConnectionsCustomized: false
   }
 };
