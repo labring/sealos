@@ -42,6 +42,7 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+      - -extldflags '-static --static'
     overrides:
       - goos: linux
         goarch: amd64
@@ -77,6 +78,7 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+      - -extldflags '-static --static'
     overrides:
       - goos: linux
         goarch: amd64
@@ -111,7 +113,7 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
-
+      - -extldflags '-static --static'
   - id: image-cri-shim
     env:
       - CGO_ENABLED=0
@@ -136,7 +138,7 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
-
+      - -extldflags '-static --static'
 dockers:
   - use: buildx
     ids:
