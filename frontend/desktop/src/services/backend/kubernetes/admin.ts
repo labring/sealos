@@ -385,8 +385,20 @@ export const setUserWorkspaceLock = async (namespace: string) => {
     } catch (readError) {
       if (
         readError instanceof k8s.HttpError &&
-        readError.body instanceof k8s.V1Status &&
-        readError.body.code === 404
+        (readError.statusCode === 404 ||
+          (readError.body && (readError.body.code === 404 || readError.body.code === '404')))
+      ) {
+        console.log('setUserWorkspaceLock error: namespace not found');
+        return true;
+      }
+      if (
+        readError instanceof k8s.HttpError &&
+        readError.body &&
+        typeof readError.body.message === 'string' &&
+        readError.body.message.includes('not found') &&
+        (readError.statusCode === 404 ||
+          readError.body.code === 404 ||
+          readError.body.code === '404')
       ) {
         console.log('setUserWorkspaceLock error: namespace not found');
         return true;
@@ -418,11 +430,23 @@ export const setUserWorkspaceLock = async (namespace: string) => {
       WorkspaceDebtStatus.TerminateSuspend
     );
   } catch (e) {
-    if (e instanceof k8s.HttpError && e.body instanceof k8s.V1Status && e.body.code === 404) {
-      console.log('namespace not found');
+    if (
+      e instanceof k8s.HttpError &&
+      (e.statusCode === 404 || (e.body && (e.body.code === 404 || e.body.code === '404')))
+    ) {
+      console.log('setUserWorkspaceLock error: namespace not found');
       return true;
     }
-    console.log(e);
+    if (
+      e instanceof k8s.HttpError &&
+      e.body &&
+      typeof e.body.message === 'string' &&
+      e.body.message.includes('not found') &&
+      (e.statusCode === 404 || e.body.code === 404 || e.body.code === '404')
+    ) {
+      console.log('setUserWorkspaceLock error: namespace not found');
+      return true;
+    }
     throw e;
   }
 };

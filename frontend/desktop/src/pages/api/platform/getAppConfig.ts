@@ -63,7 +63,7 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
       global.commitCroner = new Cron('* * * * * *', commitTransactionjob, {
         name: 'commitTransactionJob',
         catch: (err) => {
-          // console.log(err);
+          console.error('[commitTransactionJob Cron] Error:', err);
         }
       });
     }
@@ -72,7 +72,7 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
       global.runCroner = new Cron('* * * * * *', runTransactionjob, {
         name: 'runTransactionJob',
         catch: (err) => {
-          // console.log(err);
+          console.error('[runTransactionJob Cron] Error:', err);
         }
       });
     }
@@ -81,7 +81,7 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
       global.finishCroner = new Cron('* * * * * *', finishTransactionJob, {
         name: 'finishTransactionJob',
         catch: (err) => {
-          // console.log(err);
+          console.error('[finishTransactionJob Cron] Error:', err);
         }
       });
     }
