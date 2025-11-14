@@ -42,6 +42,7 @@ desktop:
       aiAssistantEnabled: false
       bannerEnabled: false
       subscriptionEnabled: false
+      guestModeEnabled: false
     gtmId: null
   auth:
     proxyAddress: ""

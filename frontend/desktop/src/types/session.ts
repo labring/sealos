@@ -25,12 +25,12 @@ export type UserInfo = {
 export type KubeConfig = string;
 
 export type Session = {
-  token: string; // jwt token
-  // 提供一些简单的信息
-  user: UserInfo;
-  subscription: WorkspaceSubscription;
-  // 帮忙导出用的
+  token: string;
+  subscription: WorkspaceSubscription | null;
+  user: UserInfo | null;
   kubeconfig: KubeConfig;
+  isGuest?: boolean;
+  guestId?: string;
 };
 export type ApiSession = {
   // 提供一些简单的信息

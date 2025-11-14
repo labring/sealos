@@ -1,10 +1,11 @@
-import { getRegionToken } from '@/api/auth';
+import { getRegionToken, autoInitRegionToken } from '@/api/auth';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { sessionConfig } from '@/utils/sessionConfig';
+import { useGuideModalStore } from '@/stores/guideModal';
 import {
   Flex,
   Stack,
@@ -24,7 +25,12 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export function EmailCheckForm() {
+interface EmailCheckFormProps {
+  isModal?: boolean;
+  onBack?: () => void;
+}
+
+export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const { setToken } = useSessionStore();
@@ -66,11 +72,30 @@ export function EmailCheckForm() {
       if (!globalToken) throw Error();
       setToken(globalToken);
       if (result.data?.needInit) {
-        gtmLoginSuccess({
-          user_type: 'new',
-          method: 'email'
-        });
-        await router.push('/workspace');
+        try {
+          // 自动初始化工作空间
+          const initResult = await autoInitRegionToken();
+
+          if (initResult?.data) {
+            gtmLoginSuccess({
+              user_type: 'new',
+              method: 'email'
+            });
+            await sessionConfig(initResult.data);
+            const { setInitGuide } = useGuideModalStore.getState();
+            setInitGuide(true);
+            // Force full page reload to close modal and reinitialize app state
+            window.location.href = '/';
+          }
+        } catch (error) {
+          console.error('Auto init failed, fallback to manual:', error);
+          gtmLoginSuccess({
+            user_type: 'new',
+            method: 'email'
+          });
+          // Force full page reload for workspace selection
+          window.location.href = '/workspace';
+        }
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
@@ -79,21 +104,32 @@ export function EmailCheckForm() {
             method: 'email'
           });
           await sessionConfig(regionTokenRes.data);
-          await router.replace('/');
+          // Force full page reload to close modal and reinitialize app state
+          window.location.href = '/';
         }
       }
     }
   });
 
   const handleBack = () => {
-    router.back();
+    if (isModal && onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
   };
 
   const bg = useColorModeValue('white', 'gray.700');
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
-      <Stack spacing={8} mx="auto" maxW="lg" px={4} h={'60%'}>
-        <Flex rounded="lg" p={8} gap={'16px'} flexDirection={'column'}>
+    <Flex
+      minH={isModal ? 'auto' : '100vh'}
+      align="center"
+      justify="center"
+      bg={isModal ? 'transparent' : bg}
+      direction={'column'}
+    >
+      <Stack spacing={8} mx="auto" maxW="lg" px={isModal ? 0 : 4} h={'60%'}>
+        <Flex rounded="lg" p={isModal ? 0 : 8} gap={'16px'} flexDirection={'column'}>
           <Box>
             <MailCheck size={'32px'} color="#ADBDCE"></MailCheck>
           </Box>

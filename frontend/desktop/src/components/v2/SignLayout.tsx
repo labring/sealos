@@ -25,7 +25,7 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
 
   useEffect(() => {
-    if (session && token) {
+    if (session?.user && !session?.isGuest && !!token) {
       router.replace('/');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
