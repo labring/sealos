@@ -161,7 +161,6 @@
   "credit_purchase": "Credit Purchase",
   "custom_amount": "Custom Amount",
   "duration": "duration",
-  "first_recharge_tips": "Earn credits when making a first-time purchase for some tiers.",
   "free_plan": "Free Plan",
   "orders": {
     "invoiced": "Invoiced",
@@ -339,5 +338,7 @@
   },
   "bonus_amount": "Bonus Amount",
   "sealos_coin_text": "Sealos Coin icon",
-  "sealos_coin_alt": "A coin icon that indicates some type of currency."
+  "sealos_coin_alt": "A coin icon that indicates some type of currency.",
+  "recharge_doubled": "Doubled!",
+  "recharge_bonus": "Bonus!"
 }
