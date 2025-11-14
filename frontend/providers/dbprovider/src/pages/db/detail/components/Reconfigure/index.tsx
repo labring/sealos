@@ -1,6 +1,6 @@
 import { applyYamlList, getConfigByName } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import { DBReconfigureMap } from '@/constants/db';
+import { DBReconfigureMap, DBTypeEnum } from '@/constants/db';
 import type { DBDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { json2Reconfigure } from '@/utils/json2Yaml';
@@ -188,6 +188,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
             ref={configTableRef}
             initialData={config}
             onDifferenceChange={handleDifferenceChange}
+            dbType={db.dbType as DBTypeEnum}
           />
         )}
         {subMenu === SubMenuEnum.History && db && <History db={db} />}
