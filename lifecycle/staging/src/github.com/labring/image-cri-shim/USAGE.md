@@ -336,6 +336,43 @@ sudo journalctl -u image-cri-shim --since="1m ago" | grep "cache"
 
 When the ConfigMap is updated, the shim automatically calls `UpdateCache` with the new values. Existing cache entries are invalidated as needed, and metric logging switches to the new cadence immediately (or stops if `disableStats: true`). This makes it safe to experiment with cache sizes/TTLs during live traffic without restarting kubelet or containerd.
 
+#### Example Configurations
+
+```yaml
+# 内存敏感/低频拉取节点：缩小容量、缩短 TTL 并关闭统计日志
+cache:
+  imageCacheSize: 256
+  imageCacheTTL: 10m
+  domainCacheTTL: 5m
+  statsLogInterval: 0s
+  disableStats: true
+
+# 高 QPS 节点：增大容量和 TTL，保留 30s 统计日志实时观察命中率
+cache:
+  imageCacheSize: 5000
+  imageCacheTTL: 2h
+  domainCacheTTL: 30m
+  statsLogInterval: 30s
+  disableStats: false
+
+# 故障排查：临时关闭缓存，所有请求直接走 registry
+cache:
+  imageCacheSize: 0
+  imageCacheTTL: 0s          # 选填，关闭后该值会被忽略
+  statsLogInterval: 60s
+  disableStats: false
+
+# 只调整域名缓存：保持镜像缓存默认，延长域名匹配的 TTL
+cache:
+  imageCacheSize: 1024
+  imageCacheTTL: 30m
+  domainCacheTTL: 1h
+  statsLogInterval: 120s
+  disableStats: false
+```
+
+配置变更后等待 `reloadInterval`（默认 30s）即可生效。镜像缓存与域名缓存会在热更新时自动失效，确保新域名、新 registry 立即可用。
+
 ## 4. Core Functionality Usage
 
 ### 4.1 Image Name Processing
