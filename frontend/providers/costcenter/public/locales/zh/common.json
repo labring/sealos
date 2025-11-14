@@ -48,7 +48,6 @@
   "enter_your_info": "输入您的信息",
   "exceeded_resources": "超出资源",
   "failed_to_redeem_gift_code": "兑换失败",
-  "first_recharge_tips": "部分规格首次充值可享赠送金额",
   "free_plan": "免费套餐",
   "get_code": "获取验证码",
   "gift_card_redemption": "点卡兑换",
@@ -340,5 +339,7 @@
   "you_have_upgraded_to_plan_benefits_unlocked": "您已升级到 {{planName}}，这些权益已经解锁",
   "your_current_plan": "您当前的套餐",
   "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制",
-  "your_next_plan": "您下一个套餐"
+  "your_next_plan": "您下一个套餐",
+  "recharge_doubled": "双倍!",
+  "recharge_bonus": "赠"
 }
