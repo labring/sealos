@@ -29,6 +29,10 @@ export type DNSRecord = {
   readonly data: string;
 };
 
+export type QueryOptions = {
+  recursionDesired: boolean;
+};
+
 /**
  * Error codes for DNS resolution errors
  */
@@ -92,6 +96,10 @@ const ROOT_NS_SERVER: Nameserver = {
   resolveIPv6: async () => '2001:503:ba3e::2:30'
 } as const;
 
+const DEFAULT_QUERY_OPTS: QueryOptions = {
+  recursionDesired: false
+};
+
 /**
  * Check if an IP address is IPv6
  */
@@ -123,7 +131,8 @@ const isDefinitiveDNSError = (rcode: string): boolean => {
 export const queryDns = async (
   name: string,
   type: dnsPacket.StringRecordType,
-  server: string
+  server: string,
+  options: QueryOptions = DEFAULT_QUERY_OPTS
 ): Promise<Packet> => {
   const socketType = isIPv6(server) ? 'udp6' : 'udp4';
 
@@ -133,7 +142,7 @@ export const queryDns = async (
       type: 'query',
       id: Math.floor(Math.random() * 65535),
       // No recursive queries
-      flags: 0,
+      flags: options.recursionDesired ? dnsPacket.RECURSION_DESIRED : 0,
       questions: [
         {
           name,
@@ -177,6 +186,24 @@ export const queryDns = async (
       }
     });
   });
+};
+
+const resolveIPv4Address = async (host: string) => {
+  try {
+    const ipResult = await dns.resolve4(host);
+    return ipResult[0] ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const resolveIPv6Address = async (host: string) => {
+  try {
+    const ipResult = await dns.resolve6(host);
+    return ipResult[0] ?? null;
+  } catch {
+    return null;
+  }
 };
 
 /**
@@ -235,23 +262,15 @@ const extractNSServers = (
         if (glueA) {
           return glueA;
         }
-        try {
-          const ipResult = await dns.resolve4(ns);
-          return ipResult[0] ?? null;
-        } catch {
-          return null;
-        }
+
+        return resolveIPv4Address(ns);
       },
       resolveIPv6: async (): Promise<string | null> => {
         if (glueAAAA) {
           return glueAAAA;
         }
-        try {
-          const ipResult = await dns.resolve6(ns);
-          return ipResult[0] ?? null;
-        } catch {
-          return null;
-        }
+
+        return resolveIPv6Address(ns);
       }
     };
   });
@@ -311,7 +330,7 @@ const resolveWithNs = async (
  * Get authoritative NS servers of the given domain name.
  * @returns a list of NS servers
  */
-export const getAuthoritativeNs = async (domain: string): Promise<NSInfo | null> => {
+export const getAuthoritativeNsFromRoot = async (domain: string): Promise<NSInfo | null> => {
   const parts = domain
     .split('.')
     .filter((p) => p.length > 0)
@@ -401,6 +420,75 @@ export const getAuthoritativeNs = async (domain: string): Promise<NSInfo | null>
   return result;
 };
 
+export const getAuthoritativeNsFromLocal = async (domain: string): Promise<NSInfo | null> => {
+  const localNs = dns.getServers();
+  if (localNs.length === 0) {
+    return null;
+  }
+
+  const parts = domain.split('.').filter((part) => part.length > 0);
+
+  if (parts.length === 0) {
+    return null;
+  }
+
+  if (parts.length > MAX_QUERY_STEPS) {
+    throw new ResolveError(
+      ResolveErrorCode.DOMAIN_TOO_LONG,
+      `Domain level exceeds the limit of ${MAX_QUERY_STEPS}`,
+      { domain }
+    );
+  }
+
+  const queryFromLocalResolvers = async (target: string): Promise<NSInfo | null> => {
+    for (const resolver of localNs) {
+      try {
+        const response = await queryDns(target, 'NS', resolver, {
+          recursionDesired: true
+        });
+
+        if (response.type !== 'response') {
+          continue;
+        }
+
+        const rcode = (response as any).rcode;
+        if (rcode !== 'NOERROR') {
+          continue;
+        }
+
+        const answers = [
+          ...(response.answers ?? []),
+          ...(response.authorities ?? []),
+          ...(response.additionals ?? [])
+        ];
+
+        const nsServersWithIP = extractNSServers(target, answers);
+        if (nsServersWithIP.length > 0) {
+          return {
+            zone: target,
+            nameservers: nsServersWithIP
+          };
+        }
+      } catch {
+        // Ignore network/time-out errors for this resolver.
+        continue;
+      }
+    }
+
+    return null;
+  };
+
+  for (let i = 0; i < parts.length; i += 1) {
+    const zoneCandidate = parts.slice(i).join('.');
+    const result = await queryFromLocalResolvers(zoneCandidate);
+    if (result) {
+      return result;
+    }
+  }
+
+  return null;
+};
+
 /**
  * Extract data from DNS answers.
  */
@@ -451,7 +539,11 @@ const queryDnsFollowCname = async (
 
   let nsInfo: NSInfo | null = null;
   try {
-    nsInfo = await getAuthoritativeNs(options.domain);
+    nsInfo = await getAuthoritativeNsFromLocal(options.domain);
+
+    if (!nsInfo || nsInfo.nameservers.length === 0) {
+      nsInfo = await getAuthoritativeNsFromRoot(options.domain);
+    }
   } catch (err) {
     // Failed to get authoritative NS - re-throw as ResolveError if not already
     if (err instanceof ResolveError) {

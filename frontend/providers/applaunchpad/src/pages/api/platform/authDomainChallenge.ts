@@ -41,10 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const challengeUrls = [ip4?.data, ip6?.data, customDomain].flatMap((host) => {
       if (!host) return [];
-      return [
-        `https://${host}/api/.well-known/applaunchpad-domain-challenge/${token}`,
-        `http://${host}/api/.well-known/applaunchpad-domain-challenge/${token}`
-      ];
+      return [`http://${host}/api/.well-known/applaunchpad-domain-challenge/${token}`];
     });
 
     console.log('URLs to attempt for domain', customDomain, ':', challengeUrls);
