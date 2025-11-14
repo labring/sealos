@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { customAlphabet } from 'nanoid';
 import crypto from 'crypto';
+import { queryA, queryAAAA } from '@/services/dns-resolver';
+import { custom } from 'zod';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
 
@@ -25,22 +27,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: 'Missing required parameter: customDomain'
       });
     }
+
+    const ip4 = await queryA(customDomain).catch((e) => {
+      console.error('Failed to resolve IPv4 address:', e);
+      return null;
+    });
+    const ip6 = await queryAAAA(customDomain).catch((e) => {
+      console.error('Failed to resolve IPv6 address:', e);
+      return null;
+    });
+
     const token = nanoid();
 
-    const challengeUrl = `http://${customDomain}/api/.well-known/applaunchpad-domain-challenge/${token}`;
+    const challengeUrls = [ip4?.data, ip6?.data, customDomain].flatMap((host) => {
+      if (!host) return [];
+      return [
+        `https://${host}/api/.well-known/applaunchpad-domain-challenge/${token}`,
+        `http://${host}/api/.well-known/applaunchpad-domain-challenge/${token}`
+      ];
+    });
 
-    console.log('Attempting domain challenge:', challengeUrl);
+    console.log('URLs to attempt for domain', customDomain, ':', challengeUrls);
 
-    try {
+    let response: Response | null = null;
+    let challengeUrl: string | null = null;
+    for (const challengeUrl of challengeUrls) {
+      console.log('Attempting domain challenge:', challengeUrl);
+
       // Make HTTP request to user's domain
-      const response = await fetch(challengeUrl, {
+      response = await fetch(challengeUrl, {
         method: 'GET',
         headers: {
+          Host: customDomain,
           'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
         },
         // Set timeout to 10 seconds
         signal: AbortSignal.timeout(10000)
-      });
+      }).catch((e) => null);
+
+      // Try every URL until one succeeds or all fail
+      if (response?.ok) {
+        break;
+      }
+    }
+
+    try {
+      if (!response) {
+        return jsonRes(res, {
+          code: 400,
+          error: {
+            code: 'CHALLENGE_REQUEST_FAILED',
+            message: 'Challenge request failed',
+            status: 400,
+            url: challengeUrl
+          }
+        });
+      }
 
       if (!response.ok) {
         return jsonRes(res, {
