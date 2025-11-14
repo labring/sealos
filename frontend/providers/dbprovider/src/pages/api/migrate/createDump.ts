@@ -211,7 +211,7 @@ if [ "$DB_TYPE" = "mysql" ] || [ "$DB_TYPE" = "apecloud-mysql" ]; then
   if [ "$IMPORT_FORMAT" = "sql" ]; then
     mysql -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME < $FILE
   elif [ "$IMPORT_FORMAT" = "csv" ]; then
-    mysql -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -e "LOAD DATA LOCAL INFILE '$FILE' INTO TABLE $TABLE_NAME FIELDS TERMINATED BY ',' ENCLOSED BY '\\\"' LINES TERMINATED BY '\\n';"
+    mysql --local-infile=1 -h $DB_HOST -P $DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -e "LOAD DATA LOCAL INFILE '$FILE' INTO TABLE $TABLE_NAME FIELDS TERMINATED BY ',' ENCLOSED BY '\\\"' LINES TERMINATED BY '\\n';"
   fi
 
 elif [ "$DB_TYPE" = "postgresql" ]; then
