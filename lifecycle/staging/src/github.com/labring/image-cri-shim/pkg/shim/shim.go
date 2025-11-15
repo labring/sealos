@@ -34,6 +34,9 @@ const (
 	DisableService = server.DontConnect
 )
 
+type CacheStats = server.CacheStats
+type CacheOptions = server.CacheOptions
+
 // Shim is the interface we expose for controlling our CRI shim.
 type Shim interface {
 	// Setup prepares the shim to start processing CRI requests.
@@ -44,6 +47,10 @@ type Shim interface {
 	Stop()
 	// UpdateAuth refreshes registry credentials without restarting the shim.
 	UpdateAuth(*types.ShimAuthConfig)
+	// UpdateCache applies cache-related tuning knobs.
+	UpdateCache(CacheOptions)
+	// CacheStats returns current cache counters.
+	CacheStats() CacheStats
 }
 
 // shim is the implementation of Shim.
@@ -80,6 +87,7 @@ func NewShim(cfg *types.Config, auth *types.ShimAuthConfig) (Shim, error) {
 		Group:     -1,
 		Mode:      0660,
 		AuthStore: r.authStore,
+		Cache:     CacheOptionsFromConfig(cfg),
 	}
 	srv, err := server.NewServer(srvopts)
 	if err != nil {
@@ -127,6 +135,20 @@ func (r *shim) UpdateAuth(auth *types.ShimAuthConfig) {
 	r.authStore.Update(auth)
 }
 
+func (r *shim) UpdateCache(opts CacheOptions) {
+	if r.server == nil {
+		return
+	}
+	r.server.UpdateCacheOptions(opts)
+}
+
+func (r *shim) CacheStats() CacheStats {
+	if r.server == nil {
+		return CacheStats{}
+	}
+	return r.server.CacheStats()
+}
+
 func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {
 	if err != nil {
 		logger.Error("failed to determine permissions/ownership of client socket %q: %v",
@@ -146,4 +168,15 @@ func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err
 // shimError creates a formatted shim-specific error.
 var shimError = func(format string, args ...interface{}) error {
 	return fmt.Errorf("cri/shim: "+format, args...)
+}
+
+func CacheOptionsFromConfig(cfg *types.Config) CacheOptions {
+	if cfg == nil {
+		return CacheOptions{}
+	}
+	return CacheOptions{
+		ImageCacheSize: cfg.Cache.ImageCacheSize,
+		ImageCacheTTL:  cfg.Cache.ImageCacheTTL.Duration,
+		DomainCacheTTL: cfg.Cache.DomainCacheTTL.Duration,
+	}
 }

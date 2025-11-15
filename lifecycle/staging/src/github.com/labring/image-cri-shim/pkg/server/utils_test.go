@@ -23,26 +23,42 @@ import (
 )
 
 func TestReplaceImageSkipLogin(t *testing.T) {
-	image := "nginx:1.29.2-alpine3.22-perl"
-	authConfig := map[string]registry.AuthConfig{
-		"docker.xpg666.xyz": {
-			ServerAddress: "https://docker.xpg666.xyz",
-		},
-		"192.168.64.4:5000": {
-			ServerAddress: "http://192.168.64.4:5000",
-			Username:      "admin",
-			Password:      "passw0rd",
-		},
+	withManifestStub(t, func(_ *manifestStub) {
+		image := "nginx:1.29.2-alpine3.22-perl"
+		authConfig := map[string]registry.AuthConfig{
+			"docker.xpg666.xyz": {
+				ServerAddress: "https://docker.xpg666.xyz",
+			},
+		}
+
+		newImage, replaced, cfg := replaceImage(image, "PullImage", authConfig)
+		if !replaced {
+			t.Fatalf("expected image to be replaced when login is skipped")
+		}
+		if expected := "docker.xpg666.xyz/library/nginx:1.29.2-alpine3.22-perl"; newImage != expected {
+			t.Fatalf("expected rewritten image %q, got %q", expected, newImage)
+		}
+		if cfg == nil {
+			t.Fatal("expected auth config to be returned")
+		}
+	})
+}
+
+func TestExtractDomainFromImage(t *testing.T) {
+	tests := []struct {
+		image    string
+		expected string
+	}{
+		{"nginx:latest", "docker.io"},
+		{"docker.io/library/nginx:latest", "docker.io"},
+		{"registry.example.com/app/nginx:1.0", "registry.example.com"},
+		{"localhost:5000/nginx:1.0", "localhost:5000"},
+		{"", ""},
 	}
 
-	newImage, replaced, cfg := replaceImage(image, "PullImage", authConfig)
-	if !replaced {
-		t.Fatalf("expected image to be replaced when login is skipped")
-	}
-	if expected := "docker.xpg666.xyz/library/nginx:1.29.2-alpine3.22-perl"; newImage != expected {
-		t.Fatalf("expected rewritten image %q, got %q", expected, newImage)
-	}
-	if cfg == nil {
-		t.Fatal("expected no auth config")
+	for _, tt := range tests {
+		if domain := extractDomainFromImage(tt.image); domain != tt.expected {
+			t.Fatalf("image %q expected domain %q, got %q", tt.image, tt.expected, domain)
+		}
 	}
 }

@@ -96,10 +96,12 @@ func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 		logger.Fatal(fmt.Sprintf("failed to start image_shim, %s", err))
 	}
 
+	statsUpdater := startCacheStatsReporter(ctx, imgShim, cfg.Cache.StatsLogInterval.Duration)
+
 	watchDone := make(chan struct{})
 	go func() {
 		defer close(watchDone)
-		if err := watchAuthConfig(ctx, cfgFile, imgShim, cfg.ReloadInterval.Duration); err != nil {
+		if err := watchAuthConfig(ctx, cfgFile, imgShim, cfg.ReloadInterval.Duration, statsUpdater); err != nil {
 			logger.Error("config watcher stopped with error: %v", err)
 		}
 	}()
@@ -115,7 +117,7 @@ func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 	logger.Info("shutting down the image_shim")
 }
 
-func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interval time.Duration) error {
+func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interval time.Duration, updateStatsInterval func(time.Duration)) error {
 	if path == "" {
 		logger.Warn("config file path is empty, skip dynamic auth reload")
 		return nil
@@ -169,6 +171,10 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interv
 				continue
 			}
 			imgShim.UpdateAuth(auth)
+			imgShim.UpdateCache(shim.CacheOptionsFromConfig(cfg))
+			if updateStatsInterval != nil {
+				updateStatsInterval(cfg.Cache.StatsLogInterval.Duration)
+			}
 			lastHash = hash
 			logger.Info("reloaded shim auth configuration from %s", path)
 			newInterval := cfg.ReloadInterval.Duration
@@ -181,6 +187,49 @@ func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interv
 				currentInterval = newInterval
 				logger.Info("updated reload interval to %s", newInterval)
 			}
+		}
+	}
+}
+
+func startCacheStatsReporter(ctx context.Context, imgShim shim.Shim, interval time.Duration) func(time.Duration) {
+	updateCh := make(chan time.Duration, 1)
+	go func() {
+		var ticker *time.Ticker
+		current := interval
+		if current > 0 {
+			ticker = time.NewTicker(current)
+		}
+		for {
+			var tick <-chan time.Time
+			if ticker != nil {
+				tick = ticker.C
+			}
+			select {
+			case <-ctx.Done():
+				if ticker != nil {
+					ticker.Stop()
+				}
+				return
+			case newInterval := <-updateCh:
+				if ticker != nil {
+					ticker.Stop()
+					ticker = nil
+				}
+				current = newInterval
+				if current > 0 {
+					ticker = time.NewTicker(current)
+				}
+			case <-tick:
+				stats := imgShim.CacheStats()
+				logger.Info("cache stats: image_hits=%d image_misses=%d domain_hits=%d domain_misses=%d image_evictions=%d domain_evictions=%d invalidations=%d generated_at=%s",
+					stats.ImageHits, stats.ImageMisses, stats.DomainHits, stats.DomainMisses, stats.ImageEvictions, stats.DomainEvictions, stats.Invalidations, stats.GeneratedAt.Format(time.RFC3339))
+			}
+		}
+	}()
+	return func(d time.Duration) {
+		select {
+		case updateCh <- d:
+		default:
 		}
 	}
 }

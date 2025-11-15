@@ -16,7 +16,11 @@ limitations under the License.
 
 package types
 
-import "testing"
+import (
+	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 func TestUnmarshal(t *testing.T) {
 	cfg, err := Unmarshal("testdata/image-cri-shim.yaml")
@@ -76,5 +80,63 @@ func TestInlineRegistriesPreProcess(t *testing.T) {
 	publicDomain := registryMatchDomain(cfg.Registries[1])
 	if !auth.SkipLoginRegistries[publicDomain] {
 		t.Fatalf("expected %s to skip login, got %#v", publicDomain, auth.SkipLoginRegistries)
+	}
+}
+
+func TestCacheConfigNormalize(t *testing.T) {
+	cases := []struct {
+		name     string
+		in       CacheConfig
+		expected CacheConfig
+	}{
+		{
+			name: "defaults applied",
+			in:   CacheConfig{},
+			expected: CacheConfig{
+				ImageCacheSize:   defaultImageCacheSize,
+				ImageCacheTTL:    metav1.Duration{Duration: defaultImageCacheTTL},
+				DomainCacheTTL:   metav1.Duration{Duration: defaultDomainCacheTTL},
+				StatsLogInterval: metav1.Duration{Duration: defaultCacheStatsInterval},
+			},
+		},
+		{
+			name: "disable stats respected",
+			in: CacheConfig{
+				ImageCacheSize: 512,
+				DisableStats:   true,
+			},
+			expected: CacheConfig{
+				ImageCacheSize: 512,
+				ImageCacheTTL:  metav1.Duration{Duration: defaultImageCacheTTL},
+				DomainCacheTTL: metav1.Duration{Duration: defaultDomainCacheTTL},
+				DisableStats:   true,
+			},
+		},
+		{
+			name: "negative size disables cache",
+			in: CacheConfig{
+				ImageCacheSize: -10,
+			},
+			expected: CacheConfig{
+				ImageCacheSize:   0,
+				ImageCacheTTL:    metav1.Duration{Duration: defaultImageCacheTTL},
+				DomainCacheTTL:   metav1.Duration{Duration: defaultDomainCacheTTL},
+				StatsLogInterval: metav1.Duration{Duration: defaultCacheStatsInterval},
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := tt.in
+			cfg.normalize()
+			if cfg.ImageCacheSize != tt.expected.ImageCacheSize ||
+				cfg.ImageCacheTTL != tt.expected.ImageCacheTTL ||
+				cfg.DomainCacheTTL != tt.expected.DomainCacheTTL ||
+				cfg.DisableStats != tt.expected.DisableStats ||
+				cfg.StatsLogInterval != tt.expected.StatsLogInterval {
+				t.Fatalf("expected %+v, got %+v", tt.expected, cfg)
+			}
+		})
 	}
 }

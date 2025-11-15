@@ -75,3 +75,23 @@ func TestAuthStoreUpdateAndGet(t *testing.T) {
 		t.Fatalf("expected offline credentials to be cleared after nil update")
 	}
 }
+
+func TestAuthStoreObservers(t *testing.T) {
+	store := NewAuthStore(nil)
+	calls := 0
+	store.AddObserver(func() { calls++ })
+
+	store.Update(&types.ShimAuthConfig{
+		CRIConfigs: map[string]rtype.AuthConfig{
+			"registry.example.com": {ServerAddress: "https://registry.example.com"},
+		},
+	})
+	if calls != 1 {
+		t.Fatalf("expected observer to fire once, got %d", calls)
+	}
+
+	store.Update(nil)
+	if calls != 2 {
+		t.Fatalf("expected observer to fire on nil update, got %d", calls)
+	}
+}
