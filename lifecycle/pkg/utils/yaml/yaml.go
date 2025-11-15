@@ -19,22 +19,22 @@ package yaml
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
 	"strings"
 
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
-
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 const nonStructPointerErrorFmt = "must be a struct pointer, got %T"
 
-func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
+func unmarshalStrict(r io.Reader, obj any) (err error) {
 	if obj != nil && reflect.ValueOf(obj).Kind() != reflect.Pointer {
 		return fmt.Errorf(nonStructPointerErrorFmt, obj)
 	}
@@ -45,7 +45,7 @@ func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
 	rd := utilyaml.NewYAMLReader(bufio.NewReader(r))
 	for {
 		buf, rerr := rd.Read()
-		if rerr == io.EOF {
+		if errors.Is(rerr, io.EOF) {
 			break
 		}
 		if rerr != nil {
@@ -63,11 +63,11 @@ func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
 			err = fmt.Errorf("document do not have corresponding struct %T", obj)
 		}
 	}
-	return
+	return err
 }
 
-func UnmarshalToMap(buf []byte) (map[string]interface{}, error) {
-	var data map[string]interface{}
+func UnmarshalToMap(buf []byte) (map[string]any, error) {
+	var data map[string]any
 	err := yaml.Unmarshal(buf, &data)
 	if err != nil {
 		return nil, err
@@ -81,21 +81,21 @@ func ToJSON(bs []byte) (jsons []string) {
 	d := utilyaml.NewYAMLOrJSONDecoder(reader, 4096)
 	for {
 		if err := d.Decode(&ext); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			break
 		}
 		jsons = append(jsons, string(ext.Raw))
 	}
-	return
+	return jsons
 }
 
-func Marshal(obj interface{}) ([]byte, error) {
+func Marshal(obj any) ([]byte, error) {
 	return yaml.Marshal(obj)
 }
 
-func MarshalFile(file string, obj ...interface{}) error {
+func MarshalFile(file string, obj ...any) error {
 	data, err := MarshalConfigs(obj...)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func MarshalFile(file string, obj ...interface{}) error {
 	return fileutil.WriteFile(file, data)
 }
 
-func Unmarshal(r io.Reader, obj interface{}) error {
+func Unmarshal(r io.Reader, obj any) error {
 	return unmarshalStrict(r, obj)
 }
 
@@ -117,7 +117,7 @@ func IsNil(b []byte) (bool, error) {
 
 // UnmarshalFile if there is no content in the file or it contains only spaces,
 // result will be nil, then the given object is not initialized at this time.
-func UnmarshalFile(file string, obj interface{}) error {
+func UnmarshalFile(file string, obj any) error {
 	r, err := os.Open(file)
 	if err != nil {
 		return err
@@ -126,8 +126,8 @@ func UnmarshalFile(file string, obj interface{}) error {
 	return unmarshalStrict(r, obj)
 }
 
-func MarshalConfigs(configs ...interface{}) ([]byte, error) {
-	var cfgs [][]byte
+func MarshalConfigs(configs ...any) ([]byte, error) {
+	cfgs := make([][]byte, 0, len(configs))
 	for _, cfg := range configs {
 		data, err := yaml.Marshal(cfg)
 		if err != nil {
@@ -138,7 +138,7 @@ func MarshalConfigs(configs ...interface{}) ([]byte, error) {
 	return bytes.Join(cfgs, []byte("\n---\n")), nil
 }
 
-func ShowStructYaml(s interface{}) {
+func ShowStructYaml(s any) {
 	data, _ := yaml.Marshal(s)
 	fmt.Println(string(data))
 }

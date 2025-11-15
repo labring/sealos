@@ -24,13 +24,13 @@ import (
 var docsPath string
 
 func newDocsCmd() *cobra.Command {
-	var docsCmd = &cobra.Command{
+	docsCmd := &cobra.Command{
 		Use:     "docs",
 		Short:   "generate API reference",
 		Example: `sealos docs`,
 		Args:    cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return os.MkdirAll(docsPath, 0755)
+			return os.MkdirAll(docsPath, 0o755)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doc.GenMarkdownTree(rootCmd, docsPath)

@@ -96,7 +96,7 @@ type Config struct {
 
 // ConfigList contains a list of Config
 type ConfigList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `         json:",inline"`
+	metav1.ListMeta `         json:"metadata,omitempty"`
 	Items           []Config `json:"items"`
 }

@@ -19,13 +19,10 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
-	. "github.com/onsi/ginkgo/v2"
-
 	"github.com/labring/sealos/test/e2e/suites/checkers"
+	"github.com/labring/sealos/test/e2e/suites/operators"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	. "github.com/onsi/ginkgo/v2"
 )
 
 var _ = Describe("E2E_sealos_run_other_test", func() {
@@ -47,11 +44,17 @@ var _ = Describe("E2E_sealos_run_other_test", func() {
 			err = fakeClient.Image.SaveImage("labring/kubernetes:v1.25.0", "/tmp/kube.tar")
 			utils.CheckErr(err, fmt.Sprintf("failed to save image: %v", err))
 			err = fakeClient.Cluster.Run("/tmp/kube.tar")
-			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single using tar: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to Run new cluster for single using tar: %v", err),
+			)
 			err = fakeClient.Cluster.Run("labring/helm:v3.8.2")
 			utils.CheckErr(err, fmt.Sprintf("failed to running image for helm: %v", err))
 			newImages := []string{"docker.io/labring/kubernetes:v1.25.0", "labring/helm:v3.8.2"}
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{Images: newImages})
+			fakeCheckInterface, err = checkers.NewFakeGroupClient(
+				"default",
+				&checkers.FakeOpts{Images: newImages},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
@@ -64,12 +67,17 @@ var _ = Describe("E2E_sealos_run_other_test", func() {
 			err = fakeClient.Image.TagImage("labring/kubernetes:v1.25.0", "k8s:dev")
 			utils.CheckErr(err, fmt.Sprintf("failed to tag image: %v", err))
 			err = fakeClient.Cluster.Run("k8s:dev")
-			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single using short name: %v", err))
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{Images: []string{"k8s:dev"}})
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to Run new cluster for single using short name: %v", err),
+			)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient(
+				"default",
+				&checkers.FakeOpts{Images: []string{"k8s:dev"}},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 	})
-
 })

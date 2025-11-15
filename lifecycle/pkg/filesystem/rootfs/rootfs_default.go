@@ -24,8 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/exec"
@@ -37,6 +35,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+	"golang.org/x/sync/errgroup"
 )
 
 type defaultRootfs struct {
@@ -58,26 +57,28 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	eg, _ := errgroup.WithContext(ctx)
 	envProcessor := env.NewEnvProcessor(cluster)
 	// TODO: remove this when rendering on client side is GA
-	for _, mount := range f.mounts {
-		src := mount
+	for i := range f.mounts {
+		mount := f.mounts[i]
 		eg.Go(func() error {
-			if !file.IsExist(src.MountPoint) {
-				logger.Debug("Image %s not exist, render env continue", src.ImageName)
+			if !file.IsExist(mount.MountPoint) {
+				logger.Debug("Image %s not exist, render env continue", mount.ImageName)
 				return nil
 			}
 			// TODO: if we are planing to support rendering templates for each host,
 			// then move this rendering process before ssh.CopyDir and do it one by one.
-			envs := v2.MergeEnvWithBuiltinKeys(src.Env, src)
-			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor, envs)
+			envs := v2.MergeEnvWithBuiltinKeys(mount.Env, mount)
+			err := renderTemplatesWithEnv(mount.MountPoint, ipList, envProcessor, envs)
 			if err != nil {
 				return fmt.Errorf("failed to render env: %w", err)
 			}
-			dirs, err := file.StatDir(src.MountPoint, true)
+			dirs, err := file.StatDir(mount.MountPoint, true)
 			if err != nil {
 				return fmt.Errorf("failed to stat files: %w", err)
 			}
 			if len(dirs) != 0 {
-				_, err = executils.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
+				_, err = executils.RunBashCmd(
+					fmt.Sprintf(constants.DefaultChmodBash, mount.MountPoint),
+				)
 				if err != nil {
 					return fmt.Errorf("run chmod to rootfs failed: %w", err)
 				}
@@ -98,7 +99,12 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
 	copyFn := func(m v2.MountImage, targetHost, targetDir string) error {
-		logger.Debug("send mount image, target: %s, image: %s, type: %s", targetHost, m.ImageName, m.Type)
+		logger.Debug(
+			"send mount image, target: %s, image: %s, type: %s",
+			targetHost,
+			m.ImageName,
+			m.Type,
+		)
 		if err := ssh.CopyDir(execer, targetHost, m.MountPoint, targetDir, notRegistryDirFilter); err != nil {
 			logger.Error("error occur while sending mount image %s: %v", m.Name, err)
 			return err
@@ -114,8 +120,8 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	}
 	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
 
-	for idx := range ipList {
-		ip := ipList[idx]
+	for i := range ipList {
+		ip := ipList[i]
 		eg.Go(func() error {
 			var renderingRequired bool
 			for i := range f.mounts {
@@ -153,7 +159,10 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 					return err
 				}
 				renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), targetDir)
-				return execer.CmdAsync(master0, stringsutil.RenderShellWithEnv(renderCommand, mountInfo.Env))
+				return execer.CmdAsync(
+					master0,
+					stringsutil.RenderShellWithEnv(renderCommand, mountInfo.Env),
+				)
 			}
 			return nil
 		})
@@ -161,7 +170,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	return eg.Wait()
 }
 
-func getRenderCommand(binary string, target string) string {
+func getRenderCommand(binary, target string) string {
 	// skip if sealctl doesn't has subcommand render
 	return fmt.Sprintf("%s render --debug=%v --clear %s 2>/dev/null || true", binary,
 		logger.IsDebugMode(),
@@ -174,8 +183,8 @@ func getRenderCommand(binary string, target string) string {
 
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
 	clusterRootfsDir := constants.NewPathResolver(cluster.Name).Root()
-	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
-	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(cluster.Name))
+	rmRootfs := "rm -rf " + clusterRootfsDir
+	deleteHomeDirCmd := "rm -rf " + constants.ClusterDir(cluster.Name)
 	eg, _ := errgroup.WithContext(context.Background())
 	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
 	execer, err := exec.New(sshClient)
@@ -183,8 +192,8 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 		return err
 	}
 
-	for _, IP := range ipList {
-		ip := IP
+	for i := range ipList {
+		ip := ipList[i]
 		eg.Go(func() error {
 			return execer.CmdAsync(ip, rmRootfs, deleteHomeDirCmd)
 		})
@@ -192,7 +201,12 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	return eg.Wait()
 }
 
-func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface, envs map[string]string) error {
+func renderTemplatesWithEnv(
+	mountDir string,
+	ipList []string,
+	p env.Interface,
+	envs map[string]string,
+) error {
 	// currently only render once
 	return p.RenderAll(ipList[0], mountDir, envs)
 }

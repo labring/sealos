@@ -23,13 +23,13 @@ import (
 	"math/big"
 )
 
-func Generator(len int) string {
+func Generator(length int) string {
 	var container string
-	var str = "abcdefghijklmnopqrstuvwxyz1234567890"
+	str := "abcdefghijklmnopqrstuvwxyz1234567890"
 	b := bytes.NewBufferString(str)
-	length := b.Len()
-	bigInt := big.NewInt(int64(length))
-	for i := 0; i < len; i++ {
+	charsetLen := b.Len()
+	bigInt := big.NewInt(int64(charsetLen))
+	for range length {
 		randomInt, _ := rand.Int(rand.Reader, bigInt)
 		container += string(str[randomInt.Int64()])
 	}

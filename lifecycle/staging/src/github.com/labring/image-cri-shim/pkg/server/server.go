@@ -16,6 +16,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -24,11 +25,10 @@ import (
 	"strconv"
 	"time"
 
-	"google.golang.org/grpc"
-	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 	netutil "github.com/labring/sealos/pkg/utils/net"
+	"google.golang.org/grpc"
+	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type Options struct {
@@ -175,7 +175,12 @@ func (s *server) Chown(uid, gid int) error {
 			return serverError("failed to change ownership of socket %q to %s/%s: %v",
 				s.options.Socket, userName, groupName, err)
 		}
-		logger.Info("changed ownership of socket %q to %s/%s", s.options.Socket, userName, groupName)
+		logger.Info(
+			"changed ownership of socket %q to %s/%s",
+			s.options.Socket,
+			userName,
+			groupName,
+		)
 	}
 
 	s.options.User = uid
@@ -191,7 +196,7 @@ func (s *server) Stop() {
 
 func NewServer(options Options) (Server, error) {
 	if !filepath.IsAbs(options.Socket) {
-		return nil, fmt.Errorf("invalid socked")
+		return nil, errors.New("invalid socked")
 	}
 
 	s := &server{
@@ -201,7 +206,7 @@ func NewServer(options Options) (Server, error) {
 }
 
 // Return a formatter server error.
-func serverError(format string, args ...interface{}) error {
+func serverError(format string, args ...any) error {
 	return fmt.Errorf("cri/server: "+format, args...)
 }
 

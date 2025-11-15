@@ -19,9 +19,8 @@ package operators
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 type fakeCRIClient struct {
@@ -44,6 +43,7 @@ func (f *fakeCRIClient) Pull(name string) error {
 	}
 	return f.SealosCmd.CRIImagePull(name)
 }
+
 func (f *fakeCRIClient) ImageList() (*ImageStruct, error) {
 	if f.SealosCmd.CriBinPath == "" {
 		if err := f.SealosCmd.SetCriBinPath(); err != nil {
@@ -61,6 +61,7 @@ func (f *fakeCRIClient) ImageList() (*ImageStruct, error) {
 	}
 	return &image, nil
 }
+
 func (f *fakeCRIClient) HasImage(name string) error {
 	data, err := f.ImageList()
 	if err != nil {

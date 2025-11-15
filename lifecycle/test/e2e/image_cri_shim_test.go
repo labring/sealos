@@ -20,22 +20,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
-
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
 	"github.com/labring/image-cri-shim/pkg/server"
 	shimType "github.com/labring/image-cri-shim/pkg/types"
-	"github.com/onsi/ginkgo/v2"
-	k8sv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
-
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/test/e2e/suites/image"
+	"github.com/labring/sealos/test/e2e/suites/operators"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -49,6 +45,7 @@ var defaultImageListingBenchmarkImages = []string{
 	defaultImageListingPrefix + "busybox:1-musl",
 	"docker.io/library/busybox:1.28",
 }
+
 var defaultImageNotExsitBenchmarkImages = []string{
 	"docker.io/library/kubernetes:v1.23.8",
 }
@@ -59,7 +56,6 @@ const (
 )
 
 var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
-
 	var (
 		imageShimService image.FakeImageCRIShimInterface
 		clt              server.Client
@@ -87,7 +83,9 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 				shimInitErr = fmt.Errorf("failed to preprocess shim config: %w", err)
 				return
 			}
-			clt, shimInitErr = server.NewClient(server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket})
+			clt, shimInitErr = server.NewClient(
+				server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket},
+			)
 			if shimInitErr != nil {
 				shimInitErr = fmt.Errorf("failed to create shim client: %w", shimInitErr)
 				return
@@ -97,16 +95,18 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 				shimInitErr = fmt.Errorf("failed to connect shim client: %w", err)
 				return
 			}
-			imageShimService = image.NewFakeImageServiceClientWithV1(k8sv1.NewImageServiceClient(gCon))
+			imageShimService = image.NewFakeImageServiceClientWithV1(
+				k8sv1.NewImageServiceClient(gCon),
+			)
 		})
 		utils.CheckErr(shimInitErr, "failed to initialize image shim client")
 	}
-	var listTestCases = func() {
+	listTestCases := func() {
 		images, err := imageShimService.ListImages()
 		utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 		logger.Info("list images: %v", images)
 	}
-	var pullTestCases = func() {
+	pullTestCases := func() {
 		for _, image := range defaultImageListingBenchmarkImages {
 			id, err := imageShimService.PullImage(image)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", image, err))
@@ -114,7 +114,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var statusExitImagesTestCases = func() {
+	statusExitImagesTestCases := func() {
 		for _, imageName := range defaultImageListingBenchmarkImages {
 			img, err := imageShimService.ImageStatus(imageName)
 			utils.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", imageName, err))
@@ -125,7 +125,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var pullAgainImagesTestCases = func() {
+	pullAgainImagesTestCases := func() {
 		err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
 		utils.CheckErr(err)
 		for _, imageName := range defaultImageListingBenchmarkImages {
@@ -138,7 +138,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
 		utils.CheckErr(err)
 	}
-	var statusNotExitImagesTestCases = func() {
+	statusNotExitImagesTestCases := func() {
 		for _, imageName := range defaultImageNotExsitBenchmarkImages {
 			img, err := imageShimService.ImageStatus(imageName)
 			utils.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", imageName, err))
@@ -150,7 +150,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var removeTestCases = func() {
+	removeTestCases := func() {
 		for _, imageName := range defaultImageListingBenchmarkImages {
 			err := imageShimService.RemoveImage(imageName)
 			utils.CheckErr(err, fmt.Sprintf("failed to remove image %s: %v", imageName, err))
@@ -167,29 +167,54 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var removeByIDTestCases = func() {
+	removeByIDTestCases := func() {
 		id, err := imageShimService.PullImage("docker.io/labring/kubernetes-docker:v1.23.8")
-		utils.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", "docker.io/labring/kubernetes-docker:v1.23.8", err))
-		logger.Info("pull images %s success, return image id %s \n", "docker.io/labring/kubernetes-docker:v1.23.8", id)
+		utils.CheckErr(
+			err,
+			fmt.Sprintf(
+				"failed to pull image %s: %v",
+				"docker.io/labring/kubernetes-docker:v1.23.8",
+				err,
+			),
+		)
+		logger.Info(
+			"pull images %s success, return image id %s \n",
+			"docker.io/labring/kubernetes-docker:v1.23.8",
+			id,
+		)
 		err = imageShimService.RemoveImage(id)
 		utils.CheckErr(err, fmt.Sprintf("failed to remove image %s: %v", id, err))
 		logger.Info("remove images %s success \n", id)
 	}
 
-	var statusByIDTestCases = func() {
+	statusByIDTestCases := func() {
 		id, err := imageShimService.PullImage("docker.io/labring/kubernetes-docker:v1.23.8")
-		utils.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", "docker.io/labring/kubernetes-docker:v1.23.8", err))
-		logger.Info("pull images %s success, return image id %s \n", "docker.io/labring/kubernetes-docker:v1.23.8", id)
+		utils.CheckErr(
+			err,
+			fmt.Sprintf(
+				"failed to pull image %s: %v",
+				"docker.io/labring/kubernetes-docker:v1.23.8",
+				err,
+			),
+		)
+		logger.Info(
+			"pull images %s success, return image id %s \n",
+			"docker.io/labring/kubernetes-docker:v1.23.8",
+			id,
+		)
 		img, err := imageShimService.ImageStatus(id)
 		utils.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", id, err))
 		if img == nil || img.Image == nil || img.Image.Id == "" {
-			utils.CheckErr(errors.New("image is not found"), fmt.Sprintf("failed to get image %s status: %+v", id, img))
+			utils.CheckErr(
+				errors.New("image is not found"),
+				fmt.Sprintf("failed to get image %s status: %+v", id, img),
+			)
 		} else {
 			logger.Info("test get images by id  %s success\n", id)
 		}
 	}
 
-	var fsInfoTestCases = func() {
+	fsInfoTestCases := func() {
 		fss, err := imageShimService.ImageFsInfo()
 		utils.CheckErr(err, fmt.Sprintf("failed to get image fs info: %v", err))
 		ginkgo.By("success get fs info: ")
@@ -199,12 +224,16 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 	}
 	ginkgo.Context("install cluster using hack image shim", func() {
 		ginkgo.It("init cluster", func() {
-			//checkout image-cri-shim status running
+			// checkout image-cri-shim status running
 			sealFile := `FROM labring/kubernetes:v1.25.0
 COPY image-cri-shim cri`
 			err = utils.WriteFile("Dockerfile", []byte(sealFile))
 			utils.CheckErr(err)
-			err = fakeClient.Image.BuildImage("kubernetes-hack:v1.25.0", ".", operators.BuildOptions{})
+			err = fakeClient.Image.BuildImage(
+				"kubernetes-hack:v1.25.0",
+				".",
+				operators.BuildOptions{},
+			)
 			utils.CheckErr(err)
 			err = fakeClient.Cluster.Run("kubernetes-hack:v1.25.0")
 			utils.CheckErr(err)
@@ -243,7 +272,15 @@ COPY image-cri-shim cri`
 				waitForShimLog("reloaded shim auth configuration", restoreSince, 60*time.Second)
 			}()
 
-			_, _ = fakeClient.CmdInterface.Exec("kubectl", "-n", "kube-system", "delete", "configmap", "image-cri-shim", "--ignore-not-found=true")
+			_, _ = fakeClient.CmdInterface.Exec(
+				"kubectl",
+				"-n",
+				"kube-system",
+				"delete",
+				"configmap",
+				"image-cri-shim",
+				"--ignore-not-found=true",
+			)
 
 			configMapManifest := fmt.Sprintf(`apiVersion: v1
 kind: ConfigMap
@@ -262,13 +299,16 @@ data:
 			defer func() {
 				utils.RemoveTempFile(configMapFile)
 			}()
-			utils.CheckErr(utils.WriteFile(configMapFile, []byte(configMapManifest)), "failed to write ConfigMap manifest")
+			utils.CheckErr(
+				utils.WriteFile(configMapFile, []byte(configMapManifest)),
+				"failed to write ConfigMap manifest",
+			)
 
 			_, err := fakeClient.CmdInterface.Exec("kubectl", "apply", "-f", configMapFile)
 			utils.CheckErr(err, "failed to apply image-cri-shim ConfigMap")
 
 			gomega.Eventually(func() string {
-				out, err := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", DefaultImageCRIShimConfig))
+				out, err := exec.RunSimpleCmd("sudo cat " + DefaultImageCRIShimConfig)
 				if err != nil {
 					return ""
 				}
@@ -276,7 +316,7 @@ data:
 			}, 90*time.Second, 3*time.Second).Should(gomega.ContainSubstring(mirrorAddress))
 
 			gomega.Eventually(func() string {
-				out, err := exec.RunSimpleCmd(fmt.Sprintf("sudo cat %s", DefaultImageCRIShimConfig))
+				out, err := exec.RunSimpleCmd("sudo cat " + DefaultImageCRIShimConfig)
 				if err != nil {
 					return ""
 				}
@@ -290,7 +330,10 @@ data:
 			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
 			logger.Info("crictl pull output: %s", string(pullOut))
 			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
-			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage),
+			)
 		})
 
 		ginkgo.It("allows pulling through registry mirror", func() {
@@ -307,7 +350,10 @@ data:
 
 			cfgCopy := *cfg
 			cfgCopy.ReloadInterval = metav1.Duration{Duration: time.Second}
-			cfgCopy.Registries = append(cfgCopy.Registries, shimType.Registry{Address: mirrorAddress})
+			cfgCopy.Registries = append(
+				cfgCopy.Registries,
+				shimType.Registry{Address: mirrorAddress},
+			)
 			payload, err := yaml.Marshal(cfgCopy)
 			utils.CheckErr(err, "failed to marshal shim config with mirror")
 
@@ -325,22 +371,32 @@ data:
 			utils.CheckErr(err, fmt.Sprintf("failed to pull %s: %v", sourceImage, err))
 			logger.Info("crictl pull output: %s", string(pullOut))
 			_, err = fakeClient.CmdInterface.Exec("crictl", "inspecti", rewrittenImage)
-			utils.CheckErr(err, fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("rewritten image %s not found in cri store", rewrittenImage),
+			)
 		})
 	})
 })
 
-const shimJournalTimeLayout = "2006-01-02 15:04:05"
+const shimJournalTimeLayout = time.DateTime
 
 func writeShimConfig(data []byte) {
-	cmd := fmt.Sprintf("cat <<'EOF' | sudo tee %s >/dev/null\n%s\nEOF", DefaultImageCRIShimConfig, string(data))
+	cmd := fmt.Sprintf(
+		"cat <<'EOF' | sudo tee %s >/dev/null\n%s\nEOF",
+		DefaultImageCRIShimConfig,
+		string(data),
+	)
 	_, err := exec.RunSimpleCmd(cmd)
 	utils.CheckErr(err, "failed to write shim config")
 }
 
 func waitForShimLog(fragment string, since time.Time, timeout time.Duration) {
 	gomega.Eventually(func() string {
-		cmd := fmt.Sprintf("sudo journalctl -u image-cri-shim --since \"%s\" --no-pager", since.Add(-60*time.Second).Format(shimJournalTimeLayout))
+		cmd := fmt.Sprintf(
+			"sudo journalctl -u image-cri-shim --since \"%s\" --no-pager",
+			since.Add(-60*time.Second).Format(shimJournalTimeLayout),
+		)
 		out, err := exec.RunSimpleCmd(cmd)
 		if err != nil {
 			return ""

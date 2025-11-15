@@ -23,16 +23,14 @@ import (
 	"path"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/test/e2e/testhelper/template"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"github.com/pkg/errors"
 )
 
 const (
 	//	ImageDockerfile = `FROM scratch
-	//COPY . .`
+	// COPY . .`
 	PatchfsTemplateDockerfile = `FROM scratch
 MAINTAINER labring
 LABEL sealos.io.type="patch"
@@ -59,11 +57,11 @@ func (d *PatchDockerfile) Write() (string, error) {
 		return "", errors.WithMessage(err, "create tmpdir failed")
 	}
 	if len(d.Images) != 0 {
-		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755); err != nil {
+		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0o755); err != nil {
 			return "", errors.WithMessage(err, "create images dir failed")
 		}
 		for i, image := range d.Images {
-			if err := os.WriteFile(path.Join(tmpdir, "images", "shim", fmt.Sprintf("image%d", i)), []byte(image), 0644); err != nil {
+			if err := os.WriteFile(path.Join(tmpdir, "images", "shim", fmt.Sprintf("image%d", i)), []byte(image), 0o644); err != nil {
 				return "", errors.WithMessage(err, "write shim image failed")
 			}
 		}
@@ -83,7 +81,7 @@ func (d *PatchDockerfile) Write() (string, error) {
 		return "", errors.New("dockerfile content is not set")
 	}
 	logger.Info("dockerfile content: %s", d.dockerfileContent)
-	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0644); err != nil {
+	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0o644); err != nil {
 		return "", errors.WithMessage(err, "write RootfsDockerfile failed")
 	}
 	return tmpdir, nil

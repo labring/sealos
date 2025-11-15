@@ -17,20 +17,19 @@ package k3s
 import (
 	"context"
 	"fmt"
+	"net"
 	"path/filepath"
+	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
-
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 func (k *K3s) initMaster0() error {
@@ -42,26 +41,29 @@ func (k *K3s) initMaster0() error {
 		func() error { return k.enableK3sService(master0) },
 		k.pullKubeConfigFromMaster0,
 		func() error {
-			return k.remoteUtil.HostsAdd(master0, iputils.GetHostIP(master0), constants.DefaultAPIServerDomain)
+			return k.remoteUtil.HostsAdd(
+				master0,
+				iputils.GetHostIP(master0),
+				constants.DefaultAPIServerDomain,
+			)
 		},
 		func() error { return k.copyKubeConfigFileToNodes(k.cluster.GetMaster0IPAndPort()) },
 	)
 }
 
 func (k *K3s) joinMasters(masters []string) error {
-	_, err := k.writeJoinConfigWithCallbacks(serverMode)
-	if err != nil {
+	if err := k.writeJoinConfigWithCallbacks(serverMode); err != nil {
 		return err
 	}
 	for _, master := range masters {
-		if err = k.joinMaster(master); err != nil {
+		if err := k.joinMaster(master); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) (string, error) {
+func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) error {
 	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg, k.overrideCertSans}
 	switch runMode {
 	case serverMode:
@@ -72,7 +74,11 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 
 	defaultCallbacks = append(defaultCallbacks,
 		func(c *Config) *Config {
-			c.ServerURL = fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, c.HTTPSPort)
+			hostPort := net.JoinHostPort(
+				constants.DefaultAPIServerDomain,
+				strconv.Itoa(c.HTTPSPort),
+			)
+			c.ServerURL = "https://" + hostPort
 			return c
 		},
 	)
@@ -80,7 +86,7 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 		append(defaultCallbacks, callbacks...)...,
 	)
 	if err != nil {
-		return "", err
+		return err
 	}
 	var filename string
 	switch runMode {
@@ -90,28 +96,36 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 		filename = defaultJoinNodesFilename
 	}
 	path := filepath.Join(k.pathResolver.EtcPath(), filename)
-	return path, file.WriteFile(path, raw)
+	return file.WriteFile(path, raw)
 }
 
 func (k *K3s) joinMaster(master string) error {
-	return k.runPipelines(fmt.Sprintf("join master %s", master),
+	return k.runPipelines("join master "+master,
 		func() error {
 			// the rest masters are also running in agent mode, so agent-token file is needed.
 			return k.generateAndSendTokenFiles(master, "token", "agent-token")
 		},
 		func() error {
-			return k.execer.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultK3sConfigPath)
+			return k.execer.Copy(
+				master,
+				filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename),
+				defaultK3sConfigPath,
+			)
 		},
 		func() error { return k.enableK3sService(master) },
 		func() error {
-			return k.remoteUtil.HostsAdd(master, iputils.GetHostIP(master), constants.DefaultAPIServerDomain)
+			return k.remoteUtil.HostsAdd(
+				master,
+				iputils.GetHostIP(master),
+				constants.DefaultAPIServerDomain,
+			)
 		},
 		func() error { return k.copyKubeConfigFileToNodes(master) },
 	)
 }
 
 func (k *K3s) joinNodes(nodes []string) error {
-	if _, err := k.writeJoinConfigWithCallbacks(agentMode, removeServerFlagsInAgentConfig); err != nil {
+	if err := k.writeJoinConfigWithCallbacks(agentMode, removeServerFlagsInAgentConfig); err != nil {
 		return err
 	}
 	for i := range nodes {
@@ -136,24 +150,29 @@ func (k *K3s) getAPIServerPort() int {
 func (k *K3s) getMasterIPListAndHTTPSPort() []string {
 	apiPort := k.getAPIServerPort()
 	masters := make([]string, 0)
+	port := strconv.Itoa(apiPort)
 	for _, master := range k.cluster.GetMasterIPList() {
-		masters = append(masters, fmt.Sprintf("%s:%d", master, apiPort))
+		masters = append(masters, net.JoinHostPort(master, port))
 	}
 	return masters
 }
 
 func (k *K3s) getVipAndPort() string {
-	return fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.getAPIServerPort())
+	return net.JoinHostPort(k.cluster.GetVIP(), strconv.Itoa(k.getAPIServerPort()))
 }
 
 func (k *K3s) joinNode(node string) error {
-	return k.runPipelines(fmt.Sprintf("join node %s", node),
+	return k.runPipelines("join node "+node,
 		func() error {
 			return k.remoteUtil.IPVS(node, k.getVipAndPort(), k.getMasterIPListAndHTTPSPort())
 		},
 		func() error { return k.generateAndSendTokenFiles(node, "agent-token") },
 		func() error {
-			return k.execer.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultK3sConfigPath)
+			return k.execer.Copy(
+				node,
+				filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename),
+				defaultK3sConfigPath,
+			)
 		},
 		func() error { return k.enableK3sService(node) },
 		func() error { return k.copyKubeConfigFileToNodes(node) },
@@ -183,27 +202,31 @@ func (k *K3s) generateAndSendTokenFiles(host string, filenames ...string) error 
 	for _, filename := range filenames {
 		src, err := k.generateRandomTokenFileIfNotExists(filename)
 		if err != nil {
-			return fmt.Errorf("generate token: %v", err)
+			return fmt.Errorf("generate token: %w", err)
 		}
 		dst := filepath.Join(k.pathResolver.ConfigsPath(), filename)
 		if err = k.execer.Copy(host, src, dst); err != nil {
-			return fmt.Errorf("copy token file: %v", err)
+			return fmt.Errorf("copy token file: %w", err)
 		}
 	}
 	return nil
 }
 
 func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
-	cfg, err := k.getInitConfig(callbacks...)
-	if err != nil {
-		return nil, err
-	}
+	cfg := k.getInitConfig(callbacks...)
 	return yaml.MarshalConfigs(cfg)
 }
 
 func (k *K3s) generateAndSendInitConfig() error {
 	src := filepath.Join(k.pathResolver.EtcPath(), defaultInitFilename)
-	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg, k.overrideCertSans, k.overrideServerConfig, setClusterInit}
+	defaultCallbacks := []callback{
+		defaultingConfig,
+		k.merge,
+		k.sealosCfg,
+		k.overrideCertSans,
+		k.overrideServerConfig,
+		setClusterInit,
+	}
 	if !file.IsExist(src) {
 		raw, err := k.getRawInitConfig(defaultCallbacks...)
 		if err != nil {
@@ -235,13 +258,17 @@ func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	if err != nil {
 		return errors.WithMessage(err, "read admin.config file failed")
 	}
-	newData := strings.ReplaceAll(string(data), "https://0.0.0.0", fmt.Sprintf("https://%s", constants.DefaultAPIServerDomain))
+	newData := strings.ReplaceAll(
+		string(data),
+		"https://0.0.0.0",
+		"https://"+constants.DefaultAPIServerDomain,
+	)
 	if err = file.WriteFile(src, []byte(newData)); err != nil {
 		return errors.WithMessage(err, "write admin.config file failed")
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range hosts {
-		node := node
+	for i := range hosts {
+		node := hosts[i]
 		eg.Go(func() error {
 			home, err := k.execer.CmdToString(node, "echo $HOME", "")
 			if err != nil {
