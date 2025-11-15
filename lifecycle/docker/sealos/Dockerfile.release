@@ -2,6 +2,12 @@ FROM ubuntu:22.04
 
 COPY sealos /usr/bin/
 
+RUN <<eot
+  apt update -y
+  apt install -y uidmap fuse-overlayfs
+  rm -rf /var/lib/apt/lists/*
+eot
+
 # nosemgrep: dockerfile.security.missing-user.missing-user
 ENTRYPOINT ["/usr/bin/sealos"]
 # nosemgrep: dockerfile.security.missing-user.missing-user
