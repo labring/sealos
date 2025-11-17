@@ -84,10 +84,21 @@ type cacheMetrics struct {
 }
 
 const (
+	// defaultImageCacheSize sets the default maximum number of cached image rewrite results.
+	// 1024 entries is a balance between hit rate and memory use for typical clusters; at roughly
+	// ~200 bytes per entry this uses around 200KB. Operators can tune this via config if they
+	// need a larger or smaller cache.
 	defaultImageCacheSize = 1024
-	defaultCacheTTL       = 30 * time.Minute
+	// defaultCacheTTL is how long cached rewrite results stay valid before being refreshed.
+	// The 30m default keeps cache freshness reasonable without frequent churn; adjust if workloads
+	// demand shorter or longer staleness windows.
+	defaultCacheTTL = 30 * time.Minute
+	// defaultDomainCacheTTL is the expiry window for registry-domain match entries.
 	defaultDomainCacheTTL = 10 * time.Minute
-	domainCacheRatio      = 10
+	// domainCacheRatio determines the size of the domain cache as imageCacheSize/ratio. A ratio of
+	// 10 keeps domain cache small relative to image cache to cap memory use while still providing
+	// effective domain-level memoization; tweak if a different ratio is desired.
+	domainCacheRatio = 10
 )
 
 func (c CacheOptions) normalize() CacheOptions {
