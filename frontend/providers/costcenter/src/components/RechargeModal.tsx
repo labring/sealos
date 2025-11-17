@@ -219,7 +219,7 @@ const BonusBox = (props: {
             'absolute right-0 top-0 text-xs font-medium z-10 flex items-center justify-center',
             props.isSpecialBonus
               ? ' text-blue-600 translate-x-4 -translate-y-4'
-              : 'bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full rounded-bl-none translate-x-1/3 -translate-y-1/2 '
+              : 'bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-fit whitespace-nowrap'
           )}
         >
           {/*special bouns only*/}
@@ -236,12 +236,12 @@ const BonusBox = (props: {
               </span>
             </div>
           ) : (
-            <span className="text-center">
+            <>
               <span>{t('common:recharge_bonus')}</span>
 
-              <CurrencySymbol />
+              <CurrencySymbol className="w-3 shrink-0" />
               <span>{props.bonus}</span>
-            </span>
+            </>
           )}
         </div>
       )}
