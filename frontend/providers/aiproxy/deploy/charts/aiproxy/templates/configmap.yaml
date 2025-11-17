@@ -3,6 +3,7 @@ data:
   AI_PROXY_BACKEND_KEY: "{{.Values.aiproxy.AI_PROXY_BACKEND_KEY}}"
   APP_TOKEN_JWT_KEY: "{{.Values.aiproxy.APP_TOKEN_JWT_KEY}}"
   CURRENCY_SYMBOL: "{{.Values.aiproxy.CURRENCY_SYMBOL}}"
+  AI_PROXY_BACKEND: https://aiproxy.{{.Values.cloudDomain}}
   AI_PROXY_BACKEND_INTERNAL: "http://aiproxy.{{.Release.Namespace}}.svc:3000"
   ADMIN_NAMESPACES: "ns-admin"
   IS_INVITATION_ACTIVE: "false"
