@@ -155,8 +155,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       render: (item: PodDetailType) => (
         <Flex alignItems={'center'} fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
           {item.restarts}
-          {!!item.containerStatuses[0].state.reason && (
-            <Flex alignItems={'center'} color={item.containerStatuses[0].state.color}>
+          {!!item.containerStatuses[0]?.state.reason && (
+            <Flex alignItems={'center'} color={item.containerStatuses[0]?.state.color}>
               (<Text>{item.containerStatuses[0].state.reason}</Text>)
             </Flex>
           )}

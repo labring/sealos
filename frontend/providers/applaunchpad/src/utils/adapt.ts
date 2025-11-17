@@ -130,7 +130,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     status: (() => {
       const container = pod.status?.containerStatuses || [];
       if (container.length > 0) {
-        const stateObj = container[0].state;
+        const stateObj = container[0]?.state;
         if (stateObj) {
           const status = [
             PodStatusEnum.running,
@@ -177,7 +177,9 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     })(),
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
-    restarts: pod.status?.containerStatuses ? pod.status?.containerStatuses[0].restartCount : 0,
+    restarts: pod.status?.containerStatuses
+      ? (pod.status?.containerStatuses[0]?.restartCount ?? 0)
+      : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
     usedCpu: {
       name: '',
