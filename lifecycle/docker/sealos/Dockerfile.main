@@ -3,11 +3,10 @@ ARG TARGETARCH
 
 WORKDIR /usr/bin/
 
-RUN <<eot
-  apt update -y
-  apt install -y uidmap fuse-overlayfs
-  rm -rf /var/lib/apt/lists/*
-eot
+RUN apt update -y \
+  && apt update -y \
+  && apt install -y uidmap fuse-overlayfs \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY --chmod=0755 /bin/sealos-$TARGETARCH/sealos .
 ENTRYPOINT ["/usr/bin/sealos"]
