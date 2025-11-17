@@ -1,5 +1,9 @@
 FROM ubuntu:22.04
 
+RUN  apt update -y \
+  && apt install -y uidmap fuse-overlayfs \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY sealos /usr/bin/
 
 # nosemgrep: dockerfile.security.missing-user.missing-user
