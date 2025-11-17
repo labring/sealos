@@ -203,3 +203,18 @@ export interface OpsRequestItemType {
     instanceName: string;
   };
 }
+
+export type ParameterConfigField = ParameterConfigStringField | ParameterConfigEnumField;
+
+export type ParameterConfigStringField = {
+  name: string;
+  type: 'string';
+  description?: string;
+};
+
+export type ParameterConfigEnumField = {
+  name: string;
+  type: 'enum';
+  description?: string;
+  values: string[];
+};

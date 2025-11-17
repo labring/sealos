@@ -1,8 +1,10 @@
 import MyIcon from '@/components/Icon';
+import { PARAMETER_CONFIG_OVERRIDES, DBTypeEnum } from '@/constants/db';
+import { ParameterConfigField } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { Box, Flex, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
+import { Box, Flex, Input, InputGroup, InputLeftElement, Select, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 
 export interface ConfigItem {
@@ -11,6 +13,7 @@ export interface ConfigItem {
   isEditing: boolean;
   isEdited: boolean;
   originalIndex: number;
+  field?: ParameterConfigField;
 }
 
 export interface ConfigTableRef {
@@ -26,16 +29,62 @@ export interface Difference {
 
 const ConfigTable = forwardRef<
   ConfigTableRef,
-  { initialData: ConfigItem[]; onDifferenceChange: (hasDifferences: boolean) => void }
->(function ConfigTable({ initialData = [], onDifferenceChange }, ref) {
+  {
+    initialData: ConfigItem[];
+    onDifferenceChange: (hasDifferences: boolean) => void;
+    dbType: DBTypeEnum;
+  }
+>(function ConfigTable({ initialData = [], onDifferenceChange, dbType }, ref) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Map to field type and do overrides.
+  const configItems = useMemo(() => {
+    const overrides = PARAMETER_CONFIG_OVERRIDES[dbType] || [];
+    const overrideMap = new Map<string, ParameterConfigField>();
+    overrides.forEach((field) => {
+      overrideMap.set(field.name, field);
+    });
+
+    return initialData.map((item) => {
+      const override = overrideMap.get(item.key);
+      if (override) {
+        return {
+          ...item,
+          field: override
+        };
+      }
+
+      return {
+        ...item,
+        field: {
+          name: item.key,
+          type: 'string'
+        } as ParameterConfigField
+      };
+    });
+  }, [initialData, dbType]);
+
   const { register, watch, setValue, control, reset } = useForm<{ configs: ConfigItem[] }>({
     defaultValues: {
-      configs: initialData.map((item) => ({ ...item, isEditing: false, isEdited: false }))
+      configs: configItems.map((item) => ({
+        ...item,
+        isEditing: false,
+        isEdited: false
+      }))
     }
   });
+
+  // Update form values when configItems change
+  useEffect(() => {
+    reset({
+      configs: configItems.map((item) => ({
+        ...item,
+        isEditing: false,
+        isEdited: false
+      }))
+    });
+  }, [configItems, reset]);
 
   const { fields } = useFieldArray({
     control,
@@ -60,17 +109,17 @@ const ConfigTable = forwardRef<
 
   const handleBlur = (index: number) => {
     const config = watchFieldArray[index];
-    setValue(`configs.${index}.isEdited`, config.value !== initialData[index].value);
+    setValue(`configs.${index}.isEdited`, config.value !== configItems[index].value);
     setValue(`configs.${index}.isEditing`, false);
   };
 
   const getChangedConfigs = (): Difference[] => {
     const currentConfigs = watchFieldArray;
     return currentConfigs.reduce((acc, config, index) => {
-      if (config.value !== initialData[index].value) {
+      if (config.value !== configItems[index].value) {
         acc.push({
           path: config.key,
-          oldValue: initialData[index].value,
+          oldValue: configItems[index].value,
           newValue: config.value
         });
       }
@@ -95,7 +144,11 @@ const ConfigTable = forwardRef<
     },
     reset: () => {
       reset({
-        configs: initialData.map((item) => ({ ...item, isEditing: false, isEdited: false }))
+        configs: configItems.map((item) => ({
+          ...item,
+          isEditing: false,
+          isEdited: false
+        }))
       });
     }
   }));
@@ -124,31 +177,59 @@ const ConfigTable = forwardRef<
     {
       title: 'dbconfig.parameter_value',
       key: 'parameter_value',
-      render: (item) => (
-        <Flex alignItems={'center'} h={'full'}>
-          {item.isEditing ? (
-            <Input
-              {...register(`configs.${item.originalIndex}.value`)}
-              autoFocus
-              onBlur={() => handleBlur(item.originalIndex)}
-            />
-          ) : (
-            <Flex gap={'4px'} alignItems={'center'}>
-              <Text maxW={'300px'} color={item.isEdited ? 'red.500' : 'grayModern.600'}>
-                {item.value}
-              </Text>
-              <MyIcon
-                onClick={() => toggleEdit(item.originalIndex)}
-                cursor={'pointer'}
-                name={'edit'}
-                w={'16px'}
-                h={'16px'}
-                color={'grayModern.600'}
-              />
-            </Flex>
-          )}
-        </Flex>
-      )
+      render: (item) => {
+        const field = item.field;
+        const isEnum = field?.type === 'enum';
+        const enumValues = isEnum ? (field as { values: string[] }).values : [];
+
+        return (
+          <Flex alignItems={'center'} h={'full'}>
+            {item.isEditing ? (
+              <>
+                {field?.type === 'enum' && (
+                  <Select
+                    autoFocus
+                    value={item.value}
+                    maxWidth={'240px'}
+                    onBlur={() => handleBlur(item.originalIndex)}
+                    onChange={(e) => {
+                      setValue(`configs.${item.originalIndex}.value`, e.target.value);
+                    }}
+                  >
+                    {enumValues.map((val) => (
+                      <option key={val} value={val}>
+                        {val}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+
+                {field?.type === 'string' && (
+                  <Input
+                    {...register(`configs.${item.originalIndex}.value`)}
+                    autoFocus
+                    onBlur={() => handleBlur(item.originalIndex)}
+                  />
+                )}
+              </>
+            ) : (
+              <Flex gap={'4px'} alignItems={'center'}>
+                <Text maxW={'300px'} color={item.isEdited ? 'red.500' : 'grayModern.600'}>
+                  {item.value}
+                </Text>
+                <MyIcon
+                  onClick={() => toggleEdit(item.originalIndex)}
+                  cursor={'pointer'}
+                  name={'edit'}
+                  w={'16px'}
+                  h={'16px'}
+                  color={'grayModern.600'}
+                />
+              </Flex>
+            )}
+          </Flex>
+        );
+      }
     }
   ];
 

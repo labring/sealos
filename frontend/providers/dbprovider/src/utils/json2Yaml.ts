@@ -1096,7 +1096,7 @@ export const json2ParameterConfig = (
     }
     const lowerCaseTableNames = parameterConfig?.lowerCaseTableNames
       ? parameterConfig.lowerCaseTableNames
-      : '0';
+      : '1';
 
     mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
 
