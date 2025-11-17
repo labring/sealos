@@ -92,8 +92,8 @@ fi
 
 export image_repository=${SEALOS_V2_IMAGE_REPO:-"labring/sealos"}
 export sealos_cloud_image_repository=${SEALOS_V2_CLOUD_IMAGE_REPO:-"labring"}
-export sealos_cloud_version=${SEALOS_V2_CLOUD_VERSION:-"v5.1.0"}
-export sealos_cli_version=${SEALOS_V2_CLI_VERSION:-"v5.1.0"}
+export sealos_cloud_version=${SEALOS_V2_CLOUD_VERSION:-"v5.1.1"}
+export sealos_cli_version=${SEALOS_V2_CLI_VERSION:-"v5.1.1"}
 export github_use_proxy=${SEALOS_V2_PROXY:-"false"}
 
 export max_pod=${SEALOS_V2_MAX_POD:-"120"}
@@ -125,8 +125,8 @@ Supported environment variables (all optional unless noted):
 General image & version settings
   SEALOS_V2_IMAGE_REPO         Image repo for runtime components (default: labring/sealos)
   SEALOS_V2_CLOUD_IMAGE_REPO   Image repo for Sealos Cloud image (default: labring)
-  SEALOS_V2_CLOUD_VERSION      Sealos Cloud image tag (default: v5.1.0)
-  SEALOS_V2_CLI_VERSION        Sealos CLI version to install (default: v5.1.0)
+  SEALOS_V2_CLOUD_VERSION      Sealos Cloud image tag (default: v5.1.1)
+  SEALOS_V2_CLI_VERSION        Sealos CLI version to install (default: v5.1.1)
   SEALOS_V2_PROXY              Use proxy for GitHub/images when "true" (default: false)
 
 Cluster / resource settings
