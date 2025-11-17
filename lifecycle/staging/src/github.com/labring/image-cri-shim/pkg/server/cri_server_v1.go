@@ -519,9 +519,12 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 			}
 		}
 		if req.Auth == nil && s.authStore != nil {
-			domain := extractDomainFromImage(imageName)
-			if cfg, ok := s.authStore.GetCRIConfig(domain); ok {
-				req.Auth = ToV1AuthConfig(&cfg)
+			if registries := s.authStore.GetCRIConfigs(); len(registries) > 0 {
+				domain := extractDomainFromImage(imageName)
+				if matchedDomain, cfg := s.findMatchingRegistry(domain, registries); cfg != nil {
+					s.cacheDomainMatch(domain, matchedDomain)
+					req.Auth = ToV1AuthConfig(cfg)
+				}
 			}
 		}
 		req.Image.Image = imageName

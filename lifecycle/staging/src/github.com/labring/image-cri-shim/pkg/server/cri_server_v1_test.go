@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -163,6 +164,7 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 
 		var wg sync.WaitGroup
 		results := make(chan string, goroutines*iterations)
+		errCh := make(chan error, goroutines)
 		for i := 0; i < goroutines; i++ {
 			wg.Add(1)
 			go func() {
@@ -170,7 +172,8 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 				for j := 0; j < iterations; j++ {
 					out, found, _ := service.rewriteImage(image, "pull")
 					if !found {
-						t.Fatalf("expected rewrite to succeed in concurrent workload")
+						errCh <- fmt.Errorf("expected rewrite to succeed in concurrent workload")
+						return
 					}
 					results <- out
 				}
@@ -178,6 +181,11 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 		}
 		wg.Wait()
 		close(results)
+		close(errCh)
+
+		if err := <-errCh; err != nil {
+			t.Fatalf("concurrent rewrite error: %v", err)
+		}
 
 		var expected string
 		for result := range results {
@@ -336,28 +344,56 @@ func TestRewriteImageEdgeCases(t *testing.T) {
 
 func TestPullImageInjectsAuthFromCRIConfig(t *testing.T) {
 	withManifestStub(t, func(_ *manifestStub) {
-		store := NewAuthStore(&types.ShimAuthConfig{
-			CRIConfigs: map[string]rtype.AuthConfig{
-				"registry.example.com": {
-					Username:      "bot",
-					Password:      "token",
-					ServerAddress: "https://registry.example.com",
+		tests := []struct {
+			name       string
+			registries map[string]rtype.AuthConfig
+			image      string
+			wantUser   string
+		}{
+			{
+				name: "exact domain match",
+				registries: map[string]rtype.AuthConfig{
+					"registry.example.com": {
+						Username:      "bot",
+						Password:      "token",
+						ServerAddress: "https://registry.example.com",
+					},
 				},
+				image:    "registry.example.com/app/nginx:latest",
+				wantUser: "bot",
 			},
-		})
-		client := &fakeImageClient{}
-		service := newV1ImageService(client, store, CacheOptions{})
-		req := &api.PullImageRequest{
-			Image: &api.ImageSpec{Image: "registry.example.com/app/nginx:latest"},
+			{
+				name: "docker hub alias",
+				registries: map[string]rtype.AuthConfig{
+					"registry-1.docker.io": {
+						Username:      "hubuser",
+						Password:      "token",
+						ServerAddress: "https://registry-1.docker.io",
+					},
+				},
+				image:    "nginx:latest",
+				wantUser: "hubuser",
+			},
 		}
-		if _, err := service.PullImage(context.Background(), req); err != nil {
-			t.Fatalf("PullImage failed: %v", err)
-		}
-		if client.lastPull == nil {
-			t.Fatalf("expected client to observe pull request")
-		}
-		if client.lastPull.Auth == nil || client.lastPull.Auth.Username != "bot" {
-			t.Fatalf("expected auth to be injected, got %+v", client.lastPull.Auth)
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				store := NewAuthStore(&types.ShimAuthConfig{CRIConfigs: tt.registries})
+				client := &fakeImageClient{}
+				service := newV1ImageService(client, store, CacheOptions{})
+				req := &api.PullImageRequest{
+					Image: &api.ImageSpec{Image: tt.image},
+				}
+				if _, err := service.PullImage(context.Background(), req); err != nil {
+					t.Fatalf("PullImage failed: %v", err)
+				}
+				if client.lastPull == nil {
+					t.Fatalf("expected client to observe pull request")
+				}
+				if client.lastPull.Auth == nil || client.lastPull.Auth.Username != tt.wantUser {
+					t.Fatalf("expected auth user %q, got %+v", tt.wantUser, client.lastPull.Auth)
+				}
+			})
 		}
 	})
 }
