@@ -31,7 +31,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	}
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
-	v.generateDecolorQuery()
+	// v.generateDecolorQuery()
 	return v.query, nil
 }
 
@@ -211,6 +211,7 @@ func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 	}
 }
 
+//nolint:unused
 func (v *VLogsQuery) generateDecolorQuery() {
 	v.query += "| decolorize "
 }
