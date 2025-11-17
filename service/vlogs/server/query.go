@@ -211,6 +211,7 @@ func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 	}
 }
 
+//nolint:unused
 func (v *VLogsQuery) generateDecolorQuery() {
 	v.query += "| decolorize "
 }
