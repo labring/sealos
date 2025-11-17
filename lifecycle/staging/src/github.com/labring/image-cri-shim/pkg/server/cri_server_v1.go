@@ -387,14 +387,6 @@ func (s *v1ImageService) findMatchingRegistry(domain string, registries map[stri
 		}
 	}
 
-	for regDomain, cfg := range registries {
-		if strings.HasSuffix(domain, "."+regDomain) || strings.HasSuffix(regDomain, "."+domain) {
-			s.cacheDomainMatch(domain, regDomain)
-			cfgCopy := cfg
-			return regDomain, &cfgCopy
-		}
-	}
-
 	return "", nil
 }
 

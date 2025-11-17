@@ -49,7 +49,7 @@ func TestRewriteImageDomainMatching(t *testing.T) {
 				expectedFound:  true,
 			},
 			{
-				name:  "subdomain match falls back to parent config",
+				name:  "subdomain rewrite uses configured registry",
 				image: "cache.registry.example.com/app/nginx:2.0",
 				criConfigs: map[string]rtype.AuthConfig{
 					"registry.example.com": {ServerAddress: "https://registry.example.com"},
@@ -98,6 +98,23 @@ func TestRewriteImageDomainMatching(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestFindMatchingRegistryExactMatchOnly(t *testing.T) {
+	service := newV1ImageService(nil, nil, CacheOptions{})
+	registries := map[string]rtype.AuthConfig{
+		"registry.example.com": {ServerAddress: "https://registry.example.com"},
+	}
+
+	if domain, cfg := service.findMatchingRegistry("registry.example.com", registries); cfg == nil || domain != "registry.example.com" {
+		t.Fatalf("expected exact match for registry.example.com, got domain=%q cfg=%v", domain, cfg)
+	}
+	if domain, cfg := service.findMatchingRegistry("REGISTRY.EXAMPLE.COM", registries); cfg == nil || domain != "registry.example.com" {
+		t.Fatalf("expected case-insensitive exact match, got domain=%q cfg=%v", domain, cfg)
+	}
+	if domain, cfg := service.findMatchingRegistry("mirror.registry.example.com", registries); cfg != nil || domain != "" {
+		t.Fatalf("expected no match for subdomain lookup, got domain=%q cfg=%v", domain, cfg)
+	}
 }
 
 func TestRewriteImageCaching(t *testing.T) {
