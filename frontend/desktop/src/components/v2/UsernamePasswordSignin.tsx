@@ -97,8 +97,10 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
     onError: (error: any) => {
       console.error('Login failed:', error);
 
-      // Set specific field errors based on the error type
-      if (error.response?.status === 401) {
+      // Handle authentication errors (500 status code with specific messages)
+      const errorMessage = error?.message || 'Login failed';
+
+      if (errorMessage === 'User not found.' || errorMessage === 'Incorrect password.') {
         setError('password', {
           type: 'manual',
           message: t('common:invalid_username_or_password')
@@ -106,7 +108,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
       } else {
         toast({
           title: t('v2:unknown_error'),
-          description: error?.message,
+          description: errorMessage,
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -223,16 +225,6 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
             >
               {t('v2:sign_in')}
             </Button>
-
-            {/* Error Message */}
-            {loginMutation.isError && (
-              <Flex align="center" gap={2} mt={2}>
-                <OctagonAlertIcon size={16} color="#DC2626" />
-                <Text fontSize="sm" color="#DC2626">
-                  {t('common:invalid_username_or_password')}
-                </Text>
-              </Flex>
-            )}
           </Stack>
         </form>
 
