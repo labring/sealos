@@ -4,6 +4,7 @@ import {
   DBEditType,
   DBSourceType,
   DBType,
+  ParameterConfigField,
   PodDetailType,
   ReconfigStatusMapType
 } from '@/types/db';
@@ -301,7 +302,7 @@ export const defaultDBEditValue: DBEditType = {
   parameterConfig: {
     maxConnections: undefined,
     timeZone: 'UTC',
-    lowerCaseTableNames: '0',
+    lowerCaseTableNames: '1',
     isMaxConnectionsCustomized: false
   }
 };
@@ -517,3 +518,25 @@ export const BackupSupportedDBTypeList: DBType[] = [
   'apecloud-mysql',
   'redis'
 ];
+
+export const PARAMETER_CONFIG_OVERRIDES: Partial<Record<DBTypeEnum, ParameterConfigField[]>> = {
+  postgresql: [
+    {
+      name: 'log_timezone',
+      type: 'enum',
+      values: ['UTC', 'Asia/Shanghai']
+    },
+    {
+      name: 'timezone',
+      type: 'enum',
+      values: ['UTC', 'Asia/Shanghai']
+    }
+  ],
+  'apecloud-mysql': [
+    {
+      name: 'mysqld.default-time-zone',
+      type: 'enum',
+      values: ['UTC', 'Asia/Shanghai']
+    }
+  ]
+};

@@ -1185,8 +1185,8 @@ const Form = ({
                                     width={'140px'}
                                     value={lowerCaseTableNames}
                                     list={[
-                                      { value: '0', label: '0 (' + t('case_sensitive') + ')' },
-                                      { value: '1', label: '1 (' + t('case_insensitive') + ')' }
+                                      { value: '1', label: '1 (' + t('case_insensitive') + ')' },
+                                      { value: '0', label: '0 (' + t('case_sensitive') + ')' }
                                     ]}
                                     onchange={(val: string) => {
                                       setValue('parameterConfig', {
