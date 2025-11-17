@@ -2,8 +2,7 @@ FROM ubuntu:22.04
 
 COPY sealos /usr/bin/
 
-RUN apt update -y \
-  && apt update -y \
+RUN  apt update -y \
   && apt install -y uidmap fuse-overlayfs \
   && rm -rf /var/lib/apt/lists/*
 
