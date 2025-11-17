@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 - [CHANGELOG-5.1.1-rc1.md](./CHANGELOG-5.1.1-rc1.md)
+- [CHANGELOG-5.1.1.md](./CHANGELOG-5.1.1.md)
 - [CHANGELOG-5.1.0-rc3.md](./CHANGELOG-5.1.0-rc3.md)
 - [CHANGELOG-5.1.0-rc2.md](./CHANGELOG-5.1.0-rc2.md)
 - [CHANGELOG-5.1.0-rc1.md](./CHANGELOG-5.1.0-rc1.md)
