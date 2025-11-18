@@ -18,20 +18,27 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
-
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
-	database2 "github.com/labring/sealos/controllers/pkg/database"
 )
 
 // LicenseReconciler reconciles a License object
@@ -39,15 +46,29 @@ type LicenseReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Logger logr.Logger
-	//finalizer *ctrlsdk.Finalizer
+	// finalizer *ctrlsdk.Finalizer
 
-	ClusterID string
+	ClusterID       string
+	CreateTimestamp metav1.Time
 
 	validator *LicenseValidator
 	activator *LicenseActivator
 }
 
-var requeueRes = ctrl.Result{RequeueAfter: time.Minute}
+var (
+	requeueRes       = ctrl.Result{RequeueAfter: time.Minute}
+	longRequeueRes   = ctrl.Result{RequeueAfter: 30 * time.Minute}
+	immediateRequeue = ctrl.Result{Requeue: true}
+)
+
+const (
+	licenseFinalizer           = "license.sealos.io/finalizer"
+	licenseProtectionFinalizer = "license.sealos.io/default-license"
+	defaultLicenseName         = "default"
+	defaultLicenseNamespace    = "ns-admin"
+)
+
+var defaultLicenseDuration = 30 * 24 * time.Hour
 
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
@@ -60,75 +81,115 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.Get(ctx, req.NamespacedName, license); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	if !license.DeletionTimestamp.IsZero() {
+
+	if license.DeletionTimestamp.IsZero() {
+		// Ensure required finalizers exist; reconcile only after they are set.
+		addedFinalizer := false
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latest := &licensev1.License{}
+			if err := r.Get(ctx, req.NamespacedName, latest); err != nil {
+				return err
+			}
+			changed := controllerutil.AddFinalizer(latest, licenseFinalizer)
+			if isDefaultLicense(latest) {
+				changed = controllerutil.AddFinalizer(latest, licenseProtectionFinalizer) || changed
+			}
+			if !changed {
+				return nil
+			}
+			addedFinalizer = true
+			return r.Update(ctx, latest)
+		}); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
+		}
+		if addedFinalizer {
+			// Requeue immediately so the reconciler can proceed with the next step.
+			return immediateRequeue, nil
+		}
+	} else {
+		if controllerutil.ContainsFinalizer(license, licenseProtectionFinalizer) && isDefaultLicense(license) {
+			r.Logger.Info("deletion blocked by protection finalizer", "license", req.NamespacedName)
+			return ctrl.Result{}, nil
+		}
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latest := &licensev1.License{}
+			if err := r.Get(ctx, req.NamespacedName, latest); err != nil {
+				return err
+			}
+			if controllerutil.RemoveFinalizer(latest, licenseFinalizer) {
+				return r.Update(ctx, latest)
+			}
+			return nil
+		}); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to remove finalizer: %w", err)
+		}
 		return ctrl.Result{}, nil
+	}
+	if isDefaultLicense(license) {
+		if err := r.ensureAndUpdateDefaultLicense(ctx, license); err != nil {
+			return ctrl.Result{}, err
+		}
+		return longRequeueRes, nil
 	}
 	return r.reconcile(ctx, license)
 }
 
-func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
-	r.Logger.V(1).Info("reconcile for license", "license", license.Namespace+"/"+license.Name)
-	// check if license is valid
-	valid, err := r.validator.Validate(license)
-	if err != nil {
-		r.Logger.V(1).Error(err, "failed to validate license")
+func (r *LicenseReconciler) reconcile(
+	ctx context.Context,
+	license *licensev1.License,
+) (ctrl.Result, error) {
+	nsName := fmt.Sprintf("%s/%s", license.Namespace, license.Name)
+	r.Logger.V(1).Info("reconcile for license", "license", nsName)
+
+	if err := r.validator.Validate(license); err != nil {
+		// Extract validation code if it's a ValidationError
+		var reason string
+
+		var validationErr licenseutil.ValidationError
+		var phase licensev1.LicenseStatusPhase
+		if errors.As(err, &validationErr) {
+			reason = validationErr.Message
+			switch validationErr.Code {
+			case licensev1.ValidationExpired:
+				phase = licensev1.LicenseStatusPhaseExpired
+			case licensev1.ValidationClusterInfoMismatch:
+				phase = licensev1.LicenseStatusPhaseInvalid
+			case licensev1.ValidationClusterIDMismatch:
+				phase = licensev1.LicenseStatusPhaseMismatch
+			default:
+				phase = licensev1.LicenseStatusPhaseFailed
+			}
+		} else {
+			// Handle non-ValidationError
+			reason = fmt.Sprintf("license validation failed: %v", err)
+			phase = licensev1.LicenseStatusPhaseFailed
+		}
+		updateStatus := &license.Status
+		updateStatus.Phase = phase
+		updateStatus.Reason = reason
+		updateStatus.ActivationTime = license.Status.ActivationTime
+		updateStatus.ExpirationTime = license.Status.ExpirationTime
+		if updateErr := r.updateStatus(ctx, client.ObjectKeyFromObject(license), updateStatus); updateErr != nil {
+			r.Logger.V(1).
+				Error(updateErr, "failed to update license status after validation failure", "license", nsName)
+			return requeueRes, updateErr
+		}
+		r.Logger.V(1).Error(err, "failed to validate license", "license", nsName)
 		return requeueRes, err
 	}
 
-	claims, err := licenseutil.GetClaims(license)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	switch valid {
-	case licensev1.ValidationClusterIDMismatch:
-		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		license.Status.ValidationCode = valid
-		license.Status.Reason = fmt.Sprintf("cluster id mismatch, license cluster id: %s, cluster id: %s", claims.ClusterID, r.ClusterID)
-		r.Logger.V(1).Info("cluster id mismatch", "license", license.Namespace+"/"+license.Name, "cluster id", r.ClusterID, "license cluster id", claims.ClusterID)
-		_ = r.Status().Update(ctx, license)
-		return requeueRes, nil
-	case licensev1.ValidationClusterInfoMismatch:
-		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		license.Status.ValidationCode = valid
-		license.Status.Reason = fmt.Sprintf("cluster info mismatch, license cluster info: %v", claims.Data)
-		r.Logger.V(1).Info("cluster info mismatch", "license", license.Namespace+"/"+license.Name, "cluster info", claims.Data)
-		_ = r.Status().Update(ctx, license)
-		return requeueRes, nil
-	case licensev1.ValidationExpired:
-		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		license.Status.ValidationCode = valid
-		license.Status.Reason = "license is expired"
-		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name, "reason", valid)
-		_ = r.Status().Update(ctx, license)
-		return requeueRes, nil
-	case licensev1.ValidationError:
-		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		license.Status.ValidationCode = valid
-		license.Status.Reason = "failed to validate license"
-		r.Logger.V(1).Info("failed to validate license", "license", license.Namespace+"/"+license.Name)
-		_ = r.Status().Update(ctx, license)
-		return requeueRes, nil
-	case licensev1.ValidationSuccess:
-		// do nothing
-	default:
-		r.Logger.V(1).Info("unknown validation code", "code", valid)
-	}
-
-	if license.Spec.Type == licensev1.AccountLicenseType && license.Status.Phase == licensev1.LicenseStatusPhaseActive {
-		r.Logger.V(1).Info("license is active, skip reconcile", "license", license.Namespace+"/"+license.Name)
-		return requeueRes, nil
-	}
-
-	if err := r.activator.Active(license); err != nil {
-		r.Logger.V(1).Error(err, "failed to active license")
+	if err := r.activator.Active(ctx, license); err != nil {
+		// Update license status to failed when activation fails
+		r.Logger.V(1).Error(err, "failed to activate license", "license", nsName)
 		return requeueRes, err
 	}
-	return ctrl.Result{RequeueAfter: time.Minute * 30}, nil
+	r.Logger.V(1).
+		Info("license activated successfully", "license", nsName, "phase", license.Status.Phase)
+	return longRequeueRes, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, accountDB database2.AccountV2) error {
+func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
 	r.Client = mgr.GetClient()
 
@@ -139,12 +200,149 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, accountDB databas
 	}
 
 	r.activator = &LicenseActivator{
-		Client:    r.Client,
-		accountDB: accountDB,
+		Client: r.Client,
 	}
 
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		if err := r.ensureAndUpdateDefaultLicense(ctx, nil); err != nil {
+			r.Logger.Error(err, "periodic default license ensure failed")
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+				if err := r.ensureAndUpdateDefaultLicense(ctx, nil); err != nil {
+					r.Logger.Error(err, "periodic default license ensure failed")
+				}
+			}
+		}
+	})); err != nil {
+		return err
+	}
 	// reconcile on generation change
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		For(&licensev1.License{}, builder.WithPredicates(predicate.And(predicate.GenerationChangedPredicate{}))).
 		Complete(r)
+}
+
+func isDefaultLicense(license *licensev1.License) bool {
+	return license.Name == defaultLicenseName && license.Namespace == defaultLicenseNamespace
+}
+
+func (r *LicenseReconciler) ensureAndUpdateDefaultLicense(
+	ctx context.Context,
+	cached *licensev1.License,
+) error {
+	ns := defaultLicenseNamespace
+	namespacedName := types.NamespacedName{
+		Name:      defaultLicenseName,
+		Namespace: ns,
+	}
+
+	license := cached
+	var err error
+	if license == nil {
+		license = &licensev1.License{}
+		err = r.Get(ctx, namespacedName, license)
+	}
+
+	switch {
+	case err == nil:
+		// ensure finalizers
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latest := &licensev1.License{}
+			if err := r.Get(ctx, namespacedName, latest); err != nil {
+				return err
+			}
+			changed := controllerutil.AddFinalizer(latest, licenseFinalizer)
+			if controllerutil.AddFinalizer(latest, licenseProtectionFinalizer) {
+				changed = true
+			}
+			if !changed {
+				return nil
+			}
+			return r.Update(ctx, latest)
+		}); err != nil {
+			return err
+		}
+	case apierrors.IsNotFound(err):
+		license = &licensev1.License{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaultLicenseName,
+				Namespace: ns,
+				Finalizers: []string{
+					licenseFinalizer,
+					licenseProtectionFinalizer,
+				},
+			},
+			Spec: licensev1.LicenseSpec{
+				Type: licensev1.ClusterLicenseType,
+			},
+		}
+		if err := r.Create(ctx, license); err != nil {
+			return fmt.Errorf("failed to create default license: %w", err)
+		}
+		r.Logger.Info(
+			"default license created",
+			"license",
+			fmt.Sprintf("%s/%s", ns, defaultLicenseName),
+		)
+	default:
+		return err
+	}
+	expiration := r.CreateTimestamp.Add(defaultLicenseDuration)
+	devboxInstalled, err := r.isDevBoxInstalled(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check devbox installation: %w", err)
+	}
+	if devboxInstalled {
+		// extend default license for devbox users
+		expiration = r.CreateTimestamp.Add(5 * 365 * 24 * time.Hour)
+	}
+	updateStatus := &license.Status
+	updateStatus.ActivationTime = r.CreateTimestamp
+	updateStatus.ExpirationTime = metav1.NewTime(expiration)
+	if time.Now().After(expiration) {
+		updateStatus.Phase = licensev1.LicenseStatusPhaseExpired
+		updateStatus.Reason = "default license expired"
+	} else {
+		updateStatus.Phase = licensev1.LicenseStatusPhaseActive
+		updateStatus.Reason = "default license active"
+	}
+	return r.updateStatus(ctx, client.ObjectKeyFromObject(license), updateStatus)
+}
+
+func (r *LicenseReconciler) updateStatus(
+	ctx context.Context,
+	nn types.NamespacedName,
+	status *licensev1.LicenseStatus,
+) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		original := &licensev1.License{}
+		if err := r.Get(ctx, nn, original); err != nil {
+			return err
+		}
+		original.Status = *status
+		return r.Client.Status().Update(ctx, original)
+	})
+}
+
+func (r *LicenseReconciler) isDevBoxInstalled(ctx context.Context) (bool, error) {
+	crd := &unstructured.Unstructured{}
+	crd.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Version: "v1",
+		Kind:    "CustomResourceDefinition",
+	})
+	if err := r.Get(ctx, types.NamespacedName{Name: "devboxes.devbox.sealos.io"}, crd); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
