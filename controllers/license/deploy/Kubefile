@@ -5,5 +5,4 @@ USER 65532:65532
 COPY registry registry
 COPY charts charts
 COPY entrypoint.sh entrypoint.sh
-COPY uninstall uninstall
 CMD ["bash entrypoint.sh"]
