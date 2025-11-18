@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -2752,29 +2751,23 @@ func deleteResourceAndWait(
 	timeout := 5 * time.Minute // 根据finalizer复杂度调整
 	err = wait.PollUntilContextTimeout(ctx, pollInterval, timeout, true,
 		func(ctx context.Context) (bool, error) {
-			// 使用retry.Backoff可选重试Get（处理临时错误）
-			dErr := retry.OnError(wait.Backoff{
-				Steps:    5,
-				Duration: 10 * time.Second,
-				Factor:   1.0,
-				Jitter:   0.1,
-			}, func(err error) bool {
-				return errors.IsServerTimeout(err) || errors.IsServiceUnavailable(err)
-			}, func() error {
-				_, getErr := dynamicClient.Resource(gvr).
-					Namespace(namespace).
-					Get(ctx, name, v12.GetOptions{})
-				if errors.IsNotFound(getErr) {
-					return nil // 成功：资源已删除
+			_, getErr := dynamicClient.Resource(gvr).
+				Namespace(namespace).
+				Get(ctx, name, v12.GetOptions{})
+			if errors.IsNotFound(getErr) {
+				return true, nil // 成功：资源已删除
+			}
+			if getErr != nil {
+				// API 调用错误（非 NotFound），需要重试但可能需要记录
+				if errors.IsServerTimeout(getErr) || errors.IsServiceUnavailable(getErr) {
+					// 服务端临时错误，静默重试
+					return false, nil
 				}
-				if getErr != nil {
-					// 其它错误：继续轮询
-					return getErr
-				}
-				// 资源仍存在：继续轮询
-				return errors2.New("resource still exists")
-			})
-			return dErr == nil, dErr
+				// 其他错误继续轮询
+				return false, nil
+			}
+			// 资源仍存在：继续轮询，不返回错误（避免打印日志）
+			return false, nil
 		})
 	if err != nil {
 		if errors2.Is(ctx.Err(), context.DeadlineExceeded) {
