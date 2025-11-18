@@ -583,70 +583,70 @@ func (r *DebtReconciler) start() {
 	}()
 
 	// 2.2 subscription change processing
-	//wg.Add(1)
-	//go func() {
-	//	defer wg.Done()
-	//	r.processWithTimeRange(
-	//		&types.Subscription{},
-	//		"update_at",
-	//		1*time.Minute,
-	//		24*time.Hour,
-	//		func(db *gorm.DB, start, end time.Time) error {
-	//			users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
-	//			if err != nil {
-	//				return fmt.Errorf("failed to get unique users: %w", err)
-	//			}
-	//			if len(users) > 0 {
-	//				r.processUsersInParallel(users)
-	//				r.Info(
-	//					"processed subscription changes",
-	//					"count",
-	//					len(users),
-	//					"users",
-	//					users,
-	//					"start",
-	//					start,
-	//					"end",
-	//					end,
-	//				)
-	//			}
-	//			return nil
-	//		},
-	//	)
-	//}()
-	//
-	//// 2.3 credits refresh processing
-	//wg.Add(1)
-	//go func() {
-	//	defer wg.Done()
-	//	r.processWithTimeRange(
-	//		&types.Credits{},
-	//		"updated_at",
-	//		1*time.Minute,
-	//		24*time.Hour,
-	//		func(db *gorm.DB, start, end time.Time) error {
-	//			users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
-	//			if err != nil {
-	//				return fmt.Errorf("failed to get unique users: %w", err)
-	//			}
-	//			if len(users) > 0 {
-	//				r.processUsersInParallel(users)
-	//				r.Info(
-	//					"processed credits refresh",
-	//					"count",
-	//					len(users),
-	//					"users",
-	//					users,
-	//					"start",
-	//					start,
-	//					"end",
-	//					end,
-	//				)
-	//			}
-	//			return nil
-	//		},
-	//	)
-	//}()
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	r.processWithTimeRange(
+	// 		&types.Subscription{},
+	// 		"update_at",
+	// 		1*time.Minute,
+	// 		24*time.Hour,
+	// 		func(db *gorm.DB, start, end time.Time) error {
+	// 			users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
+	// 			if err != nil {
+	// 				return fmt.Errorf("failed to get unique users: %w", err)
+	// 			}
+	// 			if len(users) > 0 {
+	// 				r.processUsersInParallel(users)
+	// 				r.Info(
+	// 					"processed subscription changes",
+	// 					"count",
+	// 					len(users),
+	// 					"users",
+	// 					users,
+	// 					"start",
+	// 					start,
+	// 					"end",
+	// 					end,
+	// 				)
+	// 			}
+	// 			return nil
+	// 		},
+	// 	)
+	// }()
+
+	// 2.3 credits refresh processing
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	r.processWithTimeRange(
+	// 		&types.Credits{},
+	// 		"updated_at",
+	// 		1*time.Minute,
+	// 		24*time.Hour,
+	// 		func(db *gorm.DB, start, end time.Time) error {
+	// 			users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
+	// 			if err != nil {
+	// 				return fmt.Errorf("failed to get unique users: %w", err)
+	// 			}
+	// 			if len(users) > 0 {
+	// 				r.processUsersInParallel(users)
+	// 				r.Info(
+	// 					"processed credits refresh",
+	// 					"count",
+	// 					len(users),
+	// 					"users",
+	// 					users,
+	// 					"start",
+	// 					start,
+	// 					"end",
+	// 					end,
+	// 				)
+	// 			}
+	// 			return nil
+	// 		},
+	// 	)
+	// }()
 
 	// 3 retry failed users
 	wg.Add(1)
