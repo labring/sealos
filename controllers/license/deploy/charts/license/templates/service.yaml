@@ -1,0 +1,17 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "license.fullname" . }}-metrics
+  labels:
+    {{- include "license.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8443
+      protocol: TCP
+      name: https
+  selector:
+    {{- include "license.selectorLabels" . | nindent 4 }}
+{{- end }}

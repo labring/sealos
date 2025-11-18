@@ -16,16 +16,16 @@ package clusterid
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetClusterID(config *rest.Config) (string, error) {
+func GetClusterID(ctx context.Context, config *rest.Config) (string, error) {
 	ns := &corev1.Namespace{}
-	ctx := context.Background()
 	c, err := client.New(config, client.Options{})
 	if err != nil {
 		return "", err
@@ -36,7 +36,24 @@ func GetClusterID(config *rest.Config) (string, error) {
 	}
 	res := string(ns.UID)
 	if res == "" || len(res) < 8 {
-		return "", fmt.Errorf("failed to get cluster id")
+		return "", errors.New("failed to get cluster id")
 	}
 	return res[0:8], nil
+}
+
+func GetClusterCreateTime(ctx context.Context, config *rest.Config) (*metav1.Time, error) {
+	ns := &corev1.Namespace{}
+	c, err := client.New(config, client.Options{})
+	if err != nil {
+		return nil, err
+	}
+	err = c.Get(ctx, client.ObjectKey{Name: "kube-system"}, ns)
+	if err != nil {
+		return nil, err
+	}
+	res := ns.GetCreationTimestamp()
+	if res.IsZero() {
+		return nil, errors.New("failed to get create time")
+	}
+	return &res, nil
 }
