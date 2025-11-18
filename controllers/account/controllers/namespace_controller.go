@@ -2690,19 +2690,19 @@ func deleteResourceListAndWait(
 	gvr schema.GroupVersionResource,
 	namespace string,
 ) error {
-	// 列出所有资源
+	// List all resources
 	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, v12.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list %s in namespace %s: %w", gvr, namespace, err)
 	}
 
 	if len(list.Items) == 0 {
-		return nil // 无资源需要删除
+		return nil // No resources to delete
 	}
 
-	// 并发删除：使用WaitGroup和error channel收集错误
+	// Concurrent deletion: use WaitGroup and error channel to collect errors
 	var wg sync.WaitGroup
-	errCh := make(chan error, len(list.Items)) // 缓冲channel，避免阻塞
+	errCh := make(chan error, len(list.Items)) // Buffered channel to avoid blocking
 	allErrors := []error{}
 
 	for _, item := range list.Items {
@@ -2716,7 +2716,7 @@ func deleteResourceListAndWait(
 		}(name)
 	}
 
-	// 等待所有Goroutine完成，并收集错误
+	// Wait for all goroutines to complete and collect errors
 	go func() {
 		wg.Wait()
 		close(errCh)
@@ -2739,9 +2739,9 @@ func deleteResourceAndWait(
 	gvr schema.GroupVersionResource,
 	namespace, name string,
 ) error {
-	deletePolicy := v12.DeletePropagationForeground // 前台删除，等待子资源
+	deletePolicy := v12.DeletePropagationForeground // Foreground deletion, wait for child resources
 
-	// 执行删除（针对单个资源）
+	// Execute deletion (for single resource)
 	err := dynamicClient.Resource(gvr).Namespace(namespace).Delete(ctx, name, v12.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	})
@@ -2749,30 +2749,30 @@ func deleteResourceAndWait(
 		return fmt.Errorf("failed to delete %s/%s: %w", gvr, name, err)
 	}
 	if errors.IsNotFound(err) {
-		return nil // 已不存在，无需等待
+		return nil // Already deleted, no need to wait
 	}
 
-	// 等待删除完成：轮询Get直到NotFound
+	// Wait for deletion to complete: poll Get until NotFound
 	pollInterval := 5 * time.Second
-	timeout := 5 * time.Minute // 根据finalizer复杂度调整
+	timeout := 5 * time.Minute // Adjust based on finalizer complexity
 	err = wait.PollUntilContextTimeout(ctx, pollInterval, timeout, true,
 		func(ctx context.Context) (bool, error) {
 			_, getErr := dynamicClient.Resource(gvr).
 				Namespace(namespace).
 				Get(ctx, name, v12.GetOptions{})
 			if errors.IsNotFound(getErr) {
-				return true, nil // 成功：资源已删除
+				return true, nil // Success: resource has been deleted
 			}
 			if getErr != nil {
-				// API 调用错误（非 NotFound），需要重试但可能需要记录
+				// API call error (not NotFound), need to retry but may need logging
 				if errors.IsServerTimeout(getErr) || errors.IsServiceUnavailable(getErr) {
-					// 服务端临时错误，静默重试
+					// Temporary server error, retry silently
 					return false, nil
 				}
-				// 其他错误继续轮询
+				// Continue polling for other errors
 				return false, nil
 			}
-			// 资源仍存在：继续轮询，不返回错误（避免打印日志）
+			// Resource still exists: continue polling, don't return error (avoid logging)
 			return false, nil
 		})
 	if err != nil {
