@@ -53,7 +53,6 @@ env:
   # Common versions
   GO_VERSION: "1.22"
   DEFAULT_OWNER: "labring"
-  CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 

@@ -44,6 +44,7 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	cp -r config/crd/bases/* deploy/charts/license/crds/
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -69,8 +70,7 @@ CONTROLLER_PKG=github.com/labring/sealos/controllers/pkg
 CONTROLLER_LICENSE=github.com/labring/sealos/controllers/license/internal
 build: manifests generate fmt vet ## Build manager binary.
 	LD_FLAGS="-s -w"; \
-	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_PKG}/crypto.encryptionKey=${CRYPTOKEY} -X ${CONTROLLER_PKG}/database.cryptoKey=${CRYPTOKEY}"; \
-	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSE}/util/key.EncryptionKey=${LICENSE_KEY}"; \
+	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSE}/util/key.encryptionKey=${LICENSE_KEY}"; \
 	CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager cmd/manager/main.go
 
 

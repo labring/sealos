@@ -1,0 +1,27 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "license.labels" . | nindent 4 }}
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "license.labels" . | nindent 4 }}
+  name: metrics-certs
+spec:
+  privateKey:
+    rotationPolicy: Always
+  dnsNames:
+    - {{ include "license.fullname" . }}-metrics.{{.Release.Namespace}}.svc
+    - {{ include "license.fullname" . }}-metrics.{{.Release.Namespace}}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: {{.Values.metrics.secretName}}
+{{- end }}

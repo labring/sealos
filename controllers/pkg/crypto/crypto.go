@@ -132,3 +132,33 @@ func ParseRSAPublicKeyFromPEM(keyPEM string) (*rsa.PublicKey, error) {
 	}
 	return rsaPub, nil
 }
+
+// ParseRSAPublicKeyFromAnyPEM tries to parse a public key; if the PEM contains a private key it derives the public part.
+func ParseRSAPublicKeyFromAnyPEM(keyPEM string) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode([]byte(keyPEM))
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block")
+	}
+	switch block.Type {
+	case "PUBLIC KEY":
+		return ParseRSAPublicKeyFromPEM(keyPEM)
+	case "RSA PRIVATE KEY":
+		priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		return &priv.PublicKey, nil
+	case "PRIVATE KEY":
+		privAny, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		priv, ok := privAny.(*rsa.PrivateKey)
+		if !ok {
+			return nil, errors.New("private key is not RSA")
+		}
+		return &priv.PublicKey, nil
+	default:
+		return nil, fmt.Errorf("unsupported key type %q", block.Type)
+	}
+}
