@@ -2,7 +2,7 @@ import { getGlobalNotification } from '@/api/platform';
 import { Alert, AlertIcon, AlertDescription, CloseButton, Box } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { Info, X } from 'lucide-react';
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useGlobalNotificationStore } from '@/stores/globalNotification';
@@ -13,22 +13,11 @@ function GlobalNotificationComponent() {
   const { message } = useMessage();
   const { closedNotificationId, setClosedNotificationId } = useGlobalNotificationStore();
 
-  const isRequestingRef = useRef(false);
-
   const { data: notification } = useQuery({
     queryKey: ['globalNotification'],
     queryFn: async () => {
-      if (isRequestingRef.current) {
-        return;
-      }
-      isRequestingRef.current = true;
-
-      try {
-        const { data } = await getGlobalNotification();
-        return data;
-      } finally {
-        isRequestingRef.current = false;
-      }
+      const { data } = await getGlobalNotification();
+      return data;
     },
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
