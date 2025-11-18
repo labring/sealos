@@ -2268,7 +2268,7 @@ func deleteResource(
 			Version:  "v1alpha1",
 			Resource: "backups",
 		}
-		return deleteResourceListAndWait(dynamicClient, gvr, namespace)
+		return deleteResourceListAndWait(ctx, dynamicClient, gvr, namespace)
 	case "cluster.apps.kubeblocks.io":
 		gvr = schema.GroupVersionResource{
 			Group:    "apps.kubeblocks.io",
@@ -2685,11 +2685,11 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 }
 
 func deleteResourceListAndWait(
+	ctx context.Context,
 	dynamicClient dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	namespace string,
 ) error {
-	ctx := context.Background()
 	// 列出所有资源
 	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, v12.ListOptions{})
 	if err != nil {
@@ -2710,7 +2710,7 @@ func deleteResourceListAndWait(
 		wg.Add(1)
 		go func(resName string) {
 			defer wg.Done()
-			if deleteErr := deleteResourceAndWait(dynamicClient, gvr, namespace, resName); deleteErr != nil {
+			if deleteErr := deleteResourceAndWait(ctx, dynamicClient, gvr, namespace, resName); deleteErr != nil {
 				errCh <- fmt.Errorf("failed to delete %s/%s: %w", gvr, resName, deleteErr)
 			}
 		}(name)
@@ -2734,11 +2734,11 @@ func deleteResourceListAndWait(
 }
 
 func deleteResourceAndWait(
+	ctx context.Context,
 	dynamicClient dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	namespace, name string,
 ) error {
-	ctx := context.Background()
 	deletePolicy := v12.DeletePropagationForeground // 前台删除，等待子资源
 
 	// 执行删除（针对单个资源）
