@@ -407,7 +407,7 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 	// Delete other resources without rate limiting
 	deleteResources := []string{
 		"cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
-		"objectstorageuser", "deploy", "sts", "pvc", "Service", "Ingress",
+		"objectstorageuser", "deploy", "sts", "ds", "rs", "pvc", "Service", "Ingress",
 		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
 		"job", "app",
 	}
@@ -2293,6 +2293,10 @@ func deleteResource(
 		gvr = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	case "sts":
 		gvr = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
+	case "ds":
+		gvr = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}
+	case "rs":
+		gvr = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "replicasets"}
 	case "pvc":
 		gvr = schema.GroupVersionResource{
 			Group:    "",
