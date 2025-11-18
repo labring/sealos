@@ -301,7 +301,7 @@ func (r *LicenseReconciler) ensureAndUpdateDefaultLicense(
 	}
 	if !devboxInstalled {
 		// extend default license for devbox users
-		expiration = r.CreateTimestamp.Add(5 * 365 * 24 * time.Hour)
+		expiration = r.CreateTimestamp.Add(50 * 365 * 24 * time.Hour)
 	}
 	updateStatus := &license.Status
 	updateStatus.ActivationTime = r.CreateTimestamp
