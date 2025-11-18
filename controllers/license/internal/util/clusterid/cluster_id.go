@@ -24,9 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetClusterID(config *rest.Config) (string, error) {
+func GetClusterID(ctx context.Context, config *rest.Config) (string, error) {
 	ns := &corev1.Namespace{}
-	ctx := context.Background()
 	c, err := client.New(config, client.Options{})
 	if err != nil {
 		return "", err
@@ -42,9 +41,8 @@ func GetClusterID(config *rest.Config) (string, error) {
 	return res[0:8], nil
 }
 
-func GetClusterCreateTime(config *rest.Config) (*metav1.Time, error) {
+func GetClusterCreateTime(ctx context.Context, config *rest.Config) (*metav1.Time, error) {
 	ns := &corev1.Namespace{}
-	ctx := context.Background()
 	c, err := client.New(config, client.Options{})
 	if err != nil {
 		return nil, err

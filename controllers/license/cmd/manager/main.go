@@ -144,13 +144,13 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
-	clusterID, err := utilid.GetClusterID(mgr.GetConfig())
+	ctx := ctrl.SetupSignalHandler()
+	clusterID, err := utilid.GetClusterID(ctx, mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "unable to get cluster id")
 		os.Exit(1)
 	}
-	createTime, err := utilid.GetClusterCreateTime(mgr.GetConfig())
+	createTime, err := utilid.GetClusterCreateTime(ctx, mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "unable to get cluster create time")
 		os.Exit(1)
@@ -183,7 +183,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

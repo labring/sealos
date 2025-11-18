@@ -34,9 +34,9 @@ type LicenseValidator struct {
 	ClusterID string
 }
 
-func (v *LicenseValidator) Validate(license *licensev1.License) error {
+func (v *LicenseValidator) Validate(ctx context.Context, license *licensev1.License) error {
 	nodeList := &v1.NodeList{}
-	if err := v.List(context.Background(), nodeList); err != nil {
+	if err := v.List(ctx, nodeList); err != nil {
 		return fmt.Errorf("failed to list cluster nodes: %w", err)
 	}
 	nodeCount := len(nodeList.Items)

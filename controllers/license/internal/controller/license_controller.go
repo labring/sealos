@@ -141,7 +141,7 @@ func (r *LicenseReconciler) reconcile(
 	nsName := fmt.Sprintf("%s/%s", license.Namespace, license.Name)
 	r.Logger.V(1).Info("reconcile for license", "license", nsName)
 
-	if err := r.validator.Validate(license); err != nil {
+	if err := r.validator.Validate(ctx, license); err != nil {
 		// Extract validation code if it's a ValidationError
 		var reason string
 
