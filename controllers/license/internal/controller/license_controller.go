@@ -299,7 +299,7 @@ func (r *LicenseReconciler) ensureAndUpdateDefaultLicense(
 	if err != nil {
 		return fmt.Errorf("failed to check devbox installation: %w", err)
 	}
-	if devboxInstalled {
+	if !devboxInstalled {
 		// extend default license for devbox users
 		expiration = r.CreateTimestamp.Add(5 * 365 * 24 * time.Hour)
 	}
