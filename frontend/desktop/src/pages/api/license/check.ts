@@ -28,6 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (err: any) {
+    console.log('check license error', err);
     jsonRes(res, {
       data: {
         hasLicense: false
