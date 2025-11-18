@@ -54,7 +54,6 @@ env:
   # Common versions
   GO_VERSION: "1.24"
   DEFAULT_OWNER: "labring"
-  CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
@@ -304,7 +303,14 @@ jobs:
         run: |
           OLD_DOCKER_IMAGE_NAME="${OLD_DOCKER_REPO}:latest"
           NEW_DOCKER_IMAGE_NAME="${NEW_DOCKER_REPO}:${TAG_NAME}"
-          sudo sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+          if [[ -d manifests ]]; then
+             echo "Found manifests"
+             sudo sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+          fi
+          if [[ -f charts/${{ matrix.module.path }}/values.yaml ]]; then
+             echo "Found charts charts/${{ matrix.module.path }}/values.yaml"
+             sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" charts/${{ matrix.module.path }}/values.yaml
+          fi
 
       - name: Build ${{ matrix.module.name }}-controller cluster image
         working-directory: controllers/${{ matrix.module.path }}/deploy
