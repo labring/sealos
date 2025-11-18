@@ -569,7 +569,7 @@ rules:
   - list
   - watch
 - apiGroups: [""]
-  resources: ["persistentvolumeclaims", "services"]
+  resources: ["persistentvolumeclaims", "services", "pods"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "replicasets", "daemonsets"]

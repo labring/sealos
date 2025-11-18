@@ -409,7 +409,7 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 		"cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
 		"objectstorageuser", "deploy", "sts", "ds", "rs", "pvc", "Service", "Ingress",
 		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
-		"job", "app",
+		"job", "app", "pod",
 	}
 	errChan := make(chan error, len(deleteResources))
 	for _, rs := range deleteResources {
@@ -2351,6 +2351,8 @@ func deleteResource(
 			Version:  "v1alpha1",
 			Resource: "devboxreleases",
 		}
+	case "pod":
+		gvr = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	default:
 		return fmt.Errorf("unknown resource: %s", resource)
 	}
