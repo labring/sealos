@@ -2,6 +2,7 @@ import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
+import { useLicenseCheck } from '@/hooks/useLicenseCheck';
 import useAppStore from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
@@ -44,6 +45,11 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { layoutConfig, commonConfig, trackingConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
+
+  // Initialize license check after user login
+  useLicenseCheck({
+    enabled: isUserLogin() && !!commonConfig?.licenseCheckEnabled
+  });
 
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
@@ -289,6 +295,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       }
     })();
   }, [commonConfig, firstUse]);
+
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>

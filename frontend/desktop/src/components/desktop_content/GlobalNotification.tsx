@@ -2,26 +2,43 @@ import { getGlobalNotification } from '@/api/platform';
 import { Alert, AlertIcon, AlertDescription, CloseButton, Box } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { Info, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useGlobalNotificationStore } from '@/stores/globalNotification';
 import DOMPurify from 'dompurify';
 
-export function GlobalNotification() {
+function GlobalNotificationComponent() {
   const { i18n } = useTranslation();
   const { message } = useMessage();
   const { closedNotificationId, setClosedNotificationId } = useGlobalNotificationStore();
 
+  const isRequestingRef = useRef(false);
+
   const { data: notification } = useQuery({
     queryKey: ['globalNotification'],
     queryFn: async () => {
-      const { data } = await getGlobalNotification();
-      return data;
-    }
+      if (isRequestingRef.current) {
+        return;
+      }
+      isRequestingRef.current = true;
+
+      try {
+        const { data } = await getGlobalNotification();
+        return data;
+      } finally {
+        isRequestingRef.current = false;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: 30 * 60 * 1000,
+    retry: 1,
+    enabled: true
   });
 
-  // Show popup notification for licenseFrontend notifications
   useEffect(() => {
     if (!notification || !notification.licenseFrontend) return;
 
@@ -33,7 +50,6 @@ export function GlobalNotification() {
     });
   }, [notification, i18n?.language, message]);
 
-  // Checks for banner display
   if (!notification || notification.licenseFrontend) {
     return null;
   }
@@ -42,13 +58,10 @@ export function GlobalNotification() {
   if (!notificationId) {
     return null;
   }
-
-  // Don't show if closed
   if (closedNotificationId === notificationId) {
     return null;
   }
 
-  // Why use `title`? But it's the current behavior, let's keep it.
   const rawContent = notification?.i18n[i18n?.language]?.title || '';
   const sanitizedContent = DOMPurify.sanitize(rawContent);
 
@@ -78,3 +91,5 @@ export function GlobalNotification() {
     </Box>
   );
 }
+
+export const GlobalNotification = memo(GlobalNotificationComponent);

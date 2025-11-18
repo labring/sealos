@@ -23,5 +23,9 @@
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
+    "[yaml]": {
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false
+    },
     "typescript.tsdk": "node_modules/typescript/lib"
 }
