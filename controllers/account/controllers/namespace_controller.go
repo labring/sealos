@@ -45,14 +45,15 @@ import (
 
 // NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
-	Client           client.WithWatch
-	dynamicClient    dynamic.Interface
-	Log              logr.Logger
-	Scheme           *runtime.Scheme
-	OSAdminClient    *madmin.AdminClient
-	OSNamespace      string
-	OSAdminSecret    string
-	InternalEndpoint string
+	Client                client.WithWatch
+	dynamicClient         dynamic.Interface
+	Log                   logr.Logger
+	Scheme                *runtime.Scheme
+	OSAdminClient         *madmin.AdminClient
+	OSNamespace           string
+	OSAdminSecret         string
+	InternalEndpoint      string
+	deleteBackupSemaphore chan struct{}
 }
 
 const (
@@ -380,11 +381,31 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	return errors2.Join(errs...)
 }
 
+func (r *NamespaceReconciler) deleteBackupWithRateLimit(
+	ctx context.Context,
+	namespace string,
+) error {
+	// Acquire semaphore to limit concurrent backup deletions
+	select {
+	case r.deleteBackupSemaphore <- struct{}{}:
+		// Successfully acquired semaphore for backup deletion
+		defer func() {
+			<-r.deleteBackupSemaphore // Release semaphore when done
+		}()
+		return deleteResource(ctx, r.dynamicClient, "backup", namespace)
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace string) error {
-	err := deleteResource(ctx, r.dynamicClient, "backup", namespace)
+	// Delete backup with rate limiting
+	err := r.deleteBackupWithRateLimit(ctx, namespace)
 	if err != nil {
 		return err
 	}
+
+	// Delete other resources without rate limiting
 	deleteResources := []string{
 		"cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
 		"objectstorageuser", "deploy", "sts", "pvc", "Service", "Ingress",
@@ -1194,11 +1215,20 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user, status 
 func (r *NamespaceReconciler) SetupWithManager(
 	mgr ctrl.Manager,
 	limitOps controller.Options,
+	deleteResourceConcurrent int,
 ) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
 	r.OSAdminSecret = os.Getenv(OSAdminSecret)
 	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
 	r.OSNamespace = os.Getenv(OSNamespace)
+
+	// Initialize semaphore for backup deletion rate limiting
+	if deleteResourceConcurrent <= 0 {
+		deleteResourceConcurrent = 5
+	}
+	r.deleteBackupSemaphore = make(chan struct{}, deleteResourceConcurrent)
+	r.Log.Info("Initialized backup deletion semaphore", "concurrency", deleteResourceConcurrent)
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load in-cluster config: %w", err)
