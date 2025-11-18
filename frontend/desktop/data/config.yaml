@@ -19,6 +19,7 @@ common:
   apiEnabled: false
   rechargeEnabled: false
   cfSiteKey: ""
+  licenseCheckEnabled: false
 database:
   mongodbURI: "thisismongodburi"
   globalCockroachdbURI: "thisisglobalcockroachdburi"
