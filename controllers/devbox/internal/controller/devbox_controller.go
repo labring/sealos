@@ -498,85 +498,43 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 // syncDevboxPhase updates devbox.Status.Phase derived from desired state and current pod status
 func (r *DevboxReconciler) syncDevboxPhase(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
+
+	// Fetch pod list
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
 	}
-	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox)
-	if err != nil {
+
+	// Refresh devbox to get latest status
+	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
 		return fmt.Errorf("failed to get devbox: %w", err)
 	}
 
-	var (
-		hasRunning     bool
-		hasPending     bool
-		hasFailed      bool
-		hasTerminating bool
-	)
-	for i := range podList.Items {
-		p := &podList.Items[i]
-		if !p.DeletionTimestamp.IsZero() {
-			hasTerminating = true
-		}
-		switch p.Status.Phase {
-		case corev1.PodRunning:
-			hasRunning = true
-		case corev1.PodPending:
-			hasPending = true
-		case corev1.PodFailed:
-			hasFailed = true
-		}
-	}
+	// Analyze pod status
+	podStatus := helper.AnalyzePodStatus(podList)
 
-	derivePhase := func() devboxv1alpha2.DevboxPhase {
-		// Any explicit failure maps to Error
-		if hasFailed {
-			return devboxv1alpha2.DevboxPhaseError
-		}
-		switch devbox.Spec.State {
-		case devboxv1alpha2.DevboxStateRunning:
-			if hasRunning {
-				return devboxv1alpha2.DevboxPhaseRunning
-			}
-			if hasPending || len(podList.Items) > 0 {
-				return devboxv1alpha2.DevboxPhasePending
-			}
-			// no pod yet, but desired Running -> Pending
-			return devboxv1alpha2.DevboxPhasePending
-		case devboxv1alpha2.DevboxStatePaused:
-			if len(podList.Items) > 0 {
-				if hasTerminating {
-					return devboxv1alpha2.DevboxPhasePausing
-				}
-				return devboxv1alpha2.DevboxPhasePausing
-			}
-			return devboxv1alpha2.DevboxPhasePaused
-		case devboxv1alpha2.DevboxStateStopped:
-			if len(podList.Items) > 0 {
-				if hasTerminating {
-					return devboxv1alpha2.DevboxPhaseStopping
-				}
-				return devboxv1alpha2.DevboxPhaseStopping
-			}
-			return devboxv1alpha2.DevboxPhaseStopped
-		case devboxv1alpha2.DevboxStateShutdown:
-			if len(podList.Items) > 0 {
-				if hasTerminating {
-					return devboxv1alpha2.DevboxPhaseShutting
-				}
-				return devboxv1alpha2.DevboxPhaseShutting
-			}
-			return devboxv1alpha2.DevboxPhaseShutdown
-		default:
-			return devboxv1alpha2.DevboxPhaseUnknown
-		}
-	}
+	// Get commit record for current contentID
+	latestCommitRecord := helper.GetLatestCommitRecord(devbox.Status.CommitRecords, devbox.Status.ContentID)
 
-	newPhase := derivePhase()
+	// Derive phase based on State to Phase Mapping Table
+	newPhase := helper.DerivePhase(devbox.Spec.State, podStatus, latestCommitRecord)
+
+	// Skip update if phase hasn't changed
 	if devbox.Status.Phase == newPhase {
 		return nil
 	}
-	logger.Info("updating devbox phase", "from", devbox.Status.Phase, "to", newPhase)
+
+	// Log phase change
+	latestCommitStatus := "none"
+	if latestCommitRecord != nil {
+		latestCommitStatus = string(latestCommitRecord.CommitStatus)
+	}
+	logger.Info("updating devbox phase",
+		"from", devbox.Status.Phase,
+		"to", newPhase,
+		"latestCommitStatus", latestCommitStatus,
+	)
+
 	// Update devbox phase with retry
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		latestDevbox := &devboxv1alpha2.Devbox{}
@@ -1233,6 +1191,42 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 	return e.Object.GetCreationTimestamp().Time.After(p.checkTime)
 }
 
+// ContentIDChangedPredicate triggers reconcile when devbox status.contentID changes
+type ContentIDChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p ContentIDChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.ContentID != newDevbox.Status.ContentID
+	}
+
+	return false
+}
+
+// LastContainerStatusChangedPredicate triggers reconcile when devbox status.lastContainerStatus changes
+type LastContainerStatusChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p LastContainerStatusChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.LastContainerStatus.ContainerID != newDevbox.Status.LastContainerStatus.ContainerID
+	}
+	return false
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
@@ -1246,10 +1240,14 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
-		For(&devboxv1alpha2.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})). // enqueue request if devbox spec is updated
-		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).      // enqueue request if pod spec/status is updated
-		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).       // enqueue request if service spec is updated
-		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).        // enqueue request if secret spec is updated
+		For(&devboxv1alpha2.Devbox{}, builder.WithPredicates(predicate.Or(
+			predicate.GenerationChangedPredicate{}, // enqueue request if devbox spec is updated
+			ContentIDChangedPredicate{},            // enqueue request if devbox status.contentID is updated
+			LastContainerStatusChangedPredicate{},  // enqueue request if devbox status.lastContainerStatus is updated
+		))).
+		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
+		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).  // enqueue request if service spec is updated
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).   // enqueue request if secret spec is updated
 		WithEventFilter(NewControllerRestartPredicate(r.RestartPredicateDuration)).
 		Complete(r)
 }
