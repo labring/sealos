@@ -572,7 +572,7 @@ rules:
   resources: ["persistentvolumeclaims", "services"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["apps"]
-  resources: ["deployments", "statefulsets", "daemonsets"]
+  resources: ["deployments", "statefulsets", "replicasets", "daemonsets"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["batch"]
   resources: ["cronjobs","jobs"]
