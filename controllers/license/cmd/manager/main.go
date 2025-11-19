@@ -21,6 +21,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/labring/sealos/controllers/account/controllers/utils"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/controller"
 	utilid "github.com/labring/sealos/controllers/license/internal/util/clusterid"
@@ -29,6 +30,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ccontroler "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -54,13 +56,16 @@ func main() {
 	var secureMetrics bool
 	var enableHTTP2 bool
 	var tlsOpts []func(*tls.Config)
-
+	var concurrent int
+	rateLimiterOptions := &utils.LimiterOptions{}
 	flag.StringVar(
 		&metricsAddr,
 		"metrics-bind-address",
 		":8080",
 		"The address the metric endpoint binds to.",
 	)
+	flag.IntVar(&concurrent, "concurrent", 100, "The number of concurrent cluster reconciles.")
+
 	flag.StringVar(
 		&probeAddr,
 		"health-probe-bind-address",
@@ -81,6 +86,7 @@ func main() {
 	opts := zap.Options{
 		Development: true,
 	}
+	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -144,6 +150,11 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+	rateOpts := ccontroler.Options{
+		MaxConcurrentReconciles: concurrent,
+		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
+	}
+
 	ctx := ctrl.SetupSignalHandler()
 	clusterID, err := utilid.GetClusterID(ctx, mgr.GetConfig())
 	if err != nil {
@@ -167,7 +178,7 @@ func main() {
 		ClusterID:       clusterID,
 		CreateTimestamp: *createTime,
 	}
-	if err = reconciler.SetupWithManager(mgr); err != nil {
+	if err = reconciler.SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}

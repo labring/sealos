@@ -56,7 +56,6 @@ type LicenseReconciler struct {
 }
 
 var (
-	requeueRes       = ctrl.Result{RequeueAfter: time.Minute}
 	longRequeueRes   = ctrl.Result{RequeueAfter: 30 * time.Minute}
 	immediateRequeue = ctrl.Result{Requeue: true}
 )
@@ -125,12 +124,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		return ctrl.Result{}, nil
 	}
-	if isDefaultLicense(license) {
-		if err := r.ensureAndUpdateDefaultLicense(ctx, license); err != nil {
-			return ctrl.Result{}, err
-		}
-		return longRequeueRes, nil
-	}
 	return r.reconcile(ctx, license)
 }
 
@@ -140,7 +133,10 @@ func (r *LicenseReconciler) reconcile(
 ) (ctrl.Result, error) {
 	nsName := fmt.Sprintf("%s/%s", license.Namespace, license.Name)
 	r.Logger.V(1).Info("reconcile for license", "license", nsName)
-
+	if isDefaultLicense(license) {
+		r.Logger.V(1).Info("ensuring default license status", "license", nsName)
+		return ctrl.Result{}, nil
+	}
 	if err := r.validator.Validate(ctx, license); err != nil {
 		// Extract validation code if it's a ValidationError
 		var reason string
@@ -172,16 +168,33 @@ func (r *LicenseReconciler) reconcile(
 		if updateErr := r.updateStatus(ctx, client.ObjectKeyFromObject(license), updateStatus); updateErr != nil {
 			r.Logger.V(1).
 				Error(updateErr, "failed to update license status after validation failure", "license", nsName)
-			return requeueRes, updateErr
+			return ctrl.Result{}, updateErr
 		}
 		r.Logger.V(1).Error(err, "failed to validate license", "license", nsName)
-		return requeueRes, err
+		return ctrl.Result{}, nil
 	}
 
 	if err := r.activator.Active(ctx, license); err != nil {
-		// Update license status to failed when activation fails
-		r.Logger.V(1).Error(err, "failed to activate license", "license", nsName)
-		return requeueRes, err
+		failStatus := &license.Status
+		failStatus.Phase = licensev1.LicenseStatusPhaseFailed
+		failStatus.Reason = fmt.Sprintf("license activation failed: %v", err)
+		failStatus.ActivationTime = license.Status.ActivationTime
+		failStatus.ExpirationTime = license.Status.ExpirationTime
+		if updateErr := r.updateStatus(
+			ctx,
+			client.ObjectKeyFromObject(license),
+			failStatus,
+		); updateErr != nil {
+			r.Logger.Error(
+				updateErr,
+				"failed to update license status after activation failure",
+				"license",
+				nsName,
+			)
+			return ctrl.Result{}, updateErr
+		}
+		r.Logger.Error(err, "failed to activate license", "license", nsName)
+		return ctrl.Result{}, nil
 	}
 	r.Logger.V(1).
 		Info("license activated successfully", "license", nsName, "phase", license.Status.Phase)
@@ -189,7 +202,7 @@ func (r *LicenseReconciler) reconcile(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controller.Options) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
 	r.Client = mgr.GetClient()
 
@@ -214,6 +227,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			case <-ctx.Done():
 				return nil
 			case <-ticker.C:
+				r.Logger.Info("periodic default license ensure triggered")
 				if err := r.ensureAndUpdateDefaultLicense(ctx, nil); err != nil {
 					r.Logger.Error(err, "periodic default license ensure failed")
 				}
@@ -224,7 +238,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	// reconcile on generation change
 	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
+		WithOptions(limitOps).
 		For(&licensev1.License{}, builder.WithPredicates(predicate.And(predicate.GenerationChangedPredicate{}))).
 		Complete(r)
 }
