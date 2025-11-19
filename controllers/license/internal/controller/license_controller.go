@@ -133,7 +133,10 @@ func (r *LicenseReconciler) reconcile(
 ) (ctrl.Result, error) {
 	nsName := fmt.Sprintf("%s/%s", license.Namespace, license.Name)
 	r.Logger.V(1).Info("reconcile for license", "license", nsName)
-
+	if isDefaultLicense(license) {
+		r.Logger.V(1).Info("ensuring default license status", "license", nsName)
+		return ctrl.Result{}, nil
+	}
 	if err := r.validator.Validate(ctx, license); err != nil {
 		// Extract validation code if it's a ValidationError
 		var reason string
@@ -224,6 +227,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controll
 			case <-ctx.Done():
 				return nil
 			case <-ticker.C:
+				r.Logger.Info("periodic default license ensure triggered")
 				if err := r.ensureAndUpdateDefaultLicense(ctx, nil); err != nil {
 					r.Logger.Error(err, "periodic default license ensure failed")
 				}
