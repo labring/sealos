@@ -49,7 +49,7 @@ const raw2schema = async (
       connectionString: connection.connection ?? ''
     };
   } catch (error) {
-    console.log(`Failed to get connection info for ${raw.dbName}:`, error);
+    console.log(`Failed to get connection info for:`, error);
   }
 
   // Get Pod information
@@ -76,7 +76,7 @@ const raw2schema = async (
       )
     );
   } catch (error) {
-    console.log(`Failed to get pods for ${raw.dbName}:`, error);
+    console.log(`Failed to get pods:`, error);
   }
 
   const dbEditSchemaFromRaw: DbListItem = {

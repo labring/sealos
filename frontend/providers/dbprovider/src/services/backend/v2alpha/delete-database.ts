@@ -162,7 +162,7 @@ export async function deleteDatabase(
           if (cm.metadata?.name) {
             await k8sCore.deleteNamespacedConfigMap(cm.metadata.name, namespace).catch((err) => {
               if (err?.response?.statusCode !== 404) {
-                console.error(`Error deleting configmap ${cm.metadata?.name}:`, err);
+                console.error(`Error deleting configmap:`, err);
               }
             });
           }
