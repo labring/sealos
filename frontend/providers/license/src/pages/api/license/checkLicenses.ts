@@ -152,12 +152,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const latestLicense = licenses.reduce((latest, current) => {
-      const latestExp = decodeJWT(latest.spec.token)?.exp || 0;
-      const currentExp = decodeJWT(current.spec.token)?.exp || 0;
+      const latestExp = latest.spec.token ? decodeJWT(latest.spec.token)?.exp || 0 : 0;
+      const currentExp = current.spec.token ? decodeJWT(current.spec.token)?.exp || 0 : 0;
       return currentExp > latestExp ? current : latest;
     });
 
-    const maxExpTime = decodeJWT(latestLicense.spec.token)?.exp;
+    const maxExpTime = latestLicense.spec.token
+      ? decodeJWT(latestLicense.spec.token)?.exp
+      : undefined;
     if (!maxExpTime) {
       throw new Error('Failed to decode expiration time from latest license');
     }
