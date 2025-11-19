@@ -35,7 +35,9 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { status, data } = response;
-    if (data.code === 401) {
+    const isGuest = useSessionStore.getState().isGuest();
+    // console.log(data, 'data', isGuest);
+    if (data.code === 401 && !isGuest) {
       console.log('鉴权失败');
       console.log(data.message);
       useSessionStore.getState().delSession();

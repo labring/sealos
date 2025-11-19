@@ -14,25 +14,43 @@ export const deFormatMoney = (money: number) => money * 1000000;
 
 export function formatUrl(url: string, query: Record<string, string>) {
   const urlObj = new URL(url);
-  // 添加新的查询参数
   for (const key in query) {
     urlObj.searchParams.append(key, query[key]);
   }
   return urlObj.toString();
 }
+
 export const parseOpenappQuery = (openapp: string) => {
+  console.log('openapp', openapp);
   let param = decodeURIComponent(openapp);
   const firstQuestionMarkIndex = param.indexOf('?');
+
   let appkey = '';
+  let appPath = '/';
   let appQuery = '';
+
   if (firstQuestionMarkIndex === -1) {
+    // example: system-brain
     appkey = param;
   } else {
+    // example: system-brain?/test/a/b?trialToken=xxxx or system-brain?trialToken=xxxx
     appkey = param.substring(0, firstQuestionMarkIndex);
-    appQuery = param.substring(firstQuestionMarkIndex + 1);
+    const remainingPart = param.substring(firstQuestionMarkIndex + 1);
+
+    const secondQuestionMarkIndex = remainingPart.indexOf('?');
+    if (secondQuestionMarkIndex === -1) {
+      // example: system-brain?trialToken=xxxx
+      appQuery = remainingPart;
+    } else {
+      // example: system-brain?/test/a/b?trialToken=xxxx
+      appPath = remainingPart.substring(0, secondQuestionMarkIndex);
+      appQuery = remainingPart.substring(secondQuestionMarkIndex + 1);
+    }
   }
+
   return {
     appkey,
+    appPath,
     appQuery
   };
 };

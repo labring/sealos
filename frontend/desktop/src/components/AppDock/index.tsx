@@ -13,6 +13,7 @@ import { MouseEvent, useContext, useMemo, useRef, useState } from 'react';
 import { useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import useSessionStore from '@/stores/session';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
@@ -205,7 +206,7 @@ export default function AppDock() {
   const timeoutRef = useRef<number | null>(null);
   const isSmallScreen = useBreakpointValue({ base: true, sm: false });
   const mouseX = useMotionValue(Infinity);
-
+  const { isGuest, openGuestLoginModal } = useSessionStore();
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
   });
@@ -248,6 +249,12 @@ export default function AppDock() {
 
   // Handle icon click event
   const handleNavItem = (e: MouseEvent<HTMLDivElement>, item: AppInfo) => {
+    if (isGuest()) {
+      e.preventDefault();
+      openGuestLoginModal();
+      return;
+    }
+
     if (item.key === 'system-sealos-home') {
       const isNotMinimized = runningInfo.some((item) => item.size !== 'minimize');
       runningInfo.forEach((item) => {
