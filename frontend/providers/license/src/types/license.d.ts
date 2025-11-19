@@ -56,7 +56,7 @@ export type LicenseCR = {
     uid: string;
   };
   spec: {
-    token: string;
+    token?: string;
     type: string;
   };
   status: {

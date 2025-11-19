@@ -111,12 +111,21 @@ export default function LicenseApp() {
   const maxExpTime = useMemo(() => {
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     if (data && data.length > 0) {
+      const getExpirationTime = (license: (typeof data)[0]): number => {
+        if (license.spec.token) {
+          return decodeJWT(license.spec.token)?.exp || currentTimeInSeconds;
+        } else if (license.status.expirationTime) {
+          return Math.floor(new Date(license.status.expirationTime).getTime() / 1000);
+        }
+        return currentTimeInSeconds;
+      };
+
       const maxItem = data.reduce((item, license) => {
-        const maxTime = decodeJWT(item.spec.token)?.exp || currentTimeInSeconds;
-        const currentTime = decodeJWT(license.spec.token)?.exp || currentTimeInSeconds;
+        const maxTime = getExpirationTime(item);
+        const currentTime = getExpirationTime(license);
         return currentTime > maxTime ? license : item;
       });
-      return decodeJWT(maxItem.spec.token)?.exp || currentTimeInSeconds;
+      return getExpirationTime(maxItem);
     } else {
       return currentTimeInSeconds;
     }
@@ -223,8 +232,12 @@ export default function LicenseApp() {
         {data && data?.length > 0 ? (
           <Box mt="12px" minW={'350px'} height={'300px'} overflowY={'auto'}>
             {data?.map((item, i) => {
-              const iat = decodeJWT(item.spec.token)?.iat;
-              const exp = decodeJWT(item.spec.token)?.exp;
+              const hasToken = !!item.spec.token;
+              const tokenData = hasToken && item.spec.token ? decodeJWT(item.spec.token) : null;
+              const iat = tokenData?.iat;
+              const exp = tokenData?.exp;
+              const activationTime = hasToken && iat ? iat * 1000 : item.status.activationTime;
+              const expirationTime = hasToken && exp ? exp * 1000 : item.status.expirationTime;
 
               return (
                 <Flex
@@ -250,31 +263,39 @@ export default function LicenseApp() {
                         md: '24px'
                       }}
                       ml={'auto'}
-                      cursor={'pointer'}
+                      cursor={hasToken ? 'pointer' : 'default'}
                     >
                       <Text
                         color={'#485264'}
                         fontSize={'14px'}
                         fontWeight={500}
                         px="8px"
-                        onClick={() => downloadToken(item.spec?.token)}
+                        onClick={
+                          hasToken && item.spec.token
+                            ? () => downloadToken(item.spec.token!)
+                            : undefined
+                        }
                       >
-                        激活时间: {formatTime(iat ? iat * 1000 : '')}
+                        {hasToken
+                          ? `激活时间: ${formatTime(activationTime)}`
+                          : `到期时间: ${formatTime(expirationTime)}`}
                       </Text>
                     </Flex>
                   </Flex>
-                  <Flex
-                    mt={'12px'}
-                    fontSize={'14px'}
-                    fontWeight={500}
-                    gap={'20px'}
-                    alignItems={'center'}
-                  >
-                    <Text>CPU: {decodeJWT(item.spec.token)?.data.totalCPU}核</Text>
-                    <Text>内存: {decodeJWT(item.spec.token)?.data.totalMemory}G</Text>
-                    <Text>节点: {decodeJWT(item.spec.token)?.data.nodeCount}</Text>
-                    <Text>到期时间: {formatTime(exp ? exp * 1000 : '')}</Text>
-                  </Flex>
+                  {hasToken && (
+                    <Flex
+                      mt={'12px'}
+                      fontSize={'14px'}
+                      fontWeight={500}
+                      gap={'20px'}
+                      alignItems={'center'}
+                    >
+                      <Text>CPU: {tokenData?.data.totalCPU}核</Text>
+                      <Text>内存: {tokenData?.data.totalMemory}G</Text>
+                      <Text>节点: {tokenData?.data.nodeCount}</Text>
+                      <Text>到期时间: {formatTime(expirationTime)}</Text>
+                    </Flex>
+                  )}
                 </Flex>
               );
             })}
