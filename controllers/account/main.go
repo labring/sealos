@@ -27,7 +27,7 @@ import (
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"github.com/labring/sealos/controllers/account/controllers/utils"
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	// devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
@@ -63,7 +63,7 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
-	utilruntime.Must(devboxv1alpha1.AddToScheme(scheme))
+	// utilruntime.Must(devboxv1alpha1.AddToScheme(scheme))
 	// utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }

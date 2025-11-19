@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -1995,129 +1994,129 @@ func TestHPARestoredAfterDeploymentUpdate(t *testing.T) {
 }
 
 // Test suspendDevboxes and resumeDevboxes
-func TestSuspendResumeDevboxes(t *testing.T) {
-	tests := []struct {
-		name            string
-		initialState    devboxv1alpha1.DevboxState
-		expectSuspended bool
-	}{
-		{
-			name:            "devbox in Running state",
-			initialState:    devboxv1alpha1.DevboxStateRunning,
-			expectSuspended: true,
-		},
-		{
-			name:            "devbox in Stopped state",
-			initialState:    devboxv1alpha1.DevboxStateStopped,
-			expectSuspended: true,
-		},
-	}
+// func TestSuspendResumeDevboxes(t *testing.T) {
+// 	tests := []struct {
+// 		name            string
+// 		initialState    devboxv1alpha1.DevboxState
+// 		expectSuspended bool
+// 	}{
+// 		{
+// 			name:            "devbox in Running state",
+// 			initialState:    devboxv1alpha1.DevboxStateRunning,
+// 			expectSuspended: true,
+// 		},
+// 		{
+// 			name:            "devbox in Stopped state",
+// 			initialState:    devboxv1alpha1.DevboxStateStopped,
+// 			expectSuspended: true,
+// 		},
+// 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			scheme := runtime.NewScheme()
-			_ = devboxv1alpha1.AddToScheme(scheme)
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			scheme := runtime.NewScheme()
+// 			_ = devboxv1alpha1.AddToScheme(scheme)
 
-			devbox := &devboxv1alpha1.Devbox{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "test-devbox",
-					Namespace: "test-ns",
-				},
-				Spec: devboxv1alpha1.DevboxSpec{
-					State: tt.initialState,
-				},
-			}
+// 			devbox := &devboxv1alpha1.Devbox{
+// 				ObjectMeta: v1.ObjectMeta{
+// 					Name:      "test-devbox",
+// 					Namespace: "test-ns",
+// 				},
+// 				Spec: devboxv1alpha1.DevboxSpec{
+// 					State: tt.initialState,
+// 				},
+// 			}
 
-			fakeClient := clientfake.NewClientBuilder().
-				WithScheme(scheme).
-				WithObjects(devbox).
-				Build()
+// 			fakeClient := clientfake.NewClientBuilder().
+// 				WithScheme(scheme).
+// 				WithObjects(devbox).
+// 				Build()
 
-			reconciler := &NamespaceReconciler{
-				Client: fakeClient,
-				Log:    logr.Discard(),
-			}
+// 			reconciler := &NamespaceReconciler{
+// 				Client: fakeClient,
+// 				Log:    logr.Discard(),
+// 			}
 
-			ctx := context.Background()
+// 			ctx := context.Background()
 
-			// Test suspend
-			err := reconciler.suspendDevboxes(ctx, "test-ns")
-			if err != nil {
-				t.Fatalf("suspendDevboxes failed: %v", err)
-			}
+// 			// Test suspend
+// 			err := reconciler.suspendDevboxes(ctx, "test-ns")
+// 			if err != nil {
+// 				t.Fatalf("suspendDevboxes failed: %v", err)
+// 			}
 
-			// Verify suspension
-			var suspendedDevbox devboxv1alpha1.Devbox
-			err = fakeClient.Get(
-				ctx,
-				client.ObjectKey{Name: "test-devbox", Namespace: "test-ns"},
-				&suspendedDevbox,
-			)
-			if err != nil {
-				t.Fatalf("failed to get suspended devbox: %v", err)
-			}
+// 			// Verify suspension
+// 			var suspendedDevbox devboxv1alpha1.Devbox
+// 			err = fakeClient.Get(
+// 				ctx,
+// 				client.ObjectKey{Name: "test-devbox", Namespace: "test-ns"},
+// 				&suspendedDevbox,
+// 			)
+// 			if err != nil {
+// 				t.Fatalf("failed to get suspended devbox: %v", err)
+// 			}
 
-			// Check if original state was saved
-			annotations := suspendedDevbox.GetAnnotations()
-			stateJSON, hasState := annotations[OriginalSuspendStateAnnotation]
-			if !hasState {
-				t.Fatal("expected original state annotation to be saved")
-			}
+// 			// Check if original state was saved
+// 			annotations := suspendedDevbox.GetAnnotations()
+// 			stateJSON, hasState := annotations[OriginalSuspendStateAnnotation]
+// 			if !hasState {
+// 				t.Fatal("expected original state annotation to be saved")
+// 			}
 
-			// Decode and verify state
-			state, err := decodeDevboxState(stateJSON)
-			if err != nil {
-				t.Fatalf("failed to decode state: %v", err)
-			}
+// 			// Decode and verify state
+// 			state, err := decodeDevboxState(stateJSON)
+// 			if err != nil {
+// 				t.Fatalf("failed to decode state: %v", err)
+// 			}
 
-			// Check wasRunning matches expectation (only Running is considered running)
-			expectedWasRunning := tt.initialState == devboxv1alpha1.DevboxStateRunning
-			if state.WasRunning != expectedWasRunning {
-				t.Errorf("expected wasRunning %v, got %v", expectedWasRunning, state.WasRunning)
-			}
+// 			// Check wasRunning matches expectation (only Running is considered running)
+// 			expectedWasRunning := tt.initialState == devboxv1alpha1.DevboxStateRunning
+// 			if state.WasRunning != expectedWasRunning {
+// 				t.Errorf("expected wasRunning %v, got %v", expectedWasRunning, state.WasRunning)
+// 			}
 
-			// Check if devbox state is Stopped
-			if suspendedDevbox.Spec.State != devboxv1alpha1.DevboxStateStopped {
-				t.Errorf("expected state to be Stopped, got %s", suspendedDevbox.Spec.State)
-			}
+// 			// Check if devbox state is Stopped
+// 			if suspendedDevbox.Spec.State != devboxv1alpha1.DevboxStateStopped {
+// 				t.Errorf("expected state to be Stopped, got %s", suspendedDevbox.Spec.State)
+// 			}
 
-			// Test resume
-			err = reconciler.resumeDevboxes(ctx, "test-ns")
-			if err != nil {
-				t.Fatalf("resumeDevboxes failed: %v", err)
-			}
+// 			// Test resume
+// 			err = reconciler.resumeDevboxes(ctx, "test-ns")
+// 			if err != nil {
+// 				t.Fatalf("resumeDevboxes failed: %v", err)
+// 			}
 
-			// Verify resume
-			var resumedDevbox devboxv1alpha1.Devbox
-			err = fakeClient.Get(
-				ctx,
-				client.ObjectKey{Name: "test-devbox", Namespace: "test-ns"},
-				&resumedDevbox,
-			)
-			if err != nil {
-				t.Fatalf("failed to get resumed devbox: %v", err)
-			}
+// 			// Verify resume
+// 			var resumedDevbox devboxv1alpha1.Devbox
+// 			err = fakeClient.Get(
+// 				ctx,
+// 				client.ObjectKey{Name: "test-devbox", Namespace: "test-ns"},
+// 				&resumedDevbox,
+// 			)
+// 			if err != nil {
+// 				t.Fatalf("failed to get resumed devbox: %v", err)
+// 			}
 
-			// Check if annotation was removed
-			annotations = resumedDevbox.GetAnnotations()
-			if _, hasState := annotations[OriginalSuspendStateAnnotation]; hasState {
-				t.Error("expected original state annotation to be removed")
-			}
+// 			// Check if annotation was removed
+// 			annotations = resumedDevbox.GetAnnotations()
+// 			if _, hasState := annotations[OriginalSuspendStateAnnotation]; hasState {
+// 				t.Error("expected original state annotation to be removed")
+// 			}
 
-			// Check if state was restored correctly
-			// If original state was running (not Stopped), it should be restored to "Running"
-			// If original state was Stopped, it should remain "Stopped"
-			expectedRestoredState := devboxv1alpha1.DevboxStateStopped
-			if tt.initialState != devboxv1alpha1.DevboxStateStopped {
-				expectedRestoredState = devboxv1alpha1.DevboxStateRunning
-			}
-			if resumedDevbox.Spec.State != expectedRestoredState {
-				t.Errorf(
-					"expected state %s, got %s",
-					expectedRestoredState,
-					resumedDevbox.Spec.State,
-				)
-			}
-		})
-	}
-}
+// 			// Check if state was restored correctly
+// 			// If original state was running (not Stopped), it should be restored to "Running"
+// 			// If original state was Stopped, it should remain "Stopped"
+// 			expectedRestoredState := devboxv1alpha1.DevboxStateStopped
+// 			if tt.initialState != devboxv1alpha1.DevboxStateStopped {
+// 				expectedRestoredState = devboxv1alpha1.DevboxStateRunning
+// 			}
+// 			if resumedDevbox.Spec.State != expectedRestoredState {
+// 				t.Errorf(
+// 					"expected state %s, got %s",
+// 					expectedRestoredState,
+// 					resumedDevbox.Spec.State,
+// 				)
+// 			}
+// 		})
+// 	}
+// }
