@@ -27,6 +27,7 @@ import (
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"github.com/labring/sealos/controllers/account/controllers/utils"
+	// devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
@@ -62,21 +63,23 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
+	// utilruntime.Must(devboxv1alpha1.AddToScheme(scheme))
 	// utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		probeAddr            string
-		concurrent           int
-		development          bool
-		rateLimiterOptions   = &utils.LimiterOptions{}
-		leaseDuration        time.Duration
-		renewDeadline        time.Duration
-		retryPeriod          time.Duration
+		metricsAddr              string
+		enableLeaderElection     bool
+		probeAddr                string
+		concurrent               int
+		deleteResourceConcurrent int
+		development              bool
+		rateLimiterOptions       = &utils.LimiterOptions{}
+		leaseDuration            time.Duration
+		renewDeadline            time.Duration
+		retryPeriod              time.Duration
 	)
 	flag.StringVar(
 		&metricsAddr,
@@ -95,6 +98,12 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.IntVar(&concurrent, "concurrent", 100, "The number of concurrent cluster reconciles.")
+	flag.IntVar(
+		&deleteResourceConcurrent,
+		"delete-resource-concurrent",
+		5,
+		"The number of concurrent DeleteUserResource calls.",
+	)
 	flag.DurationVar(
 		&leaseDuration,
 		"leader-elect-lease-duration",
@@ -320,7 +329,7 @@ func main() {
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts); err != nil {
+	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
