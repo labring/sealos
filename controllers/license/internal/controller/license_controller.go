@@ -57,6 +57,7 @@ type LicenseReconciler struct {
 
 var (
 	longRequeueRes   = ctrl.Result{RequeueAfter: 30 * time.Minute}
+	shortRequeueRes  = ctrl.Result{RequeueAfter: time.Minute}
 	immediateRequeue = ctrl.Result{Requeue: true}
 )
 
@@ -171,7 +172,7 @@ func (r *LicenseReconciler) reconcile(
 			return ctrl.Result{}, updateErr
 		}
 		r.Logger.V(1).Error(err, "failed to validate license", "license", nsName)
-		return ctrl.Result{}, nil
+		return shortRequeueRes, nil
 	}
 
 	if err := r.activator.Active(ctx, license); err != nil {
@@ -194,7 +195,7 @@ func (r *LicenseReconciler) reconcile(
 			return ctrl.Result{}, updateErr
 		}
 		r.Logger.Error(err, "failed to activate license", "license", nsName)
-		return ctrl.Result{}, nil
+		return shortRequeueRes, nil
 	}
 	r.Logger.V(1).
 		Info("license activated successfully", "license", nsName, "phase", license.Status.Phase)
