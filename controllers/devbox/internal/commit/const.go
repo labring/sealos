@@ -3,15 +3,18 @@ package commit
 import "time"
 
 const (
-	DefaultNamespace           = "sealos.io"
-	DefaultContainerdAddress   = "unix:///var/run/containerd/containerd.sock"
-	DefaultRuntime             = "io.containerd.runc.v2"
-	DefaultNerdctlDataRoot     = "/var/lib/containerd"
-	DefaultNerdctlHostsDir     = "/etc/containerd/certs.d"
-	DefaultDevboxSnapshotter   = "devbox"
-	DefaultNetworkMode         = "none"
-	InsecureRegistry           = true
-	PauseContainerDuringCommit = false
+	DefaultNamespace            = "sealos.io"
+	DefaultContainerdAddress    = "unix:///var/run/containerd/containerd.sock"
+	DefaultRuntime              = "io.containerd.runc.v2"
+	DefaultNerdctlDataRoot      = "/var/lib/containerd"
+	DefaultNerdctlHostsDir      = "/etc/containerd/certs.d"
+	DefaultDevboxSnapshotter    = "devbox"
+	DefaultNetworkMode          = "none"
+	DefaultRemoveImageAsync     = true
+	DefaultRemoveImageForce     = false
+	DefaultRemoveContainerForce = false
+	InsecureRegistry            = true
+	PauseContainerDuringCommit  = false
 
 	AnnotationKeyNamespace               = "namespace"
 	AnnotationKeyImageName               = "image.name"

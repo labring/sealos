@@ -196,10 +196,17 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 	h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
 	var containerID string
 	var commitErr error
+	var removeImageNames []string
 	defer func() {
 		// remove container whether commit success or not
-		if err := h.Committer.RemoveContainer(ctx, containerID); err != nil {
+		if err := h.Committer.RemoveContainers(ctx, []string{containerID}); err != nil {
 			h.Logger.Error(err, "failed to remove container", "containerID", containerID)
+		}
+		// remove after push image whether push success
+		if len(removeImageNames) > 0 {
+			if err := h.Committer.RemoveImages(ctx, removeImageNames, commit.DefaultRemoveImageForce, commit.DefaultRemoveImageAsync); err != nil {
+				h.Logger.Error(err, "failed to remove image", "removeImageNames", removeImageNames)
+			}
 		}
 	}()
 	if containerID, commitErr = h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); commitErr != nil {
@@ -240,10 +247,7 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 		}
 		return err
 	}
-	// remove after push image whether push success
-	if err := h.Committer.RemoveImage(ctx, commitImage, false, false); err != nil {
-		h.Logger.Error(err, "failed to remove image", "commitImage", commitImage)
-	}
+	removeImageNames = append(removeImageNames, commitImage, baseImage)
 	// step 2: update devbox commit record
 	// step 3: update devbox status state to shutdown
 	// step 4: add a new commit record for the new content id
@@ -322,7 +326,7 @@ func (h *EventHandler) cleanupStorage(ctx context.Context, devboxName, contentID
 
 	// make sure remove container
 	defer func() {
-		if cleanupErr := h.Committer.RemoveContainer(ctx, containerID); cleanupErr != nil {
+		if cleanupErr := h.Committer.RemoveContainers(ctx, []string{containerID}); cleanupErr != nil {
 			h.Logger.Error(cleanupErr, "failed to remove temporary container", "devbox", devboxName, "containerID", containerID)
 		} else {
 			h.Logger.Info("Successfully removed temporary container", "devbox", devboxName, "containerID", containerID)

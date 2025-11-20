@@ -127,7 +127,7 @@ func TestRemoveContainer(t *testing.T) {
 	fmt.Printf("=== Total %d containers ===\n", len(containers))
 
 	// delete container
-	err = committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
+	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
 	assert.NoError(t, err)
 
 	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
@@ -196,7 +196,7 @@ func TestConcurrentOperations(t *testing.T) {
 
 	// delete containers
 	for _, containerID := range containers {
-		err := committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
+		err := committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
 		if err != nil {
 			t.Logf("Warning: failed to delete container %s: %v", containerID, err)
 		}
@@ -266,7 +266,7 @@ func TestConnectionManagement(t *testing.T) {
 	assert.NotEmpty(t, containerID)
 
 	// delete container
-	err = committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
+	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
 	assert.NoError(t, err)
 
 	// test reconnect
@@ -282,7 +282,7 @@ func TestConnectionManagement(t *testing.T) {
 	err = committer.(*CommitterImpl).CheckConnection(ctx)
 	assert.NoError(t, err)
 
-	err = committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
+	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
 	assert.NoError(t, err)
 
 	// test connection check again
@@ -335,7 +335,7 @@ func TestPushToDockerHub(t *testing.T) {
 	}
 
 	// remove image
-	err = committer.RemoveImage(ctx, testImageName, false, false)
+	err = committer.RemoveImages(ctx, []string{testImageName}, false, false)
 	assert.NoError(t, err)
 
 	// verify image is deleted
@@ -344,7 +344,7 @@ func TestPushToDockerHub(t *testing.T) {
 	fmt.Println("can not find image:", testImageName)
 
 	// remove container
-	err = committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
+	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
 	assert.NoError(t, err)
 
 	// verify container is deleted
@@ -410,7 +410,7 @@ func TestRemoveImage(t *testing.T) {
 	// assert.NoError(t, err)
 
 	// remove image
-	err = committer.(*CommitterImpl).RemoveImage(ctx, imageName, false, false)
+	err = committer.(*CommitterImpl).RemoveImages(ctx, []string{imageName}, false, false)
 	assert.NoError(t, err)
 
 	// verify image is deleted
@@ -433,7 +433,7 @@ func TestAtomicLabels(t *testing.T) {
 
 	// ensure cleanup container after test
 	defer func() {
-		err := committer.RemoveContainer(ctx, containerID)
+		err := committer.RemoveContainers(ctx, []string{containerID})
 		if err != nil {
 			fmt.Printf("Failed to cleanup container: %v", err)
 		}
@@ -515,158 +515,135 @@ func TestGetImage(t *testing.T) {
 	}
 }
 
-// test GC initialization and execution
-func TestGCFlow(t *testing.T) {
+// TestRemoveImagePerformance test RemoveImage performance
+func TestRemoveImagePerformance(t *testing.T) {
 	ctx := context.Background()
-	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-
-	// create committer
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
-	defer committer.(*CommitterImpl).Close()
 
-	// 1. first execute InitializeGC for initial cleanup
-	err = committer.InitializeGC(ctx)
-	assert.NoError(t, err)
-
-	// 2. create some test resources
-	var containerIDs []string
-	var imageNames []string
-
-	// create three test containers and images
-	for i := 0; i < 3; i++ {
-		devboxName := fmt.Sprintf("test-gc-devbox-%d-%d", time.Now().Unix(), i)
-		contentID := fmt.Sprintf("test-gc-content-%d", i)
-		commitImage := fmt.Sprintf("test-gc-image-%d-%d", time.Now().Unix(), i)
-
-		containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImageBusyBox)
-		assert.NoError(t, err)
-		containerIDs = append(containerIDs, containerID)
-		imageNames = append(imageNames, commitImage)
-	}
-
-	// 3. verify resource creation success
-	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
-	fmt.Printf("=== Created Containers ===\n")
-	for _, container := range containers {
-		fmt.Printf("Container ID: %s\n", container.ID())
-	}
-
-	// 4. mark some resources as GC
-	committer.(*CommitterImpl).MarkForGC(containerIDs[0], imageNames[0])
-	committer.(*CommitterImpl).MarkForGC(containerIDs[1], imageNames[1])
-
-	// 5. execute normal GC
-	err = committer.(*CommitterImpl).normalGC(ctx)
-	assert.NoError(t, err)
-
-	// wait for gc
-	time.Sleep(5 * time.Second)
-
-	// 6. verify marked resources are cleaned up
-	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
-	fmt.Printf("=== Containers after normal GC ===\n")
-	for _, container := range containers {
-		fmt.Printf("Container ID: %s\n", container.ID())
-		// ensure marked containers are deleted
-		assert.NotEqual(t, containerIDs[0], container.ID())
-		assert.NotEqual(t, containerIDs[1], container.ID())
-	}
-
-	for i := 0; i < 2; i++ {
-		devboxName := fmt.Sprintf("test-gc-devbox-%d-%d", time.Now().Unix(), i)
-		contentID := fmt.Sprintf("test-gc-content-%d", i)
-		commitImage := fmt.Sprintf("test-gc-image-%d-%d", time.Now().Unix(), i)
-
-		containerID, err := committer.Commit(ctx, devboxName, contentID, baseImageBusyBox, commitImage)
-		assert.NoError(t, err)
-		containerIDs = append(containerIDs, containerID)
-		imageNames = append(imageNames, commitImage)
-	}
-
-	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
-	fmt.Printf("===After create 2 more containers ===\n")
-	for _, container := range containers {
-		fmt.Printf("Container ID: %s\n", container.ID())
-	}
-
-	// 7. execute force GC
-	err = committer.(*CommitterImpl).forceGC(ctx)
-	assert.NoError(t, err)
-
-	// 8. verify all resources are cleaned up
-	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(containers), "All containers should be removed after force GC")
-}
-
-// test periodic GC
-func TestPeriodicGC(t *testing.T) {
-	ctx := context.Background()
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
-	// create committer
-	committer, err := NewCommitter("", "", "", true)
-	assert.NoError(t, err)
-	err = committer.InitializeGC(ctx)
-	assert.NoError(t, err)
-	defer committer.(*CommitterImpl).Close()
+	fmt.Printf("\n====================================\n")
+	fmt.Printf("image remove test\n")
+	fmt.Printf("Namespace: %s\n", DefaultNamespace)
+	fmt.Printf("====================================\n\n")
 
-	// 2. create some test resources
-	var containerIDs []string
-	var imageNames []string
-
-	// create four test containers and images
-	for i := 0; i < 4; i++ {
-		devboxName := fmt.Sprintf("test-periodic-gc-devbox-%d-%d", time.Now().Unix(), i)
-		contentID := fmt.Sprintf("test-periodic-gc-content-%d", i)
-		commitImage := fmt.Sprintf("test-periodic-gc-image-%d-%d", time.Now().Unix(), i)
-
-		containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImageBusyBox)
-		assert.NoError(t, err)
-		containerIDs = append(containerIDs, containerID)
-		imageNames = append(imageNames, commitImage)
-	}
-
-	// 4. mark some resources as GC
-	committer.(*CommitterImpl).MarkForGC(containerIDs[0], imageNames[0])
-	committer.(*CommitterImpl).MarkForGC(containerIDs[1], imageNames[1])
-
-	// set short GC interval for test
-	committer.(*CommitterImpl).gcInterval = 2 * time.Second
-	// start GC
-	err = committer.GC(ctx)
-	assert.NoError(t, err)
-
-	// wait for gc start
-	fmt.Println("wait for gc start......")
-	time.Sleep(3 * time.Second)
-	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
-	fmt.Printf("=== Containers after first normal GC ===\n")
-	for _, container := range containers {
-		fmt.Printf("Container ID: %s\n", container.ID())
-		// ensure marked containers are deleted
-		assert.NotEqual(t, containerIDs[0], container.ID())
-		assert.NotEqual(t, containerIDs[1], container.ID())
-	}
-
-	committer.(*CommitterImpl).MarkForGC(containerIDs[2], imageNames[2])
-	committer.(*CommitterImpl).MarkForGC(containerIDs[3], imageNames[3])
-	// wait for gc start again
-	fmt.Println("wait for gc start again......")
-	time.Sleep(3 * time.Second)
-
-	// verify resources are cleaned up
-	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 0, len(containers), "All containers should be removed by periodic GC")
-
+	// list all images
 	images, err := committer.(*CommitterImpl).containerdClient.ListImages(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(images), "All images should be removed by periodic GC")
+
+	fmt.Printf("current image count: %d\n", len(images))
+	if len(images) > 0 {
+		fmt.Println("\nimage list:")
+		for i, img := range images {
+			fmt.Printf("  [%d] %s\n", i+1, img.Name())
+			size, err := img.Size(ctx)
+			if err == nil {
+				fmt.Printf("      Size: %.2f MB\n", float64(size)/1024/1024)
+			}
+		}
+	} else {
+		fmt.Println("no image found, test finished")
+		return
+	}
+
+	fmt.Printf("\n====================================\n")
+	fmt.Printf("start to remove all images\n")
+	fmt.Printf("====================================\n\n")
+
+	// record each image remove result
+	type RemoveResult struct {
+		ImageName string
+		Size      float64
+		Duration  time.Duration
+		Success   bool
+		Error     error
+	}
+
+	results := make([]RemoveResult, 0, len(images))
+	totalStart := time.Now()
+
+	// remove all images
+	for i, image := range images {
+		imageName := image.Name()
+		size, _ := image.Size(ctx)
+		sizeMB := float64(size) / 1024 / 1024
+
+		fmt.Printf("[%d/%d] remove image: %s (%.2f MB)\n", i+1, len(images), imageName, sizeMB)
+
+		start := time.Now()
+		err := committer.RemoveImages(ctx, []string{imageName}, true, false)
+		duration := time.Since(start)
+
+		result := RemoveResult{
+			ImageName: imageName,
+			Size:      sizeMB,
+			Duration:  duration,
+			Success:   err == nil,
+			Error:     err,
+		}
+		results = append(results, result)
+
+		if err != nil {
+			fmt.Printf("  status: failed - %v\n", err)
+		} else {
+			fmt.Printf("  status: success\n")
+		}
+		fmt.Printf("  duration: %v (%.3f seconds)\n\n", duration, duration.Seconds())
+	}
+
+	totalDuration := time.Since(totalStart)
+
+	// output statistics result
+	fmt.Printf("====================================\n")
+	fmt.Printf("remove statistics\n")
+	fmt.Printf("====================================\n\n")
+
+	successCount := 0
+	failCount := 0
+	for _, result := range results {
+		if result.Success {
+			successCount++
+		} else {
+			failCount++
+		}
+	}
+
+	fmt.Printf("total image count: %d\n", len(images))
+	fmt.Printf("success remove: %d\n", successCount)
+	fmt.Printf("failed remove: %d\n", failCount)
+	fmt.Printf("total duration: %v (%.3f seconds)\n\n", totalDuration, totalDuration.Seconds())
+
+	// detailed statistics
+	fmt.Println("each image remove duration:")
+	fmt.Println("-----------------------------------")
+	for i, result := range results {
+		status := "✓"
+		if !result.Success {
+			status = "✗"
+		}
+		fmt.Printf("  [%d] %s %s\n", i+1, status, result.ImageName)
+		fmt.Printf("      Size: %.2f MB\n", result.Size)
+		fmt.Printf("      Time: %v (%.3f seconds)\n", result.Duration, result.Duration.Seconds())
+		if !result.Success {
+			fmt.Printf("      Error: %v\n", result.Error)
+		}
+	}
+
+	// verify remove result
+	fmt.Printf("\n====================================\n")
+	fmt.Printf("verify remove result\n")
+	fmt.Printf("====================================\n")
+	finalImages, err := committer.(*CommitterImpl).containerdClient.ListImages(ctx)
+	assert.NoError(t, err)
+	fmt.Printf("remaining image count after remove: %d\n", len(finalImages))
+
+	if len(finalImages) > 0 {
+		fmt.Println("\nremaining images:")
+		for i, img := range finalImages {
+			fmt.Printf("  [%d] %s\n", i+1, img.Name())
+		}
+	}
+
+	fmt.Printf("\ntest finished!\n")
 }
