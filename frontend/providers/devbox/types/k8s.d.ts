@@ -20,7 +20,7 @@ export type KBDevboxTypeV2 = {
     };
   };
   spec: KBDevboxSpecV2;
-  status?: {
+  status: {
     // lastState: {
     //   terminated?: {
     //     containerID: string;

@@ -33,19 +33,12 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     name: string;
   }
 ]): DevboxListItemTypeV2 => {
-  const status =
-    devbox.status?.state === 'Running' &&
-    (devbox.spec.state === 'Stopped' || devbox.spec.state === 'Shutdown')
-      ? devboxStatusMap.Stopping
-      : devbox.status?.state && devboxStatusMap[devbox.status.state]
-        ? devboxStatusMap[devbox.status.state]
-        : devboxStatusMap.Pending;
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
     template,
     remark: devbox.metadata?.annotations?.[devboxRemarkKey] || '',
-    status,
+    status: devboxStatusMap[devbox.status.phase], // use devbox.status.phase to get status
     sshPort: devbox.status?.network.nodePort || 65535,
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
@@ -68,18 +61,6 @@ export const adaptDevboxDetailV2 = ([
   portInfos,
   template
 ]: GetDevboxByNameReturn): DevboxDetailTypeV2 => {
-  const status =
-    devbox.status?.state === 'Running' &&
-    (devbox.spec.state === 'Stopped' || devbox.spec.state === 'Shutdown')
-      ? devboxStatusMap.Stopping
-      : devbox.status?.state && devboxStatusMap[devbox.status.state]
-        ? devboxStatusMap[devbox.status.state]
-        : devboxStatusMap.Pending;
-
-  // isPause should be based on the final computed status, not the raw phase
-  // to avoid stopping polling when the status is 'Stopping'
-  const isPause = status.value === 'Stopped' || status.value === 'Shutdown';
-
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
@@ -91,9 +72,9 @@ export const adaptDevboxDetailV2 = ([
     templateConfig: JSON.stringify(devbox.spec.config),
     image: template.image,
     iconId: template.templateRepository.iconId || '',
-    status,
+    status: devboxStatusMap[devbox.status.phase], // use devbox.status.phase to get status
     sshPort: devbox.status?.network.nodePort || 65535,
-    isPause,
+    isPause: devbox.status.phase === 'Stopped' || devbox.status.phase === 'Shutdown',
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
