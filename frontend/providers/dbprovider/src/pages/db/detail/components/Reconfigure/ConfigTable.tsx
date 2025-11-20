@@ -35,26 +35,6 @@ export interface Difference {
   newValue: string;
 }
 
-const TIMEZONE_OPTIONS = ['UTC', 'Asia/Shanghai'];
-const COMMON_ENUM_FIELDS = new Map<string, ParameterConfigField>([
-  ['timezone', { name: 'timezone', type: 'enum', values: TIMEZONE_OPTIONS }],
-  ['log_timezone', { name: 'log_timezone', type: 'enum', values: TIMEZONE_OPTIONS }],
-  [
-    'mysqld.default-time-zone',
-    { name: 'mysqld.default-time-zone', type: 'enum', values: TIMEZONE_OPTIONS }
-  ],
-  ['default-time-zone', { name: 'default-time-zone', type: 'enum', values: TIMEZONE_OPTIONS }]
-]);
-
-const getCommonFieldOverride = (key: string): ParameterConfigField | undefined => {
-  const commonField = COMMON_ENUM_FIELDS.get(key.toLowerCase());
-  if (!commonField) return;
-  return {
-    ...commonField,
-    name: key
-  };
-};
-
 const ConfigTable = forwardRef<
   ConfigTableRef,
   {
@@ -75,7 +55,7 @@ const ConfigTable = forwardRef<
     });
 
     return initialData.map((item) => {
-      const override = overrideMap.get(item.key) || getCommonFieldOverride(item.key);
+      const override = overrideMap.get(item.key);
       if (override) {
         return {
           ...item,
