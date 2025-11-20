@@ -13,7 +13,6 @@ import { MouseEvent, useContext, useMemo, useRef, useState } from 'react';
 import { useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import useSessionStore from '@/stores/session';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
