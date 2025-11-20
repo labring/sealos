@@ -478,13 +478,6 @@ export function transformFromLegacySchema(
       replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
       cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
       memory: resourceConverters.mbToMemory(legacyData.memory || 256),
-      gpu: legacyData.gpu
-        ? {
-            vendor: legacyData.gpu.manufacturers,
-            type: legacyData.gpu.type,
-            amount: legacyData.gpu.amount
-          }
-        : undefined,
       hpa: legacyData.hpa?.use
         ? {
             target: legacyData.hpa.target,
@@ -499,20 +492,42 @@ export function transformFromLegacySchema(
         const protocol = network.openNodePort ? network.protocol : network.appProtocol || 'HTTP';
         const protocolLower = protocol.toLowerCase();
 
-        // Build private address
-        const privateAddress =
-          appName && namespace ? `http://${appName}.${namespace}:${network.port}` : undefined;
+        let privateAddress: string | undefined;
+        if (network.serviceName && namespace) {
+          const privateScheme = protocolLower === 'udp' ? 'udp' : 'http';
+          privateAddress = `${privateScheme}://${network.serviceName}.${namespace}:${network.port}`;
+        }
 
-        // Build public address
         let publicAddress: string | undefined;
-        if (network.openPublicDomain && network.publicDomain && network.domain) {
-          const publicScheme =
-            protocolLower === 'grpc' ? 'grpcs' : protocolLower === 'ws' ? 'wss' : 'https';
-          publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}`;
-        } else if (network.customDomain) {
-          const publicScheme =
-            protocolLower === 'grpc' ? 'grpcs' : protocolLower === 'ws' ? 'wss' : 'https';
-          publicAddress = `${publicScheme}://${network.customDomain}`;
+        if (network.openPublicDomain) {
+          if (network.customDomain) {
+            const publicScheme =
+              protocolLower === 'grpc'
+                ? 'grpcs'
+                : protocolLower === 'ws'
+                  ? 'wss'
+                  : protocolLower === 'udp'
+                    ? 'udp'
+                    : 'https';
+            publicAddress = `${publicScheme}://${network.customDomain}`;
+          } else if (network.publicDomain && network.domain) {
+            const publicScheme =
+              protocolLower === 'grpc'
+                ? 'grpcs'
+                : protocolLower === 'ws'
+                  ? 'wss'
+                  : protocolLower === 'udp'
+                    ? 'udp'
+                    : 'https';
+            if (network.openNodePort && network.nodePort) {
+              publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}:${network.nodePort}`;
+            } else {
+              publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}`;
+            }
+          }
+        } else if (network.openNodePort && network.nodePort && network.domain) {
+          const publicScheme = protocolLower === 'udp' ? 'udp' : protocolLower;
+          publicAddress = `${publicScheme}://${protocolLower}.${network.domain}:${network.nodePort}`;
         }
 
         return {

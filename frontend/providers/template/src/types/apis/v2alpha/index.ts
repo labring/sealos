@@ -1,13 +1,11 @@
 import * as z from 'zod';
 import { createDocument } from 'zod-openapi';
 
-import * as deleteInstanceSchemas from './delete-instance';
 import * as listTemplateSchemas from './list-template';
 import * as getTemplateSchemas from './get-template';
 import * as createTemplateSchemas from './create-template';
 import * as commonSchemas from './common/schema';
 
-export * as deleteInstanceSchemas from './delete-instance';
 export * as listTemplateSchemas from './list-template';
 export * as getTemplateSchemas from './get-template';
 export * as createTemplateSchemas from './create-template';
@@ -96,7 +94,8 @@ Get a simplified list of all available templates with basic information.
 - **High Performance**: Optimized for speed (10-50ms response time)
 - **No Resource Calculation**: Returns metadata only, without computing resource requirements
 - **Multi-language Support**: Supports internationalization via language parameter
-- **Category Menu**: Includes top categories for sidebar menu
+- **Category Menu**: Top categories available in response header X-Menu-Keys
+- **Direct Array Response**: Returns template array directly without wrapper object
 
 ## Use Cases
 - Display template list on homepage
@@ -116,30 +115,27 @@ This endpoint is optimized for fast response times by skipping resource requirem
             content: {
               'application/json': {
                 schema: listTemplateSchemas.response,
-                example: {
-                  templates: [
-                    {
-                      name: 'perplexica',
-                      resourceType: 'template',
-                      readme:
-                        'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
-                      icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
-                      description: 'AI-powered search engine',
-                      gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
-                      category: ['ai'],
-                      args: {
-                        OPENAI_API_KEY: {
-                          description: 'OpenAI API Key',
-                          type: 'string',
-                          default: '',
-                          required: true
-                        }
-                      },
-                      deployCount: 156
-                    }
-                  ],
-                  menuKeys: 'ai,database,tool'
-                }
+                example: [
+                  {
+                    name: 'perplexica',
+                    resourceType: 'template',
+                    readme:
+                      'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
+                    icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
+                    description: 'AI-powered search engine',
+                    gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
+                    category: ['ai'],
+                    args: {
+                      OPENAI_API_KEY: {
+                        description: 'OpenAI API Key',
+                        type: 'string',
+                        default: '',
+                        required: true
+                      }
+                    },
+                    deployCount: 156
+                  }
+                ]
               }
             }
           },
@@ -265,16 +261,17 @@ Response time: 50-200ms (includes YAML parsing and resource calculation)
 Deploy a template instance with custom parameters and configurations.
 
 ## Features
-- **Authentication Required**: Requires valid kubeconfig authentication
-- **Custom Parameters**: Accepts template variable values via args parameter
+- **Authentication Required**: Requires valid kubeconfig authentication (validated before deployment)
+- **Custom Parameters**: Accepts template variable values directly in request body (no "args" wrapper)
 - **Automatic Namespace**: Namespace is automatically resolved from kubeconfig
 - **Resource Management**: Automatically creates and manages Kubernetes resources
+- **Error Handling**: Returns appropriate error messages for invalid kubeconfig or insufficient permissions
 
 ## Deployment Process
-1. Authenticates user via kubeconfig header
+1. Authenticates user via kubeconfig header (validates kubeconfig)
 2. Extracts namespace from kubeconfig automatically
 3. Retrieves template configuration and YAML definitions
-4. Processes template variables with provided args values
+4. Processes template variables with provided parameter values (sent directly in request body)
 5. Generates Kubernetes manifests based on template
 6. Applies resources to user's namespace
 7. Returns deployment status
@@ -287,7 +284,7 @@ Deploy a template instance with custom parameters and configurations.
 
 ## Request Parameters
 - **name** (path parameter): Template name identifier from the URL path
-- **args** (request body): Object containing template variable values (key-value pairs)
+- **request body**: Direct object containing template variable values (key-value pairs, no "args" wrapper needed)
 
 ## Important Notes
 - **Resource Creation**: Creates real Kubernetes resources that consume cluster resources
@@ -305,11 +302,9 @@ Deploy a template instance with custom parameters and configurations.
             'application/json': {
               schema: createTemplateSchemas.requestBody,
               example: {
-                args: {
-                  OPENAI_API_KEY: 'your-api-key-here',
-                  APP_NAME: 'my-app-instance',
-                  MEMORY_LIMIT: '2Gi'
-                }
+                OPENAI_API_KEY: 'your-api-key-here',
+                APP_NAME: 'my-app-instance',
+                MEMORY_LIMIT: '2Gi'
               }
             }
           }
@@ -325,8 +320,19 @@ Deploy a template instance with custom parameters and configurations.
                 schema: commonSchemas.BaseResponseSchema.extend({
                   code: z.literal(400)
                 }),
-                example: {
-                  message: 'name is required'
+                examples: {
+                  missingParameters: {
+                    summary: 'Missing template parameters',
+                    value: {
+                      message: 'Template parameters are required'
+                    }
+                  },
+                  invalidTemplate: {
+                    summary: 'Invalid template or failed to load',
+                    value: {
+                      message: 'Failed to load template'
+                    }
+                  }
                 }
               }
             }
@@ -338,8 +344,21 @@ Deploy a template instance with custom parameters and configurations.
                 schema: commonSchemas.BaseResponseSchema.extend({
                   code: z.literal(401)
                 }),
-                example: {
-                  message: 'Invalid or missing kubeconfig'
+                examples: {
+                  missingKubeconfig: {
+                    summary: 'Missing kubeconfig',
+                    value: {
+                      message: 'Invalid or missing kubeconfig',
+                      error: 'Authentication failed'
+                    }
+                  },
+                  invalidKubeconfig: {
+                    summary: 'Invalid kubeconfig or insufficient permissions',
+                    value: {
+                      message: 'Invalid kubeconfig or insufficient permissions',
+                      error: 'Failed to authenticate with Kubernetes cluster'
+                    }
+                  }
                 }
               }
             }
@@ -366,95 +385,6 @@ Deploy a template instance with custom parameters and configurations.
                 }),
                 example: {
                   message: 'Failed to deploy template',
-                  error: 'Kubernetes API error'
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/instance/{instanceName}': {
-      delete: {
-        tags: ['Mutation'],
-        summary: 'Delete Instance',
-        description: `
-## Overview
-Delete a deployed template instance and all its dependent Kubernetes resources.
-
-## Features
-- **Authentication Required**: Requires valid kubeconfig authentication
-- **Complete Cleanup**: Removes all associated resources (Deployments, Services, PVCs, etc.)
-- **Safe Deletion**: Validates instance existence before deletion
-- **Namespace Isolation**: Only deletes resources within the user's namespace
-
-## Deletion Process
-1. Authenticates user via kubeconfig header
-2. Validates instance exists in user's namespace
-3. Deletes all labeled resources:
-   - Deployments
-   - StatefulSets
-   - Services
-   - ConfigMaps
-   - Secrets
-   - PersistentVolumeClaims
-   - Ingresses
-4. Returns success confirmation
-
-## Use Cases
-- Clean up unused template instances
-- Remove failed deployments
-- Free up cluster resources
-
-## Important Notes
-- **Irreversible**: Deletion cannot be undone
-- **Data Loss**: All associated data will be permanently deleted
-- **Namespace Scoped**: Only affects resources in the user's namespace
-        `,
-        operationId: 'deleteInstance',
-        security: [{ kubeconfigAuth: [] }],
-        requestParams: {
-          path: deleteInstanceSchemas.pathParams
-        },
-        responses: {
-          '204': {
-            description: 'Instance successfully deleted'
-          },
-          '401': {
-            description: 'Authentication failed',
-            content: {
-              'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(401)
-                }),
-                example: {
-                  message: 'Invalid or missing kubeconfig'
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Instance not found',
-            content: {
-              'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(404)
-                }),
-                example: {
-                  message: 'Instance not found in namespace'
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(500)
-                }),
-                example: {
-                  message: 'Failed to delete instance',
                   error: 'Kubernetes API error'
                 }
               }

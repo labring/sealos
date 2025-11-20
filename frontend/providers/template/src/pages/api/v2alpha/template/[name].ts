@@ -3,12 +3,17 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
-import { readTemplates } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
+import {
+  getCachedTemplates,
+  getTemplateFromCache,
+  getCachedTemplateDetail,
+  setCachedTemplateDetail
+} from './templateCache';
 
 // estimate min—max equality
 function simplifyResourceValue(
@@ -80,6 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
+  // Add caching headers for GET requests
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
+    res.setHeader('ETag', `"${templateName}-${language}"`);
+  }
+
   if (req.method === 'POST') {
     return handleTemplateDeployment(req, res, templateName);
   }
@@ -100,27 +111,44 @@ async function handleTemplateDeployment(
   templateName: string
 ) {
   try {
-    const { args } = req.body as {
-      args: Record<string, string>;
-    };
+    // Directly receive parameters object without 'args' key
+    const args = req.body as Record<string, string>;
 
-    if (!args) {
+    if (!args || typeof args !== 'object' || Object.keys(args).length === 0) {
       return res.status(400).json({
-        message: 'args is required'
+        message: 'Template parameters are required'
       });
     }
 
-    // Use template name from URL path parameter
-    const finalTemplateName = templateName;
+    // Validate kubeconfig
+    let kubeconfig: string;
+    try {
+      kubeconfig = await authSession(req.headers);
+    } catch (err) {
+      return res.status(401).json({
+        message: 'Invalid or missing kubeconfig',
+        error: 'Authentication failed'
+      });
+    }
 
-    const { namespace: userNamespace, applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+    // Validate kubeconfig and get K8s client
+    let namespace: string;
+    let applyYamlList: (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => Promise<any>;
+    try {
+      const k8sResult = await getK8s({ kubeconfig });
+      namespace = k8sResult.namespace;
+      applyYamlList = k8sResult.applyYamlList;
+    } catch (err: any) {
+      return res.status(401).json({
+        message: 'Invalid kubeconfig or insufficient permissions',
+        error: err?.message || 'Failed to authenticate with Kubernetes cluster'
+      });
+    }
 
     const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({
-        namespace: userNamespace,
-        templateName: finalTemplateName
+        namespace,
+        templateName
       });
 
     if (code !== 20000) {
@@ -129,16 +157,15 @@ async function handleTemplateDeployment(
       });
     }
 
-    const app_name = dataSource?.defaults?.app_name?.value || finalTemplateName;
+    const app_name = dataSource?.defaults?.app_name?.value || templateName;
     const _defaults = mapValues(dataSource?.defaults, (value) => value.value);
     const _inputs = reduce(
       dataSource?.inputs,
       (acc, item) => {
-        // @ts-ignore
         acc[item.key] = item.default;
         return acc;
       },
-      {}
+      {} as Record<string, string>
     );
 
     const generateStr = parseTemplateString(appYaml || '', {
@@ -150,7 +177,7 @@ async function handleTemplateDeployment(
 
     const yamls = correctYaml.map((item) => item.value);
 
-    const applyRes = await applyYamlList(yamls, 'create');
+    await applyYamlList(yamls, 'create');
 
     return res.status(204).end();
   } catch (err: any) {
@@ -179,9 +206,8 @@ async function handleTemplateDetails(
         message: 'Templates not found'
       });
     }
-
-    const templates = readTemplates(jsonPath, cdnUrl, [], language);
-    const template = templates.find((t) => t.metadata.name === templateName);
+    getCachedTemplates(jsonPath, cdnUrl, [], language);
+    const template = getTemplateFromCache(templateName);
 
     if (!template) {
       return res.status(404).json({
@@ -189,44 +215,54 @@ async function handleTemplateDetails(
       });
     }
 
-    const locale = language || 'en';
-    const i18nData = template.spec?.i18n?.[locale];
+    const i18nData = template.spec?.i18n?.[language];
 
     let simplifiedResource = null;
-    try {
-      const templateDetail = await GetTemplateByName({
-        namespace: '',
-        templateName,
-        locale: 'en',
-        includeReadme: 'false'
-      });
+    const cacheKey = `${templateName}-${language}`;
 
-      if (
-        templateDetail.code === 20000 &&
-        templateDetail.templateYaml &&
-        templateDetail.appYaml &&
-        templateDetail.TemplateEnvs
-      ) {
-        const templateSource = {
-          source: {
-            ...templateDetail.dataSource,
-            ...templateDetail.TemplateEnvs
-          },
-          appYaml: templateDetail.appYaml,
-          templateYaml: templateDetail.templateYaml
-        };
+    // Check cache first
+    simplifiedResource = getCachedTemplateDetail(cacheKey);
 
-        const renderedYaml = generateYamlData(
-          templateSource,
-          getTemplateDefaultValues(templateSource),
+    if (simplifiedResource === null) {
+      try {
+        const templateDetail = await GetTemplateByName({
+          namespace: '',
+          templateName,
+          locale: language,
+          includeReadme: 'false'
+        });
+
+        if (
+          templateDetail.code === 20000 &&
+          templateDetail.templateYaml &&
+          templateDetail.appYaml &&
           templateDetail.TemplateEnvs
-        );
+        ) {
+          const templateSource = {
+            source: {
+              ...templateDetail.dataSource,
+              ...templateDetail.TemplateEnvs
+            },
+            appYaml: templateDetail.appYaml,
+            templateYaml: templateDetail.templateYaml
+          };
 
-        const resourceUsage = getResourceUsage(renderedYaml.map((item) => item.value));
-        simplifiedResource = simplifyResourceUsage(resourceUsage);
+          const renderedYaml = generateYamlData(
+            templateSource,
+            getTemplateDefaultValues(templateSource),
+            templateDetail.TemplateEnvs
+          );
+
+          const resourceUsage = getResourceUsage(renderedYaml.map((item) => item.value));
+          simplifiedResource = simplifyResourceUsage(resourceUsage);
+
+          // Cache the result using shared cache
+          setCachedTemplateDetail(cacheKey, simplifiedResource);
+        }
+      } catch (error) {
+        console.error('Error getting template details:', error);
       }
-    } catch (error) {}
-
+    }
     if (!simplifiedResource && template.spec.requirements) {
       const staticReq = template.spec.requirements as any;
       if (staticReq.cpu && typeof staticReq.cpu === 'object' && 'min' in staticReq.cpu) {

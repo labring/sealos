@@ -8,11 +8,11 @@ export const TemplateCreateSchema = z.object({
 
 export const pathParams = TemplateNamePathSchema;
 
-export const requestBody = z.object({
-  args: z
-    .record(z.string(), z.string())
-    .describe('Template variable values (key-value pairs for template arguments)')
-});
+export const requestBody = z
+  .record(z.string(), z.string())
+  .describe(
+    'Template variable values (key-value pairs for template arguments, sent directly without "args" wrapper)'
+  );
 
 export const TemplateDeploymentSchema = z.object({
   instanceName: z.string().describe('Name of the created instance'),

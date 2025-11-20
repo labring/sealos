@@ -77,7 +77,7 @@ export const document = createDocument({
           'Key points:\n' +
           '- Quota: Use quota.replicas (1-20) for fixed replicas, or quota.hpa for auto-scaling (cannot use both)\n' +
           '- Image: Set image.imageRegistry to null for public images, or provide credentials for private images\n' +
-          '- Ports: http/grpc/ws protocols support public domain (set isPublic), tcp/udp/sctp use NodePort\n' +
+          '- Ports: http/grpc/ws protocols support public domain, tcp/udp/sctp use NodePort\n' +
           '- Storage: Providing storage creates a StatefulSet instead of Deployment',
         requestBody: {
           required: true,
@@ -198,7 +198,7 @@ export const document = createDocument({
         summary: 'Get application details by name',
         description:
           'Retrieves complete application configuration and status including quota, networking, environment, storage, and runtime status.\n\n' +
-          'Returns: metadata (name, id, createdAt, resourceType), image config, quota (CPU/memory/GPU/replicas/HPA), ports (with privateAddress/publicAddress), env vars, ConfigMap, storage, and status enum (running/creating/waiting/error/pause).',
+          'Returns: metadata (name, id, createdAt, resourceType), image config, quota (CPU/memory/replicas/HPA), ports (with privateAddress/publicAddress), env vars, ConfigMap, storage, and status enum (running/creating/waiting/error/pause).',
         parameters: [
           {
             name: 'name',

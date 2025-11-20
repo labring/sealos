@@ -5,7 +5,7 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { Cron } from 'croner';
-import { readTemplates } from '../../listTemplate';
+import { getCachedTemplates } from './templateCache';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
   const originalPath = process.cwd();
@@ -16,6 +16,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ? process.env.BLACKLIST_CATEGORIES.split(',')
     : [];
   const menuCount = Number(process.env.SIDEBAR_MENU_COUNT) || 10;
+
+  // Add caching headers for GET requests
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600'); // 5min client, 10min CDN
+  res.setHeader('ETag', `"template-list-${language}"`);
 
   try {
     if (!global.updateRepoCronJob) {
@@ -37,7 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
+    // Use shared cache instead of directly reading templates
+    const cacheResult = getCachedTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
+    const templates = cacheResult.data;
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
@@ -64,10 +70,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     const topKeys = findTopKeyWords(categories, menuCount);
 
-    res.status(200).json({
-      templates: simplifiedTemplates,
-      menuKeys: topKeys.join(',')
-    });
+    // Add menuKeys as response header if needed
+    if (topKeys.length > 0) {
+      res.setHeader('X-Menu-Keys', topKeys.join(','));
+    }
+
+    // Return templates array directly
+    res.status(200).json(simplifiedTemplates);
   } catch (error) {
     jsonRes(res, { code: 500, data: 'api listTemplate error', error: error });
   }
