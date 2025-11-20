@@ -68,6 +68,8 @@ const PAGE_SIZE = 10;
 const statusFilterFn: FilterFn<DevboxListItemTypeV2> = (row, columnId, filterValue) => {
   if (!filterValue || filterValue.length === 0) return true;
   const status = row.getValue(columnId) as DevboxStatusMapType;
+  if (!status || !status.value) return false;
+
   return filterValue.some((filter: string) => {
     if (filter === DevboxStatusEnum.Stopped) {
       return (
@@ -294,11 +296,13 @@ const DevboxList = ({
           const currentData = table.getCoreRowModel().rows.map((row) => row.original);
 
           const existingStatuses = new Set(
-            currentData.map((item) =>
-              item.status.value === DevboxStatusEnum.Shutdown
-                ? DevboxStatusEnum.Stopped
-                : item.status.value
-            )
+            currentData
+              .filter((item) => item.status && item.status.value)
+              .map((item) =>
+                item.status.value === DevboxStatusEnum.Shutdown
+                  ? DevboxStatusEnum.Stopped
+                  : item.status.value
+              )
           );
 
           const statusOptions = Object.values(devboxStatusMap).filter((status) => {
@@ -356,6 +360,7 @@ const DevboxList = ({
         },
         cell: ({ row }) => {
           const item = row.original;
+          if (!item.status || !item.status.value) return null;
           return (
             <DevboxStatusTag
               status={item.status}
@@ -470,6 +475,15 @@ const DevboxList = ({
         size: 300,
         cell: ({ row }) => {
           const item = row.original;
+          if (!item.status || !item.status.value) {
+            return (
+              <div className="flex items-center justify-start gap-2">
+                <Button variant="secondary" disabled>
+                  {t('detail')}
+                </Button>
+              </div>
+            );
+          }
           const isStopping = item.status.value === DevboxStatusEnum.Stopping;
           const isPending = item.status.value === DevboxStatusEnum.Pending;
           const isDisabled = isStopping || isPending;
