@@ -103,14 +103,15 @@ vi.mock('node:dns/promises', async () => {
       }
 
       // Try to find from additionals in NS responses
-      for (const fixture of dnsFixtures) {
-        const nsQuery = fixture.dnsQueries.find((q) => q.type === 'NS');
-        if (nsQuery?.response?.additionals) {
-          const aRecord = nsQuery.response.additionals.find(
-            (a: any) => a.type === 'A' && a.name === hostname
-          );
-          if (aRecord) {
-            return [(aRecord as any).data];
+      for (const queries of Object.values(dnsFixtures.queries)) {
+        for (const query of Object.values(queries)) {
+          if (query.response?.additionals) {
+            const aRecord = query.response.additionals.find(
+              (a: any) => a.type === 'A' && a.name === hostname
+            );
+            if (aRecord) {
+              return [(aRecord as any).data];
+            }
           }
         }
       }
@@ -131,14 +132,15 @@ vi.mock('node:dns/promises', async () => {
       }
 
       // Try to find from additionals in NS responses
-      for (const fixture of dnsFixtures) {
-        const nsQuery = fixture.dnsQueries.find((q) => q.type === 'NS');
-        if (nsQuery?.response?.additionals) {
-          const aaaaRecord = nsQuery.response.additionals.find(
-            (a: any) => a.type === 'AAAA' && a.name === hostname
-          );
-          if (aaaaRecord) {
-            return [(aaaaRecord as any).data];
+      for (const queries of Object.values(dnsFixtures.queries)) {
+        for (const query of Object.values(queries)) {
+          if (query.response?.additionals) {
+            const aaaaRecord = query.response.additionals.find(
+              (a: any) => a.type === 'AAAA' && a.name === hostname
+            );
+            if (aaaaRecord) {
+              return [(aaaaRecord as any).data];
+            }
           }
         }
       }
@@ -417,11 +419,9 @@ describe('DNS Resolver', () => {
 
     describe('using fixture data', () => {
       it('should extract A records from fixture response', () => {
-        const exampleOrgFixture = dnsFixtures.find((f) => f.domain === 'example.org');
-        const aQuery = exampleOrgFixture?.dnsQueries.find((q) => q.type === 'A');
-
-        if (aQuery?.response?.answers) {
-          const results = extractStringAnswer(aQuery.response.answers as StringAnswer[], ['A']);
+        const query = dnsFixtures.queries['199.43.135.53']?.['example.org:A'];
+        if (query?.response?.answers) {
+          const results = extractStringAnswer(query.response.answers as StringAnswer[], ['A']);
 
           expect(results.length).toBeGreaterThan(0);
           results.forEach((record) => {
@@ -433,13 +433,9 @@ describe('DNS Resolver', () => {
       });
 
       it('should extract AAAA records from fixture response', () => {
-        const exampleOrgFixture = dnsFixtures.find((f) => f.domain === 'example.org');
-        const aaaaQuery = exampleOrgFixture?.dnsQueries.find((q) => q.type === 'AAAA');
-
-        if (aaaaQuery?.response?.answers) {
-          const results = extractStringAnswer(aaaaQuery.response.answers as StringAnswer[], [
-            'AAAA'
-          ]);
+        const query = dnsFixtures.queries['199.43.135.53']?.['example.org:AAAA'];
+        if (query?.response?.answers) {
+          const results = extractStringAnswer(query.response.answers as StringAnswer[], ['AAAA']);
 
           expect(results.length).toBeGreaterThan(0);
           results.forEach((record) => {
@@ -451,11 +447,9 @@ describe('DNS Resolver', () => {
       });
 
       it('should extract NS records from fixture response', () => {
-        const exampleOrgFixture = dnsFixtures.find((f) => f.domain === 'example.org');
-        const nsQuery = exampleOrgFixture?.dnsQueries.find((q) => q.type === 'NS');
-
-        if (nsQuery?.response?.answers) {
-          const results = extractStringAnswer(nsQuery.response.answers as StringAnswer[], ['NS']);
+        const query = dnsFixtures.queries['199.43.135.53']?.['example.org:NS'];
+        if (query?.response?.answers) {
+          const results = extractStringAnswer(query.response.answers as StringAnswer[], ['NS']);
 
           expect(results.length).toBeGreaterThan(0);
           results.forEach((record) => {
@@ -467,13 +461,9 @@ describe('DNS Resolver', () => {
       });
 
       it('should extract CNAME records from fixture response', () => {
-        const wwwExampleOrgFixture = dnsFixtures.find((f) => f.domain === 'www.example.org');
-        const cnameQuery = wwwExampleOrgFixture?.dnsQueries.find((q) => q.type === 'CNAME');
-
-        if (cnameQuery?.response?.answers) {
-          const results = extractStringAnswer(cnameQuery.response.answers as StringAnswer[], [
-            'CNAME'
-          ]);
+        const query = dnsFixtures.queries['199.43.135.53']?.['www.example.org:CNAME'];
+        if (query?.response?.answers) {
+          const results = extractStringAnswer(query.response.answers as StringAnswer[], ['CNAME']);
 
           expect(results.length).toBeGreaterThan(0);
           results.forEach((record) => {
@@ -488,11 +478,9 @@ describe('DNS Resolver', () => {
 
   describe('queryDns', () => {
     it('should query A record using fixture data', async () => {
-      const exampleOrgFixture = dnsFixtures.find((f) => f.domain === 'example.org');
-      const aQuery = exampleOrgFixture?.dnsQueries.find((q) => q.type === 'A');
-
-      if (aQuery) {
-        const response = await queryDns('example.org', 'A', aQuery.server);
+      const query = dnsFixtures.queries['199.43.135.53']?.['example.org:A'];
+      if (query) {
+        const response = await queryDns('example.org', 'A', '199.43.135.53');
 
         expect(response.type).toBe('response');
         expect(response.questions?.[0]?.name).toBe('example.org');
@@ -504,11 +492,9 @@ describe('DNS Resolver', () => {
     }, 10000);
 
     it('should query AAAA record using fixture data', async () => {
-      const exampleOrgFixture = dnsFixtures.find((f) => f.domain === 'example.org');
-      const aaaaQuery = exampleOrgFixture?.dnsQueries.find((q) => q.type === 'AAAA');
-
-      if (aaaaQuery) {
-        const response = await queryDns('example.org', 'AAAA', aaaaQuery.server);
+      const query = dnsFixtures.queries['199.43.135.53']?.['example.org:AAAA'];
+      if (query) {
+        const response = await queryDns('example.org', 'AAAA', '199.43.135.53');
 
         expect(response.type).toBe('response');
         expect(response.questions?.[0]?.name).toBe('example.org');
@@ -519,11 +505,9 @@ describe('DNS Resolver', () => {
     }, 10000);
 
     it('should query NS record using fixture data', async () => {
-      const exampleOrgFixture = dnsFixtures.find((f) => f.domain === 'example.org');
-      const nsQuery = exampleOrgFixture?.dnsQueries.find((q) => q.type === 'NS');
-
-      if (nsQuery) {
-        const response = await queryDns('example.org', 'NS', nsQuery.server);
+      const query = dnsFixtures.queries['199.43.135.53']?.['example.org:NS'];
+      if (query) {
+        const response = await queryDns('example.org', 'NS', '199.43.135.53');
 
         expect(response.type).toBe('response');
         expect(response.questions?.[0]?.name).toBe('example.org');
@@ -533,11 +517,9 @@ describe('DNS Resolver', () => {
     }, 10000);
 
     it('should query CNAME record using fixture data', async () => {
-      const wwwExampleOrgFixture = dnsFixtures.find((f) => f.domain === 'www.example.org');
-      const cnameQuery = wwwExampleOrgFixture?.dnsQueries.find((q) => q.type === 'CNAME');
-
-      if (cnameQuery) {
-        const response = await queryDns('www.example.org', 'CNAME', cnameQuery.server);
+      const query = dnsFixtures.queries['199.43.135.53']?.['www.example.org:CNAME'];
+      if (query) {
+        const response = await queryDns('www.example.org', 'CNAME', '199.43.135.53');
 
         expect(response.type).toBe('response');
         expect(response.questions?.[0]?.name).toBe('www.example.org');
@@ -590,6 +572,152 @@ describe('DNS Resolver', () => {
         expect(result?.type).toBe('CNAME');
         expect(result?.name).toBe('www.example.org');
         expect(result?.data).toBe(target);
+      }
+    }, 30000);
+
+    it('should throw CNAME_MISMATCH error when target does not match', async () => {
+      // www.example.org has CNAME pointing to 'www.example.org-v2.edgesuite.net'
+      // Test with wrong target
+      await expect(testCname('www.example.org', 'wrong-target.example.org')).rejects.toThrow(
+        ResolveError
+      );
+
+      try {
+        await testCname('www.example.org', 'wrong-target.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // Should throw CNAME_MISMATCH when CNAME value doesn't match target
+          // We have complete mock data for NS queries and CNAME queries, so should get CNAME_MISMATCH
+          expect(error.code).toBe(ResolveErrorCode.CNAME_MISMATCH);
+          expect(error.domain).toBe('www.example.org');
+          expect((error.details as any)?.actual).toBe('www.example.org-v2.edgesuite.net');
+          expect((error.details as any)?.expected).toBe('wrong-target.example.org');
+        }
+      }
+    }, 30000);
+
+    it('should throw CNAME_MISMATCH error for mismatch.example.org', async () => {
+      await expect(
+        testCname('mismatch.example.org', 'expected-target.example.org')
+      ).rejects.toThrow(ResolveError);
+
+      try {
+        await testCname('mismatch.example.org', 'expected-target.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // mismatch.example.org has CNAME pointing to 'wrong-target.example.org'
+          // We have complete mock data for NS queries and CNAME queries, so should get CNAME_MISMATCH
+          expect(error.code).toBe(ResolveErrorCode.CNAME_MISMATCH);
+          expect(error.domain).toBe('mismatch.example.org');
+          expect((error.details as any)?.actual).toBe('wrong-target.example.org');
+          expect((error.details as any)?.expected).toBe('expected-target.example.org');
+        }
+      }
+    }, 30000);
+  });
+
+  describe('queryDnsFollowCname (via testCname)', () => {
+    it('should detect CNAME loop when following CNAME chain', async () => {
+      // a.example.org -> b.example.org -> a.example.org (loop)
+      // When querying CNAME for 'a.example.org' with target 'nonexistent.example.org',
+      // it will follow: a.example.org (step 0, visited={}) -> b.example.org (step 1, visited={a.example.org}) -> a.example.org (step 2, visited={a.example.org, b.example.org}, loop detected)
+      // The loop is detected when querying a.example.org again (already visited)
+      await expect(testCname('a.example.org', 'nonexistent.example.org')).rejects.toThrow(
+        ResolveError
+      );
+
+      try {
+        await testCname('a.example.org', 'nonexistent.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // Should detect CNAME loop: a.example.org -> b.example.org -> a.example.org
+          // The loop is detected when querying a.example.org again (already visited)
+          expect(error.code).toBe(ResolveErrorCode.CNAME_LOOP);
+          expect(error.domain).toBe('a.example.org');
+          expect((error.details as any)?.visited).toContain('a.example.org');
+        }
+      }
+    }, 30000);
+
+    it('should throw MAX_CNAME_STEPS_EXCEEDED for deep CNAME chain', async () => {
+      // deep1 -> deep2 -> deep3 -> deep4 -> deep5 -> deep6 (6 steps, exceeds MAX_CNAME_STEPS=4)
+      // Step counting: deep1 (step 0) -> deep2 (step 1) -> deep3 (step 2) -> deep4 (step 3) -> deep5 (step 4) -> deep6 (step 5)
+      // When querying deep6, step will be 5, which exceeds MAX_CNAME_STEPS=4
+      // Step check happens at the beginning of queryDnsFollowCname, so MAX_CNAME_STEPS_EXCEEDED should be thrown
+      await expect(testCname('deep1.example.org', 'nonexistent.example.org')).rejects.toThrow(
+        ResolveError
+      );
+
+      try {
+        await testCname('deep1.example.org', 'nonexistent.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // Should be MAX_CNAME_STEPS_EXCEEDED (4 steps max, but we have 6)
+          // deep1 -> deep2 -> deep3 -> deep4 -> deep5 -> deep6 (6 steps)
+          // Step check happens before DNS query, so should get MAX_CNAME_STEPS_EXCEEDED
+          expect(error.code).toBe(ResolveErrorCode.MAX_CNAME_STEPS_EXCEEDED);
+          expect((error.details as any)?.step).toBeGreaterThan(4);
+        }
+      }
+    }, 30000);
+  });
+
+  describe('queryDnsFollowCname (via queryA)', () => {
+    it('should throw CNAME_LOOP error when following CNAME chain creates a loop', async () => {
+      await expect(queryA('a.example.org')).rejects.toThrow(ResolveError);
+
+      try {
+        await queryA('a.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // Should detect CNAME loop: a.example.org -> b.example.org -> a.example.org
+          expect(error.code).toBe(ResolveErrorCode.CNAME_LOOP);
+          expect(error.domain).toBe('a.example.org');
+        }
+      }
+    }, 30000);
+
+    it('should throw MAX_CNAME_STEPS_EXCEEDED for deep CNAME chain in queryA', async () => {
+      await expect(queryA('deep1.example.org')).rejects.toThrow(ResolveError);
+
+      try {
+        await queryA('deep1.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // deep1 -> deep2 -> deep3 -> deep4 -> deep5 -> deep6 (6 steps, exceeds MAX_CNAME_STEPS=4)
+          // Step check happens before DNS query, so should get MAX_CNAME_STEPS_EXCEEDED
+          expect(error.code).toBe(ResolveErrorCode.MAX_CNAME_STEPS_EXCEEDED);
+          expect((error.details as any)?.step).toBeGreaterThan(4);
+        }
+      }
+    }, 30000);
+  });
+
+  describe('queryDnsFollowCname (via queryAAAA)', () => {
+    it('should throw CNAME_LOOP error when following CNAME chain creates a loop', async () => {
+      await expect(queryAAAA('a.example.org')).rejects.toThrow(ResolveError);
+
+      try {
+        await queryAAAA('a.example.org');
+        expect.fail('Should have thrown ResolveError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResolveError);
+        if (error instanceof ResolveError) {
+          // Should detect CNAME loop: a.example.org -> b.example.org -> a.example.org
+          expect(error.code).toBe(ResolveErrorCode.CNAME_LOOP);
+        }
       }
     }, 30000);
   });

@@ -706,8 +706,26 @@ export const testCname = async (domain: string, target: string): Promise<DNSReco
               data: firstCname
             };
           }
-          // System DNS returned different value, re-throw original error
-        } catch {
+          // System DNS returned different value, throw CNAME_MISMATCH
+          if (firstCname) {
+            throw new ResolveError(
+              ResolveErrorCode.CNAME_MISMATCH,
+              `CNAME record for ${domain} points to ${firstCname}, expected ${target}`,
+              {
+                domain,
+                details: { actual: firstCname, expected: target }
+              }
+            );
+          }
+          // System DNS returned no CNAME, re-throw original error
+        } catch (fallbackErr) {
+          // If fallback already threw CNAME_MISMATCH, re-throw it
+          if (
+            fallbackErr instanceof ResolveError &&
+            fallbackErr.code === ResolveErrorCode.CNAME_MISMATCH
+          ) {
+            throw fallbackErr;
+          }
           // System DNS also failed, re-throw original error
         }
       }
