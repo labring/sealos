@@ -649,7 +649,8 @@ export const json2NetworkService = ({
       'kubeblocks.io/role': 'primary'
     },
     'apecloud-mysql': {
-      'kubeblocks.io/role': 'leader'
+      'kubeblocks.io/role': 'primary',
+      'apps.kubeblocks.io/component-name': 'mysql'
     },
     redis: {
       'kubeblocks.io/role': 'primary'
