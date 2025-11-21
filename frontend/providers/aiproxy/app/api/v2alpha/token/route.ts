@@ -3,30 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateCreateParams } from '@/app/api/user/token/route'
 import { ApiProxyBackendResp } from '@/types/api.d'
 import { TokenInfo } from '@/types/user/token'
-import { getNamespaceFromKubeConfigString } from '@/utils/backend/check-kc'
+import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
 
 export const dynamic = 'force-dynamic'
-// decode kubeconfig
-async function authSession(headers: Headers): Promise<string> {
-  if (!headers) {
-    throw new Error('Auth: Headers are missing')
-  }
-
-  const authorization = headers.get('Authorization')
-
-  if (!authorization) {
-    throw new Error('Auth: Authorization header is missing')
-  }
-
-  try {
-    const kubeConfig = decodeURIComponent(authorization)
-    const namespace = getNamespaceFromKubeConfigString(kubeConfig)
-    return namespace
-  } catch (err) {
-    console.error('Auth: Failed to parse kubeconfig:', err)
-    throw new Error('Auth: Invalid kubeconfig')
-  }
-}
 
 // create token—后
 async function createTokenInBackend(name: string, group: string): Promise<'created' | 'exists'> {
@@ -66,8 +45,8 @@ async function createTokenInBackend(name: string, group: string): Promise<'creat
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // get namespace from kubeconfig
-    const group = await authSession(request.headers)
+    // get namespace from kubeconfig or workspaceId from JWT token
+    const group = await kcOrAppTokenAuthDecoded(request.headers)
 
     const body = await request.json()
 
@@ -82,15 +61,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     console.error('Token creation error:', error)
 
-    if (error instanceof Error) {
-      if (error.message.startsWith('Auth:')) {
-        return NextResponse.json(
-          {
-            error: error.message,
-          },
-          { status: 401 }
-        )
-      }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.startsWith('Auth:')) {
+      return NextResponse.json(
+        {
+          error: errorMessage,
+        },
+        { status: 401 }
+      )
     }
 
     return new NextResponse(null, { status: 500 })

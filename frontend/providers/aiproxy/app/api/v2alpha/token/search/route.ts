@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { ApiProxyBackendResp } from '@/types/api.d'
 import { TokenInfo } from '@/types/user/token'
-import { getNamespaceFromKubeConfigString } from '@/utils/backend/check-kc'
+import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
 
 import { tokenSearchQuerySchema } from './schema'
 
@@ -11,28 +11,6 @@ type TokenSearchResponse = {
   total: number
 }
 export const dynamic = 'force-dynamic'
-
-async function authSession(headers: Headers): Promise<string> {
-  if (!headers) {
-    throw new Error('Auth: Headers are missing')
-  }
-
-  const authorization = headers.get('Authorization')
-
-  if (!authorization) {
-    throw new Error('Auth: Authorization header is missing')
-  }
-
-  try {
-    // decode kubeconfig
-    const kubeConfig = decodeURIComponent(authorization)
-    const namespace = getNamespaceFromKubeConfigString(kubeConfig)
-    return namespace
-  } catch (err) {
-    console.error('Auth: Failed to parse kubeconfig:', err)
-    throw new Error('Auth: Invalid kubeconfig')
-  }
-}
 
 // search aiproxy tokens-后端
 async function searchTokensInBackend(
@@ -95,7 +73,7 @@ async function searchTokensInBackend(
 // search aiproxy tokens-前端
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const group = await authSession(request.headers)
+    const group = await kcOrAppTokenAuthDecoded(request.headers)
     const searchParams = request.nextUrl.searchParams
     const queryParams = {
       name: searchParams.get('name') || undefined,
@@ -133,10 +111,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     console.error('Token search error:', error)
 
-    if (error instanceof Error && error.message.startsWith('Auth:')) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.startsWith('Auth:')) {
       return NextResponse.json(
         {
-          error: error.message,
+          error: errorMessage,
         },
         { status: 401 }
       )
@@ -144,7 +123,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage || 'Unknown error',
       },
       { status: 500 }
     )

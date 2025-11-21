@@ -2,33 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { ApiProxyBackendResp } from '@/types/api.d'
 import { TokenInfo } from '@/types/user/token'
-import { getNamespaceFromKubeConfigString } from '@/utils/backend/check-kc'
+import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
 
 import { tokenNameParamSchema } from './schema'
 
 export const dynamic = 'force-dynamic'
-
-async function authSession(headers: Headers): Promise<string> {
-  if (!headers) {
-    throw new Error('Auth: Headers are missing')
-  }
-
-  const authorization = headers.get('Authorization')
-
-  if (!authorization) {
-    throw new Error('Auth: Authorization header is missing')
-  }
-
-  try {
-    // decode kubeconfig
-    const kubeConfig = decodeURIComponent(authorization)
-    const namespace = getNamespaceFromKubeConfigString(kubeConfig)
-    return namespace
-  } catch (err) {
-    console.error('Auth: Failed to parse kubeconfig:', err)
-    throw new Error('Auth: Invalid kubeconfig')
-  }
-}
 
 type TokenSearchResponse = {
   tokens: TokenInfo[]
@@ -141,8 +119,8 @@ export async function DELETE(
   { params }: { params: { name: string } }
 ): Promise<NextResponse> {
   try {
-    // get namespace from kubeconfig
-    const group = await authSession(request.headers)
+    // get namespace from kubeconfig or workspaceId from JWT token
+    const group = await kcOrAppTokenAuthDecoded(request.headers)
 
     // validate path parameter
     const validationResult = tokenNameParamSchema.safeParse(params)
@@ -177,10 +155,11 @@ export async function DELETE(
   } catch (error) {
     console.error('Token deletion error:', error)
 
-    if (error instanceof Error && error.message.startsWith('Auth:')) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.startsWith('Auth:')) {
       return NextResponse.json(
         {
-          error: error.message,
+          error: errorMessage,
         },
         { status: 401 }
       )
@@ -188,7 +167,7 @@ export async function DELETE(
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage || 'Unknown error',
       },
       { status: 500 }
     )

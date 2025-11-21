@@ -331,7 +331,8 @@ export const document = createDocument({
           '- Quota: Switch between fixed replicas and HPA by providing one and omitting the other\n' +
           '- Image: Change image or switch public/private (set imageRegistry to null for public)\n' +
           '- Ports: Complete replacement - include portName to update, omit to create, missing ports are deleted, use [] to remove all\n' +
-          '- ConfigMap/Storage: Complete replacement - provide all entries to keep, use [] to remove all, omit to keep unchanged\n' +
+          '- ConfigMap: Complete replacement - provide all entries to keep, use [] to remove all, omit to keep unchanged. ConfigMap updates are handled through this unified endpoint (no separate /configmap endpoint)\n' +
+          '- Storage: Complete replacement - provide all entries to keep, use [] to remove all, omit to keep unchanged\n' +
           '- Storage updates only supported for StatefulSet, trigger rolling restart\n' +
           '- All changes applied atomically',
         parameters: [

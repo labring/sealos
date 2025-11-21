@@ -154,7 +154,6 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
       end: endTime,
       step
     };
-    console.log('requestParams', requestParams);
     const [cpuResult, memoryResult] = await Promise.all([
       monitorFetch(
         {
