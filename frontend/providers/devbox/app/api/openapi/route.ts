@@ -10,7 +10,8 @@ import {
 import {
   UpdateDevboxRequestSchema,
   UpdateDevboxResponseSchema,
-  ErrorResponseSchema as UpdateDevboxErrorResponseSchema
+  ErrorResponseSchema as UpdateDevboxErrorResponseSchema,
+  DevboxDetailResponseSchema
 } from '../v1/devbox/[name]/schema';
 
 import {
@@ -443,6 +444,150 @@ Returns Devbox connection information including SSH port and private key, userna
         }
       },
       '/api/v1/devbox/{name}': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get Devbox Detail',
+          description: `Fetch comprehensive details for a specific Devbox instance including template metadata, SSH configuration, ports, pods, and operational status.
+
+**Key Features:**
+- **Template Awareness**: Includes runtime icon, template information, and container image
+- **Connection Ready**: Returns SSH host, port, user, working directory, and optional private key
+- **Networking Overview**: Lists port mappings with public/private domains and protocols
+- **Operational Insight**: Surface pod statuses and raw operational status payload
+- **Environment Visibility**: Exposes configured environment variables (excluding secret values)
+
+**Path Parameters:**
+- \`name\`: Devbox name (must comply with DNS naming conventions)`,
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Devbox name',
+              schema: {
+                type: 'string',
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+                minLength: 1,
+                maxLength: 63
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Devbox detail retrieved successfully. Returns complete configuration and runtime information.',
+              content: {
+                'application/json': {
+                  schema: DevboxDetailResponseSchema,
+                  examples: {
+                    success: {
+                      summary: 'Devbox detail example',
+                      value: {
+                        data: {
+                          name: 'my-devbox',
+                          uid: '123e4567-e89b-12d3-a456-426614174000',
+                          resourceType: 'devbox',
+                          runtime: 'node.js',
+                          image: 'ghcr.io/labring/sealos-devbox-nodejs:latest',
+                          status: 'Running',
+                          resources: {
+                            cpu: 1,
+                            memory: 2
+                          },
+                          ssh: {
+                            host: 'devbox.cloud.sealos.io',
+                            port: 40001,
+                            user: 'devbox',
+                            workingDir: '/home/devbox/project',
+                            privateKey: 'LS0tLS1CRUdJTi...'
+                          },
+                          env: [
+                            {
+                              name: 'NODE_ENV',
+                              value: 'production'
+                            }
+                          ],
+                          ports: [
+                            {
+                              number: 8080,
+                              portName: 'http',
+                              protocol: 'HTTP',
+                              serviceName: 'my-devbox',
+                              privateAddress: 'http://my-devbox.ns-user123:8080',
+                              privateHost: 'my-devbox.ns-user123',
+                              networkName: 'ingress-my-devbox',
+                              publicHost: 'app123.cloud.sealos.io',
+                              publicAddress: 'https://app123.cloud.sealos.io'
+                            }
+                          ],
+                          pods: [
+                            {
+                              name: 'my-devbox-abc123',
+                              status: 'Running'
+                            }
+                          ],
+                          operationalStatus: {
+                            phase: 'Running'
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '400': {
+              description: 'Bad Request - Invalid devbox name format.',
+              content: {
+                'application/json': {
+                  schema: UpdateDevboxErrorResponseSchema,
+                  examples: {
+                    invalid_name: {
+                      summary: 'Invalid devbox name',
+                      value: {
+                        code: 400,
+                        message: 'Devbox name is required'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '404': {
+              description: 'Not Found - The specified Devbox does not exist.',
+              content: {
+                'application/json': {
+                  schema: UpdateDevboxErrorResponseSchema,
+                  examples: {
+                    not_found: {
+                      summary: 'Devbox not found',
+                      value: {
+                        code: 404,
+                        message: 'Devbox not found'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '500': {
+              description: 'Internal Server Error - Failed to retrieve Devbox details.',
+              content: {
+                'application/json': {
+                  schema: UpdateDevboxErrorResponseSchema,
+                  examples: {
+                    server_error: {
+                      summary: 'Unexpected server error',
+                      value: {
+                        code: 500,
+                        message: 'Internal server error occurred while retrieving devbox details'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         patch: {
           tags: ['Mutation'],
           summary: 'Update Devbox Config',

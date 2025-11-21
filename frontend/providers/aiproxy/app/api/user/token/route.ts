@@ -315,14 +315,14 @@ interface CreateTokenRequest {
   name: string
 }
 
-function validateCreateParams(body: CreateTokenRequest): string | null {
+export function validateCreateParams(body: CreateTokenRequest): string | null {
   if (!body.name) {
     return 'Name parameter is required'
   }
   return null
 }
 
-async function createToken(name: string, group: string): Promise<TokenInfo | undefined> {
+export async function createToken(name: string, group: string): Promise<TokenInfo | undefined> {
   try {
     const url = new URL(
       `/api/token/${group}?auto_create_group=true`,

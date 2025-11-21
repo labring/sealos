@@ -14,6 +14,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@kubernetes/client-node": "^1.1.2",
+    "@scalar/api-reference-react": "^0.8.3",
     "@sealos/ui": "workspace:*",
     "@tanstack/react-query": "^4.35.3",
     "@tanstack/react-table": "^8.10.7",

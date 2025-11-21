@@ -35,7 +35,15 @@ const nextConfig = {
       }
     ]
   },
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver']
+  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
+  async rewrites() {
+    return [
+      {
+        source: '/api/v2alpha/doc',
+        destination: '/doc/v2alpha'
+      }
+    ];
+  }
 };
 
 module.exports = withBundleAnalyzer(nextConfig);

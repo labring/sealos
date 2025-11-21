@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const result = await restartDatabase(
+      await restartDatabase(
         k8s,
         {
           params: pathParamsParseResult.data
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         req
       );
 
-      return jsonRes(res, result);
+      return res.status(204).end();
     } catch (error) {
       return jsonRes(res, handleK8sError(error));
     }

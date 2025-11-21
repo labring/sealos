@@ -43,10 +43,24 @@ export const document = createDocument({
     description:
       'API for managing databases with KubeBlocks - Fixed resource handling and backup endpoints'
   },
+  tags: [
+    {
+      name: 'query',
+      description: 'Read-only endpoints that retrieve data without modifying resources.'
+    },
+    {
+      name: 'mutation',
+      description: 'State-changing endpoints that create, update, or delete resources.'
+    }
+  ],
   servers: [
     {
-      url: 'http://localhost:3000/api/v1',
-      description: 'Local development server'
+      url: `http://127.0.0.1:3000/api/v1`,
+      description: 'Development'
+    },
+    {
+      url: `https://dbprovider./api/v1`,
+      description: 'Production'
     }
   ],
   components: {
@@ -133,6 +147,7 @@ export const document = createDocument({
   paths: {
     '/database': {
       post: {
+        tags: ['mutation'],
         summary: 'Create Database',
         description:
           'Create a new database with proper resource conversion. CPU will be converted to millicores (2 -> 2000m), Memory to Gi (2 -> 2Gi).',
@@ -287,29 +302,8 @@ export const document = createDocument({
           }
         },
         responses: {
-          '200': {
-            description: 'Database created successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: {
-                      type: 'number',
-                      example: 200
-                    },
-                    message: {
-                      type: 'string',
-                      example: 'success create db'
-                    },
-                    data: {
-                      type: 'object',
-                      description: 'Created database details with properly converted resources'
-                    }
-                  }
-                }
-              }
-            }
+          '204': {
+            description: 'Database created successfully. No content returned.'
           },
           '400': {
             description: 'Bad Request - Invalid resource values',
@@ -347,6 +341,7 @@ export const document = createDocument({
         }
       },
       get: {
+        tags: ['query'],
         summary: 'List Databases',
         description: 'Get all databases in the namespace.',
         security: [{ KubeconfigAuth: [] }],
@@ -376,6 +371,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}': {
       patch: {
+        tags: ['mutation'],
         summary: 'Update Database Resources',
         description:
           "Update a database's resource limits (CPU, Memory, Storage, Replicas). Resources are automatically converted to proper K8s units.",
@@ -484,6 +480,7 @@ export const document = createDocument({
         }
       },
       get: {
+        tags: ['query'],
         summary: 'Get Database',
         description: 'Get a database by name.',
         security: [
@@ -516,6 +513,7 @@ export const document = createDocument({
         }
       },
       delete: {
+        tags: ['mutation'],
         summary: 'Delete a Database',
         description: 'Delete a database by name.',
         security: [{ KubeconfigAuth: [] }],
@@ -546,6 +544,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/start': {
       post: {
+        tags: ['mutation'],
         summary: 'Start Database',
         description: 'Start a database.',
         security: [{ KubeconfigAuth: [] }],
@@ -573,6 +572,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/pause': {
       post: {
+        tags: ['mutation'],
         summary: 'Pause Database',
         description: 'Pause a database.',
         security: [{ KubeconfigAuth: [] }],
@@ -600,6 +600,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/restart': {
       post: {
+        tags: ['mutation'],
         summary: 'Restart Database',
         description: 'Restart a database.',
         security: [{ KubeconfigAuth: [] }],
@@ -627,6 +628,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/backup': {
       post: {
+        tags: ['mutation'],
         summary: 'Create Database Backup',
         description: 'Create a manual backup for a specific database.',
         security: [{ KubeconfigAuth: [] }],
@@ -654,7 +656,7 @@ export const document = createDocument({
                   }
                 },
                 example: {
-                  remark: 'Manual backup before major update'
+                  remark: 'description backup'
                 }
               }
             }
@@ -697,7 +699,7 @@ export const document = createDocument({
                         remark: {
                           type: 'string',
                           description: 'Backup remark',
-                          example: 'Manual backup before major update'
+                          example: 'description backup'
                         }
                       }
                     }
@@ -720,6 +722,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/backup/{backupName}': {
       post: {
+        tags: ['mutation'],
         summary: 'Restore Database from Backup',
         description:
           'Restore a database from a specific backup by creating a new database instance.',
@@ -843,6 +846,7 @@ export const document = createDocument({
         }
       },
       delete: {
+        tags: ['mutation'],
         summary: 'Delete Database Backup',
         description: 'Delete a specific backup by name.',
         security: [{ KubeconfigAuth: [] }],
@@ -922,6 +926,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/enablePublic': {
       post: {
+        tags: ['mutation'],
         summary: 'Enable Public Access',
         description: 'Enable public access for a database by creating a NodePort service.',
         security: [{ KubeconfigAuth: [] }],
@@ -962,6 +967,7 @@ export const document = createDocument({
     },
     '/database/{databaseName}/disablePublic': {
       post: {
+        tags: ['mutation'],
         summary: 'Disable Public Access',
         description: 'Disable public access for a database by deleting the NodePort service.',
         security: [{ KubeconfigAuth: [] }],
@@ -996,6 +1002,7 @@ export const document = createDocument({
     },
     '/database/version/list': {
       get: {
+        tags: ['query'],
         summary: 'Get Database Versions',
         description: 'Get database versions.',
         security: [{ KubeconfigAuth: [] }],
@@ -1013,6 +1020,7 @@ export const document = createDocument({
     },
     '/logs/data': {
       get: {
+        tags: ['query'],
         summary: 'Get Logs Files',
         description: 'Get logs files.',
         security: [{ KubeconfigAuth: [] }],
@@ -1089,6 +1097,7 @@ export const document = createDocument({
     },
     '/logs/files': {
       get: {
+        tags: ['query'],
         summary: 'Get Logs File',
         description: 'Get logs file.',
         security: [{ KubeconfigAuth: [] }],
