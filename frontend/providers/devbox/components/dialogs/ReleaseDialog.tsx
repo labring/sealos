@@ -48,13 +48,18 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
 
   useEffect(() => {
     if (open) {
+      setTag('');
+      setReleaseDes('');
+      setTagError(null);
+      setIsAutoStart(devbox.status.value === 'Running');
+
       getDevboxVersionList(devbox.name, devbox.id)
         .then((list) => {
           setVersionList(list);
         })
         .catch(console.error);
     }
-  }, [open, devbox.name, devbox.id]);
+  }, [open, devbox.name, devbox.id, devbox.status.value]);
 
   const validateTag = (value: string) => {
     if (!value) {
@@ -78,9 +83,17 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   const handleSubmit = () => {
     const error = validateTag(tag);
     setTagError(error);
-    if (!error) {
-      handleReleaseDevbox(isAutoStart);
+    if (error) {
+      return;
     }
+
+    const isDuplicate = versionList.some((version) => version.tag === tag);
+    if (isDuplicate) {
+      setTagError(t('tag_already_exists'));
+      return;
+    }
+
+    handleReleaseDevbox(isAutoStart);
   };
 
   const handleReleaseDevbox = useCallback(
