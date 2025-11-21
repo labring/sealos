@@ -48,18 +48,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         opsRequests.push(verticalScalingYaml);
       }
 
+      let shouldNotifyReplicaChange = false;
       if (replicas !== dbForm.replicas) {
-        // Call database alert API for specific MongoDB versions
-        if (dbForm.dbVersion === 'mongodb-6.0' || dbForm.dbVersion === 'mongodb-5.0') {
-          await notifyDatabaseAlertApi({
-            namespace,
-            databaseName: dbForm.dbName,
-            replicas: dbForm.replicas
-          });
-        }
-
         const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
+        // Mark for notification after ops are applied
+        if (dbForm.dbVersion === 'mongodb-6.0' || dbForm.dbVersion === 'mongodb-5.0') {
+          shouldNotifyReplicaChange = true;
+        }
       }
 
       if (dbForm.storage > storage) {
@@ -88,6 +84,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       if (opsRequests.length > 0) {
         await applyYamlList(opsRequests, 'create');
+      }
+
+      // Call database alert API after ops are applied
+      if (shouldNotifyReplicaChange) {
+        await notifyDatabaseAlertApi({
+          namespace,
+          databaseName: dbForm.dbName,
+          replicas: dbForm.replicas
+        });
       }
 
       if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
