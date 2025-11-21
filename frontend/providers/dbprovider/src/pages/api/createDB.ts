@@ -24,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       isEdit: boolean;
       backupInfo?: BackupItemType;
     };
-    console.log('api createDB dbForm', dbForm);
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
@@ -50,6 +49,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       if (replicas !== dbForm.replicas) {
+        // Call database alert API for specific MongoDB versions
+        if (dbForm.dbVersion === 'mongodb-6.0' || dbForm.dbVersion === 'mongodb-5.0') {
+          await notifyDatabaseAlertApi({
+            namespace,
+            databaseName: dbForm.dbName,
+            replicas: dbForm.replicas
+          });
+        }
+
         const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
       }
@@ -71,7 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               dbForm.parameterConfig,
               dynamicMaxConnections
             );
-            console.log('api createDB configYaml', configYaml);
             await applyYamlList([configYaml], 'replace');
           } catch (err) {
             console.log('Failed to update parameter configuration:', err);
@@ -222,4 +229,44 @@ export async function updateTerminationPolicyApi({
   );
 
   return result;
+}
+
+export async function notifyDatabaseAlertApi({
+  namespace,
+  databaseName,
+  replicas
+}: {
+  namespace: string;
+  databaseName: string;
+  replicas: number;
+}) {
+  const databaseAlertUrl = process.env.DATABASE_ALERT_URL;
+  const databaseAlertKey = process.env.DATABASE_ALERT_KEY;
+  if (!databaseAlertUrl || !databaseAlertKey) {
+    return;
+  }
+
+  try {
+    const alertApiUrl = `${databaseAlertUrl}/v1/replicas?key=${databaseAlertKey}`;
+    const response = await fetch(alertApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        namespace: namespace,
+        database_name: databaseName,
+        replicas: replicas
+      })
+    });
+
+    if (!response.ok) {
+      console.log('Failed to call database alert API:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+    }
+  } catch (err) {
+    console.log('Error calling database alert API:', err);
+  }
 }
