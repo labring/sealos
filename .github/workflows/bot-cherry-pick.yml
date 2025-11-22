@@ -1,4 +1,4 @@
-name: Github Rebot for Cherry Pick On Comment
+name: Github Rebot for Cherry Pick
 on:
   workflow_dispatch:
     inputs:
@@ -37,7 +37,7 @@ jobs:
           bash "./${PROJECT_PATH}/scripts/cherry-pick.sh"  ${PR_NUMBER} ${TARGET_BRANCH}
       - uses: peter-evans/create-pull-request@v5
         with:
-          title: 'docs: Automated CherryPick ${{ inputs.prNumber }} for ${{ inputs.target }} '
+          title: 'fix(cherry-pick): Automated CherryPick ${{ inputs.prNumber }} for ${{ inputs.target }} '
           body: |
 
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
@@ -47,6 +47,8 @@ jobs:
           base: ${{ inputs.target }}
           draft: true
           signoff: true
+          labels: |
+            bot
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
           reviewers: cuisongliu
