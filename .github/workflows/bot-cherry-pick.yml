@@ -35,7 +35,7 @@ jobs:
           bash "./${PROJECT_PATH}/scripts/cherry-pick.sh" "${{ inputs.prNumber }}" "${{ inputs.target }}"
       - uses: peter-evans/create-pull-request@v5
         with:
-          title: 'docs: Automated CherryPick Update for ${{ steps.set-target.outputs.target }} '
+          title: 'docs: Automated CherryPick ${{ inputs.prNumber }} for ${{ inputs.target }} '
           body: |
 
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
