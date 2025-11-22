@@ -28,11 +28,13 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.prNumber }}
+          TARGET_BRANCH: ${{ inputs.target }}
         run: |
           git config --global --add safe.directory /github/workspace
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          bash "./${PROJECT_PATH}/scripts/cherry-pick.sh" "${{ inputs.prNumber }}" "${{ inputs.target }}"
+          bash "./${PROJECT_PATH}/scripts/cherry-pick.sh"  ${PR_NUMBER} ${TARGET_BRANCH}
       - uses: peter-evans/create-pull-request@v5
         with:
           title: 'docs: Automated CherryPick ${{ inputs.prNumber }} for ${{ inputs.target }} '
