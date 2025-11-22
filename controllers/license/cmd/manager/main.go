@@ -21,10 +21,10 @@ import (
 	"flag"
 	"os"
 
-	"github.com/labring/sealos/controllers/account/controllers/utils"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/controller"
 	utilid "github.com/labring/sealos/controllers/license/internal/util/clusterid"
+	"github.com/labring/sealos/controllers/license/internal/util/rate"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -57,7 +57,7 @@ func main() {
 	var enableHTTP2 bool
 	var tlsOpts []func(*tls.Config)
 	var concurrent int
-	rateLimiterOptions := &utils.LimiterOptions{}
+	rateLimiterOptions := &rate.LimiterOptions{}
 	flag.StringVar(
 		&metricsAddr,
 		"metrics-bind-address",
@@ -152,7 +152,7 @@ func main() {
 	}
 	rateOpts := ccontroler.Options{
 		MaxConcurrentReconciles: concurrent,
-		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
+		RateLimiter:             rate.GetRateLimiter(rateLimiterOptions),
 	}
 
 	ctx := ctrl.SetupSignalHandler()
