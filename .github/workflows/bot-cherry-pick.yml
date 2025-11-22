@@ -13,7 +13,9 @@ on:
 jobs:
   cherry-pick:
     permissions:
+      contents: write
       pull-requests: write
+      issues: write
     name: Cherry Pick
     runs-on: ubuntu-24.04
     steps:
