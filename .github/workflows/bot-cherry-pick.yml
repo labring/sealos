@@ -1,0 +1,51 @@
+name: Github Rebot for Cherry Pick On Comment
+on:
+  workflow_dispatch:
+    inputs:
+      prNumber:
+        description: 'PR Number to cherry pick'
+        required: true
+        default: '1234'
+      target:
+        description: 'Target branch to cherry pick to'
+        required: true
+        default: 'release-5.1'
+jobs:
+  cherry-pick:
+    permissions:
+      pull-requests: write
+    name: Cherry Pick
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout the latest code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Automatic Cherry Pick
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global --add safe.directory /github/workspace
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          bash "./${PROJECT_PATH}/scripts/cherry-pick.sh" "${{ inputs.prNumber }}" "${{ inputs.target }}"
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'docs: Automated CherryPick Update for ${{ steps.set-target.outputs.target }} '
+          body: |
+
+            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          commit-message: |
+            🤖 cherry-pick to ${{ inputs.target }} using robot.
+          branch: cherry-pick-${{ inputs.target }}-${{ inputs.prNumber }}
+          base: ${{ inputs.target }}
+          draft: true
+          signoff: true
+          delete-branch: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          reviewers: cuisongliu
+          milestone: cherry-pick
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
