@@ -50,7 +50,7 @@ jobs:
             return pr.data.title;
       - uses: peter-evans/create-pull-request@v5
         with:
-          title: ${{ steps.pr_title.outputs.result }}
+          title: ${{ fromJSON(steps.pr_title.outputs.result) }}
           body: |
             fix(cherry-pick): Automated CherryPick ${{ inputs.prNumber }} for ${{ inputs.target }}
             
