@@ -23,7 +23,7 @@ func TestCheckLicenseScenarios(t *testing.T) {
 	})
 
 	t.Run("expired license", func(t *testing.T) {
-		expired := newLicenseUnstructured("ns-admin", "default", "Expired", "expired")
+		expired := newLicenseUnstructured("default", "Expired", "expired")
 		cli := newTestClient(t, expired)
 		res, err := Evaluate(ctx, cli)
 		require.ErrorIs(t, err, ErrNoValidLicense)
@@ -32,7 +32,7 @@ func TestCheckLicenseScenarios(t *testing.T) {
 	})
 
 	t.Run("valid license", func(t *testing.T) {
-		valid := newLicenseUnstructured("ns-admin", "enterprise", "Active", "ok")
+		valid := newLicenseUnstructured("enterprise", "Active", "ok")
 		cli := newTestClient(t, valid)
 		res, err := Evaluate(ctx, cli)
 		require.NoError(t, err)
@@ -43,13 +43,13 @@ func TestCheckLicenseScenarios(t *testing.T) {
 
 func TestLicenseChecker_Check(t *testing.T) {
 	t.Run("valid license", func(t *testing.T) {
-		cli := newTestClient(t, newLicenseUnstructured("ns-admin", "default", "Active", ""))
+		cli := newTestClient(t, newLicenseUnstructured("default", "Active", ""))
 		checker := NewLicenseChecker(cli).Checker()
 		require.NoError(t, checker(nil))
 	})
 
 	t.Run("invalid license", func(t *testing.T) {
-		cli := newTestClient(t, newLicenseUnstructured("ns-admin", "default", "Expired", "expired"))
+		cli := newTestClient(t, newLicenseUnstructured("default", "Expired", "expired"))
 		checker := NewLicenseChecker(cli).Checker()
 		require.Error(t, checker(nil))
 	})
@@ -58,14 +58,28 @@ func TestLicenseChecker_Check(t *testing.T) {
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypeWithName(schema.GroupVersionKind{Group: licenseGroup, Version: licenseVersion, Kind: licenseKind}, &unstructured.Unstructured{})
-	scheme.AddKnownTypeWithName(schema.GroupVersionKind{Group: licenseGroup, Version: licenseVersion, Kind: licenseListKind}, &unstructured.UnstructuredList{})
+	scheme.AddKnownTypeWithName(
+		schema.GroupVersionKind{
+			Group:   licenseGroup,
+			Version: licenseVersion,
+			Kind:    licenseKind,
+		},
+		&unstructured.Unstructured{},
+	)
+	scheme.AddKnownTypeWithName(
+		schema.GroupVersionKind{
+			Group:   licenseGroup,
+			Version: licenseVersion,
+			Kind:    licenseListKind,
+		},
+		&unstructured.UnstructuredList{},
+	)
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
 }
 
-func newLicenseUnstructured(ns, name, phase, reason string) *unstructured.Unstructured {
+func newLicenseUnstructured(name, phase, reason string) *unstructured.Unstructured {
 	obj := newLicenseObject()
-	obj.SetNamespace(ns)
+	obj.SetNamespace(DefaultLicense.Namespace)
 	obj.SetName(name)
 	status := map[string]any{}
 	if phase != "" {
