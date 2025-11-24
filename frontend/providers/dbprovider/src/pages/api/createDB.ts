@@ -53,7 +53,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
         // Mark for notification after ops are applied
-        if (dbForm.dbVersion === 'mongodb-6.0' || dbForm.dbVersion === 'mongodb-5.0') {
+        const mongoVersionsRequiringNotification = [
+          'mongodb-6.0',
+          'mongodb-5.0.20',
+          'mongodb-5.0',
+          'mongodb-4.4',
+          'mongodb-4.2',
+          'mongodb-4.0'
+        ];
+        if (mongoVersionsRequiringNotification.includes(dbForm.dbVersion)) {
           shouldNotifyReplicaChange = true;
         }
       }
