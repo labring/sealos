@@ -16,7 +16,6 @@ endif
 buildTargets := \
 	desktop \
 	providers/terminal \
-	providers/adminer \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \

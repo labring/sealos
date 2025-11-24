@@ -60,7 +60,6 @@ jobs:
             providers/license,
             providers/cronjob,
             providers/template,
-            providers/adminer,
             providers/applaunchpad,
             providers/terminal,
             providers/dbprovider,
