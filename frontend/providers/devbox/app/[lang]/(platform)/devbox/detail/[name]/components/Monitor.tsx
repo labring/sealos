@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 
 import { useDevboxStore } from '@/stores/devbox';
 import { useDateTimeStore } from '@/stores/date';
+import { parseTimeRange } from '@/utils/timeRange';
 
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
@@ -13,8 +14,27 @@ import { RefreshButton } from '@/components/RefreshButton';
 const Monitor = () => {
   const params = useParams();
   const t = useTranslations();
-  const { startDateTime, endDateTime } = useDateTimeStore();
+  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime } = useDateTimeStore();
   const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
+  const [isTimeInitialized, setIsTimeInitialized] = useState(false);
+
+  useEffect(() => {
+    const allTimeStartDate = new Date('1970-01-01T00:00:00Z');
+    const isAllTime = startDateTime.getTime() === allTimeStartDate.getTime();
+
+    if (isAllTime) {
+      const { startTime, endTime } = parseTimeRange('7d');
+      setStartDateTime(startTime);
+      setEndDateTime(endTime);
+    }
+    setIsTimeInitialized(true);
+
+    return () => {
+      setStartDateTime(allTimeStartDate);
+      setEndDateTime(new Date());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     if (!params?.name) return;
@@ -35,7 +55,7 @@ const Monitor = () => {
       <div className="flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
-          <DatePicker onClose={handleRefresh} />
+          {isTimeInitialized && <DatePicker onClose={handleRefresh} />}
           <RefreshButton onRefresh={handleRefresh} />
         </div>
         <span className="text-sm/5 text-neutral-500">
