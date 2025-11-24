@@ -56,7 +56,8 @@ export enum DevboxStatusEnum {
   Pending = 'Pending',
   Error = 'Error',
   Delete = 'Delete',
-  Unknown = 'Unknown'
+  Unknown = 'Unknown',
+  Shutting = 'Shutting'
 }
 export enum DevboxReleaseStatusEnum {
   Success = 'Success',
@@ -135,6 +136,13 @@ export const devboxStatusMap = {
   [DevboxStatusEnum.Pending]: {
     label: 'Pending',
     value: DevboxStatusEnum.Pending,
+    color: '#787A90',
+    backgroundColor: '#F5F5F8',
+    dotColor: '#787A90'
+  },
+  [DevboxStatusEnum.Shutting]: {
+    label: 'Shutting',
+    value: DevboxStatusEnum.Shutting,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
