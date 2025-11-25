@@ -48,6 +48,7 @@
   "Confirm deletion": "Yes",
   "Confirm to restart this application?": "Are you sure you want to update the application?",
   "Container Port": "Container Port",
+  "Containers": "Containers",
   "Continue": "Continue",
   "Copy": "Copy",
   "Copy Domain Success": "Domain copied",
@@ -231,13 +232,14 @@
   "confirm_to_go": "Confirm",
   "contains": "contains",
   "cpu": "CPU",
+  "cpu_exceeds_quota": "CPU Insufficient Resources: Your setting of {{requested}} cores exceeds the available {{limit}} cores ({{used}} cores used).",
   "custom_domain_input_title": "Your Domain",
   "day": "days",
   "delete_app_tip": "Are you sure you want to delete this application? All project data will be permanently lost if you proceed.",
   "delete_sealaf_app_tip": "The application is deployed via cloud development. \nSimply deleting the app won't clear out all of the app's components, which may still accrue charges. \nTo completely uninstall the app and clean all related components, uninstall the entire app in cloud development.",
   "delete_template_app_tip": "This app is managed by the app store. You are now going to the app store to delete all app components.",
-  "domain_cname_verify_failed_toast": "CNAME record verification failed",
   "domain_challenge_verify_failed_toast": "Domain challenge verification failed",
+  "domain_cname_verify_failed_toast": "CNAME record verification failed",
   "domain_input_tip": "Please purchase a domain name and fill it below.",
   "domain_invalid_toast": "'{{domain}}' is not a valid domain",
   "domain_not_bound_modal_cancel": "Cancel",
@@ -301,6 +303,7 @@
   "gift amount tip": "Top up {{amount}} to get {{gift}} bonus",
   "gift time tip": "Within {{time}} hours",
   "gpu": "GPU",
+  "gpu_exceeds_quota": "GPU Insufficient Resources: Your setting of {{requested}} GPUs exceeds the available {{limit}} GPUs ({{used}} GPUs used).",
   "greater_than": "Greater than",
   "grpcs": "gRPCS",
   "guide_deploy_button": "Complete creation",
@@ -313,6 +316,7 @@
   "hour": "hours",
   "hour-singular": "hour",
   "https": "HTTPS",
+  "icp_reg_not_registered": "Domain not filed",
   "infrastructure": {
     "providers": {
       "alibaba": {
@@ -329,6 +333,20 @@
       }
     }
   },
+  "insufficient_quota_dialog": {
+    "alert-title": "We can't create your app right now. You've used all of your available resources.",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "please_upgrade_plan": {
+      "1": "Please ",
+      "2": "upgrade your plan",
+      "3": " or delete unused apps occupying resources."
+    },
+    "quota_available": "Available: ",
+    "quota_in_use": "In use: ",
+    "quota_total": "Total: ",
+    "title": "Insufficient Resources"
+  },
   "json_mode": "JSON Mode",
   "jump_message": "This app can't be used standalone. Click OK to open it via Sealos Desktop.",
   "jump_prompt": "Navigation Notice",
@@ -337,15 +355,25 @@
   "let me think again": "Let me reconsider",
   "logNumber": "Log Counts",
   "log_number": "Log Number",
+  "log_table": {
+    "_msg": "Message",
+    "_time": "Time",
+    "container": "Container",
+    "pod": "Pod",
+    "stream": "Stream"
+  },
   "logs": "Logs",
   "memory": "Memory",
+  "memory_exceeds_quota": "Memory Insufficient Resources: Your setting of {{requested}} GB exceeds the available {{limit}} GB ({{used}} GB used).",
   "minute": "minutes",
   "monitor": "Monitors",
   "mount path": "Mount Path",
-  "network_not_ready": "The internal gateway requires 2 to 5 minutes to prepare. Please be patient.",
+  "network_not_ready": "If the domain name has been filed but still shows \"Pending\", please further check whether it has been filed with the service provider in the current available zone.",
   "new filename": "Rename to",
   "no_data_available": "No data available",
   "no_logs_for_now": "No logs for now",
+  "nodeport": "Port",
+  "nodeport_exceeds_quota": "NodePort Insufficient Resources: Your setting of {{requested}} ports exceeds the available {{limit}} ports ({{used}} ports used).",
   "nodeports": "NodePorts",
   "normal_filter": "Normal",
   "not_contains": "not contains",
@@ -358,7 +386,14 @@
   "pending_to_allocated": "To be allocated",
   "please enter app name": "please enter: {{appName}}",
   "please_select": "Please Select",
+  "please_upgrade_plan": {
+    "0": "Please ",
+    "1": "upgrade your plan",
+    "2": " or adjust settings."
+  },
   "private": "private",
+  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider.",
+  "proxy_detected_title": "Proxy Detected",
   "public": "Public",
   "receive": "Get",
   "recently": "Last",
@@ -386,6 +421,7 @@
   "time": "Range",
   "time_zone": "Time Zone",
   "total_price_tip": "The estimated cost does not include port fees and traffic fees, and is subject to actual usage.",
+  "traffic": "Traffic",
   "update_remark_failed": "Update remark failed",
   "update_sealaf_app_tip": "This application is deployed through cloud development. To change the application, please go to cloud development.",
   "upload": "Upload",
@@ -399,40 +435,5 @@
   "websocket": "WebSocket",
   "within_1_day": "Within 1 day",
   "within_1_hour": "Within 1 hour",
-  "within_5_minute": "Within 5 minute",
-  "proxy_detected_title": "Proxy Detected",
-  "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider.",
-  "nodeport": "Port",
-  "traffic": "Traffic",
-  "nodeport_exceeds_quota": "NodePort Insufficient Resources: Your setting of {{requested}} ports exceeds the available {{limit}} ports ({{used}} ports used).",
-  "cpu_exceeds_quota": "CPU Insufficient Resources: Your setting of {{requested}} cores exceeds the available {{limit}} cores ({{used}} cores used).",
-  "memory_exceeds_quota": "Memory Insufficient Resources: Your setting of {{requested}} GB exceeds the available {{limit}} GB ({{used}} GB used).",
-  "gpu_exceeds_quota": "GPU Insufficient Resources: Your setting of {{requested}} GPUs exceeds the available {{limit}} GPUs ({{used}} GPUs used).",
-  "please_upgrade_plan": {
-    "0": "Please ",
-    "1": "upgrade your plan",
-    "2": " or adjust settings."
-  },
-  "insufficient_quota_dialog": {
-    "alert-title": "We can't create your app right now. You've used all of your available resources.",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "please_upgrade_plan": {
-      "1": "Please ",
-      "2": "upgrade your plan",
-      "3": " or delete unused apps occupying resources."
-    },
-    "quota_available": "Available: ",
-    "quota_in_use": "In use: ",
-    "quota_total": "Total: ",
-    "title": "Insufficient Resources"
-  },
-  "log_table": {
-    "_time": "Time",
-    "_msg": "Message",
-    "container": "Container",
-    "pod": "Pod",
-    "stream": "Stream"
-  },
-  "Containers": "Containers"
+  "within_5_minute": "Within 5 minute"
 }

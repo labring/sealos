@@ -29,6 +29,8 @@ import { useQuery } from '@tanstack/react-query';
 import { checkReady } from '@/api/platform';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
+import ICPStatus from './ICPStatus';
+import { CircleHelpIcon } from 'lucide-react';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -80,6 +82,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             public: `${protocol?.label}${protocol?.value.toLowerCase()}.${network.domain}${
               network?.nodePort ? `:${network.nodePort}` : ''
             }`,
+            customDomain: null,
             showReadyStatus: false
           };
         }
@@ -95,6 +98,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                   : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
               }`
             : '',
+          customDomain: network.openPublicDomain ? network.customDomain : null,
           showReadyStatus: true
         };
       }),
@@ -128,12 +132,15 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const statusMap = useMemo(
     () =>
       networkStatus
-        ? networkStatus.reduce((acc, item) => {
-            if (item?.url) {
-              acc[item.url] = item;
-            }
-            return acc;
-          }, {} as Record<string, { ready: boolean; url: string }>)
+        ? networkStatus.reduce(
+            (acc, item) => {
+              if (item?.url) {
+                acc[item.url] = item;
+              }
+              return acc;
+            },
+            {} as Record<string, { ready: boolean; url: string }>
+          )
         : {},
     [networkStatus]
   );
@@ -215,120 +222,144 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                         </Flex>
                       </th>
                       <th>
-                        <Flex alignItems={'center'} gap={'2px'}>
-                          {network.public && network.showReadyStatus && (
-                            <>
-                              {statusMap[network.public]?.ready ? (
-                                <Center
-                                  fontSize={'12px'}
-                                  fontWeight={400}
-                                  bg={'rgba(3, 152, 85, 0.05)'}
-                                  color={'#039855'}
-                                  borderRadius={'full'}
-                                  p={'2px 8px 2px 4px'}
-                                  gap={'2px'}
-                                  minW={'63px'}
-                                >
-                                  <Center
-                                    w={'6px'}
-                                    h={'6px'}
-                                    borderRadius={'full'}
-                                    bg={'#039855'}
-                                  ></Center>
-                                  {t('Accessible')}
-                                </Center>
-                              ) : (
-                                <Popover trigger="hover">
-                                  <PopoverTrigger>
-                                    <Center
-                                      fontSize={'12px'}
-                                      fontWeight={400}
-                                      bg={'rgba(17, 24, 36, 0.05)'}
-                                      color={'#485264'}
-                                      borderRadius={'full'}
-                                      p={'2px 8px 2px 4px'}
-                                      gap={'2px'}
-                                      minW={'63px'}
-                                      cursor={'pointer'}
-                                    >
-                                      <MyIcon
-                                        name={'loading'}
-                                        w={'12px'}
-                                        h={'12px'}
-                                        animation={'spin 1s linear infinite'}
-                                        sx={{
-                                          '@keyframes spin': {
-                                            '0%': {
-                                              transform: 'rotate(0deg)'
-                                            },
-                                            '100%': {
-                                              transform: 'rotate(360deg)'
-                                            }
-                                          }
-                                        }}
-                                      />
-                                      {t('Ready')}
-                                    </Center>
-                                  </PopoverTrigger>
-                                  <PopoverContent w={'254px'} h={'40px'} borderRadius={'10px'}>
-                                    <PopoverArrow />
-                                    <PopoverBody p={'10px'}>
-                                      <Box
-                                        color={'grayModern.900'}
-                                        fontSize={'12px'}
-                                        fontWeight={'400'}
-                                        lineHeight={'16px'}
-                                      >
-                                        {t('network_not_ready')}
-                                      </Box>
-                                    </PopoverBody>
-                                  </PopoverContent>
-                                </Popover>
-                              )}
-                            </>
-                          )}
-                          <MyTooltip
-                            label={network.public ? t('Open Link') : ''}
-                            placement={'bottom-start'}
+                        <Box width={'full'} overflowX={'auto'}>
+                          <Flex
+                            alignItems={'center'}
+                            gap={'2px'}
+                            flexWrap={'nowrap'}
+                            width={'fit-content'}
+                            minW={'full'}
                           >
-                            <Box
-                              fontSize={'12px'}
-                              className={'textEllipsis'}
-                              {...(network.public
-                                ? {
-                                    cursor: 'pointer',
-                                    _hover: { textDecoration: 'underline' },
-                                    onClick: () => window.open(network.public, '_blank')
-                                  }
-                                : {})}
-                            >
-                              <Flex alignItems={'center'} gap={2}>
-                                {network.public || '-'}
-                              </Flex>
-                            </Box>
-                          </MyTooltip>
+                            {network.public && network.showReadyStatus && (
+                              <>
+                                {statusMap[network.public]?.ready ? (
+                                  <Center
+                                    fontSize={'12px'}
+                                    fontWeight={400}
+                                    bg={'rgba(3, 152, 85, 0.05)'}
+                                    color={'#039855'}
+                                    borderRadius={'full'}
+                                    p={'2px 8px 2px 4px'}
+                                    gap={'2px'}
+                                    minW={'63px'}
+                                  >
+                                    <Center
+                                      w={'6px'}
+                                      h={'6px'}
+                                      borderRadius={'full'}
+                                      bg={'#039855'}
+                                    ></Center>
+                                    {t('Accessible')}
+                                  </Center>
+                                ) : (
+                                  <Popover trigger="hover">
+                                    <PopoverTrigger>
+                                      <Center
+                                        fontSize={'12px'}
+                                        fontWeight={400}
+                                        bg={'#FAFAFA'}
+                                        color={'#71717A'}
+                                        border={'1px solid #E4E4E7'}
+                                        borderRadius={'full'}
+                                        p={'2px 4px 2px 4px'}
+                                        gap={'2px'}
+                                        minW={'63px'}
+                                        cursor={'pointer'}
+                                        whiteSpace={'nowrap'}
+                                      >
+                                        <Center
+                                          w={'6px'}
+                                          h={'6px'}
+                                          mr={'4px'}
+                                          borderRadius={'full'}
+                                          bg={'#A1A1AA'}
+                                        ></Center>
 
-                          {!!network.public && (
-                            <Center
-                              ml={'auto'}
-                              flexShrink={0}
-                              w={'24px'}
-                              h={'24px'}
-                              borderRadius={'6px'}
-                              _hover={{
-                                bg: 'rgba(17, 24, 36, 0.05)'
-                              }}
-                              cursor={'pointer'}
+                                        {t('Ready')}
+
+                                        <Box ml={'4px'}>
+                                          <CircleHelpIcon size={12} color={'#485264'} />
+                                        </Box>
+                                      </Center>
+                                    </PopoverTrigger>
+                                    <PopoverContent w={'254px'} borderRadius={'10px'}>
+                                      <PopoverArrow />
+                                      <PopoverBody p={'10px'}>
+                                        <Box
+                                          color={'grayModern.900'}
+                                          fontSize={'12px'}
+                                          fontWeight={'400'}
+                                          lineHeight={'16px'}
+                                        >
+                                          {t('network_not_ready')}
+                                        </Box>
+                                      </PopoverBody>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                              </>
+                            )}
+
+                            <MyTooltip
+                              label={network.public ? t('Open Link') : ''}
+                              placement={'bottom-start'}
                             >
-                              <MyIcon
-                                name={'copy'}
-                                w={'16px'}
-                                color={'#667085'}
-                                onClick={() => copyData(network.public)}
-                              />
-                            </Center>
-                          )}
-                        </Flex>
+                              <Box
+                                fontSize={'12px'}
+                                className={'textEllipsis'}
+                                {...(network.public
+                                  ? {
+                                      cursor: 'pointer',
+                                      _hover: { textDecoration: 'underline' },
+                                      onClick: () => window.open(network.public, '_blank')
+                                    }
+                                  : {})}
+                              >
+                                <Flex alignItems={'center'} gap={2}>
+                                  {network.public || '-'}
+                                </Flex>
+                              </Box>
+                            </MyTooltip>
+
+                            {/* ICP reg status*/}
+                            {network.customDomain !== null &&
+                              network.showReadyStatus === true &&
+                              network.public &&
+                              !statusMap[network.public]?.ready && (
+                                <ICPStatus
+                                  customDomain={network.customDomain}
+                                  enabled={
+                                    !!networkStatus &&
+                                    !!network.customDomain &&
+                                    network.showReadyStatus === true &&
+                                    !!network.public &&
+                                    !statusMap[network.public]?.ready
+                                  }
+                                />
+                              )}
+
+                            {!!network.public && (
+                              <Center
+                                ml={'auto'}
+                                flexShrink={0}
+                                w={'24px'}
+                                h={'24px'}
+                                borderRadius={'6px'}
+                                _hover={{
+                                  bg: 'rgba(17, 24, 36, 0.05)'
+                                }}
+                                cursor={'pointer'}
+                              >
+                                <MyIcon
+                                  name={'copy'}
+                                  w={'16px'}
+                                  color={'#667085'}
+                                  onClick={() => copyData(network.public)}
+                                />
+                              </Center>
+                            )}
+                          </Flex>
+                        </Box>
                       </th>
                     </tr>
                   );
