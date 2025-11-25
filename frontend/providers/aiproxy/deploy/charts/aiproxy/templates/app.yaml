@@ -13,6 +13,6 @@ spec:
       name: AI Proxy
     zh-Hans:
       name: AI Proxy
-  icon: https://objectstorageapi.hzh.sealos.run/cyhipdvv-logos/aiproxy.svg
+  icon: https://{{ include "aiproxy.fullname" . }}.{{.Values.cloudDomain}}{{.Values.suffix}}/logo.svg
   name: AI Proxy
   type: iframe
