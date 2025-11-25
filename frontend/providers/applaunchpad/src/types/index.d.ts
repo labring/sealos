@@ -75,6 +75,13 @@ export type AppConfigType = {
     };
     appResourceFormSliderConfig: FormSliderListType;
     fileManger: FileMangerType;
+    checkIcpReg: {
+      enabled: boolean;
+      endpoint: string;
+      accessKeyID: string;
+      accessKeySecret: string;
+    };
+
     // todo: add gpu appResourceFormSliderConfig config.yaml and codes here
     // gpu?: {
     //   cpu: number[];
