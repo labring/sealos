@@ -99,11 +99,11 @@ func SyncConfigFromConfigMap(ctx context.Context, configPath string) {
 		logger.Debug("failed to read ConfigMap %s/%s: %v", shimConfigMapNamespace, shimConfigMapName, err)
 		return
 	}
-	if !applyConfigMapToFile(configPath, cm) {
-		logger.Debug("ConfigMap %s/%s produced no updates", shimConfigMapNamespace, shimConfigMapName)
-		return
-	}
-	logger.Info("syncing image-cri-shim config from ConfigMap completed")
+    if !applyConfigMapToFile(configPath, cm) {
+        logger.Debug("ConfigMap %s/%s produced no updates", shimConfigMapNamespace, shimConfigMapName)
+        return
+    }
+    logger.Debug("syncing image-cri-shim config from ConfigMap completed")
 }
 
 func buildKubeClient() (kubernetes.Interface, error) {

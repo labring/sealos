@@ -17,15 +17,15 @@ limitations under the License.
 package server
 
 import (
-	"strings"
+    "strings"
 
-	"github.com/docker/docker/api/types/registry"
+    "github.com/docker/docker/api/types/registry"
 
-	"github.com/labring/sreg/pkg/registry/crane"
+    "github.com/labring/sreg/pkg/registry/crane"
 
-	"github.com/labring/sealos/pkg/utils/logger"
+    "github.com/labring/sealos/pkg/utils/logger"
 
-	name "github.com/google/go-containerregistry/pkg/name"
+    name "github.com/google/go-containerregistry/pkg/name"
 )
 
 // craneGetImageManifest is declared as a var so tests can replace it with a stub implementation.
@@ -111,12 +111,12 @@ func extractDomainFromImage(image string) string {
 }
 
 func normalizeDomainCandidate(domain string) string {
-	switch domain {
-	case "", "library", "docker", "index.docker.io", "registry-1.docker.io":
-		return defaultDockerRegistry
-	}
-	if !strings.Contains(domain, ".") && !strings.Contains(domain, ":") && domain != "localhost" {
-		return defaultDockerRegistry
-	}
-	return domain
+    switch domain {
+    case "", "library", "docker", "index.docker.io", "registry-1.docker.io":
+        return defaultDockerRegistry
+    }
+    if !strings.Contains(domain, ".") && !strings.Contains(domain, ":") && domain != "localhost" {
+        return defaultDockerRegistry
+    }
+    return domain
 }

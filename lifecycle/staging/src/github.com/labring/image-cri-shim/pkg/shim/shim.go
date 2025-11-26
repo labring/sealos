@@ -80,15 +80,15 @@ func NewShim(cfg *types.Config, auth *types.ShimAuthConfig) (Shim, error) {
 
 	r.authStore = server.NewAuthStore(auth)
 
-	srvopts := server.Options{
-		Timeout:   cfg.Timeout.Duration,
-		Socket:    cfg.ImageShimSocket,
-		User:      -1,
-		Group:     -1,
-		Mode:      0660,
-		AuthStore: r.authStore,
-		Cache:     CacheOptionsFromConfig(cfg),
-	}
+    srvopts := server.Options{
+        Timeout:   cfg.Timeout.Duration,
+        Socket:    cfg.ImageShimSocket,
+        User:      -1,
+        Group:     -1,
+        Mode:      0660,
+        AuthStore: r.authStore,
+        Cache:     CacheOptionsFromConfig(cfg),
+    }
 	srv, err := server.NewServer(srvopts)
 	if err != nil {
 		return nil, shimError("failed to create shim server: %v", err)

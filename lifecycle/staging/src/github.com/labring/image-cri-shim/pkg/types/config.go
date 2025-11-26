@@ -51,16 +51,16 @@ type Registry struct {
 }
 
 type Config struct {
-	ImageShimSocket string          `json:"shim"`
-	RuntimeSocket   string          `json:"cri"`
-	Address         string          `json:"address"`
-	Force           bool            `json:"force"`
-	Debug           bool            `json:"debug"`
-	Timeout         metav1.Duration `json:"timeout"`
-	ReloadInterval  metav1.Duration `json:"reloadInterval"`
-	Auth            string          `json:"auth"`
-	Cache           CacheConfig     `json:"cache" yaml:"cache"`
-	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
+    ImageShimSocket string          `json:"shim"`
+    RuntimeSocket   string          `json:"cri"`
+    Address         string          `json:"address"`
+    Force           bool            `json:"force"`
+    Debug           bool            `json:"debug"`
+    Timeout         metav1.Duration `json:"timeout"`
+    ReloadInterval  metav1.Duration `json:"reloadInterval"`
+    Auth            string          `json:"auth"`
+    Cache           CacheConfig     `json:"cache" yaml:"cache"`
+    Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
 }
 
 type CacheConfig struct {
@@ -83,36 +83,24 @@ func registryMatchDomain(reg Registry) string {
 }
 
 func (c *Config) PreProcess() (*ShimAuthConfig, error) {
-	if c.ImageShimSocket == "" {
-		c.ImageShimSocket = SealosShimSock
-	}
-	logger.Info("shim-socket: %s", c.ImageShimSocket)
-	logger.Info("cri-socket: %s", c.RuntimeSocket)
-	logger.Info("hub-address: %s", c.Address)
-	logger.Info("auth: %s", c.Auth)
-	rawURL, err := url.Parse(c.Address)
-	if err != nil {
-		logger.Warn("url parse error: %+v", err)
-	}
-	domain := rawURL.Host
-	if c.Timeout.Duration.Milliseconds() == 0 {
-		c.Timeout = metav1.Duration{}
-		c.Timeout.Duration, _ = time.ParseDuration("15m")
-	}
-	if c.ReloadInterval.Duration <= 0 {
-		c.ReloadInterval = metav1.Duration{Duration: DefaultReloadInterval}
-	}
-
-	logger.Info("RegistryDomain: %v", domain)
-	logger.Info("Force: %v", c.Force)
-	logger.Info("Debug: %v", c.Debug)
-	logger.CfgConsoleLogger(c.Debug, false)
-	logger.Info("Timeout: %v", c.Timeout)
-	logger.Info("ReloadInterval: %v", c.ReloadInterval)
-	c.Cache.normalize()
-	logger.Info("CacheConfig: size=%d, imageTTL=%v, domainTTL=%v, statsInterval=%v, disableStats=%v",
-		c.Cache.ImageCacheSize, c.Cache.ImageCacheTTL, c.Cache.DomainCacheTTL, c.Cache.StatsLogInterval, c.Cache.DisableStats)
-	shimAuth := new(ShimAuthConfig)
+    if c.ImageShimSocket == "" {
+        c.ImageShimSocket = SealosShimSock
+    }
+    rawURL, err := url.Parse(c.Address)
+    if err != nil {
+        logger.Warn("url parse error: %+v", err)
+    }
+    domain := rawURL.Host
+    if c.Timeout.Duration.Milliseconds() == 0 {
+        c.Timeout = metav1.Duration{}
+        c.Timeout.Duration, _ = time.ParseDuration("15m")
+    }
+    if c.ReloadInterval.Duration <= 0 {
+        c.ReloadInterval = metav1.Duration{Duration: DefaultReloadInterval}
+    }
+    logger.CfgConsoleLogger(c.Debug, false)
+    c.Cache.normalize()
+    shimAuth := new(ShimAuthConfig)
 
 	splitNameAndPasswd := func(auth string) (string, string) {
 		var username, password string
@@ -154,8 +142,8 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		}
 		shimAuth.CRIConfigs = criAuth
 		shimAuth.SkipLoginRegistries = skipLogin
-		logger.Info("criRegistryAuth: %+v", shimAuth.CRIConfigs)
-	}
+        logger.Debug("criRegistryAuth: %+v", shimAuth.CRIConfigs)
+    }
 
 	{
 		offlineName, offlinePasswd := splitNameAndPasswd(c.Auth)
@@ -165,12 +153,12 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 			Password:      offlinePasswd,
 			ServerAddress: c.Address,
 		}}
-		logger.Info("criOfflineAuth: %+v", shimAuth.OfflineCRIConfigs)
-	}
+        logger.Debug("criOfflineAuth: %+v", shimAuth.OfflineCRIConfigs)
+    }
 
-	if c.Address == "" {
-		return nil, errors.New("registry addr is empty")
-	}
+    if c.Address == "" {
+        return nil, errors.New("registry addr is empty")
+    }
 	if c.RuntimeSocket == "" {
 		socket, err := cri.DetectCRISocket()
 		if err != nil {
@@ -178,12 +166,12 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		}
 		c.RuntimeSocket = socket
 	}
-	if !c.Force {
-		if !fileutil.IsExist(c.RuntimeSocket) {
-			return nil, errors.New("cri is running?")
-		}
-	}
-	return shimAuth, nil
+    if !c.Force {
+        if !fileutil.IsExist(c.RuntimeSocket) {
+            return nil, errors.New("cri is running?")
+        }
+    }
+    return shimAuth, nil
 }
 
 func (c *CacheConfig) normalize() {

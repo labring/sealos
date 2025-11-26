@@ -33,15 +33,15 @@ import (
 )
 
 type v1ImageService struct {
-	imageClient  api.ImageServiceClient
-	authStore    *AuthStore
-	cacheMutex   sync.RWMutex
-	imageCache   *lru.Cache
-	domainCache  *lru.Cache
-	maxCacheSize int
-	cacheTTL     time.Duration
-	domainTTL    time.Duration
-	metrics      *cacheMetrics
+    imageClient  api.ImageServiceClient
+    authStore    *AuthStore
+    cacheMutex   sync.RWMutex
+    imageCache   *lru.Cache
+    domainCache  *lru.Cache
+    maxCacheSize int
+    cacheTTL     time.Duration
+    domainTTL    time.Duration
+    metrics      *cacheMetrics
 }
 
 type cacheEntry struct {
@@ -180,16 +180,16 @@ func (m *cacheMetrics) recordInvalidation() {
 }
 
 func newV1ImageService(client api.ImageServiceClient, authStore *AuthStore, cacheOpts CacheOptions) *v1ImageService {
-	service := &v1ImageService{
-		imageClient: client,
-		authStore:   authStore,
-		metrics:     newCacheMetrics(),
-	}
-	service.UpdateCacheOptions(cacheOpts)
-	if authStore != nil {
-		authStore.AddObserver(service.invalidateCache)
-	}
-	return service
+    service := &v1ImageService{
+        imageClient: client,
+        authStore:   authStore,
+        metrics:     newCacheMetrics(),
+    }
+    service.UpdateCacheOptions(cacheOpts)
+    if authStore != nil {
+        authStore.AddObserver(service.invalidateCache)
+    }
+    return service
 }
 
 func (s *v1ImageService) UpdateCacheOptions(opts CacheOptions) {
@@ -212,6 +212,8 @@ func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtyp
 		return image, false, nil
 	}
 
+	// Prefer original domain first. If a matching registry is configured, try it;
+	// only if that fails should we consider offline fallback elsewhere (handled by PullImage).
 	domain := extractDomainFromImage(image)
 	if domain != "" {
 		if registries := s.authStore.GetCRIConfigs(); len(registries) > 0 {
@@ -219,28 +221,19 @@ func (s *v1ImageService) rewriteImage(image, action string) (string, bool, *rtyp
 				newImage, ok, auth := replaceImage(image, action, map[string]rtype.AuthConfig{matchedDomain: *cfg})
 				s.cacheResult(image, newImage, ok, auth)
 				s.logRewriteResult(action, image, newImage, fmt.Sprintf("cri-domain:%s", matchedDomain), false, ok)
-				return newImage, ok, auth
+				if ok {
+					return newImage, true, auth
+				}
+				// No manifest in matched registry: do not early return; let caller decide fallback.
 			}
 		}
 	}
 
-	newImage, ok, auth := replaceImage(image, action, s.authStore.GetOfflineConfigs())
-	if ok {
-		s.cacheResult(image, newImage, ok, auth)
-		s.logRewriteResult(action, image, newImage, "offline", false, true)
-		return newImage, true, auth
-	}
-
-	registries := s.authStore.GetCRIConfigs()
-	if len(registries) == 0 {
-		s.cacheResult(image, image, false, nil)
-		s.logRewriteResult(action, image, image, "no-registries", false, false)
-		return image, false, nil
-	}
-	newImage, ok, auth = replaceImage(image, action, registries)
-	s.cacheResult(image, newImage, ok, auth)
-	s.logRewriteResult(action, image, newImage, "cri", false, ok)
-	return newImage, ok, auth
+	// Do not rewrite to offline here; leave image unchanged to let the runtime
+	// attempt the original domain first. Offline fallback is performed on pull failure.
+	s.cacheResult(image, image, false, nil)
+	s.logRewriteResult(action, image, image, "no-rewrite", false, false)
+	return image, false, nil
 }
 
 func (s *v1ImageService) getCachedResult(image string) (cacheEntry, bool) {
@@ -500,16 +493,11 @@ func (s *v1ImageService) ImageStatus(ctx context.Context,
 }
 
 func (s *v1ImageService) PullImage(ctx context.Context,
-	req *api.PullImageRequest) (*api.PullImageResponse, error) {
-	logger.Debug("PullImage begin: %+v", req)
+    req *api.PullImageRequest) (*api.PullImageResponse, error) {
+    logger.Debug("PullImage begin: %+v", req)
 	if req.Image != nil {
-		imageName := req.Image.Image
-		if newImage, ok, auth := s.rewriteImage(req.Image.Image, "PullImage"); ok {
-			imageName = newImage
-			if auth != nil {
-				req.Auth = ToV1AuthConfig(auth)
-			}
-		}
+		originalImage := req.Image.Image
+		imageName := originalImage
 		if req.Auth == nil && s.authStore != nil {
 			if registries := s.authStore.GetCRIConfigs(); len(registries) > 0 {
 				domain := extractDomainFromImage(imageName)
@@ -521,13 +509,42 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 		}
 		req.Image.Image = imageName
 	}
-	logger.Debug("PullImage after: %+v", req)
-	rsp, err := s.imageClient.PullImage(ctx, req)
-	if err != nil {
-		return nil, err
-	}
+    logger.Debug("PullImage after: %+v", req)
+    rsp, err := s.imageClient.PullImage(ctx, req)
+    if err == nil {
+        return rsp, nil
+    }
+    logger.Warn("PullImage first attempt failed: %v", err)
 
-	return rsp, err
+    // On failure, attempt offline/fallback rewrite and retry once.
+    if req.Image != nil && s.authStore != nil {
+        original := req.Image.Image
+        // Do not rewrite for private registries configured in registries; honor original domain
+        if registries := s.authStore.GetCRIConfigs(); len(registries) > 0 {
+            if domain := extractDomainFromImage(original); domain != "" {
+                if matchedDomain, cfg := s.findMatchingRegistry(domain, registries); cfg != nil {
+                    s.cacheDomainMatch(domain, matchedDomain)
+                    s.logRewriteResult("PullImageFallback", original, original, "private-domain-skip", false, false)
+                    return nil, err
+                }
+            }
+        }
+        if newImage, ok, auth := replaceImage(original, "PullImageFallback", s.authStore.GetOfflineConfigs()); ok {
+            s.cacheResult(original, newImage, ok, auth)
+            s.logRewriteResult("PullImageFallback", original, newImage, "offline-manifest", false, true)
+            req.Image.Image = newImage
+            if auth != nil {
+                req.Auth = ToV1AuthConfig(auth)
+            }
+            rsp2, err2 := s.imageClient.PullImage(ctx, req)
+            if err2 == nil {
+                return rsp2, nil
+            }
+            logger.Warn("PullImage fallback attempt failed: %v", err2)
+            return nil, err2
+        }
+    }
+    return nil, err
 }
 
 func (s *v1ImageService) RemoveImage(ctx context.Context,

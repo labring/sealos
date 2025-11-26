@@ -46,11 +46,11 @@ func (a *AuthStore) Update(auth *types.ShimAuthConfig) {
 		a.criConfigs = map[string]rtype.AuthConfig{}
 		a.offlineCRIConfigs = map[string]rtype.AuthConfig{}
 		logger.Warn("received empty shim auth config, cleared cached registry credentials")
-	} else {
-		a.criConfigs = cloneAuthMap(auth.CRIConfigs)
-		a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
-		logger.Info("updated shim auth config, registries: %d, offline: %d", len(a.criConfigs), len(a.offlineCRIConfigs))
-	}
+    } else {
+        a.criConfigs = cloneAuthMap(auth.CRIConfigs)
+        a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
+        logger.Debug("updated shim auth config, registries: %d, offline: %d", len(a.criConfigs), len(a.offlineCRIConfigs))
+    }
 
 	observers := append([]func(){}, a.observers...)
 	a.mu.Unlock()

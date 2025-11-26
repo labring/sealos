@@ -32,19 +32,19 @@ import (
 )
 
 type Options struct {
-	Timeout time.Duration
-	// Socket is the socket where shim listens on
-	Socket string
-	// User is the user ID for our gRPC socket.
-	User int
-	// Group is the group ID for our gRPC socket.
-	Group int
-	// Mode is the permission mode bits for our gRPC socket.
-	Mode os.FileMode
-	// AuthStore keeps registry credentials shared with the CRI handlers.
-	AuthStore *AuthStore
-	// Cache keeps cache tuning knobs.
-	Cache CacheOptions
+    Timeout time.Duration
+    // Socket is the socket where shim listens on
+    Socket string
+    // User is the user ID for our gRPC socket.
+    User int
+    // Group is the group ID for our gRPC socket.
+    Group int
+    // Mode is the permission mode bits for our gRPC socket.
+    Mode os.FileMode
+    // AuthStore keeps registry credentials shared with the CRI handlers.
+    AuthStore *AuthStore
+    // Cache keeps cache tuning knobs.
+    Cache CacheOptions
 }
 
 type Server interface {
@@ -83,7 +83,7 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 		return err
 	}
 
-	imageService := newV1ImageService(s.imageV1Client, s.options.AuthStore, s.options.Cache)
+    imageService := newV1ImageService(s.imageV1Client, s.options.AuthStore, s.options.Cache)
 	k8sv1api.RegisterImageServiceServer(s.server, imageService)
 	s.imageService = imageService
 
