@@ -123,8 +123,11 @@
     "modelVision": "Vision",
     "modelVisionLabel": "This model supports vision capabilities",
     "modelToolChoice": "Tool Chocice",
+    "modelCoder": "Coding",
     "response": "Output",
     "fixedPrice": "Fixed price",
+    "limitedTimeFree": "Free (limited time)",
+    "freeLabel": "Free",
     "imageInputPrice": "Image input price",
     "thinkingModeOutputPrice": "Thinking model output price",
     "thinkingMode": "Deep thinking",
@@ -281,6 +284,7 @@
     "huggingface": "Hugging Face",
     "lingyiwanwu": "Lingyi Wanwu",
     "stepfun": "StepFun",
+    "streamlake": "StreamLake",
     "unknown": "Unknown"
   },
   "GlobalLogs": {
