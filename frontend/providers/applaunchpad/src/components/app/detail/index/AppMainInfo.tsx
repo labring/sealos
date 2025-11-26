@@ -291,7 +291,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                                           fontWeight={'400'}
                                           lineHeight={'16px'}
                                         >
-                                          {t('network_not_ready')}
+                                          {network.customDomain
+                                            ? t('network_not_ready_icp_reg')
+                                            : t('network_not_ready')}
                                         </Box>
                                       </PopoverBody>
                                     </PopoverContent>
