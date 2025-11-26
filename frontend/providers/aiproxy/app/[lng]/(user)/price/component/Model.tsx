@@ -1,6 +1,7 @@
 'use client';
 import { Badge, Flex, Text } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
+import { Code } from 'lucide-react';
 import Image, { StaticImageData } from 'next/image';
 
 import { useTranslationClientSide } from '@/app/i18n/client';
@@ -252,6 +253,30 @@ export const ModelComponent = ({
                 letterSpacing="0.5px"
               >
                 {t('price.modelToolChoice')}
+              </Text>
+            </Badge>
+          )}
+          {modelConfig.config?.coder && (
+            <Badge
+              display="flex"
+              padding="1px 4px"
+              justifyContent="center"
+              alignItems="center"
+              gap="2px"
+              borderRadius="4px"
+              background="#EDFBF3"
+            >
+              <Code size={14} color="#039855" strokeWidth={2.5} />
+              <Text
+                color="#039855"
+                fontFamily="PingFang SC"
+                fontStyle="normal"
+                fontSize="11px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+              >
+                {t('price.modelCoder')}
               </Text>
             </Badge>
           )}
