@@ -1,9 +1,10 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp, AppOverviewBilling } from '@/types';
 import useAppTypeStore from '@/stores/appType';
 import { PAYGCostTableView, PAYGData } from './PAYGCostTableView';
+import { AppType } from '@/types/app';
 
 type PAYGCostTableProps = {
   currentRegionUid: string;
@@ -33,19 +34,28 @@ export function PAYGCostTable({
   onPageChange
 }: PAYGCostTableProps) {
   const { getAppType: getAppTypeString } = useAppTypeStore();
+  const [selectedAppType, setSelectedAppType] = useState<AppType | null>(null);
 
   const appOverviewQueryBody = useMemo(
     () => ({
       endTime: effectiveEndTime,
       startTime: effectiveStartTime,
       regionUid: currentRegionUid,
-      appType: '',
+      appType: selectedAppType || '',
       appName: '',
       namespace: selectedWorkspace || '',
       page,
       pageSize
     }),
-    [effectiveEndTime, effectiveStartTime, currentRegionUid, selectedWorkspace, page, pageSize]
+    [
+      effectiveEndTime,
+      effectiveStartTime,
+      currentRegionUid,
+      selectedWorkspace,
+      page,
+      pageSize,
+      selectedAppType
+    ]
   );
 
   const [lastValidTotalPage, setLastValidTotalPage] = useState(1);
@@ -116,6 +126,8 @@ export function PAYGCostTable({
       totalCount={total}
       onPageChange={onPageChange}
       isLoading={isFetching}
+      selectedAppType={selectedAppType}
+      onAppTypeSelected={setSelectedAppType}
     />
   );
 }

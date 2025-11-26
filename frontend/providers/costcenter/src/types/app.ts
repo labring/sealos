@@ -5,17 +5,17 @@ export type AppListItem = {
 };
 
 export const AppType = {
-  TERMINAL: 'TERMINAL',
-  JOB: 'JOB',
-  OTHER: 'OTHER',
-  OBJECT_STORAGE: 'OBJECT-STORAGE',
-  CLOUD_VM: 'CLOUD-VM',
-  DB: 'DB',
-  APP: 'APP',
+  LLM_TOKEN: 'LLM-TOKEN',
   APP_STORE: 'APP-STORE',
+  APP: 'APP',
+  CLOUD_VM: 'CLOUD-VM',
+  JOB: 'JOB',
   DB_BACKUP: 'DB-BACKUP',
+  DB: 'DB',
   DEV_BOX: 'DEV-BOX',
-  LLM_TOKEN: 'LLM-TOKEN'
+  OBJECT_STORAGE: 'OBJECT-STORAGE',
+  TERMINAL: 'TERMINAL',
+  OTHER: 'OTHER'
 } as const;
 
 export type AppType = (typeof AppType)[keyof typeof AppType];

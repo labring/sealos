@@ -17,6 +17,16 @@ import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
 import CurrencySymbol from '../CurrencySymbol';
+import { FilledChevronDown } from '../Icons';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem
+} from '@sealos/shadcn-ui/dropdown-menu';
+import { AppType } from '@/types/app';
 
 export type PAYGData = {
   appName: string;
@@ -35,6 +45,8 @@ type PAYGCostTableViewProps = {
   totalCount: number;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
+  selectedAppType: AppType | null;
+  onAppTypeSelected?: (appType: AppType | null) => void;
 };
 
 /**
@@ -50,7 +62,9 @@ export function PAYGCostTableView({
   pageSize,
   totalCount,
   onPageChange,
-  isLoading = false
+  isLoading = false,
+  selectedAppType,
+  onAppTypeSelected
 }: PAYGCostTableViewProps) {
   const { t } = useTranslation();
 
@@ -119,7 +133,42 @@ export function PAYGCostTableView({
       <TableLayoutContent>
         <TableLayoutHeadRow>
           <TableHead className="bg-transparent">{t('common:item')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:orders.type')}</TableHead>
+          <TableHead className="bg-transparent">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="cursor-pointer">
+                <div className="flex gap-1 items-center">
+                  {t('common:orders.type')}
+                  <div
+                    className={cn('size-5', selectedAppType ? 'text-blue-600' : 'text-zinc-400')}
+                  >
+                    <FilledChevronDown />
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Type</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={selectedAppType || 'all'}
+                  onValueChange={(value) => {
+                    if (value === 'all') {
+                      onAppTypeSelected?.(null);
+                    } else {
+                      onAppTypeSelected?.(value as AppType);
+                    }
+                  }}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    {t('applist:all_app_type')}
+                  </DropdownMenuRadioItem>
+                  {Object.values(AppType).map((appType) => (
+                    <DropdownMenuRadioItem key={appType} value={appType}>
+                      {t('applist:' + appType)}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableHead>
           <TableHead className="bg-transparent">{t('common:cost')}</TableHead>
           <TableHead className="bg-transparent">{t('common:orders.action')}</TableHead>
         </TableLayoutHeadRow>
