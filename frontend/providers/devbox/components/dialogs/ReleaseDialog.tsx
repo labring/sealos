@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
+import { useDevboxStore } from '@/stores/devbox';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
 import { DevboxListItemTypeV2, DevboxVersionListItemType } from '@/types/devbox';
 import { releaseDevbox, shutdownDevbox, startDevbox, getDevboxVersionList } from '@/api/devbox';
@@ -38,6 +39,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   const { getErrorMessage } = useErrorMessage();
 
   const { env } = useEnvStore();
+  const { setDevboxDetail } = useDevboxStore();
 
   const [tag, setTag] = useState('');
   const [loading, setLoading] = useState(false);
@@ -101,28 +103,39 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       try {
         setLoading(true);
 
-        // 1.pause devbox
-        if (devbox.status.value === 'Running') {
+        const isRunning = devbox.status.value === 'Running';
+
+        // Step 1: Shutdown devbox if it's running (required before release)
+        if (isRunning) {
           await shutdownDevbox({
             devboxName: devbox.name,
             shutdownMode: 'Stopped'
           });
-          // wait 3s
           await new Promise((resolve) => setTimeout(resolve, 3000));
         }
-        // 2.release devbox
+
+        // Step 2: Release devbox
         await releaseDevbox({
           devboxName: devbox.name,
           tag,
           releaseDes,
           devboxUid: devbox.id,
-          // NOTE: there we do not use backend logic to start devbox,because backend do not support modified ingress annotations
-          startDevboxAfterRelease: false
+          startDevboxAfterRelease
         });
-        // 3.start devbox
+
+        // Step 3: If auto start is enabled, Go backend will start devbox
+        // but won't modify ingress, so we need to resume ingress manually
         if (startDevboxAfterRelease) {
-          await startDevbox({ devboxName: devbox.name });
+          await startDevbox({
+            devboxName: devbox.name,
+            onlyIngress: true
+          });
+          // Wait for Go backend to start devbox
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Refresh devbox detail to update status and restart polling
+          await setDevboxDetail(devbox.name, env.sealosDomain);
         }
+
         toast.success(t('submit_release_successful'));
         track({
           event: 'release_create',
@@ -148,7 +161,9 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       onSuccess,
       onClose,
       versionList.length,
-      getErrorMessage
+      getErrorMessage,
+      setDevboxDetail,
+      env.sealosDomain
     ]
   );
 
