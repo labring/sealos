@@ -21,7 +21,7 @@ export const valuationMap: Record<string, number> = {
   memory: 1024,
   storage: 1024,
   gpu: 1000,
-  'services.nodeports': 1000
+  'services.nodeports': 1
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -79,6 +79,7 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 
 const getResourcePrice = async () => {
   const url = global.AppConfig.launchpad.components.billing.url;
+  console.log(url, 'url');
 
   const res = await fetch(`${url}/account/v1alpha1/properties`, {
     method: 'POST'

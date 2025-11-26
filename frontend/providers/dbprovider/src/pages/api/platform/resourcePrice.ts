@@ -38,7 +38,7 @@ export const valuationMap: Record<string, number> = {
   cpu: 1000,
   memory: 1024,
   storage: 1024,
-  'services.nodeports': 1000
+  'services.nodeports': 1
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
