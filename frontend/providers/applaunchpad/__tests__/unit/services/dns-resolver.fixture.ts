@@ -38,904 +38,71 @@ function queryKey(domain: string, type: string): string {
   return `${domain}:${type}`;
 }
 
-// Mock DNS responses
-const responses = {
-  // example.org responses
-  exampleOrgA: {
-    id: 24537,
+// Helper function to create DNS response packet
+function createDnsResponse(
+  id: number,
+  questions: Array<{ name: string; type: string; class?: string }>,
+  answers: Array<{
+    name: string;
+    type: string;
+    ttl?: number;
+    class?: string;
+    flush?: boolean;
+    data: string;
+  }> = [],
+  authorities: Array<{
+    name: string;
+    type: string;
+    ttl?: number;
+    class?: string;
+    flush?: boolean;
+    data: string;
+  }> = [],
+  additionals: Array<{
+    name: string;
+    type: string;
+    ttl?: number;
+    class?: string;
+    flush?: boolean;
+    data: string;
+  }> = [],
+  rcode: 'NOERROR' | 'NXDOMAIN' | 'SERVFAIL' | 'REFUSED' = 'NOERROR'
+): Packet {
+  return {
+    id,
     type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'example.org',
-        type: 'A' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: '23.215.0.132'
-      },
-      {
-        name: 'example.org',
-        type: 'A' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: '23.215.0.133'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  exampleOrgAAAA: {
-    id: 39566,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'example.org', type: 'AAAA' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'example.org',
-        type: 'AAAA' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: '2600:1406:5e00:6::17ce:bc29'
-      },
-      {
-        name: 'example.org',
-        type: 'AAAA' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: '2600:1406:5e00:6::17ce:bc3c'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  exampleOrgNS: {
-    id: 1790,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'example.org', type: 'NS' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'example.org',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.iana-servers.net'
-      },
-      {
-        name: 'example.org',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b.iana-servers.net'
-      }
-    ],
-    authorities: [],
-    additionals: [
-      {
-        name: 'a.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.135.53'
-      },
-      {
-        name: 'b.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.133.53'
-      }
-    ]
-  },
-
-  // example.com responses
-  exampleComA: {
-    id: 12345,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'example.com', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'example.com',
-        type: 'A' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: '93.184.216.34'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  exampleComNS: {
-    id: 23456,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'example.com', type: 'NS' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'example.com',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.iana-servers.net'
-      },
-      {
-        name: 'example.com',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b.iana-servers.net'
-      }
-    ],
-    authorities: [],
-    additionals: [
-      {
-        name: 'a.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.135.53'
-      }
-    ]
-  },
-
-  // www.example.org CNAME response
-  wwwExampleOrgCNAME: {
-    id: 3705,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'www.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'www.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'www.example.org-v2.edgesuite.net'
-      }
-    ],
-    authorities: [
-      {
-        name: 'example.org',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.iana-servers.net'
-      },
-      {
-        name: 'example.org',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b.iana-servers.net'
-      }
-    ],
-    additionals: [
-      {
-        name: 'a.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.135.53'
-      },
-      {
-        name: 'b.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.133.53'
-      }
-    ]
-  },
-
-  // org TLD NS response
-  orgNS: {
-    id: 34567,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'org', type: 'NS' as const, class: 'IN' as const }],
-    answers: [],
-    authorities: [
-      {
-        name: 'org',
-        type: 'NS' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a0.org.afilias-nst.info'
-      },
-      {
-        name: 'org',
-        type: 'NS' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a2.org.afilias-nst.info'
-      },
-      {
-        name: 'org',
-        type: 'NS' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b0.org.afilias-nst.org'
-      }
-    ],
-    additionals: [
-      {
-        name: 'a0.org.afilias-nst.info',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.19.56.1'
-      },
-      {
-        name: 'a0.org.afilias-nst.info',
-        type: 'AAAA' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '2001:500:e::1'
-      },
-      {
-        name: 'a2.org.afilias-nst.info',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.249.112.1'
-      },
-      {
-        name: 'b0.org.afilias-nst.org',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.19.54.1'
-      }
-    ]
-  },
-
-  // Root NS server response (for .org query)
-  rootNS: {
-    id: 45678,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'org', type: 'NS' as const, class: 'IN' as const }],
-    answers: [],
-    authorities: [
-      {
-        name: '',
-        type: 'NS' as const,
-        ttl: 518400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.root-servers.net'
-      }
-    ],
-    additionals: [
-      {
-        name: 'a.root-servers.net',
-        type: 'A' as const,
-        ttl: 518400,
-        class: 'IN' as const,
-        flush: false,
-        data: '198.41.0.4'
-      },
-      {
-        name: 'a.root-servers.net',
-        type: 'AAAA' as const,
-        ttl: 518400,
-        class: 'IN' as const,
-        flush: false,
-        data: '2001:503:ba3e::2:30'
-      }
-    ]
-  },
-
-  // CNAME loop responses (a.example.org -> b.example.org -> a.example.org)
-  cnameLoopA1CNAME: {
-    id: 50001,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'a.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'a.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  cnameLoopA1A: {
-    id: 50011,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'a.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'a.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  cnameLoopB1CNAME: {
-    id: 50002,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'b.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'b.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  cnameLoopB1A: {
-    id: 50012,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'b.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'b.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  cnameLoopB1AAAA: {
-    id: 50013,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'b.example.org', type: 'AAAA' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'b.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  // Deep CNAME chain responses (for MAX_CNAME_STEPS_EXCEEDED testing)
-  deepCname1CNAME: {
-    id: 50003,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep1.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep1.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep2.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname1A: {
-    id: 50021,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep1.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep1.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep2.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname2CNAME: {
-    id: 50004,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep2.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep2.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep3.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname2A: {
-    id: 50022,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep2.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep2.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep3.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname3CNAME: {
-    id: 50005,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep3.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep3.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep4.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname3A: {
-    id: 50023,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep3.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep3.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep4.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname4CNAME: {
-    id: 50006,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep4.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep4.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep5.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname4A: {
-    id: 50024,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep4.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep4.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep5.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname5CNAME: {
-    id: 50007,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep5.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep5.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep6.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  deepCname5A: {
-    id: 50025,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'deep5.example.org', type: 'A' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'deep5.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'deep6.example.org'
-      }
-    ],
-    authorities: [],
-    additionals: []
-  },
-
-  // CNAME mismatch response
-  cnameMismatch: {
-    id: 50007,
-    type: 'response' as const,
-    flags: 1024,
-    flag_qr: true,
-    opcode: 'QUERY' as const,
-    flag_aa: true,
-    flag_tc: false,
-    flag_rd: false,
-    flag_ra: false,
-    flag_z: false,
-    flag_ad: false,
-    flag_cd: false,
-    rcode: 'NOERROR' as const,
-    questions: [{ name: 'mismatch.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-    answers: [
-      {
-        name: 'mismatch.example.org',
-        type: 'CNAME' as const,
-        ttl: 300,
-        class: 'IN' as const,
-        flush: false,
-        data: 'wrong-target.example.org'
-      }
-    ],
-    authorities: [
-      {
-        name: 'example.org',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'a.iana-servers.net'
-      },
-      {
-        name: 'example.org',
-        type: 'NS' as const,
-        ttl: 86400,
-        class: 'IN' as const,
-        flush: false,
-        data: 'b.iana-servers.net'
-      }
-    ],
-    additionals: [
-      {
-        name: 'a.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.135.53'
-      },
-      {
-        name: 'b.iana-servers.net',
-        type: 'A' as const,
-        ttl: 172800,
-        class: 'IN' as const,
-        flush: false,
-        data: '199.43.133.53'
-      }
-    ]
-  }
-};
+    rcode: rcode,
+    questions: questions.map((q) => ({
+      name: q.name,
+      type: q.type as any,
+      class: q.class || ('IN' as const)
+    })),
+    answers: answers.map((a) => ({
+      name: a.name,
+      type: a.type as any,
+      ttl: a.ttl ?? 300,
+      class: a.class || ('IN' as const),
+      flush: a.flush ?? false,
+      data: a.data
+    })),
+    authorities: authorities.map((a) => ({
+      name: a.name,
+      type: a.type as any,
+      ttl: a.ttl ?? 300,
+      class: a.class || ('IN' as const),
+      flush: a.flush ?? false,
+      data: a.data
+    })),
+    additionals: additionals.map((a) => ({
+      name: a.name,
+      type: a.type as any,
+      ttl: a.ttl ?? 300,
+      class: a.class || ('IN' as const),
+      flush: a.flush ?? false,
+      data: a.data
+    }))
+  } as Packet;
+}
 
 // Main fixture object organized by NS server
 export const dnsFixtures: DNSFixtures = {
@@ -944,287 +111,330 @@ export const dnsFixtures: DNSFixtures = {
     '199.43.135.53': {
       [queryKey('example.org', 'A')]: {
         request: { name: 'example.org', type: 'A' },
-        response: responses.exampleOrgA as Packet
+        response: createDnsResponse(
+          24537,
+          [{ name: 'example.org', type: 'A' }],
+          [
+            { name: 'example.org', type: 'A', ttl: 300, data: '23.215.0.132' },
+            { name: 'example.org', type: 'A', ttl: 300, data: '23.215.0.133' }
+          ]
+        )
       },
       [queryKey('example.org', 'AAAA')]: {
         request: { name: 'example.org', type: 'AAAA' },
-        response: responses.exampleOrgAAAA as Packet
+        response: createDnsResponse(
+          39566,
+          [{ name: 'example.org', type: 'AAAA' }],
+          [
+            { name: 'example.org', type: 'AAAA', ttl: 300, data: '2600:1406:5e00:6::17ce:bc29' },
+            { name: 'example.org', type: 'AAAA', ttl: 300, data: '2600:1406:5e00:6::17ce:bc3c' }
+          ]
+        )
       },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('example.com', 'A')]: {
         request: { name: 'example.com', type: 'A' },
-        response: responses.exampleComA as Packet
+        response: createDnsResponse(
+          12345,
+          [{ name: 'example.com', type: 'A' }],
+          [{ name: 'example.com', type: 'A', ttl: 300, data: '93.184.216.34' }]
+        )
       },
       [queryKey('example.com', 'NS')]: {
         request: { name: 'example.com', type: 'NS' },
-        response: responses.exampleComNS as Packet
+        response: createDnsResponse(
+          23456,
+          [{ name: 'example.com', type: 'NS' }],
+          [
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [{ name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' }]
+        )
       },
       [queryKey('www.example.org', 'CNAME')]: {
         request: { name: 'www.example.org', type: 'CNAME' },
-        response: responses.wwwExampleOrgCNAME as Packet
+        response: createDnsResponse(
+          3705,
+          [{ name: 'www.example.org', type: 'CNAME' }],
+          [
+            {
+              name: 'www.example.org',
+              type: 'CNAME',
+              ttl: 300,
+              data: 'www.example.org-v2.edgesuite.net'
+            }
+          ]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        // www.example.org NS query returns CNAME record (real DNS behavior)
-        // This causes extractNSServers to return empty array, then getAuthoritativeNsFromRoot
-        // will fallback to return example.org NSInfo
-        response: {
-          id: 50012,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          50012,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        // mismatch.example.org NS query returns CNAME record
-        response: {
-          id: 50013,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'mismatch.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          50013,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('a.example.org', 'CNAME')]: {
         request: { name: 'a.example.org', type: 'CNAME' },
-        response: responses.cnameLoopA1CNAME as Packet
+        response: createDnsResponse(
+          50001,
+          [{ name: 'a.example.org', type: 'CNAME' }],
+          [{ name: 'a.example.org', type: 'CNAME', ttl: 300, data: 'b.example.org' }]
+        )
       },
       [queryKey('a.example.org', 'A')]: {
         request: { name: 'a.example.org', type: 'A' },
-        response: responses.cnameLoopA1A as Packet
+        response: createDnsResponse(
+          50011,
+          [{ name: 'a.example.org', type: 'A' }],
+          [{ name: 'a.example.org', type: 'CNAME', ttl: 300, data: 'b.example.org' }]
+        )
       },
       [queryKey('a.example.org', 'AAAA')]: {
         request: { name: 'a.example.org', type: 'AAAA' },
-        response: responses.cnameLoopA1A as Packet
+        response: createDnsResponse(
+          50011,
+          [{ name: 'a.example.org', type: 'AAAA' }],
+          [{ name: 'a.example.org', type: 'CNAME', ttl: 300, data: 'b.example.org' }]
+        )
       },
       [queryKey('b.example.org', 'CNAME')]: {
         request: { name: 'b.example.org', type: 'CNAME' },
-        response: responses.cnameLoopB1CNAME as Packet
+        response: createDnsResponse(
+          50002,
+          [{ name: 'b.example.org', type: 'CNAME' }],
+          [{ name: 'b.example.org', type: 'CNAME', ttl: 300, data: 'a.example.org' }]
+        )
       },
       [queryKey('b.example.org', 'A')]: {
         request: { name: 'b.example.org', type: 'A' },
-        response: responses.cnameLoopB1A as Packet
+        response: createDnsResponse(
+          50012,
+          [{ name: 'b.example.org', type: 'A' }],
+          [{ name: 'b.example.org', type: 'CNAME', ttl: 300, data: 'a.example.org' }]
+        )
       },
       [queryKey('b.example.org', 'AAAA')]: {
         request: { name: 'b.example.org', type: 'AAAA' },
-        response: responses.cnameLoopB1AAAA as Packet
+        response: createDnsResponse(
+          50013,
+          [{ name: 'b.example.org', type: 'AAAA' }],
+          [{ name: 'b.example.org', type: 'CNAME', ttl: 300, data: 'a.example.org' }]
+        )
       },
       [queryKey('deep1.example.org', 'CNAME')]: {
         request: { name: 'deep1.example.org', type: 'CNAME' },
-        response: responses.deepCname1CNAME as Packet
+        response: createDnsResponse(
+          50003,
+          [{ name: 'deep1.example.org', type: 'CNAME' }],
+          [{ name: 'deep1.example.org', type: 'CNAME', ttl: 300, data: 'deep2.example.org' }]
+        )
       },
       [queryKey('deep1.example.org', 'A')]: {
         request: { name: 'deep1.example.org', type: 'A' },
-        response: responses.deepCname1A as Packet
+        response: createDnsResponse(
+          50021,
+          [{ name: 'deep1.example.org', type: 'A' }],
+          [{ name: 'deep1.example.org', type: 'CNAME', ttl: 300, data: 'deep2.example.org' }]
+        )
       },
       [queryKey('deep2.example.org', 'CNAME')]: {
         request: { name: 'deep2.example.org', type: 'CNAME' },
-        response: responses.deepCname2CNAME as Packet
+        response: createDnsResponse(
+          50004,
+          [{ name: 'deep2.example.org', type: 'CNAME' }],
+          [{ name: 'deep2.example.org', type: 'CNAME', ttl: 300, data: 'deep3.example.org' }]
+        )
       },
       [queryKey('deep2.example.org', 'A')]: {
         request: { name: 'deep2.example.org', type: 'A' },
-        response: responses.deepCname2A as Packet
+        response: createDnsResponse(
+          50022,
+          [{ name: 'deep2.example.org', type: 'A' }],
+          [{ name: 'deep2.example.org', type: 'CNAME', ttl: 300, data: 'deep3.example.org' }]
+        )
       },
       [queryKey('deep3.example.org', 'CNAME')]: {
         request: { name: 'deep3.example.org', type: 'CNAME' },
-        response: responses.deepCname3CNAME as Packet
+        response: createDnsResponse(
+          50005,
+          [{ name: 'deep3.example.org', type: 'CNAME' }],
+          [{ name: 'deep3.example.org', type: 'CNAME', ttl: 300, data: 'deep4.example.org' }]
+        )
       },
       [queryKey('deep3.example.org', 'A')]: {
         request: { name: 'deep3.example.org', type: 'A' },
-        response: responses.deepCname3A as Packet
+        response: createDnsResponse(
+          50023,
+          [{ name: 'deep3.example.org', type: 'A' }],
+          [{ name: 'deep3.example.org', type: 'CNAME', ttl: 300, data: 'deep4.example.org' }]
+        )
       },
       [queryKey('deep4.example.org', 'CNAME')]: {
         request: { name: 'deep4.example.org', type: 'CNAME' },
-        response: responses.deepCname4CNAME as Packet
+        response: createDnsResponse(
+          50006,
+          [{ name: 'deep4.example.org', type: 'CNAME' }],
+          [{ name: 'deep4.example.org', type: 'CNAME', ttl: 300, data: 'deep5.example.org' }]
+        )
       },
       [queryKey('deep4.example.org', 'A')]: {
         request: { name: 'deep4.example.org', type: 'A' },
-        response: responses.deepCname4A as Packet
+        response: createDnsResponse(
+          50024,
+          [{ name: 'deep4.example.org', type: 'A' }],
+          [{ name: 'deep4.example.org', type: 'CNAME', ttl: 300, data: 'deep5.example.org' }]
+        )
       },
       [queryKey('deep5.example.org', 'CNAME')]: {
         request: { name: 'deep5.example.org', type: 'CNAME' },
-        response: responses.deepCname5CNAME as Packet
+        response: createDnsResponse(
+          50007,
+          [{ name: 'deep5.example.org', type: 'CNAME' }],
+          [{ name: 'deep5.example.org', type: 'CNAME', ttl: 300, data: 'deep6.example.org' }]
+        )
       },
       [queryKey('deep5.example.org', 'A')]: {
         request: { name: 'deep5.example.org', type: 'A' },
-        response: responses.deepCname5A as Packet
+        response: createDnsResponse(
+          50025,
+          [{ name: 'deep5.example.org', type: 'A' }],
+          [{ name: 'deep5.example.org', type: 'CNAME', ttl: 300, data: 'deep6.example.org' }]
+        )
       },
       [queryKey('mismatch.example.org', 'CNAME')]: {
         request: { name: 'mismatch.example.org', type: 'CNAME' },
-        response: responses.cnameMismatch as Packet
+        response: createDnsResponse(
+          50007,
+          [{ name: 'mismatch.example.org', type: 'CNAME' }],
+          [
+            {
+              name: 'mismatch.example.org',
+              type: 'CNAME',
+              ttl: 300,
+              data: 'wrong-target.example.org'
+            }
+          ],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('www.example.org', 'A')]: {
         request: { name: 'www.example.org', type: 'A' },
-        response: {
-          id: 27862,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'A' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          27862,
+          [{ name: 'www.example.org', type: 'A' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('www.example.org', 'AAAA')]: {
         request: { name: 'www.example.org', type: 'AAAA' },
-        response: {
-          id: 61780,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'AAAA' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          61780,
+          [{ name: 'www.example.org', type: 'AAAA' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'A')]: {
         request: { name: 'mismatch.example.org', type: 'A' },
-        response: {
-          id: 50008,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'mismatch.example.org', type: 'A' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          50008,
+          [{ name: 'mismatch.example.org', type: 'A' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'AAAA')]: {
         request: { name: 'mismatch.example.org', type: 'AAAA' },
-        response: {
-          id: 50009,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [
-            { name: 'mismatch.example.org', type: 'AAAA' as const, class: 'IN' as const }
-          ],
-          answers: [
+        response: createDnsResponse(
+          50009,
+          [{ name: 'mismatch.example.org', type: 'AAAA' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
+      },
+      // For resolveWithNs multi-nameserver test: bad nameserver (returns SERVFAIL)
+      [queryKey('test.example.org', 'A')]: {
+        request: { name: 'test.example.org', type: 'A' },
+        response: createDnsResponse(
+          60001,
+          [{ name: 'test.example.org', type: 'A' }],
+          [],
+          [],
+          [],
+          'SERVFAIL'
+        )
       }
     },
 
@@ -1232,328 +442,158 @@ export const dnsFixtures: DNSFixtures = {
     '199.43.133.53': {
       [queryKey('example.org', 'A')]: {
         request: { name: 'example.org', type: 'A' },
-        response: {
-          id: 267,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'example.org', type: 'A' as const, class: 'IN' as const }],
-          answers: [
-            {
-              name: 'example.org',
-              type: 'A' as const,
-              ttl: 300,
-              class: 'IN' as const,
-              flush: false,
-              data: '23.215.0.132'
-            },
-            {
-              name: 'example.org',
-              type: 'A' as const,
-              ttl: 300,
-              class: 'IN' as const,
-              flush: false,
-              data: '23.215.0.133'
-            }
-          ],
-          authorities: [
-            {
-              name: 'example.org',
-              type: 'NS' as const,
-              ttl: 86400,
-              class: 'IN' as const,
-              flush: false,
-              data: 'a.iana-servers.net'
-            },
-            {
-              name: 'example.org',
-              type: 'NS' as const,
-              ttl: 86400,
-              class: 'IN' as const,
-              flush: false,
-              data: 'b.iana-servers.net'
-            }
-          ],
-          additionals: []
-        } as Packet
+        response: createDnsResponse(
+          267,
+          [{ name: 'example.org', type: 'A' }],
+          [
+            { name: 'example.org', type: 'A', ttl: 300, data: '23.215.0.132' },
+            { name: 'example.org', type: 'A', ttl: 300, data: '23.215.0.133' }
+          ]
+        )
       },
       [queryKey('example.org', 'AAAA')]: {
         request: { name: 'example.org', type: 'AAAA' },
-        response: {
-          id: 18785,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'example.org', type: 'AAAA' as const, class: 'IN' as const }],
-          answers: [
-            {
-              name: 'example.org',
-              type: 'AAAA' as const,
-              ttl: 300,
-              class: 'IN' as const,
-              flush: false,
-              data: '2600:1406:5e00:6::17ce:bc29'
-            },
-            {
-              name: 'example.org',
-              type: 'AAAA' as const,
-              ttl: 300,
-              class: 'IN' as const,
-              flush: false,
-              data: '2600:1406:5e00:6::17ce:bc3c'
-            }
-          ],
-          authorities: [
-            {
-              name: 'example.org',
-              type: 'NS' as const,
-              ttl: 86400,
-              class: 'IN' as const,
-              flush: false,
-              data: 'a.iana-servers.net'
-            },
-            {
-              name: 'example.org',
-              type: 'NS' as const,
-              ttl: 86400,
-              class: 'IN' as const,
-              flush: false,
-              data: 'b.iana-servers.net'
-            }
-          ],
-          additionals: []
-        } as Packet
+        response: createDnsResponse(
+          18785,
+          [{ name: 'example.org', type: 'AAAA' }],
+          [
+            { name: 'example.org', type: 'AAAA', ttl: 300, data: '2600:1406:5e00:6::17ce:bc29' },
+            { name: 'example.org', type: 'AAAA', ttl: 300, data: '2600:1406:5e00:6::17ce:bc3c' }
+          ]
+        )
       },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('www.example.org', 'A')]: {
         request: { name: 'www.example.org', type: 'A' },
-        response: {
-          id: 27862,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'A' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          27862,
+          [{ name: 'www.example.org', type: 'A' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('www.example.org', 'AAAA')]: {
         request: { name: 'www.example.org', type: 'AAAA' },
-        response: {
-          id: 61780,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'AAAA' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          61780,
+          [{ name: 'www.example.org', type: 'AAAA' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        response: {
-          id: 9715,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          9715,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('www.example.org', 'CNAME')]: {
         request: { name: 'www.example.org', type: 'CNAME' },
-        response: {
-          id: 53344,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'CNAME' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          53344,
+          [{ name: 'www.example.org', type: 'CNAME' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [
-            {
-              name: 'example.org',
-              type: 'NS' as const,
-              ttl: 86400,
-              class: 'IN' as const,
-              flush: false,
-              data: 'a.iana-servers.net'
-            },
-            {
-              name: 'example.org',
-              type: 'NS' as const,
-              ttl: 86400,
-              class: 'IN' as const,
-              flush: false,
-              data: 'b.iana-servers.net'
-            }
-          ],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'CNAME')]: {
         request: { name: 'mismatch.example.org', type: 'CNAME' },
-        response: responses.cnameMismatch as Packet
+        response: createDnsResponse(
+          50007,
+          [{ name: 'mismatch.example.org', type: 'CNAME' }],
+          [
+            {
+              name: 'mismatch.example.org',
+              type: 'CNAME',
+              ttl: 300,
+              data: 'wrong-target.example.org'
+            }
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'A')]: {
         request: { name: 'mismatch.example.org', type: 'A' },
-        response: {
-          id: 50008,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'mismatch.example.org', type: 'A' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          50008,
+          [{ name: 'mismatch.example.org', type: 'A' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'AAAA')]: {
         request: { name: 'mismatch.example.org', type: 'AAAA' },
-        response: {
-          id: 50009,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [
-            { name: 'mismatch.example.org', type: 'AAAA' as const, class: 'IN' as const }
-          ],
-          answers: [
+        response: createDnsResponse(
+          50009,
+          [{ name: 'mismatch.example.org', type: 'AAAA' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
+      },
+      // For resolveWithNs multi-nameserver test: bad nameserver (returns SERVFAIL)
+      [queryKey('test.example.org', 'A')]: {
+        request: { name: 'test.example.org', type: 'A' },
+        response: createDnsResponse(
+          60002,
+          [{ name: 'test.example.org', type: 'A' }],
+          [],
+          [],
+          [],
+          'SERVFAIL'
+        )
       }
     },
 
@@ -1561,26 +601,83 @@ export const dnsFixtures: DNSFixtures = {
     '198.41.0.4': {
       [queryKey('org', 'NS')]: {
         request: { name: 'org', type: 'NS' },
-        response: responses.orgNS as Packet
+        response: createDnsResponse(
+          34567,
+          [{ name: 'org', type: 'NS' }],
+          [],
+          [
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a0.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a2.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'b0.org.afilias-nst.org' }
+          ],
+          [
+            { name: 'a0.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.19.56.1' },
+            { name: 'a0.org.afilias-nst.info', type: 'AAAA', ttl: 172800, data: '2001:500:e::1' },
+            { name: 'a2.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.249.112.1' },
+            { name: 'b0.org.afilias-nst.org', type: 'A', ttl: 172800, data: '199.19.54.1' }
+          ]
+        )
       },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('example.com', 'NS')]: {
         request: { name: 'example.com', type: 'NS' },
-        response: responses.exampleComNS as Packet
+        response: createDnsResponse(
+          23456,
+          [{ name: 'example.com', type: 'NS' }],
+          [
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [{ name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' }]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        // Root server delegates to org TLD, which then delegates to example.org
-        // So return example.org NS response
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        // Return example.org NS response
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       }
     },
 
@@ -1588,21 +685,70 @@ export const dnsFixtures: DNSFixtures = {
     '199.19.56.1': {
       [queryKey('org', 'NS')]: {
         request: { name: 'org', type: 'NS' },
-        response: responses.orgNS as Packet
+        response: createDnsResponse(
+          34567,
+          [{ name: 'org', type: 'NS' }],
+          [],
+          [
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a0.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a2.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'b0.org.afilias-nst.org' }
+          ],
+          [
+            { name: 'a0.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.19.56.1' },
+            { name: 'a0.org.afilias-nst.info', type: 'AAAA', ttl: 172800, data: '2001:500:e::1' },
+            { name: 'a2.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.249.112.1' },
+            { name: 'b0.org.afilias-nst.org', type: 'A', ttl: 172800, data: '199.19.54.1' }
+          ]
+        )
       },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        // Return example.org NS response (www.example.org is a subdomain)
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        // Return example.org NS response
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       }
     },
 
@@ -1610,19 +756,69 @@ export const dnsFixtures: DNSFixtures = {
     '199.249.112.1': {
       [queryKey('org', 'NS')]: {
         request: { name: 'org', type: 'NS' },
-        response: responses.orgNS as Packet
+        response: createDnsResponse(
+          34567,
+          [{ name: 'org', type: 'NS' }],
+          [],
+          [
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a0.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a2.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'b0.org.afilias-nst.org' }
+          ],
+          [
+            { name: 'a0.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.19.56.1' },
+            { name: 'a2.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.249.112.1' },
+            { name: 'b0.org.afilias-nst.org', type: 'A', ttl: 172800, data: '199.19.54.1' }
+          ]
+        )
       },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       }
     },
 
@@ -1630,19 +826,69 @@ export const dnsFixtures: DNSFixtures = {
     '199.19.54.1': {
       [queryKey('org', 'NS')]: {
         request: { name: 'org', type: 'NS' },
-        response: responses.orgNS as Packet
+        response: createDnsResponse(
+          34567,
+          [{ name: 'org', type: 'NS' }],
+          [],
+          [
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a0.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'a2.org.afilias-nst.info' },
+            { name: 'org', type: 'NS', ttl: 172800, data: 'b0.org.afilias-nst.org' }
+          ],
+          [
+            { name: 'a0.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.19.56.1' },
+            { name: 'a2.org.afilias-nst.info', type: 'A', ttl: 172800, data: '199.249.112.1' },
+            { name: 'b0.org.afilias-nst.org', type: 'A', ttl: 172800, data: '199.19.54.1' }
+          ]
+        )
       },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       }
     },
 
@@ -1650,214 +896,360 @@ export const dnsFixtures: DNSFixtures = {
     '8.8.8.8': {
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('example.com', 'NS')]: {
         request: { name: 'example.com', type: 'NS' },
-        response: responses.exampleComNS as Packet
+        response: createDnsResponse(
+          23456,
+          [{ name: 'example.com', type: 'NS' }],
+          [
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [{ name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' }]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        // www.example.org NS query returns CNAME record (real DNS behavior)
-        // This causes extractNSServers to return empty array, then getAuthoritativeNsFromLocal
-        // will fallback to query example.org NS
-        response: {
-          id: 60865,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          60865,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        // mismatch.example.org NS query returns CNAME record (like www.example.org)
-        // This causes extractNSServers to return empty array, then getAuthoritativeNsFromLocal
-        // will fallback to query example.org NS
-        response: {
-          id: 50010,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'mismatch.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          50010,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('a.example.org', 'NS')]: {
         request: { name: 'a.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'a.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('b.example.org', 'NS')]: {
         request: { name: 'b.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'b.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep1.example.org', 'NS')]: {
         request: { name: 'deep1.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep1.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep2.example.org', 'NS')]: {
         request: { name: 'deep2.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep2.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep3.example.org', 'NS')]: {
         request: { name: 'deep3.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep3.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep4.example.org', 'NS')]: {
         request: { name: 'deep4.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep4.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep5.example.org', 'NS')]: {
         request: { name: 'deep5.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep5.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       }
     },
 
     '1.1.1.1': {
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('example.com', 'NS')]: {
         request: { name: 'example.com', type: 'NS' },
-        response: responses.exampleComNS as Packet
+        response: createDnsResponse(
+          23456,
+          [{ name: 'example.com', type: 'NS' }],
+          [
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.com', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [{ name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' }]
+        )
       },
       [queryKey('www.example.org', 'NS')]: {
         request: { name: 'www.example.org', type: 'NS' },
-        // www.example.org NS query returns CNAME record (real DNS behavior)
-        // This causes extractNSServers to return empty array, then getAuthoritativeNsFromLocal
-        // will fallback to query example.org NS
-        response: {
-          id: 60865,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'www.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          60865,
+          [{ name: 'www.example.org', type: 'NS' }],
+          [
             {
               name: 'www.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'www.example.org-v2.edgesuite.net'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('mismatch.example.org', 'NS')]: {
         request: { name: 'mismatch.example.org', type: 'NS' },
-        // mismatch.example.org NS query returns CNAME record (like www.example.org)
-        // This causes extractNSServers to return empty array, then getAuthoritativeNsFromLocal
-        // will fallback to query example.org NS
-        response: {
-          id: 50011,
-          type: 'response' as const,
-          flags: 1024,
-          flag_qr: true,
-          opcode: 'QUERY' as const,
-          flag_aa: true,
-          flag_tc: false,
-          flag_rd: false,
-          flag_ra: false,
-          flag_z: false,
-          flag_ad: false,
-          flag_cd: false,
-          rcode: 'NOERROR' as const,
-          questions: [{ name: 'mismatch.example.org', type: 'NS' as const, class: 'IN' as const }],
-          answers: [
+        response: createDnsResponse(
+          50011,
+          [{ name: 'mismatch.example.org', type: 'NS' }],
+          [
             {
               name: 'mismatch.example.org',
-              type: 'CNAME' as const,
+              type: 'CNAME',
               ttl: 300,
-              class: 'IN' as const,
-              flush: false,
               data: 'wrong-target.example.org'
             }
-          ],
-          authorities: [],
-          additionals: []
-        } as Packet
+          ]
+        )
       },
       [queryKey('a.example.org', 'NS')]: {
         request: { name: 'a.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'a.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('b.example.org', 'NS')]: {
         request: { name: 'b.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'b.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep1.example.org', 'NS')]: {
         request: { name: 'deep1.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep1.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep2.example.org', 'NS')]: {
         request: { name: 'deep2.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep2.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep3.example.org', 'NS')]: {
         request: { name: 'deep3.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep3.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep4.example.org', 'NS')]: {
         request: { name: 'deep4.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep4.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
       },
       [queryKey('deep5.example.org', 'NS')]: {
         request: { name: 'deep5.example.org', type: 'NS' },
-        response: responses.exampleOrgNS as Packet
+        response: createDnsResponse(
+          1790,
+          [{ name: 'deep5.example.org', type: 'NS' }],
+          [
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'a.iana-servers.net' },
+            { name: 'example.org', type: 'NS', ttl: 86400, data: 'b.iana-servers.net' }
+          ],
+          [],
+          [
+            { name: 'a.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.135.53' },
+            { name: 'b.iana-servers.net', type: 'A', ttl: 172800, data: '199.43.133.53' }
+          ]
+        )
+      }
+    },
+
+    // For resolveWithNs multi-nameserver test: good nameserver (returns success)
+    '10.0.0.1': {
+      [queryKey('test.example.org', 'A')]: {
+        request: { name: 'test.example.org', type: 'A' },
+        response: createDnsResponse(
+          60003,
+          [{ name: 'test.example.org', type: 'A' }],
+          [{ name: 'test.example.org', type: 'A', ttl: 300, data: '192.168.1.1' }]
+        )
       }
     }
   },
@@ -1882,6 +1274,16 @@ export const dnsFixtures: DNSFixtures = {
     },
     'b0.org.afilias-nst.org': {
       ipv4: '199.19.54.1'
+    },
+    // For resolveWithNs multi-nameserver test
+    'bad-ns1.example.org': {
+      ipv4: '199.43.135.53' // Will return empty response
+    },
+    'bad-ns2.example.org': {
+      ipv4: '199.43.133.53' // Will return empty response
+    },
+    'good-ns.example.org': {
+      ipv4: '10.0.0.1' // Will return success
     }
   }
 };
