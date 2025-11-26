@@ -14,31 +14,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    await testCname(customDomain, publicDomain)
-      .then((data) => {
-        if (!data) {
-          // No data = CNAME not found error
-          throw {
-            code: 'NO_CNAME_FOUND',
-            message: `No CNAME record found for domain: ${customDomain}`,
-            hostname: customDomain
-          };
-        }
-      })
-      .catch((e) => {
-        console.log('Invalid resolve result for CNAME record on ' + customDomain + ': ', e);
-        throw e;
-      });
+    const result = await testCname(customDomain, publicDomain).catch((e) => {
+      console.log('Invalid resolve result for CNAME record on ' + customDomain + ': ', e);
+      throw e;
+    });
 
-    jsonRes(res);
+    jsonRes(res, {
+      data: result
+    });
   } catch (error: any) {
-    console.log('CNAME mismatch error:', error);
     jsonRes(res, {
       code: 400,
       error: {
-        code: error.code
+        code: error?.code,
+        cause: error
       },
-      message: error?.message || 'CNAME mismatch error'
+      message: error?.message || 'Error verifying CNAME record.'
     });
   }
 }

@@ -3,7 +3,6 @@ import { jsonRes } from '@/services/backend/response';
 import { customAlphabet } from 'nanoid';
 import crypto from 'crypto';
 import { queryA, queryAAAA } from '@/services/dns-resolver';
-import { custom } from 'zod';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
 
@@ -48,11 +47,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let response: Response | null = null;
     let challengeUrl: string | null = null;
-    for (const challengeUrl of challengeUrls) {
-      console.log('Attempting domain challenge:', challengeUrl);
+    for (const url of challengeUrls) {
+      console.log('Attempting domain challenge:', url);
+      challengeUrl = url;
 
       // Make HTTP request to user's domain
-      response = await fetch(challengeUrl, {
+      response = await fetch(url, {
         method: 'GET',
         headers: {
           Host: customDomain,
@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         // Set timeout to 10 seconds
         signal: AbortSignal.timeout(10000)
-      }).catch((e) => null);
+      }).catch(() => null);
 
       // Try every URL until one succeeds or all fail
       if (response?.ok) {

@@ -49,12 +49,8 @@ export const ResolveErrorCode = {
   DNS_ERROR: 'DNS_ERROR',
   /** Maximum CNAME steps exceeded */
   MAX_CNAME_STEPS_EXCEEDED: 'MAX_CNAME_STEPS_EXCEEDED',
-  /** Maximum query steps exceeded */
-  MAX_QUERY_STEPS_EXCEEDED: 'MAX_QUERY_STEPS_EXCEEDED',
   /** No authoritative NS servers found */
   NO_AUTHORITATIVE_NS: 'NO_AUTHORITATIVE_NS',
-  /** Network error (connection refused, unreachable, etc.) */
-  NETWORK_ERROR: 'NETWORK_ERROR',
   /** Domain level exceeds limit */
   DOMAIN_TOO_LONG: 'DOMAIN_TOO_LONG'
 } as const;
@@ -88,7 +84,7 @@ export class ResolveError extends Error {
 
 // Constants
 const QUERY_TIMEOUT = 5000 as const;
-const MAX_QUERY_STEPS = 10 as const;
+const MAX_DOMAIN_LEVEL = 10 as const;
 const MAX_CNAME_STEPS = 4 as const;
 const ROOT_NS_SERVER: Nameserver = {
   ns: 'a.root-servers.net',
@@ -161,7 +157,7 @@ export const queryDns = async (
       );
     }, QUERY_TIMEOUT);
 
-    socket.on('message', (msg) => {
+    socket.on('message', (msg, rinfo) => {
       clearTimeout(timer);
       socket.close();
       try {
@@ -191,6 +187,7 @@ export const queryDns = async (
 const resolveIPv4Address = async (host: string) => {
   try {
     const ipResult = await dns.resolve4(host);
+
     return ipResult[0] ?? null;
   } catch {
     return null;
@@ -200,6 +197,7 @@ const resolveIPv4Address = async (host: string) => {
 const resolveIPv6Address = async (host: string) => {
   try {
     const ipResult = await dns.resolve6(host);
+
     return ipResult[0] ?? null;
   } catch {
     return null;
@@ -286,8 +284,17 @@ const extractNSServers = (
 const resolveWithNs = async (
   name: string,
   type: dnsPacket.StringRecordType,
-  nameservers: readonly Nameserver[]
-): Promise<Packet | null> => {
+  nameservers: readonly Nameserver[],
+  options?: QueryOptions
+): Promise<
+  | (Packet & {
+      readonly ns: {
+        readonly host: string;
+        readonly ip: string;
+      };
+    })
+  | null
+> => {
   for (const nsServer of nameservers) {
     try {
       // Try IPv4 first, then IPv6
@@ -302,15 +309,18 @@ const resolveWithNs = async (
         continue;
       }
 
-      const dnsResponse = await queryDns(name, type, ip);
+      const dnsResponse = await queryDns(name, type, ip, options);
       if (dnsResponse.type === 'response') {
         const rcode = (dnsResponse as any).rcode;
         if (rcode === 'NOERROR') {
           // Success
-          return dnsResponse;
-        } else if (isDefinitiveDNSError(rcode)) {
-          // DNS-level error
-          return null;
+          return {
+            ...dnsResponse,
+            ns: {
+              host: nsServer.ns,
+              ip: ip
+            }
+          };
         }
 
         // Other response codes, try next NS
@@ -337,10 +347,10 @@ export const getAuthoritativeNsFromRoot = async (domain: string): Promise<NSInfo
     .slice()
     .reverse();
 
-  if (parts.length > MAX_QUERY_STEPS) {
+  if (parts.length > MAX_DOMAIN_LEVEL) {
     throw new ResolveError(
       ResolveErrorCode.DOMAIN_TOO_LONG,
-      `Domain level exceeds the limit of ${MAX_QUERY_STEPS}`,
+      `Domain level exceeds the limit of ${MAX_DOMAIN_LEVEL}`,
       { domain }
     );
   }
@@ -353,7 +363,9 @@ export const getAuthoritativeNsFromRoot = async (domain: string): Promise<NSInfo
     // Use NS servers from lastValidNSInfo if available, otherwise use root server
     const nsServersToQuery = lastValidNSInfo ? lastValidNSInfo.nameservers : [ROOT_NS_SERVER];
 
-    const nsResponse = await resolveWithNs(testDomain, 'NS', nsServersToQuery);
+    const nsResponse = await resolveWithNs(testDomain, 'NS', nsServersToQuery, {
+      recursionDesired: true
+    });
 
     if (!nsResponse) {
       // Not valid response, return last valid NSInfo if available.
@@ -432,10 +444,10 @@ export const getAuthoritativeNsFromLocal = async (domain: string): Promise<NSInf
     return null;
   }
 
-  if (parts.length > MAX_QUERY_STEPS) {
+  if (parts.length > MAX_DOMAIN_LEVEL) {
     throw new ResolveError(
       ResolveErrorCode.DOMAIN_TOO_LONG,
-      `Domain level exceeds the limit of ${MAX_QUERY_STEPS}`,
+      `Domain level exceeds the limit of ${MAX_DOMAIN_LEVEL}`,
       { domain }
     );
   }
@@ -481,6 +493,7 @@ export const getAuthoritativeNsFromLocal = async (domain: string): Promise<NSInf
   for (let i = 0; i < parts.length; i += 1) {
     const zoneCandidate = parts.slice(i).join('.');
     const result = await queryFromLocalResolvers(zoneCandidate);
+
     if (result) {
       return result;
     }
@@ -525,7 +538,14 @@ type FollowCnameOptions = {
  */
 const queryDnsFollowCname = async (
   options: Readonly<FollowCnameOptions>
-): Promise<DNSRecord | null> => {
+): Promise<
+  DNSRecord & {
+    readonly ns: {
+      readonly host: string;
+      readonly ip: string;
+    };
+  }
+> => {
   if (options.step > MAX_CNAME_STEPS) {
     throw new ResolveError(
       ResolveErrorCode.MAX_CNAME_STEPS_EXCEEDED,
@@ -565,12 +585,14 @@ const queryDnsFollowCname = async (
     );
   }
 
-  const dnsResponse = await resolveWithNs(options.domain, options.target.type, nsInfo.nameservers);
+  const dnsResponse = await resolveWithNs(options.domain, options.target.type, nsInfo.nameservers, {
+    recursionDesired: true
+  });
 
   if (!dnsResponse) {
     // All tries failed - could be network error or no response
     throw new ResolveError(
-      ResolveErrorCode.NETWORK_ERROR,
+      ResolveErrorCode.NO_RECORD,
       `All authoritative NS servers failed for domain ${options.domain}`,
       { domain: options.domain }
     );
@@ -612,7 +634,11 @@ const queryDnsFollowCname = async (
     );
 
     // Target matched, returning.
-    if (targetRecord) return targetRecord;
+    if (targetRecord)
+      return {
+        ...targetRecord,
+        ns: dnsResponse.ns
+      };
 
     // Use first CNAME record
     const cnameRecord = records.find((record) => record.type === 'CNAME');
@@ -621,7 +647,13 @@ const queryDnsFollowCname = async (
       throw new ResolveError(
         ResolveErrorCode.NO_RECORD,
         `No ${options.target.type} record pointing to domain ${options.target.value}`,
-        { domain: options.domain, details: { targetType: options.target.type } }
+        {
+          domain: options.domain,
+          details: {
+            query: options,
+            response: dnsResponse
+          }
+        }
       );
     }
 
@@ -640,7 +672,10 @@ const queryDnsFollowCname = async (
       `DNS server returned error code: ${rcode} for domain ${options.domain}`,
       {
         domain: options.domain,
-        details: { rcode, targetType: options.target.type }
+        details: {
+          query: options,
+          response: dnsResponse
+        }
       }
     );
   }
@@ -651,7 +686,10 @@ const queryDnsFollowCname = async (
     `Unknown DNS response for domain ${options.domain}`,
     {
       domain: options.domain,
-      details: { rcode, responseType: dnsResponse.type }
+      details: {
+        query: options,
+        response: dnsResponse
+      }
     }
   );
 };
@@ -660,165 +698,71 @@ const queryDnsFollowCname = async (
  * Query CNAME record without caching.
  * @param domain - domain name
  * @param target - target CNAME value to match
- * @returns CNAME record matches the domain or not
+ * @returns CNAME record
+ * @throws ResolveError if no record or any error occurred.
  */
-export const testCname = async (domain: string, target: string): Promise<DNSRecord | null> => {
-  try {
-    const result = await queryDnsFollowCname({
-      domain,
-      step: 0,
-      target: {
-        type: 'CNAME',
-        value: target
-      },
-      visited: new Set<string>()
-    });
+export const testCname = async (domain: string, target: string): Promise<DNSRecord> => {
+  const result = await queryDnsFollowCname({
+    domain,
+    step: 0,
+    target: {
+      type: 'CNAME',
+      value: target
+    },
+    visited: new Set<string>()
+  });
 
-    // Check if CNAME value matches target
-    if (result && result.data !== target) {
-      throw new ResolveError(
-        ResolveErrorCode.CNAME_MISMATCH,
-        `CNAME record for ${domain} points to ${result.data}, expected ${target}`,
-        {
-          domain,
-          details: { actual: result.data, expected: target }
-        }
-      );
-    }
-
-    return result;
-  } catch (err) {
-    // If it's a ResolveError, check if we should try system DNS fallback
-    if (err instanceof ResolveError) {
-      // Only fallback for network errors, not for definitive DNS errors
-      if (
-        err.code === ResolveErrorCode.NETWORK_ERROR ||
-        err.code === ResolveErrorCode.NO_AUTHORITATIVE_NS
-      ) {
-        try {
-          const cnameRecords = await dns.resolveCname(domain);
-          const firstCname = cnameRecords[0];
-          if (firstCname && firstCname === target) {
-            return {
-              name: domain,
-              type: 'CNAME',
-              ttl: 0,
-              data: firstCname
-            };
-          }
-          // System DNS returned different value, throw CNAME_MISMATCH
-          if (firstCname) {
-            throw new ResolveError(
-              ResolveErrorCode.CNAME_MISMATCH,
-              `CNAME record for ${domain} points to ${firstCname}, expected ${target}`,
-              {
-                domain,
-                details: { actual: firstCname, expected: target }
-              }
-            );
-          }
-          // System DNS returned no CNAME, re-throw original error
-        } catch (fallbackErr) {
-          // If fallback already threw CNAME_MISMATCH, re-throw it
-          if (
-            fallbackErr instanceof ResolveError &&
-            fallbackErr.code === ResolveErrorCode.CNAME_MISMATCH
-          ) {
-            throw fallbackErr;
-          }
-          // System DNS also failed, re-throw original error
+  // Check if CNAME value matches target
+  if (result && result.data !== target) {
+    throw new ResolveError(
+      ResolveErrorCode.CNAME_MISMATCH,
+      `CNAME record for ${domain} points to ${result.data}, expected ${target}`,
+      {
+        domain,
+        details: {
+          actual: result.data,
+          expected: target,
+          result: result
         }
       }
-    }
-    // Re-throw the error
-    throw err;
+    );
   }
+
+  return result;
 };
 
 /**
  * Query A record without caching.
  * @param domain - domain name
  * @returns A record
+ * @throws ResolveError if no record or any error occurred.
+ *
  */
-export const queryA = async (domain: string): Promise<DNSRecord | null> => {
-  try {
-    return await queryDnsFollowCname({
-      domain,
-      step: 0,
-      target: {
-        type: 'A'
-      },
-      visited: new Set<string>()
-    });
-  } catch (err) {
-    // If it's a ResolveError, check if we should try system DNS fallback
-    if (err instanceof ResolveError) {
-      // Only fallback for network errors, not for definitive DNS errors
-      if (
-        err.code === ResolveErrorCode.NETWORK_ERROR ||
-        err.code === ResolveErrorCode.NO_AUTHORITATIVE_NS
-      ) {
-        try {
-          const aRecords = await dns.resolve4(domain);
-          const firstA = aRecords[0];
-          if (firstA) {
-            return {
-              name: domain,
-              type: 'A',
-              ttl: 0,
-              data: firstA
-            };
-          }
-        } catch {
-          // System DNS also failed, re-throw original error
-        }
-      }
-    }
-    // Re-throw the error
-    throw err;
-  }
+export const queryA = async (domain: string): Promise<DNSRecord> => {
+  return await queryDnsFollowCname({
+    domain,
+    step: 0,
+    target: {
+      type: 'A'
+    },
+    visited: new Set<string>()
+  });
 };
 
 /**
  * Query AAAA record without caching.
  * @param domain - domain name
  * @returns AAAA record
+ * @throws ResolveError if no record or any error occurred.
+ *
  */
-export const queryAAAA = async (domain: string): Promise<DNSRecord | null> => {
-  try {
-    return await queryDnsFollowCname({
-      domain,
-      step: 0,
-      target: {
-        type: 'AAAA'
-      },
-      visited: new Set<string>()
-    });
-  } catch (err) {
-    // If it's a ResolveError, check if we should try system DNS fallback
-    if (err instanceof ResolveError) {
-      // Only fallback for network errors, not for definitive DNS errors
-      if (
-        err.code === ResolveErrorCode.NETWORK_ERROR ||
-        err.code === ResolveErrorCode.NO_AUTHORITATIVE_NS
-      ) {
-        try {
-          const aaaaRecords = await dns.resolve6(domain);
-          const firstAAAA = aaaaRecords[0];
-          if (firstAAAA) {
-            return {
-              name: domain,
-              type: 'AAAA',
-              ttl: 0,
-              data: firstAAAA
-            };
-          }
-        } catch {
-          // System DNS also failed, re-throw original error
-        }
-      }
-    }
-    // Re-throw the error
-    throw err;
-  }
+export const queryAAAA = async (domain: string): Promise<DNSRecord> => {
+  return await queryDnsFollowCname({
+    domain,
+    step: 0,
+    target: {
+      type: 'AAAA'
+    },
+    visited: new Set<string>()
+  });
 };
