@@ -84,8 +84,9 @@ export class ResolveError extends Error {
 
 // Constants
 const QUERY_TIMEOUT = 5000 as const;
-const MAX_DOMAIN_LEVEL = 10 as const;
+const MAX_DOMAIN_LEVELS = 10 as const;
 const MAX_CNAME_STEPS = 4 as const;
+const MAX_NAMESERVERS = 3 as const;
 const ROOT_NS_SERVER: Nameserver = {
   ns: 'a.root-servers.net',
   resolveIPv4: async () => '198.41.0.4',
@@ -206,9 +207,9 @@ const resolveIPv6Address = async (host: string) => {
 
 /**
  * Extract NS servers with their possible IP addresses from DNS answers.
- * @returns a list of NS servers with lazy IP resolution.
+ * @returns a list of NS servers with lazy IP resolution (max MAX_NAMESERVERS).
  */
-const extractNSServers = (
+export const extractNSServers = (
   target: string,
   allAnswers: readonly dnsPacket.Answer[]
 ): readonly Nameserver[] => {
@@ -248,30 +249,32 @@ const extractNSServers = (
     >()
   );
 
-  return Array.from(nsWithPossibleAddresses.entries()).map(([ns, addresses]): Nameserver => {
-    const glueA = addresses.glueA;
-    const glueAAAA = addresses.glueAAAA;
+  return Array.from(nsWithPossibleAddresses.entries())
+    .map(([ns, addresses]): Nameserver => {
+      const glueA = addresses.glueA;
+      const glueAAAA = addresses.glueAAAA;
 
-    return {
-      ns,
-      // If glue A/AAAA record is available
-      // Otherwise, resolve lazily via DNS lookup
-      resolveIPv4: async (): Promise<string | null> => {
-        if (glueA) {
-          return glueA;
+      return {
+        ns,
+        // If glue A/AAAA record is available
+        // Otherwise, resolve lazily via DNS lookup
+        resolveIPv4: async (): Promise<string | null> => {
+          if (glueA) {
+            return glueA;
+          }
+
+          return resolveIPv4Address(ns);
+        },
+        resolveIPv6: async (): Promise<string | null> => {
+          if (glueAAAA) {
+            return glueAAAA;
+          }
+
+          return resolveIPv6Address(ns);
         }
-
-        return resolveIPv4Address(ns);
-      },
-      resolveIPv6: async (): Promise<string | null> => {
-        if (glueAAAA) {
-          return glueAAAA;
-        }
-
-        return resolveIPv6Address(ns);
-      }
-    };
-  });
+      };
+    })
+    .slice(0, MAX_NAMESERVERS);
 };
 
 /**
@@ -281,7 +284,7 @@ const extractNSServers = (
  * @param nameservers - List of NS servers
  * @returns DNS response packet or null if all servers failed
  */
-const resolveWithNs = async (
+export const resolveWithNs = async (
   name: string,
   type: dnsPacket.StringRecordType,
   nameservers: readonly Nameserver[],
@@ -313,14 +316,21 @@ const resolveWithNs = async (
       if (dnsResponse.type === 'response') {
         const rcode = (dnsResponse as any).rcode;
         if (rcode === 'NOERROR') {
-          // Success
-          return {
-            ...dnsResponse,
-            ns: {
-              host: nsServer.ns,
-              ip: ip
-            }
-          };
+          // Only return success if we have answers (or if it's an NS query with authorities)
+          const hasAnswers = dnsResponse.answers && dnsResponse.answers.length > 0;
+          const hasAuthorities = dnsResponse.authorities && dnsResponse.authorities.length > 0;
+          // For NS queries, authorities are acceptable
+          if (hasAnswers || (type === 'NS' && hasAuthorities)) {
+            // Success
+            return {
+              ...dnsResponse,
+              ns: {
+                host: nsServer.ns,
+                ip: ip
+              }
+            };
+          }
+          // NOERROR but no answers/authorities, try next NS
         }
 
         // Other response codes, try next NS
@@ -347,10 +357,10 @@ export const getAuthoritativeNsFromRoot = async (domain: string): Promise<NSInfo
     .slice()
     .reverse();
 
-  if (parts.length > MAX_DOMAIN_LEVEL) {
+  if (parts.length > MAX_DOMAIN_LEVELS) {
     throw new ResolveError(
       ResolveErrorCode.DOMAIN_TOO_LONG,
-      `Domain level exceeds the limit of ${MAX_DOMAIN_LEVEL}`,
+      `Domain level exceeds the limit of ${MAX_DOMAIN_LEVELS}`,
       { domain }
     );
   }
@@ -444,10 +454,10 @@ export const getAuthoritativeNsFromLocal = async (domain: string): Promise<NSInf
     return null;
   }
 
-  if (parts.length > MAX_DOMAIN_LEVEL) {
+  if (parts.length > MAX_DOMAIN_LEVELS) {
     throw new ResolveError(
       ResolveErrorCode.DOMAIN_TOO_LONG,
-      `Domain level exceeds the limit of ${MAX_DOMAIN_LEVEL}`,
+      `Domain level exceeds the limit of ${MAX_DOMAIN_LEVELS}`,
       { domain }
     );
   }
