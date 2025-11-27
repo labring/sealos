@@ -51,7 +51,8 @@ export default function OrderListView({
   onToggleSelect,
   onToggleSelectAll,
   selectedCount,
-  selectedAmount
+  selectedAmount,
+  isLoading
 }: {
   dateRange: DateRange | undefined;
   onDateRangeChange: (v: DateRange | undefined) => void;
@@ -69,6 +70,7 @@ export default function OrderListView({
   onToggleSelectAll: (ids: string[]) => void;
   selectedCount: number;
   selectedAmount: number;
+  isLoading: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -140,26 +142,46 @@ export default function OrderListView({
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
-          {filteredRows.map((row, idx) => (
-            <TableRow key={`${row.id}-${idx}`} className="h-14">
-              <TableCell>
-                <Checkbox
-                  checked={selectedIds.has(row.id)}
-                  disabled={!row.selectable}
-                  onCheckedChange={() => onToggleSelect(row.id)}
-                />
-              </TableCell>
-              <TableCell>{row.id || '-'}</TableCell>
-              <TableCell>{row.region || '-'}</TableCell>
-              <TableCell>{row.workspace || '-'}</TableCell>
-              <TableCell>{formatDateTime(row.time)}</TableCell>
-              <TableCell>{row.typeTag || '-'}</TableCell>
-              <TableCell>
-                <CurrencySymbol />
-                <span>{formatMoney(row.amount).toFixed(2)}</span>
-              </TableCell>
-            </TableRow>
-          ))}
+          {isLoading ? (
+            <tr>
+              <td colSpan={7}>
+                <div className="flex justify-center items-center w-full px-12 py-6 text-zinc-500">
+                  {t('loading_data')}
+                </div>
+              </td>
+            </tr>
+          ) : (
+            filteredRows.map((row, idx) => (
+              <TableRow key={`${row.id}-${idx}`} className="h-14">
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(row.id)}
+                    disabled={!row.selectable}
+                    onCheckedChange={() => onToggleSelect(row.id)}
+                  />
+                </TableCell>
+                <TableCell>{row.id || '-'}</TableCell>
+                <TableCell>{row.region || '-'}</TableCell>
+                <TableCell>{row.workspace || '-'}</TableCell>
+                <TableCell>{formatDateTime(row.time)}</TableCell>
+                <TableCell>{row.typeTag || '-'}</TableCell>
+                <TableCell>
+                  <CurrencySymbol />
+                  <span>{formatMoney(row.amount).toFixed(2)}</span>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+
+          {!isLoading && filteredRows.length <= 0 && (
+            <tr>
+              <td colSpan={7}>
+                <div className="flex justify-center items-center w-full px-12 py-6 text-zinc-500">
+                  {t('no_data_available')}
+                </div>
+              </td>
+            </tr>
+          )}
         </TableLayoutBody>
       </TableLayoutContent>
 

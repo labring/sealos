@@ -341,5 +341,6 @@
   "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制",
   "your_next_plan": "您下一个套餐",
   "recharge_doubled": "双倍!",
-  "recharge_bonus": "赠"
+  "recharge_bonus": "赠",
+  "loading_data": "正在加载..."
 }
