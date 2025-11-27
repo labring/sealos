@@ -27,6 +27,7 @@ import {
   DropdownMenuRadioItem
 } from '@sealos/shadcn-ui/dropdown-menu';
 import { AppType } from '@/types/app';
+import { QueryFilters } from './PAYGCostTable';
 
 export type PAYGData = {
   appName: string;
@@ -45,8 +46,8 @@ type PAYGCostTableViewProps = {
   totalCount: number;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
-  selectedAppType: AppType | null;
-  onAppTypeSelected?: (appType: AppType | null) => void;
+  filters: QueryFilters;
+  onFiltersChange?: (filters: Partial<QueryFilters>) => void;
 };
 
 /**
@@ -63,10 +64,15 @@ export function PAYGCostTableView({
   totalCount,
   onPageChange,
   isLoading = false,
-  selectedAppType,
-  onAppTypeSelected
+  filters,
+  onFiltersChange
 }: PAYGCostTableViewProps) {
   const { t } = useTranslation();
+
+  // Handle app type filter change
+  const handleAppTypeChange = (appType: AppType | null) => {
+    onFiltersChange?.({ selectedAppType: appType });
+  };
 
   const PAYGRow = ({ item }: { item: PAYGData }) => (
     <TableRow className="h-[50px]">
@@ -139,7 +145,10 @@ export function PAYGCostTableView({
                 <div className="flex gap-1 items-center">
                   {t('common:orders.type')}
                   <div
-                    className={cn('size-5', selectedAppType ? 'text-blue-600' : 'text-zinc-400')}
+                    className={cn(
+                      'size-5',
+                      filters.selectedAppType ? 'text-blue-600' : 'text-zinc-400'
+                    )}
                   >
                     <FilledChevronDown />
                   </div>
@@ -148,12 +157,12 @@ export function PAYGCostTableView({
               <DropdownMenuContent>
                 <DropdownMenuLabel>Type</DropdownMenuLabel>
                 <DropdownMenuRadioGroup
-                  value={selectedAppType || 'all'}
+                  value={filters.selectedAppType || 'all'}
                   onValueChange={(value) => {
                     if (value === 'all') {
-                      onAppTypeSelected?.(null);
+                      handleAppTypeChange(null);
                     } else {
-                      onAppTypeSelected?.(value as AppType);
+                      handleAppTypeChange(value as AppType);
                     }
                   }}
                 >
