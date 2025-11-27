@@ -112,6 +112,7 @@ jobs:
             devbox,
             vlogs,
             hubble,
+            sshgate,
           ]
     steps:
       - name: Checkout
@@ -241,6 +242,7 @@ jobs:
             devbox,
             vlogs,
             hubble,
+            sshgate,
           ]
     steps:
       - name: Checkout

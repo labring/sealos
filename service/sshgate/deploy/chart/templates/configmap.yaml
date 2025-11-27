@@ -1,0 +1,20 @@
+{{- $existingConfigMap := lookup "v1" "ConfigMap" .Release.Namespace (include "sshgate.fullname" .) -}}
+{{- $sshHostKeySeed := "" -}}
+{{- if .Values.sshHostKeySeed -}}
+  {{- $sshHostKeySeed = .Values.sshHostKeySeed -}}
+{{- else if $existingConfigMap -}}
+  {{- $sshHostKeySeed = index $existingConfigMap.data "SSH_HOST_KEY_SEED" -}}
+{{- else -}}
+  {{- $sshHostKeySeed = randAlphaNum 32 -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sshgate.fullname" . }}
+  labels:
+    {{- include "sshgate.labels" . | nindent 4 }}
+data:
+  SSH_HOST_KEY_SEED: {{ $sshHostKeySeed | quote }}
+{{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}

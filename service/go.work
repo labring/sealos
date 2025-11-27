@@ -12,6 +12,7 @@ use (
 	./pay
 	./vlogs
 	./zombiedetector
+	./sshgate
 )
 
 replace (
