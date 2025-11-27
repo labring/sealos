@@ -18,9 +18,10 @@ package controllers
 
 import (
 	"context"
-	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/label"
+	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 	nanoid "github.com/matoous/go-nanoid/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,9 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"github.com/labring/sealos/controllers/pkg/utils/label"
-	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
 const TerminalPartOf = "terminal"
@@ -68,9 +66,9 @@ const (
 	MemoryLimit   = "256Mi"
 )
 
-const (
-	SecretHeaderPrefix = "X-SEALOS-"
-)
+// const (
+// 	SecretHeaderPrefix = "X-SEALOS-"
+// )
 
 // TerminalReconciler reconciles a Terminal object
 type TerminalReconciler struct {
@@ -96,7 +94,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
+	if terminal.DeletionTimestamp.IsZero() {
 		if controllerutil.AddFinalizer(terminal, FinalizerName) {
 			if err := r.Update(ctx, terminal); err != nil {
 				return ctrl.Result{}, err
@@ -143,7 +141,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		PartOf:    TerminalPartOf,
 	})
 
-	//Note: Fixme: For `Forward Compatibility` usage only, old resource controller need this label.
+	// Note: Fixme: For `Forward Compatibility` usage only, old resource controller need this label.
 	recLabels["TerminalID"] = terminal.Name
 
 	var hostname string
@@ -165,14 +163,26 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	r.recorder.Eventf(terminal, corev1.EventTypeNormal, "Created", "create terminal success: %v", terminal.Name)
+	r.recorder.Eventf(
+		terminal,
+		corev1.EventTypeNormal,
+		"Created",
+		"create terminal success: %v",
+		terminal.Name,
+	)
 	duration, _ := time.ParseDuration(terminal.Spec.Keepalived)
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncIngress(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	hostname string,
+	recLabels map[string]string,
+) error {
 	var err error
-	host := hostname + "." + r.CtrConfig.Global.CloudDomain
+	host := hostname + "." + r.CtrConfig.CloudDomain
+	//nolint:gocritic
 	switch terminal.Spec.IngressType {
 	case terminalv1.Nginx:
 		err = r.syncNginxIngress(ctx, terminal, host, recLabels)
@@ -180,7 +190,12 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminal
 	return err
 }
 
-func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *terminalv1.Terminal, host string, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncNginxIngress(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	host string,
+	recLabels map[string]string,
+) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      terminal.Name,
@@ -190,7 +205,7 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
 		expectIngress := r.createNginxIngress(terminal, host)
-		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
+		ingress.Annotations = expectIngress.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
 		ingress.Spec.TLS = expectIngress.Spec.TLS
 		return controllerutil.SetControllerReference(terminal, ingress, r.Scheme)
@@ -207,12 +222,21 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 	return nil
 }
 
-func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminalv1.Terminal, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncService(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	recLabels map[string]string,
+) error {
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: recLabels,
 		Type:     corev1.ServiceTypeClusterIP,
 		Ports: []corev1.ServicePort{
-			{Name: "tty", Port: 8080, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
+			{
+				Name:       "tty",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+				Protocol:   corev1.ProtocolTCP,
+			},
 		},
 	}
 
@@ -243,7 +267,12 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 	return nil
 }
 
-func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *terminalv1.Terminal, hostname *string, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncDeployment(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	hostname *string,
+	recLabels map[string]string,
+) error {
 	var (
 		objectMeta      metav1.ObjectMeta
 		selector        *metav1.LabelSelector
@@ -277,7 +306,7 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 		{Name: "NAMESPACE", Value: terminal.Namespace},
 		{Name: "USER_NAME", Value: terminal.Spec.User},
 		// Add secret header
-		{Name: "AUTH_HEADER", Value: terminal.Status.SecretHeader},
+		{Name: "CREDENTIAL", Value: terminal.Status.SecretHeader},
 	}
 
 	containers = []corev1.Container{
@@ -318,7 +347,7 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 		// only update some specific fields
 		deployment.Spec.Replicas = expectDeploymentSpec.Replicas
 		deployment.Spec.Selector = expectDeploymentSpec.Selector
-		deployment.Spec.Template.ObjectMeta.Labels = expectDeploymentSpec.Template.Labels
+		deployment.Spec.Template.Labels = expectDeploymentSpec.Template.Labels
 		if len(deployment.Spec.Template.Spec.Containers) == 0 {
 			deployment.Spec.Template.Spec.Containers = containers
 		} else {
@@ -354,15 +383,18 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	return nil
 }
 
-func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *terminalv1.Terminal) error {
+func (r *TerminalReconciler) fillDefaultValue(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+) error {
 	hasUpdate := false
 	if terminal.Spec.APIServer == "" {
 		terminal.Spec.APIServer = r.Config.Host
 		hasUpdate = true
 	}
 
-	if _, ok := terminal.ObjectMeta.Annotations[KeepaliveAnnotation]; !ok {
-		terminal.ObjectMeta.Annotations[KeepaliveAnnotation] = time.Now().Format(time.RFC3339)
+	if _, ok := terminal.Annotations[KeepaliveAnnotation]; !ok {
+		terminal.Annotations[KeepaliveAnnotation] = time.Now().Format(time.RFC3339)
 		hasUpdate = true
 	}
 
@@ -375,7 +407,7 @@ func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *ter
 
 // isExpired return true if the terminal has expired
 func isExpired(terminal *terminalv1.Terminal) bool {
-	anno := terminal.ObjectMeta.Annotations
+	anno := terminal.Annotations
 	lastUpdateTime, err := time.Parse(time.RFC3339, anno[KeepaliveAnnotation])
 	if err != nil {
 		// treat parse errors as not expired
@@ -387,14 +419,16 @@ func isExpired(terminal *terminalv1.Terminal) bool {
 }
 
 func (r *TerminalReconciler) getPort() string {
-	if r.CtrConfig.Global.CloudPort == "" || r.CtrConfig.Global.CloudPort == "80" || r.CtrConfig.Global.CloudPort == "443" {
+	if r.CtrConfig.CloudPort == "" || r.CtrConfig.CloudPort == "80" ||
+		r.CtrConfig.CloudPort == "443" {
 		return ""
 	}
-	return ":" + r.CtrConfig.Global.CloudPort
+	return ":" + r.CtrConfig.CloudPort
 }
 
 func (r *TerminalReconciler) generateSecretHeader() string {
-	return SecretHeaderPrefix + strings.ToUpper(rand.String(5))
+	return rand.String(5) + ":" + rand.String(5)
+	// return SecretHeaderPrefix + strings.ToUpper(rand.String(5))
 }
 
 // SetupWithManager sets up the controller with the Manager.
