@@ -3149,6 +3149,7 @@ spec:
                     enum:
                     - NodePort
                     - Tailnet
+                    - SSHGate
                     type: string
                 required:
                 - type
@@ -3664,6 +3665,9 @@ spec:
                     enum:
                     - NodePort
                     - Tailnet
+                    - SSHGate
+                    type: string
+                  uniqueID:
                     type: string
                 required:
                 - type

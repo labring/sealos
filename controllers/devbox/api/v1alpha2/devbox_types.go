@@ -70,6 +70,7 @@ type NetworkType string
 const (
 	NetworkTypeNodePort NetworkType = "NodePort"
 	NetworkTypeTailnet  NetworkType = "Tailnet"
+	NetworkTypeSSHGate  NetworkType = "SSHGate"
 )
 
 type RuntimeRef struct {
@@ -81,7 +82,7 @@ type RuntimeRef struct {
 
 type NetworkSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;SSHGate
 	Type NetworkType `json:"type"`
 	// +kubebuilder:validation:Optional
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts,omitempty"`
@@ -165,11 +166,14 @@ type DevboxSpec struct {
 
 type NetworkStatus struct {
 	// +kubebuilder:default=NodePort
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;SSHGate
 	Type NetworkType `json:"type"`
 
 	// +kubebuilder:validation:Optional
 	NodePort int32 `json:"nodePort"`
+
+	// +kubebuilder:validation:Optional
+	UniqueID string `json:"uniqueID"`
 
 	// todo TailNet
 	// +kubebuilder:validation:Optional

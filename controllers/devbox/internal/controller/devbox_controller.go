@@ -29,6 +29,7 @@ import (
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/events"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/rwords"
 	"github.com/labring/sealos/controllers/devbox/internal/stat"
 	"github.com/labring/sealos/controllers/devbox/label"
 
@@ -139,8 +140,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	// init devbox status network type
-	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	// init devbox status content id
 	if devbox.Status.ContentID == "" {
 		devbox.Status.ContentID = uuid.New().String()
@@ -217,17 +216,14 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	logger.Info("sync secret success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
-	// create service if network type is NodePort
-	if devbox.Spec.NetworkSpec.Type == devboxv1alpha2.NetworkTypeNodePort {
-		logger.Info("syncing service")
-		if err := r.syncService(ctx, devbox, recLabels); err != nil {
-			logger.Error(err, "sync service failed")
-			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync service failed", "%v", err)
-			return ctrl.Result{}, err
-		}
-		logger.Info("sync service success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync service success", "Sync service success")
+
+	if err := r.syncNetwork(ctx, devbox, recLabels); err != nil {
+		logger.Error(err, "sync network failed")
+		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync network failed", "%v", err)
+		return ctrl.Result{}, err
 	}
+	logger.Info("sync network success")
+	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync network success", "Sync network success")
 
 	// sync devbox phase based on desired state and current pod status
 	if err := r.syncDevboxPhase(ctx, devbox, recLabels); err != nil {
@@ -392,7 +388,102 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 	return nil
 }
 
-func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// Use a pipeline pattern to execute each sync function in order, returning early if an error occurs in any step.
+	pipeline := []func(context.Context, *devboxv1alpha2.Devbox, map[string]string) error{
+		r.syncCommon,
+		r.syncTailnet,
+		r.syncSSHGate,
+		r.syncNodeport,
+	}
+	for _, fn := range pipeline {
+		if err := fn(ctx, devbox, recLabels); err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	// succeed sync all network resources, do update devbox status network type
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
+		return r.Status().Update(ctx, latestDevbox)
+	})
+}
+
+// syncCommon syncs the common resources for the network, including headless service and unique id
+func (r *DevboxReconciler) syncCommon(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	logger := log.FromContext(ctx)
+	logger.Info("syncing network common resources: headless service and unique id")
+	_ = r.Get(ctx, client.ObjectKeyFromObject(devbox), devbox)
+	if devbox.Status.Network.UniqueID == "" {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.Network.UniqueID = rwords.GenerateRandomWords()
+			return r.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// create a headless service for the devbox, use the unique id as the name
+	// todo: use label to find the service
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Status.Network.UniqueID,
+			Namespace: devbox.Namespace,
+			Labels:    recLabels,
+		},
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
+		service.Spec.Selector = recLabels
+		service.Spec.Type = corev1.ServiceTypeClusterIP
+		if service.Spec.ClusterIP == "" {
+			service.Spec.ClusterIP = corev1.ClusterIPNone
+		}
+		if len(service.Spec.ClusterIPs) == 0 {
+			service.Spec.ClusterIPs = []string{corev1.ClusterIPNone}
+		}
+		service.Spec.Ports = nil
+		return controllerutil.SetControllerReference(devbox, service, r.Scheme)
+	})
+	return err
+}
+
+func (r *DevboxReconciler) syncTailnet(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// deprecated, we don't need to sync tailnet anymore
+	logger := log.FromContext(ctx)
+	logger.Info("syncing tailnet")
+	return nil
+}
+
+func (r *DevboxReconciler) syncSSHGate(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// maybe we should do something here...
+	logger := log.FromContext(ctx)
+	logger.Info("syncing ssh gate")
+	return nil
+}
+
+func (r *DevboxReconciler) syncNodeport(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// todo: use label to find the service
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-svc",
+			Namespace: devbox.Namespace,
+			Labels:    recLabels,
+		},
+	}
+
+	desiredNodePort := devbox.Spec.NetworkSpec.Type == devboxv1alpha2.NetworkTypeNodePort
+	if !desiredNodePort {
+		return r.deleteNodeport(ctx, devbox, service)
+	}
+
 	var servicePorts []corev1.ServicePort
 	for _, port := range devbox.Spec.Config.Ports {
 		servicePorts = append(servicePorts, corev1.ServicePort{
@@ -403,7 +494,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		})
 	}
 	if len(servicePorts) == 0 {
-		//use the default value
+		// use the default value
 		servicePorts = []corev1.ServicePort{
 			{
 				Name:       "devbox-ssh-port",
@@ -418,31 +509,10 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		Type:     corev1.ServiceTypeNodePort,
 		Ports:    servicePorts,
 	}
-	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      devbox.Name + "-svc",
-			Namespace: devbox.Namespace,
-			Labels:    recLabels,
-		},
-	}
+
 	switch devbox.Spec.State {
 	case devboxv1alpha2.DevboxStateShutdown:
-		err := r.Client.Delete(ctx, service)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		// Update devbox status with retry
-		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			latestDevbox := &devboxv1alpha2.Devbox{}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
-				return err
-			}
-			latestDevbox.Status.Network = devboxv1alpha2.NetworkStatus{
-				Type:     devboxv1alpha2.NetworkTypeNodePort,
-				NodePort: int32(0),
-			}
-			return r.Status().Update(ctx, latestDevbox)
-		})
+		return r.deleteNodeport(ctx, devbox, service)
 	case devboxv1alpha2.DevboxStateRunning, devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped:
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
@@ -495,6 +565,23 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		})
 	}
 	return nil
+}
+
+func (r *DevboxReconciler) deleteNodeport(ctx context.Context, devbox *devboxv1alpha2.Devbox, service *corev1.Service) error {
+	logger := log.FromContext(ctx)
+	logger.Info("deleting nodeport service for devbox", "devbox", devbox.Name)
+	if err := r.Client.Delete(ctx, service); err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.Network.NodePort = 0
+		return r.Status().Update(ctx, latestDevbox)
+	})
 }
 
 // syncDevboxPhase updates devbox.Status.Phase derived from desired state and current pod status
