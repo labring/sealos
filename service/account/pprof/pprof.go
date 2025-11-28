@@ -3,7 +3,6 @@ package pprof
 import (
 	"net"
 	"net/http"
-
 	//nolint:gosec
 	_ "net/http/pprof"
 	"strconv"

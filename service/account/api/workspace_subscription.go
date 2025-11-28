@@ -157,10 +157,14 @@ func DeleteWorkspaceSubscription(c *gin.Context) {
 				sub, err := services.StripeServiceInstance.CancelSubscription(
 					subscription.Stripe.SubscriptionID)
 				if err != nil {
-					return fmt.Errorf("failed to cancel Stripe subscription %s: %v", subscription.Stripe.SubscriptionID, err)
+					return fmt.Errorf(
+						"failed to cancel Stripe subscription %s: %w",
+						subscription.Stripe.SubscriptionID,
+						err,
+					)
 				}
 				if sub == nil {
-					return fmt.Errorf("stripe subscription cancel failed with nil subscription")
+					return errors.New("stripe subscription cancel failed with nil subscription")
 				}
 			}
 		}
@@ -3082,7 +3086,8 @@ func createOrUpdateWorkspaceSubscription(
 			workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
 
 			// Set ExpireAt to the new current period end if not set, or extend it
-			if workspaceSubscription.ExpireAt == nil || workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+			if workspaceSubscription.ExpireAt == nil ||
+				workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
 				workspaceSubscription.ExpireAt = &workspaceSubscription.CurrentPeriodEndAt
 			}
 			logrus.Infof(
@@ -3178,7 +3183,6 @@ func addTrafficAndAIPackages(
 
 	// Add AI quota package
 	if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-
 		// Calculate additional AI quota for upgrades
 		additionalAIQuota := plan.AIQuota
 		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&

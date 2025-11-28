@@ -610,32 +610,26 @@ func CheckQuota(ctx context.Context, workspace, planName string) (bool, error) {
 }
 
 // processExpiredBalanceSubscriptions 处理已到期的余额支付订阅
-// 合并处理两种情况：
-// 1. 当前周期即将结束（20分钟内）且过期时间大于当前周期结束时间 - 需要续期
-// 2. 当前周期已结束需要续期的情况
+// 1. The current cycle is about to end (within 20 minutes) and the expiration time is longer than the end time of the current cycle - renewal is required
+// 2. The situation where the current cycle has ended and needs to be renewed
 func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 	ctx context.Context,
 ) (int, error) {
 	var subscriptionsToProcess []types.WorkspaceSubscription
 	now := time.Now().UTC()
-
-	// 获取即将过期并且状态正常并且支付状态不是已取消或失败的订阅并且：
-	// 1. balance支付的订阅； 2. 过期时间大于当前周期结束时间的订阅
 	renewalThreshold := now.Add(20 * time.Minute)
 	localDomain := dao.DBClient.GetLocalRegion().Domain
 	normalStatus := types.SubscriptionStatusNormal
 	canceledStatus := types.SubscriptionPayStatusCanceled
-	noNeedStatus := types.SubscriptionPayStatusNoNeed
 	balancePayMethod := types.PaymentMethodBalance
 
 	err := dao.DBClient.GetGlobalDB().WithContext(ctx).
 		Model(&types.WorkspaceSubscription{}).
-		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status NOT IN (?, ?) AND (pay_method = ? OR (expire_at > current_period_end_at))",
+		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status != ? AND (pay_method = ? OR (expire_at > current_period_end_at))",
 			renewalThreshold,
 			normalStatus,
 			localDomain,
 			canceledStatus,
-			noNeedStatus,
 			balancePayMethod).
 		Find(&subscriptionsToProcess).Error
 	if err != nil {
@@ -645,7 +639,10 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 	if len(subscriptionsToProcess) == 0 {
 		return 0, nil
 	}
-	logrus.Infof("Found %d subscriptions needing period renewal (includes expired and expiring subscriptions with remaining prepaid time)", len(subscriptionsToProcess))
+	logrus.Infof(
+		"Found %d subscriptions needing period renewal (includes expired and expiring subscriptions with remaining prepaid time)",
+		len(subscriptionsToProcess),
+	)
 
 	processedCount := 0
 	for i := range subscriptionsToProcess {
@@ -664,9 +661,6 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 }
 
 // processPeriodRenewal 处理订阅的周期续期
-// 处理条件：当前周期已结束或即将结束（20分钟内），且 ExpireAt > CurrentPeriodEndAt（有剩余预付时长）
-// 对于已过期的订阅：新周期从现在开始
-// 对于即将过期的订阅：新周期从 CurrentPeriodEndAt 开始
 func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 	ctx context.Context,
 	sub *types.WorkspaceSubscription,
@@ -719,8 +713,8 @@ func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 		monthlyPeriod, _ := types.ParsePeriod(types.SubscriptionPeriodMonthly)
 		potentialPeriodEnd := newPeriodStart.Add(monthlyPeriod)
 
-		var newPeriodEnd = potentialPeriodEnd
-		var needsPayment = false
+		newPeriodEnd := potentialPeriodEnd
+		needsPayment := false
 		var paymentID string
 		var paymentAmount int64 = 0
 
