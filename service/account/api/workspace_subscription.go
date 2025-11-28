@@ -3045,30 +3045,52 @@ func createOrUpdateWorkspaceSubscription(
 	var workspaceSubscription *types.WorkspaceSubscription
 	if existingSubscription != nil {
 		workspaceSubscription = existingSubscription
-		workspaceSubscription.PlanName = req.PlanName
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
 		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
 		workspaceSubscription.PayMethod = types.PaymentMethodBalance // Admin operations use balance payment
 
-		// Update period for renewals or extensions
-		if req.Operator == types.SubscriptionTransactionTypeRenewed ||
-			req.Operator == types.SubscriptionTransactionTypeUpgraded {
-			// Parse the period and add to current end time
-			periodDuration, err := types.ParsePeriod(req.Period)
-			if err != nil {
-				// Fallback to monthly if parsing fails
-				workspaceSubscription.CurrentPeriodStartAt = now
-				workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0)
-				workspaceSubscription.ExpireAt = stripe.Time(
-					workspaceSubscription.CurrentPeriodEndAt,
-				)
+		// Parse period duration
+		periodDuration, err := types.ParsePeriod(req.Period)
+		if err != nil {
+			// Fallback to monthly if parsing fails
+			periodDuration = 30 * 24 * time.Hour
+		}
+
+		// Handle different operators
+		switch req.Operator {
+		case types.SubscriptionTransactionTypeRenewed:
+			// For renewal: only extend ExpireAt, don't modify current period
+			// The processor will handle period renewal when CurrentPeriodEndAt approaches
+			if workspaceSubscription.ExpireAt == nil {
+				expireTime := existingSubscription.CurrentPeriodEndAt.Add(periodDuration)
+				workspaceSubscription.ExpireAt = &expireTime
 			} else {
-				// Extend from current end time
-				workspaceSubscription.CurrentPeriodStartAt = existingSubscription.CurrentPeriodEndAt
-				workspaceSubscription.CurrentPeriodEndAt = existingSubscription.CurrentPeriodEndAt.Add(periodDuration)
-				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+				expireTime := workspaceSubscription.ExpireAt.Add(periodDuration)
+				workspaceSubscription.ExpireAt = &expireTime
 			}
+			logrus.Infof(
+				"Renewal: Extended ExpireAt to %s, current period unchanged (ends at %s)",
+				workspaceSubscription.ExpireAt.Format(time.RFC3339),
+				workspaceSubscription.CurrentPeriodEndAt.Format(time.RFC3339),
+			)
+
+		case types.SubscriptionTransactionTypeUpgraded, types.SubscriptionTransactionTypeDowngraded:
+			// For upgrade/downgrade: immediately update current period and plan
+			workspaceSubscription.PlanName = req.PlanName
+			workspaceSubscription.CurrentPeriodStartAt = now
+			workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
+
+			// Set ExpireAt to the new current period end if not set, or extend it
+			if workspaceSubscription.ExpireAt == nil || workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+				workspaceSubscription.ExpireAt = &workspaceSubscription.CurrentPeriodEndAt
+			}
+			logrus.Infof(
+				"Upgrade/Downgrade: Updated current period to %s - %s, plan=%s",
+				workspaceSubscription.CurrentPeriodStartAt.Format(time.RFC3339),
+				workspaceSubscription.CurrentPeriodEndAt.Format(time.RFC3339),
+				req.PlanName,
+			)
 		}
 	} else {
 		// Create new subscription - parse period for correct end time
@@ -3109,25 +3131,18 @@ func addTrafficAndAIPackages(
 	existingSubscription, workspaceSubscription *types.WorkspaceSubscription,
 	transactionID string,
 ) error {
-	// For renewal operations, check if current period is still valid
-	// If current period hasn't expired, don't add traffic/AI packages for renewals
-	if req.Operator == types.SubscriptionTransactionTypeRenewed &&
-		existingSubscription != nil &&
-		existingSubscription.CurrentPeriodEndAt.After(time.Now()) {
+	// For renewal operations, skip adding packages - they will be handled by the processor
+	// when the current period is about to end
+	if req.Operator == types.SubscriptionTransactionTypeRenewed {
 		logrus.Infof(
-			"Skipping traffic/AI package addition for renewal: current period still valid until %s",
-			existingSubscription.CurrentPeriodEndAt.Format(time.DateTime),
+			"Skipping traffic/AI package addition for renewal: will be handled by processor before period end",
 		)
 		return nil
 	}
 
+	// For upgrade/downgrade/create operations, add packages immediately
 	// Add traffic package
 	if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-		period, err := types.ParsePeriod(req.Period)
-		if err != nil {
-			return fmt.Errorf("invalid subscription period: %w", err)
-		}
-
 		// Calculate additional traffic for upgrades
 		additionalTraffic := plan.Traffic
 		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
@@ -3146,12 +3161,12 @@ func addTrafficAndAIPackages(
 		}
 
 		if additionalTraffic > 0 {
-			err = helper.AddTrafficPackage(
+			err := helper.AddTrafficPackage(
 				tx,
 				dao.K8sManager.GetClient(),
 				workspaceSubscription,
 				plan,
-				time.Now().Add(period),
+				workspaceSubscription.CurrentPeriodEndAt,
 				types.WorkspaceTrafficFromWorkspaceSubscription,
 				transactionID,
 			)
@@ -3163,10 +3178,6 @@ func addTrafficAndAIPackages(
 
 	// Add AI quota package
 	if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-		period, err := types.ParsePeriod(req.Period)
-		if err != nil {
-			return fmt.Errorf("invalid subscription period: %w", err)
-		}
 
 		// Calculate additional AI quota for upgrades
 		additionalAIQuota := plan.AIQuota
@@ -3186,11 +3197,11 @@ func addTrafficAndAIPackages(
 		}
 
 		if additionalAIQuota > 0 {
-			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+			err := cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
 				tx,
 				workspaceSubscription.ID,
 				additionalAIQuota,
-				time.Now().Add(period),
+				workspaceSubscription.CurrentPeriodEndAt,
 				types.PKGFromWorkspaceSubscription,
 				transactionID,
 			)
@@ -3232,7 +3243,8 @@ func processSubscriptionTransaction(
 			return fmt.Errorf("failed to save workspace subscription: %w", err)
 		}
 
-		// Update resource quota for creation or upgrade
+		// Update resource quota for creation, upgrade or downgrade (not for renewal)
+		// Renewal doesn't change the current period plan, so no quota update needed
 		if req.Operator != types.SubscriptionTransactionTypeRenewed {
 			if err := updateWorkspaceSubscriptionQuota(req.PlanName, workspaceSubscription.Workspace); err != nil {
 				return fmt.Errorf("failed to update workspace subscription quota: %w", err)
@@ -3240,6 +3252,7 @@ func processSubscriptionTransaction(
 		}
 
 		// Add traffic and AI packages
+		// For renewal, this will be skipped and handled by the processor
 		if err := addTrafficAndAIPackages(tx, req, plan, existingSubscription, workspaceSubscription, transaction.ID.String()); err != nil {
 			return err
 		}
