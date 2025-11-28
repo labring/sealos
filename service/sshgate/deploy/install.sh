@@ -2,4 +2,9 @@
 
 HELM_OPTS=${HELM_OPTS:-""}
 
-helm upgrade -i sshgate -n devbox-system --create-namespace charts ${HELM_OPTS} --wait
+helm upgrade -i sshgate \
+    -n devbox-system --create-namespace \
+    ./chart \
+    --set 'tolerations[0].operator=Exists' \
+    ${HELM_OPTS} \
+    --wait
