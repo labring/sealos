@@ -1223,7 +1223,7 @@ func (r *NamespaceReconciler) SetupWithManager(
 
 	// Initialize semaphore for backup deletion rate limiting
 	if deleteResourceConcurrent <= 0 {
-		deleteResourceConcurrent = 5
+		deleteResourceConcurrent = 1
 	}
 	r.deleteBackupSemaphore = make(chan struct{}, deleteResourceConcurrent)
 	r.Log.Info("Initialized backup deletion semaphore", "concurrency", deleteResourceConcurrent)

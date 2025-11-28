@@ -102,7 +102,7 @@ func main() {
 	flag.IntVar(
 		&deleteResourceConcurrent,
 		"delete-resource-concurrent",
-		5,
+		1,
 		"The number of concurrent DeleteUserResource calls.",
 	)
 	flag.DurationVar(
