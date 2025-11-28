@@ -29,6 +29,8 @@ export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',
   mysql = 'apecloud-mysql',
+  // ! Uncomment this after KB 0.9 upgrade!
+  // notapemysql = 'mysql',
   redis = 'redis',
   kafka = 'kafka',
   qdrant = 'qdrant',
@@ -326,6 +328,7 @@ export const RedisHAConfig = (ha = true) => {
 
 export const defaultDBDetail: DBDetailType = {
   ...defaultDBEditValue,
+  rawDbType: DBTypeEnum.postgresql,
   id: '',
   createTime: '2022/1/22',
   status: dbStatusMap.Creating,

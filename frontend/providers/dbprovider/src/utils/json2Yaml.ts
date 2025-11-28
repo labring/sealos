@@ -642,7 +642,8 @@ export const json2NetworkService = ({
     clickhouse: 8123
   };
   const labelMap: Record<
-    DBType,
+    // [FIXME] Remove this union after KB 0.9 upgrade!
+    DBType | 'mysql',
     Record<string, Record<string, string>> & { default: Record<string, string> }
   > = {
     postgresql: {
@@ -656,6 +657,11 @@ export const json2NetworkService = ({
       }
     },
     'apecloud-mysql': {
+      default: {
+        'kubeblocks.io/role': 'leader'
+      }
+    },
+    mysql: {
       default: {
         'kubeblocks.io/role': 'primary',
         'apps.kubeblocks.io/component-name': 'mysql'
@@ -694,9 +700,9 @@ export const json2NetworkService = ({
   };
 
   const labels =
-    Object.entries(labelMap[dbDetail.dbType]).find(
+    Object.entries(labelMap[dbDetail.rawDbType]).find(
       ([version]) => version === dbDetail.dbVersion
-    )?.[1] ?? labelMap[dbDetail.dbType].default;
+    )?.[1] ?? labelMap[dbDetail.rawDbType].default;
 
   const template = {
     apiVersion: 'v1',
