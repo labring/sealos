@@ -19,10 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"slices"
 	"strconv"
-
-	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/apply/processor"
@@ -35,6 +33,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/spf13/cobra"
 )
 
 type ClusterArgs struct {
@@ -43,14 +42,18 @@ type ClusterArgs struct {
 	clusterName string
 }
 
-func NewApplierFromArgs(cmd *cobra.Command, args *RunArgs, imageName []string) (applydrivers.Interface, error) {
+func NewApplierFromArgs(
+	cmd *cobra.Command,
+	args *RunArgs,
+	imageName []string,
+) (applydrivers.Interface, error) {
 	clusterPath := constants.Clusterfile(args.ClusterName)
 	cf := clusterfile.NewClusterFile(clusterPath,
 		clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
 		clusterfile.WithCustomEnvs(args.CustomEnv),
 	)
 	err := cf.Process()
-	if err != nil && err != clusterfile.ErrClusterFileNotExists {
+	if err != nil && !errors.Is(err, clusterfile.ErrClusterFileNotExists) {
 		return nil, err
 	}
 
@@ -91,7 +94,7 @@ func withCommonContext(ctx context.Context, cmd *cobra.Command) context.Context 
 }
 
 func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []string) error {
-	if args.Cluster.ClusterName == "" {
+	if args.ClusterName == "" {
 		return errors.New("cluster name can not be empty")
 	}
 	// the first run check
@@ -99,13 +102,11 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 		if len(imageList) == 0 {
 			return errors.New("image can not be empty")
 		}
-		if len(args.Cluster.Masters) == 0 {
+		if len(args.Masters) == 0 {
 			return errors.New("master ip(s) must specified")
 		}
-	} else {
-		if r.cluster.Status.Phase != v2.ClusterSuccess {
-			return fmt.Errorf("cluster status is not %s", v2.ClusterSuccess)
-		}
+	} else if r.cluster.Status.Phase != v2.ClusterSuccess {
+		return fmt.Errorf("cluster status is not %s", v2.ClusterSuccess)
 	}
 
 	if err := PreProcessIPList(args.Cluster); err != nil {
@@ -120,8 +121,8 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 	r.cluster.SetNewImages(imageList)
 
 	defaultPort := defaultSSHPort(r.cluster.Spec.SSH.Port)
-	masters := stringsutil.FilterNonEmptyFromString(args.Cluster.Masters, ",")
-	nodes := stringsutil.FilterNonEmptyFromString(args.Cluster.Nodes, ",")
+	masters := stringsutil.FilterNonEmptyFromString(args.Masters, ",")
+	nodes := stringsutil.FilterNonEmptyFromString(args.Nodes, ",")
 	r.hosts = []v2.Host{}
 
 	sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)
@@ -144,13 +145,13 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 	return nil
 }
 
-func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
+func (r *ClusterArgs) setHostWithIpsPort(ips, roles []string) {
 	defaultPort := defaultSSHPort(r.cluster.Spec.SSH.Port)
 	hostMap := map[string]*v2.Host{}
 	for i := range ips {
 		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], defaultPort)
 		logger.Debug("defaultPort: %s", defaultPort)
-		socket := fmt.Sprintf("%s:%s", ip, port)
+		socket := net.JoinHostPort(ip, port)
 		if slices.Contains(r.cluster.GetAllIPS(), socket) {
 			continue
 		}

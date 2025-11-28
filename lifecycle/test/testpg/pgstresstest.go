@@ -71,13 +71,13 @@ spec:
       memory: 300Mi
 `
 
-//you can also copy this file to your project and run it or run pod on sealos cloud.
-//and also you can write a go test to run this Stress Test.
-//what you need is to specify a kubeconfig path and your namespace
-//example
-//func main() {
-//	PostgresStressTest("~/.kube/config", "ns-b47ef502")
-//}
+// you can also copy this file to your project and run it or run pod on sealos cloud.
+// and also you can write a go test to run this Stress Test.
+// what you need is to specify a kubeconfig path and your namespace
+// example
+// func main() {
+// 	PostgresStressTest("~/.kube/config", "ns-b47ef502")
+// }
 
 func PostgresStressTest(configpath, userNamespace string) {
 	err := RunPostgresTest(configpath, userNamespace)
@@ -94,7 +94,8 @@ func RunPostgresTest(config, userNamespace string) error {
 		err error
 	)
 	obj := &unstructured.Unstructured{}
-	_, gvk, err = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode([]byte(metaCRD), nil, obj)
+	_, gvk, err = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).
+		Decode([]byte(metaCRD), nil, obj)
 	if err != nil {
 		return err
 	}
@@ -124,17 +125,21 @@ func RunPostgresTest(config, userNamespace string) error {
 }
 
 // PostgresClusterRandomCreate Create random PostgresCluster.
-func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+func PostgresClusterRandomCreate(
+	ctx context.Context,
+	dr dynamic.ResourceInterface,
+	obj *unstructured.Unstructured,
+) ([]*unstructured.Unstructured, error) {
 	var err error
 
 	var bigN *big.Int
 	if bigN, err = rand.Int(rand.Reader, big.NewInt(5)); err != nil {
-		return nil, fmt.Errorf("unable to read random bytes for jwt id: %s", err)
+		return nil, fmt.Errorf("unable to read random bytes for jwt id: %w", err)
 	}
 	n := int(bigN.Int64())
-	var objSlice []*unstructured.Unstructured
-	//Create
-	for i := 0; i < n; i++ {
+	objSlice := make([]*unstructured.Unstructured, 0, n)
+	// Create
+	for i := range n {
 		objTmp := obj.DeepCopy()
 		objTmp.SetName(objTmp.GetName() + strconv.Itoa(i))
 		_, err = dr.Create(ctx, objTmp, metav1.CreateOptions{})
@@ -149,17 +154,25 @@ func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterfa
 }
 
 // PostgresGet Get PostgresCluster.
-func PostgresGet(ctx context.Context, dr dynamic.ResourceInterface, cs *kubernetes.Clientset, obj *unstructured.Unstructured, userNamespace string) error {
+func PostgresGet(
+	ctx context.Context,
+	dr dynamic.ResourceInterface,
+	cs *kubernetes.Clientset,
+	obj *unstructured.Unstructured,
+	userNamespace string,
+) error {
 	objGET, err := dr.Get(ctx, obj.GetName(), metav1.GetOptions{})
 	if err != nil {
 		log.Printf("select resource ERROR: %v\n", err)
 		return err
 	}
 	fmt.Println(objGET.Object["status"])
-	oobj, ismap := objGET.Object["status"].(map[string]interface{})
+	oobj, ismap := objGET.Object["status"].(map[string]any)
 	if ismap {
 		if oobj["state"] != "running" {
-			events, _ := cs.CoreV1().Events(userNamespace).List(context.TODO(), metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "Event"}})
+			events, _ := cs.CoreV1().
+				Events(userNamespace).
+				List(context.TODO(), metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "Event"}})
 			for _, event := range events.Items {
 				fmt.Println(event.Message)
 			}
@@ -170,8 +183,12 @@ func PostgresGet(ctx context.Context, dr dynamic.ResourceInterface, cs *kubernet
 }
 
 // PostgresDelete Delete PostgresCluster.
-func PostgresDelete(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) {
-	//Delete
+func PostgresDelete(
+	ctx context.Context,
+	dr dynamic.ResourceInterface,
+	obj *unstructured.Unstructured,
+) {
+	// Delete
 	err := dr.Delete(ctx, obj.GetName(), metav1.DeleteOptions{})
 	if err != nil {
 		log.Printf("delete resource ERROR : %v\n", err)
@@ -192,7 +209,10 @@ func GetKubeconfig(configpath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-func GetGVRdyClientAndClientSet(gvk *schema.GroupVersionKind, configpath string, namespace string) (dr dynamic.ResourceInterface, cs *kubernetes.Clientset, err error) {
+func GetGVRdyClientAndClientSet(
+	gvk *schema.GroupVersionKind,
+	configpath, namespace string,
+) (dr dynamic.ResourceInterface, cs *kubernetes.Clientset, err error) {
 	config, err := GetKubeconfig(configpath)
 	if err != nil {
 		log.Printf("failed to get kubeconfig: %v", err)
@@ -204,7 +224,9 @@ func GetGVRdyClientAndClientSet(gvk *schema.GroupVersionKind, configpath string,
 		log.Printf("failed create discovery client: %v", err)
 		return nil, nil, err
 	}
-	mapperGVRGVK := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(discoveryClient))
+	mapperGVRGVK := restmapper.NewDeferredDiscoveryRESTMapper(
+		memory.NewMemCacheClient(discoveryClient),
+	)
 	resourceMapper, err := mapperGVRGVK.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		log.Printf("failed to get resourceMapper: %v", err)

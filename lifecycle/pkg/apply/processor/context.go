@@ -31,7 +31,9 @@ func WithCommands(ctx context.Context, commands []string) context.Context {
 func GetCommands(ctx context.Context) []string {
 	v := ctx.Value(commandKey)
 	if v != nil {
-		return v.([]string)
+		if commands, ok := v.([]string); ok {
+			return commands
+		}
 	}
 	return nil
 }
@@ -42,9 +44,11 @@ func WithEnvs(ctx context.Context, envs map[string]string) context.Context {
 }
 
 func GetEnvs(ctx context.Context) map[string]string {
-	v := ctx.Value(commandKey)
+	v := ctx.Value(envKey)
 	if v != nil {
-		return v.(map[string]string)
+		if envs, ok := v.(map[string]string); ok {
+			return envs
+		}
 	}
 	return nil
 }

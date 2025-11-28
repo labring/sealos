@@ -23,9 +23,7 @@ import (
 )
 
 func newTagCommand() *cobra.Command {
-	var (
-		tagDescription = "\n  Adds one or more additional names to locally-stored image."
-	)
+	tagDescription := "\n  Adds one or more additional names to locally-stored image."
 	tagCommand := &cobra.Command{
 		Use:   "tag",
 		Short: "Add an additional name to a local image",
@@ -49,7 +47,10 @@ func tagCmd(c *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return err
 	}

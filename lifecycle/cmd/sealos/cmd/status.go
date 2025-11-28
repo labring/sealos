@@ -19,7 +19,6 @@ import (
 
 	"github.com/labring/sealos/pkg/checker"
 	"github.com/labring/sealos/pkg/clusterfile"
-
 	"github.com/spf13/cobra"
 )
 
@@ -32,12 +31,22 @@ func newStatusCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cluster, err := clusterfile.GetClusterFromName(clusterName)
 			if err != nil {
-				return fmt.Errorf("get default cluster failed, %v", err)
+				return fmt.Errorf("get default cluster failed, %w", err)
 			}
-			list := []checker.Interface{checker.NewRegistryChecker(), checker.NewCRIShimChecker(), checker.NewCRICtlChecker(), checker.NewInitSystemChecker(), checker.NewNodeChecker(), checker.NewPodChecker(), checker.NewSvcChecker(), checker.NewClusterChecker()}
+			list := []checker.Interface{
+				checker.NewRegistryChecker(),
+				checker.NewCRIShimChecker(),
+				checker.NewCRICtlChecker(),
+				checker.NewInitSystemChecker(),
+				checker.NewNodeChecker(),
+				checker.NewPodChecker(),
+				checker.NewSvcChecker(),
+				checker.NewClusterChecker(),
+			}
 			return checker.RunCheckList(list, cluster, checker.PhasePost)
 		},
 	}
-	checkCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied status action")
+	checkCmd.Flags().
+		StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied status action")
 	return checkCmd
 }

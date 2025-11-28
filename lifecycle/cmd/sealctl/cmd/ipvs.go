@@ -15,15 +15,13 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/labring/lvscare/care"
-
 	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/spf13/cobra"
 )
 
 func newIPVSCmd() *cobra.Command {
-	var ipvsCmd = &cobra.Command{
+	ipvsCmd := &cobra.Command{
 		Use:          "ipvs",
 		Short:        "sealos create or care local ipvs lb",
 		SilenceUsage: true,

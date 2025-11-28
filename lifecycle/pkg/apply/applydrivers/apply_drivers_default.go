@@ -21,16 +21,11 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/labring/sealos/pkg/runtime/k3s"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
+	"github.com/labring/sealos/pkg/runtime/k3s"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/system"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -38,11 +33,18 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewDefaultApplier(ctx context.Context, cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
+func NewDefaultApplier(
+	ctx context.Context,
+	cluster *v2.Cluster,
+	cf clusterfile.Interface,
+	images []string,
+) (Interface, error) {
 	if cluster.Name == "" {
-		return nil, fmt.Errorf("cluster name cannot be empty")
+		return nil, errors.New("cluster name cannot be empty")
 	}
 	if cf == nil {
 		cf = clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
@@ -100,7 +102,7 @@ func (c *Applier) Apply() error {
 	if c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero() {
 		if !c.ClusterDesired.CreationTimestamp.IsZero() {
 			if yes, _ := confirm.Confirm("Desired cluster CreationTimestamp is not zero, do you want to initialize it again?", "you have canceled to create cluster"); !yes {
-				clusterErr = processor.NewPreProcessError(fmt.Errorf("canceled to create cluster"))
+				clusterErr = processor.NewPreProcessError(errors.New("canceled to create cluster"))
 				return clusterErr
 			}
 		}
@@ -123,8 +125,8 @@ func (c *Applier) Apply() error {
 	return clusterErr
 }
 
-func (c *Applier) getWriteBackObjects() []interface{} {
-	obj := []interface{}{c.ClusterDesired}
+func (c *Applier) getWriteBackObjects() []any {
+	obj := []any{c.ClusterDesired}
 	distribution := c.ClusterFile.GetCluster().GetDistribution()
 	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
 		if components := runtimeConfig.GetComponents(); len(components) > 0 {
@@ -150,10 +152,14 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
-func (c *Applier) updateStatus(clusterErr error, appErr error) {
-	switch clusterErr.(type) {
-	case *processor.CheckError, *processor.PreProcessError:
-		return
+func (c *Applier) updateStatus(clusterErr, appErr error) {
+	{
+		var errCase0 *processor.CheckError
+		var errCase1 *processor.PreProcessError
+		switch {
+		case errors.As(clusterErr, &errCase0), errors.As(clusterErr, &errCase1):
+			return
+		}
 	}
 	// update cluster condition using clusterErr
 	var condition v2.ClusterCondition
@@ -165,7 +171,10 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 		condition = v2.NewSuccessClusterCondition()
 		c.ClusterDesired.Status.Phase = v2.ClusterSuccess
 	}
-	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
+	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(
+		c.ClusterDesired.Status.Conditions,
+		condition,
+	)
 
 	// update command condition using appErr
 	var cmdCondition v2.CommandCondition
@@ -179,10 +188,13 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 		return
 	}
 	cmdCondition.Images = c.RunNewImages
-	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(c.ClusterDesired.Status.CommandConditions, cmdCondition)
+	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(
+		c.ClusterDesired.Status.CommandConditions,
+		cmdCondition,
+	)
 }
 
-func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
+func (c *Applier) reconcileCluster() (clusterErr, appErr error) {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired.Name)
 	if len(c.RunNewImages) != 0 {
@@ -191,14 +203,29 @@ func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
 			return nil, appErr
 		}
 	}
-	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
-	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
+	mj, md := iputils.GetDiffHosts(
+		c.ClusterCurrent.GetMasterIPAndPortList(),
+		c.ClusterDesired.GetMasterIPAndPortList(),
+	)
+	nj, nd := iputils.GetDiffHosts(
+		c.ClusterCurrent.GetNodeIPAndPortList(),
+		c.ClusterDesired.GetNodeIPAndPortList(),
+	)
 	return c.scaleCluster(mj, md, nj, nd), nil
 }
 
 func (c *Applier) initCluster() error {
-	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
-	createProcessor, err := processor.NewCreateProcessor(c.Context, c.ClusterDesired.Name, c.ClusterFile)
+	logger.Info(
+		"Start to create a new cluster: master %s, worker %s, registry %s",
+		c.ClusterDesired.GetMasterIPList(),
+		c.ClusterDesired.GetNodeIPList(),
+		c.ClusterDesired.GetRegistryIP(),
+	)
+	createProcessor, err := processor.NewCreateProcessor(
+		c.Context,
+		c.ClusterDesired.Name,
+		c.ClusterFile,
+	)
 	if err != nil {
 		return err
 	}
@@ -231,12 +258,28 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 		return nil
 	}
 	logger.Info("start to scale this cluster")
-	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterCurrent.GetNodeIPAndPortList())
-	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
+	logger.Debug(
+		"current cluster: master %s, worker %s",
+		c.ClusterCurrent.GetMasterIPAndPortList(),
+		c.ClusterCurrent.GetNodeIPAndPortList(),
+	)
+	logger.Debug(
+		"desired cluster: master %s, worker %s",
+		c.ClusterDesired.GetMasterIPAndPortList(),
+		c.ClusterDesired.GetNodeIPAndPortList(),
+	)
 
 	localpath := constants.Clusterfile(c.ClusterDesired.Name)
 	cf := clusterfile.NewClusterFile(localpath)
-	scaleProcessor, err := processor.NewScaleProcessor(cf, c.ClusterDesired.Name, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
+	scaleProcessor, err := processor.NewScaleProcessor(
+		cf,
+		c.ClusterDesired.Name,
+		c.ClusterDesired.Spec.Image,
+		mj,
+		md,
+		nj,
+		nd,
+	)
 	if err != nil {
 		return err
 	}
@@ -293,10 +336,10 @@ func (c *Applier) syncWorkdir() {
 		logger.Error("failed to create ssh client: %v", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, ipAddr := range ipList {
-		ip := ipAddr
+	for i := range ipList {
+		addr := ipList[i]
 		eg.Go(func() error {
-			return execer.Copy(ip, workDir, workDir)
+			return execer.Copy(addr, workDir, workDir)
 		})
 	}
 	if err := eg.Wait(); err != nil {

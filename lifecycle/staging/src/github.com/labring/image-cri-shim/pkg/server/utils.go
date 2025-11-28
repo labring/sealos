@@ -20,17 +20,15 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/registry"
-
-	"github.com/labring/sreg/pkg/registry/crane"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	name "github.com/google/go-containerregistry/pkg/name"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sreg/pkg/registry/crane"
 )
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
 func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
-	isReplace bool, cfg *registry.AuthConfig) {
+	isReplace bool, cfg *registry.AuthConfig,
+) {
 	if len(authConfig) == 0 {
 		return image, false, nil
 	}
@@ -60,6 +58,7 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 	return newImage, true, cfg
 }
 
+//nolint:unused // utility function for future use
 func registryFromImage(image string) string {
 	parts := strings.SplitN(image, "/", 2)
 	if len(parts) == 0 {
@@ -68,6 +67,7 @@ func registryFromImage(image string) string {
 	return parts[0]
 }
 
+//nolint:unused // utility function for future use
 func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]bool) bool {
 	if skip != nil && skip[domain] {
 		return true
@@ -75,9 +75,11 @@ func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]boo
 	if cfg == nil {
 		return true
 	}
-	return cfg.Username == "" && cfg.Password == "" && cfg.Auth == "" && cfg.IdentityToken == "" && cfg.RegistryToken == ""
+	return cfg.Username == "" && cfg.Password == "" && cfg.Auth == "" && cfg.IdentityToken == "" &&
+		cfg.RegistryToken == ""
 }
 
+//nolint:unused // utility function for future use
 func referenceSuffix(ref name.Reference) string {
 	switch v := ref.(type) {
 	case name.Tag:

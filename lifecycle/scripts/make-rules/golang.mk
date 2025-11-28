@@ -13,6 +13,8 @@
 # limitations under the License.
 
 GO := go
+GOLANGCI_CACHE_DIR := $(abspath $(ROOT_DIR)/../.cache/golangci-lint)
+GOLANGCI_GOMODCACHE := $(GOLANGCI_CACHE_DIR)/gomodcache
 GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
 	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
@@ -90,7 +92,12 @@ go.tidy:
 .PHONY: go.lint
 go.lint: tools.verify.golangci-lint
 	@echo "===========> Run golangci to lint source codes"
-	@$(TOOLS_DIR)/golangci-lint run --build-tags=musl -c $(ROOT_DIR)/.golangci.yml
+	@if [ -d $(ROOT_DIR)/tmp/gomodcache ]; then chmod -R u+w $(ROOT_DIR)/tmp/gomodcache || true; rm -rf $(ROOT_DIR)/tmp/gomodcache; fi
+	@mkdir -p $(GOLANGCI_GOMODCACHE)
+	@GOOS=linux GOARCH=$(GOARCH) GOMODCACHE=$(GOLANGCI_GOMODCACHE) $(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v
+	@GOOS=linux GOARCH=$(GOARCH) GOMODCACHE=$(GOLANGCI_GOMODCACHE) $(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v test/e2e/...
+	@GOOS=linux GOARCH=$(GOARCH) GOMODCACHE=$(GOLANGCI_GOMODCACHE) $(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v staging/src/github.com/labring/image-cri-shim/...
+	@GOOS=linux GOARCH=$(GOARCH) GOMODCACHE=$(GOLANGCI_GOMODCACHE) $(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v staging/src/github.com/labring/lvscare/...
 
 .PHONY: go.format
 go.format: tools.verify.goimports
@@ -102,4 +109,3 @@ go.format: tools.verify.goimports
 .PHONY: go.coverage
 go.coverage:
 	@$(GO) test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./pkg/env ./pkg/apply  | grep -v "/test\|/fork"`
-

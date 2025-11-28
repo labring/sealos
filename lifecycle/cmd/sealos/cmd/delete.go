@@ -17,11 +17,10 @@ package cmd
 import (
 	"errors"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 var exampleDelete = `
@@ -46,7 +45,7 @@ func newDeleteCmd() *cobra.Command {
 	deleteArgs := &apply.ScaleArgs{
 		Cluster: &apply.Cluster{},
 	}
-	var deleteCmd = &cobra.Command{
+	deleteCmd := &cobra.Command{
 		Use:     "delete",
 		Short:   "Remove nodes from cluster",
 		Args:    cobra.NoArgs,
@@ -73,6 +72,7 @@ func newDeleteCmd() *cobra.Command {
 	}
 	setRequireBuildahAnnotation(deleteCmd)
 	deleteArgs.RegisterFlags(deleteCmd.Flags(), "removed", "remove")
-	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to delete cluster by force")
+	deleteCmd.Flags().
+		BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to delete cluster by force")
 	return deleteCmd
 }

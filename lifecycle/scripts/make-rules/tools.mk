@@ -26,9 +26,18 @@ tools.install.%:
 tools.verify.%:
 	@if [ ! -f $(TOOLS_DIR)/$* ]; then GOBIN=$(TOOLS_DIR) $(MAKE) tools.install.$*; fi
 
+.PHONY: tools.verify.golangci-lint
+tools.verify.golangci-lint:
+	@if [ ! -f $(TOOLS_DIR)/golangci-lint ]; then \
+		$(MAKE) tools.install.golangci-lint; \
+	elif ! /usr/bin/env -u GOOS -u GOARCH $(TOOLS_DIR)/golangci-lint version >/dev/null 2>&1; then \
+		rm -f $(TOOLS_DIR)/golangci-lint; \
+		$(MAKE) tools.install.golangci-lint; \
+	fi
+
 .PHONY: install.golangci-lint
 install.golangci-lint:
-	@$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@/usr/bin/env -u GOOS -u GOARCH bash -c "set -euo pipefail; curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b '$(TOOLS_DIR)' v2.5.0"
 
 .PHONY: install.goimports
 install.goimports:

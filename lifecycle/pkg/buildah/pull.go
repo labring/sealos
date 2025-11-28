@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 // Copyright © 2022 buildah.
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,11 +32,10 @@ import (
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/labring/sealos/pkg/buildah/internal/util"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 type pullOptions struct {
@@ -75,23 +77,105 @@ func newDefaultPullOptions() *pullOptions {
 
 func (opts *pullOptions) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.SetInterspersed(false)
-	fs.BoolVarP(&opts.allTags, "all-tags", "a", opts.allTags, "download all tagged images in the repository")
-	fs.StringVar(&opts.authfile, "authfile", opts.authfile, "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
-	fs.StringVar(&opts.blobCache, "blob-cache", opts.blobCache, "store copies of pulled image blobs in the specified directory")
-	fs.StringVar(&opts.certDir, "cert-dir", opts.certDir, "use certificates at the specified path to access the registry")
-	fs.StringVar(&opts.creds, "creds", opts.creds, "use `[username[:password]]` for accessing the registry")
+	fs.BoolVarP(
+		&opts.allTags,
+		"all-tags",
+		"a",
+		opts.allTags,
+		"download all tagged images in the repository",
+	)
+	fs.StringVar(
+		&opts.authfile,
+		"authfile",
+		opts.authfile,
+		"path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override",
+	)
+	fs.StringVar(
+		&opts.blobCache,
+		"blob-cache",
+		opts.blobCache,
+		"store copies of pulled image blobs in the specified directory",
+	)
+	fs.StringVar(
+		&opts.certDir,
+		"cert-dir",
+		opts.certDir,
+		"use certificates at the specified path to access the registry",
+	)
+	fs.StringVar(
+		&opts.creds,
+		"creds",
+		opts.creds,
+		"use `[username[:password]]` for accessing the registry",
+	)
 	fs.StringVar(&opts.pullPolicy, "policy", opts.pullPolicy, "missing, always, or never.")
-	fs.BoolVar(&opts.removeSignatures, "remove-signatures", opts.removeSignatures, "don't copy signatures when pulling image")
-	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
-	fs.StringSliceVar(&opts.decryptionKeys, "decryption-key", opts.decryptionKeys, "key needed to decrypt the image")
-	fs.BoolVarP(&opts.quiet, "quiet", "q", opts.quiet, "don't output progress information when pulling images")
-	fs.StringVar(&opts.os, "os", opts.os, "prefer `OS` instead of the running OS for choosing images")
-	fs.StringVar(&opts.arch, "arch", opts.arch, "prefer `ARCH` instead of the architecture of the machine for choosing images")
-	fs.StringSliceVar(&opts.platform, "platform", opts.platform, "prefer OS/ARCH instead of the current operating system and architecture for choosing images")
-	fs.StringVar(&opts.variant, "variant", opts.variant, "override the `variant` of the specified image")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.IntVar(&opts.retry, "retry", opts.retry, "number of times to retry in case of failure when performing pull")
-	fs.DurationVar(&opts.retryDelay, "retry-delay", opts.retryDelay, "delay between retries in case of pull failures")
+	fs.BoolVar(
+		&opts.removeSignatures,
+		"remove-signatures",
+		opts.removeSignatures,
+		"don't copy signatures when pulling image",
+	)
+	fs.StringVar(
+		&opts.signaturePolicy,
+		"signature-policy",
+		opts.signaturePolicy,
+		"`pathname` of signature policy file (not usually used)",
+	)
+	fs.StringSliceVar(
+		&opts.decryptionKeys,
+		"decryption-key",
+		opts.decryptionKeys,
+		"key needed to decrypt the image",
+	)
+	fs.BoolVarP(
+		&opts.quiet,
+		"quiet",
+		"q",
+		opts.quiet,
+		"don't output progress information when pulling images",
+	)
+	fs.StringVar(
+		&opts.os,
+		"os",
+		opts.os,
+		"prefer `OS` instead of the running OS for choosing images",
+	)
+	fs.StringVar(
+		&opts.arch,
+		"arch",
+		opts.arch,
+		"prefer `ARCH` instead of the architecture of the machine for choosing images",
+	)
+	fs.StringSliceVar(
+		&opts.platform,
+		"platform",
+		opts.platform,
+		"prefer OS/ARCH instead of the current operating system and architecture for choosing images",
+	)
+	fs.StringVar(
+		&opts.variant,
+		"variant",
+		opts.variant,
+		"override the `variant` of the specified image",
+	)
+	fs.BoolVar(
+		&opts.tlsVerify,
+		"tls-verify",
+		opts.tlsVerify,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	fs.IntVar(
+		&opts.retry,
+		"retry",
+		opts.retry,
+		"number of times to retry in case of failure when performing pull",
+	)
+	fs.DurationVar(
+		&opts.retryDelay,
+		"retry-delay",
+		opts.retryDelay,
+		"delay between retries in case of pull failures",
+	)
 	return markFlagsHidden(fs, opts.HiddenFlags()...)
 }
 
@@ -157,7 +241,13 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	return nil
 }
 
-func doPull(c *cobra.Command, store storage.Store, systemContext *types.SystemContext, imageNames []string, iopts *pullOptions) ([]string, error) {
+func doPull(
+	c *cobra.Command,
+	store storage.Store,
+	systemContext *types.SystemContext,
+	imageNames []string,
+	iopts *pullOptions,
+) ([]string, error) {
 	var err error
 	if systemContext == nil {
 		systemContext, err = parse.SystemContextFromOptions(c)
@@ -195,7 +285,7 @@ func doPull(c *cobra.Command, store storage.Store, systemContext *types.SystemCo
 	if iopts.quiet {
 		options.ReportWriter = nil // Turns off logging output
 	}
-	var ids []string
+	ids := make([]string, 0, len(imageNames))
 	for _, imageName := range imageNames {
 		id, err := buildah.Pull(getContext(), imageName, options)
 		if err != nil {

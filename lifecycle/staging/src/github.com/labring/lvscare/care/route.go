@@ -16,7 +16,6 @@ package care
 
 import (
 	"github.com/labring/lvscare/pkg/route"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -24,6 +23,7 @@ type routeImpl struct {
 	*route.Route
 }
 
+//nolint:unparam // error return is kept for interface compatibility
 func newRouteImpl(target, gw string) (Ruler, error) {
 	return &routeImpl{
 		route.New(target, gw),

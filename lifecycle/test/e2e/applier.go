@@ -21,22 +21,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"github.com/labring/sealos/pkg/types/v1beta1"
-
-	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
-	"github.com/labring/sealos/test/e2e/testhelper/kube"
-
-	"sigs.k8s.io/yaml"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/retry"
-
+	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/terraform"
+	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
+	"github.com/labring/sealos/test/e2e/testhelper/kube"
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	"sigs.k8s.io/yaml"
 )
 
 type Applier struct {
@@ -84,36 +78,36 @@ func NewApplier(infra *terraform.InfraDetail) (*Applier, error) {
 		}
 	}
 	if err := a.WaitSSHReady(); err != nil {
-		return nil, fmt.Errorf("wait for ssh ready: %v", err)
+		return nil, fmt.Errorf("wait for ssh ready: %w", err)
 	}
 	a.Infra.Nodes = append([]terraform.Host{*a.Infra.Public}, a.Infra.Nodes...)
 	if err := a.initImage(); err != nil {
-		return nil, fmt.Errorf("init image: %v", err)
+		return nil, fmt.Errorf("init image: %w", err)
 	}
 	return a, nil
 }
 
 func (a *Applier) initImage() error {
 	if err := a.RemoteCmd.Copy(settings.E2EConfig.SealosBinPath, settings.E2EConfig.SealosBinPath); err != nil {
-		return fmt.Errorf("copy sealos bin to remote: %v", err)
+		return fmt.Errorf("copy sealos bin to remote: %w", err)
 	}
 
 	if err := a.RemoteCmd.AsyncExec("chmod +x " + settings.E2EConfig.SealosBinPath); err != nil {
-		return fmt.Errorf("chmod sealos bin: %v", err)
+		return fmt.Errorf("chmod sealos bin: %w", err)
 	}
 	if a.ImageTar != "" {
 		if err := a.RemoteCmd.Copy(a.ImageTar, a.ImageTar); err != nil {
-			return fmt.Errorf("copy image tar to remote: %v", err)
+			return fmt.Errorf("copy image tar to remote: %w", err)
 		}
 		if err := a.RemoteSealosCmd.ImageLoad(a.ImageTar); err != nil {
-			return fmt.Errorf("load image tar: %v", err)
+			return fmt.Errorf("load image tar: %w", err)
 		}
 	} else {
 		if err := a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
 			ImageRefs: []string{a.ImageName},
 			Quiet:     true,
 		}); err != nil {
-			return fmt.Errorf("pull image: %v", err)
+			return fmt.Errorf("pull image: %w", err)
 		}
 	}
 	if a.PatchImageName == "" {
@@ -121,20 +115,20 @@ func (a *Applier) initImage() error {
 	}
 	if a.PatchImageTar != "" {
 		if err := a.RemoteCmd.Copy(a.PatchImageTar, a.PatchImageTar); err != nil {
-			return fmt.Errorf("copy patch image tar to remote: %v", err)
+			return fmt.Errorf("copy patch image tar to remote: %w", err)
 		}
 		if strings.HasSuffix(a.PatchImageTar, settings.GzSuffix) {
 			if err := a.RemoteCmd.AsyncExec(fmt.Sprintf("gzip %s -d", a.PatchImageTar)); err != nil {
-				return fmt.Errorf("unzip patch image tar: %v", err)
+				return fmt.Errorf("unzip patch image tar: %w", err)
 			}
 			a.PatchImageTar = strings.TrimSuffix(a.PatchImageTar, settings.GzSuffix)
 		}
 		if err := a.RemoteSealosCmd.ImageLoad(a.PatchImageTar); err != nil {
-			return fmt.Errorf("load patch image tar: %v", err)
+			return fmt.Errorf("load patch image tar: %w", err)
 		}
 		images, err := operators.NewFakeImage(a.RemoteSealosCmd).ListImages(false)
 		if err != nil {
-			return fmt.Errorf("list images: %v", err)
+			return fmt.Errorf("list images: %w", err)
 		}
 		logger.Info("images:", images)
 		patchImageName := ""
@@ -155,7 +149,7 @@ func (a *Applier) initImage() error {
 			ImageRefs: []string{a.PatchImageName},
 			Quiet:     true,
 		}); err != nil {
-			return fmt.Errorf("pull patch image: %v", err)
+			return fmt.Errorf("pull patch image: %w", err)
 		}
 	}
 	if err := a.RemoteSealosCmd.ImageMerge(&cmd2.MergeOptions{
@@ -163,7 +157,7 @@ func (a *Applier) initImage() error {
 		ImageRefs: []string{a.ImageName, a.PatchImageName},
 		Tag:       []string{a.ImageName},
 	}); err != nil {
-		return fmt.Errorf("merge image: %v", err)
+		return fmt.Errorf("merge image: %w", err)
 	}
 	return nil
 }
@@ -177,15 +171,22 @@ func (a *Applier) FetchRemoteKubeConfig() {
 	content, err := os.ReadFile(localConf)
 	utils.CheckErr(err)
 
-	certOpts := &cmd2.CertOptions{Cluster: a.ClusterName, AltName: []string{a.Infra.Public.PublicIP}}
+	certOpts := &cmd2.CertOptions{
+		Cluster: a.ClusterName,
+		AltName: []string{a.Infra.Public.PublicIP},
+	}
 	logger.Info("certOpts: %v", certOpts)
 	/*
 		 issue: output: Error: open /root/.sealos/e2e_test/etc/kubeadm-init.yaml: no such file or directory
 		exec not in master0
 	*/
-	//pattern := regexp.MustCompile(`(?m)^(\s+server:\s+).+$`)
-	//newData := pattern.ReplaceAllString(string(content), fmt.Sprintf("${1}%s:6443", a.EIp))
-	newData := strings.Replace(string(content), "server: https://apiserver.cluster.local:6443", "server: https://"+a.Infra.Public.PublicIP+":6443", -1)
+	// pattern := regexp.MustCompile(`(?m)^(\s+server:\s+).+$`)
+	// newData := pattern.ReplaceAllString(string(content), fmt.Sprintf("${1}%s:6443", a.EIp))
+	newData := strings.ReplaceAll(
+		string(content),
+		"server: https://apiserver.cluster.local:6443",
+		"server: https://"+a.Infra.Public.PublicIP+":6443",
+	)
 	utils.CheckErr(utils.WriteFile(localConf, []byte(newData)))
 	utils.CheckErr(a.RemoteSealosCmd.Cert(certOpts))
 	time.Sleep(30 * time.Second)
@@ -195,7 +196,10 @@ func (a *Applier) CheckNodeNum(num int) {
 	notReady := make(map[string]struct{})
 	err := retry.Retry(5, 5*time.Second, func() error {
 		var err error
-		a.k8sClient, err = kube.NewK8sClient(filepath.Join(a.TestDir, "kube", "admin.conf"), "https://"+a.Infra.Public.PublicIP+":6443")
+		a.k8sClient, err = kube.NewK8sClient(
+			filepath.Join(a.TestDir, "kube", "admin.conf"),
+			"https://"+a.Infra.Public.PublicIP+":6443",
+		)
 		if err != nil {
 			return err
 		}
@@ -204,8 +208,8 @@ func (a *Applier) CheckNodeNum(num int) {
 			return err
 		}
 
-		//kubectl get nodes --no-headers=true | awk '$2 != "Ready" {print}'
-		//not_ready_nodes=$(kubectl get nodes --no-headers | awk '{ if ($2 != "Ready") print $1 }')
+		// kubectl get nodes --no-headers=true | awk '$2 != "Ready" {print}'
+		// not_ready_nodes=$(kubectl get nodes --no-headers | awk '{ if ($2 != "Ready") print $1 }')
 		for _, node := range nodes.Items {
 			for _, condition := range node.Status.Conditions {
 				if condition.Reason != "KubeletReady" {
@@ -238,11 +242,11 @@ func (a *Applier) CheckNodeNum(num int) {
 
 func (a *Applier) WaitSSHReady() error {
 	var err error
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if err = a.RemoteCmd.AsyncExec("date"); err == nil {
 			return nil
 		}
 		time.Sleep(time.Duration(i) * time.Second)
 	}
-	return fmt.Errorf("wait for host %s ssh ready timeout: %v", a.Infra.Public.PublicIP, err)
+	return fmt.Errorf("wait for host %s ssh ready timeout: %w", a.Infra.Public.PublicIP, err)
 }

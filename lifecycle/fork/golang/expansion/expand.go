@@ -88,9 +88,10 @@ func tryReadVariableName(input string) (string, bool, int) {
 		return input[0:1], false, 1
 	case referenceParenOpener:
 		// Scan to expression closer
-		for i := 1; i < len(input); i++ {
-			if input[i] == referenceParenCloser {
-				return input[1:i], true, i + 1
+		for offset, r := range input[1:] {
+			if r == referenceParenCloser {
+				idx := offset + 1
+				return input[1:idx], true, idx + 1
 			}
 		}
 
@@ -98,9 +99,10 @@ func tryReadVariableName(input string) (string, bool, int) {
 		return string(operator) + string(referenceParenOpener), false, 1
 	case referenceCurlyOpener:
 		// Scan to expression closer
-		for i := 1; i < len(input); i++ {
-			if input[i] == referenceCurlyCloser {
-				return input[1:i], true, i + 1
+		for offset, r := range input[1:] {
+			if r == referenceCurlyCloser {
+				idx := offset + 1
+				return input[1:idx], true, idx + 1
 			}
 		}
 
@@ -111,15 +113,17 @@ func tryReadVariableName(input string) (string, bool, int) {
 		// that doesn't begin an expression.  Return the operator
 		// and the first rune in the string.
 		var variableName string
-		var i int
-		for i = 0; i < len(input); i++ {
-			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) && input[i] != '_' {
+		var consumed int
+		for idx, r := range input {
+			if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' {
+				consumed = idx
 				break
 			}
-			variableName += string(input[i])
+			variableName += string(r)
+			consumed = idx + 1
 		}
 		if len(variableName) > 0 {
-			return variableName, true, i
+			return variableName, true, consumed
 		}
 		return string(operator) + string(input[0]), false, 1
 	}

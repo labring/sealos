@@ -109,7 +109,10 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 	excludeSysEnv := func(m map[string]string) map[string]string {
 		m, exclude := ExcludeKeysWithPrefix(m, "SEALOS_SYS")
 		if len(exclude) > 0 {
-			logger.Warn("skip %s cause envs with prefix SEALOS_SYS are sealos system only", strings.Join(exclude, ", "))
+			logger.Warn(
+				"skip %s cause envs with prefix SEALOS_SYS are sealos system only",
+				strings.Join(exclude, ", "),
+			)
 		}
 		return m
 	}

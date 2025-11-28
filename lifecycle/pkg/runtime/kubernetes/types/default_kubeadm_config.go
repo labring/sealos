@@ -199,5 +199,14 @@ controlPlane:
 )
 
 func DefaultKubeadmInitConfiguration() string {
-	return strings.Join([]string{defaultKubeadmInitConfiguration, defaultKubeadmClusterConfiguration, defaultKubeadmKubeProxyConfiguration, defaultKubeadmKubeletConfiguration, defaultKubeadmJoinConfiguration}, "\n---\n")
+	return strings.Join(
+		[]string{
+			defaultKubeadmInitConfiguration,
+			defaultKubeadmClusterConfiguration,
+			defaultKubeadmKubeProxyConfiguration,
+			defaultKubeadmKubeletConfiguration,
+			defaultKubeadmJoinConfiguration,
+		},
+		"\n---\n",
+	)
 }

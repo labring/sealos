@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -31,8 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -146,13 +145,17 @@ func (ki *kubeIdempotency) CreateOrUpdateDaemonSet(ds *apps.DaemonSet) error {
 // DeleteDaemonSetForeground deletes the specified DaemonSet in foreground mode; i.e. it blocks until/makes sure all the managed Pods are deleted
 func (ki *kubeIdempotency) DeleteDaemonSetForeground(namespace, name string) error {
 	foregroundDelete := metav1.DeletePropagationForeground
-	return ki.client.AppsV1().DaemonSets(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{PropagationPolicy: &foregroundDelete})
+	return ki.client.AppsV1().
+		DaemonSets(namespace).
+		Delete(context.TODO(), name, metav1.DeleteOptions{PropagationPolicy: &foregroundDelete})
 }
 
 // DeleteDeploymentForeground deletes the specified Deployment in foreground mode; i.e. it blocks until/makes sure all the managed Pods are deleted
 func (ki *kubeIdempotency) DeleteDeploymentForeground(namespace, name string) error {
 	foregroundDelete := metav1.DeletePropagationForeground
-	return ki.client.AppsV1().Deployments(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{PropagationPolicy: &foregroundDelete})
+	return ki.client.AppsV1().
+		Deployments(namespace).
+		Delete(context.TODO(), name, metav1.DeleteOptions{PropagationPolicy: &foregroundDelete})
 }
 
 // CreateOrUpdateRole creates a Role if the target resource doesn't exist. If the resource exists already, this function will update the resource instead.
@@ -198,7 +201,9 @@ func (ki *kubeIdempotency) CreateOrUpdateClusterRole(clusterRole *rbac.ClusterRo
 }
 
 // CreateOrUpdateClusterRoleBinding creates a ClusterRoleBinding if the target resource doesn't exist. If the resource exists already, this function will update the resource instead.
-func (ki *kubeIdempotency) CreateOrUpdateClusterRoleBinding(clusterRoleBinding *rbac.ClusterRoleBinding) error {
+func (ki *kubeIdempotency) CreateOrUpdateClusterRoleBinding(
+	clusterRoleBinding *rbac.ClusterRoleBinding,
+) error {
 	if _, err := ki.client.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
 			return fmt.Errorf("unable to create RBAC clusterrolebinding: %w", err)
@@ -215,7 +220,10 @@ func (ki *kubeIdempotency) CreateOrUpdateClusterRoleBinding(clusterRoleBinding *
 // This is a condition function meant to be used with wait.Poll. false, nil
 // implies it is safe to try again, an error indicates no more tries should be
 // made and true indicates success.
-func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)) func(ctx context.Context) (bool, error) {
+func (ki *kubeIdempotency) patchNodeOnce(
+	nodeName string,
+	patchFn func(*v1.Node),
+) func(ctx context.Context) (bool, error) {
 	return func(ctx context.Context) (bool, error) {
 		// First get the node object
 		n, err := ki.client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
@@ -225,13 +233,17 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 
 		// The node may appear to have no labels at first,
 		// so we wait for it to get hostname label.
-		if _, found := n.ObjectMeta.Labels[v1.LabelHostname]; !found {
+		if _, found := n.Labels[v1.LabelHostname]; !found {
 			return false, nil
 		}
 
 		oldData, err := json.Marshal(n)
 		if err != nil {
-			return false, fmt.Errorf("failed to marshal unmodified node %q into JSON: %w", n.Name, err)
+			return false, fmt.Errorf(
+				"failed to marshal unmodified node %q into JSON: %w",
+				n.Name,
+				err,
+			)
 		}
 
 		// Execute the mutating function
@@ -239,7 +251,11 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 
 		newData, err := json.Marshal(n)
 		if err != nil {
-			return false, fmt.Errorf("failed to marshal modified node %q into JSON: %w", n.Name, err)
+			return false, fmt.Errorf(
+				"failed to marshal modified node %q into JSON: %w",
+				n.Name,
+				err,
+			)
 		}
 
 		patchBytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newData, v1.Node{})
@@ -249,7 +265,9 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 
 		if _, err := ki.client.CoreV1().Nodes().Patch(ctx, n.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
 			if apierrors.IsConflict(err) {
-				logger.Debug("Temporarily unable to update node metadata due to conflict (will retry)")
+				logger.Debug(
+					"Temporarily unable to update node metadata due to conflict (will retry)",
+				)
 				return false, nil
 			}
 			return false, fmt.Errorf("error patching node %q through apiserver: %w", n.Name, err)
@@ -264,9 +282,14 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 func (ki *kubeIdempotency) PatchNode(nodeName string, patchFn func(*v1.Node)) error {
 	ctx, cancel := context.WithTimeout(context.Background(), PatchNodeTimeout)
 	defer cancel()
-	return wait.PollUntilContextCancel(ctx, APICallRetryInterval, true, ki.patchNodeOnce(nodeName, patchFn))
+	return wait.PollUntilContextCancel(
+		ctx,
+		APICallRetryInterval,
+		true,
+		ki.patchNodeOnce(nodeName, patchFn),
+	)
 	// wait.Poll will rerun the condition function every interval function if
 	// the function returns false. If the condition function returns an error
 	// then the retries end and the error is returned.
-	//return wait.Poll(APICallRetryInterval, PatchNodeTimeout, ki.patchNodeOnce(nodeName, patchFn))
+	// return wait.Poll(APICallRetryInterval, PatchNodeTimeout, ki.patchNodeOnce(nodeName, patchFn))
 }

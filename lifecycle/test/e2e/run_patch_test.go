@@ -20,14 +20,11 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/labring/sealos/test/e2e/suites/checkers"
+	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
 	. "github.com/onsi/ginkgo/v2"
-
-	"github.com/labring/sealos/test/e2e/suites/checkers"
 )
 
 var _ = Describe("E2E_sealos_run_patchimage_test", func() {
@@ -47,7 +44,12 @@ var _ = Describe("E2E_sealos_run_patchimage_test", func() {
 			dFile := config.PatchDockerfile{
 				Images: []string{"nginx"},
 				Copys:  []string{"sealctl opt/sealctl", "image-cri-shim cri/image-cri-shim"},
-				Cmds:   []string{"systemctl stop image-cri-shim", "cp cri/image-cri-shim /usr/bin/image-cri-shim", "systemctl start image-cri-shim", "image-cri-shim -v"},
+				Cmds: []string{
+					"systemctl stop image-cri-shim",
+					"cp cri/image-cri-shim /usr/bin/image-cri-shim",
+					"systemctl start image-cri-shim",
+					"image-cri-shim -v",
+				},
 			}
 			tmpdir, err := dFile.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
@@ -57,29 +59,44 @@ var _ = Describe("E2E_sealos_run_patchimage_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to copy sealctl to rootfs: %v", err))
 
 			By("copy image-cri-shim to rootfs")
-			err = fakeClient.CmdInterface.Copy("/tmp/image-cri-shim", path.Join(tmpdir, "image-cri-shim"))
+			err = fakeClient.CmdInterface.Copy(
+				"/tmp/image-cri-shim",
+				path.Join(tmpdir, "image-cri-shim"),
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to copy image-cri-shim to rootfs: %v", err))
 
 			By("build image")
-			err = fakeClient.Image.BuildImage("test-build-image:patch-upgrade", tmpdir, operators.BuildOptions{
-				MaxPullProcs: 5,
-			})
+			err = fakeClient.Image.BuildImage(
+				"test-build-image:patch-upgrade",
+				tmpdir,
+				operators.BuildOptions{
+					MaxPullProcs: 5,
+				},
+			)
 			utils.CheckErr(err)
 
 			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2"}
 			err = fakeClient.Image.PullImage(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull image: %v", err))
 			err = fakeClient.Cluster.Run(images...)
-			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single using tar: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to Run new cluster for single using tar: %v", err),
+			)
 			newImages := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2"}
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{Images: newImages})
+			fakeCheckInterface, err = checkers.NewFakeGroupClient(
+				"default",
+				&checkers.FakeOpts{Images: newImages},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 			patchImage := "test-build-image:patch-upgrade"
 			err = fakeClient.Cluster.Run(patchImage)
-			utils.CheckErr(err, fmt.Sprintf("failed to Run patch image for single using tar: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to Run patch image for single using tar: %v", err),
+			)
 		})
 	})
-
 })

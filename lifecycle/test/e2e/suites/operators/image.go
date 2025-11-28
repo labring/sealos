@@ -17,9 +17,8 @@ package operators
 import (
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 const (
@@ -41,9 +40,9 @@ var _ FakeImageInterface = &fakeImageClient{}
 
 func (f *fakeImageClient) ListImages(display bool) ([]DisplayImage, error) {
 	if display {
-		return nil, f.SealosCmd.ImageList()
+		return nil, f.ImageList()
 	}
-	data, err := f.SealosCmd.Executor.Exec(f.SealosCmd.BinPath, "images", "--json")
+	data, err := f.Executor.Exec(f.BinPath, "images", "--json")
 	if err != nil {
 		return nil, err
 	}
@@ -53,34 +52,34 @@ func (f *fakeImageClient) ListImages(display bool) ([]DisplayImage, error) {
 }
 
 func (f *fakeImageClient) PullImage(images ...string) error {
-	return f.SealosCmd.ImagePull(&cmd.PullOptions{
+	return f.ImagePull(&cmd.PullOptions{
 		ImageRefs: images,
 		Quiet:     true,
 	})
 }
 
 func (f *fakeImageClient) RemoveImage(images ...string) error {
-	return f.SealosCmd.ImageRemove(images...)
+	return f.ImageRemove(images...)
 }
 
 func (f *fakeImageClient) DockerArchiveImage(name string) error {
-	return f.SealosCmd.ImageSave(name, DockerTarFile, "docker-archive")
+	return f.ImageSave(name, DockerTarFile, "docker-archive")
 }
 
 func (f *fakeImageClient) OCIArchiveImage(name string) error {
-	return f.SealosCmd.ImageSave(name, OCITarFile, "oci-archive")
+	return f.ImageSave(name, OCITarFile, "oci-archive")
 }
 
 func (f *fakeImageClient) SaveImage(name, file string) error {
-	return f.SealosCmd.ImageSave(name, file, "")
+	return f.ImageSave(name, file, "")
 }
 
 func (f *fakeImageClient) SaveMultiImage(file string, name ...string) error {
-	return f.SealosCmd.ImageMultiSave(file, name...)
+	return f.ImageMultiSave(file, name...)
 }
 
 func (f *fakeImageClient) LoadImage(file string) error {
-	return f.SealosCmd.ImageLoad(file)
+	return f.ImageLoad(file)
 }
 
 func (f *fakeImageClient) Create(name string, short bool) ([]byte, error) {
@@ -91,21 +90,22 @@ func (f *fakeImageClient) Create(name string, short bool) ([]byte, error) {
 }
 
 func (f *fakeImageClient) Merge(newImage string, images []string) error {
-	return f.SealosCmd.ImageMerge(&cmd.MergeOptions{
+	return f.ImageMerge(&cmd.MergeOptions{
 		Tag:       []string{newImage},
 		ImageRefs: images,
 	})
 }
 
 func (f *fakeImageClient) FetchImageID(name string) (string, error) {
-	data, err := f.SealosCmd.Executor.Exec(f.BinPath, "images", "-q", name)
+	data, err := f.Executor.Exec(f.BinPath, "images", "-q", name)
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
 }
+
 func (f *fakeImageClient) BuildImage(image, context string, opts BuildOptions) error {
-	return f.SealosCmd.Build(&cmd.BuildOptions{
+	return f.Build(&cmd.BuildOptions{
 		Tag:          image,
 		SaveImage:    opts.SaveImage,
 		Context:      context,
@@ -116,5 +116,5 @@ func (f *fakeImageClient) BuildImage(image, context string, opts BuildOptions) e
 }
 
 func (f *fakeImageClient) TagImage(name, newName string) error {
-	return f.SealosCmd.ImageTag(name, newName)
+	return f.ImageTag(name, newName)
 }

@@ -22,17 +22,15 @@ import (
 	"strings"
 	"time"
 
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-
 	"sigs.k8s.io/yaml"
-
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -81,17 +79,32 @@ func SyncConfigFromConfigMap(ctx context.Context, configPath string) {
 		logger.Warn("you can ignore this if you are not running inside a kubernetes cluster")
 		return
 	}
-	cm, err := client.CoreV1().ConfigMaps(shimConfigMapNamespace).Get(ctx, shimConfigMapName, metav1.GetOptions{})
+	cm, err := client.CoreV1().
+		ConfigMaps(shimConfigMapNamespace).
+		Get(ctx, shimConfigMapName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		logger.Debug("configmap %s/%s not found; skip syncing", shimConfigMapNamespace, shimConfigMapName)
+		logger.Debug(
+			"configmap %s/%s not found; skip syncing",
+			shimConfigMapNamespace,
+			shimConfigMapName,
+		)
 		return
 	}
 	if err != nil {
-		logger.Debug("failed to read ConfigMap %s/%s: %v", shimConfigMapNamespace, shimConfigMapName, err)
+		logger.Debug(
+			"failed to read ConfigMap %s/%s: %v",
+			shimConfigMapNamespace,
+			shimConfigMapName,
+			err,
+		)
 		return
 	}
 	if !applyConfigMapToFile(configPath, cm) {
-		logger.Debug("ConfigMap %s/%s produced no updates", shimConfigMapNamespace, shimConfigMapName)
+		logger.Debug(
+			"ConfigMap %s/%s produced no updates",
+			shimConfigMapNamespace,
+			shimConfigMapName,
+		)
 		return
 	}
 	logger.Info("syncing image-cri-shim config from ConfigMap completed")
@@ -124,7 +137,8 @@ func buildKubeClient() (kubernetes.Interface, error) {
 		return kubernetes.NewForConfig(cfg)
 	}
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, &clientcmd.ConfigOverrides{}).ClientConfig()
+	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, &clientcmd.ConfigOverrides{}).
+		ClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +148,12 @@ func buildKubeClient() (kubernetes.Interface, error) {
 func applyConfigMapToFile(configPath string, cm *corev1.ConfigMap) bool {
 	raw, ok := cm.Data[shimConfigMapDataKey]
 	if !ok || strings.TrimSpace(raw) == "" {
-		logger.Debug("ConfigMap %s/%s does not contain key %s; skip syncing", shimConfigMapNamespace, shimConfigMapName, shimConfigMapDataKey)
+		logger.Debug(
+			"ConfigMap %s/%s does not contain key %s; skip syncing",
+			shimConfigMapNamespace,
+			shimConfigMapName,
+			shimConfigMapDataKey,
+		)
 		return false
 	}
 	spec := new(registryConfigSpec)

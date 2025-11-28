@@ -15,24 +15,24 @@
 package helpers
 
 import (
-	"fmt"
 	"path"
 
 	"github.com/labring/image-cri-shim/pkg/types"
-
-	"k8s.io/apimachinery/pkg/util/yaml"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 const RegistryCustomConfig = "registry.yml"
 
-func GetRegistryInfo(execer exec.Interface, rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
-	var DefaultConfig = &v1beta1.RegistryConfig{
+func GetRegistryInfo(
+	execer exec.Interface,
+	rootfs, defaultRegistry string,
+) *v1beta1.RegistryConfig {
+	DefaultConfig := &v1beta1.RegistryConfig{
 		IP:       iputils.GetHostIP(defaultRegistry),
 		Domain:   constants.DefaultRegistryDomain,
 		Port:     "5000",
@@ -41,7 +41,7 @@ func GetRegistryInfo(execer exec.Interface, rootfs, defaultRegistry string) *v1b
 		Data:     constants.DefaultRegistryData,
 	}
 	etcPath := path.Join(rootfs, constants.EtcDirName, RegistryCustomConfig)
-	out, err := execer.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
+	out, err := execer.Cmd(defaultRegistry, "cat "+etcPath)
 	if err != nil {
 		logger.Warn("load registry config error: %+v, using default registry config", err)
 		return DefaultConfig
@@ -62,12 +62,17 @@ func GetRegistryInfo(execer exec.Interface, rootfs, defaultRegistry string) *v1b
 	if readConfig.Port == "" {
 		readConfig.Port = DefaultConfig.Port
 	}
-	logger.Debug("show registry info, IP: %s, Domain: %s, Data: %s", readConfig.IP, readConfig.Domain, readConfig.Data)
+	logger.Debug(
+		"show registry info, IP: %s, Domain: %s, Data: %s",
+		readConfig.IP,
+		readConfig.Domain,
+		readConfig.Data,
+	)
 	return readConfig
 }
 
 func GetImageCRIShimInfo(execer exec.Interface, config, defaultIP string) *types.Config {
-	out, _ := execer.Cmd(defaultIP, fmt.Sprintf("cat %s", config))
+	out, _ := execer.Cmd(defaultIP, "cat "+config)
 	logger.Debug("image shim data info: %s", string(out))
 	readConfig := &types.Config{}
 	err := yaml.Unmarshal(out, &readConfig)

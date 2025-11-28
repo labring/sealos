@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -30,6 +28,7 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/strings"
+	"golang.org/x/sync/errgroup"
 )
 
 var ForceDelete bool
@@ -54,6 +53,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 
 	return nil
 }
+
 func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
@@ -87,7 +87,7 @@ func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
 	rt, err := factory.New(cluster, d.ClusterFile.GetRuntimeConfig())
 	if err != nil {
-		return fmt.Errorf("failed to delete runtime, %v", err)
+		return fmt.Errorf("failed to delete runtime, %w", err)
 	}
 	return rt.Reset()
 }
@@ -114,8 +114,8 @@ func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 
 func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, mount := range cluster.Status.Mounts {
-		mount := mount
+	for i := range cluster.Status.Mounts {
+		mount := cluster.Status.Mounts[i]
 		eg.Go(func() error {
 			return d.Buildah.Delete(mount.Name)
 		})

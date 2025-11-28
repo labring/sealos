@@ -146,7 +146,10 @@ registries:
 
 	mirror, ok = auth.CRIConfigs["mirror.example.com"]
 	if !ok {
-		t.Fatalf("expected registry credentials for mirror.example.com after update, got %#v", auth.CRIConfigs)
+		t.Fatalf(
+			"expected registry credentials for mirror.example.com after update, got %#v",
+			auth.CRIConfigs,
+		)
 	}
 	if mirror.Password != "changed" {
 		t.Fatalf("expected updated mirror password, got %q", mirror.Password)

@@ -24,13 +24,17 @@ var _ FakeInterface = &fakeServiceCIDRClient{}
 
 type fakeServiceCIDRClient struct {
 	*fakeClient
-	//10.96.0.0/22
+	// 10.96.0.0/22
 	data string
 }
 
 func (f *fakeServiceCIDRClient) Verify() error {
 	if f.ClusterConfiguration.Networking.ServiceSubnet != f.data {
-		return fmt.Errorf("cluster config service subnet %s not match %s", f.ClusterConfiguration.Networking.ServiceSubnet, f.data)
+		return fmt.Errorf(
+			"cluster config service subnet %s not match %s",
+			f.ClusterConfiguration.Networking.ServiceSubnet,
+			f.data,
+		)
 	}
 	return nil
 }

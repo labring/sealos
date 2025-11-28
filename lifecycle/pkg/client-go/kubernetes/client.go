@@ -18,7 +18,6 @@ import (
 	"path/filepath"
 
 	fileutil "github.com/labring/sealos/pkg/utils/file"
-
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -60,9 +59,9 @@ func newKubernetesClient(kubeconfig, apiserver string, insecure bool) (Client, e
 	config.QPS = 1e6
 	config.Burst = 1e6
 	if insecure {
-		config.TLSClientConfig.CAFile = ""
-		config.TLSClientConfig.CAData = nil
-		config.TLSClientConfig.Insecure = true
+		config.CAFile = ""
+		config.CAData = nil
+		config.Insecure = true
 	}
 
 	var k kubernetesClient

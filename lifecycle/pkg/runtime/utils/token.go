@@ -26,18 +26,17 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/util/cert"
-	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
-
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/util/cert"
+	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 )
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
@@ -50,9 +49,12 @@ func GenerateToken(config, certificateKey string) (*types.Token, error) {
 			key = certificateKey
 		}
 		token.CertificateKey = key
-		uploadCertTemplate := fmt.Sprintf("kubeadm init phase upload-certs --upload-certs --certificate-key %s", key)
+		uploadCertTemplate := "kubeadm init phase upload-certs --upload-certs --certificate-key " + key
 		if config != "" {
-			uploadCertTemplate = fmt.Sprintf("kubeadm init phase upload-certs --config %s --upload-certs", config)
+			uploadCertTemplate = fmt.Sprintf(
+				"kubeadm init phase upload-certs --config %s --upload-certs",
+				config,
+			)
 		}
 		logger.Debug("token uploadCertTemplate cmd: %s", uploadCertTemplate)
 		_, _ = exec.RunBashCmd(uploadCertTemplate)
@@ -77,10 +79,10 @@ func GenerateToken(config, certificateKey string) (*types.Token, error) {
 			}
 			return token, nil
 		}
-		return nil, fmt.Errorf("token list found more than one")
+		return nil, errors.New("token list found more than one")
 	}
 
-	return nil, fmt.Errorf("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
+	return nil, errors.New("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
 }
 
 func ListToken() BootstrapTokens {
@@ -99,11 +101,11 @@ func processTokenList(data string) BootstrapTokens {
 			slice = append(slice, to)
 		}
 	}
-	var result []v1.BootstrapToken
+	result := make([]v1.BootstrapToken, 0, len(slice))
 	for _, token := range slice {
 		if token.Expires != nil {
 			t := time.Now().Unix()
-			ex := token.Expires.Time.Unix()
+			ex := token.Expires.Unix()
 			if ex < t {
 				continue
 			}
@@ -139,17 +141,24 @@ func discoveryTokenCaCertHash(adminPath string) ([]string, error) {
 
 	// load CA certificates from the kubeconfig (either from PEM data or by file path)
 	var caCerts []*x509.Certificate
-	if clusterConfig.CertificateAuthorityData != nil {
+	switch {
+	case clusterConfig.CertificateAuthorityData != nil:
 		caCerts, err = cert.ParseCertsPEM(clusterConfig.CertificateAuthorityData)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse CA certificate from kubeconfig: %w", err)
+			return nil, fmt.Errorf(
+				"failed to parse CA certificate from kubeconfig: %w",
+				err,
+			)
 		}
-	} else if clusterConfig.CertificateAuthority != "" {
+	case clusterConfig.CertificateAuthority != "":
 		caCerts, err = cert.CertsFromFile(clusterConfig.CertificateAuthority)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load CA certificate referenced by kubeconfig: %w", err)
+			return nil, fmt.Errorf(
+				"failed to load CA certificate referenced by kubeconfig: %w",
+				err,
+			)
 		}
-	} else {
+	default:
 		return nil, errors.New("no CA certificates found in kubeconfig")
 	}
 

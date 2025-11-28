@@ -43,7 +43,7 @@ func Must(t *template.Template, err error) *template.Template {
 	return template.Must(t, err)
 }
 
-func RenderTemplate(name, defaultStr string, data map[string]interface{}) (string, error) {
+func RenderTemplate(name, defaultStr string, data map[string]any) (string, error) {
 	var out bytes.Buffer
 	tmpl := template.Must(template.New(name).Parse(defaultStr))
 	err := tmpl.Execute(&out, data)

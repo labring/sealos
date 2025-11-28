@@ -23,7 +23,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 )
 
@@ -41,28 +40,31 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		return err
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range newNodesIPList {
-		node := node
+	for i := range newNodesIPList {
+		node := newNodesIPList[i]
 		eg.Go(func() error {
 			logger.Info("start to join %s as worker", node)
 			k.mu.Lock()
 			err = k.copyKubeadmConfigToNode(node)
 			if err != nil {
-				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
+				return fmt.Errorf("failed to copy join node kubeadm config %s %w", node, err)
 			}
 			k.mu.Unlock()
 			logger.Info("run ipvs once module: %s", node)
 			err = k.execIPVS(node, masters)
 			if err != nil {
-				return fmt.Errorf("run ipvs once failed %v", err)
+				return fmt.Errorf("run ipvs once failed %w", err)
 			}
 			logger.Info("start join node: %s", node)
 			joinCmd := k.Command(JoinNode)
 			if joinCmd == "" {
-				return fmt.Errorf("get join node command failed, kubernetes version is %s", k.getKubeVersion())
+				return fmt.Errorf(
+					"get join node command failed, kubernetes version is %s",
+					k.getKubeVersion(),
+				)
 			}
 			if err = k.sshCmdAsync(node, joinCmd); err != nil {
-				return fmt.Errorf("failed to join node %s %v", node, err)
+				return fmt.Errorf("failed to join node %s %w", node, err)
 			}
 			logger.Info("succeeded in joining %s as worker", node)
 			return nil
@@ -75,9 +77,13 @@ func (k *KubeadmRuntime) copyKubeadmConfigToNode(node string) error {
 	logger.Info("start to copy kubeadm join config to node: %s", node)
 	data, err := k.generateJoinNodeConfigs(node)
 	if err != nil {
-		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
+		return fmt.Errorf("failed to generate join kubeadm config: %w", err)
 	}
-	joinConfigPath := path.Join(k.pathResolver.TmpPath(), iputils.GetHostIP(node), defaultJoinNodeKubeadmFileName)
+	joinConfigPath := path.Join(
+		k.pathResolver.TmpPath(),
+		iputils.GetHostIP(node),
+		defaultJoinNodeKubeadmFileName,
+	)
 	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
@@ -95,12 +101,12 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 		return nil
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range nodes {
-		node := node
+	for i := range nodes {
+		node := nodes[i]
 		eg.Go(func() error {
 			logger.Info("start to delete worker %s", node)
 			if err := k.deleteNode(node); err != nil {
-				return fmt.Errorf("delete node %s failed %v", node, err)
+				return fmt.Errorf("delete node %s failed %w", node, err)
 			}
 			logger.Info("succeeded in deleting worker %s", node)
 			return nil
@@ -111,10 +117,10 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 
 func (k *KubeadmRuntime) deleteNode(node string) error {
 	return k.resetNode(node, func() {
-		//remove node
+		// remove node
 		if len(k.getMasterIPList()) > 0 {
 			if err := k.removeNode(node); err != nil {
-				logger.Warn(fmt.Errorf("delete node %s failed %v", node, err))
+				logger.Warn(fmt.Errorf("delete node %s failed %w", node, err))
 			}
 		}
 	})

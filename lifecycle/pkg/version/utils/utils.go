@@ -19,13 +19,12 @@ package utils
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
+	"gopkg.in/yaml.v2"
 )
 
 func GetKubernetesVersion(cluster *v2.Cluster) *version.KubernetesVersion {

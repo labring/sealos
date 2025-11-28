@@ -24,22 +24,21 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 func (c *Client) Ping(host string) error {
 	client, _, err := c.Connect(host)
 	if err != nil {
-		return fmt.Errorf("failed to connect %s: %v", host, err)
+		return fmt.Errorf("failed to connect %s: %w", host, err)
 	}
 	return client.Close()
 }
 
 func (c *Client) wrapCommands(cmds ...string) string {
 	cmdJoined := strings.Join(cmds, "; ")
-	if !c.Option.sudo || c.Option.user == defaultUsername {
+	if !c.sudo || c.user == defaultUsername {
 		return cmdJoined
 	}
 
@@ -54,21 +53,21 @@ func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...s
 	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
 	if err != nil {
-		return fmt.Errorf("connect error: %v", err)
+		return fmt.Errorf("connect error: %w", err)
 	}
 	defer client.Close()
 	defer session.Close()
 	stdout, err := session.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("stdout pipe %s: %v", host, err)
+		return fmt.Errorf("stdout pipe %s: %w", host, err)
 	}
 	stderr, err := session.StderrPipe()
 	if err != nil {
-		return fmt.Errorf("stderr pipe %s: %v", host, err)
+		return fmt.Errorf("stderr pipe %s: %w", host, err)
 	}
 	stdin, err := session.StdinPipe()
 	if err != nil {
-		return fmt.Errorf("stdin pipe %s: %v", host, err)
+		return fmt.Errorf("stdin pipe %s: %w", host, err)
 	}
 	out := autoAnswerWriter{
 		in:        stdin,
@@ -83,13 +82,13 @@ func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...s
 	go func() {
 		errCh <- func() error {
 			if err := session.Start(cmd); err != nil {
-				return fmt.Errorf("start command `%s` on %s: %v", cmd, host, err)
+				return fmt.Errorf("start command `%s` on %s: %w", cmd, host, err)
 			}
 			if err = eg.Wait(); err != nil {
 				return err
 			}
 			if err = session.Wait(); err != nil {
-				return fmt.Errorf("run command `%s` on %s, output: %s, error: %v,", cmd, host, out.b.String(), err)
+				return fmt.Errorf("run command `%s` on %s, output: %s, error: %w,", cmd, host, out.b.String(), err)
 			}
 			return nil
 		}()
@@ -114,7 +113,7 @@ func (c *Client) Cmd(host, cmd string) ([]byte, error) {
 	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create ssh session for %s: %v", host, err)
+		return nil, fmt.Errorf("failed to create ssh session for %s: %w", host, err)
 	}
 	defer client.Close()
 	defer session.Close()
@@ -184,10 +183,13 @@ func (c *Client) handlePipe(host string, pipe io.Reader, out io.Writer, isStdout
 	r := bufio.NewReader(pipe)
 	writers := []io.Writer{out}
 	if isStdout {
-		writers = append(writers, &withPrefixWriter{prefix: host + "\t", newline: true, w: os.Stdout})
+		writers = append(
+			writers,
+			&withPrefixWriter{prefix: host + "\t", newline: true, w: os.Stdout},
+		)
 	}
 	w := io.MultiWriter(writers...)
-	var line []byte
+	line := make([]byte, 0, 256) // reasonable buffer size for a line
 	for {
 		b, err := r.ReadByte()
 		if err != nil {

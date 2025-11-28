@@ -50,7 +50,11 @@ func TestTerraform_Detail(t *testing.T) {
 		t.Errorf("%+v", err)
 		return
 	}
-	data, _ := json.MarshalIndent(d, "", "  ")
+	data, err := json.MarshalIndent(d, "", "  ")
+	if err != nil {
+		t.Errorf("failed to marshal detail: %v", err)
+		return
+	}
 	t.Logf("SUCCESS: %s", string(data))
 	t.Logf("public: %+v", *d.Public)
 }

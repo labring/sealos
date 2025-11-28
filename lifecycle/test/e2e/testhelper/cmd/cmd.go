@@ -20,9 +20,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
-
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
@@ -30,12 +29,14 @@ import (
 type Interface interface {
 	Exec(cmd string, args ...string) ([]byte, error)
 	AsyncExec(cmd string, args ...string) error
-	Copy(src string, dst string) error
-	CopyR(dst string, src string) error
+	Copy(src, dst string) error
+	CopyR(dst, src string) error
 }
 
-var _ = (Interface)(&RemoteCmd{})
-var _ = (Interface)(&LocalCmd{})
+var (
+	_ = (Interface)(&RemoteCmd{})
+	_ = (Interface)(&LocalCmd{})
+)
 
 // Exec executes the given command on the remote machine
 func (c *RemoteCmd) Exec(cmd string, args ...string) ([]byte, error) {
@@ -49,12 +50,12 @@ func (c *RemoteCmd) AsyncExec(cmd string, args ...string) error {
 	return c.CmdAsync(c.Host, strings.Join(append([]string{cmd}, args...), " "))
 }
 
-func (c *RemoteCmd) Copy(src string, dst string) error {
+func (c *RemoteCmd) Copy(src, dst string) error {
 	return c.Interface.Copy(c.Host, src, dst)
 }
 
-func (c *RemoteCmd) CopyR(dst string, src string) error {
-	return c.Interface.Fetch(c.Host, src, dst)
+func (c *RemoteCmd) CopyR(dst, src string) error {
+	return c.Fetch(c.Host, src, dst)
 }
 
 // RemoteCmd implements the Interface for remote command execution using SSH
@@ -85,10 +86,10 @@ func (c LocalCmd) AsyncExec(cmd string, arg ...string) error {
 	return cmder.Run()
 }
 
-func (c LocalCmd) Copy(src string, dst string) error {
+func (c LocalCmd) Copy(src, dst string) error {
 	return file.RecursionCopy(src, dst)
 }
 
-func (c LocalCmd) CopyR(dst string, src string) error {
+func (c LocalCmd) CopyR(dst, src string) error {
 	return file.RecursionCopy(src, dst)
 }

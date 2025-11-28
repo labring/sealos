@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 // Copyright © 2022 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,10 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/retry"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var LVS = &runner{
@@ -41,7 +44,7 @@ type runner struct {
 }
 
 func (r *runner) Run() (err error) {
-	if !r.options.RunOnce {
+	if !r.RunOnce {
 		defer func() {
 			cleanupErr := r.cleanup()
 			if err != nil {
@@ -59,19 +62,19 @@ func (r *runner) Run() (err error) {
 	}
 
 	cleanVirtualServer := func() error {
-		logger.Info("delete IPVS service %s", r.options.VirtualServer)
-		err := r.proxier.DeleteVirtualServer(r.options.VirtualServer)
+		logger.Info("delete IPVS service %s", r.VirtualServer)
+		err := r.proxier.DeleteVirtualServer(r.VirtualServer)
 		if err != nil {
 			logger.Warn("failed to delete IPVS service: %v", err)
 		}
 		return err
 	}
-	if r.options.CleanAndExit {
+	if r.CleanAndExit {
 		r.cleanupFuncs = append(r.cleanupFuncs, cleanVirtualServer)
 		if r.ruler != nil {
 			r.cleanupFuncs = append(r.cleanupFuncs, r.ruler.Cleanup)
 		}
-		return
+		return err
 	}
 	errCh := make(chan error, 1)
 	ctx := signals.SetupSignalHandler()
@@ -94,11 +97,25 @@ func (r *runner) Run() (err error) {
 
 // run once at startup
 func (r *runner) ensureIPVSRules() error {
-	if err := r.proxier.EnsureVirtualServer(r.options.VirtualServer); err != nil {
+	// Add retry logic for virtual server setup
+	if err := retry.Retry(3, 200*time.Millisecond, func() error {
+		if err := r.proxier.EnsureVirtualServer(r.VirtualServer); err != nil {
+			return fmt.Errorf("failed to ensure virtual server %s: %w", r.VirtualServer, err)
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
-	for i := range r.options.RealServer {
-		if err := r.proxier.EnsureRealServer(r.options.VirtualServer, r.options.RealServer[i]); err != nil {
+
+	// Add retry logic for each real server
+	for i := range r.RealServer {
+		rs := r.RealServer[i] // create local variable to avoid closure issues
+		if err := retry.Retry(3, 200*time.Millisecond, func() error {
+			if err := r.proxier.EnsureRealServer(r.VirtualServer, rs); err != nil {
+				return fmt.Errorf("failed to ensure real server %s: %w", rs, err)
+			}
+			return nil
+		}); err != nil {
 			return err
 		}
 	}
@@ -125,7 +142,7 @@ func (r *runner) cleanup() error {
 }
 
 func (r *runner) RegisterCommandFlags(cmd *cobra.Command) {
-	for _, iter := range []interface{}{r.options, r.prober} {
+	for _, iter := range []any{r.options, r.prober} {
 		if registerer, ok := iter.(flagRegisterer); ok {
 			registerer.RegisterFlags(cmd.Flags())
 		}
@@ -138,15 +155,20 @@ func (r *runner) RegisterCommandFlags(cmd *cobra.Command) {
 }
 
 func (r *runner) ValidateAndSetDefaults() error {
-	for _, iter := range []interface{}{r.options, r.prober} {
+	for _, iter := range []any{r.options, r.prober} {
 		if validator, ok := iter.(flagValidator); ok {
 			if err := validator.ValidateAndSetDefaults(); err != nil {
 				return err
 			}
 		}
 	}
-	r.proxier = NewProxier(r.options.scheduler, time.Duration(r.options.Interval), r.prober, r.periodicRun)
-	virtualIP, _, err := splitHostPort(r.options.VirtualServer)
+	r.proxier = NewProxier(
+		r.scheduler,
+		time.Duration(r.Interval),
+		r.prober,
+		r.periodicRun,
+	)
+	virtualIP, _, err := splitHostPort(r.VirtualServer)
 	if err != nil {
 		return err
 	}
@@ -154,13 +176,17 @@ func (r *runner) ValidateAndSetDefaults() error {
 	var ruler Ruler
 	switch r.Mode {
 	case routeMode:
-		if r.options.TargetIP == nil {
+		if r.TargetIP == nil {
 			logger.Warn("running routeMode and Target IP is not valid IP, skipping")
 			break
 		}
-		ruler, err = newRouteImpl(virtualIP, r.options.TargetIP.String())
+		ruler, err = newRouteImpl(virtualIP, r.TargetIP.String())
 	case linkMode:
-		ruler, err = newIptablesImpl(r.options.IfaceName, r.options.MasqueradeBit, r.options.VirtualServer)
+		ruler, err = newIptablesImpl(
+			r.IfaceName,
+			r.MasqueradeBit,
+			r.VirtualServer,
+		)
 	case "":
 		// do nothing, disable ruler
 	default:
