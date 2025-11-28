@@ -39,7 +39,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - name: ssh
-          containerPort: 2222
+          containerPort: {{ .Values.sshPort }}
           hostPort: {{ .Values.sshPort }}
           protocol: TCP
         envFrom:
@@ -47,12 +47,12 @@ spec:
             name: {{ include "sshgate.fullname" . }}
         livenessProbe:
           tcpSocket:
-            port: 2222
+            port: {{ .Values.sshPort }}
           initialDelaySeconds: 10
           periodSeconds: 10
         readinessProbe:
           tcpSocket:
-            port: 2222
+            port: {{ .Values.sshPort }}
           initialDelaySeconds: 5
           periodSeconds: 5
         resources:

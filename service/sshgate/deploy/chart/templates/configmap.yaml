@@ -15,6 +15,7 @@ metadata:
     {{- include "sshgate.labels" . | nindent 4 }}
 data:
   SSH_HOST_KEY_SEED: {{ $sshHostKeySeed | quote }}
+  SSH_LISTEN_ADDR: {{ printf ":%d" (int .Values.sshPort) | quote }}
 {{- range $key, $value := .Values.env }}
   {{ $key }}: {{ $value | quote }}
 {{- end }}
