@@ -258,20 +258,28 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
               {importLogs && (
                 <div className="flex flex-col gap-4 rounded-xl border border-dashed border-zinc-400 bg-white p-4">
                   <div className="flex flex-col gap-2">
-                    {importLogs.split('\n').filter(log => log.trim()).map((log, index) => {
-                      const isError = log.toLowerCase().includes('error') ||
-                                     log.toLowerCase().includes('err:') ||
-                                     log.toLowerCase().includes('fatal');
+                    {importLogs
+                      .split('\n')
+                      .filter((log) => log.trim())
+                      .map((log, index) => {
+                        const isError =
+                          log.toLowerCase().includes('error') ||
+                          log.toLowerCase().includes('err:') ||
+                          log.toLowerCase().includes('fatal');
 
-                      return (
-                        <div key={index} className="flex gap-4">
-                          <div className={`w-0.5 shrink-0 rounded-sm ${isError ? 'bg-red-400' : 'bg-emerald-400'}`} />
-                          <p className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} break-all`}>
-                            {log}
-                          </p>
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div key={index} className="flex gap-4">
+                            <div
+                              className={`w-0.5 shrink-0 rounded-sm ${isError ? 'bg-red-400' : 'bg-emerald-400'}`}
+                            />
+                            <p
+                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} break-all`}
+                            >
+                              {log}
+                            </p>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
@@ -313,7 +321,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                     onClick={() => !isImporting && setFormData({ ...formData, isPrivate: false })}
                   >
                     <RadioGroupItem value="public" id="public" />
-                    <Label htmlFor="public" className="cursor-pointer font-medium text-sm">
+                    <Label htmlFor="public" className="cursor-pointer text-sm font-medium">
                       {t('public')}
                     </Label>
                   </div>
@@ -324,7 +332,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                     onClick={() => !isImporting && setFormData({ ...formData, isPrivate: true })}
                   >
                     <RadioGroupItem value="private" id="private" />
-                    <Label htmlFor="private" className="cursor-pointer font-medium text-sm">
+                    <Label htmlFor="private" className="cursor-pointer text-sm font-medium">
                       {t('private')}
                     </Label>
                   </div>

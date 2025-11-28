@@ -209,6 +209,8 @@ const RuntimeSelector = ({
         templateUid: firstTemplate.uid,
         version: firstTemplate.name
       });
+      setOpen(false);
+      setSearchQuery('');
     }
   };
 

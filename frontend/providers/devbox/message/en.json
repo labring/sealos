@@ -354,7 +354,7 @@
   "pause_success": "Shutdown succeeded",
   "paused": "Paused",
   "please_enter_devbox_name_confirm": "Enter <strong>{name}</strong> to continue: ",
-  "please_enter_git_url": "Please enter your Git URL",
+  "please_enter_git_url": "Please enter your git repository url",
   "please_fill_git_credentials": "Please fill in Git credentials",
   "please_fill_required_fields": "Please fill in all required fields",
   "please_select_runtime": "Please select your Runtime",
