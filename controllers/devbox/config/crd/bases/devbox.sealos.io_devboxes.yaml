@@ -21,6 +21,9 @@ spec:
     - jsonPath: .status.network.type
       name: NetworkType
       type: string
+    - jsonPath: .status.network.uniqueID
+      name: UniqueID
+      type: string
     - jsonPath: .status.network.nodePort
       name: NodePort
       type: integer

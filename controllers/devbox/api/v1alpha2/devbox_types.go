@@ -276,6 +276,7 @@ type DevboxStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".spec.state"
 // +kubebuilder:printcolumn:name="NetworkType",type="string",JSONPath=".status.network.type"
+// +kubebuilder:printcolumn:name="UniqueID",type="string",JSONPath=".status.network.uniqueID"
 // +kubebuilder:printcolumn:name="NodePort",type="integer",JSONPath=".status.network.nodePort"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Node",type="string",JSONPath=".status.node"
