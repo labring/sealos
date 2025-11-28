@@ -163,39 +163,29 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
                 <span className="leading-5">{t('create_devbox')}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-2">
-              <div className="px-1 py-1.5">
-                <p className="px-2 py-1.5 text-xs font-medium text-zinc-500">{t('order')}</p>
-              </div>
-              <div className="px-2">
-                <DropdownMenuItem
-                  onClick={handleCreateDevbox}
-                  className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
-                >
-                  <Package className="mr-2 h-4 w-4 text-zinc-500" />
-                  <span className="text-sm font-normal text-zinc-900">{t('choose_runtime')}</span>
-                </DropdownMenuItem>
-              </div>
-              <div className="px-2">
-                <DropdownMenuItem
-                  onClick={() => handleOpenImportDrawer('git')}
-                  className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
-                >
-                  <Github className="mr-2 h-4 w-4 text-zinc-500" />
-                  <span className="text-sm font-normal text-zinc-900">{t('import_from_git')}</span>
-                </DropdownMenuItem>
-              </div>
-              <div className="px-2">
-                <DropdownMenuItem
-                  onClick={() => handleOpenImportDrawer('local')}
-                  className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
-                >
-                  <FolderArchive className="mr-2 h-4 w-4 text-zinc-500" />
-                  <span className="text-sm font-normal text-zinc-900">
-                    {t('import_from_local')}
-                  </span>
-                </DropdownMenuItem>
-              </div>
+            <DropdownMenuContent align="end" className="w-64 space-y-1 p-2">
+              <p className="px-1 py-1.5 text-xs font-medium text-zinc-500">{t('order')}</p>
+              <DropdownMenuItem
+                onClick={handleCreateDevbox}
+                className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+              >
+                <Package className="mr-2 h-4 w-4 text-zinc-500" />
+                <span className="text-sm font-normal text-zinc-900">{t('choose_runtime')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleOpenImportDrawer('git')}
+                className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+              >
+                <Github className="mr-2 h-4 w-4 text-zinc-500" />
+                <span className="text-sm font-normal text-zinc-900">{t('import_from_git')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleOpenImportDrawer('local')}
+                className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+              >
+                <FolderArchive className="mr-2 h-4 w-4 text-zinc-500" />
+                <span className="text-sm font-normal text-zinc-900">{t('import_from_local')}</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
