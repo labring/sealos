@@ -215,14 +215,13 @@ export function PAYGCostTable({
     }
 
     const { total, totalPage } = appOverviewData.data;
-    const calculatedTotalPage = totalPage === 0 ? 1 : totalPage;
 
     // Update last valid total page when we get new data
-    setLastValidTotalPage(calculatedTotalPage);
+    setLastValidTotalPage(totalPage);
 
     return {
-      total: totalPage === 0 ? 1 : total,
-      totalPage: calculatedTotalPage
+      total: total,
+      totalPage: totalPage
     };
   }, [appOverviewData, lastValidTotalPage]);
 
