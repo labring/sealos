@@ -431,6 +431,8 @@ func (r *DevboxReconciler) syncCommon(ctx context.Context, devbox *devboxv1alpha
 		if err != nil {
 			return err
 		}
+		// re-update devbox to get the latest status
+		_ = r.Get(ctx, client.ObjectKeyFromObject(devbox), devbox)
 	}
 
 	// create a headless service for the devbox, use the unique id as the name
@@ -1319,6 +1321,23 @@ func (p LastContainerStatusChangedPredicate) Update(e event.UpdateEvent) bool {
 	return false
 }
 
+// NetworkTypeChangedPredicate triggers reconcile when devbox status.network.type changes
+type NetworkTypeChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p NetworkTypeChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.Network.Type != newDevbox.Status.Network.Type
+	}
+	return false
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
@@ -1334,6 +1353,7 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		For(&devboxv1alpha2.Devbox{}, builder.WithPredicates(predicate.Or(
 			predicate.GenerationChangedPredicate{}, // enqueue request if devbox spec is updated
+			NetworkTypeChangedPredicate{},          // enqueue request if devbox status.network.type is updated
 			ContentIDChangedPredicate{},            // enqueue request if devbox status.contentID is updated
 			LastContainerStatusChangedPredicate{},  // enqueue request if devbox status.lastContainerStatus is updated
 		))).
