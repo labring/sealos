@@ -60,6 +60,12 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     templateUid: string;
     version: string;
   } | null>(null);
+  const [formErrors, setFormErrors] = useState<{
+    file?: string;
+    runtime?: string;
+    containerPort?: string;
+    startupCommand?: string;
+  }>({});
 
   const handleRuntimeSelect = (runtime: {
     name: string;
@@ -105,6 +111,9 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     }
 
     setFormData({ ...formData, file });
+    if (formErrors.file) {
+      setFormErrors({ ...formErrors, file: undefined });
+    }
   };
 
   const handleRemoveFile = () => {
@@ -120,8 +129,31 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     return `devbox-${timestamp}-${random}`;
   };
 
+  const validateForm = () => {
+    const errors: typeof formErrors = {};
+
+    if (!formData.file) {
+      errors.file = t('please_upload_file');
+    }
+
+    if (!formData.templateUid) {
+      errors.runtime = t('please_select_runtime');
+    }
+
+    if (!formData.containerPort || formData.containerPort <= 0) {
+      errors.containerPort = t('please_enter_valid_port');
+    }
+
+    if (!formData.startupCommand) {
+      errors.startupCommand = t('please_enter_startup_command');
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleImport = async () => {
-    if (!formData.file || !formData.templateUid) {
+    if (!validateForm()) {
       toast.error(t('please_fill_required_fields'));
       return;
     }
@@ -133,7 +165,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       const devboxName = generateDevboxName();
 
       const formDataToSend = new FormData();
-      formDataToSend.append('file', formData.file);
+      formDataToSend.append('file', formData.file!);
       formDataToSend.append('name', devboxName);
       formDataToSend.append('runtime', selectedRuntime?.iconId || '');
       formDataToSend.append('templateUid', formData.templateUid);
@@ -193,6 +225,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportError('');
       setImportLogs('');
       setSelectedRuntime(null);
+      setFormErrors({});
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -265,15 +298,14 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
           ) : (
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-zinc-900">
-                  <span className="text-red-600">*</span>
+                <Label className="text-sm font-medium text-zinc-900" required>
                   {t('upload_local_repository')}
                 </Label>
                 <div
                   className={`cursor-pointer rounded-xl text-center transition-colors ${
                     formData.file
                       ? ''
-                      : 'border border-dashed border-zinc-400 py-6 hover:border-zinc-500'
+                      : `border border-dashed py-6 hover:border-zinc-500 ${formErrors.file ? 'border-red-500' : 'border-zinc-400'}`
                   }`}
                   onClick={() => !formData.file && fileInputRef.current?.click()}
                 >
@@ -337,24 +369,33 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                     </div>
                   )}
                 </div>
+                {formErrors.file && (
+                  <p className="text-sm text-red-600">{formErrors.file}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-zinc-900">
-                  <span className="text-red-600">*</span>
+                <Label className="text-sm font-medium text-zinc-900" required>
                   {t('runtime')}
                 </Label>
                 <RuntimeSelector
                   selectedRuntime={selectedRuntime}
-                  onRuntimeSelect={handleRuntimeSelect}
+                  onRuntimeSelect={(runtime) => {
+                    handleRuntimeSelect(runtime);
+                    if (formErrors.runtime) {
+                      setFormErrors({ ...formErrors, runtime: undefined });
+                    }
+                  }}
                   onVersionChange={handleVersionChange}
                   disabled={isImporting}
                 />
+                {formErrors.runtime && (
+                  <p className="text-sm text-red-600">{formErrors.runtime}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="container-port" className="text-sm font-medium text-zinc-900">
-                  <span className="text-red-600">*</span>
+                <Label htmlFor="container-port" className="text-sm font-medium text-zinc-900" required>
                   {t('container_port')}
                 </Label>
                 <Input
@@ -362,27 +403,40 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                   type="number"
                   placeholder="80"
                   value={formData.containerPort}
-                  onChange={(e) =>
-                    setFormData({ ...formData, containerPort: parseInt(e.target.value) || 0 })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, containerPort: parseInt(e.target.value) || 0 });
+                    if (formErrors.containerPort) {
+                      setFormErrors({ ...formErrors, containerPort: undefined });
+                    }
+                  }}
                   disabled={isImporting}
-                  className="h-10 rounded-lg border-zinc-200 text-sm"
+                  className={`h-10 rounded-lg border-zinc-200 text-sm ${formErrors.containerPort ? 'border-red-500' : ''}`}
                 />
+                {formErrors.containerPort && (
+                  <p className="text-sm text-red-600">{formErrors.containerPort}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="startup-command" className="text-sm font-medium text-zinc-900">
-                  <span className="text-red-600">*</span>
+                <Label htmlFor="startup-command" className="text-sm font-medium text-zinc-900" required>
                   {t('startup_command')}
                 </Label>
                 <Input
                   id="startup-command"
                   placeholder={t('startup_command_example')}
                   value={formData.startupCommand}
-                  onChange={(e) => setFormData({ ...formData, startupCommand: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, startupCommand: e.target.value });
+                    if (formErrors.startupCommand) {
+                      setFormErrors({ ...formErrors, startupCommand: undefined });
+                    }
+                  }}
                   disabled={isImporting}
-                  className="h-10 rounded-lg border-zinc-200 text-sm placeholder:text-zinc-500"
+                  className={`h-10 rounded-lg border-zinc-200 text-sm placeholder:text-zinc-500 ${formErrors.startupCommand ? 'border-red-500' : ''}`}
                 />
+                {formErrors.startupCommand && (
+                  <p className="text-sm text-red-600">{formErrors.startupCommand}</p>
+                )}
               </div>
 
               {importError && (

@@ -357,9 +357,12 @@
   "paused": "已暂停",
   "please_enter_devbox_name_confirm": "请输入 <strong>{name}</strong> 确认:",
   "please_enter_git_url": "请输入您的 Git 仓库 URL",
+  "please_enter_startup_command": "请输入启动命令",
+  "please_enter_valid_port": "请输入有效的端口号",
   "please_fill_git_credentials": "请填写 Git 凭证信息",
   "please_fill_required_fields": "请填写所有必填项",
   "please_select_runtime": "请选择运行环境",
+  "please_upload_file": "请上传文件",
   "please_upgrade_plan": {
     "0": "请 ",
     "1": "升级您的计划",

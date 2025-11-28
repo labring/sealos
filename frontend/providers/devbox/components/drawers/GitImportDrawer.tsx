@@ -56,6 +56,13 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     templateUid: string;
     version: string;
   } | null>(null);
+  const [formErrors, setFormErrors] = useState<{
+    gitUrl?: string;
+    token?: string;
+    runtime?: string;
+    containerPort?: string;
+    startupCommand?: string;
+  }>({});
 
   const handleRuntimeSelect = (runtime: {
     name: string;
@@ -92,14 +99,36 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     return `devbox-${timestamp}-${random}`;
   };
 
-  const handleImport = async () => {
-    if (!formData.gitUrl || !formData.templateUid) {
-      toast.error(t('please_fill_required_fields'));
-      return;
+  const validateForm = () => {
+    const errors: typeof formErrors = {};
+
+    if (!formData.gitUrl) {
+      errors.gitUrl = t('please_enter_git_url');
     }
 
     if (formData.isPrivate && !formData.token) {
-      toast.error(t('please_fill_git_token'));
+      errors.token = t('please_fill_git_token');
+    }
+
+    if (!formData.templateUid) {
+      errors.runtime = t('please_select_runtime');
+    }
+
+    if (!formData.containerPort || formData.containerPort <= 0) {
+      errors.containerPort = t('please_enter_valid_port');
+    }
+
+    if (!formData.startupCommand) {
+      errors.startupCommand = t('please_enter_startup_command');
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleImport = async () => {
+    if (!validateForm()) {
+      toast.error(t('please_fill_required_fields'));
       return;
     }
 
@@ -223,6 +252,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
       setCloneProgress(0);
       setImportLogs('');
       setSelectedRuntime(null);
+      setFormErrors({});
       onClose();
     }
   };
@@ -287,23 +317,29 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
           ) : (
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="git-url" className="text-sm font-medium">
-                  <span className="text-red-600">*</span>
+                <Label htmlFor="git-url" className="text-sm font-medium" required>
                   {t('url')}
                 </Label>
                 <Input
                   id="git-url"
                   placeholder={t('please_enter_git_url')}
                   value={formData.gitUrl}
-                  onChange={(e) => setFormData({ ...formData, gitUrl: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, gitUrl: e.target.value });
+                    if (formErrors.gitUrl) {
+                      setFormErrors({ ...formErrors, gitUrl: undefined });
+                    }
+                  }}
                   disabled={isImporting}
-                  className="h-10 rounded-lg bg-white"
+                  className={`h-10 rounded-lg bg-white ${formErrors.gitUrl ? 'border-red-500' : ''}`}
                 />
+                {formErrors.gitUrl && (
+                  <p className="text-sm text-red-600">{formErrors.gitUrl}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label className="text-sm font-medium">
-                  <span className="text-red-600">*</span>
+                <Label className="text-sm font-medium" required>
                   {t('repo_privacy')}
                 </Label>
                 <RadioGroup
@@ -342,8 +378,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
               {formData.isPrivate && (
                 <div className="flex flex-col gap-4 rounded-xl border border-dashed border-zinc-400 p-4">
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="git-token" className="text-sm font-medium">
-                      <span className="text-red-600">*</span>
+                    <Label htmlFor="git-token" className="text-sm font-medium" required>
                       {t('token')}
                     </Label>
                     <Input
@@ -351,30 +386,44 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                       type="password"
                       placeholder={t('enter_git_token')}
                       value={formData.token || ''}
-                      onChange={(e) => setFormData({ ...formData, token: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, token: e.target.value });
+                        if (formErrors.token) {
+                          setFormErrors({ ...formErrors, token: undefined });
+                        }
+                      }}
                       disabled={isImporting}
-                      className="h-10 rounded-lg border-zinc-300 bg-white"
+                      className={`h-10 rounded-lg border-zinc-300 bg-white ${formErrors.token ? 'border-red-500' : ''}`}
                     />
+                    {formErrors.token && (
+                      <p className="text-sm text-red-600">{formErrors.token}</p>
+                    )}
                   </div>
                 </div>
               )}
 
               <div className="flex flex-col gap-2">
-                <Label className="text-sm font-medium">
-                  <span className="text-red-600">*</span>
+                <Label className="text-sm font-medium" required>
                   {t('runtime')}
                 </Label>
                 <RuntimeSelector
                   selectedRuntime={selectedRuntime}
-                  onRuntimeSelect={handleRuntimeSelect}
+                  onRuntimeSelect={(runtime) => {
+                    handleRuntimeSelect(runtime);
+                    if (formErrors.runtime) {
+                      setFormErrors({ ...formErrors, runtime: undefined });
+                    }
+                  }}
                   onVersionChange={handleVersionChange}
                   disabled={isImporting}
                 />
+                {formErrors.runtime && (
+                  <p className="text-sm text-red-600">{formErrors.runtime}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="container-port" className="text-sm font-medium">
-                  <span className="text-red-600">*</span>
+                <Label htmlFor="container-port" className="text-sm font-medium" required>
                   {t('container_port')}
                 </Label>
                 <Input
@@ -382,27 +431,40 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                   type="number"
                   placeholder="80"
                   value={formData.containerPort}
-                  onChange={(e) =>
-                    setFormData({ ...formData, containerPort: parseInt(e.target.value) || 0 })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, containerPort: parseInt(e.target.value) || 0 });
+                    if (formErrors.containerPort) {
+                      setFormErrors({ ...formErrors, containerPort: undefined });
+                    }
+                  }}
                   disabled={isImporting}
-                  className="h-10 rounded-lg bg-white"
+                  className={`h-10 rounded-lg bg-white ${formErrors.containerPort ? 'border-red-500' : ''}`}
                 />
+                {formErrors.containerPort && (
+                  <p className="text-sm text-red-600">{formErrors.containerPort}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="startup-command" className="text-sm font-medium">
-                  <span className="text-red-600">*</span>
+                <Label htmlFor="startup-command" className="text-sm font-medium" required>
                   {t('startup_command')}
                 </Label>
                 <Input
                   id="startup-command"
                   placeholder={t('startup_command_example')}
                   value={formData.startupCommand}
-                  onChange={(e) => setFormData({ ...formData, startupCommand: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, startupCommand: e.target.value });
+                    if (formErrors.startupCommand) {
+                      setFormErrors({ ...formErrors, startupCommand: undefined });
+                    }
+                  }}
                   disabled={isImporting}
-                  className="h-10 rounded-lg bg-white"
+                  className={`h-10 rounded-lg bg-white ${formErrors.startupCommand ? 'border-red-500' : ''}`}
                 />
+                {formErrors.startupCommand && (
+                  <p className="text-sm text-red-600">{formErrors.startupCommand}</p>
+                )}
               </div>
 
               {importError && (
