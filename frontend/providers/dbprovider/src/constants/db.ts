@@ -295,7 +295,7 @@ export const defaultDBEditValue: DBEditType = {
     week: [],
     hour: '12',
     minute: '00',
-    saveTime: 100,
+    saveTime: 14,
     saveType: 'd'
   },
   terminationPolicy: 'Delete',
