@@ -3661,7 +3661,6 @@ spec:
                     description: todo TailNet
                     type: string
                   type:
-                    default: NodePort
                     enum:
                     - NodePort
                     - Tailnet
@@ -3669,8 +3668,6 @@ spec:
                     type: string
                   uniqueID:
                     type: string
-                required:
-                - type
                 type: object
               node:
                 type: string

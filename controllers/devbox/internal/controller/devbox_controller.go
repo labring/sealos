@@ -140,6 +140,8 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	// init devbox status network type
+	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	// init devbox status content id
 	if devbox.Status.ContentID == "" {
 		devbox.Status.ContentID = uuid.New().String()
@@ -559,7 +561,6 @@ func (r *DevboxReconciler) syncNodeport(ctx context.Context, devbox *devboxv1alp
 			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
 				return err
 			}
-			latestDevbox.Status.Network.Type = devboxv1alpha2.NetworkTypeNodePort
 			latestDevbox.Status.Network.NodePort = nodePort
 			return r.Status().Update(ctx, latestDevbox)
 		})

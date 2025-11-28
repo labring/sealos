@@ -165,19 +165,19 @@ type DevboxSpec struct {
 }
 
 type NetworkStatus struct {
-	// +kubebuilder:default=NodePort
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=NodePort;Tailnet;SSHGate
-	Type NetworkType `json:"type"`
+	Type NetworkType `json:"type,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	NodePort int32 `json:"nodePort"`
+	NodePort int32 `json:"nodePort,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	UniqueID string `json:"uniqueID"`
+	UniqueID string `json:"uniqueID,omitempty"`
 
 	// todo TailNet
 	// +kubebuilder:validation:Optional
-	TailNet string `json:"tailnet"`
+	TailNet string `json:"tailnet,omitempty"`
 }
 
 type CommitStatus string
@@ -266,7 +266,7 @@ type DevboxStatus struct {
 	// +kubebuilder:validation:Optional
 	Phase DevboxPhase `json:"phase"`
 	// +kubebuilder:validation:Optional
-	Network NetworkStatus `json:"network"`
+	Network NetworkStatus `json:"network,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	LastContainerStatus corev1.ContainerStatus `json:"lastContainerStatus"`
