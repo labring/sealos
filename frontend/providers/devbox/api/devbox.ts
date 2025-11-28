@@ -11,6 +11,7 @@ import {
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { AxiosProgressEvent } from 'axios';
 import { AppListItemType } from '@/types/app';
+import type { GitImportRequest, ImportResponse } from '@/types/import';
 
 export const getMyDevboxList = () => GET<DevboxListItemTypeV2[]>('/api/getDevboxList');
 
@@ -91,3 +92,18 @@ export const execCommandInDevboxPod = (data: {
 
 export const updateDevboxRemark = (data: { devboxName: string; remark: string }) =>
   POST('/api/updateDevboxRemark', data);
+
+export const importDevboxFromGit = (payload: GitImportRequest) =>
+  POST<ImportResponse>('/api/importFromGit', payload);
+
+export const importDevboxFromLocal = (
+  formData: FormData,
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+) =>
+  POST<ImportResponse>('/api/importFromLocal', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 0,
+    onUploadProgress
+  });

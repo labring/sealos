@@ -17,6 +17,15 @@ const nextConfig = {
       }
     ]);
     config.plugins = [...config.plugins];
+
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'bufferutil': 'commonjs bufferutil',
+        'utf-8-validate': 'commonjs utf-8-validate'
+      });
+    }
+
     return config;
   },
   // https://www.npmjs.com/package/geist
