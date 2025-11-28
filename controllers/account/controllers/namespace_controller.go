@@ -42,15 +42,16 @@ import (
 
 // NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
-	Client                client.WithWatch
-	dynamicClient         dynamic.Interface
-	Log                   logr.Logger
-	Scheme                *runtime.Scheme
-	OSAdminClient         *madmin.AdminClient
-	OSNamespace           string
-	OSAdminSecret         string
-	InternalEndpoint      string
-	deleteBackupSemaphore chan struct{}
+	Client                  client.WithWatch
+	dynamicClient           dynamic.Interface
+	Log                     logr.Logger
+	Scheme                  *runtime.Scheme
+	OSAdminClient           *madmin.AdminClient
+	OSNamespace             string
+	OSAdminSecret           string
+	InternalEndpoint        string
+	deleteResourceSemaphore chan struct{}
+	deleteBackupSemaphore   chan struct{}
 }
 
 const (
@@ -379,31 +380,22 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	return errors2.Join(errs...)
 }
 
-func (r *NamespaceReconciler) deleteBackupWithRateLimit(
-	ctx context.Context,
-	namespace string,
-) error {
-	// Acquire semaphore to limit concurrent backup deletions
-	select {
-	case r.deleteBackupSemaphore <- struct{}{}:
-		// Successfully acquired semaphore for backup deletion
-		defer func() {
-			<-r.deleteBackupSemaphore // Release semaphore when done
-		}()
-		return deleteResource(ctx, r.dynamicClient, "backup", namespace)
-	case <-ctx.Done():
-		return ctx.Err()
+func (r *NamespaceReconciler) deleteBackup(ctx context.Context, namespace string) error {
+	gvr := schema.GroupVersionResource{
+		Group:    "dataprotection.kubeblocks.io",
+		Version:  "v1alpha1",
+		Resource: "backups",
 	}
+	return deleteResourceListAndWait(ctx, r.dynamicClient, gvr, namespace, r.deleteBackupSemaphore)
 }
 
 func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace string) error {
-	// Delete backup with rate limiting
-	err := r.deleteBackupWithRateLimit(ctx, namespace)
-	if err != nil {
+	// Delete backup first and wait for completion
+	if err := r.deleteBackup(ctx, namespace); err != nil {
 		return err
 	}
 
-	// Delete other resources without rate limiting
+	// Delete other resources with rate limiting using semaphore
 	deleteResources := []string{
 		"cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
 		"objectstorageuser", "deploy", "sts", "ds", "rs", "pvc", "Service", "Ingress",
@@ -413,7 +405,16 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 	errChan := make(chan error, len(deleteResources))
 	for _, rs := range deleteResources {
 		go func(resource string) {
-			errChan <- deleteResource(ctx, r.dynamicClient, resource, namespace)
+			// Acquire semaphore to limit concurrent resource deletions
+			select {
+			case r.deleteResourceSemaphore <- struct{}{}:
+				defer func() {
+					<-r.deleteResourceSemaphore // Release semaphore when done
+				}()
+				errChan <- deleteResource(ctx, r.dynamicClient, resource, namespace)
+			case <-ctx.Done():
+				errChan <- ctx.Err()
+			}
 		}(rs)
 	}
 	for range deleteResources {
@@ -1215,18 +1216,26 @@ func (r *NamespaceReconciler) SetupWithManager(
 	mgr ctrl.Manager,
 	limitOps controller.Options,
 	deleteResourceConcurrent int,
+	deleteBackupConcurrent int,
 ) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
 	r.OSAdminSecret = os.Getenv(OSAdminSecret)
 	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
 	r.OSNamespace = os.Getenv(OSNamespace)
 
-	// Initialize semaphore for backup deletion rate limiting
+	// Initialize semaphore for resource deletion rate limiting
 	if deleteResourceConcurrent <= 0 {
-		deleteResourceConcurrent = 1
+		deleteResourceConcurrent = 3
 	}
-	r.deleteBackupSemaphore = make(chan struct{}, deleteResourceConcurrent)
-	r.Log.Info("Initialized backup deletion semaphore", "concurrency", deleteResourceConcurrent)
+	r.deleteResourceSemaphore = make(chan struct{}, deleteResourceConcurrent)
+	r.Log.Info("Initialized resource deletion semaphore", "concurrency", deleteResourceConcurrent)
+
+	// Initialize semaphore for backup deletion rate limiting
+	if deleteBackupConcurrent <= 0 {
+		deleteBackupConcurrent = 30
+	}
+	r.deleteBackupSemaphore = make(chan struct{}, deleteBackupConcurrent)
+	r.Log.Info("Initialized backup deletion semaphore", "concurrency", deleteBackupConcurrent)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -2262,13 +2271,6 @@ func deleteResource(
 	deletePolicy := v12.DeletePropagationForeground
 	var gvr schema.GroupVersionResource
 	switch resource {
-	case "backup":
-		gvr = schema.GroupVersionResource{
-			Group:    "dataprotection.kubeblocks.io",
-			Version:  "v1alpha1",
-			Resource: "backups",
-		}
-		return deleteResourceListAndWait(ctx, dynamicClient, gvr, namespace)
 	case "cluster.apps.kubeblocks.io":
 		gvr = schema.GroupVersionResource{
 			Group:    "apps.kubeblocks.io",
@@ -2689,6 +2691,7 @@ func deleteResourceListAndWait(
 	dynamicClient dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	namespace string,
+	semaphore chan struct{},
 ) error {
 	// List all resources
 	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, v12.ListOptions{})
@@ -2700,7 +2703,7 @@ func deleteResourceListAndWait(
 		return nil // No resources to delete
 	}
 
-	// Concurrent deletion: use WaitGroup and error channel to collect errors
+	// Concurrent deletion with rate limiting: use semaphore to limit concurrent deletions
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(list.Items)) // Buffered channel to avoid blocking
 	allErrors := []error{}
@@ -2710,8 +2713,15 @@ func deleteResourceListAndWait(
 		wg.Add(1)
 		go func(resName string) {
 			defer wg.Done()
-			if deleteErr := deleteResourceAndWait(ctx, dynamicClient, gvr, namespace, resName); deleteErr != nil {
-				errCh <- fmt.Errorf("failed to delete %s/%s: %w", gvr, resName, deleteErr)
+			// Acquire semaphore
+			select {
+			case semaphore <- struct{}{}:
+				defer func() { <-semaphore }() // Release semaphore when done
+				if deleteErr := deleteResourceAndWait(ctx, dynamicClient, gvr, namespace, resName); deleteErr != nil {
+					errCh <- fmt.Errorf("failed to delete %s/%s: %w", gvr, resName, deleteErr)
+				}
+			case <-ctx.Done():
+				errCh <- ctx.Err()
 			}
 		}(name)
 	}
@@ -2754,7 +2764,7 @@ func deleteResourceAndWait(
 
 	// Wait for deletion to complete: poll Get until NotFound
 	pollInterval := 5 * time.Second
-	timeout := 5 * time.Minute // Adjust based on finalizer complexity
+	timeout := time.Minute
 	err = wait.PollUntilContextTimeout(ctx, pollInterval, timeout, true,
 		func(ctx context.Context) (bool, error) {
 			_, getErr := dynamicClient.Resource(gvr).
