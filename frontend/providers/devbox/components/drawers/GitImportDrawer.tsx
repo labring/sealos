@@ -16,7 +16,6 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
-import { Progress } from '@sealos/shadcn-ui/progress';
 import type { GitImportFormData, ImportStage } from '@/types/import';
 import { importDevboxFromGit, execCommandInDevboxPod } from '@/api/devbox';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
@@ -47,7 +46,6 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
 
   const [importStage, setImportStage] = useState<ImportStage>('idle');
   const [importError, setImportError] = useState<string>('');
-  const [cloneProgress, setCloneProgress] = useState<number>(0);
   const [importLogs, setImportLogs] = useState<string>('');
   const [selectedRuntime, setSelectedRuntime] = useState<{
     name: string;
@@ -138,7 +136,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     try {
       setImportStage('creating');
       setImportError('');
-      setCloneProgress(0);
+      setImportLogs('Creating devbox...\n');
 
       const devboxName = generateDevboxName();
 
@@ -154,7 +152,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
         cpu: 4000,
         memory: 8192
       });
-
+      setImportLogs((prev) => prev + 'Devbox created\nCloning repository...\n');
       setImportStage('cloning');
 
       const gitImportCommand = generateGitImportCommand({
@@ -181,19 +179,6 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
               isSuccess = true;
             }
 
-            const receivingMatch = text.match(/Receiving objects:\s+(\d+)%/);
-            const resolvingMatch = text.match(/Resolving deltas:\s+(\d+)%/);
-            const cloningMatch = text.match(/Cloning into/);
-
-            if (receivingMatch) {
-              const progress = parseInt(receivingMatch[1]);
-              setCloneProgress(Math.min(progress, 100));
-            } else if (resolvingMatch) {
-              const progress = parseInt(resolvingMatch[1]);
-              setCloneProgress(Math.min(progress, 100));
-            } else if (cloningMatch) {
-              setCloneProgress(10);
-            }
           },
           signal: controller.signal
         });
@@ -249,7 +234,6 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
       });
       setImportStage('idle');
       setImportError('');
-      setCloneProgress(0);
       setImportLogs('');
       setSelectedRuntime(null);
       setFormErrors({});
@@ -259,6 +243,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
 
   const isImporting =
     importStage === 'creating' ||
+    importStage === 'waiting' ||
     importStage === 'cloning' ||
     importStage === 'configuring' ||
     importStage === 'starting';
@@ -333,9 +318,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                   disabled={isImporting}
                   className={`h-10 rounded-lg bg-white ${formErrors.gitUrl ? 'border-red-500' : ''}`}
                 />
-                {formErrors.gitUrl && (
-                  <p className="text-sm text-red-600">{formErrors.gitUrl}</p>
-                )}
+                {formErrors.gitUrl && <p className="text-sm text-red-600">{formErrors.gitUrl}</p>}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -395,9 +378,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                       disabled={isImporting}
                       className={`h-10 rounded-lg border-zinc-300 bg-white ${formErrors.token ? 'border-red-500' : ''}`}
                     />
-                    {formErrors.token && (
-                      <p className="text-sm text-red-600">{formErrors.token}</p>
-                    )}
+                    {formErrors.token && <p className="text-sm text-red-600">{formErrors.token}</p>}
                   </div>
                 </div>
               )}
@@ -417,9 +398,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                   onVersionChange={handleVersionChange}
                   disabled={isImporting}
                 />
-                {formErrors.runtime && (
-                  <p className="text-sm text-red-600">{formErrors.runtime}</p>
-                )}
+                {formErrors.runtime && <p className="text-sm text-red-600">{formErrors.runtime}</p>}
               </div>
 
               <div className="flex flex-col gap-2">

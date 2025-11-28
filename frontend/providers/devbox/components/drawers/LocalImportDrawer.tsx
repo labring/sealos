@@ -3,14 +3,7 @@
 import { toast } from 'sonner';
 import { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Loader2,
-  FileArchive,
-  CloudUpload,
-  Repeat,
-  Trash2,
-  Hourglass
-} from 'lucide-react';
+import { Loader2, FileArchive, CloudUpload, Repeat, Trash2, Hourglass } from 'lucide-react';
 
 import {
   Drawer,
@@ -22,7 +15,6 @@ import {
 import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
-import { Progress } from '@sealos/shadcn-ui/progress';
 import type { LocalImportFormData, ImportStage } from '@/types/import';
 import { importDevboxFromLocal } from '@/api/devbox';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
@@ -161,6 +153,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     try {
       setImportStage('creating');
       setImportError('');
+      setImportLogs('Creating devbox...\n');
 
       const devboxName = generateDevboxName();
 
@@ -175,6 +168,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       formDataToSend.append('memory', '8192');
 
       setImportStage('waiting');
+      setImportLogs((prev) => prev + 'Devbox created\nPreparing to upload...\n');
 
       const response = await importDevboxFromLocal(formDataToSend, (progressEvent) => {
         const progress = progressEvent.total
@@ -235,7 +229,9 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
 
   const isImporting =
     importStage === 'creating' ||
+    importStage === 'waiting' ||
     importStage === 'uploading' ||
+    importStage === 'extracting' ||
     importStage === 'configuring' ||
     importStage === 'starting';
 
@@ -369,9 +365,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                     </div>
                   )}
                 </div>
-                {formErrors.file && (
-                  <p className="text-sm text-red-600">{formErrors.file}</p>
-                )}
+                {formErrors.file && <p className="text-sm text-red-600">{formErrors.file}</p>}
               </div>
 
               <div className="space-y-2">
@@ -389,13 +383,15 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                   onVersionChange={handleVersionChange}
                   disabled={isImporting}
                 />
-                {formErrors.runtime && (
-                  <p className="text-sm text-red-600">{formErrors.runtime}</p>
-                )}
+                {formErrors.runtime && <p className="text-sm text-red-600">{formErrors.runtime}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="container-port" className="text-sm font-medium text-zinc-900" required>
+                <Label
+                  htmlFor="container-port"
+                  className="text-sm font-medium text-zinc-900"
+                  required
+                >
                   {t('container_port')}
                 </Label>
                 <Input
@@ -418,7 +414,11 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="startup-command" className="text-sm font-medium text-zinc-900" required>
+                <Label
+                  htmlFor="startup-command"
+                  className="text-sm font-medium text-zinc-900"
+                  required
+                >
                   {t('startup_command')}
                 </Label>
                 <Input
@@ -454,14 +454,14 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
               variant="outline"
               onClick={handleClose}
               disabled={isImporting}
-              className="h-10 flex-1 rounded-lg border-zinc-200 text-sm font-medium"
+              className="h-10 rounded-lg border-zinc-200 text-sm font-medium"
             >
               {t('cancel')}
             </Button>
             <Button
               onClick={handleImport}
               disabled={isImporting || !formData.file || !formData.templateUid}
-              className="h-10 flex-1 rounded-lg bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800"
+              className="h-10 rounded-lg bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800"
             >
               {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('create_devbox')}
