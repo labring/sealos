@@ -1,6 +1,6 @@
 module github.com/labring/sealos/service/sshgate
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/caarlos0/env/v9 v9.0.0

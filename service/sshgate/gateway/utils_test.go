@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -109,7 +110,7 @@ func TestExitStatusForwarding(t *testing.T) {
 	}()
 
 	// Run the test multiple times sequentially to catch race conditions
-	const numRuns = 5
+	const numRuns = 50
 
 	for i := 1; i <= numRuns; i++ {
 		exitCode, err := runSSHCommand(t, gwListener.Addr().String(), privBytes, "exit 42")
@@ -323,6 +324,11 @@ func handleMockBackendConnection(conn net.Conn, config *ssh.ServerConfig, exitCo
 
 					// Send EOF after exit-status
 					_ = ch.CloseWrite()
+
+					// Drain any remaining input from client before closing.
+					// This ensures the gateway has time to forward exit-status
+					// before the channel is closed.
+					_, _ = io.Copy(io.Discard, ch)
 
 					return
 

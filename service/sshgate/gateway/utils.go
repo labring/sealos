@@ -5,17 +5,25 @@ import (
 	"net"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
-func (g *Gateway) proxyRequests(in <-chan *ssh.Request, out ssh.Channel) {
+func (g *Gateway) proxyRequests(
+	in <-chan *ssh.Request,
+	out ssh.Channel,
+	logger *log.Entry,
+) {
 	for req := range in {
 		ok, err := out.SendRequest(req.Type, req.WantReply, req.Payload)
 		if req.WantReply {
 			_ = req.Reply(ok, nil)
 		}
-
 		if err != nil {
+			logger.WithField("request_type", req.Type).
+				WithError(err).
+				Error("Error forwarding request")
+
 			return
 		}
 	}
@@ -26,10 +34,11 @@ func (g *Gateway) proxyRequests(in <-chan *ssh.Request, out ssh.Channel) {
 func (g *Gateway) proxyChannelWithRequests(
 	channel, backendChannel ssh.Channel,
 	clientReqs, backendReqs <-chan *ssh.Request,
+	logger *log.Entry,
 ) {
 	// Client to backend: requests and data
 	go func() {
-		g.proxyRequests(clientReqs, backendChannel)
+		g.proxyRequests(clientReqs, backendChannel, logger)
 	}()
 
 	go func() {
@@ -46,7 +55,7 @@ func (g *Gateway) proxyChannelWithRequests(
 	})
 
 	backendToClientWg.Go(func() {
-		g.proxyRequests(backendReqs, channel)
+		g.proxyRequests(backendReqs, channel, logger)
 	})
 
 	// Wait for backend->client to complete (data + exit-status)

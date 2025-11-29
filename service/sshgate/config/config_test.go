@@ -8,7 +8,6 @@ import (
 	"github.com/labring/sealos/service/sshgate/gateway"
 )
 
-//nolint:gocyclo // Test function with multiple sub-tests
 func TestLoad(t *testing.T) {
 	t.Run("LoadWithDefaults", func(t *testing.T) {
 		cfg, err := config.Load()

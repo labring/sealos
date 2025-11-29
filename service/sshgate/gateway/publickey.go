@@ -52,31 +52,16 @@ func (g *Gateway) handleGlobalRequestsPublicKey(
 	logger *log.Entry,
 ) {
 	for req := range reqs {
-		switch req.Type {
-		case "tcpip-forward", "cancel-tcpip-forward":
-			if req.WantReply {
-				_ = req.Reply(false, nil)
-			}
+		ok, response, err := backendConn.SendRequest(req.Type, req.WantReply, req.Payload)
+		if req.WantReply {
+			_ = req.Reply(ok, response)
+		}
+		if err != nil {
+			logger.WithField("request_type", req.Type).
+				WithError(err).
+				Error("Error forwarding request")
 
-			logger.WithField("request_type", req.Type).Warn("Rejected remote port forwarding")
-
-		default:
-			ok, response, err := backendConn.SendRequest(req.Type, req.WantReply, req.Payload)
-			if err != nil {
-				logger.WithField("request_type", req.Type).
-					WithError(err).
-					Error("Error forwarding request")
-
-				if req.WantReply {
-					_ = req.Reply(false, nil)
-				}
-
-				return
-			}
-
-			if req.WantReply {
-				_ = req.Reply(ok, response)
-			}
+			return
 		}
 	}
 }
@@ -110,5 +95,11 @@ func (g *Gateway) handleChannelPublicKey(
 	channelLogger.Debug("Channel established")
 
 	// Use synchronized proxy to ensure exit-status is forwarded before closing
-	g.proxyChannelWithRequests(channel, backendChannel, requests, backendReqs)
+	g.proxyChannelWithRequests(
+		channel,
+		backendChannel,
+		requests,
+		backendReqs,
+		channelLogger,
+	)
 }
