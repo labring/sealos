@@ -153,7 +153,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     try {
       setImportStage('creating');
       setImportError('');
-      setImportLogs('Creating devbox...\n');
+      setImportLogs('');
 
       const devboxName = generateDevboxName();
 
@@ -167,30 +167,28 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       formDataToSend.append('cpu', '4000');
       formDataToSend.append('memory', '8192');
 
-      setImportStage('waiting');
-      setImportLogs((prev) => prev + 'Devbox created\nPreparing to upload...\n');
+      let lastProgress = 0;
 
       const response = await importDevboxFromLocal(formDataToSend, (progressEvent) => {
         const progress = progressEvent.total
           ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
           : 0;
 
-        if (progress === 0) {
-          setImportStage('uploading');
-          setImportLogs((prev) => prev + '\nUploading local repository...\n');
-        } else if (progress > 0 && progress < 100) {
-          setImportLogs((prev) => prev + `Uploading: ${progress}%\n`);
-        } else if (progress >= 100) {
-          setImportStage('extracting');
-          setImportLogs((prev) => prev + 'Upload complete\nExtracting files...\n');
+        if (progress > 0 && progress !== lastProgress) {
+          lastProgress = progress;
+
+          if (progress < 100) {
+            setImportStage('uploading');
+            setImportLogs(`Upload progress: ${progress}%`);
+          } else {
+            setImportStage('extracting');
+            setImportLogs(`Upload complete (100%)\nExtracting and configuring...`);
+          }
         }
       });
 
-      setImportStage('configuring');
-      setImportLogs((prev) => prev + 'Configuring environment...\n');
-      await new Promise((resolve) => setTimeout(resolve, 500));
       setImportStage('success');
-      setImportLogs((prev) => prev + 'DevBox is ready!\n');
+      setImportLogs('Import completed successfully');
       toast.success(t('import_success'));
       setTimeout(() => {
         onSuccess(response.devboxName);
@@ -200,7 +198,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportStage('error');
       const errorMsg = getErrorMessage(error, 'import_failed');
       setImportError(errorMsg);
-      setImportLogs((prev) => prev + `\nERR: ${errorMsg}\n`);
+      setImportLogs(`ERR: ${errorMsg}`);
       toast.error(errorMsg);
     }
   };

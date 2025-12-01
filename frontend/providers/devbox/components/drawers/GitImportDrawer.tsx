@@ -17,7 +17,8 @@ import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
 import type { GitImportFormData, ImportStage } from '@/types/import';
-import { importDevboxFromGit, execCommandInDevboxPod } from '@/api/devbox';
+import { createDevbox, getDevboxByName, execCommandInDevboxPod } from '@/api/devbox';
+import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { generateGitImportCommand } from '@/utils/importCommandGenerator';
 import RuntimeSelector from '@/components/RuntimeSelector';
@@ -124,6 +125,22 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     return Object.keys(errors).length === 0;
   };
 
+  const waitForDevboxReady = async (devboxName: string, maxRetries = 60): Promise<boolean> => {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const devbox = await getDevboxByName(devboxName);
+        if (devbox.status?.value === 'Running') {
+          return true;
+        }
+        setImportLogs(`Waiting for devbox to be ready... (${i + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error('Error checking devbox status:', error);
+      }
+    }
+    return false;
+  };
+
   const handleImport = async () => {
     if (!validateForm()) {
       toast.error(t('please_fill_required_fields'));
@@ -136,24 +153,40 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     try {
       setImportStage('creating');
       setImportError('');
-      setImportLogs('Creating devbox...\n');
+      setImportLogs('Creating devbox...');
 
       const devboxName = generateDevboxName();
 
-      const response = await importDevboxFromGit({
+      const templateData = await getTemplate(formData.templateUid);
+
+      await createDevbox({
         name: devboxName,
-        gitUrl: formData.gitUrl,
-        isPrivate: formData.isPrivate,
-        token: formData.token,
-        runtime: selectedRuntime?.iconId || '',
         templateUid: formData.templateUid,
-        containerPort: formData.containerPort,
-        startupCommand: formData.startupCommand,
+        templateRepositoryUid: templateData.template.templateRepositoryUid,
+        templateConfig: templateData.template.config,
+        image: templateData.template.image,
         cpu: 4000,
-        memory: 8192
+        memory: 8192,
+        networks: [
+          {
+            port: formData.containerPort,
+            protocol: 'HTTP',
+            openPublicDomain: true
+          } as any
+        ],
+        env: []
       });
-      setImportLogs((prev) => prev + 'Devbox created\nCloning repository...\n');
+
+      setImportStage('waiting');
+      setImportLogs('Devbox created, waiting for it to be ready...');
+
+      const isReady = await waitForDevboxReady(devboxName);
+      if (!isReady) {
+        throw new Error('Devbox failed to become ready within timeout');
+      }
+
       setImportStage('cloning');
+      setImportLogs('Devbox is ready, starting git import...');
 
       const gitImportCommand = generateGitImportCommand({
         gitUrl: formData.gitUrl,
@@ -167,7 +200,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
 
       try {
         await execCommandInDevboxPod({
-          devboxName: response.devboxName,
+          devboxName: devboxName,
           command: gitImportCommand,
           idePath: '/home/devbox/project',
           onDownloadProgress: (progressEvent) => {
@@ -201,7 +234,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
         setImportStage('success');
         toast.success(t('import_success'));
         setTimeout(() => {
-          onSuccess(response.devboxName);
+          onSuccess(devboxName);
         }, 1000);
       } else {
         setImportStage('error');
