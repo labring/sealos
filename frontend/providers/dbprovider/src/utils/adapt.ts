@@ -146,6 +146,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
+    rawDbType: rawDbType,
     dbType: dbType,
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
