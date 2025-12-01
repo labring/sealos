@@ -1722,7 +1722,7 @@ importers:
         version: 3.9.0(react-hook-form@7.48.2)
       '@kubernetes/client-node':
         specifier: ^0.21.0
-        version: 0.21.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+        version: 0.21.0
       '@prisma/client':
         specifier: ^5.10.2
         version: 5.10.2(prisma@5.10.2)
@@ -1750,9 +1750,6 @@ importers:
       axios:
         specifier: ^1.7.3
         version: 1.7.3
-      bufferutil:
-        specifier: ^4.0.9
-        version: 4.0.9
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -1761,7 +1758,7 @@ importers:
         version: 1.11.10
       dns:
         specifier: ^0.2.2
-        version: 0.2.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+        version: 0.2.2
       echarts:
         specifier: ^5.4.3
         version: 5.4.3
@@ -1843,9 +1840,6 @@ importers:
       sonner:
         specifier: ^2.0.5
         version: 2.0.5(react-dom@18.2.0)(react@18.2.0)
-      utf-8-validate:
-        specifier: ^6.0.5
-        version: 6.0.5
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -8588,7 +8582,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@kubernetes/client-node@0.21.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
+  /@kubernetes/client-node@0.21.0:
     resolution: {integrity: sha512-yYRbgMeyQbvZDHt/ZqsW3m4lRefzhbbJEuj8sVXM+bufKrgmzriA2oq7lWPH/k/LQIicAME9ixPUadTrxIF6dQ==}
     dependencies:
       '@types/js-yaml': 4.0.9
@@ -8604,7 +8598,7 @@ packages:
       stream-buffers: 3.0.2
       tar: 7.4.3
       tslib: 2.6.2
-      ws: 8.14.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.14.2
     optionalDependencies:
       openid-client: 5.6.1
     transitivePeerDependencies:
@@ -18007,6 +18001,23 @@ packages:
   /dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
 
+  /dns@0.2.2:
+    resolution: {integrity: sha512-dhCgBk0QglzySl2BVlIkRuk7aTqxlCe+5KhHEX5ULuco7RcB6d1zDnP5iGSs2rLdJaTc+82MxegtJtjFuueWiQ==}
+    engines: {node: '>= 0.10.0 < 0.11.0'}
+    hasBin: true
+    dependencies:
+      hbo-dnsd: 0.9.8
+      native-dns: 0.6.1
+      node-options: 0.0.6
+      tomahawk: 0.1.6
+      tomahawk-plugin-kv-memory-store: 0.0.3
+      winston: 0.7.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
   /dns@0.2.2(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     resolution: {integrity: sha512-dhCgBk0QglzySl2BVlIkRuk7aTqxlCe+5KhHEX5ULuco7RcB6d1zDnP5iGSs2rLdJaTc+82MxegtJtjFuueWiQ==}
     engines: {node: '>= 0.10.0 < 0.11.0'}
@@ -18244,6 +18255,26 @@ packages:
       once: 1.4.0
     dev: false
 
+  /engine.io-client@1.3.1:
+    resolution: {integrity: sha512-bTOZMqAe7HXhyA/2T7Fve04b/ZZruTHSOqa+yn8U4RFSyRAVPePjopOgJOUNciEfuXo1gx850P5LzaQU28/p3w==}
+    dependencies:
+      component-emitter: 1.1.2
+      component-inherit: 0.0.3
+      debug: 0.7.4
+      engine.io-parser: 1.0.6
+      has-cors: 1.0.3
+      indexof: 0.0.1
+      parsejson: 0.0.1
+      parseqs: 0.0.2
+      parseuri: 0.0.2
+      ws: 0.4.31
+      xmlhttprequest: '@github.com/LearnBoost/node-XMLHttpRequest/archive/0f36d0b5ebc03d85f860d42a64ae9791e1daa433.tar.gz'
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
   /engine.io-client@1.3.1(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     resolution: {integrity: sha512-bTOZMqAe7HXhyA/2T7Fve04b/ZZruTHSOqa+yn8U4RFSyRAVPePjopOgJOUNciEfuXo1gx850P5LzaQU28/p3w==}
     dependencies:
@@ -18272,6 +18303,19 @@ packages:
       base64-arraybuffer: 0.1.2
       blob: 0.0.2
       utf8: 2.0.0
+    dev: false
+
+  /engine.io@1.3.1:
+    resolution: {integrity: sha512-fjnHWC9SLPoygMp6pqwoxmNkDDdYme4eCRTBTZLmEtGZETCpUEgSwoQjSgyj7IyIjqninKRF+2VeEV2kOniUFQ==}
+    dependencies:
+      base64id: 0.1.0
+      debug: 0.6.0
+      engine.io-parser: 1.0.6
+      ws: 0.4.31
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
     dev: false
 
   /engine.io@1.3.1(bufferutil@4.0.9)(utf-8-validate@6.0.5):
@@ -22710,7 +22754,7 @@ packages:
     peerDependencies:
       ws: '*'
     dependencies:
-      ws: 8.14.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.14.2
 
   /isomorphic-ws@5.0.0(ws@8.18.1):
     resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
@@ -29568,6 +29612,25 @@ packages:
       - supports-color
     dev: false
 
+  /socket.io-client@1.0.6:
+    resolution: {integrity: sha512-itdtz6fQBTFIDBP4+hJox0OlT+SbCVdENjPgjMup3ehu7OsiG6t0FYBXCx+k/upt9lbeyp9BmUNNi5EfnGa5Vw==}
+    dependencies:
+      component-bind: 1.0.0
+      component-emitter: 1.1.2
+      debug: 0.7.4
+      engine.io-client: 1.3.1
+      has-binary-data: 0.1.1
+      indexof: 0.0.1
+      object-component: 0.0.3
+      parseuri: 0.0.2
+      socket.io-parser: 2.2.0
+      to-array: 0.1.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
   /socket.io-client@1.0.6(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     resolution: {integrity: sha512-itdtz6fQBTFIDBP4+hJox0OlT+SbCVdENjPgjMup3ehu7OsiG6t0FYBXCx+k/upt9lbeyp9BmUNNi5EfnGa5Vw==}
     dependencies:
@@ -29607,6 +29670,21 @@ packages:
       json3: 3.2.6
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /socket.io@1.0.6:
+    resolution: {integrity: sha512-1x7TkMh8aKfLoXuXe5rXnDnv3xfcOFrDM6hR9z15dpZ83tTxt2NUxnpuGL2zMIAJQ4DitKiadEBvBVju5cxcHw==}
+    dependencies:
+      debug: 0.7.4
+      engine.io: 1.3.1
+      has-binary-data: 0.1.1
+      socket.io-adapter: 0.2.0
+      socket.io-client: 1.0.6
+      socket.io-parser: 2.2.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
     dev: false
 
   /socket.io@1.0.6(bufferutil@4.0.9)(utf-8-validate@6.0.5):
@@ -30663,6 +30741,25 @@ packages:
 
   /tomahawk-plugin-kv-memory-store@0.0.3:
     resolution: {integrity: sha512-opt82r6s+775jmrREiWruMVTQaGQYgPd6/zYTDRwwHhDGSqpFaZZgCSnI/BAIs8nC88puTK4PyodkSRpUDp/2Q==}
+    dev: false
+
+  /tomahawk@0.1.6:
+    resolution: {integrity: sha512-HFLoewTx2gHD0o2t0tR+EIcDXhqdtakfZCDiYsGjOO93nYQ1i7nbhj3UL7iQdtoBbPAcEbrxeJ0KlfPOvhxFyg==}
+    engines: {node: '>= 0.8.0 < 0.11.0'}
+    hasBin: true
+    dependencies:
+      body-parser: 1.5.0
+      connect: 3.0.2
+      errorhandler: 1.1.1
+      express: 4.6.1
+      morgan: 1.2.0
+      node-options: 0.0.6
+      socket.io: 1.0.6
+      winston: 0.7.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
     dev: false
 
   /tomahawk@0.1.6(bufferutil@4.0.9)(utf-8-validate@6.0.5):
@@ -32204,6 +32301,26 @@ packages:
       signal-exit: 3.0.7
     dev: true
 
+  /ws@0.4.31:
+    resolution: {integrity: sha512-mWiVQ9qZGPXvLxQ4xGy58Ix5Bw0L99SB+hDT8L59bty4fbnQczaGl4YEWR7AzLQGbvPn/30r9/o41dPiSuUmYw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+    requiresBuild: true
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: ^5.0.2
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dependencies:
+      commander: 0.6.1
+      nan: 0.3.2
+      options: 0.0.6
+      tinycolor: 0.0.1
+    dev: false
+
   /ws@0.4.31(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     resolution: {integrity: sha512-mWiVQ9qZGPXvLxQ4xGy58Ix5Bw0L99SB+hDT8L59bty4fbnQczaGl4YEWR7AzLQGbvPn/30r9/o41dPiSuUmYw==}
     engines: {node: '>=0.4.0'}
@@ -32232,6 +32349,18 @@ packages:
     peerDependencies:
       bufferutil: ^4.0.1
       utf-8-validate: ^5.0.2
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
+  /ws@8.14.2:
+    resolution: {integrity: sha512-wEBG1ftX4jcglPxgFCMJmZ2PLtSbJ2Peg6TmpJFTbe9GZYOQCDPdMYu/Tm0/bGZkw8paZnJY45J4K2PZrLYq8g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
     peerDependenciesMeta:
       bufferutil:
         optional: true
