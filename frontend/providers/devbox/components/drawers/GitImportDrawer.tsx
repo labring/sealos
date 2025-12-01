@@ -1,7 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Hourglass } from 'lucide-react';
 
@@ -34,6 +34,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
   const { getErrorMessage } = useErrorMessage();
 
   const controllerRef = useRef<AbortController | null>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<GitImportFormData>({
     name: '',
@@ -197,6 +198,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
 
       let commandOutput = '';
       let isSuccess = false;
+      let lastProgress = '';
 
       try {
         await execCommandInDevboxPod({
@@ -206,7 +208,24 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
           onDownloadProgress: (progressEvent) => {
             const text = progressEvent.event.target.response;
             commandOutput = text;
-            setImportLogs(text);
+
+            const lines = text.split('\n').filter((line: string) => line.trim());
+            const processedLines: string[] = [];
+
+            for (const line of lines) {
+              const progressMatch = line.match(/Receiving objects:\s+(\d+)%/);
+              if (progressMatch) {
+                const currentProgress = progressMatch[1];
+                if (currentProgress !== lastProgress) {
+                  processedLines.push(line);
+                  lastProgress = currentProgress;
+                }
+              } else {
+                processedLines.push(line);
+              }
+            }
+
+            setImportLogs(processedLines.join('\n'));
 
             if (text.includes('Git import completed successfully')) {
               isSuccess = true;
@@ -281,6 +300,12 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     importStage === 'configuring' ||
     importStage === 'starting';
 
+  useEffect(() => {
+    if (importLogs && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [importLogs]);
+
   return (
     <Drawer open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DrawerContent className="max-w-[530px] rounded-2xl">
@@ -304,7 +329,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
               </div>
 
               {importLogs && (
-                <div className="flex flex-col gap-4 rounded-xl border border-dashed border-zinc-400 bg-white p-4">
+                <div className="max-h-80 overflow-y-auto rounded-xl border border-dashed border-zinc-400 bg-white p-4">
                   <div className="flex flex-col gap-2">
                     {importLogs
                       .split('\n')
@@ -321,13 +346,14 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                               className={`w-0.5 shrink-0 rounded-sm ${isError ? 'bg-red-400' : 'bg-emerald-400'}`}
                             />
                             <p
-                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} break-all`}
+                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} break-all leading-relaxed`}
                             >
                               {log}
                             </p>
                           </div>
                         );
                       })}
+                    <div ref={logsEndRef} />
                   </div>
                 </div>
               )}

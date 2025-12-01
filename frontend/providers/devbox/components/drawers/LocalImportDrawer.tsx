@@ -260,7 +260,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
               </div>
 
               {importLogs && (
-                <div className="flex flex-col gap-4 rounded-xl border border-dashed border-zinc-400 bg-white p-4">
+                <div className="max-h-80 overflow-y-auto rounded-xl border border-dashed border-zinc-400 bg-white p-4">
                   <div className="flex flex-col gap-2">
                     {importLogs
                       .split('\n')
@@ -278,7 +278,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                               className={`w-0.5 shrink-0 rounded-sm ${isError ? 'bg-red-400' : 'bg-emerald-400'}`}
                             />
                             <p
-                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} leading-5 break-all`}
+                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} leading-relaxed break-all`}
                             >
                               {log}
                             </p>

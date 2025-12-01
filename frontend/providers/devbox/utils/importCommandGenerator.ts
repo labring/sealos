@@ -25,7 +25,19 @@ export function generateGitImportCommand(options: GitImportCommandOptions): stri
   const escapedStartupCommand = startupCommand.replace(/'/g, "'\\''");
 
   if (isPrivate && token) {
-    const escapedToken = escapeShellArg(token);
+    const escapedToken = token.replace(/'/g, "'\\''");
+
+    let authenticatedUrl = gitUrl;
+    try {
+      const urlObj = new URL(gitUrl);
+      urlObj.username = 'oauth2';
+      urlObj.password = escapedToken;
+      authenticatedUrl = urlObj.toString();
+    } catch (error) {
+      console.error('Failed to parse Git URL:', error);
+    }
+
+    const escapedAuthUrl = escapeShellArg(authenticatedUrl);
 
     return `
 set -e
@@ -33,13 +45,7 @@ echo "Starting git import..."
 rm -rf /home/devbox/project/*
 rm -rf /home/devbox/project/.[!.]*
 
-git config --global credential.helper store
-echo "https://oauth2:${escapedToken}@github.com" > ~/.git-credentials
-
-git clone --progress --depth 1 ${escapedGitUrl} /home/devbox/project/temp_repo 2>&1
-
-rm -f ~/.git-credentials
-git config --global --unset credential.helper
+git clone --progress --depth 1 ${escapedAuthUrl} /home/devbox/project/temp_repo 2>&1
 
 echo "Moving repository contents..."
 mv /home/devbox/project/temp_repo/* /home/devbox/project/ 2>/dev/null || true
