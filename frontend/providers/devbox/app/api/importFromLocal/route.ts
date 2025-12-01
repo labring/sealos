@@ -96,35 +96,55 @@ async function unzipFileInDevbox(
   const command = `set -e
 mkdir -p ${targetDir}
 
-if ! command -v unzip >/dev/null 2>&1; then
-  echo "Installing unzip..."
-  if command -v apt-get >/dev/null 2>&1; then
-    sudo apt-get update -qq && sudo apt-get install -y -qq unzip
-  elif command -v apk >/dev/null 2>&1; then
-    sudo apk add --no-cache unzip
-  elif command -v yum >/dev/null 2>&1; then
-    sudo yum install -y -q unzip
-  else
-    echo "Error: Unable to install unzip (no package manager found)"
-    exit 1
-  fi
-fi
+echo "Extracting zip file using Python..."
+python3 << 'PYTHON_SCRIPT'
+import zipfile
+import os
+import shutil
 
-echo "Extracting zip file..."
-unzip -q -o ${zipPath} -d ${targetDir} 2>&1 | grep -v "creating:" || true
+zip_path = "${zipPath}"
+target_dir = "${targetDir}"
 
-find ${targetDir} -type f -name "*.zip" -path "*/__MACOSX/*" -delete 2>/dev/null || true
-find ${targetDir} -type d -name "__MACOSX" -exec rm -rf {} + 2>/dev/null || true
+print(f"Extracting {zip_path} to {target_dir}")
 
-REAL_DIR=$(find ${targetDir} -mindepth 1 -maxdepth 1 -type d | head -1)
-if [ -n "$REAL_DIR" ] && [ "$(ls -A ${targetDir} | wc -l)" -eq 1 ]; then
-  echo "Moving contents from subdirectory..."
-  mv "$REAL_DIR"/* ${targetDir}/ 2>/dev/null || true
-  mv "$REAL_DIR"/.[!.]* ${targetDir}/ 2>/dev/null || true
-  rm -rf "$REAL_DIR"
-fi
+with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    for member in zip_ref.namelist():
+        if '__MACOSX' in member or member.startswith('.'):
+            continue
 
-rm -f ${zipPath}
+        member_path = os.path.join(target_dir, member)
+
+        if member.endswith('/'):
+            os.makedirs(member_path, exist_ok=True)
+        else:
+            os.makedirs(os.path.dirname(member_path), exist_ok=True)
+            with zip_ref.open(member) as source, open(member_path, 'wb') as target:
+                shutil.copyfileobj(source, target)
+
+print("Extraction completed")
+
+dirs_in_target = [d for d in os.listdir(target_dir) if os.path.isdir(os.path.join(target_dir, d))]
+files_in_target = [f for f in os.listdir(target_dir) if os.path.isfile(os.path.join(target_dir, f))]
+
+if len(dirs_in_target) == 1 and len(files_in_target) == 0:
+    real_dir = os.path.join(target_dir, dirs_in_target[0])
+    print(f"Moving contents from subdirectory {real_dir}...")
+
+    for item in os.listdir(real_dir):
+        src = os.path.join(real_dir, item)
+        dst = os.path.join(target_dir, item)
+        shutil.move(src, dst)
+
+    os.rmdir(real_dir)
+    print("Contents moved successfully")
+
+os.remove(zip_path)
+print("Zip file removed")
+print("Listing extracted files:")
+for item in os.listdir(target_dir):
+    print(f"  {item}")
+PYTHON_SCRIPT
+
 echo "Unzip completed successfully"`;
 
   console.log('Executing unzip command in pod:', podName, 'container:', containerName);
