@@ -17,6 +17,17 @@ import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
 import CurrencySymbol from '../CurrencySymbol';
+import { FilledChevronDown } from '../Icons';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem
+} from '@sealos/shadcn-ui/dropdown-menu';
+import { AppType } from '@/types/app';
+import { QueryFilters } from './PAYGCostTable';
 
 export type PAYGData = {
   appName: string;
@@ -35,6 +46,8 @@ type PAYGCostTableViewProps = {
   totalCount: number;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
+  filters: QueryFilters;
+  onFiltersChange?: (filters: Partial<QueryFilters>) => void;
 };
 
 /**
@@ -50,12 +63,19 @@ export function PAYGCostTableView({
   pageSize,
   totalCount,
   onPageChange,
-  isLoading = false
+  isLoading = false,
+  filters,
+  onFiltersChange
 }: PAYGCostTableViewProps) {
   const { t } = useTranslation();
 
+  // Handle app type filter change
+  const handleAppTypeChange = (appType: AppType | null) => {
+    onFiltersChange?.({ selectedAppType: appType });
+  };
+
   const PAYGRow = ({ item }: { item: PAYGData }) => (
-    <TableRow>
+    <TableRow className="h-[50px]">
       <TableCell>
         <div className="flex gap-1 items-center">
           <AppIcon app={item.appType} className={{ avatar: 'size-5' }} />
@@ -90,19 +110,19 @@ export function PAYGCostTableView({
   const SkeletonRow = () => (
     <TableRow>
       <TableCell>
-        <div className="flex gap-1 items-center">
-          <Skeleton className="size-5 rounded-full" />
-          <Skeleton className="h-4 w-24" />
+        <div className="flex gap-2 items-center">
+          <Skeleton className="size-5 rounded-md" />
+          <Skeleton className="h-4 w-full" />
         </div>
       </TableCell>
       <TableCell>
-        <Skeleton className="h-6 w-16 rounded" />
+        <Skeleton className="h-6 w-full rounded" />
       </TableCell>
       <TableCell>
-        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-4 w-full" />
       </TableCell>
       <TableCell>
-        <Skeleton className="h-8 w-16 rounded" />
+        <Skeleton className="h-8 w-full rounded" />
       </TableCell>
     </TableRow>
   );
@@ -118,19 +138,71 @@ export function PAYGCostTableView({
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">{t('common:item')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:orders.type')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:cost')}</TableHead>
+          <TableHead className="w-[20ch] bg-transparent">{t('common:item')}</TableHead>
+          <TableHead className="w-[18ch] bg-transparent">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="cursor-pointer">
+                <div className="flex gap-1 items-center">
+                  {t('common:orders.type')}
+                  <div
+                    className={cn(
+                      'size-5',
+                      filters.selectedAppType ? 'text-blue-600' : 'text-zinc-400'
+                    )}
+                  >
+                    <FilledChevronDown />
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Type</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={filters.selectedAppType || 'all'}
+                  onValueChange={(value) => {
+                    if (value === 'all') {
+                      handleAppTypeChange(null);
+                    } else {
+                      handleAppTypeChange(value as AppType);
+                    }
+                  }}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    {t('applist:all_app_type')}
+                  </DropdownMenuRadioItem>
+                  {Object.values(AppType).map((appType) => (
+                    <DropdownMenuRadioItem key={appType} value={appType}>
+                      {t('applist:' + appType)}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableHead>
+          <TableHead className="w-[16ch] bg-transparent">{t('common:cost')}</TableHead>
           <TableHead className="bg-transparent">{t('common:orders.action')}</TableHead>
         </TableLayoutHeadRow>
 
-        <TableLayoutBody>
+        <TableLayoutBody className="h-[calc(50px*10))]">
           {isLoading
             ? // Show skeleton rows during loading
               Array.from({ length: pageSize }, (_, index) => (
                 <SkeletonRow key={`skeleton-${index}`} />
               ))
-            : data.map((item, index) => <PAYGRow key={index} item={item} />)}
+            : data.length > 0 && [
+                ...data.map((item, index) => <PAYGRow key={`data-${index}`} item={item} />),
+                ...Array.from({ length: pageSize - data.length }).map((_, index) => (
+                  <tr key={`placeholder-${index}`} className="h-[50px] border-none" />
+                ))
+              ]}
+          {!isLoading && data.length <= 0 && (
+            <tr>
+              <td colSpan={4}>
+                <div className="flex justify-center items-center w-full px-12 py-6 text-zinc-500">
+                  {t('no_data_available')}
+                </div>
+              </td>
+            </tr>
+          )}
         </TableLayoutBody>
       </TableLayoutContent>
 

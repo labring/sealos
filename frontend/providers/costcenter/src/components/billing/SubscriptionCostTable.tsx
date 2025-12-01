@@ -59,12 +59,21 @@ export function SubscriptionCostTable({ data }: SubscriptionCostTableProps) {
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">{t('common:time')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:plan')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:cost')}</TableHead>
+          <TableHead className="w-1/3 bg-transparent">{t('common:time')}</TableHead>
+          <TableHead className="w-1/3 bg-transparent">{t('common:plan')}</TableHead>
+          <TableHead className="w-1/3 bg-transparent">{t('common:cost')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
+          {data.length <= 0 && (
+            <tr>
+              <td colSpan={3}>
+                <div className="flex justify-center items-center w-full px-12 py-6 text-zinc-500">
+                  {t('no_data_available')}
+                </div>
+              </td>
+            </tr>
+          )}
           {data.map((item, index) => (
             <SubscriptionRow key={index} item={item} />
           ))}

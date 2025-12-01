@@ -340,5 +340,6 @@
   "sealos_coin_text": "Sealos Coin icon",
   "sealos_coin_alt": "A coin icon that indicates some type of currency.",
   "recharge_doubled": "Doubled!",
-  "recharge_bonus": "Bonus!"
+  "recharge_bonus": "Bonus!",
+  "loading_data": "Loading data..."
 }

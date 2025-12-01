@@ -159,8 +159,8 @@ export function AppBillingDrawer({
     const { total_records: total, total_pages: totalPage } = appBillingData.data;
 
     return {
-      total: totalPage === 0 ? 1 : total,
-      totalPage: totalPage === 0 ? 1 : totalPage
+      total: total,
+      totalPage: totalPage
     };
   }, [appBillingData]);
 

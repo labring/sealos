@@ -96,39 +96,59 @@ export default function InvoiceHistoryView({
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
-          {invoiceList.map((invoice) => {
-            const statusDisplay = getStatusDisplay(invoice.status);
-            const isCompleted = invoice.status === 'COMPLETED';
-            return (
-              <TableRow key={invoice.id} className="h-14">
-                <TableCell>{formatDateTime(invoice.createdAt)}</TableCell>
-                <TableCell>{isCompleted ? formatDateTime(invoice.updatedAt) : '-'}</TableCell>
-                <TableCell>
-                  <span className={statusDisplay.className}>{statusDisplay.text}</span>
-                </TableCell>
-                <TableCell>
-                  <CurrencySymbol />
-                  <span>{formatMoney(invoice.totalAmount).toFixed(2)}</span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    {toInvoiceDetail && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          onInvoiceClick?.(invoice);
-                          toInvoiceDetail();
-                        }}
-                      >
-                        {t('common:orders.invoice_details_button')}
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {isLoading ? (
+            <tr>
+              <td colSpan={5}>
+                <div className="flex justify-center items-center w-full px-12 py-6 text-zinc-500">
+                  {t('loading_data')}
+                </div>
+              </td>
+            </tr>
+          ) : (
+            invoiceList.map((invoice) => {
+              const statusDisplay = getStatusDisplay(invoice.status);
+              const isCompleted = invoice.status === 'COMPLETED';
+              return (
+                <TableRow key={invoice.id} className="h-14">
+                  <TableCell>{formatDateTime(invoice.createdAt)}</TableCell>
+                  <TableCell>{isCompleted ? formatDateTime(invoice.updatedAt) : '-'}</TableCell>
+                  <TableCell>
+                    <span className={statusDisplay.className}>{statusDisplay.text}</span>
+                  </TableCell>
+                  <TableCell>
+                    <CurrencySymbol />
+                    <span>{formatMoney(invoice.totalAmount).toFixed(2)}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {toInvoiceDetail && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            onInvoiceClick?.(invoice);
+                            toInvoiceDetail();
+                          }}
+                        >
+                          {t('common:orders.invoice_details_button')}
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+
+          {!isLoading && invoiceList.length <= 0 && (
+            <tr>
+              <td colSpan={5}>
+                <div className="flex justify-center items-center w-full px-12 py-6 text-zinc-500">
+                  {t('no_data_available')}
+                </div>
+              </td>
+            </tr>
+          )}
         </TableLayoutBody>
       </TableLayoutContent>
 
