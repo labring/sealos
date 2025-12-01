@@ -3,7 +3,6 @@ import JSZip from 'jszip';
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Info, X } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
 
 import { Button } from '@sealos/shadcn-ui/button';
 
@@ -21,14 +20,13 @@ interface HeaderProps {
   applyCb: () => void;
   title: string;
   applyBtnText: string;
+  name?: string;
+  from?: 'list' | 'detail';
 }
 
-const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
+const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
-  const searchParams = useSearchParams();
-  const name = searchParams.get('name');
-  const from = searchParams.get('from') as 'list' | 'detail';
 
   const { guideConfigDevbox } = useGuideStore();
 
