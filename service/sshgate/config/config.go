@@ -4,10 +4,13 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/caarlos0/env/v9"
 	"github.com/joho/godotenv"
+	proxyproto "github.com/pires/go-proxyproto"
+
 	"github.com/labring/sealos/service/sshgate/gateway"
 )
 
@@ -15,6 +18,11 @@ import (
 type Config struct {
 	// Server configuration
 	SSHListenAddr string `env:"SSH_LISTEN_ADDR" envDefault:":2222"`
+
+	// Proxy Protocol configuration
+	EnableProxyProtocol      bool     `env:"ENABLE_PROXY_PROTOCOL"       envDefault:"false"`
+	ProxyProtocolTrustedCIDRs []string `env:"PROXY_PROTOCOL_TRUSTED_CIDRS" envSeparator:","`
+	ProxyProtocolSkipCIDRs    []string `env:"PROXY_PROTOCOL_SKIP_CIDRS"    envSeparator:","`
 
 	// Logging configuration
 	Debug     bool   `env:"DEBUG"      envDefault:"false"`
@@ -92,6 +100,18 @@ func (c *Config) validate() error {
 		)
 	}
 
+	// Validate proxy protocol CIDRs
+	for _, cidr := range c.ProxyProtocolTrustedCIDRs {
+		if _, _, err := net.ParseCIDR(cidr); err != nil {
+			return fmt.Errorf("invalid PROXY_PROTOCOL_TRUSTED_CIDRS value %q: %w", cidr, err)
+		}
+	}
+	for _, cidr := range c.ProxyProtocolSkipCIDRs {
+		if _, _, err := net.ParseCIDR(cidr); err != nil {
+			return fmt.Errorf("invalid PROXY_PROTOCOL_SKIP_CIDRS value %q: %w", cidr, err)
+		}
+	}
+
 	return nil
 }
 
@@ -99,6 +119,7 @@ func (c *Config) validate() error {
 func NewDefaultConfig() *Config {
 	return &Config{
 		SSHListenAddr:        ":2222",
+		EnableProxyProtocol:  false,
 		Debug:                false,
 		LogLevel:             "info",
 		LogFormat:            "text",
@@ -108,4 +129,64 @@ func NewDefaultConfig() *Config {
 		PprofPort:            0,
 		Gateway:              gateway.DefaultOptions(),
 	}
+}
+
+// ProxyProtocolConnPolicy returns a ConnPolicyFunc for proxy protocol handling.
+// - If upstream IP is in SkipCIDRs, SKIP proxy protocol parsing
+// - If TrustedCIDRs is empty, USE proxy protocol (trust all)
+// - If upstream IP is in TrustedCIDRs, USE proxy protocol
+// - Otherwise, REJECT the connection
+func (c *Config) ProxyProtocolConnPolicy() proxyproto.ConnPolicyFunc {
+	var skipNets []*net.IPNet
+	for _, cidr := range c.ProxyProtocolSkipCIDRs {
+		_, ipNet, _ := net.ParseCIDR(cidr) // already validated
+		skipNets = append(skipNets, ipNet)
+	}
+
+	var trustedNets []*net.IPNet
+	for _, cidr := range c.ProxyProtocolTrustedCIDRs {
+		_, ipNet, _ := net.ParseCIDR(cidr) // already validated
+		trustedNets = append(trustedNets, ipNet)
+	}
+
+	return func(opts proxyproto.ConnPolicyOptions) (proxyproto.Policy, error) {
+		ip := ipFromAddr(opts.Upstream)
+		if ip == nil {
+			return proxyproto.REJECT, nil
+		}
+
+		// Check if should skip proxy protocol
+		for _, ipNet := range skipNets {
+			if ipNet.Contains(ip) {
+				return proxyproto.SKIP, nil
+			}
+		}
+
+		// If no trusted CIDRs configured, trust all
+		if len(trustedNets) == 0 {
+			return proxyproto.USE, nil
+		}
+
+		// Check if IP is in trusted CIDRs
+		for _, ipNet := range trustedNets {
+			if ipNet.Contains(ip) {
+				return proxyproto.USE, nil
+			}
+		}
+
+		// Not trusted, reject
+		return proxyproto.REJECT, nil
+	}
+}
+
+// ipFromAddr extracts IP from net.Addr
+func ipFromAddr(addr net.Addr) net.IP {
+	if addr == nil {
+		return nil
+	}
+	host, _, err := net.SplitHostPort(addr.String())
+	if err != nil {
+		return nil
+	}
+	return net.ParseIP(host)
 }

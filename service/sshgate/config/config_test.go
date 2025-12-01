@@ -1,8 +1,11 @@
 package config_test
 
 import (
+	"net"
 	"testing"
 	"time"
+
+	proxyproto "github.com/pires/go-proxyproto"
 
 	"github.com/labring/sealos/service/sshgate/config"
 	"github.com/labring/sealos/service/sshgate/gateway"
@@ -407,4 +410,218 @@ func TestPortValidation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProxyProtocolCIDRValidation(t *testing.T) {
+	tests := []struct {
+		name       string
+		envVar     string
+		value      string
+		shouldFail bool
+	}{
+		{"ValidTrustedCIDR", "PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8", false},
+		{"ValidTrustedCIDRMultiple", "PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8,172.16.0.0/12", false},
+		{"ValidSkipCIDR", "PROXY_PROTOCOL_SKIP_CIDRS", "10.244.0.0/16", false},
+		{"ValidSkipCIDRMultiple", "PROXY_PROTOCOL_SKIP_CIDRS", "10.244.0.0/16,192.168.0.0/16", false},
+		{"InvalidTrustedCIDR", "PROXY_PROTOCOL_TRUSTED_CIDRS", "invalid", true},
+		{"InvalidTrustedCIDRPartial", "PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8,invalid", true},
+		{"InvalidSkipCIDR", "PROXY_PROTOCOL_SKIP_CIDRS", "not-a-cidr", true},
+		{"EmptyTrustedCIDR", "PROXY_PROTOCOL_TRUSTED_CIDRS", "", false},
+		{"EmptySkipCIDR", "PROXY_PROTOCOL_SKIP_CIDRS", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(tt.envVar, tt.value)
+
+			_, err := config.Load()
+
+			if tt.shouldFail && err == nil {
+				t.Errorf("Expected error for %s=%s, got none", tt.envVar, tt.value)
+			}
+
+			if !tt.shouldFail && err != nil {
+				t.Errorf("Unexpected error for %s=%s: %v", tt.envVar, tt.value, err)
+			}
+		})
+	}
+}
+
+func TestProxyProtocolConnPolicy(t *testing.T) {
+	tests := []struct {
+		name         string
+		trustedCIDRs []string
+		skipCIDRs    []string
+		upstreamIP   string
+		wantPolicy   proxyproto.Policy
+	}{
+		{
+			name:         "NoConfig_TrustAll",
+			trustedCIDRs: nil,
+			skipCIDRs:    nil,
+			upstreamIP:   "1.2.3.4:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "EmptyTrusted_TrustAll",
+			trustedCIDRs: []string{},
+			skipCIDRs:    []string{},
+			upstreamIP:   "192.168.1.100:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "TrustedCIDR_IPInRange",
+			trustedCIDRs: []string{"10.0.0.0/8"},
+			skipCIDRs:    nil,
+			upstreamIP:   "10.1.2.3:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "TrustedCIDR_IPNotInRange",
+			trustedCIDRs: []string{"10.0.0.0/8"},
+			skipCIDRs:    nil,
+			upstreamIP:   "192.168.1.1:12345",
+			wantPolicy:   proxyproto.REJECT,
+		},
+		{
+			name:         "MultipleTrustedCIDRs_IPInSecondRange",
+			trustedCIDRs: []string{"10.0.0.0/8", "172.16.0.0/12"},
+			skipCIDRs:    nil,
+			upstreamIP:   "172.20.1.1:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "SkipCIDR_IPInRange",
+			trustedCIDRs: []string{"10.0.0.0/8"},
+			skipCIDRs:    []string{"10.244.0.0/16"},
+			upstreamIP:   "10.244.1.1:12345",
+			wantPolicy:   proxyproto.SKIP,
+		},
+		{
+			name:         "SkipCIDR_IPNotInRange_ButInTrusted",
+			trustedCIDRs: []string{"10.0.0.0/8"},
+			skipCIDRs:    []string{"10.244.0.0/16"},
+			upstreamIP:   "10.1.2.3:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "SkipCIDR_NoTrusted_TrustAll",
+			trustedCIDRs: nil,
+			skipCIDRs:    []string{"10.244.0.0/16"},
+			upstreamIP:   "192.168.1.1:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "SkipCIDR_NoTrusted_IPInSkip",
+			trustedCIDRs: nil,
+			skipCIDRs:    []string{"10.244.0.0/16"},
+			upstreamIP:   "10.244.5.5:12345",
+			wantPolicy:   proxyproto.SKIP,
+		},
+		{
+			name:         "IPv6_TrustAll",
+			trustedCIDRs: nil,
+			skipCIDRs:    nil,
+			upstreamIP:   "[2001:db8::1]:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "IPv6_InTrustedRange",
+			trustedCIDRs: []string{"2001:db8::/32"},
+			skipCIDRs:    nil,
+			upstreamIP:   "[2001:db8::1]:12345",
+			wantPolicy:   proxyproto.USE,
+		},
+		{
+			name:         "IPv6_NotInTrustedRange",
+			trustedCIDRs: []string{"2001:db8::/32"},
+			skipCIDRs:    nil,
+			upstreamIP:   "[2001:db9::1]:12345",
+			wantPolicy:   proxyproto.REJECT,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.NewDefaultConfig()
+			cfg.EnableProxyProtocol = true
+			cfg.ProxyProtocolTrustedCIDRs = tt.trustedCIDRs
+			cfg.ProxyProtocolSkipCIDRs = tt.skipCIDRs
+
+			policyFunc := cfg.ProxyProtocolConnPolicy()
+
+			upstream, err := net.ResolveTCPAddr("tcp", tt.upstreamIP)
+			if err != nil {
+				t.Fatalf("Failed to resolve upstream address %s: %v", tt.upstreamIP, err)
+			}
+
+			opts := proxyproto.ConnPolicyOptions{
+				Upstream: upstream,
+			}
+
+			policy, err := policyFunc(opts)
+			if err != nil {
+				t.Fatalf("ConnPolicy returned error: %v", err)
+			}
+
+			if policy != tt.wantPolicy {
+				t.Errorf("ConnPolicy() = %v, want %v", policy, tt.wantPolicy)
+			}
+		})
+	}
+}
+
+func TestProxyProtocolConnPolicy_NilUpstream(t *testing.T) {
+	cfg := config.NewDefaultConfig()
+	cfg.EnableProxyProtocol = true
+	cfg.ProxyProtocolTrustedCIDRs = []string{"10.0.0.0/8"}
+
+	policyFunc := cfg.ProxyProtocolConnPolicy()
+
+	opts := proxyproto.ConnPolicyOptions{
+		Upstream: nil,
+	}
+
+	policy, _ := policyFunc(opts)
+	if policy != proxyproto.REJECT {
+		t.Errorf("ConnPolicy() with nil upstream = %v, want REJECT", policy)
+	}
+}
+
+func TestLoadProxyProtocolConfig(t *testing.T) {
+	t.Run("LoadWithProxyProtocolEnabled", func(t *testing.T) {
+		t.Setenv("ENABLE_PROXY_PROTOCOL", "true")
+		t.Setenv("PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8,172.16.0.0/12")
+		t.Setenv("PROXY_PROTOCOL_SKIP_CIDRS", "10.244.0.0/16")
+
+		cfg, err := config.Load()
+		if err != nil {
+			t.Fatalf("Load() failed: %v", err)
+		}
+
+		if !cfg.EnableProxyProtocol {
+			t.Error("EnableProxyProtocol = false, want true")
+		}
+
+		if len(cfg.ProxyProtocolTrustedCIDRs) != 2 {
+			t.Errorf("ProxyProtocolTrustedCIDRs length = %d, want 2", len(cfg.ProxyProtocolTrustedCIDRs))
+		}
+
+		if len(cfg.ProxyProtocolSkipCIDRs) != 1 {
+			t.Errorf("ProxyProtocolSkipCIDRs length = %d, want 1", len(cfg.ProxyProtocolSkipCIDRs))
+		}
+	})
+
+	t.Run("LoadWithProxyProtocolDisabled", func(t *testing.T) {
+		t.Setenv("ENABLE_PROXY_PROTOCOL", "false")
+
+		cfg, err := config.Load()
+		if err != nil {
+			t.Fatalf("Load() failed: %v", err)
+		}
+
+		if cfg.EnableProxyProtocol {
+			t.Error("EnableProxyProtocol = true, want false")
+		}
+	})
 }

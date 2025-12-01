@@ -15,6 +15,7 @@ import (
 	"github.com/labring/sealos/service/sshgate/logger"
 	"github.com/labring/sealos/service/sshgate/pprof"
 	"github.com/labring/sealos/service/sshgate/registry"
+	proxyproto "github.com/pires/go-proxyproto"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -90,7 +91,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("SSH Gateway listening on %s", cfg.SSHListenAddr)
+	// Wrap listener with proxy protocol support if enabled
+	if cfg.EnableProxyProtocol {
+		listener = &proxyproto.Listener{
+			Listener:   listener,
+			ConnPolicy: cfg.ProxyProtocolConnPolicy(),
+		}
+		log.Printf("SSH Gateway listening on %s (proxy protocol enabled)", cfg.SSHListenAddr)
+	} else {
+		log.Printf("SSH Gateway listening on %s", cfg.SSHListenAddr)
+	}
 
 	for {
 		conn, err := listener.Accept()

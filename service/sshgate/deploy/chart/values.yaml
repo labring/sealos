@@ -19,6 +19,20 @@ sshPort: 2222
 # If empty, a random 32-character seed will be auto-generated on first install
 sshHostKeySeed: ""
 
+# Proxy Protocol configuration
+# When enabled, the gateway will parse PROXY protocol headers from load balancers
+proxyProtocol:
+  # Enable PROXY protocol support
+  enabled: false
+  # Trusted source CIDRs (load balancer IPs)
+  # If empty, all sources are trusted when proxyProtocol is enabled
+  # Example: ["10.0.0.0/8", "172.16.0.0/12"]
+  trustedCIDRs: []
+  # Skip CIDRs - connections from these IPs bypass PROXY protocol parsing
+  # Useful for Kubernetes pod-to-pod traffic
+  # Example: ["10.244.0.0/16"]
+  skipCIDRs: []
+
 # Additional environment variables
 # These will be added to the ConfigMap and injected into the pods
 env: {}
