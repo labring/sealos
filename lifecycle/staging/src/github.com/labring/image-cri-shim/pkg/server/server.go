@@ -32,17 +32,19 @@ import (
 )
 
 type Options struct {
-	Timeout time.Duration
-	// Socket is the socket where shim listens on
-	Socket string
-	// User is the user ID for our gRPC socket.
-	User int
-	// Group is the group ID for our gRPC socket.
-	Group int
-	// Mode is the permission mode bits for our gRPC socket.
-	Mode os.FileMode
-	// AuthStore keeps registry credentials shared with the CRI handlers.
-	AuthStore *AuthStore
+    Timeout time.Duration
+    // Socket is the socket where shim listens on
+    Socket string
+    // User is the user ID for our gRPC socket.
+    User int
+    // Group is the group ID for our gRPC socket.
+    Group int
+    // Mode is the permission mode bits for our gRPC socket.
+    Mode os.FileMode
+    // AuthStore keeps registry credentials shared with the CRI handlers.
+    AuthStore *AuthStore
+    // Cache keeps cache tuning knobs.
+    Cache CacheOptions
 }
 
 type Server interface {
@@ -55,11 +57,16 @@ type Server interface {
 	Start() error
 
 	Stop()
+
+	UpdateCacheOptions(CacheOptions)
+
+	CacheStats() CacheStats
 }
 
 type server struct {
 	server        *grpc.Server
 	imageV1Client k8sv1api.ImageServiceClient
+	imageService  *v1ImageService
 	options       Options
 	listener      net.Listener // socket our gRPC server listens on
 }
@@ -76,10 +83,9 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 		return err
 	}
 
-	k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
-		imageClient: s.imageV1Client,
-		authStore:   s.options.AuthStore,
-	})
+    imageService := newV1ImageService(s.imageV1Client, s.options.AuthStore, s.options.Cache)
+	k8sv1api.RegisterImageServiceServer(s.server, imageService)
+	s.imageService = imageService
 
 	return nil
 }
@@ -187,6 +193,21 @@ func (s *server) Chown(uid, gid int) error {
 func (s *server) Stop() {
 	logger.Info("stopping server on socket %s...", s.options.Socket)
 	s.server.Stop()
+}
+
+func (s *server) UpdateCacheOptions(opts CacheOptions) {
+	if s.imageService == nil {
+		logger.Warn("image service not initialized, skip cache update")
+		return
+	}
+	s.imageService.UpdateCacheOptions(opts)
+}
+
+func (s *server) CacheStats() CacheStats {
+	if s.imageService == nil {
+		return CacheStats{}
+	}
+	return s.imageService.CacheStats()
 }
 
 func NewServer(options Options) (Server, error) {
