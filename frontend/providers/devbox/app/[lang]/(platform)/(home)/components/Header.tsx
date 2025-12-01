@@ -164,7 +164,9 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 space-y-1 p-2">
-              <p className="px-1 py-1.5 text-xs font-medium text-zinc-500">{t('order')}</p>
+              <p className="px-1 py-1.5 text-xs font-medium text-zinc-500">
+                {t('creation_method')}
+              </p>
               <DropdownMenuItem
                 onClick={handleCreateDevbox}
                 className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"

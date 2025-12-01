@@ -87,6 +87,7 @@
   "create_time": "创建时间",
   "create_your_first_devbox": "创建您的第一个 DevBox",
   "creating_devbox": "正在创建 DevBox...",
+  "creation_method": "创建方式",
   "creation_time": "创建时间",
   "current": "当前",
   "current_image_name": "当前镜像",
@@ -362,12 +363,12 @@
   "please_fill_git_credentials": "请填写 Git 凭证信息",
   "please_fill_required_fields": "请填写所有必填项",
   "please_select_runtime": "请选择运行环境",
-  "please_upload_file": "请上传文件",
   "please_upgrade_plan": {
     "0": "请 ",
     "1": "升级您的计划",
     "2": " 或调整设置"
   },
+  "please_upload_file": "请上传文件",
   "port": "端口",
   "prepare": "准备中",
   "privacy_and_security_agreement": "安全隐私说明",

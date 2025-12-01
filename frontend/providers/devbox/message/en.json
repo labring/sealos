@@ -86,6 +86,7 @@
   "create_time": "Created At",
   "create_your_first_devbox": "Create your first DevBox",
   "creating_devbox": "Creating DevBox...",
+  "creation_method": "Creation method",
   "creation_time": "Creation Date",
   "current": "Current",
   "current_image_name": "Current Image",
@@ -360,12 +361,12 @@
   "please_fill_git_credentials": "Please fill in Git credentials",
   "please_fill_required_fields": "Please fill in all required fields",
   "please_select_runtime": "Please select your Runtime",
-  "please_upload_file": "Please upload a file",
   "please_upgrade_plan": {
     "0": "Please ",
     "1": "upgrade your plan",
     "2": " or adjust settings."
   },
+  "please_upload_file": "Please upload a file",
   "port": "Port",
   "prepare": "Pending",
   "privacy_and_security_agreement": "Privacy and Security Agreement",
