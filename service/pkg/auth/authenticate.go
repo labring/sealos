@@ -113,9 +113,6 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 	if len(pvcUIDs) == 0 {
 		return ErrNilPVCUID
 	}
-	for i, pvcUID := range pvcUIDs {
-		pvcUIDs[i] = strings.TrimPrefix(pvcUID, "pvc-")
-	}
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
 		return fmt.Errorf("kubeconfig failed: %v", err)
@@ -137,7 +134,7 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 	}
 	pvcUIDSet := make(map[string]bool)
 	for _, pvc := range pvcList.Items {
-		pvcUIDSet[string(pvc.UID)] = true
+		pvcUIDSet["pvc-"+string(pvc.UID)] = true
 	}
 	var notFoundUIDs []string
 	for _, uid := range pvcUIDs {
