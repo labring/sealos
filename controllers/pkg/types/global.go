@@ -429,6 +429,7 @@ type UserAlertNotificationAccount struct {
 	UserUID      uuid.UUID         `gorm:"column:userUid;type:uuid;not null;uniqueIndex:idx_user_provider_type_id"`
 	ProviderType OauthProviderType `gorm:"column:providerType;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
 	ProviderID   string            `gorm:"column:providerId;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	IsEnabled    bool              `gorm:"column:isEnabled;type:boolean;not null;default:true"`
 	CreatedAt    time.Time         `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp"`
 	UpdatedAt    time.Time         `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp"`
 }

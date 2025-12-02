@@ -831,9 +831,9 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 		existingProviders[key] = true
 	}
 
-	// Query UserAlertNotificationAccount records
+	// Query UserAlertNotificationAccount records that are enabled
 	var alertNotificationAccounts []types.UserAlertNotificationAccount
-	if err := c.DB.Where(types.UserAlertNotificationAccount{UserUID: ops.UID}).Find(&alertNotificationAccounts).Error; err != nil {
+	if err := c.DB.Where(types.UserAlertNotificationAccount{UserUID: ops.UID, IsEnabled: true}).Find(&alertNotificationAccounts).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return provider, nil
 		}
@@ -842,6 +842,11 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 
 	// Convert UserAlertNotificationAccount to OauthProvider and append non-duplicates
 	for _, account := range alertNotificationAccounts {
+		// Only include EMAIL and PHONE provider types
+		if account.ProviderType != types.OauthProviderTypeEmail && account.ProviderType != types.OauthProviderTypePhone {
+			continue
+		}
+
 		key := string(account.ProviderType) + "_" + account.ProviderID
 		if !existingProviders[key] {
 			// Convert UserAlertNotificationAccount to OauthProvider
@@ -1972,6 +1977,7 @@ func (c *Cockroach) createTables() error {
 		types.WorkspaceSubscriptionTransaction{},
 		types.WorkspaceSubscriptionPlan{},
 		types.ProductPrice{},
+		types.UserAlertNotificationAccount{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
