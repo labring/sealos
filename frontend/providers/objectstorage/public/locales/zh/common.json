@@ -3,6 +3,8 @@
   "export": "导出",
   "configForm": "配置表单",
   "yamlFile": "YAML 文件",
+  "form": "表单",
+  "Deploy": "部署",
   "edit": "编辑",
   "delete": "删除",
   "totalObjects": "总对象数量",
