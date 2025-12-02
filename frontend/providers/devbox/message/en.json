@@ -359,6 +359,7 @@
   "please_enter_startup_command": "Please enter startup command",
   "please_enter_valid_port": "Please enter a valid port number",
   "please_fill_git_credentials": "Please fill in Git credentials",
+  "please_fill_git_token": "Please fill git token",
   "please_fill_required_fields": "Please fill in all required fields",
   "please_select_runtime": "Please select your Runtime",
   "please_upgrade_plan": {

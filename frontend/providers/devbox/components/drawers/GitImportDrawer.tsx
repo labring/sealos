@@ -230,7 +230,6 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
             if (text.includes('Git import completed successfully')) {
               isSuccess = true;
             }
-
           },
           signal: controller.signal
         });
@@ -346,7 +345,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                               className={`w-0.5 shrink-0 rounded-sm ${isError ? 'bg-red-400' : 'bg-emerald-400'}`}
                             />
                             <p
-                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} break-all leading-relaxed`}
+                              className={`text-sm ${isError ? 'text-red-600' : 'text-zinc-600'} leading-relaxed break-all`}
                             >
                               {log}
                             </p>

@@ -361,6 +361,7 @@
   "please_enter_startup_command": "请输入启动命令",
   "please_enter_valid_port": "请输入有效的端口号",
   "please_fill_git_credentials": "请填写 Git 凭证信息",
+  "please_fill_git_token": "请填写 Git Token",
   "please_fill_required_fields": "请填写所有必填项",
   "please_select_runtime": "请选择运行环境",
   "please_upgrade_plan": {
