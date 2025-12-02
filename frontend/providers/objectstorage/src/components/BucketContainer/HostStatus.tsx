@@ -53,7 +53,7 @@ export function HostStatus() {
   const exceededQuotas = checkExceededQuotas({
     cpu: SystemEnv.HOSTING_POD_CPU_REQUIREMENT,
     memory: SystemEnv.HOSTING_POD_MEMORY_REQUIREMENT,
-    traffic: session?.subscription.type === 'PAYG' ? 0 : 1
+    traffic: (session as any)?.subscription?.type === 'PAYG' ? 0 : 1
   });
 
   const { data, isSuccess } = useQuery(
