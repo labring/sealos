@@ -869,39 +869,43 @@ func (r *DebtReconciler) SendUserDebtMsg(
 	if err != nil {
 		return fmt.Errorf("failed to get user oauth provider: %w", err)
 	}
-	phone, email := "", ""
+
+	// Collect all phone numbers and emails from OAuth providers
+	var phones []string
+	var emails []string
 	for i := range outh {
 		switch outh[i].ProviderType {
 		case types.OauthProviderTypePhone:
-			phone = outh[i].ProviderID
+			phones = append(phones, outh[i].ProviderID)
 		case types.OauthProviderTypeEmail:
-			email = outh[i].ProviderID
+			emails = append(emails, outh[i].ProviderID)
 		}
 	}
-	fmt.Printf("user: %s, phone: %s, email: %s\n", userUID, phone, email)
-	if phone != "" {
+	fmt.Printf("user: %s, phones: %v, emails: %v\n", userUID, phones, emails)
+
+	if len(phones) > 0 {
 		if r.SmsConfig != nil && r.SmsConfig.SmsCode[string(currentStatus)] != "" {
 			oweamount := strconv.FormatInt(
 				int64(math.Abs(math.Ceil(float64(oweamount)/1_000_000))),
 				10,
 			)
-			err = utils2.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-				PhoneNumbers: tea.String(phone),
-				SignName:     tea.String(r.SmsConfig.SmsSignName),
-				TemplateCode: tea.String(r.SmsConfig.SmsCode[string(currentStatus)]),
-				// ｜ownAmount/1_000_000｜
-				TemplateParam: tea.String(
-					"{\"user_id\":\"" + userUID.String() + "\",\"oweamount\":\"" + oweamount + "\"}",
-				),
-			})
+			// Use SendSmsMultiple to send to all phone numbers
+			err = utils2.SendSmsMultiple(
+				r.SmsConfig.Client,
+				phones,
+				r.SmsConfig.SmsSignName,
+				r.SmsConfig.SmsCode[string(currentStatus)],
+				"{\"user_id\":\""+userUID.String()+"\",\"oweamount\":\""+oweamount+"\"}",
+			)
 			if err != nil {
 				return fmt.Errorf("failed to send sms notice: %w", err)
 			}
 		}
 		if r.VmsConfig != nil && types.ContainDebtStatus(types.DebtStates, currentStatus) &&
 			r.VmsConfig.TemplateCode[string(currentStatus)] != "" {
-			err = utils2.SendVms(
-				phone,
+			// Use SendVmsMultiple to send to all phone numbers
+			err = utils2.SendVmsMultiple(
+				phones,
 				r.VmsConfig.TemplateCode[string(currentStatus)],
 				r.VmsConfig.NumberPoll,
 				GetSendVmsTimeInUTCPlus8(time.Now()),
@@ -912,7 +916,7 @@ func (r *DebtReconciler) SendUserDebtMsg(
 			}
 		}
 	}
-	if r.smtpConfig != nil && email != "" {
+	if r.smtpConfig != nil && len(emails) > 0 {
 		var emailBody string
 		emailSubject := "Low Account Balance Reminder"
 		if SubscriptionEnabled {
@@ -951,7 +955,7 @@ func (r *DebtReconciler) SendUserDebtMsg(
 		} else {
 			emailBody = emailTmpl
 		}
-		if err = r.smtpConfig.SendEmailWithTitle(emailSubject, emailBody, email); err != nil {
+		if err = r.smtpConfig.SendEmailWithTitleMultiple(emailSubject, emailBody, emails); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
