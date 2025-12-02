@@ -65,6 +65,12 @@ export async function register() {
           fileManger: {
             uploadLimit: 5,
             downloadLimit: 100
+          },
+          checkIcpReg: {
+            enabled: false,
+            endpoint: '',
+            accessKeyID: '',
+            accessKeySecret: ''
           }
         }
       };

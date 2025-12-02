@@ -39,3 +39,8 @@ launchpad:
   fileManger:
     uploadLimit: 50 # MB
     downloadLimit: 100 # MB
+  checkIcpReg:
+    enabled: false
+    endpoint: cdn.aliyuncs.com
+    accessKeyID: ''
+    accessKeySecret: ''

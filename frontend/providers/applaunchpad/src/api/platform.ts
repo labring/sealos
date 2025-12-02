@@ -3,6 +3,7 @@ import type { UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
+import { CheckICPRegParams } from '@/pages/api/platform/checkIcpReg';
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
@@ -41,3 +42,9 @@ export const checkPermission = (payload: { appName: string }) =>
 
 export const checkReady = (appName: string) =>
   GET<{ url: string; ready: boolean; error?: string }[]>(`/api/checkReady?appName=${appName}`);
+
+export const checkDomainICP = (data: CheckICPRegParams) =>
+  POST<{
+    domain: string;
+    icpRegistered: boolean;
+  }>('/api/platform/checkIcpReg', data);
