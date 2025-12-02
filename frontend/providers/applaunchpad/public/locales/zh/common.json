@@ -48,6 +48,7 @@
   "Confirm deletion": "确认删除",
   "Confirm to restart this application?": "确认重启该应用？",
   "Container Port": "容器暴露端口",
+  "Containers": "容器",
   "Continue": "继续",
   "Copy": "复制",
   "Copy Domain Success": "复制域名成功",
@@ -231,13 +232,14 @@
   "confirm_to_go": "确认前往",
   "contains": "包含",
   "cpu": "CPU",
+  "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
   "custom_domain_input_title": "您的域名",
   "day": "天",
   "delete_app_tip": "确定要删除此应用吗？如果继续，该项目的所有数据将被删除。",
   "delete_sealaf_app_tip": "该应用是通过云开发部署的。仅删除应用无法清除应用的所有组件，这些组件可能仍会产生费用。要彻底卸载应用并清理所有相关组件，请在云开发中卸载整个应用。",
   "delete_template_app_tip": "该应用由应用商店部署与管理，即将前往应用商店删除该应用全部组件。",
-  "domain_cname_verify_failed_toast": "CNAME 记录验证失败",
   "domain_challenge_verify_failed_toast": "域名挑战验证失败",
+  "domain_cname_verify_failed_toast": "CNAME 记录验证失败",
   "domain_input_tip": "请自备域名并填入下方输入框中。",
   "domain_invalid_toast": "'{{domain}}' 不是有效的域名",
   "domain_not_bound_modal_cancel": "取消",
@@ -301,6 +303,7 @@
   "gift amount tip": "充值 {{amount}} 赠送 {{gift}} ",
   "gift time tip": "{{time}} 小时内",
   "gpu": "GPU",
+  "gpu_exceeds_quota": "GPU 资源不足：你设置的 {{requested}} 个 GPU 超出工作空间可用 {{limit}} 个 GPU 限制（已使用 {{used}} 个 GPU）。",
   "grpcs": "gRPCS",
   "guide_deploy_button": "完成创建",
   "guide_deploy_command": "丰富的命令集支持，简化服务器管理",
@@ -313,6 +316,7 @@
   "hour": "小时",
   "hour-singular": "小时",
   "https": "HTTPS",
+  "icp_reg_not_registered": "域名未备案",
   "infrastructure": {
     "providers": {
       "alibaba": {
@@ -329,6 +333,20 @@
       }
     }
   },
+  "insufficient_quota_dialog": {
+    "alert-title": "现在无法创建应用，您已经用尽了全部资源。",
+    "cancel": "取消",
+    "confirm": "确认",
+    "please_upgrade_plan": {
+      "1": "请 ",
+      "2": "升级您的计划",
+      "3": "或删除使用上述资源的应用。"
+    },
+    "quota_available": "可用: ",
+    "quota_in_use": "使用中: ",
+    "quota_total": "总计: ",
+    "title": "资源不足"
+  },
   "json_mode": "JSON模式",
   "jump_message": "该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。",
   "jump_prompt": "跳转提示",
@@ -336,15 +354,26 @@
   "let me think again": "我再想想",
   "logNumber": "日志数量",
   "log_number": "日志数",
+  "log_table": {
+    "_msg": "日志内容",
+    "_time": "时间",
+    "container": "容器",
+    "pod": "Pod",
+    "stream": "输出流"
+  },
   "logs": "日志",
   "memory": "内存",
+  "memory_exceeds_quota": "内存资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
   "minute": "分钟",
   "monitor": "监控",
   "mount path": "挂载路径",
   "network_not_ready": "内部网关需要 2~5 分钟准备，请耐心等待",
+  "network_not_ready_icp_reg": "若域名已备案但仍显示“准备中”，请进一步检查是否在当前可用区的供应商备案。",
   "new filename": "重命名为",
   "no_data_available": "暂无数据",
   "no_logs_for_now": "暂无日志",
+  "nodeport": "端口",
+  "nodeport_exceeds_quota": "端口资源不足：你设置的 {{requested}} 个端口超出工作空间可用 {{limit}} 个端口限制（已使用 {{used}} 个端口）。",
   "nodeports": "外网端口",
   "normal_filter": "普通筛选",
   "not_contains": "不包含",
@@ -358,7 +387,14 @@
   "piece": "个",
   "please enter app name": "请输入：{{appName}}",
   "please_select": "请选择",
+  "please_upgrade_plan": {
+    "0": "请 ",
+    "1": "升级您的计划",
+    "2": " 或调整设置"
+  },
   "private": "私有",
+  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。",
+  "proxy_detected_title": "检测到代理",
   "public": "公共",
   "receive": "已获得",
   "recently": "最近",
@@ -386,6 +422,7 @@
   "time": "时间",
   "time_zone": "时区",
   "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准",
+  "traffic": "流量",
   "update_remark_failed": "更新备注失败",
   "update_sealaf_app_tip": "该应用是通过云开发部署的，变更该应用请到云开发中进行。",
   "upload": "上传",
@@ -399,40 +436,5 @@
   "websocket": "WebSocket",
   "within_1_day": "一天内",
   "within_1_hour": "一小时内",
-  "within_5_minute": "五分钟内",
-  "proxy_detected_title": "检测到代理",
-  "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。",
-  "nodeport": "端口",
-  "traffic": "流量",
-  "nodeport_exceeds_quota": "端口资源不足：你设置的 {{requested}} 个端口超出工作空间可用 {{limit}} 个端口限制（已使用 {{used}} 个端口）。",
-  "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
-  "memory_exceeds_quota": "内存资源不足：你设置的 {{requested}} GB 超出工作空间可用 {{limit}} GB 限制（已使用 {{used}} GB）。",
-  "gpu_exceeds_quota": "GPU 资源不足：你设置的 {{requested}} 个 GPU 超出工作空间可用 {{limit}} 个 GPU 限制（已使用 {{used}} 个 GPU）。",
-  "please_upgrade_plan": {
-    "0": "请 ",
-    "1": "升级您的计划",
-    "2": " 或调整设置"
-  },
-  "insufficient_quota_dialog": {
-    "alert-title": "现在无法创建应用，您已经用尽了全部资源。",
-    "cancel": "取消",
-    "confirm": "确认",
-    "please_upgrade_plan": {
-      "1": "请 ",
-      "2": "升级您的计划",
-      "3": "或删除使用上述资源的应用。"
-    },
-    "quota_available": "可用: ",
-    "quota_in_use": "使用中: ",
-    "quota_total": "总计: ",
-    "title": "资源不足"
-  },
-  "log_table": {
-    "_time": "时间",
-    "_msg": "日志内容",
-    "container": "容器",
-    "pod": "Pod",
-    "stream": "输出流"
-  },
-  "Containers": "容器"
+  "within_5_minute": "五分钟内"
 }
