@@ -422,3 +422,17 @@ type NotificationRecipient struct {
 	UserID      string    `json:"user_id,omitempty"      gorm:"column:user_id"`
 	UserUID     uuid.UUID `json:"user_uid,omitempty"     gorm:"column:user_uid"`
 }
+
+// UserAlertNotificationAccount 用户自定义告警通知账号
+type UserAlertNotificationAccount struct {
+	ID           uuid.UUID         `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	UserUID      uuid.UUID         `gorm:"column:userUid;type:uuid;not null;uniqueIndex:idx_user_provider_type_id"`
+	ProviderType OauthProviderType `gorm:"column:providerType;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	ProviderID   string            `gorm:"column:providerId;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	CreatedAt    time.Time         `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp"`
+	UpdatedAt    time.Time         `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp"`
+}
+
+func (UserAlertNotificationAccount) TableName() string {
+	return "UserAlertNotificationAccount"
+}

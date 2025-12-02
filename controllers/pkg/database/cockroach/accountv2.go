@@ -823,6 +823,40 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 		}
 		return nil, fmt.Errorf("failed to get user oauth provider: %w", err)
 	}
+
+	// Create a map to track existing providerType+providerID combinations
+	existingProviders := make(map[string]bool)
+	for _, p := range provider {
+		key := string(p.ProviderType) + "_" + p.ProviderID
+		existingProviders[key] = true
+	}
+
+	// Query UserAlertNotificationAccount records
+	var alertNotificationAccounts []types.UserAlertNotificationAccount
+	if err := c.DB.Where(types.UserAlertNotificationAccount{UserUID: ops.UID}).Find(&alertNotificationAccounts).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return provider, nil
+		}
+		return nil, fmt.Errorf("failed to get user alert notification accounts: %w", err)
+	}
+
+	// Convert UserAlertNotificationAccount to OauthProvider and append non-duplicates
+	for _, account := range alertNotificationAccounts {
+		key := string(account.ProviderType) + "_" + account.ProviderID
+		if !existingProviders[key] {
+			// Convert UserAlertNotificationAccount to OauthProvider
+			newProvider := types.OauthProvider{
+				UserUID:      account.UserUID,
+				ProviderType: account.ProviderType,
+				ProviderID:   account.ProviderID,
+				CreatedAt:    account.CreatedAt,
+				UpdatedAt:    account.UpdatedAt,
+			}
+			provider = append(provider, newProvider)
+			existingProviders[key] = true
+		}
+	}
+
 	return provider, nil
 }
 

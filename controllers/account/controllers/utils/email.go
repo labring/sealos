@@ -14,7 +14,11 @@
 
 package utils
 
-import "github.com/go-gomail/gomail"
+import (
+	"fmt"
+
+	"github.com/go-gomail/gomail"
+)
 
 type SMTPConfig struct {
 	ServerHost string
@@ -41,6 +45,30 @@ func (c *SMTPConfig) SendEmailWithTitle(subject, emailBody, to string) error {
 	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", emailBody)
+	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.Username, c.Passwd)
+	return d.DialAndSend(m)
+}
+
+// SendEmailWithTitleMultiple sends email with title to multiple email addresses with the same content
+func (c *SMTPConfig) SendEmailWithTitleMultiple(subject, emailBody string, toEmails []string) error {
+	if len(toEmails) == 0 {
+		return fmt.Errorf("email addresses cannot be empty")
+	}
+
+	m := gomail.NewMessage()
+
+	// Set multiple recipients
+	for _, email := range toEmails {
+		if email == "" {
+			continue
+		}
+		m.SetHeader("To", email)
+	}
+
+	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", emailBody)
+
 	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.Username, c.Passwd)
 	return d.DialAndSend(m)
 }
