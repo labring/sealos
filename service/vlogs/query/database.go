@@ -20,6 +20,7 @@ func (v *DBLogsQuery) GetDBQuery(req *api.VlogsDatabaseRequest) (string, error) 
 	v.generateCommonQuery(req)
 	v.generateNumberQuery(req)
 	v.generateSortQuery(req)
+	fmt.Printf("database query: %s\n", v.query)
 	return v.query, nil
 }
 
