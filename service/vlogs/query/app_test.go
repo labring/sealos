@@ -1,6 +1,8 @@
-package server
+package query
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestEscapeSingleQuoted(t *testing.T) {
 	type args struct {

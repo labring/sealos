@@ -78,7 +78,7 @@ type JSONQuery struct {
 	Value string
 }
 
-type VlogsRequest struct {
+type VlogsLaunchpadRequest struct {
 	Time        string      `json:"time"`
 	Namespace   string      `json:"namespace"`
 	App         string      `json:"app"`
@@ -96,7 +96,22 @@ type VlogsRequest struct {
 	EndTime     string      `json:"endTime,omitempty"`
 }
 
-type VlogsResponse struct {
+type VlogsDatabaseRequest struct {
+	Time        string   `json:"time"`
+	Namespace   string   `json:"namespace"`
+	Limit       string   `json:"limit,omitempty"`
+	NumberMode  string   `json:"numberMode,omitempty"`
+	NumberLevel string   `json:"numberLevel,omitempty"`
+	Pvc         []string `json:"pvc,omitempty"`
+	Type        []string `json:"type,omitempty"`
+	Container   []string `json:"container,omitempty"`
+	Keyword     string   `json:"keyword,omitempty"`
+	PodQuery    string   `json:"podQuery,omitempty"`
+	StartTime   string   `json:"startTime,omitempty"`
+	EndTime     string   `json:"endTime,omitempty"`
+}
+
+type VlogsLaunchpadResponse struct {
 	Time      string `json:"_time"`
 	Message   string `json:"_msg"`
 	Container string `json:"container"`

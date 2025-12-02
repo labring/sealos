@@ -1,4 +1,4 @@
-package server
+package query
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ type VLogsQuery struct {
 	query string
 }
 
-func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
+func (v *VLogsQuery) GetQuery(req *api.VlogsLaunchpadRequest) (string, error) {
 	if req.PodQuery == modeTrue {
 		query := v.generatePodListQuery(req)
 		return query, nil
@@ -41,7 +41,7 @@ func EscapeSingleQuoted(s string) string {
 	return s
 }
 
-func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
+func (v *VLogsQuery) generatePodListQuery(req *api.VlogsLaunchpadRequest) string {
 	var item string
 	if len(req.Time) != 0 {
 		item = fmt.Sprintf(
@@ -57,7 +57,7 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	return v.query
 }
 
-func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
+func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsLaunchpadRequest) {
 	if len(req.Keyword) == 0 {
 		return
 	} else {
@@ -65,7 +65,7 @@ func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
 	}
 }
 
-func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
+func (v *VLogsQuery) generateJSONQuery(req *api.VlogsLaunchpadRequest) error {
 	if req.JSONMode != modeTrue {
 		return nil
 	}
@@ -95,7 +95,7 @@ func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
 	return nil
 }
 
-func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
+func (v *VLogsQuery) generateStreamQuery(req *api.VlogsLaunchpadRequest) {
 	namespace := EscapeSingleQuoted(req.Namespace)
 	var builder strings.Builder
 	switch {
@@ -145,7 +145,7 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 	v.query += builder.String()
 }
 
-func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
+func (v *VLogsQuery) generateCommonQuery(req *api.VlogsLaunchpadRequest) {
 	var builder strings.Builder
 	var item string
 	if len(req.Time) != 0 {
@@ -198,7 +198,7 @@ func isValidNumberLevel(level string) bool {
 	return ok
 }
 
-func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
+func (v *VLogsQuery) generateNumberQuery(req *api.VlogsLaunchpadRequest) {
 	if req.NumberMode == modeTrue {
 		if isValidNumberLevel(req.NumberLevel) {
 			item := fmt.Sprintf(
