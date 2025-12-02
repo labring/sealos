@@ -315,14 +315,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -1058,14 +1058,15 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                ? network.protocol
-                                : 'HTTP'
+                                  ? network.protocol
+                                  : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
                               if (APPLICATION_PROTOCOLS.includes(val)) {
                                 updateNetworks(i, {
                                   ...getValues('networks')[i],
+                                  serviceName: '',
                                   protocol: 'TCP',
                                   appProtocol: val,
                                   openNodePort: false,
@@ -1076,6 +1077,7 @@ const Form = ({
                               } else {
                                 updateNetworks(i, {
                                   ...getValues('networks')[i],
+                                  serviceName: '',
                                   protocol: val,
                                   appProtocol: 'HTTP',
                                   openNodePort: true,
@@ -1109,14 +1111,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                  ? network?.nodePort
-                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                        network.nodePort
-                                      }`
-                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                        'pending_to_allocated'
-                                      )}`
-                                  : `${network.publicDomain}.${network.domain}`}
+                                    ? network?.nodePort
+                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                          network.nodePort
+                                        }`
+                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                          'pending_to_allocated'
+                                        )}`
+                                    : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1283,8 +1285,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

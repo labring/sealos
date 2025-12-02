@@ -39,8 +39,8 @@ const getServiceName = (data: AppEditType, forNodePort: boolean = false): string
   }
 
   const portsOfType = data.networks.filter((n) => n.openNodePort === forNodePort);
-  const ports = portsOfType.map((n) => n.port).sort();
-  const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${ports.join(',')}`;
+  const portSlugs = portsOfType.map((n) => n.protocol + n.port).sort();
+  const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${portSlugs.join(',')}`;
   const deterministicId = createDeterministicNanoid(seed);
   const suffix = forNodePort ? '-nodeport' : '';
 
