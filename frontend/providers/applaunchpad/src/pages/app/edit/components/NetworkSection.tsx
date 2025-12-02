@@ -10,8 +10,8 @@ import { useCopyData } from '@/utils/tools';
 import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
 import type { CustomAccessModalParams } from './CustomAccessModal';
-import type { WorkspaceQuotaItem } from '@/types/workspace';
 import dynamic from 'next/dynamic';
+import { WorkspaceQuotaItem } from '@sealos/shared';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
@@ -296,8 +296,8 @@ export function NetworkSection({
                           network.openPublicDomain
                             ? network.appProtocol
                             : network.openNodePort
-                              ? network.protocol
-                              : 'HTTP'
+                            ? network.protocol
+                            : 'HTTP'
                         }
                         list={ProtocolList}
                         onchange={(val: any) => {
@@ -334,14 +334,14 @@ export function NetworkSection({
                             {network.customDomain
                               ? network.customDomain
                               : network.openNodePort
-                                ? network?.nodePort
-                                  ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                      network.nodePort
-                                    }`
-                                  : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                      'pending_to_allocated'
-                                    )}`
-                                : `${network.publicDomain}.${network.domain}`}
+                              ? network?.nodePort
+                                ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                    network.nodePort
+                                  }`
+                                : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                    'pending_to_allocated'
+                                  )}`
+                              : `${network.publicDomain}.${network.domain}`}
                           </Box>
                         </Tooltip>
 

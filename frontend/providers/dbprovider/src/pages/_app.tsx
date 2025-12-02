@@ -22,6 +22,12 @@ import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
 import { useUserStore } from '@/store/user';
+import { InsufficientQuotaDialog, createQuotaGuarded, type SupportedLang } from '@sealos/shared';
+
+// Initialize quota guarded hook with session getter
+createQuotaGuarded({
+  getSession: () => useUserStore.getState().session
+});
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -186,6 +192,7 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
           <ConfirmChild />
           <Loading loading={loading} />
         </ChakraProvider>

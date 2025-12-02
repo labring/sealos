@@ -26,6 +26,14 @@ import * as yaml from 'js-yaml';
 import type { AppConfigType } from '@/types';
 import Script from 'next/script';
 import { GTMScript } from '@sealos/gtm';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { createQuotaGuarded } from '@sealos/shared';
+
+// Initialize quota guarded hook with session getter
+// This allows using useQuotaGuarded without passing config each time
+createQuotaGuarded({
+  getSession: () => useUserStore.getState().session
+});
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -219,6 +227,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
           <ConfirmChild />
           <Loading loading={loading} />
         </ChakraProvider>

@@ -20,6 +20,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
+    "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "ansi_up": "^5.2.1",

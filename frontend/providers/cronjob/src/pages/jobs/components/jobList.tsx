@@ -10,13 +10,12 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import useEnvStore from '@/store/env';
 import { CronJobListItemType } from '@/types/job';
-import { Box, Button, Flex, MenuButton, useTheme, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, MenuButton, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useState, useEffect } from 'react';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { useCallback, useState } from 'react';
+import { useQuotaGuarded } from '@sealos/shared';
 
 const DelModal = dynamic(() => import('@/pages/job/detail/components/DelModal'));
 
@@ -33,37 +32,26 @@ const JobList = ({
   const theme = useTheme();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
-  const { checkExceededQuotas, session, loadUserQuota } = useUserStore();
   const { SystemEnv } = useEnvStore();
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('Pause Hint')
   });
 
-  // load user quota on component mount
-  useEffect(() => {
-    loadUserQuota();
-  }, [loadUserQuota]);
-
-  const handleCreateApp = useCallback(() => {
-    // Check quota before creating app
-    const exceededQuotaItems = checkExceededQuotas({
-      cpu: SystemEnv.podCpuRequest,
-      memory: SystemEnv.podMemoryRequest,
-      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-    });
-
-    if (exceededQuotaItems.length > 0) {
-      setExceededQuotas(exceededQuotaItems);
-      setExceededDialogOpen(true);
-      return;
-    } else {
-      setExceededQuotas([]);
+  const handleCreateApp = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: SystemEnv.podCpuRequest,
+        memory: SystemEnv.podMemoryRequest,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: true
+    },
+    () => {
       router.push('/job/edit');
     }
-  }, [checkExceededQuotas, router, session, SystemEnv]);
+  );
 
   const handlePauseApp = useCallback(
     async (job: CronJobListItemType, type: 'Stop' | 'Start') => {
@@ -276,20 +264,6 @@ const JobList = ({
       {!!delAppName && (
         <DelModal jobName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
       )}
-
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        open={exceededDialogOpen}
-        onOpenChange={(open) => {
-          // Refresh quota on open change
-          loadUserQuota();
-          setExceededDialogOpen(open);
-        }}
-        onConfirm={() => {
-          setExceededDialogOpen(false);
-          router.push('/job/edit');
-        }}
-      />
     </Box>
   );
 };

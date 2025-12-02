@@ -1,0 +1,71 @@
+{
+  "name": "@sealos/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities, types, and components for Sealos frontend applications",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./chakra": "./src/components/chakra/index.ts",
+    "./shadcn": "./src/components/shadcn/index.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "chakra": [
+        "src/components/chakra/index.ts"
+      ],
+      "shadcn": [
+        "src/components/shadcn/index.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "exit 0",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "sealos",
+    "shared"
+  ],
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/react": "^2.8.1",
+    "lucide-react": ">=0.460.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sealos-desktop-sdk": "workspace:*",
+    "zustand": "^4.4.1"
+  },
+  "peerDependenciesMeta": {
+    "@chakra-ui/icons": {
+      "optional": true
+    },
+    "@chakra-ui/react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "immer": "^10.0.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/react": "^2.8.1",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-import": "^2.29.1",
+    "lucide-react": "^0.476.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sealos-desktop-sdk": "workspace:*",
+    "typescript": "^5.2.2",
+    "zustand": "^4.4.1"
+  }
+}

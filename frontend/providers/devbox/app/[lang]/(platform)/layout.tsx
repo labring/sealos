@@ -6,6 +6,7 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { usePathname, useRouter } from '@/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocale } from 'next-intl';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
 import { initUser } from '@/api/template';
@@ -19,6 +20,13 @@ import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
 import { Toaster } from '@sealos/shadcn-ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
+import { createQuotaGuarded } from '@sealos/shared';
+
+// Initialize quota guarded hook with session getter
+createQuotaGuarded({
+  getSession: () => useUserStore.getState().session
+});
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,6 +45,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   const [init, setInit] = useState(false);
   const [refresh, setRefresh] = useState(false);
+  const locale = useLocale();
   // init session
   useEffect(() => {
     const response = createSealosApp();
@@ -143,6 +152,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     <RouteHandlerProvider>
       <ConfirmChild />
       <Toaster />
+      <InsufficientQuotaDialog lang={(locale || 'en') as SupportedLang} />
       {children}
     </RouteHandlerProvider>
   );

@@ -1,5 +1,4 @@
 import { Authority, QueryKey } from '@/consts';
-import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import {
   Box,
@@ -18,14 +17,13 @@ import { WebHostIcon } from '@sealos/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOssStore } from '@/store/ossStore';
 import { closeHost, getHostStatus, openHost } from '@/api/bucket';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { isArray } from 'lodash';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useToast } from '@/hooks/useToast';
-import { useUserStore } from '@/store/user';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 import useSessionStore from '@/store/session';
 import useEnvStore from '@/store/env';
+import { useQuotaGuarded } from '@sealos/shared';
 
 enum HostStatusType {
   Running,
@@ -37,24 +35,8 @@ export function HostStatus() {
   const { t } = useTranslation(['common', 'bucket']);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { checkExceededQuotas, loadUserQuota } = useUserStore();
   const { SystemEnv } = useEnvStore();
   const { session } = useSessionStore();
-  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
-
-  // Load user quota when session is available and has required properties
-  useEffect(() => {
-    if (session?.user && session?.kubeconfig) {
-      loadUserQuota();
-    }
-  }, [session, loadUserQuota]);
-
-  // Check quota before opening hosting
-  const exceededQuotas = checkExceededQuotas({
-    cpu: SystemEnv.HOSTING_POD_CPU_REQUIREMENT,
-    memory: SystemEnv.HOSTING_POD_MEMORY_REQUIREMENT,
-    traffic: session?.subscription?.type === 'PAYG' ? 0 : 1
-  });
 
   const { data, isSuccess } = useQuery(
     [QueryKey.HostStatus, currentBucket?.name],
@@ -110,6 +92,22 @@ export function HostStatus() {
       }
     }
   );
+
+  const handleOpenHosting = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: SystemEnv.HOSTING_POD_CPU_REQUIREMENT,
+        memory: SystemEnv.HOSTING_POD_MEMORY_REQUIREMENT,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: false
+    },
+    () => {
+      currentBucket?.name && openMutate(currentBucket?.name);
+    }
+  );
+
   return (
     <Box
       ml={'auto'}
@@ -118,18 +116,7 @@ export function HostStatus() {
       fontSize={'12px'}
     >
       {!onHosting ? (
-        <HStack
-          onClick={() => {
-            if (exceededQuotas.length <= 0) {
-              // No quota exceeded, proceed with opening hosting
-              currentBucket?.name && openMutate(currentBucket?.name);
-            } else {
-              // Quota exceeded, show dialog
-              setIsInsufficientQuotaDialogOpen(true);
-            }
-          }}
-          cursor={'pointer'}
-        >
+        <HStack onClick={handleOpenHosting} cursor={'pointer'}>
           <WebHostIcon boxSize={'24px'} />
           <Text fontSize={'12px'}>{t('Enable Hosting')}</Text>
         </HStack>
@@ -185,13 +172,6 @@ export function HostStatus() {
           </Menu>
         </HStack>
       )}
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        onOpenChange={setIsInsufficientQuotaDialogOpen}
-        open={isInsufficientQuotaDialogOpen}
-        onConfirm={() => {}}
-        showControls={false}
-      />
     </Box>
   );
 }

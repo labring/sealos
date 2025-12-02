@@ -16,7 +16,7 @@ import {
 import RefreshIcon from '@/components/Icons/RefreshIcon';
 import BucketIcon from '@/components/Icons/BucketIcon';
 import MoreIcon from '@/components/Icons/MoreIcon';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import ParamterModal from '@/components/common/modal/ParamterModal';
 import CreateBucketModal from '@/components/common/modal/CreateBucketModal';
 import EditIcon from '../Icons/EditIcon';
@@ -31,62 +31,32 @@ import { formatBytes } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import DeleteBucketModal from '../common/modal/DeleteBucketModal';
 import useSessionStore from '@/store/session';
-import { useUserStore } from '@/store/user';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { useQuotaGuarded } from '@sealos/shared';
+import { useEffect } from 'react';
+
 function MoreMenu({ bucket }: { bucket: TBucket }) {
   const router = useRouter();
   const { t } = useTranslation(['common', 'bucket']);
-  const { checkExceededQuotas, loadUserQuota } = useUserStore();
   const { session } = useSessionStore();
-  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
 
-  // Load user quota when session is available and has required properties
-  useEffect(() => {
-    if (session?.user && session?.kubeconfig) {
-      loadUserQuota();
-    }
-  }, [session, loadUserQuota]);
-
-  const handleEditBucket = () => {
-    if (!session) {
-      // If session is not available, just navigate to bucketConfig
+  const handleEditBucket = useQuotaGuarded(
+    {
+      requirements: {
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: true
+    },
+    () => {
       const _params: bucketConfigQueryParam = {
         bucketName: bucket.crName,
         bucketPolicy: bucket.policy
       };
       const params = new URLSearchParams(_params);
       router.push('/bucketConfig?' + params.toString());
-      return;
     }
+  );
 
-    // Check quota before editing bucket
-    const exceededQuotas = checkExceededQuotas({
-      traffic: session?.subscription?.type === 'PAYG' ? 0 : 1
-    });
-
-    if (exceededQuotas.length <= 0) {
-      // No quota exceeded, proceed with navigation
-      const _params: bucketConfigQueryParam = {
-        bucketName: bucket.crName,
-        bucketPolicy: bucket.policy
-      };
-      const params = new URLSearchParams(_params);
-      router.push('/bucketConfig?' + params.toString());
-    } else {
-      // Quota exceeded, show dialog
-      setIsInsufficientQuotaDialogOpen(true);
-    }
-  };
-
-  const confirmEditBucket = () => {
-    setIsInsufficientQuotaDialogOpen(false);
-    const _params: bucketConfigQueryParam = {
-      bucketName: bucket.crName,
-      bucketPolicy: bucket.policy
-    };
-    const params = new URLSearchParams(_params);
-    router.push('/bucketConfig?' + params.toString());
-  };
   return (
     <Menu>
       <MenuButton
@@ -122,18 +92,10 @@ function MoreMenu({ bucket }: { bucket: TBucket }) {
           <DeleteBucketModal layout="sm" bucketName={bucket.name} />
         </MenuItem>
       </MenuList>
-      <InsufficientQuotaDialog
-        items={checkExceededQuotas({
-          traffic: session?.subscription?.type === 'PAYG' ? 0 : 1
-        })}
-        onOpenChange={setIsInsufficientQuotaDialogOpen}
-        open={isInsufficientQuotaDialogOpen}
-        onConfirm={confirmEditBucket}
-        showControls={true}
-      />
     </Menu>
   );
 }
+
 function BucketListItem({
   isSelected,
   bucket,
@@ -164,6 +126,7 @@ function BucketListItem({
     </Flex>
   );
 }
+
 function QuotaProgress({
   children,
   text,
@@ -212,6 +175,7 @@ function QuotaProgress({
     </Tooltip>
   );
 }
+
 function BucketOverview({ ...styles }: StackProps) {
   const session = useSessionStore((s) => s.session);
   const quotaQuery = useQuery({

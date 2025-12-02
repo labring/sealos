@@ -1,12 +1,7 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
-import {
-  APPLICATION_PROTOCOLS,
-  defaultSliderKey,
-  defaultGpuSliderKey,
-  ProtocolList
-} from '@/constants/app';
+import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
@@ -15,7 +10,7 @@ import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
-import { resourcePropertyMap } from '@/constants/resource';
+import { resourcePropertyMap, useUserQuota, type WorkspaceQuotaItem } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -37,7 +32,6 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import { throttle } from 'lodash';
-import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -50,14 +44,10 @@ import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { NetworkSection } from './NetworkSection';
 import { mountPathToConfigMapKey } from '@/utils/tools';
-import { useQuery } from '@tanstack/react-query';
-import { WorkspaceQuotaItem } from '@/types/workspace';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
-
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const labelWidth = 120;
 
@@ -163,8 +153,7 @@ const Form = ({
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
 
   // For quota calculation in fields
-  const { userQuota, loadUserQuota } = useUserStore();
-  useQuery(['getUserQuota'], loadUserQuota);
+  const { userQuota } = useUserQuota();
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -313,14 +302,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-        : cpuList;
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -1028,8 +1017,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                                ? 'value from | ***'
-                                : '';
+                              ? 'value from | ***'
+                              : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

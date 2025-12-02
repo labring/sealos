@@ -25,6 +25,7 @@ import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { useUserStore } from '@/stores/user';
+import { useQuotaGuarded } from '@sealos/shared';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -33,8 +34,6 @@ import { Loading } from '@sealos/shadcn-ui/loading';
 import { track } from '@sealos/gtm';
 import { listTemplate } from '@/api/template';
 import { z } from 'zod';
-import type { WorkspaceQuotaItem } from '@/types/workspace';
-import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
 
 const DevboxCreatePage = () => {
   const router = useRouter();
@@ -46,7 +45,6 @@ const DevboxCreatePage = () => {
   const { addDevboxIDE } = useIDEStore();
   const { setDevboxDetail, setStartedTemplate, startedTemplate } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
-  const userStore = useUserStore();
 
   const crOldYamls = useRef<DevboxKindsType[]>([]);
   const formOldYamls = useRef<YamlItemType[]>([]);
@@ -54,9 +52,6 @@ const DevboxCreatePage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
-  console.log('exceededQuotas', exceededQuotas, exceededDialogOpen);
 
   const tabType = searchParams.get('type') || 'form';
   const devboxName = searchParams.get('name') || '';
@@ -294,6 +289,29 @@ const DevboxCreatePage = () => {
     toast.error(deepSearch(formHook.formState.errors));
   }, [formHook.formState.errors, t]);
 
+  const formData = formHook.watch();
+  const quotaRequirements = useMemo(
+    () => ({
+      cpu: isEdit ? formData.cpu - (oldDevboxEditData.current?.cpu ?? 0) : formData.cpu,
+      memory: isEdit ? formData.memory - (oldDevboxEditData.current?.memory ?? 0) : formData.memory,
+      gpu: 0,
+      nodeport: 0,
+      traffic: true
+    }),
+    [formData, isEdit]
+  );
+
+  const handleApply = useQuotaGuarded(
+    {
+      requirements: quotaRequirements,
+      immediate: false,
+      allowContinue: false
+    },
+    () => {
+      formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
+    }
+  );
+
   if (isLoading) return <Loading />;
 
   return (
@@ -306,29 +324,7 @@ const DevboxCreatePage = () => {
             applyBtnText={applyBtnText}
             name={captureDevboxName}
             from={captureFrom as 'list' | 'detail'}
-            applyCb={() => {
-              const formData = formHook.getValues();
-              const exceededQuotaItems = userStore.checkExceededQuotas({
-                cpu: isEdit ? formData.cpu - (oldDevboxEditData.current?.cpu ?? 0) : formData.cpu,
-                memory: isEdit
-                  ? formData.memory - (oldDevboxEditData.current?.memory ?? 0)
-                  : formData.memory,
-                gpu: 0,
-                nodeport: 0,
-                ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-              });
-
-              if (exceededQuotaItems.length > 0) {
-                setExceededQuotas(exceededQuotaItems);
-                setExceededDialogOpen(true);
-                return;
-              }
-
-              formHook.handleSubmit(
-                (data) => openConfirm(() => submitSuccess(data))(),
-                submitError
-              )();
-            }}
+            applyCb={handleApply}
           />
           <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
             {tabType === 'form' ? (
@@ -344,19 +340,6 @@ const DevboxCreatePage = () => {
         </div>
       </FormProvider>
       <ConfirmChild />
-      <InsufficientQuotaDialog
-        open={exceededDialogOpen}
-        onOpenChange={(open) => {
-          userStore.loadUserQuota();
-          setExceededDialogOpen(open);
-        }}
-        onConfirm={() => {
-          setExceededDialogOpen(false);
-          // formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
-        }}
-        items={exceededQuotas}
-        showFooter={false}
-      />
     </>
   );
 };
