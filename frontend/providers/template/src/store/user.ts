@@ -5,6 +5,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { useCachedStore } from './cached';
 
 type State = {
   userSourcePrice: userPriceType | undefined;
@@ -42,6 +43,12 @@ export const useUserStore = create<State>()(
       },
       userQuota: [],
       loadUserQuota: async () => {
+        // Skip loading quota when not inside cloud
+        const insideCloud = useCachedStore.getState().insideCloud;
+        if (!insideCloud) {
+          return null;
+        }
+
         const response = await sealosApp.getWorkspaceQuota();
 
         set((state) => {
