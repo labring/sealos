@@ -84,7 +84,10 @@ func (v *DBLogsQuery) generateCommonQuery(req *api.VlogsDatabaseRequest) {
 func (v *DBLogsQuery) generateNumberQuery(req *api.VlogsDatabaseRequest) {
 	if req.NumberMode == modeTrue {
 		if isValidNumberLevel(req.NumberLevel) {
-			v.query += fmt.Sprintf(` | stats by (_time:1%s) count() logs_total`, EscapeSingleQuoted(req.NumberLevel))
+			v.query += fmt.Sprintf(
+				` | stats by (_time:1%s) count() logs_total`,
+				EscapeSingleQuoted(req.NumberLevel),
+			)
 		}
 	}
 }
