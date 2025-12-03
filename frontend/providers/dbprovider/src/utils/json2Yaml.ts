@@ -1291,9 +1291,9 @@ export const json2NetworkService = ({
             apiVersion: dbCluster?.apiVersion,
             kind: 'Cluster',
             name: dbCluster?.metadata?.name,
-            uid: dbCluster?.metadata?.uid,
-            blockOwnerDeletion: true,
-            controller: true
+            uid: dbCluster?.metadata?.uid
+            // blockOwnerDeletion: true,
+            // controller: true
           }
         ]
       }),
@@ -1303,9 +1303,9 @@ export const json2NetworkService = ({
             apiVersion: dbStatefulSet?.apiVersion,
             kind: 'StatefulSet',
             name: dbStatefulSet?.metadata?.name,
-            uid: dbStatefulSet?.metadata?.uid,
-            blockOwnerDeletion: true,
-            controller: false
+            uid: dbStatefulSet?.metadata?.uid
+            // blockOwnerDeletion: true,
+            // controller: false
           }
         ]
       })
