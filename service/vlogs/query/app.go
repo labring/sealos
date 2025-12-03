@@ -166,7 +166,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsLaunchpadRequest) {
 	// if query number,dont use limit param
 	if req.NumberMode == modeFalse {
 		var item string
-		if HasNonDigits(req.Limit) {
+		if req.Limit == "" || HasNonDigits(req.Limit) {
 			item = `  | limit '100'  `
 		} else {
 			item = fmt.Sprintf(`  | limit '%s'  `, EscapeSingleQuoted(req.Limit))
