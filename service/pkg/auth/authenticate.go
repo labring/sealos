@@ -115,7 +115,7 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 	}
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
-		return fmt.Errorf("kubeconfig failed: %v", err)
+		return fmt.Errorf("kubeconfig failed: %w", err)
 	}
 	if !IsWhitelistKubernetesHost(config.Host) {
 		if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
@@ -126,11 +126,11 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 	}
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return fmt.Errorf("failed to new client: %v", err)
+		return fmt.Errorf("failed to new client: %w", err)
 	}
 	pvcList, err := client.CoreV1().PersistentVolumeClaims(ns).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to list pvcs: %v", err)
+		return fmt.Errorf("failed to list pvcs: %w", err)
 	}
 	pvcUIDSet := make(map[string]bool)
 	for _, pvc := range pvcList.Items {

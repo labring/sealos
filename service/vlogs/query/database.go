@@ -42,7 +42,12 @@ func (v *DBLogsQuery) generateContainerQuery(req *api.VlogsDatabaseRequest) {
 	if len(req.Container) == 0 {
 		return
 	}
-	containerList := `"` + strings.Join(req.Container, `","`) + `"`
+	escapedContainers := make([]string, 0, len(req.Container))
+	for _, container := range req.Container {
+		escaped := EscapeSingleQuoted(container)
+		escapedContainers = append(escapedContainers, escaped)
+	}
+	containerList := `"` + strings.Join(escapedContainers, `","`) + `"`
 	v.query += fmt.Sprintf(`container:in(%s) `, containerList)
 }
 
@@ -50,14 +55,19 @@ func (v *DBLogsQuery) generateTypeQuery(req *api.VlogsDatabaseRequest) {
 	if len(req.Type) == 0 {
 		return
 	}
-	containerList := `"` + strings.Join(req.Type, `","`) + `"`
-	v.query += fmt.Sprintf(`log_type:in(%s) `, containerList)
+	escapedTypes := make([]string, 0, len(req.Type))
+	for _, logType := range req.Type {
+		escaped := EscapeSingleQuoted(logType)
+		escapedTypes = append(escapedTypes, escaped)
+	}
+	typeList := `"` + strings.Join(escapedTypes, `","`) + `"`
+	v.query += fmt.Sprintf(`log_type:in(%s) `, typeList)
 }
 
 func (v *DBLogsQuery) generateCommonQuery(req *api.VlogsDatabaseRequest) {
 	var filters []string
 	if req.Time != "" {
-		filters = append(filters, "_time:"+req.Time)
+		filters = append(filters, "_time:"+EscapeSingleQuoted(req.Time))
 	}
 	if len(filters) > 0 {
 		v.query += strings.Join(filters, " ")
@@ -67,14 +77,14 @@ func (v *DBLogsQuery) generateCommonQuery(req *api.VlogsDatabaseRequest) {
 		if limit == "" {
 			limit = "100"
 		}
-		v.query += " | limit " + limit
+		v.query += " | limit " + EscapeSingleQuoted(limit)
 	}
 }
 
 func (v *DBLogsQuery) generateNumberQuery(req *api.VlogsDatabaseRequest) {
 	if req.NumberMode == modeTrue {
 		if isValidNumberLevel(req.NumberLevel) {
-			v.query += fmt.Sprintf(` | stats by (_time:1%s) count() logs_total`, req.NumberLevel)
+			v.query += fmt.Sprintf(` | stats by (_time:1%s) count() logs_total`, EscapeSingleQuoted(req.NumberLevel))
 		}
 	}
 }
