@@ -1,9 +1,7 @@
 # Default values for sshgate
 
-image:
-  repository: ghcr.io/labring/sealos-sshgate-service
-  pullPolicy: IfNotPresent
-  tag: ""  # Overrides the image tag whose default is the chart appVersion
+image: ghcr.io/labring/sealos-sshgate-service:latest
+imagePullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
