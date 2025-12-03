@@ -16,7 +16,8 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import type { LocalImportFormData, ImportStage } from '@/types/import';
-import { importDevboxFromLocal } from '@/api/devbox';
+import { createDevbox, getDevboxByName, uploadAndExtractFile } from '@/api/devbox';
+import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import RuntimeSelector from '@/components/RuntimeSelector';
 
@@ -144,6 +145,22 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     return Object.keys(errors).length === 0;
   };
 
+  const waitForDevboxReady = async (devboxName: string, maxRetries = 60): Promise<boolean> => {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const devbox = await getDevboxByName(devboxName);
+        if (devbox.status?.value === 'Running') {
+          return true;
+        }
+        setImportLogs((prev) => `${prev}\nWaiting for devbox to be ready... (${i + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error('Error checking devbox status:', error);
+      }
+    }
+    return false;
+  };
+
   const handleImport = async () => {
     if (!validateForm()) {
       toast.error(t('please_fill_required_fields'));
@@ -153,23 +170,49 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     try {
       setImportStage('creating');
       setImportError('');
-      setImportLogs('');
+      setImportLogs('Creating devbox...');
 
       const devboxName = generateDevboxName();
 
+      const templateData = await getTemplate(formData.templateUid);
+
+      await createDevbox({
+        name: devboxName,
+        templateUid: formData.templateUid,
+        templateRepositoryUid: templateData.template.templateRepositoryUid,
+        templateConfig: templateData.template.config,
+        image: templateData.template.image,
+        cpu: 4000,
+        memory: 8192,
+        networks: [
+          {
+            port: formData.containerPort,
+            protocol: 'HTTP',
+            openPublicDomain: true
+          } as any
+        ],
+        env: []
+      });
+
+      setImportStage('waiting');
+      setImportLogs('Devbox created, waiting for it to be ready...');
+
+      const isReady = await waitForDevboxReady(devboxName);
+      if (!isReady) {
+        throw new Error('Devbox failed to become ready within timeout');
+      }
+
+      setImportStage('uploading');
+      setImportLogs('Devbox is ready, starting file upload...');
+
       const formDataToSend = new FormData();
       formDataToSend.append('file', formData.file!);
-      formDataToSend.append('name', devboxName);
-      formDataToSend.append('runtime', selectedRuntime?.iconId || '');
-      formDataToSend.append('templateUid', formData.templateUid);
-      formDataToSend.append('containerPort', formData.containerPort.toString());
+      formDataToSend.append('devboxName', devboxName);
       formDataToSend.append('startupCommand', formData.startupCommand || '');
-      formDataToSend.append('cpu', '4000');
-      formDataToSend.append('memory', '8192');
 
       let lastProgress = 0;
 
-      const response = await importDevboxFromLocal(formDataToSend, (progressEvent) => {
+      await uploadAndExtractFile(formDataToSend, (progressEvent) => {
         const progress = progressEvent.total
           ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
           : 0;
@@ -178,8 +221,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
           lastProgress = progress;
 
           if (progress < 100) {
-            setImportStage('uploading');
-            setImportLogs(`Upload progress: ${progress}%`);
+            setImportLogs(`Uploading file... ${progress}%`);
           } else {
             setImportStage('extracting');
             setImportLogs(`Upload complete (100%)\nExtracting and configuring...`);
@@ -190,9 +232,11 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportStage('success');
       setImportLogs('Import completed successfully');
       toast.success(t('import_success'));
+
+      onClose();
       setTimeout(() => {
-        onSuccess(response.devboxName);
-      }, 1000);
+        onSuccess(devboxName);
+      }, 100);
     } catch (error: any) {
       console.error('Import failed:', error);
       setImportStage('error');
@@ -203,8 +247,16 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     }
   };
 
+  const isImporting =
+    importStage === 'creating' ||
+    importStage === 'waiting' ||
+    importStage === 'uploading' ||
+    importStage === 'extracting' ||
+    importStage === 'configuring' ||
+    importStage === 'starting';
+
   const handleClose = () => {
-    if (importStage !== 'creating' && importStage !== 'uploading') {
+    if (!isImporting) {
       setFormData({
         name: '',
         file: null,
@@ -224,14 +276,6 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       onClose();
     }
   };
-
-  const isImporting =
-    importStage === 'creating' ||
-    importStage === 'waiting' ||
-    importStage === 'uploading' ||
-    importStage === 'extracting' ||
-    importStage === 'configuring' ||
-    importStage === 'starting';
 
   return (
     <Drawer open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>

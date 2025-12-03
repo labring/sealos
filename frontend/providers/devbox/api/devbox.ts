@@ -107,3 +107,15 @@ export const importDevboxFromLocal = (
     timeout: 0,
     onUploadProgress
   });
+
+export const uploadAndExtractFile = (
+  formData: FormData,
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+) =>
+  POST<{ success: boolean }>('/api/uploadAndExtractFile', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 0,
+    onUploadProgress
+  });
