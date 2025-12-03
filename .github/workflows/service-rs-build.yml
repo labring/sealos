@@ -278,12 +278,10 @@ jobs:
               sed -i "s|repository:.*|repository: ${DOCKER_IMAGE%:*}|" charts/${MODULE_NAME}/values.yaml
               sed -i "s|tag:.*|tag: \"${DOCKER_IMAGE##*:}\"|" charts/${MODULE_NAME}/values.yaml
             fi
+            sudo rm -rf registry
             echo "Building ${TAG}-amd64"
             sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           done
-
-          # delete old registry cache
-          sudo rm -rf registry
 
           # Build cluster images for each tag (arm64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
@@ -292,6 +290,7 @@ jobs:
               sed -i "s|repository:.*|repository: ${DOCKER_IMAGE%:*}|" charts/${MODULE_NAME}/values.yaml
               sed -i "s|tag:.*|tag: \"${DOCKER_IMAGE##*:}\"|" charts/${MODULE_NAME}/values.yaml
             fi
+            sudo rm -rf registry
             echo "Building ${TAG}-arm64"
             sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           done
