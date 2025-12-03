@@ -157,7 +157,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
       (item) => item === db.dbType
     );
   }, [db.dbType]);
