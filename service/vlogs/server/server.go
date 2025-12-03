@@ -45,6 +45,7 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
+
 func (vl *VLogsServer) queryConvert(
 	req *http.Request,
 ) (func(rw http.ResponseWriter, req *http.Request) error, error) {
