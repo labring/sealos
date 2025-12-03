@@ -23,6 +23,7 @@ func NewVLogsServer(config *config.Config) (*VLogsServer, error) {
 	}
 	return vl, nil
 }
+
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	query, err := vl.queryConvert(req)
 	if err != nil {

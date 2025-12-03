@@ -142,7 +142,9 @@ func (vl *VLogsServer) executeDBQuery(req *http.Request) (io.ReadCloser, error) 
 	return resp, nil
 }
 
-func (vl *VLogsServer) verifyDBParams(req *http.Request) (*api.VlogsDatabaseRequest, string, error) {
+func (vl *VLogsServer) verifyDBParams(
+	req *http.Request,
+) (*api.VlogsDatabaseRequest, string, error) {
 	kubeConfig, err := vl.extractKubeConfig(req)
 	if err != nil {
 		return nil, "", err
