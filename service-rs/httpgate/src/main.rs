@@ -41,7 +41,7 @@ fn main() {
     server.bootstrap();
 
     // Create and configure proxy service
-    let proxy = DevboxProxy::new(Arc::clone(&registry));
+    let proxy = DevboxProxy::new(Arc::clone(&registry), config.agent_port);
     let mut proxy_service = pingora_proxy::http_proxy_service(&server.configuration, proxy);
     // Enable h2c (HTTP/2 over cleartext) to support gRPC
     if let Some(app) = proxy_service.app_logic_mut() {

@@ -13,6 +13,10 @@ fullnameOverride: ""
 # The gateway listens on this port on each node
 httpPort: 8080
 
+# Agent port (used when port is "agent" instead of a number in the host header)
+# Example: devbox-my-app-agent.devbox.sealos.io will route to this port
+agentPort: 10000
+
 # Service configuration
 service:
   # Enable trafficDistribution: PreferSameNode (requires K8s 1.34+)

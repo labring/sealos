@@ -7,6 +7,9 @@ pub struct Config {
 
     /// Log level (e.g., "info", "debug", "warn")
     pub log_level: String,
+
+    /// Agent port (used when port is "agent" instead of a number)
+    pub agent_port: u16,
 }
 
 impl Config {
@@ -18,9 +21,15 @@ impl Config {
 
         let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
 
+        let agent_port = std::env::var("AGENT_PORT")
+            .unwrap_or_else(|_| "10000".to_string())
+            .parse()
+            .expect("Invalid AGENT_PORT format");
+
         Self {
             listen_addr,
             log_level,
+            agent_port,
         }
     }
 }
@@ -30,6 +39,7 @@ impl Default for Config {
         Self {
             listen_addr: "0.0.0.0:8080".parse().unwrap(),
             log_level: "info".to_string(),
+            agent_port: 10000,
         }
     }
 }
