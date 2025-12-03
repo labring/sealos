@@ -12,7 +12,6 @@ import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
-import { useUserStore } from '@/stores/user';
 import { useQuotaGuarded } from '@sealos/shared';
 
 export default function Header({ onSearch }: { onSearch: (value: string) => void }) {
@@ -22,8 +21,6 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
   const { env } = useEnvStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
-
-  const { session } = useUserStore();
 
   const handleGotoTemplate = useCallback(() => {
     router.push('/template?tab=public');
@@ -51,8 +48,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
       setGuide2(true);
       destroyDriver();
       handleGotoTemplate();
-    },
-    { getSession: () => session }
+    }
   );
 
   useEffect(() => {

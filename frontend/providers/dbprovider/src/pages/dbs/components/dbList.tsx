@@ -66,7 +66,6 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
-import { useUserStore } from '@/store/user';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
@@ -86,7 +85,6 @@ const DBList = ({
   const theme = useTheme();
   const router = useRouter();
   const { SystemEnv } = useEnvStore();
-  const { session } = useUserStore();
   const {
     isOpen: isOpenUpdateModal,
     onOpen: onOpenUpdateModal,
@@ -128,8 +126,7 @@ const DBList = ({
         view_name: 'create_form'
       });
       router.push('/db/edit');
-    },
-    { getSession: () => session }
+    }
   );
 
   const handleRestartApp = useCallback(

@@ -32,7 +32,6 @@ const JobList = ({
   const theme = useTheme();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
-  const { session } = useUserStore();
   const { SystemEnv } = useEnvStore();
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -51,8 +50,7 @@ const JobList = ({
     },
     () => {
       router.push('/job/edit');
-    },
-    { getSession: () => session }
+    }
   );
 
   const handlePauseApp = useCallback(

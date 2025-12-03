@@ -23,6 +23,13 @@ import { useGuideStore } from '@/store/guide';
 import App from 'next/app';
 import Script from 'next/script';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { createQuotaGuarded } from '@sealos/shared';
+import useSessionStore from '@/store/session';
+
+// Initialize quota guarded hook with session getter
+createQuotaGuarded({
+  getSession: () => useSessionStore.getState().session ?? null
+});
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

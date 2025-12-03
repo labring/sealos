@@ -4,14 +4,12 @@ import { Button, Box } from '@chakra-ui/react';
 import styles from './empty.module.scss';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
-import { useUserStore } from '@/store/user';
 import useEnvStore from '@/store/env';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const Empty = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { session } = useUserStore();
   const { SystemEnv } = useEnvStore();
 
   const handleCreateApp = useQuotaGuarded(
@@ -26,8 +24,7 @@ const Empty = () => {
     },
     () => {
       router.push('/job/edit');
-    },
-    { getSession: () => session }
+    }
   );
 
   return (

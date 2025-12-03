@@ -309,8 +309,7 @@ const DevboxCreatePage = () => {
     },
     () => {
       formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
-    },
-    { getSession: () => useUserStore.getState().session }
+    }
   );
 
   if (isLoading) return <Loading />;
