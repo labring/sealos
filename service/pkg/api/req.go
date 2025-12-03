@@ -106,7 +106,6 @@ type VlogsDatabaseRequest struct {
 	Type        []string `json:"type,omitempty"`
 	Container   []string `json:"container,omitempty"`
 	Keyword     string   `json:"keyword,omitempty"`
-	PodQuery    string   `json:"podQuery,omitempty"`
 	StartTime   string   `json:"startTime,omitempty"`
 	EndTime     string   `json:"endTime,omitempty"`
 }

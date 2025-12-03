@@ -34,7 +34,7 @@ func (v *DBLogsQuery) generateVolumeUIDQuery(req *api.VlogsDatabaseRequest) {
 
 func (v *DBLogsQuery) generateKeywordQuery(req *api.VlogsDatabaseRequest) {
 	if req.Keyword != "" {
-		v.query += fmt.Sprintf(`*%s* `, EscapeSingleQuoted(req.Keyword))
+		v.query += fmt.Sprintf(`'%s' `, EscapeSingleQuoted(req.Keyword))
 	}
 }
 
@@ -67,7 +67,7 @@ func (v *DBLogsQuery) generateTypeQuery(req *api.VlogsDatabaseRequest) {
 func (v *DBLogsQuery) generateCommonQuery(req *api.VlogsDatabaseRequest) {
 	var filters []string
 	if req.Time != "" {
-		filters = append(filters, "_time:"+EscapeSingleQuoted(req.Time))
+		filters = append(filters, fmt.Sprintf(`time'%s' `, EscapeSingleQuoted(req.Time)))
 	}
 	if len(filters) > 0 {
 		v.query += strings.Join(filters, " ")
@@ -82,13 +82,11 @@ func (v *DBLogsQuery) generateCommonQuery(req *api.VlogsDatabaseRequest) {
 }
 
 func (v *DBLogsQuery) generateNumberQuery(req *api.VlogsDatabaseRequest) {
-	if req.NumberMode == modeTrue {
-		if isValidNumberLevel(req.NumberLevel) {
-			v.query += fmt.Sprintf(
-				` | stats by (_time:1%s) count() logs_total`,
-				EscapeSingleQuoted(req.NumberLevel),
-			)
-		}
+	if req.NumberMode == modeTrue && isValidNumberLevel(req.NumberLevel) {
+		v.query += fmt.Sprintf(
+			` | stats by (_time:1%s) count() logs_total`,
+			EscapeSingleQuoted(req.NumberLevel),
+		)
 	}
 }
 
