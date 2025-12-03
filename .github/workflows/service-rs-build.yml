@@ -232,47 +232,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set module name
+      - name: Set image repo
         env:
           MODULE: ${{ inputs.module }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           echo "MODULE_NAME=${MODULE}" >> $GITHUB_ENV
-
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-
-      - name: Check if tag
-        id: check_tag
-        env:
-          REF: ${{ github.ref }}
-        run: |
-          if [[ "$REF" == refs/tags/* ]]; then
-            echo "isTag=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "isTag=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Prepare
-        id: prepare
-        env:
-          PUSH_IMAGE: ${{ inputs.push_image }}
-          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
-          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          MODULE_NAME: ${{ env.MODULE_NAME }}
-        run: |
-          tag_name=$(bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG")
-          echo "new_docker_repo=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-service" >> $GITHUB_OUTPUT
-          echo "new_docker_image=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-service:${tag_name}" >> $GITHUB_OUTPUT
-          echo "cluster_repo=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-service" >> $GITHUB_OUTPUT
-          echo "cluster_image=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-service:${tag_name}" >> $GITHUB_OUTPUT
-          echo "latest_cluster_image=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-service:latest" >> $GITHUB_OUTPUT
-
+          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "aliyun_cluster_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-service" >> $GITHUB_OUTPUT
-            echo "aliyun_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-service:${tag_name}" >> $GITHUB_OUTPUT
-            echo "aliyun_latest_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-service:latest" >> $GITHUB_OUTPUT
+            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           fi
+
+      - name: Docker meta for cluster image
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_CLUSTER_REPO }}
+            ${{ env.ALIYUN_CLUSTER_REPO }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: Install sealos
         run: |
@@ -282,37 +266,37 @@ jobs:
         working-directory: service-rs/${{ inputs.module }}/deploy
         env:
           MODULE_NAME: ${{ env.MODULE_NAME }}
-          NEW_DOCKER_IMAGE: ${{ steps.prepare.outputs.new_docker_image }}
-          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
-          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
-          ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
-          ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
           IMAGE_SOURCE: https://github.com/${{ github.repository }}
         run: |
-          # Update image in values.yaml if exists
-          if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-            echo "Updating image in charts/${MODULE_NAME}/values.yaml"
-            sed -i "s|repository:.*|repository: ${NEW_DOCKER_IMAGE%:*}|" charts/${MODULE_NAME}/values.yaml
-            sed -i "s|tag:.*|tag: \"${NEW_DOCKER_IMAGE##*:}\"|" charts/${MODULE_NAME}/values.yaml
-          fi
+          # Build cluster images for each tag (amd64)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            # Update image in values.yaml for each tag
+            if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+              echo "Updating image in charts/${MODULE_NAME}/values.yaml to ${TAG}"
+              # Extract repo (everything before last :) and tag (everything after last :)
+              REPO="${TAG%:*}"
+              IMAGE_TAG="${TAG##*:}"
+              sed -i "s|repository:.*|repository: ${REPO}|" charts/${MODULE_NAME}/values.yaml
+              sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|" charts/${MODULE_NAME}/values.yaml
+            fi
+            echo "Building ${TAG}-amd64"
+            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
+          done
 
-          # Build for GHCR
-          sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
-          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           # delete old registry cache
           sudo rm -rf registry
-          sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
-          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
 
-          # Build for Aliyun if enabled
-          if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
-            sudo rm -rf registry
-            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
-            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
-            sudo rm -rf registry
-            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
-            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
-          fi
+          # Build cluster images for each tag (arm64)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+              REPO="${TAG%:*}"
+              IMAGE_TAG="${TAG##*:}"
+              sed -i "s|repository:.*|repository: ${REPO}|" charts/${MODULE_NAME}/values.yaml
+              sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|" charts/${MODULE_NAME}/values.yaml
+            fi
+            echo "Building ${TAG}-arm64"
+            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
+          done
 
       - name: Sealos login to ghcr.io
         env:
@@ -330,17 +314,9 @@ jobs:
           sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
-        env:
-          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
-          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
-          ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
-          ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
         run: |
           sudo sealos images
-          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
-          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
-
-          if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
-            bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE"
-            bash scripts/manifest-cluster-images.sh "$ALIYUN_LATEST_CLUSTER_IMAGE"
-          fi
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            echo "Creating manifest for ${TAG}"
+            bash scripts/manifest-cluster-images.sh "$TAG"
+          done
