@@ -166,7 +166,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsLaunchpadRequest) {
 	// if query number,dont use limit param
 	if req.NumberMode == modeFalse {
 		var item string
-		if hasNonDigits(req.Limit) {
+		if HasNonDigits(req.Limit) {
 			item = `  | limit '100'  `
 		} else {
 			item = fmt.Sprintf(`  | limit '%s'  `, EscapeSingleQuoted(req.Limit))
@@ -188,7 +188,7 @@ var allowedNumberLevels = map[string]struct{}{
 	"s": {},
 }
 
-func hasNonDigits(s string) bool {
+func HasNonDigits(s string) bool {
 	_, err := strconv.Atoi(s)
 	return err != nil
 }

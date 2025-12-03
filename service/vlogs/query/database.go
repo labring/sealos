@@ -74,7 +74,7 @@ func (v *DBLogsQuery) generateCommonQuery(req *api.VlogsDatabaseRequest) {
 	}
 	if req.NumberMode != modeTrue {
 		limit := req.Limit
-		if limit == "" {
+		if limit == "" || HasNonDigits(req.Limit) {
 			limit = "100"
 		}
 		v.query += " | limit " + EscapeSingleQuoted(limit)
