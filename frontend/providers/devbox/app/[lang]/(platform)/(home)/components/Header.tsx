@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+'use client';
+
+import { useCallback, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { BookOpen, LayoutTemplate, Plus, Search } from 'lucide-react';
 
@@ -11,9 +13,7 @@ import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { useUserStore } from '@/stores/user';
-import { WorkspaceQuotaItem } from '@/types/workspace';
-import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuotaGuarded } from '@sealos/shared';
 
 export default function Header({ onSearch }: { onSearch: (value: string) => void }) {
   const router = useRouter();
@@ -23,18 +23,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
 
-  const userStore = useUserStore();
-  const [quotaLoaded, setQuotaLoaded] = useState(false);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
-
-  // load user quota on load
-  useEffect(() => {
-    if (quotaLoaded) return;
-
-    userStore.loadUserQuota();
-    setQuotaLoaded(true);
-  }, [quotaLoaded, userStore]);
+  const { session } = useUserStore();
 
   const handleGotoTemplate = useCallback(() => {
     router.push('/template?tab=public');
@@ -48,26 +37,23 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     }
   };
 
-  const handleCreateDevbox = useCallback((): void => {
-    setGuide2(true);
-    destroyDriver();
-
-    const exceededQuotaItems = userStore.checkExceededQuotas({
-      cpu: 1,
-      memory: 1,
-      ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-    });
-
-    console.log('exceededQuotaItems', exceededQuotaItems);
-    if (exceededQuotaItems.length > 0) {
-      setExceededQuotas(exceededQuotaItems);
-      setExceededDialogOpen(true);
-      return;
-    } else {
-      setExceededQuotas([]);
+  const handleCreateDevbox = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: 1,
+        memory: 1,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: true
+    },
+    () => {
+      setGuide2(true);
+      destroyDriver();
       handleGotoTemplate();
-    }
-  }, [setGuide2, handleGotoTemplate, userStore]);
+    },
+    { getSession: () => session }
+  );
 
   useEffect(() => {
     if (!guide2 && isClientSide) {
@@ -109,17 +95,6 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
           </Button>
         </div>
       </div>
-
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        open={exceededDialogOpen}
-        onOpenChange={(open) => {
-          // Refresh quota on open change
-          userStore.loadUserQuota();
-          setExceededDialogOpen(open);
-        }}
-        onConfirm={handleGotoTemplate}
-      />
     </>
   );
 }

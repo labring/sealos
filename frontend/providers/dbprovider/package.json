@@ -24,6 +24,7 @@
     "@scalar/api-reference-react": "^0.6.23",
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
+    "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "@tanstack/react-table": "^8.10.7",

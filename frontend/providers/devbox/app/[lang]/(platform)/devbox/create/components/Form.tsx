@@ -19,8 +19,7 @@ import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
 
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
-import { useUserStore } from '@/stores/user';
-import { resourcePropertyMap } from '@/constants/resource';
+import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 interface FormProps {
@@ -32,20 +31,22 @@ interface FormProps {
 const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userStore = useUserStore();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
 
   const formValues = watch();
-  const exceededQuotas = useMemo(() => {
-    return userStore.checkExceededQuotas({
+  const requirements = useMemo(
+    () => ({
       cpu: isEdit ? formValues.cpu - (oldDevboxData?.cpu ?? 0) : formValues.cpu,
       memory: isEdit ? formValues.memory - (oldDevboxData?.memory ?? 0) : formValues.memory,
       // [TODO] These two does not need to be considered currently
       gpu: 0,
       nodeport: 0
-    });
-  }, [formValues, userStore, isEdit, oldDevboxData]);
+    }),
+    [formValues, isEdit, oldDevboxData]
+  );
+
+  const { exceededQuotas } = useUserQuota({ requirements });
 
   useEffect(() => {
     if (searchParams.get('scrollTo') === 'network') {

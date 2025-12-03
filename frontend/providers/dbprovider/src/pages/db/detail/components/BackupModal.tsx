@@ -1,11 +1,10 @@
 import { createBackup, updateBackupPolicy } from '@/api/backup';
 import { getDBByName } from '@/api/db';
 import Tip from '@/components/Tip';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 import { DBBackupMethodNameMap, DBTypeEnum, SelectTimeList, WeekSelectList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { useQuotaGuarded } from '@sealos/shared';
 import { convertCronTime, getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -25,9 +24,8 @@ import { MySelect, Tabs, useMessage } from '@sealos/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useUserStore } from '@/store/user';
 import useEnvStore from '@/store/env';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
@@ -48,20 +46,7 @@ const BackupModal = ({
   const { t } = useTranslation();
   const { message: toast } = useMessage();
 
-  // Quota related state
-  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
-  const [quotaLoaded, setQuotaLoaded] = useState(false);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
   const { SystemEnv } = useEnvStore();
-
-  // Load user quota on component mount
-  useEffect(() => {
-    if (quotaLoaded) return;
-
-    loadUserQuota();
-    setQuotaLoaded(true);
-  }, [quotaLoaded, loadUserQuota]);
 
   const { data: defaultVal, refetch: refetchPolicy } = useQuery(
     ['initpolicy', dbName, dbType],
@@ -142,24 +127,21 @@ const BackupModal = ({
     [currentNav]
   );
 
-  const checkQuotaAndProceed = () => {
-    // Check quota before showing confirmation dialog
-    const exceededQuotaItems = checkExceededQuotas({
-      cpu: SystemEnv.BACKUP_JOB_CPU_REQUIREMENT,
-      memory: SystemEnv.BACKUP_JOB_MEMORY_REQUIREMENT,
-      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-    });
-
-    if (exceededQuotaItems.length > 0) {
-      setExceededQuotas(exceededQuotaItems);
-      setExceededDialogOpen(true);
-      return;
-    } else {
-      setExceededQuotas([]);
+  const checkQuotaAndProceed = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: SystemEnv.BACKUP_JOB_CPU_REQUIREMENT,
+        memory: SystemEnv.BACKUP_JOB_MEMORY_REQUIREMENT,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: false
+    },
+    () => {
       // If quota is sufficient, show confirmation dialog
       handleSubmitManual(openConfirm(onclickBackup))();
     }
-  };
+  );
 
   const { mutate: onclickBackup, isLoading } = useMutation({
     mutationFn: () => {
@@ -490,18 +472,6 @@ const BackupModal = ({
       </Modal>
       <ConfirmChild />
       <AutoBackupConfirmChild />
-
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        open={exceededDialogOpen}
-        onOpenChange={(open) => {
-          // Refresh quota on open change
-          loadUserQuota();
-          setExceededDialogOpen(open);
-        }}
-        onConfirm={() => {}}
-        showControls={false}
-      />
     </>
   );
 };

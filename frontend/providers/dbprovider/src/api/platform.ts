@@ -4,7 +4,6 @@ import type { Response as resourcePriceResponse } from '@/pages/api/platform/res
 import type { AddonItem } from '@/pages/api/getAddonList';
 import { GET, POST } from '@/services/request';
 import type { UserTask } from '@/types/user';
-import { WorkspaceQuotaItem } from '@/types/workspace';
 import { getUserSession } from '@/utils/user';
 import { AxiosProgressEvent } from 'axios';
 
