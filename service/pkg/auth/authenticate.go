@@ -132,14 +132,13 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to list pvcs: %w", err)
 	}
-	pvcUIDSet := make(map[string]bool)
+	pvcUIDSet := make(map[string]struct{}, len(pvcList.Items))
 	for _, pvc := range pvcList.Items {
-		pvcUIDSet["pvc-"+string(pvc.UID)] = true
+		pvcUIDSet["pvc-"+string(pvc.UID)] = struct{}{}
 	}
-	var notFoundUIDs []string
 	for _, uid := range pvcUIDs {
-		if !pvcUIDSet[uid] {
-			return fmt.Errorf("%w: %v", ErrPVCNotFound, notFoundUIDs)
+		if _, ok := pvcUIDSet[uid]; !ok {
+			return fmt.Errorf("%w: %s", ErrPVCNotFound, uid)
 		}
 	}
 	return nil
