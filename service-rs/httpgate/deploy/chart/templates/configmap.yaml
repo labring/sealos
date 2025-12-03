@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "httpgate.fullname" . }}
+  labels:
+    {{- include "httpgate.labels" . | nindent 4 }}
+data:
+{{- if not (hasKey .Values.env "LISTEN_ADDR") }}
+  LISTEN_ADDR: {{ printf "0.0.0.0:%d" (int .Values.httpPort) | quote }}
+{{- end }}
+{{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}

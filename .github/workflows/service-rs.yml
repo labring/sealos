@@ -1,0 +1,58 @@
+name: Build Service-RS Images
+
+on:
+  workflow_call:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - "service-rs/**"
+      - ".github/workflows/service-rs.yml"
+      - ".github/workflows/service-rs-build.yml"
+      - "!**/*.md"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - "service-rs/**"
+      - ".github/workflows/service-rs.yml"
+      - ".github/workflows/service-rs-build.yml"
+      - "!**/*.md"
+
+jobs:
+  image-build:
+    uses: ./.github/workflows/service-rs-build.yml
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - httpgate
+    with:
+      module: ${{ matrix.module }}
+      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
+      push_image_tag: ${{ inputs.push_image_tag }}

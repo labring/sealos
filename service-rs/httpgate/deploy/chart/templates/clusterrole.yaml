@@ -1,0 +1,17 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "httpgate.fullname" . }}
+  labels:
+    {{- include "httpgate.labels" . | nindent 4 }}
+rules:
+# Watch Pods to get Pod IPs
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+# Watch Devbox CRDs to get uniqueID mappings
+- apiGroups: ["devbox.sealos.io"]
+  resources: ["devboxes"]
+  verbs: ["get", "list", "watch"]
+{{- end }}
