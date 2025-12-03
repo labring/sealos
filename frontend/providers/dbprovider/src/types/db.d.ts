@@ -134,6 +134,7 @@ export interface DBDetailType extends DBEditType {
   totalMemory: number;
   totalStorage: number;
   rawDbType: DBType;
+  dbType: DBType;
   cluster?: KbPgClusterType; // cluster info
 }
 
