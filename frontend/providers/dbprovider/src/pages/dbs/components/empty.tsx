@@ -8,14 +8,12 @@ import { startDriver, applistDriverObj } from '@/hooks/driver';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { track } from '@sealos/gtm';
-import { useUserStore } from '@/store/user';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const Empty = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const isClientSide = useClientSideValue(true);
-  const { session } = useUserStore();
 
   const { applistCompleted, _hasHydrated } = useGuideStore();
   useEffect(() => {
@@ -49,8 +47,7 @@ const Empty = () => {
         view_name: 'create_form'
       });
       router.push('/db/edit');
-    },
-    { getSession: () => session }
+    }
   );
 
   return (

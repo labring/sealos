@@ -26,25 +26,19 @@ export function createQuotaGuarded(config: UseQuotaGuardedConfig) {
 
 /**
  * Hook to guard actions with quota checking.
- * If createQuotaGuarded() was called during app initialization, config is optional.
- * Otherwise, config must be provided.
+ * Requires createQuotaGuarded() to be called during app initialization.
  */
-export function useQuotaGuarded(
-  options: QuotaGuardedOptions,
-  callback: () => void,
-  config?: UseQuotaGuardedConfig
-) {
+export function useQuotaGuarded(options: QuotaGuardedOptions, callback: () => void) {
   const quotaStore = useQuotaStore();
   const globalConfig = quotaStore.quotaGuardedConfig;
-  const finalConfig = config ?? globalConfig;
 
-  if (!finalConfig) {
+  if (!globalConfig) {
     throw new Error(
-      'useQuotaGuarded: No config provided. Either call createQuotaGuarded() during app initialization, or pass config as the third argument.'
+      'useQuotaGuarded: No config provided. Please call createQuotaGuarded() during app initialization (e.g., in _app.tsx or layout.tsx).'
     );
   }
 
-  const { getSession } = finalConfig;
+  const { getSession } = globalConfig;
 
   return () => {
     const session = getSession();

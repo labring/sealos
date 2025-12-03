@@ -6,7 +6,6 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { useJobStore } from '@/store/job';
-import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import { CronJobEditType } from '@/types/job';
 import { serviceSideProps } from '@/utils/i18n';
@@ -46,7 +45,6 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const { loadJobDetail } = useJobStore();
-  const { session } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
   const isEdit = useMemo(() => !!jobName, [jobName]);
   const { SystemEnv } = useEnvStore();
@@ -127,8 +125,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
       immediate: false,
       allowContinue: false
     },
-    doSubmit,
-    { getSession: () => session }
+    doSubmit
   );
 
   useQuery(

@@ -21,6 +21,12 @@ import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 import { Toaster } from '@sealos/shadcn-ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
+import { createQuotaGuarded } from '@sealos/shared';
+
+// Initialize quota guarded hook with session getter
+createQuotaGuarded({
+  getSession: () => useUserStore.getState().session
+});
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

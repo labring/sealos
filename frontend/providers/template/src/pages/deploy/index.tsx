@@ -26,7 +26,6 @@ import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
-import useSessionStore from '@/store/session';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
@@ -61,7 +60,6 @@ export default function EditApp({
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
-  const { getSession } = useSessionStore();
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
@@ -251,8 +249,7 @@ export default function EditApp({
     },
     () => {
       formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
-    },
-    { getSession: () => getSession() }
+    }
   );
 
   const parseTemplate = (res: TemplateSourceType) => {
