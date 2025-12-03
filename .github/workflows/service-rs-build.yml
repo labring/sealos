@@ -201,9 +201,12 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         env:
           GHCR_REPO: ${{ env.GHCR_REPO }}
+          IMAGE_SOURCE: https://github.com/${{ github.repository }}
         run: |
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            docker buildx imagetools create -t $TAG \
+            docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=${IMAGE_SOURCE}" \
+              -t $TAG \
               $(printf "${GHCR_REPO}@sha256:%s " *)
             sleep 5
           done
@@ -284,6 +287,7 @@ jobs:
           LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
           ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
           ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
+          IMAGE_SOURCE: https://github.com/${{ github.repository }}
         run: |
           # Update image in values.yaml if exists
           if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
@@ -293,21 +297,21 @@ jobs:
           fi
 
           # Build for GHCR
-          sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
-          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           # delete old registry cache
           sudo rm -rf registry
-          sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
-          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+          sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
 
           # Build for Aliyun if enabled
           if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
             sudo rm -rf registry
-            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
-            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
+            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
             sudo rm -rf registry
-            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
-            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
+            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           fi
 
       - name: Sealos login to ghcr.io
