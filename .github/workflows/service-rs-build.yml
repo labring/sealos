@@ -157,29 +157,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-
-      - name: Check if tag
-        id: check_tag
-        env:
-          REF: ${{ github.ref }}
-        run: |
-          if [[ "$REF" == refs/tags/* ]]; then
-            echo "isTag=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "isTag=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Prepare
-        id: prepare
-        env:
-          PUSH_IMAGE: ${{ inputs.push_image }}
-          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
-          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
-        run: |
-          bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -189,7 +166,7 @@ jobs:
             ${{ env.ALIYUN_REPO }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
             type=ref,event=tag
             type=sha
           labels: |
