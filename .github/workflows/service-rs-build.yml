@@ -59,6 +59,8 @@ jobs:
           images: |
             ${{ env.GHCR_REPO }}
             ${{ env.ALIYUN_REPO }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -190,6 +192,8 @@ jobs:
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
             type=ref,event=tag
             type=sha
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
         env:
           DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
@@ -282,10 +286,10 @@ jobs:
           ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
         run: |
           # Update image in values.yaml if exists
-          if [[ -f chart/values.yaml ]]; then
-            echo "Updating image in chart/values.yaml"
-            sed -i "s|repository:.*|repository: ${NEW_DOCKER_IMAGE%:*}|" chart/values.yaml
-            sed -i "s|tag:.*|tag: \"${NEW_DOCKER_IMAGE##*:}\"|" chart/values.yaml
+          if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+            echo "Updating image in charts/${MODULE_NAME}/values.yaml"
+            sed -i "s|repository:.*|repository: ${NEW_DOCKER_IMAGE%:*}|" charts/${MODULE_NAME}/values.yaml
+            sed -i "s|tag:.*|tag: \"${NEW_DOCKER_IMAGE##*:}\"|" charts/${MODULE_NAME}/values.yaml
           fi
 
           # Build for GHCR
