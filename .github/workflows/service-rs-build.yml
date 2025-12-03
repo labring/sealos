@@ -271,13 +271,12 @@ jobs:
           # Build cluster images for each tag (amd64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             # Update image in values.yaml for each tag
+            # Convert cluster image to docker image: sealos-cloud-xxx -> sealos-xxx
             if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-              echo "Updating image in charts/${MODULE_NAME}/values.yaml to ${TAG}"
-              # Extract repo (everything before last :) and tag (everything after last :)
-              REPO="${TAG%:*}"
-              IMAGE_TAG="${TAG##*:}"
-              sed -i "s|repository:.*|repository: ${REPO}|" charts/${MODULE_NAME}/values.yaml
-              sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|" charts/${MODULE_NAME}/values.yaml
+              DOCKER_IMAGE="${TAG/sealos-cloud-/sealos-}"
+              echo "Updating image in charts/${MODULE_NAME}/values.yaml to ${DOCKER_IMAGE}"
+              sed -i "s|repository:.*|repository: ${DOCKER_IMAGE%:*}|" charts/${MODULE_NAME}/values.yaml
+              sed -i "s|tag:.*|tag: \"${DOCKER_IMAGE##*:}\"|" charts/${MODULE_NAME}/values.yaml
             fi
             echo "Building ${TAG}-amd64"
             sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
@@ -289,10 +288,9 @@ jobs:
           # Build cluster images for each tag (arm64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-              REPO="${TAG%:*}"
-              IMAGE_TAG="${TAG##*:}"
-              sed -i "s|repository:.*|repository: ${REPO}|" charts/${MODULE_NAME}/values.yaml
-              sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|" charts/${MODULE_NAME}/values.yaml
+              DOCKER_IMAGE="${TAG/sealos-cloud-/sealos-}"
+              sed -i "s|repository:.*|repository: ${DOCKER_IMAGE%:*}|" charts/${MODULE_NAME}/values.yaml
+              sed -i "s|tag:.*|tag: \"${DOCKER_IMAGE##*:}\"|" charts/${MODULE_NAME}/values.yaml
             fi
             echo "Building ${TAG}-arm64"
             sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
