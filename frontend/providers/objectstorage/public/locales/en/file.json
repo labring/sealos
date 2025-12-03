@@ -23,5 +23,15 @@
   "selectedItems": "Selected {{count}} item",
   "clickToAscend": "Click to ascend",
   "clickToDescend": "Click to descend",
-  "clickToCancelSort": "Click to cancel sorting"
+  "clickToCancelSort": "Click to cancel sorting",
+  "prepareUpload": "Prepare Upload",
+  "selectedFolder": "Selected Folder",
+  "containsFiles": "Contains {{count}} files",
+  "preserveStructure": "Preserve folder structure",
+  "flattenStructure": "Upload folder contents only",
+  "pathExample": "Path example",
+  "overwriteWarning": "Note: May overwrite files with the same name in the current directory.",
+  "confirmUpload": "Confirm Upload",
+  "forStaticHosting": "For static hosting",
+  "default": "Default"
 }
