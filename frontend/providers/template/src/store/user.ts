@@ -1,7 +1,5 @@
 import { getResourcePrice } from '@/api/platform';
 import { userPriceType } from '@/types/user';
-import { ExceededWorkspaceQuotaItem, WorkspaceQuotaItem } from '@/types/workspace';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -9,11 +7,6 @@ import { immer } from 'zustand/middleware/immer';
 type State = {
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
-  userQuota: WorkspaceQuotaItem[];
-  loadUserQuota: () => Promise<null>;
-  checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage' | 'traffic', number>>
-  ) => ExceededWorkspaceQuotaItem[];
 };
 
 let retryGetPrice = 3;
@@ -39,33 +32,6 @@ export const useUserStore = create<State>()(
           }
         }
         return null;
-      },
-      userQuota: [],
-      loadUserQuota: async () => {
-        const response = await sealosApp.getWorkspaceQuota();
-
-        set((state) => {
-          state.userQuota = response.quota;
-        });
-        return null;
-      },
-      checkExceededQuotas: (request) => {
-        const quota = get().userQuota;
-
-        const exceededItems = quota
-          .filter((item) => {
-            if (!(item.type in request)) return false;
-
-            if (item.limit - item.used < request[item.type as keyof typeof request]!) {
-              return true;
-            }
-          })
-          .map((item) => ({
-            ...item,
-            request: request?.[item.type]
-          }));
-
-        return exceededItems;
       }
     }))
   )

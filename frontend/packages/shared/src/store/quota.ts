@@ -7,6 +7,11 @@ import type {
   WorkspaceQuotaItemType
 } from '../types/workspace';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import type { SessionV1 } from 'sealos-desktop-sdk';
+
+type QuotaGuardedConfig = {
+  getSession: () => SessionV1 | null;
+};
 
 type State = {
   userQuota: WorkspaceQuotaItem[];
@@ -15,7 +20,9 @@ type State = {
   exceededQuotas: ExceededWorkspaceQuotaItem[];
   setExceededQuotas: (quotas: ExceededWorkspaceQuotaItem[]) => void;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage' | 'traffic', number>>
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
+      traffic?: number | boolean;
+    }
   ) => ExceededWorkspaceQuotaItem[];
   exceededPromptOpen: boolean;
   setExceededPromptOpen: (open: boolean) => void;
@@ -25,6 +32,8 @@ type State = {
   setExceededPromptCallback: (callback: (() => void) | null) => void;
   showRequirements: WorkspaceQuotaItemType[];
   setShowRequirements: (types: WorkspaceQuotaItemType[]) => void;
+  quotaGuardedConfig: QuotaGuardedConfig | null;
+  setQuotaGuardedConfig: (config: QuotaGuardedConfig) => void;
 };
 
 export const useQuotaStore = create<State>()(
@@ -53,13 +62,24 @@ export const useQuotaStore = create<State>()(
           .filter((item) => {
             if (!(item.type in request)) return false;
 
-            if (item.limit - item.used < request[item.type as keyof typeof request]!) {
+            const requestValue = request[item.type as keyof typeof request];
+            if (item.type === 'traffic') {
+              // For traffic, `true` means check any quota is exceeded (value > 0 is already met)
+              if (requestValue === true) return item.limit - item.used < 1;
+              // `false` = not provided
+              if (requestValue === false) return false;
+            }
+
+            if (item.limit - item.used < (requestValue as number)) {
               return true;
             }
           })
           .map((item) => ({
             ...item,
-            request: request[item.type as keyof typeof request]
+            request:
+              item.type === 'traffic' && request.traffic === true
+                ? undefined
+                : (request[item.type as keyof typeof request] as number)
           }));
 
         return exceededItems;
@@ -86,6 +106,12 @@ export const useQuotaStore = create<State>()(
       setShowRequirements: (types) => {
         set({
           showRequirements: types
+        });
+      },
+      quotaGuardedConfig: null,
+      setQuotaGuardedConfig: (config) => {
+        set({
+          quotaGuardedConfig: config
         });
       }
     }))

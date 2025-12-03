@@ -457,19 +457,5 @@
     "1": "升级您的计划",
     "2": " 或调整设置"
   },
-  "insufficient_quota_dialog": {
-    "alert-title": "现在无法创建数据库，您已经用尽了全部资源。",
-    "cancel": "取消",
-    "confirm": "确认",
-    "please_upgrade_plan": {
-      "1": "请 ",
-      "2": "升级您的计划",
-      "3": "或删除使用上述资源的应用。"
-    },
-    "quota_available": "可用: ",
-    "quota_in_use": "使用中: ",
-    "quota_total": "总计: ",
-    "title": "资源不足"
-  },
   "need_manual_table_creation": "你需要自行创建与 CSV 文件对应的数据表。"
 }

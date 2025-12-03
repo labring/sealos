@@ -1,15 +1,13 @@
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import {
-  InsufficientQuotaDialogView,
-  type InsufficientQuotaDialogI18n
-} from './InsufficientQuotaDialogView';
+import { InsufficientQuotaDialogView } from './InsufficientQuotaDialogView';
 import { useQuotaStore } from '../../../store/quota';
+import type { SupportedLang } from '../../../i18n/quota-dialog';
 
 export interface InsufficientQuotaDialogProps {
-  i18n: InsufficientQuotaDialogI18n;
+  lang: SupportedLang;
 }
 
-export function InsufficientQuotaDialog({ i18n }: InsufficientQuotaDialogProps) {
+export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) {
   const quotaStore = useQuotaStore();
 
   const handleOpenCostcenter = () => {
@@ -34,7 +32,7 @@ export function InsufficientQuotaDialog({ i18n }: InsufficientQuotaDialogProps) 
       onOpenChange={quotaStore.setExceededPromptOpen}
       showControls={quotaStore.showExceededPromptControls}
       showRequirements={quotaStore.showRequirements}
-      i18n={i18n}
+      lang={lang}
       onConfirm={
         quotaStore.exceededPromptCallback
           ? () => {

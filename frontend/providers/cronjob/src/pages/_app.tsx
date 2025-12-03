@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import 'react-day-picker/dist/style.css';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -176,6 +177,7 @@ function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
           <ConfirmChild />
           <Loading loading={loading} />
         </ChakraProvider>

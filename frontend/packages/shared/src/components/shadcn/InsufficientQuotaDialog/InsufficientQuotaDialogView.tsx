@@ -4,23 +4,7 @@ import React from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 import type { ExceededWorkspaceQuotaItem, WorkspaceQuotaItemType } from '../../../types/workspace';
 import { resourcePropertyMap } from '../../../constants/resource';
-
-export interface InsufficientQuotaDialogI18n {
-  title: string;
-  alertTitle: string;
-  cancel: string;
-  confirm: string;
-  pleaseUpgradePlan: {
-    prefix: string;
-    link: string;
-    suffix: string;
-  };
-  quotaTotal: string;
-  quotaInUse: string;
-  quotaAvailable: string;
-  quotaRequired: string;
-  resourceLabels: Record<WorkspaceQuotaItemType, string>;
-}
+import { getQuotaDialogI18n, type SupportedLang } from '../../../i18n/quota-dialog';
 
 export interface InsufficientQuotaDialogViewProps {
   items: ExceededWorkspaceQuotaItem[];
@@ -30,7 +14,7 @@ export interface InsufficientQuotaDialogViewProps {
   onOpenCostCenter: () => void;
   showControls: boolean;
   showRequirements: WorkspaceQuotaItemType[];
-  i18n: InsufficientQuotaDialogI18n;
+  lang: SupportedLang;
 }
 
 export function InsufficientQuotaDialogView({
@@ -41,8 +25,9 @@ export function InsufficientQuotaDialogView({
   showControls,
   onOpenCostCenter,
   showRequirements,
-  i18n
+  lang
 }: InsufficientQuotaDialogViewProps) {
+  const i18n = getQuotaDialogI18n(lang);
   if (!open) return null;
 
   return (
