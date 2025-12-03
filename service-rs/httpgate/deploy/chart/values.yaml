@@ -1,7 +1,7 @@
 # Default values for httpgate
 
 image:
-  repository: ghcr.io/zijiren233/httpgate
+  repository: ghcr.io/labring/sealos-httpgate-service
   pullPolicy: IfNotPresent
   tag: "" # Overrides the image tag whose default is the chart appVersion
 
