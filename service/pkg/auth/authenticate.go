@@ -139,11 +139,8 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 	var notFoundUIDs []string
 	for _, uid := range pvcUIDs {
 		if !pvcUIDSet[uid] {
-			notFoundUIDs = append(notFoundUIDs, uid)
+			return fmt.Errorf("%w: %v", ErrPVCNotFound, notFoundUIDs)
 		}
-	}
-	if len(notFoundUIDs) > 0 {
-		return fmt.Errorf("%w: %v", ErrPVCNotFound, notFoundUIDs)
 	}
 	return nil
 }
