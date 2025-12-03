@@ -45,9 +45,9 @@ func (v *DBLogsQuery) generateContainerQuery(req *api.VlogsDatabaseRequest) {
 	escapedContainers := make([]string, 0, len(req.Container))
 	for _, container := range req.Container {
 		escaped := EscapeSingleQuoted(container)
-		escapedContainers = append(escapedContainers, escaped)
+		escapedContainers = append(escapedContainers, "'"+escaped+"'")
 	}
-	containerList := `"` + strings.Join(escapedContainers, `","`) + `"`
+	containerList := strings.Join(escapedContainers, ",")
 	v.query += fmt.Sprintf(`container:in(%s) `, containerList)
 }
 
@@ -58,9 +58,9 @@ func (v *DBLogsQuery) generateTypeQuery(req *api.VlogsDatabaseRequest) {
 	escapedTypes := make([]string, 0, len(req.Type))
 	for _, logType := range req.Type {
 		escaped := EscapeSingleQuoted(logType)
-		escapedTypes = append(escapedTypes, escaped)
+		escapedTypes = append(escapedTypes, "'"+escaped+"'")
 	}
-	typeList := `"` + strings.Join(escapedTypes, `","`) + `"`
+	typeList := strings.Join(escapedTypes, ",")
 	v.query += fmt.Sprintf(`log_type:in(%s) `, typeList)
 }
 
