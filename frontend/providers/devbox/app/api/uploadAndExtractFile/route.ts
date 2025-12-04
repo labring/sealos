@@ -193,13 +193,20 @@ echo "Contents of EXTRACT_DIR:"
 ls -la "\$EXTRACT_DIR"
 
 echo ""
-echo "Step 7: Removing target directory..."
-rm -rf ${targetDir}
-echo "Target directory removed"
+echo "Step 7: Cleaning target directory contents..."
+rm -rf ${targetDir}/*
+rm -rf ${targetDir}/.[!.]*
+echo "Target directory cleaned"
 
 echo ""
 echo "Step 8: Moving extracted files to target..."
-mv "\$EXTRACT_DIR" ${targetDir}
+if [ "\$EXTRACT_DIR" = "\$TEMP_DIR" ]; then
+  mv \$TEMP_DIR/* ${targetDir}/ 2>/dev/null || true
+  mv \$TEMP_DIR/.[!.]* ${targetDir}/ 2>/dev/null || true
+else
+  mv "\$EXTRACT_DIR"/* ${targetDir}/ 2>/dev/null || true
+  mv "\$EXTRACT_DIR"/.[!.]* ${targetDir}/ 2>/dev/null || true
+fi
 echo "Move completed"
 
 echo ""
