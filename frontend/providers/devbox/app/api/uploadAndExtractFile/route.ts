@@ -5,7 +5,6 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
-import { validateZipFile } from '@/utils/validate';
 import { sleep, DEVBOX_IMPORT_CONSTANTS } from '@/utils/devboxImportHelper';
 
 export const dynamic = 'force-dynamic';
@@ -53,7 +52,7 @@ async function uploadFileToDevbox(
   podName: string,
   containerName: string,
   fileBuffer: Buffer,
-  destPath: string = '/tmp/upload.zip'
+  destPath: string = '/tmp/upload.tar'
 ): Promise<void> {
   const pass = new PassThrough();
 
@@ -71,114 +70,55 @@ async function uploadFileToDevbox(
   console.log(`File uploaded successfully to ${destPath}`);
 }
 
-async function unzipFileInDevbox(
+async function extractTarFileInDevbox(
   kubefs: KubeFileSystem,
   namespace: string,
   podName: string,
   containerName: string,
-  zipPath: string = '/tmp/upload.zip',
+  tarPath: string = '/tmp/upload.tar',
   targetDir: string = '/home/devbox/project'
 ): Promise<string> {
   const command = `set -ex
 echo "=========================================="
-echo "Starting unzip process..."
+echo "Starting extract process..."
 echo "=========================================="
 
-echo "Step 1: Checking zip file..."
-echo "Zip file path: ${zipPath}"
-ls -lh ${zipPath}
+echo "Step 1: Checking tar file..."
+echo "Tar file path: ${tarPath}"
+ls -lh ${tarPath}
 
 echo ""
 echo "Step 2: Creating temp directory..."
-TEMP_DIR="/tmp/unzip_temp_\$\$"
+TEMP_DIR="/tmp/extract_temp_\$\$"
 mkdir -p \$TEMP_DIR
 echo "Temp directory created: \$TEMP_DIR"
 
 echo ""
-echo "Step 3: Extracting zip file to temp directory..."
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Python3 not found, installing..."
-  sudo apt-get update -qq && sudo apt-get install -y python3
-fi
-
-python3 - <<PYTHON_EXTRACT_EOF
-import zipfile
-import os
-import sys
-import shutil
-
-zip_path = "${zipPath}"
-temp_dir = "\$TEMP_DIR"
-
-def clean_temp_dir():
-    for item in os.listdir(temp_dir):
-        item_path = os.path.join(temp_dir, item)
-        try:
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-        except Exception as e:
-            print(f"Warning: failed to remove {item_path}: {e}", file=sys.stderr)
-
-def try_extract(encoding):
-    try:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            for member in zip_ref.namelist():
-                try:
-                    filename = member.encode('cp437').decode(encoding)
-                except:
-                    filename = member
-
-                target_path = os.path.join(temp_dir, filename)
-
-                if member.endswith('/'):
-                    os.makedirs(target_path, exist_ok=True)
-                else:
-                    parent_dir = os.path.dirname(target_path)
-                    if parent_dir:
-                        os.makedirs(parent_dir, exist_ok=True)
-                    with zip_ref.open(member) as source, open(target_path, 'wb') as target:
-                        target.write(source.read())
-        return True
-    except Exception as e:
-        print(f"Failed with {encoding}: {e}", file=sys.stderr)
-        return False
-
-print("Attempting to extract with UTF-8 encoding (macOS/Linux)...")
-if try_extract('utf-8'):
-    print("Successfully extracted with UTF-8 encoding")
-else:
-    print("UTF-8 extraction failed, trying GBK encoding (Windows)...")
-    clean_temp_dir()
-
-    if try_extract('gbk'):
-        print("Successfully extracted with GBK encoding")
-    else:
-        print("GBK failed, using default extraction...")
-        clean_temp_dir()
-
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(temp_dir)
-        print("Extracted with default encoding")
-PYTHON_EXTRACT_EOF
+echo "Step 3: Extracting tar file to temp directory..."
+tar -xf ${tarPath} -C \$TEMP_DIR
+echo "Extraction completed"
 
 echo ""
-echo "Step 4: Listing temp directory contents..."
+echo "Step 4: Removing __MACOSX if exists..."
+rm -rf \$TEMP_DIR/__MACOSX
+echo "__MACOSX removed if existed"
+
+echo ""
+echo "Step 5: Listing temp directory contents..."
 echo "Contents of \$TEMP_DIR:"
 ls -la \$TEMP_DIR
 
 echo ""
-echo "Step 5: Checking directory structure..."
+echo "Step 6: Checking directory structure..."
 cd \$TEMP_DIR
-DIR_COUNT=\$(ls -d */ 2>/dev/null | grep -v '^__MACOSX' | wc -l)
+DIR_COUNT=\$(ls -d */ 2>/dev/null | wc -l)
 FILE_COUNT=\$(ls -p 2>/dev/null | grep -v / | wc -l)
 
 echo "Number of directories: \$DIR_COUNT"
 echo "Number of files: \$FILE_COUNT"
 
 if [ "\$DIR_COUNT" -eq 1 ] && [ "\$FILE_COUNT" -eq 0 ]; then
-  SINGLE_DIR=\$(ls -d */ 2>/dev/null | grep -v '^__MACOSX' | head -n 1)
+  SINGLE_DIR=\$(ls -d */ 2>/dev/null | head -n 1)
   echo "Found single root directory: \$SINGLE_DIR"
   EXTRACT_DIR="\$TEMP_DIR/\$SINGLE_DIR"
 else
@@ -187,19 +127,19 @@ else
 fi
 
 echo ""
-echo "Step 6: Source directory info..."
+echo "Step 7: Source directory info..."
 echo "EXTRACT_DIR = \$EXTRACT_DIR"
 echo "Contents of EXTRACT_DIR:"
 ls -la "\$EXTRACT_DIR"
 
 echo ""
-echo "Step 7: Cleaning target directory contents..."
+echo "Step 8: Cleaning target directory contents..."
 rm -rf ${targetDir}/*
 rm -rf ${targetDir}/.[!.]*
 echo "Target directory cleaned"
 
 echo ""
-echo "Step 8: Moving extracted files to target..."
+echo "Step 9: Moving extracted files to target..."
 if [ "\$EXTRACT_DIR" = "\$TEMP_DIR" ]; then
   mv \$TEMP_DIR/* ${targetDir}/ 2>/dev/null || true
   mv \$TEMP_DIR/.[!.]* ${targetDir}/ 2>/dev/null || true
@@ -210,22 +150,23 @@ fi
 echo "Move completed"
 
 echo ""
-echo "Step 9: Verifying target directory..."
+echo "Step 10: Verifying target directory..."
 echo "Contents of ${targetDir}:"
 ls -la ${targetDir}
 
 echo ""
-echo "Step 10: Cleaning up..."
-rm -f ${zipPath}
-echo "Zip file removed"
+echo "Step 11: Cleaning up..."
+rm -rf \$TEMP_DIR
+rm -f ${tarPath}
+echo "Temp directory and tar file removed"
 
 echo ""
 echo "=========================================="
-echo "Unzip completed successfully"
+echo "Extract completed successfully"
 echo "=========================================="
 `;
 
-  console.log('Executing unzip command in pod:', podName, 'container:', containerName);
+  console.log('Executing extract command in pod:', podName, 'container:', containerName);
 
   try {
     const result = await kubefs.execCommand(namespace, podName, containerName, [
@@ -233,11 +174,11 @@ echo "=========================================="
       '-c',
       command
     ]);
-    console.log(`File unzipped successfully to ${targetDir}, output:`, result);
+    console.log(`File extracted successfully to ${targetDir}, output:`, result);
     return result;
   } catch (error: any) {
-    console.error('Unzip failed:', error?.message || String(error));
-    throw new Error(`Failed to unzip file: ${error?.message || 'Unknown error'}`);
+    console.error('Extract failed:', error?.message || String(error));
+    throw new Error(`Failed to extract file: ${error?.message || 'Unknown error'}`);
   }
 }
 
@@ -263,10 +204,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (!file.name.endsWith('.zip')) {
+    if (!file.name.endsWith('.tar')) {
       return jsonRes({
         code: 400,
-        message: 'Only .zip files are supported'
+        message: 'Only .tar files are supported'
       });
     }
 
@@ -278,13 +219,6 @@ export async function POST(req: NextRequest) {
     }
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-
-    if (!validateZipFile(fileBuffer)) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid ZIP file format'
-      });
-    }
 
     const headerList = req.headers;
 
@@ -366,13 +300,13 @@ export async function POST(req: NextRequest) {
       throw lastError || new Error('Upload failed after 3 attempts');
     }
 
-    console.log('Unzipping file...');
+    console.log('Extracting tar file...');
     try {
-      const unzipResult = await unzipFileInDevbox(kubefs, namespace, podName, containerName);
-      console.log('File unzipped successfully, result:', unzipResult);
+      const extractResult = await extractTarFileInDevbox(kubefs, namespace, podName, containerName);
+      console.log('Tar file extracted successfully, result:', extractResult);
     } catch (error: any) {
-      console.error('Unzip failed:', error?.message || String(error));
-      throw new Error(`Failed to unzip file: ${error?.message || 'Unknown error'}`);
+      console.error('Extract failed:', error?.message || String(error));
+      throw new Error(`Failed to extract file: ${error?.message || 'Unknown error'}`);
     }
 
     console.log('Creating entrypoint.sh...');

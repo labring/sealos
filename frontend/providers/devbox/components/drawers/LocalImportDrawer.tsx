@@ -21,6 +21,7 @@ import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import RuntimeSelector from '@/components/RuntimeSelector';
 import { useGlobalStore } from '@/stores/global';
+import { convertZipToTar } from '@/utils/archiveConverter';
 
 interface LocalImportDrawerProps {
   open: boolean;
@@ -256,10 +257,13 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       }
 
       setImportStage('uploading');
-      setImportLogs('Devbox is ready, starting file upload...');
+      setImportLogs('Devbox is ready, converting archive format...');
+
+      const tarFile = await convertZipToTar(formData.file!);
+      setImportLogs('Archive converted, starting file upload...');
 
       const formDataToSend = new FormData();
-      formDataToSend.append('file', formData.file!);
+      formDataToSend.append('file', tarFile);
       formDataToSend.append('devboxName', devboxName);
       formDataToSend.append('startupCommand', formData.startupCommand || '');
 
