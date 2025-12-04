@@ -28,19 +28,6 @@ export interface ImportProgress {
   error?: string;
 }
 
-export interface GitImportRequest {
-  name: string;
-  gitUrl: string;
-  isPrivate: boolean;
-  token?: string;
-  runtime: string;
-  templateUid: string;
-  containerPort: number;
-  startupCommand?: string;
-  cpu: number;
-  memory: number;
-}
-
 export interface LocalImportRequest {
   name: string;
   runtime: string;
