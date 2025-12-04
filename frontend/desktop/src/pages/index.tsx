@@ -122,12 +122,18 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           setInviterId(query.uid);
         }
         // sealos_inside=true internal call
-        if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
-          sessionStorage.setItem(
-            'accessTemplatesNoLogin',
-            `https://template.${sealos_cloud_domain}/deploy?${appQuery}`
-          );
-          return;
+        if (whitelistApps.includes(appkey)) {
+          if (appQuery.indexOf('sealos_inside=true') === -1) {
+            sessionStorage.setItem(
+              'accessTemplatesNoLogin',
+              `https://template.${sealos_cloud_domain}/deploy?${appQuery}`
+            );
+            return;
+          } else {
+            // If sealos_inside=true, redirect to login page to avoid guest mode
+            router.replace('/signin');
+            return;
+          }
         }
 
         // save autolaunch info (for guest and logged in user)
