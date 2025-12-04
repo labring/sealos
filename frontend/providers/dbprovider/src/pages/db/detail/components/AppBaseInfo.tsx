@@ -165,27 +165,34 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
-      (item) => item === db.dbType
-    );
+    return !![
+      'postgresql',
+      'mongodb',
+      'apecloud-mysql',
+      'redis',
+      'milvus',
+      'kafka',
+      'clickhouse'
+    ].find((item) => item === db.dbType);
   }, [db.dbType]);
 
   // load user quota on component mount
-  useEffect(() => {
-    if (quotaLoaded) return;
+  // useEffect(() => {
+  //   if (quotaLoaded) return;
 
-    loadUserQuota();
-    setQuotaLoaded(true);
-  }, [quotaLoaded, loadUserQuota]);
+  //   loadUserQuota();
+  //   setQuotaLoaded(true);
+  // }, [quotaLoaded, loadUserQuota]);
 
-  const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
-    ['getDBStatefulSetByName', db.dbName, db.dbType],
-    () => getDBStatefulSetByName(db.dbName, db.dbType),
-    {
-      retry: 2,
-      enabled: !!db.dbName && !!db.dbType
-    }
-  );
+  // kb 0.9 StatefulSets have all been changed to instancesets
+  // const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
+  //   ['getDBStatefulSetByName', db.dbName, db.dbType],
+  //   () => getDBStatefulSetByName(db.dbName, db.dbType),
+  //   {
+  //     retry: 2,
+  //     enabled: !!db.dbName && !!db.dbType
+  //   }
+  // );
 
   const { data: secret, refetch: refetchSecret } = useQuery(
     ['getDBSecret', db.dbName, db.dbType],
@@ -206,7 +213,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
-      enabled: supportConnectDB,
+      // enabled: supportConnectDB,
       retry: 3,
       onSuccess(data) {
         setIsChecked(!!data);
@@ -315,23 +322,20 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     });
   }, [db.dbType, secret]);
 
-  const refetchAll = useCallback(() => {
-    loadUserQuota();
-    refetchDBStatefulSet();
+  const refetchAll = () => {
     refetchSecret();
     refetchService();
-  }, [loadUserQuota, refetchDBStatefulSet, refetchSecret, refetchService]);
+  };
 
   const openNetWorkService = useCallback(async () => {
     try {
-      console.log({ dbStatefulSet, db });
-      if (!dbStatefulSet || !db) {
+      if (!db) {
         return toast({
           title: 'Missing Parameters',
           status: 'error'
         });
       }
-      const yaml = json2NetworkService({ dbDetail: db, dbStatefulSet: dbStatefulSet });
+      const yaml = json2NetworkService({ dbDetail: db, dbCluster: db?.cluster });
       await applyYamlList([yaml], 'create');
       onClose();
       setIsChecked(true);
@@ -346,7 +350,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         status: 'error'
       });
     }
-  }, [onClose, refetchAll, db, dbStatefulSet, t, toast]);
+  }, [onClose, refetchAll, db, t, toast]);
 
   const closeNetWorkService = async () => {
     try {
@@ -709,7 +713,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </HStack>
           </Flex>
 
-          {!['milvus', 'kafka'].includes(db.dbType) && (
+          {!['milvus'].includes(db.dbType) && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>

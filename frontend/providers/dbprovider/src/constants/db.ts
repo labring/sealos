@@ -231,10 +231,10 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' }
+  { id: DBTypeEnum.milvus, label: 'Milvus' },
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
+  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
