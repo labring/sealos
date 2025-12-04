@@ -106,19 +106,12 @@ echo "Temp directory created: \$TEMP_DIR"
 
 echo ""
 echo "Step 4: Extracting zip file to temp directory..."
-if command -v 7z >/dev/null 2>&1; then
-  echo "Using 7z for extraction (better charset support)"
-  7z x ${zipPath} -o\$TEMP_DIR -y
-elif unzip -h 2>&1 | grep -q '\-O'; then
-  echo "Using unzip with -O UTF-8 option"
-  unzip -O UTF-8 -o ${zipPath} -d \$TEMP_DIR
-else
-  echo "Installing p7zip for better charset support..."
-  sudo apt-get update
-  sudo apt-get install -y p7zip-full
-  echo "Extracting with 7z..."
-  7z x ${zipPath} -o\$TEMP_DIR -y
+if ! command -v unar >/dev/null 2>&1; then
+  echo "Installing unar for proper charset support..."
+  sudo apt-get update -qq && sudo apt-get install -y unar
 fi
+echo "Extracting with unar..."
+unar -f -o \$TEMP_DIR ${zipPath}
 
 echo ""
 echo "Step 5: Listing temp directory contents..."
