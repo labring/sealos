@@ -1,7 +1,7 @@
 import { getPlanInfo, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
-import { PhoneBindingModal } from '@/components/PhoneBindingModal';
+import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
 import { useLicenseCheck } from '@/hooks/useLicenseCheck';
