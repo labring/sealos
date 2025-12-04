@@ -200,7 +200,9 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
         if (devbox.status?.value === 'Running') {
           return true;
         }
-        setImportLogs((prev) => `${prev}\nWaiting for devbox to be ready... (${i + 1}/${maxRetries})`);
+        setImportLogs(
+          (prev) => `${prev}\nWaiting for devbox to be ready... (${i + 1}/${maxRetries})`
+        );
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (error) {
         console.error('Error checking devbox status:', error);
@@ -247,7 +249,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
 
       const isReady = await waitForDevboxReady(devboxName);
       if (!isReady) {
-        throw new Error('Devbox failed to become ready within timeout');
+        throw new Error('Devbox failed to become ready within timeout.Please try again later.');
       }
 
       setImportStage('uploading');
