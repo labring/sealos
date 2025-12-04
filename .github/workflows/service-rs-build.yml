@@ -200,6 +200,7 @@ jobs:
     needs:
       - image-release
     runs-on: ubuntu-24.04
+    if: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
     permissions:
       contents: read
       packages: write
@@ -292,7 +293,6 @@ jobs:
           sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
-        if: ${{ inputs.push_image }}
         run: |
           sudo sealos images
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
