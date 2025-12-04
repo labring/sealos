@@ -453,6 +453,11 @@ const Form = ({
     });
 
     const filtered = DBTypeList.filter((dbType) => {
+      // Exclude weaviate from create form
+      if (dbType.id === DBTypeEnum.weaviate) {
+        return false;
+      }
+
       const addonName = dbType.id;
       const addonStatus = addonStatusMap.get(addonName);
       const shouldInclude = addonStatus !== 'Disabled';
