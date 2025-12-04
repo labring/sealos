@@ -75,6 +75,7 @@ func main() {
 		probeAddr                string
 		concurrent               int
 		deleteResourceConcurrent int
+		deleteBackupConcurrent   int
 		development              bool
 		rateLimiterOptions       = &utils.LimiterOptions{}
 		leaseDuration            time.Duration
@@ -101,8 +102,14 @@ func main() {
 	flag.IntVar(
 		&deleteResourceConcurrent,
 		"delete-resource-concurrent",
-		5,
+		3,
 		"The number of concurrent DeleteUserResource calls.",
+	)
+	flag.IntVar(
+		&deleteBackupConcurrent,
+		"delete-backup-concurrent",
+		30,
+		"The maximum number of concurrent backup deletions.",
 	)
 	flag.DurationVar(
 		&leaseDuration,
@@ -329,15 +336,16 @@ func main() {
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent); err != nil {
+	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent, deleteBackupConcurrent); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
 	if err = (&controllers.PaymentReconciler{
-		Account:     accountReconciler,
-		WatchClient: watchClient,
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
+		Account:        accountReconciler,
+		DebtReconciler: debtController,
+		WatchClient:    watchClient,
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}

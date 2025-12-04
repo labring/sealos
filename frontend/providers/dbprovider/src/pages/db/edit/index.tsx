@@ -180,6 +180,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     if (!dbName) {
       const hour = Math.floor(Math.random() * 10) + 14;
       formHook.setValue('autoBackup.hour', hour.toString().padStart(2, '0'));
+      const minute = Math.floor(Math.random() * 60);
+      formHook.setValue('autoBackup.minute', minute.toString().padStart(2, '0'));
     }
   }, []);
 

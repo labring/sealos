@@ -13,6 +13,8 @@ import (
 // @host localhost:2333
 // @BasePath
 func main() {
-	go pprof.RunPprofServer(10000)
+	go func() {
+		_ = pprof.RunPprofServer(10000)
+	}()
 	router.RegisterPayRouter()
 }

@@ -30,6 +30,7 @@ import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg';
 import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg';
 import StabilityAIIcon from '@/ui/svg/icons/modelist/stabilityai.svg';
 import StepFunIcon from '@/ui/svg/icons/modelist/stepfun.svg';
+import StreamlakeIcon from '@/ui/svg/icons/modelist/streamlake.svg';
 
 export const modelIcons = {
   openai: OpenAIIcon,
@@ -62,4 +63,5 @@ export const modelIcons = {
   lingyiwanwu: LingyiWanwuIcon,
   stepfun: StepFunIcon,
   default: DefaultIcon,
+  streamlake: StreamlakeIcon,
 };

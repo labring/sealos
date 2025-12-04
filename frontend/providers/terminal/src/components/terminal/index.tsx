@@ -31,7 +31,9 @@ function Terminal({ url, site }: { url: string; site: string }) {
 
   useEffect(() => {
     const event = async (e: MessageEvent) => {
-      const whitelist = [url, site];
+      const urlOrigin = new URL(url).origin;
+      const whitelist = [urlOrigin, site];
+
       if (!whitelist.includes(e.origin)) return;
       try {
         if (e.data.type === 'new terminal' && e.data.command) {
@@ -59,7 +61,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
     };
     window.addEventListener('message', event);
     return () => window.removeEventListener('message', event);
-  }, [site, url]);
+  }, [site, url, nsid]);
 
   const newTerminal = (command?: string) => {
     const temp = nanoid(6);

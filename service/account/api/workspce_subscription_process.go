@@ -610,37 +610,46 @@ func CheckQuota(ctx context.Context, workspace, planName string) (bool, error) {
 }
 
 // processExpiredBalanceSubscriptions 处理已到期的余额支付订阅
+// 1. The current cycle is about to end (within 20 minutes) and the expiration time is longer than the end time of the current cycle - renewal is required
+// 2. The situation where the current cycle has ended and needs to be renewed
 func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 	ctx context.Context,
 ) (int, error) {
-	var expiredSubscriptions []types.WorkspaceSubscription
+	var subscriptionsToProcess []types.WorkspaceSubscription
 	now := time.Now().UTC()
+	renewalThreshold := now.Add(20 * time.Minute)
+	localDomain := dao.DBClient.GetLocalRegion().Domain
+	normalStatus := types.SubscriptionStatusNormal
+	canceledStatus := types.SubscriptionPayStatusCanceled
+	balancePayMethod := types.PaymentMethodBalance
 
-	// 查询已到期且支付方式为余额的订阅
-	err := dao.DBClient.GetGlobalDB().WithContext(ctx).Model(&types.WorkspaceSubscription{}).
-		Where("current_period_end_at <= ? AND pay_method = ? AND status = ? AND region_domain = ? AND pay_status NOT IN (?, ?)",
-			now.Add(20*time.Minute),
-			types.PaymentMethodBalance,
-			types.SubscriptionStatusNormal,
-			dao.DBClient.GetLocalRegion().Domain,
-			types.SubscriptionPayStatusCanceled,
-			types.SubscriptionPayStatusNoNeed).
-		Find(&expiredSubscriptions).Error
+	err := dao.DBClient.GetGlobalDB().WithContext(ctx).
+		Model(&types.WorkspaceSubscription{}).
+		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status != ? AND (pay_method = ? OR (expire_at > current_period_end_at))",
+			renewalThreshold,
+			normalStatus,
+			localDomain,
+			canceledStatus,
+			balancePayMethod).
+		Find(&subscriptionsToProcess).Error
 	if err != nil {
-		return 0, fmt.Errorf("failed to query expired balance subscriptions: %w", err)
+		return 0, fmt.Errorf("failed to query subscriptions needing period renewal: %w", err)
 	}
 
-	if len(expiredSubscriptions) == 0 {
+	if len(subscriptionsToProcess) == 0 {
 		return 0, nil
 	}
-	logrus.Infof("Found %d expired balance subscriptions to process", len(expiredSubscriptions))
+	logrus.Infof(
+		"Found %d subscriptions needing period renewal (includes expired and expiring subscriptions with remaining prepaid time)",
+		len(subscriptionsToProcess),
+	)
 
 	processedCount := 0
-	for i := range expiredSubscriptions {
-		if err := wsp.processExpiredBalanceSubscription(ctx, &expiredSubscriptions[i]); err != nil {
+	for i := range subscriptionsToProcess {
+		if err := wsp.processPeriodRenewal(ctx, &subscriptionsToProcess[i]); err != nil {
 			dao.Logger.Errorf(
-				"Failed to process expired balance subscription %s: %v",
-				expiredSubscriptions[i].ID,
+				"Failed to process period renewal for subscription %s: %v",
+				subscriptionsToProcess[i].ID,
 				err,
 			)
 		} else {
@@ -651,39 +660,38 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 	return processedCount, nil
 }
 
-// processExpiredBalanceSubscription 处理单个到期的余额支付订阅
-func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscription(
+// processPeriodRenewal 处理订阅的周期续期
+func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 	ctx context.Context,
 	sub *types.WorkspaceSubscription,
 ) error {
 	return dao.DBClient.GetGlobalDB().Transaction(func(dbTx *gorm.DB) error {
-		// 重新获取最新的订阅状态，防止并发问题
+		// Re-obtain the latest subscription status to prevent concurrent issues
 		var latestSub types.WorkspaceSubscription
 		if err := dbTx.Where("id = ?", sub.ID).First(&latestSub).Error; err != nil {
 			return fmt.Errorf("failed to get latest subscription: %w", err)
 		}
 
-		// 再次检查是否需要处理
+		// check again to see if any processing is needed
 		now := time.Now().UTC()
-		if latestSub.CurrentPeriodEndAt.After(now) ||
-			latestSub.PayMethod != types.PaymentMethodBalance ||
-			latestSub.Status != types.SubscriptionStatusNormal {
-			logrus.Infof("Subscription %s no longer needs processing, skipping", latestSub.ID)
+
+		// 检查订阅状态
+		if latestSub.Status != types.SubscriptionStatusNormal {
+			logrus.Infof("Subscription %s status is not normal, skipping", latestSub.ID)
 			return nil
 		}
 
-		logrus.Infof(
-			"Processing expired balance subscription: workspace=%s, region=%s, plan=%s, expired_at=%s",
-			latestSub.Workspace,
-			latestSub.RegionDomain,
-			latestSub.PlanName,
-			latestSub.CurrentPeriodEndAt.Format(time.RFC3339),
-		)
-
-		account, err := dao.DBClient.GetAccount(types.UserQueryOpts{UID: latestSub.UserUID})
-		if err != nil {
-			return fmt.Errorf("failed to get account for user %s: %w", latestSub.UserUID, err)
+		// Check if the current cycle has not yet reached the renewal time (leave a 20-minute buffer)
+		if latestSub.CurrentPeriodEndAt.After(now.Add(20 * time.Minute)) {
+			logrus.Infof("Subscription %s current period not yet ending (ends at %s), skipping",
+				latestSub.ID, latestSub.CurrentPeriodEndAt.Format(time.RFC3339))
+			return nil
 		}
+
+		// determine whether the subscription has expired
+		isExpired := latestSub.CurrentPeriodEndAt.Before(now)
+
+		// obtain plan information
 		plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(latestSub.PlanName)
 		if err != nil {
 			return fmt.Errorf(
@@ -693,29 +701,158 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscription(
 			)
 		}
 
-		price, err := dao.DBClient.GetWorkspaceSubscriptionPlanPrice(
-			latestSub.PlanName,
-			types.SubscriptionPeriodMonthly,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to get plan price for %s: %w", latestSub.PlanName, err)
+		// Calculate the new cycle time
+		// For expired subscriptions, the new cycle begins now; For subscriptions that are about to expire, start from the end time of the current cycle
+		var newPeriodStart time.Time
+		if isExpired {
+			newPeriodStart = now
+		} else {
+			newPeriodStart = latestSub.CurrentPeriodEndAt
 		}
 
-		// 检查余额是否足够
-		availableBalance := account.Balance - account.DeductionBalance
-		if availableBalance < price.Price {
-			// 余额不足，更新订阅状态为欠费
-			return wsp.handleInsufficientBalance(
-				ctx,
-				dbTx,
-				&latestSub,
-				price.Price,
-				availableBalance,
+		monthlyPeriod, _ := types.ParsePeriod(types.SubscriptionPeriodMonthly)
+		potentialPeriodEnd := newPeriodStart.Add(monthlyPeriod)
+
+		newPeriodEnd := potentialPeriodEnd
+		needsPayment := false
+		var paymentID string
+		var paymentAmount int64 = 0
+
+		// 检查是否还有剩余订阅时长
+		if potentialPeriodEnd.After(*latestSub.ExpireAt) {
+			if latestSub.CurrentPeriodEndAt.Before(*latestSub.ExpireAt) {
+				newPeriodEnd = *latestSub.ExpireAt
+			} else {
+				needsPayment = true
+			}
+		}
+
+		if needsPayment {
+			// Only subscriptions with balance payments are processed here. Other payment methods such as stripe are not handled
+			if latestSub.PayMethod != types.PaymentMethodBalance {
+				return nil
+			}
+			price, err := dao.DBClient.GetWorkspaceSubscriptionPlanPrice(
+				latestSub.PlanName,
+				types.SubscriptionPeriodMonthly,
 			)
+			if err != nil {
+				return fmt.Errorf("failed to get plan price for %s: %w", latestSub.PlanName, err)
+			}
+
+			account, err := dao.DBClient.GetAccount(types.UserQueryOpts{UID: latestSub.UserUID})
+			if err != nil {
+				return fmt.Errorf("failed to get account for user %s: %w", latestSub.UserUID, err)
+			}
+
+			availableBalance := account.Balance - account.DeductionBalance
+			if availableBalance < price.Price {
+				return wsp.handleInsufficientBalance(
+					ctx,
+					dbTx,
+					&latestSub,
+					price.Price,
+					availableBalance,
+				)
+			}
+			_payID, err := gonanoid.New(12)
+			if err != nil {
+				return fmt.Errorf("failed to create payment id: %w", err)
+			}
+			paymentID = _payID
+			paymentAmount = price.Price
+			if err := cockroach.AddDeductionAccount(dbTx, latestSub.UserUID, price.Price); err != nil {
+				return fmt.Errorf("failed to deduct balance: %w", err)
+			}
+
+			payment := types.Payment{
+				ID: paymentID,
+				PaymentRaw: types.PaymentRaw{
+					UserUID:                 latestSub.UserUID,
+					RegionUID:               dao.DBClient.GetLocalRegion().UID,
+					CreatedAt:               now,
+					Method:                  types.PaymentMethodBalance,
+					Amount:                  price.Price,
+					TradeNO:                 paymentID,
+					Type:                    types.PaymentTypeSubscription,
+					ChargeSource:            types.ChargeSourceBalance,
+					Status:                  types.PaymentStatusPAID,
+					WorkspaceSubscriptionID: &latestSub.ID,
+					Message: fmt.Sprintf(
+						"Period renewal payment for workspace %s/%s",
+						latestSub.Workspace,
+						latestSub.RegionDomain,
+					),
+				},
+			}
+			if err := dbTx.Create(&payment).Error; err != nil {
+				return fmt.Errorf("failed to create payment record: %w", err)
+			}
 		}
 
-		// 余额充足，执行续费
-		return wsp.handleSuccessfulBalanceRenewal(ctx, dbTx, &latestSub, plan, price)
+		latestSub.CurrentPeriodStartAt = newPeriodStart
+		latestSub.CurrentPeriodEndAt = newPeriodEnd
+		latestSub.Status = types.SubscriptionStatusNormal
+		latestSub.TrafficStatus = types.WorkspaceTrafficStatusActive
+		latestSub.UpdateAt = now
+
+		if err := dbTx.Save(&latestSub).Error; err != nil {
+			return fmt.Errorf("failed to update subscription: %w", err)
+		}
+
+		var payStatus types.SubscriptionPayStatus
+		var statusDesc string
+
+		if needsPayment {
+			payStatus = types.SubscriptionPayStatusPaid
+			statusDesc = "Auto period renewal with payment by processor"
+		} else {
+			payStatus = types.SubscriptionPayStatusNoNeed
+			statusDesc = "Auto period renewal using prepaid time (no payment needed)"
+		}
+
+		transaction := types.WorkspaceSubscriptionTransaction{
+			ID:            uuid.New(),
+			From:          types.TransactionFromSystem,
+			Workspace:     latestSub.Workspace,
+			RegionDomain:  latestSub.RegionDomain,
+			UserUID:       latestSub.UserUID,
+			OldPlanName:   latestSub.PlanName,
+			NewPlanName:   latestSub.PlanName,
+			OldPlanStatus: types.SubscriptionStatusNormal,
+			Operator:      types.SubscriptionTransactionTypeRenewed,
+			StartAt:       now,
+			CreatedAt:     now,
+			UpdatedAt:     now,
+			Status:        types.SubscriptionTransactionStatusCompleted,
+			StatusDesc:    statusDesc,
+			PayStatus:     payStatus,
+			PayID:         paymentID,
+			Period:        types.SubscriptionPeriodMonthly,
+			Amount:        paymentAmount,
+		}
+
+		if err := dbTx.Create(&transaction).Error; err != nil {
+			return fmt.Errorf("failed to create renewal transaction: %w", err)
+		}
+
+		if err = helper.AddTrafficPackage(dbTx, dao.K8sManager.GetClient(), &latestSub, plan, newPeriodEnd, types.WorkspaceTrafficFromWorkspaceSubscription, transaction.ID.String()); err != nil {
+			return fmt.Errorf("failed to add traffic package: %w", err)
+		}
+
+		if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, latestSub.ID, plan.AIQuota, newPeriodEnd, types.PKGFromWorkspaceSubscription, transaction.ID.String()); err != nil {
+			return fmt.Errorf("failed to create AI quota package: %w", err)
+		}
+
+		logrus.Infof(
+			"Successfully processed period renewal for workspace %s, new period: %s to %s, expire_at: %s",
+			latestSub.Workspace,
+			latestSub.CurrentPeriodStartAt.Format(time.RFC3339),
+			latestSub.CurrentPeriodEndAt.Format(time.RFC3339),
+			latestSub.ExpireAt.Format(time.RFC3339),
+		)
+
+		return nil
 	})
 }
 
@@ -825,118 +962,5 @@ func (wsp *WorkspaceSubscriptionProcessor) handleInsufficientBalance(
 		"Created debt status and failed transaction for workspace %s due to insufficient balance",
 		sub.Workspace,
 	)
-	return nil
-}
-
-// handleSuccessfulBalanceRenewal 处理成功的余额续费
-func (wsp *WorkspaceSubscriptionProcessor) handleSuccessfulBalanceRenewal(
-	_ context.Context,
-	dbTx *gorm.DB,
-	sub *types.WorkspaceSubscription,
-	plan *types.WorkspaceSubscriptionPlan,
-	price *types.ProductPrice,
-) error {
-	now := time.Now().UTC()
-
-	paymentID, err := gonanoid.New(12)
-	if err != nil {
-		return fmt.Errorf("failed to create payment id: %w", err)
-	}
-
-	logrus.Infof(
-		"Processing successful balance renewal for workspace %s, amount: %d",
-		sub.Workspace,
-		price.Price,
-	)
-
-	periodDuration, err := types.ParsePeriod(types.SubscriptionPeriodMonthly)
-	if err != nil {
-		return fmt.Errorf("failed to parse period: %w", err)
-	}
-
-	// 设置新的周期时间
-	if sub.CurrentPeriodEndAt.Before(now) {
-		sub.CurrentPeriodStartAt = now
-		sub.CurrentPeriodEndAt = now.Add(periodDuration)
-	} else {
-		sub.CurrentPeriodStartAt = sub.CurrentPeriodEndAt
-		sub.CurrentPeriodEndAt = sub.CurrentPeriodEndAt.Add(periodDuration)
-	}
-
-	sub.Status = types.SubscriptionStatusNormal
-	sub.PayStatus = types.SubscriptionPayStatusPaid
-	sub.TrafficStatus = types.WorkspaceTrafficStatusActive
-	sub.UpdateAt = now
-
-	if err := dbTx.Save(sub).Error; err != nil {
-		return fmt.Errorf("failed to update subscription: %w", err)
-	}
-
-	// 创建成功的续费事务记录
-	successTransaction := types.WorkspaceSubscriptionTransaction{
-		ID:            uuid.New(),
-		From:          types.TransactionFromSystem,
-		Workspace:     sub.Workspace,
-		RegionDomain:  sub.RegionDomain,
-		UserUID:       sub.UserUID,
-		OldPlanName:   sub.PlanName,
-		NewPlanName:   sub.PlanName,
-		OldPlanStatus: types.SubscriptionStatusNormal,
-		Operator:      types.SubscriptionTransactionTypeRenewed,
-		StartAt:       now,
-		CreatedAt:     now,
-		UpdatedAt:     now,
-		Status:        types.SubscriptionTransactionStatusCompleted,
-		StatusDesc:    "Auto renewal successful",
-		PayStatus:     types.SubscriptionPayStatusPaid,
-		PayID:         paymentID,
-		Period:        types.SubscriptionPeriodMonthly,
-		Amount:        price.Price,
-	}
-
-	if err := dbTx.Create(&successTransaction).Error; err != nil {
-		return fmt.Errorf("failed to create successful renewal transaction: %w", err)
-	}
-	if err := cockroach.AddDeductionAccount(dbTx, sub.UserUID, price.Price); err != nil {
-		return fmt.Errorf("failed to deduct balance: %w", err)
-	}
-
-	payment := types.Payment{
-		ID: paymentID,
-		PaymentRaw: types.PaymentRaw{
-			UserUID:                 sub.UserUID,
-			RegionUID:               dao.DBClient.GetLocalRegion().UID,
-			CreatedAt:               now,
-			Method:                  types.PaymentMethodBalance,
-			Amount:                  price.Price,
-			TradeNO:                 successTransaction.ID.String(),
-			Type:                    types.PaymentTypeSubscription,
-			ChargeSource:            types.ChargeSourceBalance,
-			Status:                  types.PaymentStatusPAID,
-			WorkspaceSubscriptionID: &sub.ID,
-			Message: fmt.Sprintf(
-				"Auto renewal for workspace %s/%s",
-				sub.Workspace,
-				sub.RegionDomain,
-			),
-		},
-	}
-
-	if err := dbTx.Create(&payment).Error; err != nil {
-		return fmt.Errorf("failed to create payment record: %w", err)
-	}
-	if err = helper.AddTrafficPackage(dbTx, dao.K8sManager.GetClient(), sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, successTransaction.ID.String()); err != nil {
-		return fmt.Errorf("failed to add traffic package: %w", err)
-	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, successTransaction.ID.String()); err != nil {
-		return fmt.Errorf("failed to create AI quota package: %w", err)
-	}
-	logrus.Infof(
-		"Successfully processed balance renewal for workspace %s, new period: %s to %s",
-		sub.Workspace,
-		sub.CurrentPeriodStartAt.Format(time.RFC3339),
-		sub.CurrentPeriodEndAt.Format(time.RFC3339),
-	)
-
 	return nil
 }

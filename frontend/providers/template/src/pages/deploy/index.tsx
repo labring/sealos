@@ -151,8 +151,20 @@ export default function EditApp({
 
   const { createCompleted } = useGuideStore();
 
-  const handleOutside = useCallback(() => {
+  const handleOutside = useCallback(async () => {
     setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
+
+    // Ensure platformEnvs is loaded
+    let envs = platformEnvs;
+    if (!envs?.DESKTOP_DOMAIN) {
+      try {
+        envs = await getPlatformEnv({ insideCloud });
+        setEnvs(envs);
+      } catch (error) {
+        console.error('Failed to get platform envs:', error);
+        return;
+      }
+    }
 
     const params = new URLSearchParams();
     ['k', 's', 'bd_vid'].forEach((param) => {
@@ -164,7 +176,7 @@ export default function EditApp({
 
     const queryString = params.toString();
 
-    const baseUrl = `https://${platformEnvs?.DESKTOP_DOMAIN}/`;
+    const baseUrl = `https://${envs.DESKTOP_DOMAIN}/`;
     const encodedTemplateQuery = encodeURIComponent(
       `?templateName=${templateName}&sealos_inside=true`
     );
@@ -174,7 +186,7 @@ export default function EditApp({
     }`;
 
     window.open(href, '_self');
-  }, [router, templateName, platformEnvs, setCached, formHook]);
+  }, [router, templateName, platformEnvs, setCached, formHook, insideCloud, setEnvs]);
 
   const handleInside = useCallback(async () => {
     const yamls = yamlList.map((item) => item.value);
@@ -213,7 +225,7 @@ export default function EditApp({
 
     try {
       if (!insideCloud) {
-        handleOutside();
+        await handleOutside();
       } else {
         await handleInside();
       }
@@ -240,6 +252,7 @@ export default function EditApp({
   }, [yamlList]);
 
   const handleCreateApp = useCallback(() => {
+    // console.log('usage', usage);
     // Check quota before creating app
     const exceededQuotaItems = checkExceededQuotas({
       cpu: usage.cpu.max,

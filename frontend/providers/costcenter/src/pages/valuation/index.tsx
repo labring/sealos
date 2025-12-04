@@ -127,7 +127,7 @@ export default function Valuation() {
       }}
     >
       <TabList mx={'24px'}>
-        {subscriptionEnabled && <Tab>{t('common:subscription_plans Plans')}</Tab>}
+        {subscriptionEnabled && <Tab>{t('common:subscription_plans')}</Tab>}
         {(subscriptionEnabled ? !!isPaygType : true) && (
           <>
             <Tab>{t('common:price_table')}</Tab>

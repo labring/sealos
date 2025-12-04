@@ -1333,7 +1333,7 @@ const Form = ({
                   <FormControl isInvalid={Boolean(errors?.autoBackup?.saveTime)} mt={7}>
                     <Flex alignItems={'center'}>
                       <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
-                      <MyTooltip label={'1~100' + t('Day')}>
+                      <MyTooltip label={'1~14' + t('Day')}>
                         <NumberInput
                           w={'120px'}
                           max={100}
@@ -1343,7 +1343,7 @@ const Form = ({
                           value={getValues('autoBackup.saveTime')}
                           onChange={(e) => {
                             e !== ''
-                              ? setValue('autoBackup.saveTime', Math.min(+e, 100))
+                              ? setValue('autoBackup.saveTime', Math.min(+e, 14))
                               : setValue('autoBackup.saveTime', 1);
                           }}
                         >
@@ -1355,13 +1355,13 @@ const Form = ({
                                 message: `${t('backup_saveTime_max')}1${t('Day')}`
                               },
                               max: {
-                                value: 100,
-                                message: `${t('backup_saveTime_min')}100${t('Day')} `
+                                value: 14,
+                                message: `${t('backup_saveTime_min')}14${t('Day')} `
                               },
                               valueAsNumber: true
                             })}
-                            min={0}
-                            max={100}
+                            min={1}
+                            max={14}
                             borderRadius={'md'}
                             borderColor={'#E8EBF0'}
                             bg={'#F7F8FA'}

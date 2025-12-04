@@ -76,17 +76,11 @@ const DevboxCreatePage = () => {
     const scrollTo = searchParams.get('scrollTo');
     if (name) {
       setCaptureDevboxName(name);
-      router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
       if (from) {
         setCaptureFrom(from);
-        router.replace(`/devbox/create?name=${captureDevboxName}&from=${captureFrom}`, undefined);
-        if (scrollTo) {
-          setCaptureScrollTo(scrollTo);
-          router.replace(
-            `/devbox/create?name=${captureDevboxName}&scrollTo=${captureScrollTo}`,
-            undefined
-          );
-        }
+      }
+      if (scrollTo) {
+        setCaptureScrollTo(scrollTo);
       }
     } else if (from === 'template') {
       const savedFormData = localStorage.getItem('devbox_create_form_data');
@@ -100,7 +94,7 @@ const DevboxCreatePage = () => {
         }
       }
     }
-  }, [searchParams, router, captureDevboxName, captureScrollTo, captureFrom, formHook]);
+  }, [searchParams, formHook]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
@@ -310,6 +304,8 @@ const DevboxCreatePage = () => {
             yamlList={yamlList}
             title={title}
             applyBtnText={applyBtnText}
+            name={captureDevboxName}
+            from={captureFrom as 'list' | 'detail'}
             applyCb={() => {
               const formData = formHook.getValues();
               const exceededQuotaItems = userStore.checkExceededQuotas({
