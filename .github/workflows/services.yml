@@ -36,7 +36,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: ["main"]
+    branches: ["*"]
     paths:
       - "service/**"
       - ".github/workflows/services.yml"

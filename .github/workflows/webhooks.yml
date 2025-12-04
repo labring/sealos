@@ -36,7 +36,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: [ "main" ]
+    branches: ["*"]
     paths:
       - "webhooks/**"
       - ".github/workflows/webhooks.yml"
@@ -44,7 +44,7 @@ on:
       - "!**/*.yaml"
 
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths:
       - "webhooks/**"
       - ".github/workflows/webhooks.yml"
@@ -56,7 +56,6 @@ env:
   DEFAULT_OWNER: "labring"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
-
 
 jobs:
   resolve-modules:
@@ -73,7 +72,7 @@ jobs:
 
   golangci-lint:
     if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request') }}
-    needs: [ resolve-modules ]
+    needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -106,7 +105,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        module: [ admission ]
+        module: [admission]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -206,7 +205,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        module: [ admission ]
+        module: [admission]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

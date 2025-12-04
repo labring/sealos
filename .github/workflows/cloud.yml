@@ -36,7 +36,7 @@ on:
         required: false
         type: string
   push:
-    branches: ["main"]
+    branches: ["*"]
     paths:
       - "deploy/cloud/**"
       - ".github/workflows/cloud.yml"

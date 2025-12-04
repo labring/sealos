@@ -247,7 +247,6 @@ jobs:
         run: |
           sudo bash ./.github/scripts/install.sh
 
-
       - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
         working-directory: frontend/${{ inputs.module }}/deploy
         env:
