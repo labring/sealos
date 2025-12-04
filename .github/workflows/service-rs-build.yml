@@ -167,6 +167,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=branch
             type=ref,event=tag
             type=sha
           labels: |
@@ -198,7 +199,6 @@ jobs:
   cluster-image-build:
     needs:
       - image-release
-    if: ${{ inputs.push_image }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -233,6 +233,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=branch
             type=ref,event=tag
             type=sha
         env:
@@ -291,6 +292,7 @@ jobs:
           sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
+        if: ${{ inputs.push_image }}
         run: |
           sudo sealos images
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
