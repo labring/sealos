@@ -5,7 +5,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
-import { validateZipFile } from '../importFromLocal/schema';
+import { validateZipFile } from '@/utils/validate';
 import { sleep, DEVBOX_IMPORT_CONSTANTS } from '@/utils/devboxImportHelper';
 
 export const dynamic = 'force-dynamic';

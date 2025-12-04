@@ -93,18 +93,6 @@ export const execCommandInDevboxPod = (data: {
 export const updateDevboxRemark = (data: { devboxName: string; remark: string }) =>
   POST('/api/updateDevboxRemark', data);
 
-export const importDevboxFromLocal = (
-  formData: FormData,
-  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-) =>
-  POST<ImportResponse>('/api/importFromLocal', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
-    timeout: 0,
-    onUploadProgress
-  });
-
 export const uploadAndExtractFile = (
   formData: FormData,
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
