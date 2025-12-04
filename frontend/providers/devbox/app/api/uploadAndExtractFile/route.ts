@@ -84,42 +84,92 @@ echo "=========================================="
 echo "Starting unzip process..."
 echo "=========================================="
 
-echo "Step 1: Checking if unzip is installed..."
-if ! command -v unzip >/dev/null 2>&1; then
-  echo "unzip not found, installing..."
-  sudo apt-get update
-  sudo apt-get install -y unzip
-else
-  echo "unzip is already installed"
-fi
-
-echo ""
-echo "Step 2: Checking zip file..."
+echo "Step 1: Checking zip file..."
 echo "Zip file path: ${zipPath}"
 ls -lh ${zipPath}
 
 echo ""
-echo "Step 3: Creating temp directory..."
+echo "Step 2: Creating temp directory..."
 TEMP_DIR="/tmp/unzip_temp_\$\$"
 mkdir -p \$TEMP_DIR
 echo "Temp directory created: \$TEMP_DIR"
 
 echo ""
-echo "Step 4: Extracting zip file to temp directory..."
-if ! command -v unar >/dev/null 2>&1; then
-  echo "Installing unar for proper charset support..."
-  sudo apt-get update -qq && sudo apt-get install -y unar
+echo "Step 3: Extracting zip file to temp directory..."
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Python3 not found, installing..."
+  sudo apt-get update -qq && sudo apt-get install -y python3
 fi
-echo "Extracting with unar..."
-unar -f -o \$TEMP_DIR ${zipPath}
+
+python3 - <<'PYTHON_EXTRACT_EOF'
+import zipfile
+import os
+import sys
+import shutil
+
+zip_path = "${zipPath}"
+temp_dir = "\$TEMP_DIR"
+
+def clean_temp_dir():
+    for item in os.listdir(temp_dir):
+        item_path = os.path.join(temp_dir, item)
+        try:
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        except Exception as e:
+            print(f"Warning: failed to remove {item_path}: {e}", file=sys.stderr)
+
+def try_extract(encoding):
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            for member in zip_ref.namelist():
+                try:
+                    filename = member.encode('cp437').decode(encoding)
+                except:
+                    filename = member
+
+                target_path = os.path.join(temp_dir, filename)
+
+                if member.endswith('/'):
+                    os.makedirs(target_path, exist_ok=True)
+                else:
+                    parent_dir = os.path.dirname(target_path)
+                    if parent_dir:
+                        os.makedirs(parent_dir, exist_ok=True)
+                    with zip_ref.open(member) as source, open(target_path, 'wb') as target:
+                        target.write(source.read())
+        return True
+    except Exception as e:
+        print(f"Failed with {encoding}: {e}", file=sys.stderr)
+        return False
+
+print("Attempting to extract with UTF-8 encoding (macOS/Linux)...")
+if try_extract('utf-8'):
+    print("Successfully extracted with UTF-8 encoding")
+else:
+    print("UTF-8 extraction failed, trying GBK encoding (Windows)...")
+    clean_temp_dir()
+
+    if try_extract('gbk'):
+        print("Successfully extracted with GBK encoding")
+    else:
+        print("GBK failed, using default extraction...")
+        clean_temp_dir()
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
+        print("Extracted with default encoding")
+PYTHON_EXTRACT_EOF
 
 echo ""
-echo "Step 5: Listing temp directory contents..."
+echo "Step 4: Listing temp directory contents..."
 echo "Contents of \$TEMP_DIR:"
 ls -la \$TEMP_DIR
 
 echo ""
-echo "Step 6: Checking directory structure..."
+echo "Step 5: Checking directory structure..."
 cd \$TEMP_DIR
 DIR_COUNT=\$(ls -d */ 2>/dev/null | grep -v '^__MACOSX' | wc -l)
 FILE_COUNT=\$(ls -p 2>/dev/null | grep -v / | wc -l)
@@ -137,28 +187,28 @@ else
 fi
 
 echo ""
-echo "Step 7: Source directory info..."
+echo "Step 6: Source directory info..."
 echo "EXTRACT_DIR = \$EXTRACT_DIR"
 echo "Contents of EXTRACT_DIR:"
 ls -la "\$EXTRACT_DIR"
 
 echo ""
-echo "Step 8: Removing target directory..."
+echo "Step 7: Removing target directory..."
 rm -rf ${targetDir}
 echo "Target directory removed"
 
 echo ""
-echo "Step 9: Moving extracted files to target..."
+echo "Step 8: Moving extracted files to target..."
 mv "\$EXTRACT_DIR" ${targetDir}
 echo "Move completed"
 
 echo ""
-echo "Step 10: Verifying target directory..."
+echo "Step 9: Verifying target directory..."
 echo "Contents of ${targetDir}:"
 ls -la ${targetDir}
 
 echo ""
-echo "Step 11: Cleaning up..."
+echo "Step 10: Cleaning up..."
 rm -f ${zipPath}
 echo "Zip file removed"
 

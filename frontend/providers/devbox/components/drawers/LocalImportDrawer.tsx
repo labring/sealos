@@ -20,6 +20,7 @@ import { createDevbox, getDevboxByName, uploadAndExtractFile } from '@/api/devbo
 import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import RuntimeSelector from '@/components/RuntimeSelector';
+import { useGlobalStore } from '@/stores/global';
 
 interface LocalImportDrawerProps {
   open: boolean;
@@ -33,6 +34,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
   const t = useTranslations();
   const { getErrorMessage } = useErrorMessage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { setIsImporting } = useGlobalStore();
 
   const [formData, setFormData] = useState<LocalImportFormData>({
     name: '',
@@ -218,6 +220,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     }
 
     try {
+      setIsImporting(true);
       setImportStage('creating');
       setImportError('');
       setImportLogs('Creating devbox...');
@@ -292,6 +295,8 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportError(errorMsg);
       setImportLogs(`ERR: ${errorMsg}`);
       toast.error(errorMsg);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -321,6 +326,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      setIsImporting(false);
       onClose();
     }
   };
