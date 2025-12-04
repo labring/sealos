@@ -15,8 +15,10 @@ type CallbackState = {
   workspaceInviteCode?: string;
   mergeUserData?: MergeUserData;
   mergeUserStatus: MergeUserStatus;
+  isForceMerge: boolean;
   setMergeUserData: (d?: MergeUserData) => void;
   setMergeUserStatus: (s: MergeUserStatus) => void;
+  setForceMerge: (force: boolean) => void;
   setWorkspaceInviteCode: (id?: string) => void;
 };
 
@@ -26,6 +28,7 @@ const useCallbackStore = create<CallbackState>()(
       workspaceInviteCode: undefined,
       mergeUserData: undefined,
       mergeUserStatus: MergeUserStatus.IDLE,
+      isForceMerge: false,
       setMergeUserData(mergeUserData) {
         set({
           mergeUserData
@@ -34,6 +37,11 @@ const useCallbackStore = create<CallbackState>()(
       setMergeUserStatus(mergeUserStatus) {
         set({
           mergeUserStatus
+        });
+      },
+      setForceMerge(force) {
+        set({
+          isForceMerge: force
         });
       },
       setWorkspaceInviteCode: (id?: string) => {
