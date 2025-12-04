@@ -165,7 +165,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
       (item) => item === db.dbType
     );
   }, [db.dbType]);
@@ -747,6 +747,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
+                isDisabled={db.dbType === 'kafka'}
                 onChange={(e) => {
                   if (isChecked) {
                     closeNetWorkService();
