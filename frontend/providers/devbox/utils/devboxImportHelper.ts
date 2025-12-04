@@ -94,7 +94,7 @@ export function escapeShellArg(arg: string): string {
 }
 
 export const DEVBOX_IMPORT_CONSTANTS = {
-  MAX_FILE_SIZE: 500 * 1024 * 1024,
+  MAX_FILE_SIZE: 100 * 1024 * 1024,
   DEFAULT_CPU: 4000,
   DEFAULT_MEMORY: 8192,
   WAIT_FOR_STATUS_RETRIES: 10,

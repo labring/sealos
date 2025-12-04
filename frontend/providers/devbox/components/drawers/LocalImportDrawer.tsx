@@ -27,7 +27,7 @@ interface LocalImportDrawerProps {
   onSuccess: (devboxName: string) => void;
 }
 
-const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps) => {
   const t = useTranslations();
@@ -59,6 +59,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     containerPort?: string;
     startupCommand?: string;
   }>({});
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleRuntimeSelect = (runtime: {
     name: string;
@@ -99,7 +100,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      toast.error(t('file_size_limit', { limit: '500MB' }));
+      toast.error(t('file_size_limit', { limit: '100MB' }));
       return;
     }
 
@@ -113,6 +114,53 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     setFormData({ ...formData, file: null });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!formData.file && !isImporting) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (formData.file || isImporting) return;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+
+      if (!file.name.endsWith('.zip')) {
+        toast.error(t('file_format_error'));
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(t('file_size_limit', { limit: '100MB' }));
+        return;
+      }
+
+      setFormData({ ...formData, file });
+      if (formErrors.file) {
+        setFormErrors({ ...formErrors, file: undefined });
+      }
     }
   };
 
@@ -343,9 +391,19 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                   className={`cursor-pointer rounded-xl text-center transition-colors ${
                     formData.file
                       ? ''
-                      : `border border-dashed py-6 hover:border-zinc-500 ${formErrors.file ? 'border-red-500' : 'border-zinc-400'}`
+                      : `border border-dashed py-6 hover:border-zinc-500 ${
+                          formErrors.file
+                            ? 'border-red-500'
+                            : isDragging
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-zinc-400'
+                        }`
                   }`}
                   onClick={() => !formData.file && fileInputRef.current?.click()}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
                 >
                   <input
                     ref={fileInputRef}
