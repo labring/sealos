@@ -16,3 +16,23 @@ spec:
   {{- if .Values.service.preferSameNode }}
   trafficDistribution: PreferSameNode
   {{- end }}
+---
+# Separate Service for gRPC traffic (same port, but allows different Ingress backend-protocol)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "httpgate.fullname" . }}-grpc
+  labels:
+    {{- include "httpgate.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "httpgate.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: grpc
+      port: {{ .Values.httpPort }}
+      targetPort: {{ .Values.httpPort }}
+      protocol: TCP
+  type: ClusterIP
+  {{- if .Values.service.preferSameNode }}
+  trafficDistribution: PreferSameNode
+  {{- end }}
