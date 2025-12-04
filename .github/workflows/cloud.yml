@@ -116,22 +116,6 @@ jobs:
 
       # todo: mutate image tag in images/shim and scripts or change scripts to use changeable tags
 
-      - name: Sealos login to ghcr.io
-        # if push to master, then login to ghcr.io
-        env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
-
-      - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        env:
-          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
-          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
-        run: |
-          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
-
       - name: Build sealos cloud cluster image
         working-directory: deploy/cloud
         env:
@@ -160,6 +144,22 @@ jobs:
             echo "Building ${TAG}-arm64"
             sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
           done
+
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
         run: |
