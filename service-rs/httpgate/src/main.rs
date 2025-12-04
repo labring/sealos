@@ -10,7 +10,7 @@ use httpgate::{
     config::Config,
     proxy::DevboxProxy,
     registry::DevboxRegistry,
-    watcher::{DevboxWatcher, PodWatcher},
+    watcher::{create_client, DevboxWatcher, PodWatcher},
 };
 
 fn init_logging(log_level: &str) {
@@ -59,30 +59,46 @@ fn main() {
         .build()
         .expect("Failed to create Tokio runtime");
 
-    // Spawn independent watchers - they operate on separate indices
-    let devbox_watcher_registry = Arc::clone(&registry);
-    let pod_watcher_registry = Arc::clone(&registry);
-
-    // Spawn Devbox watcher
+    // Create shared Kubernetes client and spawn watchers
+    let watcher_registry = Arc::clone(&registry);
     runtime.spawn(async move {
-        let devbox_watcher = DevboxWatcher::new(devbox_watcher_registry);
-        loop {
-            if let Err(e) = devbox_watcher.run().await {
-                error!(error = %e, "Devbox watcher failed, restarting in 5s");
-                tokio::time::sleep(Duration::from_secs(5)).await;
+        // Create a single shared client for both watchers
+        let client = match create_client().await {
+            Ok(c) => c,
+            Err(e) => {
+                error!(error = %e, "Failed to create Kubernetes client");
+                return;
             }
-        }
-    });
+        };
 
-    // Spawn Pod watcher
-    runtime.spawn(async move {
-        let pod_watcher = PodWatcher::new(pod_watcher_registry);
-        loop {
-            if let Err(e) = pod_watcher.run().await {
-                error!(error = %e, "Pod watcher failed, restarting in 5s");
-                tokio::time::sleep(Duration::from_secs(5)).await;
+        info!("Kubernetes client created, starting watchers");
+
+        // Clone registry for each watcher
+        let devbox_registry = Arc::clone(&watcher_registry);
+        let pod_registry = Arc::clone(&watcher_registry);
+
+        // Spawn Devbox watcher
+        let devbox_client = client.clone();
+        tokio::spawn(async move {
+            let devbox_watcher = DevboxWatcher::new(devbox_client, devbox_registry);
+            loop {
+                if let Err(e) = devbox_watcher.run().await {
+                    error!(error = %e, "Devbox watcher failed, restarting in 5s");
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                }
             }
-        }
+        });
+
+        // Spawn Pod watcher
+        tokio::spawn(async move {
+            let pod_watcher = PodWatcher::new(client, pod_registry);
+            loop {
+                if let Err(e) = pod_watcher.run().await {
+                    error!(error = %e, "Pod watcher failed, restarting in 5s");
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                }
+            }
+        });
     });
 
     info!("Proxy server starting");

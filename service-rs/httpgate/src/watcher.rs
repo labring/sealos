@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use futures::StreamExt;
-use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::Api,
     config::{KubeConfigOptions, Kubeconfig},
@@ -10,7 +9,7 @@ use kube::{
 };
 use tracing::{debug, error, info, warn};
 
-use crate::{crd::Devbox, error::Result, registry::DevboxRegistry};
+use crate::{crd::Devbox, error::Result, partial::PartialPod, registry::DevboxRegistry};
 
 /// Label used to identify devbox pods
 const DEVBOX_PART_OF_LABEL: &str = "app.kubernetes.io/part-of";
@@ -55,12 +54,13 @@ pub async fn create_client() -> Result<Client> {
 /// Watches all Devbox CRDs across all namespaces and maintains
 /// a registry of uniqueID -> (namespace, devbox_name) mappings.
 pub struct DevboxWatcher {
+    client: Client,
     registry: Arc<DevboxRegistry>,
 }
 
 impl DevboxWatcher {
-    pub const fn new(registry: Arc<DevboxRegistry>) -> Self {
-        Self { registry }
+    pub const fn new(client: Client, registry: Arc<DevboxRegistry>) -> Self {
+        Self { client, registry }
     }
 
     /// Start watching Devbox resources.
@@ -68,12 +68,12 @@ impl DevboxWatcher {
     /// This function runs indefinitely, processing watch events.
     /// It should be spawned as a background task.
     pub async fn run(&self) -> Result<()> {
-        let client = create_client().await?;
-        let devboxes: Api<Devbox> = Api::all(client);
+        let devboxes: Api<Devbox> = Api::all(self.client.clone());
 
         info!("Starting Devbox CRD watcher");
 
-        let watcher_config = watcher::Config::default();
+        // Use pagination to reduce initial list memory spike
+        let watcher_config = watcher::Config::default().page_size(100);
         let mut stream = watcher(devboxes, watcher_config).default_backoff().boxed();
 
         while let Some(event) = stream.next().await {
@@ -168,12 +168,13 @@ impl DevboxWatcher {
 /// Watches all Pods with label `app.kubernetes.io/part-of=devbox` across all namespaces
 /// and updates the registry with Pod IP information.
 pub struct PodWatcher {
+    client: Client,
     registry: Arc<DevboxRegistry>,
 }
 
 impl PodWatcher {
-    pub const fn new(registry: Arc<DevboxRegistry>) -> Self {
-        Self { registry }
+    pub const fn new(client: Client, registry: Arc<DevboxRegistry>) -> Self {
+        Self { client, registry }
     }
 
     /// Start watching Devbox Pods.
@@ -181,14 +182,17 @@ impl PodWatcher {
     /// This function runs indefinitely, processing watch events.
     /// It should be spawned as a background task.
     pub async fn run(&self) -> Result<()> {
-        let client = create_client().await?;
-        let pods: Api<Pod> = Api::all(client);
+        // Use PartialPod to reduce memory footprint by ~70-80%
+        let pods: Api<PartialPod> = Api::all(self.client.clone());
 
         info!("Starting Pod watcher for devbox pods");
 
         // Filter pods by label: app.kubernetes.io/part-of=devbox
+        // Use pagination to reduce initial list memory spike
         let label_selector = format!("{DEVBOX_PART_OF_LABEL}={DEVBOX_PART_OF_VALUE}");
-        let watcher_config = watcher::Config::default().labels(&label_selector);
+        let watcher_config = watcher::Config::default()
+            .labels(&label_selector)
+            .page_size(500);
 
         let mut stream = watcher(pods, watcher_config).default_backoff().boxed();
 
@@ -200,7 +204,7 @@ impl PodWatcher {
         Ok(())
     }
 
-    fn handle_event(&self, event: std::result::Result<Event<Pod>, watcher::Error>) {
+    fn handle_event(&self, event: std::result::Result<Event<PartialPod>, watcher::Error>) {
         match event {
             Ok(Event::Apply(pod) | Event::InitApply(pod)) => {
                 self.handle_apply(&pod);
@@ -224,7 +228,7 @@ impl PodWatcher {
         }
     }
 
-    fn handle_apply(&self, pod: &Pod) {
+    fn handle_apply(&self, pod: &PartialPod) {
         let Some(namespace) = pod.metadata.namespace.as_ref() else {
             warn!(name = ?pod.metadata.name, "Pod has no namespace, skipping");
             return;
@@ -250,7 +254,7 @@ impl PodWatcher {
         self.registry.update_pod_ip(namespace, &devbox_name, pod_ip);
     }
 
-    fn handle_delete(&self, pod: &Pod) {
+    fn handle_delete(&self, pod: &PartialPod) {
         let Some(namespace) = pod.metadata.namespace.as_ref() else {
             return;
         };
@@ -263,7 +267,7 @@ impl PodWatcher {
     /// Extract devbox name from `OwnerReferences`.
     ///
     /// Looks for an `OwnerReference` with kind "Devbox" and returns its name.
-    fn get_devbox_name(pod: &Pod) -> Option<String> {
+    fn get_devbox_name(pod: &PartialPod) -> Option<String> {
         pod.metadata
             .owner_references
             .as_ref()?

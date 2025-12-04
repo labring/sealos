@@ -86,7 +86,7 @@ impl HostParser {
             } else if let Some(stripped) = host_without_port.strip_prefix("devbox-") {
                 (UpstreamProtocol::Http, stripped)
             } else {
-                return None;
+                (UpstreamProtocol::Http, host_without_port)
             };
 
         HOST_REGEX.captures(host_stripped).and_then(|caps| {
