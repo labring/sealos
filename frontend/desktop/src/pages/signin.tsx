@@ -16,13 +16,6 @@ import { setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 export default function SigninPage() {
   const { layoutConfig, authConfig } = useConfigStore();
   const { setCaptchaIsLoad } = useScriptStore();
-  useEffect(() => {
-    const url = sessionStorage.getItem('accessTemplatesNoLogin');
-    if (!!url) {
-      sessionStorage.clear();
-      window.location.replace(url);
-    }
-  }, []);
 
   // Grab params from ad clicks and store in local storage
   const { adClickData, semData } = useSemParams();
