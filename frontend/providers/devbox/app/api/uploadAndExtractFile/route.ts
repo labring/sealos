@@ -101,7 +101,7 @@ if ! command -v python3 >/dev/null 2>&1; then
   sudo apt-get update -qq && sudo apt-get install -y python3
 fi
 
-python3 - <<'PYTHON_EXTRACT_EOF'
+python3 - <<PYTHON_EXTRACT_EOF
 import zipfile
 import os
 import sys
