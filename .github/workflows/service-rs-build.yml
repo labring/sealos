@@ -1,10 +1,10 @@
-name: Build Frontend Image
+name: Build Service-RS Image
 
 on:
   workflow_call:
     inputs:
       module:
-        description: "Module"
+        description: "Module name (e.g., httpgate)"
         required: true
         type: string
       push_image:
@@ -19,8 +19,6 @@ on:
         type: string
 
 env:
-  # Common versions
-  GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
@@ -43,17 +41,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract module name
-        id: module_name
+      - name: Set image repo
+        id: set_repo
         env:
-          MODULE_INPUT: ${{ inputs.module }}
+          MODULE: ${{ inputs.module }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          MODULE_NAME=$(basename "$MODULE_INPUT")
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
           fi
 
       - name: Docker meta
@@ -63,6 +59,8 @@ jobs:
           images: |
             ${{ env.GHCR_REPO }}
             ${{ env.ALIYUN_REPO }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -87,12 +85,9 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
+          context: ./service-rs
+          file: ./service-rs/${{ inputs.module }}/Dockerfile
           platforms: linux/${{ matrix.arch }}
-          build-args: |
-            name=${{ env.MODULE_NAME }}
-            path=${{ inputs.module }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,"name=${{ env.GHCR_REPO }}${{ env.ALIYUN_REPO && format(',{0}', env.ALIYUN_REPO) || '' }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
 
@@ -107,7 +102,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ env.MODULE_NAME }}-${{ matrix.arch }}
+          name: digests-${{ inputs.module }}-${{ matrix.arch }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -141,24 +136,22 @@ jobs:
           username: ${{ secrets.ALIYUN_USERNAME }}
           password: ${{ secrets.ALIYUN_PASSWORD }}
 
-      - name: Extract module name
-        id: module_name
+      - name: Set image repo
+        id: set_repo
         env:
-          MODULE_INPUT: ${{ inputs.module }}
+          MODULE: ${{ inputs.module }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          MODULE_NAME=$(basename "$MODULE_INPUT")
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
           fi
 
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: ${{ runner.temp }}/digests
-          pattern: digests-${{ env.MODULE_NAME }}-*
+          pattern: digests-${{ inputs.module }}-*
           merge-multiple: true
 
       - name: Set up Docker Buildx
@@ -177,17 +170,21 @@ jobs:
             type=ref,event=branch
             type=ref,event=tag
             type=sha
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
         env:
           DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         env:
-          TEMP_DIR: ${{ runner.temp }}
           GHCR_REPO: ${{ env.GHCR_REPO }}
+          IMAGE_SOURCE: https://github.com/${{ github.repository }}
         run: |
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            docker buildx imagetools create -t $TAG \
+            docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=${IMAGE_SOURCE}" \
+              -t $TAG \
               $(printf "${GHCR_REPO}@sha256:%s " *)
             sleep 5
           done
@@ -215,18 +212,16 @@ jobs:
 
       - name: Set image repo
         env:
-          MODULE_INPUT: ${{ inputs.module }}
-          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE: ${{ inputs.module }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          MODULE_NAME=$(basename "$MODULE_INPUT")
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "MODULE_NAME=${MODULE}" >> $GITHUB_ENV
           # Docker image repo (always use GHCR for values.yaml to avoid Aliyun bandwidth costs)
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
           # Cluster image repos
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           fi
 
       - name: Docker meta for cluster image
@@ -249,45 +244,37 @@ jobs:
         run: |
           sudo bash ./.github/scripts/install.sh
 
-      - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
-        working-directory: frontend/${{ inputs.module }}/deploy
+      - name: Build ${{ env.MODULE_NAME }} cluster image
+        working-directory: service-rs/${{ inputs.module }}/deploy
         env:
           MODULE_NAME: ${{ env.MODULE_NAME }}
-          OLD_DOCKER_REPO: ${{ env.OLD_DOCKER_REPO }}
           GHCR_DOCKER_REPO: ${{ env.GHCR_DOCKER_REPO }}
+          IMAGE_SOURCE: https://github.com/${{ github.repository }}
         run: |
           # Build cluster images for each tag (amd64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            # Always use GHCR docker image to avoid Aliyun bandwidth costs
-            IMAGE_TAG="${TAG##*:}"
-            OLD_DOCKER_IMAGE="${OLD_DOCKER_REPO}:latest"
-            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            echo "Updating deploy files: ${OLD_DOCKER_IMAGE} -> ${NEW_DOCKER_IMAGE}"
-            if [[ -d manifests ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
-            fi
+            # Update image in values.yaml - always use GHCR to avoid Aliyun bandwidth costs
             if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+              IMAGE_TAG="${TAG##*:}"
+              echo "Updating image in charts/${MODULE_NAME}/values.yaml to ${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
+              sed -i "s|repository:.*|repository: ${GHCR_DOCKER_REPO}|" charts/${MODULE_NAME}/values.yaml
+              sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|" charts/${MODULE_NAME}/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-amd64"
-            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
+            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           done
 
           # Build cluster images for each tag (arm64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            IMAGE_TAG="${TAG##*:}"
-            OLD_DOCKER_IMAGE="${OLD_DOCKER_REPO}:latest"
-            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            if [[ -d manifests ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
-            fi
             if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+              IMAGE_TAG="${TAG##*:}"
+              sed -i "s|repository:.*|repository: ${GHCR_DOCKER_REPO}|" charts/${MODULE_NAME}/values.yaml
+              sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|" charts/${MODULE_NAME}/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-arm64"
-            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
+            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           done
 
       - name: Sealos login to ghcr.io
