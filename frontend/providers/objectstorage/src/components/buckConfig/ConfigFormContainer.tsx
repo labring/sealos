@@ -19,7 +19,7 @@ const ConfigFormContainer = ({
     position={'relative'}
     {...props}
   >
-    <Flex px={'42px'} py={'15px'} bg={'white_.400'}>
+    <Flex px={'24px'} py={'15px'} bg={'white_.400'}>
       {header}
     </Flex>
     <Box flex={1} h={0} overflow={'auto'} bg={'white'} p={'24px'}>

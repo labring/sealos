@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const result = await testCname(customDomain, publicDomain).catch((e) => {
-      console.log('Invalid resolve result for CNAME record on ' + customDomain + ': ', e);
+      // console.log('Invalid resolve result for CNAME record on ' + customDomain + ': ', e);
       throw e;
     });
 
