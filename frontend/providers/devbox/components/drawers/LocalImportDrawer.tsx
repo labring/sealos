@@ -283,10 +283,8 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportLogs('Import completed successfully');
       toast.success(t('import_success'));
 
+      onSuccess(devboxName);
       onClose();
-      setTimeout(() => {
-        onSuccess(devboxName);
-      }, 100);
     } catch (error: any) {
       console.error('Import failed:', error);
       setImportStage('error');

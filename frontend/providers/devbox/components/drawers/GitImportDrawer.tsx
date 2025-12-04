@@ -251,9 +251,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
       if (isSuccess || commandOutput.includes('Git import completed successfully')) {
         setImportStage('success');
         toast.success(t('import_success'));
-        setTimeout(() => {
-          onSuccess(devboxName);
-        }, 1000);
+        onSuccess(devboxName);
       } else {
         setImportStage('error');
         setImportError(t('import_failed'));
