@@ -296,7 +296,7 @@ mod tests {
     use super::*;
 
     /// Test agent port value
-    const TEST_AGENT_PORT: u16 = 10000;
+    const TEST_AGENT_PORT: u16 = 9757;
 
     fn test_parser() -> HostParser {
         HostParser::new(TEST_AGENT_PORT)

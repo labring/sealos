@@ -15,7 +15,7 @@ httpPort: 8080
 
 # Agent port (used when port is "agent" instead of a number in the host header)
 # Example: devbox-my-app-agent.devbox.sealos.io will route to this port
-agentPort: 10000
+agentPort: 9757
 
 # Service configuration
 service:

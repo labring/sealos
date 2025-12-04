@@ -22,7 +22,7 @@ impl Config {
         let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
 
         let agent_port = std::env::var("AGENT_PORT")
-            .unwrap_or_else(|_| "10000".to_string())
+            .unwrap_or_else(|_| "9757".to_string())
             .parse()
             .expect("Invalid AGENT_PORT format");
 
@@ -39,7 +39,7 @@ impl Default for Config {
         Self {
             listen_addr: "0.0.0.0:8080".parse().unwrap(),
             log_level: "info".to_string(),
-            agent_port: 10000,
+            agent_port: 9757,
         }
     }
 }
