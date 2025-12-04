@@ -20,6 +20,9 @@ import { useTranslation } from 'next-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSmsBindCodeRequest, verifySmsBindRequest } from '@/api/auth';
 import { ApiResp } from '@/types';
+import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
+import { MERGE_USER_READY } from '@/types/response/utils';
+import { ProviderType } from 'prisma/global/generated/client';
 
 interface PhoneBindingModalProps {
   isOpen: boolean;
@@ -30,6 +33,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { setMergeUserData, setMergeUserStatus, setForceMerge } = useCallbackStore();
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
@@ -88,8 +92,11 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
         code: verifyCode
       }),
     onSuccess: (data) => {
+      const status = data.message || '';
+
       if (data.code === 200) {
         toast({
+          position: 'top',
           title: t('common:bind_success'),
           status: 'success',
           duration: 3000
@@ -97,6 +104,24 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
         // Refresh user info
         queryClient.invalidateQueries();
         // Close modal
+        onClose();
+      } else if (Object.values(MERGE_USER_READY).includes(status as MERGE_USER_READY)) {
+        // Handle merge user scenario
+        // Set force merge to true since this is required phone binding
+        setForceMerge(true);
+
+        if (status === MERGE_USER_READY.MERGE_USER_CONTINUE) {
+          const code = data.data?.code;
+          if (!code) return;
+          setMergeUserStatus(MergeUserStatus.CANMERGE);
+          setMergeUserData({
+            code,
+            providerType: ProviderType.PHONE
+          });
+        } else {
+          setMergeUserStatus(MergeUserStatus.CONFLICT);
+        }
+        // Close current modal, NeedToMergeModal will open
         onClose();
       } else {
         toast({
