@@ -16,6 +16,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
+import { Textarea } from '@sealos/shadcn-ui/textarea';
 import type { GitImportFormData, ImportStage } from '@/types/import';
 import { createDevbox, getDevboxByName, execCommandInDevboxPod } from '@/api/devbox';
 import { getTemplate } from '@/api/template';
@@ -484,7 +485,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                 <Label htmlFor="startup-command" className="text-sm font-medium" required>
                   {t('startup_command')}
                 </Label>
-                <Input
+                <Textarea
                   id="startup-command"
                   placeholder={t('startup_command_example')}
                   value={formData.startupCommand}
@@ -495,7 +496,8 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                     }
                   }}
                   disabled={isImporting}
-                  className={`h-10 rounded-lg bg-white ${formErrors.startupCommand ? 'border-red-500' : ''}`}
+                  rows={3}
+                  className={`min-h-20 rounded-lg bg-white ${formErrors.startupCommand ? 'border-red-500' : ''}`}
                 />
                 {formErrors.startupCommand && (
                   <p className="text-sm text-red-600">{formErrors.startupCommand}</p>

@@ -15,6 +15,7 @@ import {
 import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
+import { Textarea } from '@sealos/shadcn-ui/textarea';
 import type { LocalImportFormData, ImportStage } from '@/types/import';
 import { createDevbox, getDevboxByName, uploadAndExtractFile } from '@/api/devbox';
 import { getTemplate } from '@/api/template';
@@ -531,7 +532,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                 >
                   {t('startup_command')}
                 </Label>
-                <Input
+                <Textarea
                   id="startup-command"
                   placeholder={t('startup_command_example')}
                   value={formData.startupCommand}
@@ -542,7 +543,8 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                     }
                   }}
                   disabled={isImporting}
-                  className={`h-10 rounded-lg border-zinc-200 text-sm placeholder:text-zinc-500 ${formErrors.startupCommand ? 'border-red-500' : ''}`}
+                  rows={3}
+                  className={`min-h-20 rounded-lg border-zinc-200 text-sm placeholder:text-zinc-500 ${formErrors.startupCommand ? 'border-red-500' : ''}`}
                 />
                 {formErrors.startupCommand && (
                   <p className="text-sm text-red-600">{formErrors.startupCommand}</p>
