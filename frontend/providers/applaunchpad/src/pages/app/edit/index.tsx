@@ -171,21 +171,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       (formHook.formState.defaultValues?.hpa?.use
         ? formHook.formState.defaultValues?.hpa?.maxReplicas
         : Number.isSafeInteger(formHook.formState.defaultValues?.replicas)
-        ? (formHook.formState.defaultValues?.replicas as number)
-        : 1) ?? 1;
+          ? (formHook.formState.defaultValues?.replicas as number)
+          : 1) ?? 1;
 
     const newReplicas = realTimeForm.current.hpa.use
       ? realTimeForm.current.hpa.maxReplicas
       : Number.isSafeInteger(realTimeForm.current.replicas)
-      ? (realTimeForm.current.replicas as number)
-      : 1;
+        ? (realTimeForm.current.replicas as number)
+        : 1;
 
     const oldGpuCount =
       formHook.formState.defaultValues?.gpu?.type === ''
         ? 0
-        : formHook.formState.defaultValues?.gpu?.amount ?? 0;
+        : (formHook.formState.defaultValues?.gpu?.amount ?? 0);
     const newGpuCount =
-      realTimeForm.current.gpu?.type === '' ? 0 : realTimeForm.current.gpu?.amount ?? 0;
+      realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0);
 
     return checkExceededQuotas({
       cpu: isEdit
@@ -538,6 +538,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           appName={formHook.getValues('appName')}
           title={title}
           yamlList={yamlList}
+          getFormData={() => realTimeForm.current}
           applyBtnText={applyBtnText}
           applyCb={handleSubmit}
         />
