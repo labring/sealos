@@ -38,6 +38,8 @@ type NotificationSpec struct {
 	Importance   Type            `json:"importance,omitempty"`
 	DesktopPopup bool            `json:"desktopPopup,omitempty"`
 	I18n         map[string]I18n `json:"i18ns,omitempty"`
+	StartTime    *metav1.Time    `json:"startTime,omitempty"`
+	EndTime      *metav1.Time    `json:"endTime,omitempty"`
 }
 
 type I18n struct {
