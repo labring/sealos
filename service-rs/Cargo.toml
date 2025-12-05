@@ -1,0 +1,11 @@
+
+
+
+[workspace]
+resolver = "2"
+members = ["httpgate"]
+
+[workspace.dependencies]
+
+[profile.bench]
+debug = true

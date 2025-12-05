@@ -1,0 +1,15 @@
+apiVersion: v2
+name: httpgate
+description: A Kubernetes-native HTTP gateway that routes HTTP requests to Devbox pods based on Host header
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - http
+  - gateway
+  - devbox
+  - sealos
+  - proxy
+  - pingora
+maintainers:
+  - name: httpgate
