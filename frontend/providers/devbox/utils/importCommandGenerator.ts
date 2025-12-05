@@ -51,6 +51,8 @@ echo "Moving repository contents..."
 mv /home/devbox/project/temp_repo/* /home/devbox/project/ 2>/dev/null || true
 mv /home/devbox/project/temp_repo/.[!.]* /home/devbox/project/ 2>/dev/null || true
 rm -rf /home/devbox/project/temp_repo
+echo "Setting ownership..."
+chown -R devbox:devbox /home/devbox/project
 echo "Creating entrypoint.sh..."
 cat > /home/devbox/project/entrypoint.sh << 'ENTRYPOINT_EOF'
 #!/bin/bash
@@ -58,6 +60,7 @@ set -e
 cd /home/devbox/project
 ${escapedStartupCommand}
 ENTRYPOINT_EOF
+chown devbox:devbox /home/devbox/project/entrypoint.sh
 chmod +x /home/devbox/project/entrypoint.sh
 echo "Git import completed successfully"
 `.trim();
@@ -73,6 +76,8 @@ echo "Moving repository contents..."
 mv /home/devbox/project/temp_repo/* /home/devbox/project/ 2>/dev/null || true
 mv /home/devbox/project/temp_repo/.[!.]* /home/devbox/project/ 2>/dev/null || true
 rm -rf /home/devbox/project/temp_repo
+echo "Setting ownership..."
+chown -R devbox:devbox /home/devbox/project
 echo "Creating entrypoint.sh..."
 cat > /home/devbox/project/entrypoint.sh << 'ENTRYPOINT_EOF'
 #!/bin/bash
@@ -80,6 +85,7 @@ set -e
 cd /home/devbox/project
 ${escapedStartupCommand}
 ENTRYPOINT_EOF
+chown devbox:devbox /home/devbox/project/entrypoint.sh
 chmod +x /home/devbox/project/entrypoint.sh
 echo "Git import completed successfully"
 `.trim();
@@ -97,6 +103,7 @@ set -e
 cd /home/devbox/project
 ${startupCommand}
 ENTRYPOINT_EOF
+chown devbox:devbox /home/devbox/project/entrypoint.sh
 chmod +x /home/devbox/project/entrypoint.sh
 echo "Local import completed successfully"
 `.trim();

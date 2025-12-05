@@ -150,12 +150,17 @@ fi
 echo "Move completed"
 
 echo ""
-echo "Step 10: Verifying target directory..."
+echo "Step 10: Setting ownership..."
+chown -R devbox:devbox ${targetDir}
+echo "Ownership set to devbox:devbox"
+
+echo ""
+echo "Step 11: Verifying target directory..."
 echo "Contents of ${targetDir}:"
 ls -la ${targetDir}
 
 echo ""
-echo "Step 11: Cleaning up..."
+echo "Step 12: Cleaning up..."
 rm -rf \$TEMP_DIR
 rm -f ${tarPath}
 echo "Temp directory and tar file removed"
@@ -319,6 +324,7 @@ set -e
 cd /home/devbox/project
 ${startupCommand || 'echo "No startup command specified"'}
 ENTRYPOINT_EOF
+chown devbox:devbox /home/devbox/project/entrypoint.sh
 chmod +x /home/devbox/project/entrypoint.sh
 echo "Local import completed successfully"
 `.trim();
