@@ -18,7 +18,8 @@ export const defaultEnv: Env = {
   privacyUrlEN: 'https://sealos.io/docs/msa/privacy-policy',
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
-  currencySymbol: 'shellCoin'
+  currencySymbol: 'shellCoin',
+  enableImportFeature: 'false'
 };
 
 type State = {

@@ -156,40 +156,47 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
             <LayoutTemplate className="h-4 w-4" />
             <span className="leading-5"> {t('scan_templates')}</span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="list-create-app-button h-10 gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="leading-5">{t('create_devbox')}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 space-y-1 p-2">
-              <p className="px-1 py-1.5 text-xs font-medium text-zinc-500">
-                {t('creation_method')}
-              </p>
-              <DropdownMenuItem
-                onClick={handleCreateDevbox}
-                className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
-              >
-                <Package className="mr-2 h-4 w-4 text-zinc-500" />
-                <span className="text-sm font-normal text-zinc-900">{t('choose_runtime')}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleOpenImportDrawer('git')}
-                className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
-              >
-                <Github className="mr-2 h-4 w-4 text-zinc-500" />
-                <span className="text-sm font-normal text-zinc-900">{t('import_from_git')}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleOpenImportDrawer('local')}
-                className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
-              >
-                <FolderArchive className="mr-2 h-4 w-4 text-zinc-500" />
-                <span className="text-sm font-normal text-zinc-900">{t('import_from_local')}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {env.enableImportFeature === 'true' ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="list-create-app-button h-10 gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="leading-5">{t('create_devbox')}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 space-y-1 p-2">
+                <p className="px-1 py-1.5 text-xs font-medium text-zinc-500">
+                  {t('creation_method')}
+                </p>
+                <DropdownMenuItem
+                  onClick={handleCreateDevbox}
+                  className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+                >
+                  <Package className="mr-2 h-4 w-4 text-zinc-500" />
+                  <span className="text-sm font-normal text-zinc-900">{t('choose_runtime')}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleOpenImportDrawer('git')}
+                  className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+                >
+                  <Github className="mr-2 h-4 w-4 text-zinc-500" />
+                  <span className="text-sm font-normal text-zinc-900">{t('import_from_git')}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleOpenImportDrawer('local')}
+                  className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+                >
+                  <FolderArchive className="mr-2 h-4 w-4 text-zinc-500" />
+                  <span className="text-sm font-normal text-zinc-900">{t('import_from_local')}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button className="list-create-app-button h-10 gap-2" onClick={handleCreateDevbox}>
+              <Plus className="h-4 w-4" />
+              <span className="leading-5">{t('create_devbox')}</span>
+            </Button>
+          )}
         </div>
       </div>
 
