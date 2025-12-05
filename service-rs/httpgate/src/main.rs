@@ -37,7 +37,9 @@ fn main() {
 
     // Create Pingora server
     let opt = Opt::default();
-    let mut server = Server::new(Some(opt)).unwrap();
+    let mut server = Server::new(Some(opt)).unwrap_or_else(|e| {
+        panic!("Failed to create Pingora server: {e}");
+    });
     server.bootstrap();
 
     // Create and configure proxy service
