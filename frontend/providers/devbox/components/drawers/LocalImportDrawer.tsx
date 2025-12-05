@@ -517,7 +517,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                     }
                   }}
                   disabled={isImporting}
-                  className={`h-10 rounded-lg border-zinc-200 text-sm ${formErrors.containerPort ? 'border-red-500' : ''}`}
+                  className={`h-10 rounded-lg border-zinc-200 bg-white text-sm ${formErrors.containerPort ? 'border-red-500' : ''}`}
                 />
                 {formErrors.containerPort && (
                   <p className="text-sm text-red-600">{formErrors.containerPort}</p>
@@ -544,7 +544,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                   }}
                   disabled={isImporting}
                   rows={3}
-                  className={`min-h-20 rounded-lg border-zinc-200 text-sm placeholder:text-zinc-500 ${formErrors.startupCommand ? 'border-red-500' : ''}`}
+                  className={`min-h-20 rounded-lg border-zinc-200 bg-white text-sm placeholder:text-zinc-500 ${formErrors.startupCommand ? 'border-red-500' : ''}`}
                 />
                 {formErrors.startupCommand && (
                   <p className="text-sm text-red-600">{formErrors.startupCommand}</p>
