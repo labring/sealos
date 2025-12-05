@@ -397,6 +397,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           appName={formHook.getValues('appName')}
           title={title}
           yamlList={yamlList}
+          getFormData={() => realTimeForm.current}
           applyBtnText={applyBtnText}
           applyCb={() => {
             formHook.handleSubmit(async (data) => {
