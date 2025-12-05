@@ -1,0 +1,100 @@
+# Default values for sshgate
+
+image: ghcr.io/labring/sealos-sshgate-service:latest
+imagePullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# SSH port exposed on the host (hostPort)
+# The gateway listens on this port on each node
+sshPort: 2222
+
+# SSH Host Key Seed for deterministic key generation
+# All DaemonSet pods with the same seed will generate identical host keys
+# Warning: Keep this secure. Anyone with the seed can regenerate the private key.
+# If empty, a random 32-character seed will be auto-generated on first install
+sshHostKeySeed: ""
+
+# Proxy Protocol configuration
+# When enabled, the gateway will parse PROXY protocol headers from load balancers
+proxyProtocol:
+  # Enable PROXY protocol support
+  enabled: false
+  # Trusted source CIDRs (load balancer IPs)
+  # If empty, all sources are trusted when proxyProtocol is enabled
+  # Example: ["10.0.0.0/8", "172.16.0.0/12"]
+  trustedCIDRs: []
+  # Skip CIDRs - connections from these IPs bypass PROXY protocol parsing
+  # Useful for Kubernetes pod-to-pod traffic
+  # Example: ["10.244.0.0/16"]
+  skipCIDRs: []
+
+# Additional environment variables
+# These will be added to the ConfigMap and injected into the pods
+env: {}
+  # Example:
+  # LOG_LEVEL: "debug"
+  # CUSTOM_VAR: "value"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# RBAC settings
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Node selector for DaemonSet scheduling
+# Example: Only run on nodes with specific label
+# nodeSelector:
+#   role: gateway
+nodeSelector: {}
+
+# Tolerations for DaemonSet scheduling
+# Example: Run on master nodes
+# tolerations:
+# - key: node-role.kubernetes.io/master
+#   effect: NoSchedule
+tolerations: []
+
+# Affinity rules for DaemonSet scheduling
+affinity: {}
+
+# Update strategy for DaemonSet
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1

@@ -2,7 +2,7 @@ name: Release
 
 env:
   # Common versions
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
 
 on:
