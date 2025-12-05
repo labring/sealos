@@ -5,10 +5,9 @@ import (
 	"testing"
 	"time"
 
-	proxyproto "github.com/pires/go-proxyproto"
-
 	"github.com/labring/sealos/service/sshgate/config"
 	"github.com/labring/sealos/service/sshgate/gateway"
+	proxyproto "github.com/pires/go-proxyproto"
 )
 
 func TestLoad(t *testing.T) {
@@ -420,9 +419,19 @@ func TestProxyProtocolCIDRValidation(t *testing.T) {
 		shouldFail bool
 	}{
 		{"ValidTrustedCIDR", "PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8", false},
-		{"ValidTrustedCIDRMultiple", "PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8,172.16.0.0/12", false},
+		{
+			"ValidTrustedCIDRMultiple",
+			"PROXY_PROTOCOL_TRUSTED_CIDRS",
+			"10.0.0.0/8,172.16.0.0/12",
+			false,
+		},
 		{"ValidSkipCIDR", "PROXY_PROTOCOL_SKIP_CIDRS", "10.244.0.0/16", false},
-		{"ValidSkipCIDRMultiple", "PROXY_PROTOCOL_SKIP_CIDRS", "10.244.0.0/16,192.168.0.0/16", false},
+		{
+			"ValidSkipCIDRMultiple",
+			"PROXY_PROTOCOL_SKIP_CIDRS",
+			"10.244.0.0/16,192.168.0.0/16",
+			false,
+		},
 		{"InvalidTrustedCIDR", "PROXY_PROTOCOL_TRUSTED_CIDRS", "invalid", true},
 		{"InvalidTrustedCIDRPartial", "PROXY_PROTOCOL_TRUSTED_CIDRS", "10.0.0.0/8,invalid", true},
 		{"InvalidSkipCIDR", "PROXY_PROTOCOL_SKIP_CIDRS", "not-a-cidr", true},
@@ -604,7 +613,10 @@ func TestLoadProxyProtocolConfig(t *testing.T) {
 		}
 
 		if len(cfg.ProxyProtocolTrustedCIDRs) != 2 {
-			t.Errorf("ProxyProtocolTrustedCIDRs length = %d, want 2", len(cfg.ProxyProtocolTrustedCIDRs))
+			t.Errorf(
+				"ProxyProtocolTrustedCIDRs length = %d, want 2",
+				len(cfg.ProxyProtocolTrustedCIDRs),
+			)
 		}
 
 		if len(cfg.ProxyProtocolSkipCIDRs) != 1 {

@@ -9,9 +9,8 @@ import (
 
 	"github.com/caarlos0/env/v9"
 	"github.com/joho/godotenv"
-	proxyproto "github.com/pires/go-proxyproto"
-
 	"github.com/labring/sealos/service/sshgate/gateway"
+	proxyproto "github.com/pires/go-proxyproto"
 )
 
 // Config holds all configuration for the SSH gateway
@@ -20,9 +19,9 @@ type Config struct {
 	SSHListenAddr string `env:"SSH_LISTEN_ADDR" envDefault:":2222"`
 
 	// Proxy Protocol configuration
-	EnableProxyProtocol      bool     `env:"ENABLE_PROXY_PROTOCOL"       envDefault:"false"`
-	ProxyProtocolTrustedCIDRs []string `env:"PROXY_PROTOCOL_TRUSTED_CIDRS" envSeparator:","`
-	ProxyProtocolSkipCIDRs    []string `env:"PROXY_PROTOCOL_SKIP_CIDRS"    envSeparator:","`
+	EnableProxyProtocol       bool     `env:"ENABLE_PROXY_PROTOCOL"        envDefault:"false"`
+	ProxyProtocolTrustedCIDRs []string `env:"PROXY_PROTOCOL_TRUSTED_CIDRS"                    envSeparator:","`
+	ProxyProtocolSkipCIDRs    []string `env:"PROXY_PROTOCOL_SKIP_CIDRS"                       envSeparator:","`
 
 	// Logging configuration
 	Debug     bool   `env:"DEBUG"      envDefault:"false"`
@@ -137,13 +136,13 @@ func NewDefaultConfig() *Config {
 // - If upstream IP is in TrustedCIDRs, USE proxy protocol
 // - Otherwise, REJECT the connection
 func (c *Config) ProxyProtocolConnPolicy() proxyproto.ConnPolicyFunc {
-	var skipNets []*net.IPNet
+	skipNets := make([]*net.IPNet, 0, len(c.ProxyProtocolSkipCIDRs))
 	for _, cidr := range c.ProxyProtocolSkipCIDRs {
 		_, ipNet, _ := net.ParseCIDR(cidr) // already validated
 		skipNets = append(skipNets, ipNet)
 	}
 
-	var trustedNets []*net.IPNet
+	trustedNets := make([]*net.IPNet, 0, len(c.ProxyProtocolTrustedCIDRs))
 	for _, cidr := range c.ProxyProtocolTrustedCIDRs {
 		_, ipNet, _ := net.ParseCIDR(cidr) // already validated
 		trustedNets = append(trustedNets, ipNet)

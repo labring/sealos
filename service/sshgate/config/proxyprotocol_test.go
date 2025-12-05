@@ -2,15 +2,15 @@ package config_test
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"testing"
 	"time"
 
-	proxyproto "github.com/pires/go-proxyproto"
-
 	"github.com/labring/sealos/service/sshgate/config"
+	proxyproto "github.com/pires/go-proxyproto"
 )
 
 // TestProxyProtocolListenerIntegration tests the actual proxy protocol listener
@@ -167,7 +167,7 @@ func TestProxyProtocolListenerIntegration(t *testing.T) {
 			select {
 			case result := <-serverResult:
 				if tt.expectData {
-					if result.err != nil && result.err != io.EOF {
+					if result.err != nil && !errors.Is(result.err, io.EOF) {
 						t.Errorf("Server error: %v", result.err)
 					}
 					if result.data != testData {
@@ -179,7 +179,11 @@ func TestProxyProtocolListenerIntegration(t *testing.T) {
 						// Should see proxy header source IP
 						host, _, _ := net.SplitHostPort(result.remoteAddr)
 						if host != tt.sourceIP {
-							t.Errorf("RemoteAddr = %s, want source IP %s", result.remoteAddr, tt.sourceIP)
+							t.Errorf(
+								"RemoteAddr = %s, want source IP %s",
+								result.remoteAddr,
+								tt.sourceIP,
+							)
 						}
 					}
 				}
@@ -361,7 +365,12 @@ func TestProxyProtocolSkipWithHeader(t *testing.T) {
 
 		for i, b := range proxyV2Sig {
 			if result.data[i] != b {
-				t.Errorf("Expected proxy v2 signature at byte %d, got %x want %x", i, result.data[i], b)
+				t.Errorf(
+					"Expected proxy v2 signature at byte %d, got %x want %x",
+					i,
+					result.data[i],
+					b,
+				)
 			}
 		}
 
