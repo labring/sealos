@@ -157,10 +157,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
-      (item) => item === db.dbType
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
+      (item) => item === db?.dbType
     );
-  }, [db.dbType]);
+  }, [db?.dbType]);
 
   const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
@@ -182,7 +182,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           })
         : null,
     {
-      enabled: supportConnectDB
+      enabled: !!db.dbName && !!db.dbType
     }
   );
 
@@ -190,7 +190,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
-      enabled: supportConnectDB,
+      enabled: !!db.dbName && !!db.dbType,
       retry: 3,
       onSuccess(data) {
         setIsChecked(!!data);
@@ -705,7 +705,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
-                isDisabled={db.dbType === 'kafka'}
+                isDisabled={!supportConnectDB}
                 onChange={(e) => {
                   if (isChecked) {
                     closeNetWorkService();

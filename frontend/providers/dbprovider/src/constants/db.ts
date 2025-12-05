@@ -228,12 +228,12 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' }
-  // { id: DBTypeEnum.qdrant, label: 'qdrant' },
-  // { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
-  // { id: DBTypeEnum.nebula, label: 'nebula' },
-  // { id: DBTypeEnum.weaviate, label: 'weaviate' }
+  { id: DBTypeEnum.milvus, label: 'Milvus' },
+  { id: DBTypeEnum.weaviate, label: 'Weaviate' }
+  // { id: DBTypeEnum.qdrant, label: 'Qdrant' },
+  // { id: DBTypeEnum.pulsar, label: 'Pulsar' },
+  // { id: DBTypeEnum.clickhouse, label: 'ClickHouse' },
+  // { id: DBTypeEnum.nebula, label: 'Nebula' }
 ];
 
 export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
