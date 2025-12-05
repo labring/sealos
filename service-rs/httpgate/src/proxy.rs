@@ -202,12 +202,13 @@ impl ProxyHttp for DevboxProxy {
     }
 
     async fn request_filter(&self, session: &mut Session, ctx: &mut Self::CTX) -> Result<bool> {
-        // Extract Host header
+        // Extract Host header (HTTP/1.1) or :authority pseudo-header (HTTP/2/gRPC)
         let host = session
             .req_header()
             .headers
             .get("host")
             .and_then(|h| h.to_str().ok())
+            .or_else(|| session.req_header().uri.authority().map(|a| a.as_str()))
             .unwrap_or("");
 
         // Parse protocol, uniqueID and port from host
