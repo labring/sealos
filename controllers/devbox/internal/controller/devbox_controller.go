@@ -290,7 +290,7 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 				latestSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = latestSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
 			}
 			// generate SEALOS_DEVBOX_ENV_PROFILE
-			latestSecret.Data["SEALOS_DEVBOX_ENV_PROFILE"] = helper.GenerateEnvProfile(devbox)
+			latestSecret.Data["SEALOS_DEVBOX_ENV_PROFILE"] = helper.GenerateEnvProfile(devbox, latestSecret.Data["SEALOS_DEVBOX_JWT_SECRET"])
 			return r.Update(ctx, latestSecret)
 		})
 		return err
@@ -949,7 +949,17 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha2.Devbox, opts
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
 	envs := devbox.Spec.Config.Env
-
+	envs = append(envs, corev1.EnvVar{
+		Name: "DEVBOX_JWT_SECRET",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				Key: "SEALOS_DEVBOX_JWT_SECRET",
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: devbox.Name,
+				},
+			},
+		},
+	})
 	volumes := devbox.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
 	volumes = append(volumes, helper.GenerateEnvProfileVolume(devbox))
