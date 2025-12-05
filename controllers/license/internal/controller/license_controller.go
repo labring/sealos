@@ -310,11 +310,11 @@ func (r *LicenseReconciler) ensureAndUpdateDefaultLicense(
 		return err
 	}
 	expiration := r.CreateTimestamp.Add(defaultLicenseDuration)
-	devboxInstalled, err := r.isDevBoxInstalled(ctx)
+	ensureProInstalled, err := r.ensureProInstalled(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to check devbox installation: %w", err)
+		return fmt.Errorf("failed to check pro installation: %w", err)
 	}
-	if !devboxInstalled {
+	if !ensureProInstalled {
 		// extend default license for devbox users
 		expiration = r.CreateTimestamp.Add(50 * 365 * 24 * time.Hour)
 	}
@@ -346,6 +346,24 @@ func (r *LicenseReconciler) updateStatus(
 	})
 }
 
+func (r *LicenseReconciler) ensureProInstalled(ctx context.Context) (bool, error) {
+	isDevBox, err := r.isDevBoxInstalled(ctx)
+	if err != nil {
+		return false, err
+	}
+	if isDevBox {
+		return true, nil
+	}
+	isObjectStorage, err := r.isObjectStorageInstalled(ctx)
+	if err != nil {
+		return false, err
+	}
+	if isObjectStorage {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (r *LicenseReconciler) isDevBoxInstalled(ctx context.Context) (bool, error) {
 	crd := &unstructured.Unstructured{}
 	crd.SetGroupVersionKind(schema.GroupVersionKind{
@@ -354,6 +372,22 @@ func (r *LicenseReconciler) isDevBoxInstalled(ctx context.Context) (bool, error)
 		Kind:    "CustomResourceDefinition",
 	})
 	if err := r.Get(ctx, types.NamespacedName{Name: "devboxes.devbox.sealos.io"}, crd); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *LicenseReconciler) isObjectStorageInstalled(ctx context.Context) (bool, error) {
+	crd := &unstructured.Unstructured{}
+	crd.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Version: "v1",
+		Kind:    "CustomResourceDefinition",
+	})
+	if err := r.Get(ctx, types.NamespacedName{Name: "objectstoragebuckets.objectstorage.sealos.io"}, crd); err != nil {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
