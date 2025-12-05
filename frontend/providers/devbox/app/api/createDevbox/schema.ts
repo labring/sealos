@@ -55,6 +55,9 @@ export const RequestSchema = z
     templateUid: z.string().min(1).openapi({
       description: 'Template UID'
     }),
+    templateRepositoryUid: z.string().optional().openapi({
+      description: 'Template Repository UID'
+    }),
     templateConfig: z.string().default('{}').openapi({
       description: 'Template configuration in JSON format'
     }),
@@ -74,6 +77,9 @@ export const RequestSchema = z
     }),
     networks: z.array(z.any()).default([]).openapi({
       description: 'Network configurations'
+    }),
+    env: z.array(z.any()).optional().default([]).openapi({
+      description: 'Environment variables'
     })
   })
   .transform((data) => {

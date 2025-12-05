@@ -1,13 +1,12 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
 
 import { useEnvStore } from '@/stores/env';
 
 import '@scalar/api-reference-react/style.css';
 
-export default function References() {
+function ApiDocsContent() {
   const { env } = useEnvStore();
   const [apiData, setApiData] = useState(null);
 
@@ -52,4 +51,12 @@ export default function References() {
   }
 
   return <ApiReferenceReact configuration={config} />;
+}
+
+export default function References() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ApiDocsContent />
+    </Suspense>
+  );
 }

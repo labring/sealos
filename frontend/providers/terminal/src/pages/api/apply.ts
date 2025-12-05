@@ -38,9 +38,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ? Buffer.from(terminalStatus.secretHeader).toString('base64')
           : '';
         if (terminalStatus.availableReplicas > 0) {
-          return jsonRes(res, { data: terminalStatus.domain ? terminalStatus.domain + '?authorization=' + encodedAuth : '' });
+          return jsonRes(res, {
+            data: terminalStatus.domain
+              ? terminalStatus.domain + '?authorization=' + encodedAuth
+              : ''
+          });
         } else {
-          return jsonRes(res, { code: 201, data: terminalStatus.domain ? terminalStatus.domain + '?authorization=' + encodedAuth : '' });
+          return jsonRes(res, {
+            code: 201,
+            data: terminalStatus.domain
+              ? terminalStatus.domain + '?authorization=' + encodedAuth
+              : ''
+          });
         }
       }
     } catch (error) {}

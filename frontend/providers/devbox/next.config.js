@@ -17,6 +17,7 @@ const nextConfig = {
       }
     ]);
     config.plugins = [...config.plugins];
+
     return config;
   },
   // https://www.npmjs.com/package/geist

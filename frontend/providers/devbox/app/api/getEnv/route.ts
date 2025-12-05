@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
         currencySymbol: (process.env.CURRENCY_SYMBOL || defaultEnv.currencySymbol) as
           | 'shellCoin'
           | 'cny'
-          | 'usd'
+          | 'usd',
+        enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature
       }
     });
   } catch (err: any) {
