@@ -10,7 +10,7 @@ const RedirectPage = () => {
   const router = useRouter();
   const { setLastRoute } = useGlobalStore();
   const { resetGuideState } = useGuideStore();
-  const { session } = useUserStore();
+  // const { session } = useUserStore();
   const hasHandledRef = useRef(false);
 
   useEffect(() => {
@@ -58,11 +58,11 @@ const RedirectPage = () => {
     };
 
     // wait session
-    if (router.isReady && session && !hasHandledRef.current) {
+    if (router.isReady && !hasHandledRef.current) {
       hasHandledRef.current = true;
       handleUrlParams();
     }
-  }, [resetGuideState, router, router.isReady, router.query, setLastRoute, session]);
+  }, [resetGuideState, router, router.isReady, router.query, setLastRoute]);
 
   return null;
 };
