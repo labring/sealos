@@ -92,7 +92,7 @@ export const json2DevboxV2 = (
     },
     spec: {
       network: {
-        type: 'NodePort',
+        type: 'SSHGate', // TODO: github import and local import maybe should adjust this too.
         extraPorts: data.networks.map((item) => ({
           containerPort: item.port
         }))
