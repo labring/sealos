@@ -13,7 +13,8 @@ import {
   useToast,
   InputGroup,
   InputRightElement,
-  Box
+  Box,
+  Flex
 } from '@chakra-ui/react';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'next-i18next';
@@ -133,12 +134,21 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
       }
     },
     onError: (error: ApiResp) => {
-      toast({
-        position: 'top',
-        title: error.message || t('common:bind_failed'),
-        status: 'error',
-        duration: 3000
-      });
+      if (error.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
+        toast({
+          position: 'top',
+          title: t('common:provider_conflict_error'),
+          status: 'error',
+          duration: 5000
+        });
+      } else {
+        toast({
+          position: 'top',
+          title: error.message || t('common:bind_failed'),
+          status: 'error',
+          duration: 3000
+        });
+      }
     }
   });
 
@@ -184,12 +194,12 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
-      <ModalContent maxW="480px">
+      <ModalContent maxW="450px">
         <ModalHeader fontSize="20px" fontWeight={600}>
           {t('common:phone_binding_required')}
         </ModalHeader>
         <ModalBody pb={'24px'} pt={'16px'} px={'24px'}>
-          <VStack align="stretch">
+          <Box>
             <Box bg={'#F4F4F5'} p="16px" borderRadius="8px" mb={'16px'}>
               <Text fontSize="14px" color="grayModern.600">
                 {t('common:phone_binding_description')}
@@ -202,6 +212,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
               </FormLabel>
               <InputGroup>
                 <Input
+                  height={'40px'}
                   width={'100%'}
                   type="tel"
                   placeholder={t('common:enter_phone_number')}
@@ -211,7 +222,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
                   disabled={verifyMutation.isLoading}
                   pr="110px"
                 />
-                <InputRightElement width="100px">
+                <InputRightElement width="100px" height={'40px'}>
                   <Button
                     size="sm"
                     variant="link"
@@ -236,6 +247,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
                 {t('common:verifycode')}
               </FormLabel>
               <Input
+                height={'40px'}
                 width={'100%'}
                 type="text"
                 placeholder={t('common:enter_verify_code')}
@@ -246,18 +258,19 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
               />
             </FormControl>
 
-            <Button
-              ml={'auto'}
-              width={'110px'}
-              colorScheme="blue"
-              onClick={handleSubmit}
-              isLoading={verifyMutation.isLoading}
-              isDisabled={!phoneNumber || verifyCode.length !== 6}
-              size="md"
-            >
-              {t('common:confirm')}
-            </Button>
-          </VStack>
+            <Flex justifyContent={'flex-end'}>
+              <Button
+                minW={'110px'}
+                colorScheme="blue"
+                onClick={handleSubmit}
+                isLoading={verifyMutation.isLoading}
+                isDisabled={!phoneNumber || verifyCode.length !== 6}
+                size="md"
+              >
+                {t('common:complete_binding')}
+              </Button>
+            </Flex>
+          </Box>
         </ModalBody>
       </ModalContent>
     </Modal>
