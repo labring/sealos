@@ -47,7 +47,7 @@ import StopBackupModal from '../detail/components/StopBackupModal';
 import { resourcePropertyMap } from '@/constants/resource';
 import { distributeResources } from '@/utils/database';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
-import { TriangleAlertIcon } from 'lucide-react';
+import MyIcon from '@/components/Icon';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -554,47 +554,29 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
       <Modal isOpen={isRestartConfirmOpen} onClose={() => setIsRestartConfirmOpen(false)}>
         <ModalOverlay />
-        <ModalContent borderRadius={'16px'} maxW={{ base: '100%', md: '540px' }}>
-          <ModalHeader
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              paddingLeft: '24px',
-              paddingRight: '24px',
-              paddingTop: '24px',
-              paddingBottom: '0',
-              border: 'none',
-              background: 'none',
-              fontSize: '18px',
-              fontWeight: 'semibold'
-            }}
-          >
-            <TriangleAlertIcon size={16} color="#CA8A04" />
-            {t('prompt')}
+        <ModalContent>
+          <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
+            <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
+            <Box ml={3} fontSize={'xl'}>
+              {t('prompt')}
+            </Box>
           </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody
-            style={{
-              padding: '16px 24px'
-            }}
-          >
-            <p style={{ fontSize: '14px' }}>{t('confirm_config_change_restart')}</p>
+          <ModalCloseButton fontSize={'16px'} />
+          <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
+            {t('confirm_config_change_restart')}
           </ModalBody>
-
-          <ModalFooter
-            style={{
-              paddingTop: '0',
-              paddingLeft: '24px',
-              paddingRight: '24px',
-              display: 'flex',
-              justifyContent: 'flex-end'
-            }}
-          >
-            <Button variant="outline" mr={3} onClick={() => setIsRestartConfirmOpen(false)}>
+          <ModalFooter>
+            <Button
+              onClick={() => {
+                setIsRestartConfirmOpen(false);
+              }}
+              variant={'outline'}
+            >
               {t('Cancel')}
             </Button>
-            <Button onClick={handleSubmitAfterConfirm}>{t('confirm')}</Button>
+            <Button ml={'12px'} onClick={handleSubmitAfterConfirm}>
+              {t('confirm')}
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
