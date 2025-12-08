@@ -16,7 +16,7 @@ import {
   Box,
   Flex
 } from '@chakra-ui/react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSmsBindCodeRequest, verifySmsBindRequest } from '@/api/auth';
@@ -40,6 +40,15 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   const [verifyCode, setVerifyCode] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [isSending, setIsSending] = useState(false);
+
+  // Reset merge status when modal opens to avoid stale state after page refresh
+  useEffect(() => {
+    if (isOpen) {
+      setMergeUserStatus(MergeUserStatus.IDLE);
+      setMergeUserData(undefined);
+      setForceMerge(false);
+    }
+  }, [isOpen, setMergeUserStatus, setMergeUserData, setForceMerge]);
 
   // Phone number validation
   const isPhoneValid = useCallback((phone: string) => {
