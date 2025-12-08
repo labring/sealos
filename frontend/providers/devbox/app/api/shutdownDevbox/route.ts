@@ -85,13 +85,19 @@ export async function POST(req: NextRequest) {
     });
 
     if (!onlyIngress) {
+      const patchData: any = { spec: { state: shutdownMode } };
+
+      if (shutdownMode === 'Shutdown') {
+        patchData.spec.network = { type: 'SSHGate' };
+      }
+
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
         'v1alpha2',
         namespace,
         'devboxes',
         devboxName,
-        { spec: { state: shutdownMode } },
+        patchData,
         undefined,
         undefined,
         undefined,

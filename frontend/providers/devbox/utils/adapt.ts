@@ -53,7 +53,8 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
       name: '',
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
-    }
+    },
+    networkType: devbox.spec.network.type
   };
 };
 
@@ -95,7 +96,8 @@ export const adaptDevboxDetailV2 = ([
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: portInfos || []
+    networks: portInfos || [],
+    networkType: devbox.spec.network.type
   };
 };
 export const adaptDevboxVersionListItem = (

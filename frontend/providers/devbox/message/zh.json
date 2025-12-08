@@ -61,6 +61,7 @@
   "confirm_create_devbox": "确认创建项目？",
   "confirm_delete": "确认删除",
   "confirm_shutdown": "确认关机",
+  "confirm_shutdown_question": "是否确认关机？",
   "confirm_update_devbox": "变更 CPU 和内存将导致项目重启和 IDE 的重新连接（变更网络配置并不会）。是否继续？",
   "continue": "继续",
   "control": "操作",

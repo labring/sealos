@@ -53,6 +53,7 @@ import DevboxStatusTag from '@/components/StatusTag';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
+import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { track } from '@sealos/gtm';
 import { Polygon } from '@/components/Polygon';
@@ -729,19 +730,32 @@ const DevboxList = ({
           devbox={currentDevboxListItem}
         />
       )}
-      {!!currentDevboxListItem && (
-        <ShutdownModal
-          open={!!onOpenShutdown}
-          onSuccess={() => {
-            refetchDevboxList();
-            setOnOpenShutdown(false);
-          }}
-          onClose={() => {
-            setOnOpenShutdown(false);
-          }}
-          devbox={currentDevboxListItem}
-        />
-      )}
+      {!!currentDevboxListItem &&
+        (currentDevboxListItem.networkType === 'SSHGate' ? (
+          <SimpleShutdownDialog
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxList();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={currentDevboxListItem}
+          />
+        ) : (
+          <ShutdownModal
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxList();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={currentDevboxListItem}
+          />
+        ))}
       {!!editRemarkItem && (
         <EditRemarkDialog
           open={!!onOpenEditRemark}

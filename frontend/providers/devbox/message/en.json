@@ -61,6 +61,7 @@
   "confirm_create_devbox": "Confirm creation of your DevBox?",
   "confirm_delete": "Delete",
   "confirm_shutdown": "Shutdown",
+  "confirm_shutdown_question": "Are you sure you want to shutdown?",
   "confirm_update_devbox": "Changing the CPU or memory will cause the project to restart and any active IDE instances will need to reconnect. Are you sure you wish to continue?",
   "control": "Operations",
   "convert_to_runtime": "Convert to Template",
