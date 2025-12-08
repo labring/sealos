@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	"github.com/labring/sealos/controllers/pkg/types"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/sirupsen/logrus"
@@ -1673,10 +1673,12 @@ func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		ops.UID = userUID
 	}
 	account := &types.Account{
-		UserUID:        ops.UID,
-		CreateRegionID: c.LocalRegion.UID.String(),
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		UserUID:          ops.UID,
+		CreateRegionID:   c.LocalRegion.UID.String(),
+		Balance:          c.ZeroAccount.Balance,
+		DeductionBalance: c.ZeroAccount.DeductionBalance,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
 	}
 
 	if err := c.DB.FirstOrCreate(account).Error; err != nil {
@@ -2209,14 +2211,16 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open local url %s : %w", localURI, err)
 	}
-	baseBalance, err := crypto.DecryptInt64(os.Getenv(EnvBaseBalance))
-	if err == nil {
-		BaseBalance = baseBalance
+	if os.Getenv(EnvBaseBalance) != "" {
+		balance, err := strconv.ParseInt(os.Getenv(EnvBaseBalance), 10, 64)
+		if err == nil {
+			BaseBalance = balance
+		}
 	}
 	cockroach := &Cockroach{
 		DB:          db,
 		Localdb:     localdb,
-		ZeroAccount: &types.Account{Balance: baseBalance, DeductionBalance: 0},
+		ZeroAccount: &types.Account{Balance: BaseBalance, DeductionBalance: 0},
 	}
 	cockroach.ownerUsrUIDMap = &sync.Map{}
 	cockroach.ownerUsrIDMap = &sync.Map{}
