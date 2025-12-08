@@ -5,12 +5,11 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/labring/sealos/controllers/pkg/types"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,7 +66,8 @@ func (operationRequestCompletedPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	// Only process when status changes to Completed
-	return oldObj.Status.Phase != userv1.RequestCompleted && newObj.Status.Phase == userv1.RequestCompleted
+	return oldObj.Status.Phase != userv1.RequestCompleted &&
+		newObj.Status.Phase == userv1.RequestCompleted
 }
 
 func (operationRequestCompletedPredicate) Delete(event.DeleteEvent) bool {
@@ -80,7 +80,10 @@ func (operationRequestCompletedPredicate) Generic(event.GenericEvent) bool {
 
 // +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests,verbs=get;list;watch
 
-func (r *OperationRequestMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *OperationRequestMonitorReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	operationRequest := &userv1.Operationrequest{}
 	if err := r.Get(ctx, req.NamespacedName, operationRequest); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -103,7 +106,8 @@ func (r *OperationRequestMonitorReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	// Only process Grant and Update actions for owner role
-	if operationRequest.Spec.Action != userv1.Grant && operationRequest.Spec.Action != userv1.Update {
+	if operationRequest.Spec.Action != userv1.Grant &&
+		operationRequest.Spec.Action != userv1.Update {
 		r.Logger.V(1).Info("Skipping non-grant/update action for owner role",
 			"request.name", operationRequest.Name,
 			"request.namespace", operationRequest.Namespace,
@@ -146,7 +150,10 @@ func namespaceOnlyPredicate(namespace string) predicate.Predicate {
 // 1. Gets the owner's namespace (ns-owner)
 // 2. Checks owner's namespace status
 // 3. Synchronizes the target namespace status accordingly
-func (r *OperationRequestMonitorReconciler) syncNamespaceStatus(ctx context.Context, owner, targetNamespace string) error {
+func (r *OperationRequestMonitorReconciler) syncNamespaceStatus(
+	ctx context.Context,
+	owner, targetNamespace string,
+) error {
 	// Get the owner's namespace
 	ownerNamespace, err := r.getOwnerNamespace(ctx, owner)
 	if err != nil {
@@ -164,19 +171,30 @@ func (r *OperationRequestMonitorReconciler) syncNamespaceStatus(ctx context.Cont
 }
 
 // getOwnerNamespace finds the owner's namespace by owner label
-func (r *OperationRequestMonitorReconciler) getOwnerNamespace(ctx context.Context, owner string) (*corev1.Namespace, error) {
+func (r *OperationRequestMonitorReconciler) getOwnerNamespace(
+	ctx context.Context,
+	owner string,
+) (*corev1.Namespace, error) {
 	// Get the owner's namespace using the naming convention
 	namespace := &corev1.Namespace{}
-	err := r.Client.Get(ctx, client.ObjectKey{Name: userNamespacePrefix + owner}, namespace)
+	err := r.Get(ctx, client.ObjectKey{Name: userNamespacePrefix + owner}, namespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get owner namespace %s%s: %w", userNamespacePrefix, owner, err)
+		return nil, fmt.Errorf(
+			"failed to get owner namespace %s%s: %w",
+			userNamespacePrefix,
+			owner,
+			err,
+		)
 	}
 	return namespace, nil
 }
 
 // synchronizeNamespaceStatus synchronizes target namespace annotations based on owner namespace status
 // If owner debt status is empty/normal/resume/resume-completed and target is suspended, it will resume the target namespace
-func (r *OperationRequestMonitorReconciler) synchronizeNamespaceStatus(ctx context.Context, ownerNamespace, targetNamespace *corev1.Namespace) error {
+func (r *OperationRequestMonitorReconciler) synchronizeNamespaceStatus(
+	ctx context.Context,
+	ownerNamespace, targetNamespace *corev1.Namespace,
+) error {
 	if targetNamespace.Annotations == nil {
 		targetNamespace.Annotations = make(map[string]string)
 	}
@@ -195,8 +213,12 @@ func (r *OperationRequestMonitorReconciler) synchronizeNamespaceStatus(ctx conte
 		targetNamespace.Annotations[types.DebtNamespaceAnnoStatusKey] = types.ResumeDebtNamespaceAnnoStatus
 
 		// Update the target namespace
-		if err := r.Client.Update(ctx, targetNamespace); err != nil {
-			return fmt.Errorf("failed to update target namespace %s annotations: %w", targetNamespace.Name, err)
+		if err := r.Update(ctx, targetNamespace); err != nil {
+			return fmt.Errorf(
+				"failed to update target namespace %s annotations: %w",
+				targetNamespace.Name,
+				err,
+			)
 		}
 
 		r.Logger.Info("Successfully resumed target namespace",
