@@ -314,7 +314,7 @@ const Form = ({
                         <Textarea my={2} ref={connectionRef} />
                         <Box display={'flex'} justifyContent={'flex-end'} mt={2} gap={2}>
                           <Button variant="outline" onClick={onClose}>
-                            {t('cancel')}
+                            {t('Cancel')}
                           </Button>
                           <Button onClick={identifyClipboard}>{t('identify')}</Button>
                         </Box>

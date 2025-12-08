@@ -12,7 +12,19 @@ import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
-import { Box, Flex, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Button
+} from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
@@ -35,6 +47,7 @@ import StopBackupModal from '../detail/components/StopBackupModal';
 import { resourcePropertyMap } from '@/constants/resource';
 import { distributeResources } from '@/utils/database';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { TriangleAlertIcon } from 'lucide-react';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -65,6 +78,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [pendingFormData, setPendingFormData] = useState<DBEditType | null>(null);
 
   const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
+  const [isRestartConfirmOpen, setIsRestartConfirmOpen] = useState(false);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -424,7 +438,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     )();
   };
 
-  const handleSubmit = () => {
+  const handleSubmitAfterConfirm = () => {
+    setIsRestartConfirmOpen(false);
     if (exceededQuotas.length <= 0) {
       confirmSubmit();
       return;
@@ -432,6 +447,22 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
     setIsInsufficientQuotaDialogOpen(true);
   };
+
+  const handleSubmit = () => {
+    // Show confirmation modal when editing.
+    if (isEdit) {
+      setIsRestartConfirmOpen(true);
+      return;
+    }
+
+    if (exceededQuotas.length <= 0) {
+      confirmSubmit();
+      return;
+    }
+
+    setIsInsufficientQuotaDialogOpen(true);
+  };
+
   return (
     <>
       <Flex
@@ -520,6 +551,53 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         onConfirm={() => {}}
         showControls={false}
       />
+
+      <Modal isOpen={isRestartConfirmOpen} onClose={() => setIsRestartConfirmOpen(false)}>
+        <ModalOverlay />
+        <ModalContent borderRadius={'16px'} maxW={{ base: '100%', md: '540px' }}>
+          <ModalHeader
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              paddingLeft: '24px',
+              paddingRight: '24px',
+              paddingTop: '24px',
+              paddingBottom: '0',
+              border: 'none',
+              background: 'none',
+              fontSize: '18px',
+              fontWeight: 'semibold'
+            }}
+          >
+            <TriangleAlertIcon size={16} color="#CA8A04" />
+            {t('prompt')}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody
+            style={{
+              padding: '16px 24px'
+            }}
+          >
+            <p style={{ fontSize: '14px' }}>{t('confirm_config_change_restart')}</p>
+          </ModalBody>
+
+          <ModalFooter
+            style={{
+              paddingTop: '0',
+              paddingLeft: '24px',
+              paddingRight: '24px',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}
+          >
+            <Button variant="outline" mr={3} onClick={() => setIsRestartConfirmOpen(false)}>
+              {t('Cancel')}
+            </Button>
+            <Button onClick={handleSubmitAfterConfirm}>{t('confirm')}</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };
