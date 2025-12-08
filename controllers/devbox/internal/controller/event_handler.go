@@ -99,12 +99,12 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 		h.Logger.Info("start commit devbox", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", start)
 
 		// retry commit devbox with retry logic
-		// backoff: 2s, 4s, 8s
+		// backoff: 10s, 20s, 30s
 		err := retry.OnError(wait.Backoff{
-			Duration: 2 * time.Second,
+			Duration: 10 * time.Second,
 			Factor:   1.0,
 			Jitter:   0.1,
-			Steps:    3,
+			Steps:    30,
 		}, func(err error) bool {
 			return true
 		}, func() error {

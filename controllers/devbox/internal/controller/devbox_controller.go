@@ -981,7 +981,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha2.Devbox, opts
 			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage)},
 	}
 
-	terminationGracePeriodSeconds := 300
+	terminationGracePeriodSeconds := 3
 	automountServiceAccountToken := false
 
 	runtimeClassName := devbox.Spec.RuntimeClassName
