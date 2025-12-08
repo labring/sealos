@@ -50,7 +50,7 @@ const SimpleShutdownDialog = ({ onSuccess, onClose, devbox, open }: SimpleShutdo
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-w-[360px]">
+      <DialogContent className="w-[350px]">
         <DialogHeader>
           <DialogTitle>{t('confirm_shutdown_question')}</DialogTitle>
         </DialogHeader>
