@@ -10,7 +10,7 @@ import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
-import { resourcePropertyMap } from '@/constants/resource';
+import { resourcePropertyMap, useUserQuota, type WorkspaceQuotaItem } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -47,8 +47,6 @@ import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
-import { useQuery } from '@tanstack/react-query';
-import { WorkspaceQuotaItem } from '@/types/workspace';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -173,8 +171,7 @@ const Form = ({
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
 
   // For quota calculation in fields
-  const { userQuota, loadUserQuota } = useUserStore();
-  useQuery(['getUserQuota'], loadUserQuota);
+  const { userQuota } = useUserQuota();
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -315,14 +312,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -1058,8 +1055,8 @@ const Form = ({
                               network.openPublicDomain
                                 ? network.appProtocol
                                 : network.openNodePort
-                                ? network.protocol
-                                : 'HTTP'
+                                  ? network.protocol
+                                  : 'HTTP'
                             }
                             list={ProtocolList}
                             onchange={(val: any) => {
@@ -1109,14 +1106,14 @@ const Form = ({
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.openNodePort
-                                  ? network?.nodePort
-                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                        network.nodePort
-                                      }`
-                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                        'pending_to_allocated'
-                                      )}`
-                                  : `${network.publicDomain}.${network.domain}`}
+                                    ? network?.nodePort
+                                      ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                          network.nodePort
+                                        }`
+                                      : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                          'pending_to_allocated'
+                                        )}`
+                                    : `${network.publicDomain}.${network.domain}`}
                               </Box>
                             </Tooltip>
 
@@ -1283,8 +1280,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

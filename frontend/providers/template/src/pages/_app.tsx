@@ -4,7 +4,6 @@ import { useGlobalStore } from '@/store/global';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Head from 'next/head';
@@ -23,6 +22,13 @@ import 'nprogress/nprogress.css';
 import { useGuideStore } from '@/store/guide';
 import App from 'next/app';
 import Script from 'next/script';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { createQuotaGuarded } from '@sealos/shared';
+
+// Initialize quota guarded hook with session getter
+createQuotaGuarded({
+  getSession: () => useSessionStore.getState().session ?? null
+});
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -167,6 +173,7 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
           <Layout>
             <Component {...pageProps} />
           </Layout>
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
         </ChakraProvider>
       </QueryClientProvider>
       {customScripts.map((script, i) => (
