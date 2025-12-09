@@ -54,7 +54,8 @@ export type KBDevboxTypeV2 = {
     network: {
       nodePort: number;
       tailnet: string;
-      type: 'NodePort' | 'Tailnet';
+      type: 'NodePort' | 'Tailnet' | 'SSHGate';
+      uniqueID?: string;
     };
     podPhase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete';
   };
