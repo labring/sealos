@@ -9,10 +9,16 @@ import type {
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import type { SessionV1 } from 'sealos-desktop-sdk';
 
+/**
+ * @internal
+ */
 type QuotaGuardedConfig = {
   getSession: () => SessionV1 | null;
 };
 
+/**
+ * @internal
+ */
 type State = {
   userQuota: WorkspaceQuotaItem[];
   setUserQuota: (quotas: WorkspaceQuotaItem[]) => void;
@@ -35,6 +41,10 @@ type State = {
   quotaGuardedConfig: QuotaGuardedConfig | null;
   setQuotaGuardedConfig: (config: QuotaGuardedConfig) => void;
 };
+
+/**
+ * Zustand store for quota management.
+ */
 
 export const useQuotaStore = create<State>()(
   devtools(

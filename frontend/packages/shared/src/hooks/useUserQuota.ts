@@ -7,30 +7,53 @@ import type {
 } from '../types/workspace';
 
 export interface UseUserQuotaOptions {
+  /** Resource requirements to check against */
   requirements?: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
     traffic?: boolean | number;
   };
+  /** Types to show in requirements dialog */
   showRequirements?: WorkspaceQuotaItemType[];
 }
 
+/**
+ * @internal
+ */
 type UseUserQuotaReturn = {
+  /** Current user quota items */
   userQuota: WorkspaceQuotaItem[];
+  /** Refetch quota from server */
   refetch: () => Promise<WorkspaceQuotaItem[]>;
 };
 
+/**
+ * @internal
+ */
 type UseUserQuotaWithCheckReturn = UseUserQuotaReturn & {
+  /** Quotas that exceed requirements */
   exceededQuotas: ExceededWorkspaceQuotaItem[];
+  /** Whether any quota is exceeded */
   isExceeded: boolean;
 };
 
 /**
- * Hook for accessing user quota and optionally checking against requirements.
- * Automatically fetches quota on mount when used.
+ * Hook to access user quota. Fetches quota on mount.
+ *
+ * @returns Quota data and refetch function
  */
 export function useUserQuota(): UseUserQuotaReturn;
+/**
+ * Hook to access user quota with requirement checking.
+ *
+ * @param options - Options with requirements
+ * @returns Quota data, exceeded quotas, and refetch function
+ * @public
+ */
 export function useUserQuota(
   options: UseUserQuotaOptions & { requirements: NonNullable<UseUserQuotaOptions['requirements']> }
 ): UseUserQuotaWithCheckReturn;
+/**
+ * @internal
+ */
 export function useUserQuota(
   options?: UseUserQuotaOptions
 ): UseUserQuotaReturn | UseUserQuotaWithCheckReturn {

@@ -6,9 +6,15 @@ import { useQuotaStore } from '../../../store/quota';
 import type { SupportedLang } from '../../../i18n/quota-dialog';
 
 export interface InsufficientQuotaDialogProps {
+  /** Language for dialog content */
   lang: SupportedLang;
 }
 
+/**
+ * Dialog component shown when quota is exceeded.
+ *
+ * @param props - Component props
+ */
 export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) {
   const quotaStore = useQuotaStore();
 

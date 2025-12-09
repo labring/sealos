@@ -68,6 +68,12 @@ export const quotaDialogI18n: Record<SupportedLang, QuotaDialogI18nConfig> = {
   }
 };
 
+/**
+ * Get i18n config for quota dialog by language.
+ *
+ * @param lang - Language code
+ * @returns I18n configuration
+ */
 export function getQuotaDialogI18n(lang: SupportedLang): QuotaDialogI18nConfig {
   return quotaDialogI18n[lang] ?? quotaDialogI18n.en;
 }
