@@ -1978,6 +1978,112 @@ func (c *Cockroach) InitTables() error {
 		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %w", err)
 	}
 
+	// Update the PaymentRefund table. If trade_no is of uuid type, update it to string type:
+	if c.DB.Migrator().HasColumn(&types.PaymentRefund{}, "trade_no") {
+		columnTypes, err := c.DB.Migrator().ColumnTypes(&types.PaymentRefund{})
+		if err != nil {
+			return fmt.Errorf("failed to get column type of trade_no: %w", err)
+		}
+		for _, columnType := range columnTypes {
+			if columnType.Name() == "trade_no" {
+				if strings.ToLower(columnType.DatabaseTypeName()) == "uuid" {
+					// 1. add the temporary column trade_no_tmp
+					err := c.DB.Exec(`
+						ALTER TABLE "PaymentRefund" ADD COLUMN IF NOT EXISTS "trade_no_tmp" TEXT;
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to add temporary column trade_no_tmp: %w", err)
+					}
+					// 2. copy the value of trade_no to trade_no_tmp
+					err = c.DB.Exec(`
+						UPDATE "PaymentRefund" SET "trade_no_tmp" = "trade_no"::TEXT WHERE "trade_no" IS NOT NULL;
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to copy trade_no to trade_no_tmp: %w", err)
+					}
+					// 3. delete the original trade_no column
+					err = c.DB.Exec(`
+						ALTER TABLE "PaymentRefund" DROP COLUMN "trade_no";
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to drop column trade_no: %w", err)
+					}
+					// 4. rename trade_no_tmp to trade_no
+					err = c.DB.Exec(`
+						ALTER TABLE "PaymentRefund" RENAME COLUMN "trade_no_tmp" TO "trade_no";
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to rename column trade_no_tmp to trade_no: %w", err)
+					}
+				}
+			}
+		}
+	} else {
+		fmt.Println("PaymentRefund.trade_no column does not exist, skipping migration")
+	}
+
+	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique constraint
+	if c.DB.Migrator().HasColumn(&types.PaymentRefund{}, "id") {
+		fmt.Println("check PaymentRefund table for id -> order_id migration")
+
+		// check if the order_id field already exists
+		if !c.DB.Migrator().HasColumn(&types.PaymentRefund{}, "order_id") {
+			fmt.Println("migrate PaymentRefund: add order_id column")
+			err := c.DB.Exec(`
+				ALTER TABLE "PaymentRefund" ADD COLUMN "order_id" TEXT;
+			`).Error
+			if err != nil {
+				return fmt.Errorf("failed to add order_id column: %w", err)
+			}
+
+			// copy the value of the id field to order_id
+			fmt.Println("copy id values to order_id")
+			err = c.DB.Exec(`
+				UPDATE "PaymentRefund" SET "order_id" = "id" WHERE "id" IS NOT NULL;
+			`).Error
+			if err != nil {
+				return fmt.Errorf("failed to copy id to order_id: %w", err)
+			}
+		}
+		// add the rowid column (if the table still has a primary key)
+		fmt.Println("add rowid column if not exists")
+		err := c.DB.Exec(`
+			ALTER TABLE "PaymentRefund" ADD COLUMN IF NOT EXISTS "rowid" UUID DEFAULT gen_random_uuid() NOT NULL;
+		`).Error
+		if err != nil {
+			return fmt.Errorf("failed to add rowid column: %w", err)
+		}
+
+		// Remove the unique constraint of the id field (if it exists) and add rowid as an alternative constraint
+		//（https://go.crdb.dev/issue-v/48026/v23.1）
+		fmt.Println("migrate PaymentRefund primary key from id to rowid")
+		tranDB := c.DB.Begin()
+		// To modify the primary key within the same transaction: delete the old primary key and add a new one
+		fmt.Println("modify primary key from id to rowid")
+		err = tranDB.Exec(`
+			ALTER TABLE "PaymentRefund"
+			DROP CONSTRAINT "PaymentRefund_pkey",
+			ADD CONSTRAINT "PaymentRefund_pkey" PRIMARY KEY ("rowid");
+		`).Error
+		if err != nil {
+			tranDB.Rollback()
+			return fmt.Errorf("failed to modify primary key constraint: %w", err)
+		}
+		err = tranDB.Commit().Error
+		if err != nil {
+			return fmt.Errorf("failed to commit transaction for PaymentRefund migration: %w", err)
+		}
+		// remove the id not null constraint
+		fmt.Println("drop not null constraint on id column")
+		err = c.DB.Exec(`
+			ALTER TABLE "PaymentRefund" ALTER COLUMN "id" DROP NOT NULL;
+		`).Error
+		if err != nil {
+			return fmt.Errorf("failed to drop not null constraint on id: %w", err)
+		}
+		fmt.Println("PaymentRefund migration completed: id -> order_id with uniqueness removed")
+	}
+
 	// TODO: remove this after migration
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, `activityType`) {
 		fmt.Println("add column activityType")
