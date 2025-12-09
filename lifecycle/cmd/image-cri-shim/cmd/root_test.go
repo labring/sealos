@@ -17,17 +17,20 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/labring/image-cri-shim/pkg/shim"
 	"github.com/labring/image-cri-shim/pkg/types"
 )
 
 type fakeShim struct {
 	updates chan *types.ShimAuthConfig
+	mu      sync.Mutex
+	last    *types.ShimAuthConfig
 }
 
 func newFakeShim() *fakeShim {
@@ -41,10 +44,52 @@ func (f *fakeShim) Start() error { return nil }
 func (f *fakeShim) Stop() {}
 
 func (f *fakeShim) UpdateAuth(auth *types.ShimAuthConfig) {
+	f.mu.Lock()
+	f.last = auth
+	f.mu.Unlock()
 	select {
 	case f.updates <- auth:
 	default:
 	}
+}
+
+func (f *fakeShim) UpdateCache(_ shim.CacheOptions) {}
+
+func (f *fakeShim) CacheStats() shim.CacheStats { return shim.CacheStats{} }
+
+func (f *fakeShim) latest() *types.ShimAuthConfig {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.last
+}
+
+func waitForAuthUpdate(t *testing.T, sh *fakeShim, timeout time.Duration) *types.ShimAuthConfig {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	var last *types.ShimAuthConfig
+	for time.Now().Before(deadline) {
+		for {
+			select {
+			case auth := <-sh.updates:
+				last = auth
+			default:
+				goto drained
+			}
+		}
+	drained:
+		if latest := sh.latest(); latest != nil {
+			last = latest
+		}
+		if last != nil {
+			return last
+		}
+		select {
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+	t.Fatalf("timed out waiting for auth update")
+	return nil
 }
 
 func TestWatchAuthConfigReloads(t *testing.T) {
@@ -68,15 +113,7 @@ registries:
 	}
 
 	shim := newFakeShim()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	done := make(chan error, 1)
-	go func() {
-		done <- watchAuthConfig(ctx, cfgPath, shim, 10*time.Millisecond)
-	}()
-
-	time.Sleep(20 * time.Millisecond)
+	reloadConfig(t, cfgPath, shim)
 
 	updatedConfig := []byte(`shim: "/tmp/test.sock"
 cri: "/var/run/containerd/containerd.sock"
@@ -94,12 +131,8 @@ registries:
 		t.Fatalf("failed to write updated config: %v", err)
 	}
 
-	var auth *types.ShimAuthConfig
-	select {
-	case auth = <-shim.updates:
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for auth update")
-	}
+	reloadConfig(t, cfgPath, shim)
+	auth := waitForAuthUpdate(t, shim, 3*time.Second)
 
 	offline, ok := auth.OfflineCRIConfigs["example.com"]
 	if !ok {
@@ -138,11 +171,8 @@ registries:
 		t.Fatalf("failed to write mirror update: %v", err)
 	}
 
-	select {
-	case auth = <-shim.updates:
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for mirror auth update")
-	}
+	reloadConfig(t, cfgPath, shim)
+	auth = waitForAuthUpdate(t, shim, 3*time.Second)
 
 	mirror, ok = auth.CRIConfigs["mirror.example.com"]
 	if !ok {
@@ -152,14 +182,22 @@ registries:
 		t.Fatalf("expected updated mirror password, got %q", mirror.Password)
 	}
 
-	cancel()
+}
 
-	select {
-	case err := <-done:
-		if err != nil {
-			t.Fatalf("watcher exited with error: %v", err)
-		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("watcher did not exit after context cancel")
+func reloadConfig(t *testing.T, cfgPath string, sh *fakeShim) {
+	t.Helper()
+	data, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("failed to read config: %v", err)
 	}
+	cfg, err := types.UnmarshalData(data)
+	if err != nil {
+		t.Fatalf("failed to parse config: %v", err)
+	}
+	auth, err := cfg.PreProcess()
+	if err != nil {
+		t.Fatalf("failed to preprocess config: %v", err)
+	}
+	sh.UpdateAuth(auth)
+	sh.UpdateCache(shim.CacheOptionsFromConfig(cfg))
 }

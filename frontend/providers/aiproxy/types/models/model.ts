@@ -46,4 +46,6 @@ export interface ModelConfigDetail {
   tool_choice?: boolean
   support_formats?: string[]
   support_voices?: string[]
+  coder?: boolean
+  limited_time_free?: boolean
 }

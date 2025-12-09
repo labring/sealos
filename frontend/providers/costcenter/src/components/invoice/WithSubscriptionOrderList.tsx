@@ -103,7 +103,7 @@ export function WithSubscriptionOrderList({
     [effectiveStartTime, effectiveEndTime]
   );
 
-  const { data: allPaymentsData } = useQuery({
+  const { data: allPaymentsData, isLoading } = useQuery({
     queryFn: () =>
       getPaymentList({ ...paymentListQueryBodyBase }).then((res) => res?.data?.payments || []),
     queryKey: ['payment-list', 'subscription', paymentListQueryBodyBase]
@@ -221,6 +221,7 @@ export function WithSubscriptionOrderList({
       onToggleSelectAll={handleToggleSelectAll}
       selectedCount={selectedRows.length}
       selectedAmount={selectedAmount}
+      isLoading={isLoading}
     />
   );
 }

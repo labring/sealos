@@ -52,7 +52,7 @@ export function NoSubscriptionOrderList({
   );
 
   // Fetch recharge billing data with pagination
-  const { data: billingListData } = useQuery(
+  const { data: billingListData, isLoading } = useQuery(
     ['payment-list', 'no-subscription', paymentListQueryBodyBase],
     () => getRechargeBillingList(paymentListQueryBodyBase),
     {
@@ -165,6 +165,7 @@ export function NoSubscriptionOrderList({
       onToggleSelectAll={handleToggleSelectAll}
       selectedCount={selectedRows.length}
       selectedAmount={selectedAmount}
+      isLoading={isLoading}
     />
   );
 }

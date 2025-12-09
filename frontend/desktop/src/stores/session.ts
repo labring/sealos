@@ -11,7 +11,6 @@ type SessionState = {
   session?: Session;
   token: string;
   provider?: OauthProvider;
-  oauth_state: string;
   firstUse: Date | null;
   hasEverLoggedIn: boolean;
   setSession: (ss: Session) => void;
@@ -23,7 +22,6 @@ type SessionState = {
 
   generateState: (action?: OauthAction, domainState?: string) => string;
   compareState: (state: string) => {
-    isSuccess: boolean;
     action: string;
     statePayload: string[];
   };
@@ -48,7 +46,6 @@ const useSessionStore = create<SessionState>()(
       lastSigninProvier: undefined,
       firstUse: null,
       hasEverLoggedIn: false,
-      oauth_state: '',
       token: '',
       lastWorkSpaceId: '',
       showGuestLoginModal: false,
@@ -90,16 +87,11 @@ const useSessionStore = create<SessionState>()(
         } else {
           state = state + '_' + new Date().getTime().toString();
         }
-        set({ oauth_state: state });
         return state;
       },
       compareState: (state: string) => {
-        // fix wechat
-        let isSuccess = decodeURIComponent(state) === decodeURIComponent(get().oauth_state);
         const [action, ...statePayload] = state.split('_');
-        set({ oauth_state: undefined });
         return {
-          isSuccess,
           action,
           statePayload
         };

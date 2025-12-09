@@ -21,6 +21,8 @@ var (
 	ErrNilNs        = errors.New("namespace not found")
 	ErrNoAuth       = errors.New("no permission for this namespace")
 	ErrNoSealosHost = errors.New("unable to get the sealos host")
+	ErrPVCNotFound  = errors.New("pvc not found in namespace")
+	ErrNilPVCUID    = errors.New("pvc uid not provided")
 
 	whiteListKubernetesHosts []string
 )
@@ -101,6 +103,44 @@ func Authenticate(ns, kc string) error {
 		return fmt.Errorf("check resource access error: %v", err)
 	}
 
+	return nil
+}
+
+func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
+	if ns == "" {
+		return ErrNilNs
+	}
+	if len(pvcUIDs) == 0 {
+		return ErrNilPVCUID
+	}
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
+	if err != nil {
+		return fmt.Errorf("kubeconfig failed: %w", err)
+	}
+	if !IsWhitelistKubernetesHost(config.Host) {
+		if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
+			config.Host = k8shost
+		} else {
+			return ErrNoSealosHost
+		}
+	}
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to new client: %w", err)
+	}
+	pvcList, err := client.CoreV1().PersistentVolumeClaims(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list pvcs: %w", err)
+	}
+	pvcUIDSet := make(map[string]struct{}, len(pvcList.Items))
+	for _, pvc := range pvcList.Items {
+		pvcUIDSet["pvc-"+string(pvc.UID)] = struct{}{}
+	}
+	for _, uid := range pvcUIDs {
+		if _, ok := pvcUIDSet[uid]; !ok {
+			return fmt.Errorf("%w: %s", ErrPVCNotFound, uid)
+		}
+	}
 	return nil
 }
 

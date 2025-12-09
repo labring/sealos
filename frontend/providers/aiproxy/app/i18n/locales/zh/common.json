@@ -123,8 +123,11 @@
     "modelVision": "视觉",
     "modelVisionLabel": "该模型支持视觉能力",
     "modelToolChoice": "工具调用",
+    "modelCoder": "代码编写",
     "response": "输出",
     "fixedPrice": "固定价格",
+    "limitedTimeFree": "当前限时免费中",
+    "freeLabel": "免费",
     "perRequest": "/次",
     "imageInputPrice": "图片输入价格",
     "thinkingModeOutputPrice": "思考模式输出价格",
@@ -281,6 +284,7 @@
     "huggingface": "Hugging Face",
     "lingyiwanwu": "零一万物",
     "stepfun": "StepFun",
+    "streamlake": "StreamLake",
     "unknown": "未知"
   },
   "GlobalLogs": {

@@ -408,6 +408,7 @@
   "submit_form_error": "提交表单错误",
   "submit_release_failed": "发版请求提交失败",
   "submit_release_successful": "发版请求提交成功，正在发版中......",
+  "tag_already_exists": "该版本号已存在，请使用不同的版本号",
   "tag_format_error": "版本号格式错误",
   "tag_length_error": "最大不超过 50 个字符",
   "tag_required": "需要填写版本号",

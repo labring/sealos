@@ -5,11 +5,11 @@
   "OBJECT-STORAGE": "Object Storage",
   "CLOUD-VM": "Cloud Server",
   "DB": "Database",
-  "APP": "APP Launchpad",
+  "APP": "App Launchpad",
   "All APP": "ALL APP",
-  "APP-STORE": "APP Store",
+  "APP-STORE": "App Store",
   "DB-BACKUP": "Database Backup",
-  "all_app_type": "ALL APP TYPE",
+  "all_app_type": "All Apps",
   "DEV-BOX": "DevBox",
   "LLM-TOKEN": "AI Proxy"
 }

@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { getCluster } from '@/pages/api/getDBByName';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { NextApiRequest } from 'next';
-import { adaptDBDetail } from '@/utils/adapt';
-import { raw2schema } from './get-database';
 
 export async function restartDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
@@ -26,6 +24,4 @@ export async function restartDatabase(
     type: 'Restart'
   });
   await k8s.applyYamlList([yaml], 'update');
-
-  return { data: raw2schema(adaptDBDetail(body)) };
 }

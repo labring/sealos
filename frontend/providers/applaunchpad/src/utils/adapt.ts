@@ -33,6 +33,7 @@ import {
   maxReplicasKey,
   minReplicasKey,
   PodStatusEnum,
+  AppStatusEnum,
   publicDomainKey,
   gpuNodeSelectorKey,
   gpuResourceKey,
@@ -42,11 +43,46 @@ import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
-import type { EnvResponse } from '@/types';
 import { lauchpadRemarkKey } from '@/constants/account';
 import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+// Calculate app  status
+function calculateAppStatus(
+  appDeploy: V1Deployment | V1StatefulSet
+): (typeof appStatusMap)[keyof typeof appStatusMap] {
+  const isPause = !!appDeploy?.metadata?.annotations?.[pauseKey];
+  if (isPause) {
+    return appStatusMap[AppStatusEnum.pause];
+  }
+
+  const desiredReplicas = appDeploy.spec?.replicas || 0;
+  const availableReplicas = appDeploy.status?.availableReplicas || 0;
+  const readyReplicas = appDeploy.status?.readyReplicas || 0;
+  const replicas = appDeploy.status?.replicas || 0;
+  const updatedReplicas = appDeploy.status?.updatedReplicas || 0;
+  const conditions = appDeploy.status?.conditions || [];
+  const hasErrorCondition = conditions.some(
+    (condition) =>
+      condition.type === 'Progressing' &&
+      condition.status === 'False' &&
+      condition.reason === 'ProgressDeadlineExceeded'
+  );
+  if (hasErrorCondition) {
+    return appStatusMap[AppStatusEnum.error];
+  }
+  if (desiredReplicas === 0) {
+    return appStatusMap[AppStatusEnum.waiting];
+  }
+  if (availableReplicas >= desiredReplicas && readyReplicas >= desiredReplicas) {
+    return appStatusMap[AppStatusEnum.running];
+  }
+  if (availableReplicas > 0 || readyReplicas > 0 || replicas > 0 || updatedReplicas > 0) {
+    return appStatusMap[AppStatusEnum.creating];
+  }
+  return appStatusMap[AppStatusEnum.waiting];
+}
 
 export const getAppSource = (
   app: V1Deployment | V1StatefulSet
@@ -385,7 +421,7 @@ export const adaptAppDetail = async (
     id: appDeploy.metadata?.uid || ``,
     appName: appName,
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    status: appStatusMap.waiting,
+    status: calculateAppStatus(appDeploy),
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
     imageName:
       appDeploy?.metadata?.annotations?.originImageName ||

@@ -59,11 +59,11 @@ export default function Quota() {
 
       <TableLayoutContent>
         <TableLayoutHeadRow>
-          <TableHead className="bg-transparent">{t('common:resource_name')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:chart')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:total')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:used')}</TableHead>
-          <TableHead className="bg-transparent">{t('common:remain')}</TableHead>
+          <TableHead className="w-1/5 bg-transparent">{t('common:resource_name')}</TableHead>
+          <TableHead className="w-1/5 bg-transparent">{t('common:chart')}</TableHead>
+          <TableHead className="w-1/5 bg-transparent">{t('common:total')}</TableHead>
+          <TableHead className="w-1/5 bg-transparent">{t('common:used')}</TableHead>
+          <TableHead className="w-1/5 bg-transparent">{t('common:remain')}</TableHead>
         </TableLayoutHeadRow>
 
         <TableLayoutBody>
@@ -83,7 +83,7 @@ export default function Quota() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Progress value={100 * (item.used / item.limit)} className="h-1" />
+                  <Progress value={100 * (item.used / item.limit)} className="h-1 w-4/5" />
                 </TableCell>
                 <TableCell>
                   <span>{(item.limit / item.scale).toFixed(2)}</span>

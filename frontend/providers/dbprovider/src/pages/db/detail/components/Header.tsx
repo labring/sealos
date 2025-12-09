@@ -317,7 +317,7 @@ const Header = ({
 
       <Box flex={1} />
 
-      <Flex width={'471px'} height={'40px'} gap={'12px'} alignItems={'center'}>
+      <Flex height={'40px'} gap={'12px'} alignItems={'center'}>
         <Button
           display={'flex'}
           width={'40px'}
@@ -339,7 +339,6 @@ const Header = ({
         >
           <Trash2 size={16} color="#71717A" />
         </Button>
-
         <Flex>
           {db.status.value === 'Stopped' ? (
             <Button
@@ -350,14 +349,13 @@ const Header = ({
               justifyContent={'center'}
               alignItems={'center'}
               gap={'8px'}
-              borderRight={'1px solid #E4E4E7'}
               background={'#FFF'}
               color={'#18181B'}
               fontFamily={'Geist, sans-serif'}
               fontSize={'14px'}
               fontWeight={'500'}
               lineHeight={'20px'}
-              borderRadius={'8px 0 0 8px'}
+              borderRadius={'8px'}
               isLoading={loading}
               _hover={{
                 color: '#FFF',

@@ -133,6 +133,7 @@ export interface DBDetailType extends DBEditType {
   totalCpu: number;
   totalMemory: number;
   totalStorage: number;
+  rawDbType: DBType;
 }
 
 export interface DBConditionItemType {

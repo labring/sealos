@@ -30,7 +30,7 @@
   "subscribe": "Subscribe",
   "choose_your_workspace_plan": "Choose Your Workspace Plan",
   "no_plans_available": "No plans available",
-  "still_want_to_charge_by_volume": "Still want to charge by volume?",
+  "still_want_to_charge_by_volume": "Still want to pay based on usage?",
   "workspace_name": "Workspace Name",
   "order_summary": "Order Summary",
   "total_billed_monthly": "Total Billed Monthly",
@@ -340,5 +340,6 @@
   "sealos_coin_text": "Sealos Coin icon",
   "sealos_coin_alt": "A coin icon that indicates some type of currency.",
   "recharge_doubled": "Doubled!",
-  "recharge_bonus": "Bonus!"
+  "recharge_bonus": "Bonus!",
+  "loading_data": "Loading data..."
 }

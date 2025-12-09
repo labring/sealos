@@ -108,7 +108,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     const handleInit = async () => {
       const { query } = router;
       const is_login = isUserLogin();
-      const whitelistApps = ['system-template', 'system-fastdeploy'];
 
       if (!is_login) {
         // check if user has logged in before
@@ -120,14 +119,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         // Invited new user
         if (query?.uid && typeof query?.uid === 'string') {
           setInviterId(query.uid);
-        }
-        // sealos_inside=true internal call
-        if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
-          sessionStorage.setItem(
-            'accessTemplatesNoLogin',
-            `https://template.${sealos_cloud_domain}/deploy?${appQuery}`
-          );
-          return;
         }
 
         // save autolaunch info (for guest and logged in user)
@@ -278,9 +269,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           }
 
           if (!appkey) return;
-          if (appkey === 'system-fastdeploy') {
-            appkey = 'system-template';
-          }
           if (appkey === 'system-brain' && appRoute === '/trial') {
             appRoute = '/';
             // Remove sessionId from appQuery but keep other parameters

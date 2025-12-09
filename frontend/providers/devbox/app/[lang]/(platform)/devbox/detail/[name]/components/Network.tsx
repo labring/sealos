@@ -221,7 +221,7 @@ const Network = () => {
   ];
 
   const handleManage = () => {
-    router.push(`/devbox/create?name=${devboxDetail?.name}&scrollTo=network`);
+    router.push(`/devbox/create?name=${devboxDetail?.name}&from=detail&scrollTo=network`);
   };
 
   return (
