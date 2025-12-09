@@ -10,8 +10,7 @@
   
 # 🚀 Develop, deploy, and scale in one seamless cloud platform ☁️
 
-Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel, designed for a seamless development lifecycle.
-Spin up full-stack environments in seconds, effortlessly push releases, and scale production seamlessly.
+Sealos['siːləs] is an AI-native Cloud Operating System built on Kubernetes that unifies the entire application lifecycle, from development in cloud IDEs to production deployment and management. It is perfect for building and scaling modern AI applications, SaaS platforms, managed databases (MySQL, PostgreSQL, Redis, MongoDB) and complex microservice architectures.
 
 </div>
 
@@ -53,10 +52,7 @@ Spin up full-stack environments in seconds, effortlessly push releases, and scal
 
 <div align="center">
 
-| Global | China |
-| ------------- | ------------- |
-| Default: US-West  | Default: Hangzhou  |
-| [![Deploy on Sealos][deploy-badge]][deploy-link]  | [![Deploy on Sealos - China][deploy-badge]][deploy-link-cn] |
+[![Deploy on Sealos][deploy-badge]][deploy-link]
 
 
 
@@ -118,15 +114,12 @@ https://github.com/user-attachments/assets/cc8599da-6c3e-4503-bb53-55e13bf61ef6
 
 ## 💡 Core features
 
-- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the templates marketplace.
-- 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
-- 🌥️ **Cloud Universality**: Equally effective in both public and private cloud, enabling a seamless transition of traditional applications to the cloud.
-
-## 🌟 Advantages
-
-- 💰 **Efficient & Economical**: Pay solely for the containers you utilize; automatic scaling prevents resource squandering and substantially reduces costs.
-- 🌐 **High Universality & Ease of Use**: Concentrate on your core business activities without worrying about system complexities; negligible learning costs involved.
-- 🛡️ **Agility & Security**: The distinctive multi-tenancy sharing model ensures both effective resource segmentation and collaboration, all under a secure framework.
+- Integrated Cloud IDEs: Zero-setup, collaborative development in the cloud. Eliminate local environment inconsistencies with DevBox.
+- Managed Databases & Storage: Production-ready PostgreSQL, MySQL, MongoDB, Redis, and built-in S3-compatible Object Storage.
+- Extensive App Store: Deploy complex applications with a single click. No YAML configuration, no container orchestration complexity - just point, click, and deploy.
+- Full Kubernetes Power: Access the full power of Kubernetes without the complexity. K8s-native from day one.
+- Enterprise Multi-Tenancy: Workspace-based isolation with granular RBAC and per-workspace resource quotas for secure collaboration.
+- AI-Native Infrastructure: Build and scale anything with AI simply by describing them.
 
 
 ## 🏘️ Community & support
@@ -153,9 +146,8 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 - [FastGPT](https://github.com/labring/FastGPT) is a free, open-source, and powerful AI knowledge base platform, offers out-of-the-box data processing, model invocation, RAG retrieval, and visual AI workflows. Easily build complex LLM applications.
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
-[deploy-badge]: https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg
+[deploy-badge]: https://sealos.io/Deploy-on-Sealos.svg
 [deploy-link]: https://os.sealos.io
-[deploy-link-cn]: https://cloud.sealos.run
 
 ## 📄 License
 
