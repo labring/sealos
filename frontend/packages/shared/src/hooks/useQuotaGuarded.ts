@@ -32,7 +32,15 @@ export function useQuotaGuarded(options: QuotaGuardedOptions, callback: () => vo
   const quotaStore = useQuotaStore();
   const globalConfig = quotaStore.quotaGuardedConfig;
 
+  // During SSR/pre-rendering, skip quota checking and directly execute callback
+  const isSSR = typeof window === 'undefined';
+
   if (!globalConfig) {
+    if (isSSR) {
+      return () => {
+        callback();
+      };
+    }
     throw new Error(
       'useQuotaGuarded: No config provided. Please call createQuotaGuarded() during app initialization (e.g., in _app.tsx or layout.tsx).'
     );
@@ -41,6 +49,13 @@ export function useQuotaGuarded(options: QuotaGuardedOptions, callback: () => vo
   const { getSession } = globalConfig;
 
   return () => {
+    // Skip quota checking during SSR/pre-rendering
+    // The function will be called on the client side where quota checking is meaningful
+    if (typeof window === 'undefined') {
+      callback();
+      return;
+    }
+
     const session = getSession();
     const requirements = {
       ...options.requirements,
