@@ -119,6 +119,7 @@ var (
 	APPSECRET                         string
 	GlobalCockroachURI                string
 	LocalCockroachURI                 string
+	APIKey                            string
 	DatabaseStatusMessageIDMap        = make(map[string]string)
 	DatabaseDiskMessageIDMap          = make(map[string]string)
 	DatabaseCPUMessageIDMap           = make(map[string]string)
@@ -139,6 +140,7 @@ func GetENV() error {
 	LOCALREGION = getEnvWithCheck("LOCALREGION", &missingEnvVars)
 	GlobalCockroachURI = getEnvWithCheck("GlobalCockroachURI", &missingEnvVars)
 	LocalCockroachURI = getEnvWithCheck("LocalCockroachURI", &missingEnvVars)
+	APIKey = getEnvWithCheck("APIKey", &missingEnvVars)
 	DatabaseMonitor, _ = strconv.ParseBool(getEnvWithCheck("DatabaseMonitor", &missingEnvVars))
 	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
@@ -179,7 +181,7 @@ func GetENV() error {
 		"bja",
 		"hzh",
 		"gzg",
-		"top",
+		"test",
 	}, ClusterRegionMap, &missingEnvVars)
 
 	if len(missingEnvVars) > 0 {
