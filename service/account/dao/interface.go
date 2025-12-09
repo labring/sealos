@@ -3066,7 +3066,7 @@ func (g *Cockroach) RefundAmount(
 		// 1. 查询原 payment 并设置状态为已退款
 		var payment types.Payment
 		if err := tx.
-			Where("id = ? ", ref.ID).
+			Where("id = ? ", ref.OrderID).
 			First(&payment).Error; err != nil {
 			return fmt.Errorf("payment not found: %w", err)
 		}
@@ -3086,7 +3086,7 @@ func (g *Cockroach) RefundAmount(
 		// 2. 创建一条 payment_refund 记录
 		refund := types.PaymentRefund{
 			TradeNo:      payment.TradeNO,  // 自查询
-			ID:           payment.ID,       // 外键 与payment关联  前端传入
+			OrderID:      payment.ID,       // 外键 与payment关联  前端传入
 			Method:       payment.Method,   // 前端传入
 			RefundNo:     ref.RefundNo,     // 生成传入
 			RefundAmount: ref.RefundAmount, // 前端传入
