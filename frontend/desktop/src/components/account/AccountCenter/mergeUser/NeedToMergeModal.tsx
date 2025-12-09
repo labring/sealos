@@ -60,13 +60,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
     setIsOpen(!![MergeUserStatus.CONFLICT, MergeUserStatus.CANMERGE].includes(mergeUserStatus));
   }, [mergeUserStatus]);
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      isCentered
-      closeOnOverlayClick={true}
-      closeOnEsc={true}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent
         borderRadius={'10px'}

@@ -389,6 +389,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
                   <Text mb={'12px'}>{t('common:merge_account_tips2')}</Text>
                   <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
                     <Button
+                      cursor={'pointer'}
                       onClick={handleBackToBinding}
                       variant={'unstyled'}
                       border={'1px'}
@@ -401,6 +402,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
                       {t('common:go_back' as any)}
                     </Button>
                     <Button
+                      cursor={'pointer'}
                       onClick={handleMerge}
                       variant={'unstyled'}
                       bgColor={'grayModern.900'}

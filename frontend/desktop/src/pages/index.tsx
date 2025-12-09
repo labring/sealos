@@ -93,24 +93,20 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       return;
     }
 
-    // Check if it's domestic version (cn)
     const isDomesticVersion = layoutConfig.version === 'cn';
     if (!isDomesticVersion) {
       return;
     }
 
-    // Check if SMS login is enabled
     const isSmsEnabled = authConfig.idp?.sms?.enabled && authConfig.idp?.sms?.ali?.enabled;
     if (!isSmsEnabled) {
       return;
     }
 
-    // Check if user has phone binding
     const hasPhoneBinding = userInfo.oauthProvider?.some(
       (provider) => provider.providerType === 'PHONE'
     );
 
-    // Show modal if domestic version, SMS enabled, and no phone binding
     if (!hasPhoneBinding) {
       onPhoneBindingModalOpen();
     }
