@@ -10,8 +10,6 @@ import (
 	"github.com/lib/pq"
 )
 
-const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
-
 type WorkspaceSubscription struct {
 	ID            uuid.UUID              `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 订阅 ID
 	PlanName      string                 `gorm:"type:varchar(50);column:plan_name"`                        // 计划名称
