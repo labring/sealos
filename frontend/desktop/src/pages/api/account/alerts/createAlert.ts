@@ -9,37 +9,22 @@ import type { NextApiRequest, NextApiResponse } from 'next';
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log('[createAlert] Request received:', {
-      method: req.method,
-      body: req.body,
-      headers: { authorization: req.headers.authorization ? 'present' : 'missing' }
-    });
-
     if (req.method !== 'POST') {
       return jsonRes(res, { code: 405, message: 'Method not allowed' });
     }
 
     const session = await verifyAccessToken(req.headers);
     if (!session) {
-      console.log('[createAlert] Unauthorized: session verification failed');
       return jsonRes(res, {
         code: 401,
         message: 'Unauthorized'
       });
     }
 
-    console.log('[createAlert] Session verified:', {
-      userUid: session.userUid,
-      userId: session.userId
-    });
-
     const body: CreateAlertRequest = req.body;
     const { providerType, providerId, code } = body;
 
-    console.log('[createAlert] Request body:', { providerType, providerId });
-
     if (!providerType || !providerId || !code) {
-      console.log('[createAlert] Validation failed: missing required fields');
       return jsonRes(res, {
         code: 400,
         message: 'Missing required fields: providerType, providerId, code'
@@ -53,10 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       code,
       smsType
     )(res, async () => {
-      // Verification code is valid, proceed to create alert account
       const billingUrl = global.AppConfig.desktop.auth.billingUrl;
       if (!billingUrl) {
-        console.log('[createAlert] Error: Billing service not configured');
         return jsonRes(res, { code: 500, message: 'Billing service not configured' });
       }
 
@@ -71,12 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         providerId
       };
 
-      console.log('[createAlert] Calling billing service:', {
-        url: `${billingUrl}/account/v1alpha1/user-alert-notification-account/create`,
-        body: requestBody,
-        hasToken: !!billingToken
-      });
-
       const response = await fetch(
         `${billingUrl}/account/v1alpha1/user-alert-notification-account/create`,
         {
@@ -89,22 +66,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       );
 
-      console.log('[createAlert] Billing service response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.log('[createAlert] Billing service error:', errorData);
         throw new Error(
           errorData.error || `Failed to create alert notification account: ${response.statusText}`
         );
       }
 
       const result = await response.json();
-      console.log('[createAlert] Billing service success:', result);
 
       jsonRes<CreateAlertResponse>(res, {
         data: result.data,
@@ -112,7 +81,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     });
   } catch (error) {
-    console.error('[createAlert] Error:', error);
     jsonRes(res, {
       code: 500,
       message:
