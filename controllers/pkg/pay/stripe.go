@@ -15,18 +15,16 @@
 package pay
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	session2 "github.com/stripe/stripe-go/v74/checkout/session"
-
 	"github.com/google/uuid"
-
-	"github.com/stripe/stripe-go/v74/refund"
-
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/stripe/stripe-go/v74"
+	session2 "github.com/stripe/stripe-go/v74/checkout/session"
+	"github.com/stripe/stripe-go/v74/refund"
 )
 
 var DefaultURL = "https://" + env.GetEnvWithDefault("DOMAIN", DefaultDomain)
@@ -106,14 +104,18 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 
 	// Check if Stripe API key is configured
 	if stripe.Key == "" {
-		return "", "", fmt.Errorf("stripe API key not configured")
+		return "", "", errors.New("stripe API key not configured")
 	}
 
 	params := &stripe.CheckoutSessionParams{}
 
 	session, err := session2.Get(opt.TradeNo, params)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to retrieve session for trade no %s: %w", opt.TradeNo, err)
+		return "", "", fmt.Errorf(
+			"failed to retrieve session for trade no %s: %w",
+			opt.TradeNo,
+			err,
+		)
 	}
 
 	if session.PaymentStatus != "paid" {
@@ -121,7 +123,10 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 	}
 
 	if session.PaymentIntent == nil || session.PaymentIntent.ID == "" {
-		return "", "", fmt.Errorf("failed to refund: payment intent ID is nil for session %s", opt.TradeNo)
+		return "", "", fmt.Errorf(
+			"failed to refund: payment intent ID is nil for session %s",
+			opt.TradeNo,
+		)
 	}
 
 	// Build refund parameters with comprehensive metadata
@@ -140,7 +145,7 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 		// Validate that the amount is reasonable (convert to cents for Stripe)
 		refundParams.Amount = stripe.Int64(opt.Amount / 10000) // Convert to cents
 	} else {
-		return "", "", fmt.Errorf("refund amount must be greater than zero")
+		return "", "", errors.New("refund amount must be greater than zero")
 	}
 
 	// Create the refund
@@ -151,7 +156,7 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 
 	// Validate the refund result
 	if refundResult == nil {
-		return "", "", fmt.Errorf("refund result is nil")
+		return "", "", errors.New("refund result is nil")
 	}
 
 	// Check refund status and provide appropriate feedback
@@ -159,23 +164,29 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 	case stripe.RefundStatusSucceeded:
 		return refundResult.ID, refundResult.ID, nil
 	case stripe.RefundStatusPending:
-		return refundResult.ID, refundResult.ID, fmt.Errorf("refund pending: refund ID %s is being processed", refundResult.ID)
+		return refundResult.ID, refundResult.ID, fmt.Errorf(
+			"refund pending: refund ID %s is being processed",
+			refundResult.ID,
+		)
 	case stripe.RefundStatusFailed:
 		return "", "", fmt.Errorf("refund failed: %s", refundResult.FailureReason)
 	case stripe.RefundStatusCanceled:
 		return "", "", fmt.Errorf("refund canceled: refund ID %s was canceled", refundResult.ID)
 	default:
-		return refundResult.ID, refundResult.ID, fmt.Errorf("refund created with unknown status: %s", refundResult.Status)
+		return refundResult.ID, refundResult.ID, fmt.Errorf(
+			"refund created with unknown status: %s",
+			refundResult.Status,
+		)
 	}
 }
 
 // validateRefundOption validates the refund request parameters
 func validateRefundOption(opt RefundOption) error {
 	if opt.TradeNo == "" {
-		return fmt.Errorf("trade_no (charge ID) is required")
+		return errors.New("trade_no (charge ID) is required")
 	}
 	if opt.Amount <= 0 {
-		return fmt.Errorf("refund amount cannot be negative")
+		return errors.New("refund amount cannot be negative")
 	}
 	return nil
 }

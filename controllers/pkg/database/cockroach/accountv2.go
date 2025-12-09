@@ -1905,33 +1905,7 @@ func (c *Cockroach) transferAccount(
 	return err
 }
 
-func (c *Cockroach) InitTables() error {
-	enumTypes := []string{
-		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION', 'DELETED')`,
-		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed', 'deleted')`,
-		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'unpaid', 'paid', 'no_need', 'failed', 'expired', 'canceled')`,
-		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
-		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed', 'canceled')`,
-	}
-	// subscription_pay_status 如果不存在canceled 状态，则添加
-	enumTypes = append(
-		enumTypes,
-		`ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'canceled'`,
-	)
-	enumTypes = append(
-		enumTypes,
-		`ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'unpaid'`,
-	)
-	enumTypes = append(
-		enumTypes,
-		`ALTER TYPE subscription_transaction_status ADD VALUE IF NOT EXISTS 'canceled'`,
-	)
-	for _, query := range enumTypes {
-		err := c.DB.Exec(query).Error
-		if err != nil {
-			return fmt.Errorf("failed to create exec : %w", err)
-		}
-	}
+func (c *Cockroach) createTables() error {
 	err := CreateTableIfNotExist(
 		c.DB,
 		types.Account{},
@@ -1972,54 +1946,57 @@ func (c *Cockroach) InitTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to create table in local db: %w", err)
 	}
-	err = c.DB.Exec(`
+	return nil
+}
+
+func (c *Cockroach) InitTables() error {
+	enumTypes := []string{
+		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION', 'DELETED')`,
+		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed', 'deleted')`,
+		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'unpaid', 'paid', 'no_need', 'failed', 'expired', 'canceled')`,
+		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
+		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed', 'canceled')`,
+	}
+	// subscription_pay_status 如果不存在canceled 状态，则添加
+	enumTypes = append(
+		enumTypes,
+		`ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'canceled'`,
+	)
+	enumTypes = append(
+		enumTypes,
+		`ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'unpaid'`,
+	)
+	enumTypes = append(
+		enumTypes,
+		`ALTER TYPE subscription_transaction_status ADD VALUE IF NOT EXISTS 'canceled'`,
+	)
+	for _, query := range enumTypes {
+		err := c.DB.Exec(query).Error
+		if err != nil {
+			return fmt.Errorf("failed to create exec : %w", err)
+		}
+	}
+	if err := c.createTables(); err != nil {
+		return err
+	}
+	err := c.DB.Exec(`
 		CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);`).Error
 	if err != nil {
 		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %w", err)
 	}
 
-	// Update the PaymentRefund table. If trade_no is of uuid type, update it to string type:
-	if c.DB.Migrator().HasColumn(&types.PaymentRefund{}, "trade_no") {
-		columnTypes, err := c.DB.Migrator().ColumnTypes(&types.PaymentRefund{})
-		if err != nil {
-			return fmt.Errorf("failed to get column type of trade_no: %w", err)
-		}
-		for _, columnType := range columnTypes {
-			if columnType.Name() == "trade_no" {
-				if strings.ToLower(columnType.DatabaseTypeName()) == "uuid" {
-					// 1. add the temporary column trade_no_tmp
-					err := c.DB.Exec(`
-						ALTER TABLE "PaymentRefund" ADD COLUMN IF NOT EXISTS "trade_no_tmp" TEXT;
-					`).Error
-					if err != nil {
-						return fmt.Errorf("failed to add temporary column trade_no_tmp: %w", err)
-					}
-					// 2. copy the value of trade_no to trade_no_tmp
-					err = c.DB.Exec(`
-						UPDATE "PaymentRefund" SET "trade_no_tmp" = "trade_no"::TEXT WHERE "trade_no" IS NOT NULL;
-					`).Error
-					if err != nil {
-						return fmt.Errorf("failed to copy trade_no to trade_no_tmp: %w", err)
-					}
-					// 3. delete the original trade_no column
-					err = c.DB.Exec(`
-						ALTER TABLE "PaymentRefund" DROP COLUMN "trade_no";
-					`).Error
-					if err != nil {
-						return fmt.Errorf("failed to drop column trade_no: %w", err)
-					}
-					// 4. rename trade_no_tmp to trade_no
-					err = c.DB.Exec(`
-						ALTER TABLE "PaymentRefund" RENAME COLUMN "trade_no_tmp" TO "trade_no";
-					`).Error
-					if err != nil {
-						return fmt.Errorf("failed to rename column trade_no_tmp to trade_no: %w", err)
-					}
-				}
-			}
-		}
-	} else {
-		fmt.Println("PaymentRefund.trade_no column does not exist, skipping migration")
+	// TODO: remove this after migration
+	if err := c.migrateColumns(); err != nil {
+		return fmt.Errorf("failed to migrate columns: %w", err)
+	}
+	return nil
+}
+
+func (c *Cockroach) migratorPaymentRefundTable() error {
+	// If the id field does not exist or exists but is not the primary key and is not not null, skip the migration
+	if !c.DB.Migrator().HasConstraint(&types.PaymentRefund{}, "PaymentRefund_pkey") {
+		fmt.Println("PaymentRefund.id is not primary key, skipping migration")
+		return nil
 	}
 
 	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique constraint
@@ -2055,7 +2032,7 @@ func (c *Cockroach) InitTables() error {
 		}
 
 		// Remove the unique constraint of the id field (if it exists) and add rowid as an alternative constraint
-		//（https://go.crdb.dev/issue-v/48026/v23.1）
+		// （https://go.crdb.dev/issue-v/48026/v23.1）
 		fmt.Println("migrate PaymentRefund primary key from id to rowid")
 		tranDB := c.DB.Begin()
 		// To modify the primary key within the same transaction: delete the old primary key and add a new one
@@ -2083,8 +2060,71 @@ func (c *Cockroach) InitTables() error {
 		}
 		fmt.Println("PaymentRefund migration completed: id -> order_id with uniqueness removed")
 	}
+	return nil
+}
 
-	// TODO: remove this after migration
+func (c *Cockroach) migrateColumns() error {
+	// Update the PaymentRefund table. If trade_no is of uuid type, update it to string type:
+	needMigratorPaymentRefundID := false
+	if c.DB.Migrator().HasColumn(&types.PaymentRefund{}, "trade_no") {
+		columnTypes, err := c.DB.Migrator().ColumnTypes(&types.PaymentRefund{})
+		if err != nil {
+			return fmt.Errorf("failed to get column type of trade_no: %w", err)
+		}
+		for _, columnType := range columnTypes {
+			if columnType.Name() == "trade_no" {
+				if strings.ToLower(columnType.DatabaseTypeName()) == "uuid" {
+					// 1. add the temporary column trade_no_tmp
+					err := c.DB.Exec(`
+						ALTER TABLE "PaymentRefund" ADD COLUMN IF NOT EXISTS "trade_no_tmp" TEXT;
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to add temporary column trade_no_tmp: %w", err)
+					}
+					// 2. copy the value of trade_no to trade_no_tmp
+					err = c.DB.Exec(`
+						UPDATE "PaymentRefund" SET "trade_no_tmp" = "trade_no"::TEXT WHERE "trade_no" IS NOT NULL;
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to copy trade_no to trade_no_tmp: %w", err)
+					}
+					// 3. delete the original trade_no column
+					err = c.DB.Exec(`
+						ALTER TABLE "PaymentRefund" DROP COLUMN "trade_no";
+					`).Error
+					if err != nil {
+						return fmt.Errorf("failed to drop column trade_no: %w", err)
+					}
+					// 4. rename trade_no_tmp to trade_no
+					err = c.DB.Exec(`
+						ALTER TABLE "PaymentRefund" RENAME COLUMN "trade_no_tmp" TO "trade_no";
+					`).Error
+					if err != nil {
+						return fmt.Errorf(
+							"failed to rename column trade_no_tmp to trade_no: %w",
+							err,
+						)
+					}
+				}
+			}
+			if columnType.Name() == "id" {
+				isPrimaryKey, _ := columnType.PrimaryKey()
+				isNullable, _ := columnType.Nullable()
+				if isPrimaryKey || !isNullable {
+					needMigratorPaymentRefundID = true
+				}
+			}
+		}
+	} else {
+		fmt.Println("PaymentRefund.trade_no column does not exist, skipping migration")
+	}
+
+	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique constraint
+	if needMigratorPaymentRefundID {
+		if err := c.migratorPaymentRefundTable(); err != nil {
+			return fmt.Errorf("failed to migrate PaymentRefund table: %w", err)
+		}
+	}
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, `activityType`) {
 		fmt.Println("add column activityType")
 		tableName := types.Payment{}.TableName()
@@ -2159,10 +2199,40 @@ func (c *Cockroach) InitTables() error {
 			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %w", err)
 		}
 	}
+	// TODO Processing encryptBalance column，to be deleted in the future
+	if c.DB.Migrator().HasColumn(&types.Account{}, "encryptBalance") {
+		// 将现有 NULL 值更新为 ''
+		// fmt.Println("updating NULL values to '' for encryptBalance")
+		// err := c.Exec(`UPDATE "Account" SET "encryptBalance" = '' WHERE "encryptBalance" IS NULL`).Error
+		// if err != nil {
+		//	return fmt.Errorf("failed to update NULL values for encryptBalance: %v", err)
+		//}
 
-	// 设置默认值 ''
-	if err := migrateColumns(c.DB); err != nil {
-		return fmt.Errorf("failed to migrate columns: %w", err)
+		// 设置默认值 ''
+		fmt.Println("setting default value '' for encryptBalance")
+		err := c.DB.Exec(`ALTER TABLE "Account" ALTER COLUMN "encryptBalance" SET DEFAULT ''`).Error
+		if err != nil {
+			return fmt.Errorf("failed to set default value for encryptBalance: %w", err)
+		}
+	}
+
+	// 处理 encryptDeductionBalance 列
+	if c.DB.Migrator().HasColumn(&types.Account{}, "encryptDeductionBalance") {
+		//// 将现有 NULL 值更新为 ''
+		// fmt.Println("updating NULL values to '' for encryptDeductionBalance")
+		// err := c.Exec(`UPDATE "Account" SET "encryptDeductionBalance" = '' WHERE "encryptDeductionBalance" IS NULL`).Error
+		// if err != nil {
+		//	return fmt.Errorf("failed to update NULL values for encryptDeductionBalance: %v", err)
+		//}
+
+		// 设置默认值 ''
+		fmt.Println("setting default value '' for encryptDeductionBalance")
+		err := c.DB.Exec(
+			`ALTER TABLE "Account" ALTER COLUMN "encryptDeductionBalance" SET DEFAULT ''`,
+		).Error
+		if err != nil {
+			return fmt.Errorf("failed to set default value for encryptDeductionBalance: %w", err)
+		}
 	}
 	if !c.DB.Migrator().HasColumn(&types.Credits{}, `updated_at`) {
 		fmt.Println("add table `Credits` column updated_at")
@@ -2244,47 +2314,6 @@ func (c *Cockroach) InitTables() error {
 			return fmt.Errorf("failed to add payment.status column: %w", err)
 		}
 	}
-
-	return nil
-}
-
-func migrateColumns(c *gorm.DB) error {
-	// TODO Processing encryptBalance column，to be deleted in the future
-	if c.Migrator().HasColumn(&types.Account{}, "encryptBalance") {
-		// 将现有 NULL 值更新为 ''
-		// fmt.Println("updating NULL values to '' for encryptBalance")
-		// err := c.Exec(`UPDATE "Account" SET "encryptBalance" = '' WHERE "encryptBalance" IS NULL`).Error
-		// if err != nil {
-		//	return fmt.Errorf("failed to update NULL values for encryptBalance: %v", err)
-		//}
-
-		// 设置默认值 ''
-		fmt.Println("setting default value '' for encryptBalance")
-		err := c.Exec(`ALTER TABLE "Account" ALTER COLUMN "encryptBalance" SET DEFAULT ''`).Error
-		if err != nil {
-			return fmt.Errorf("failed to set default value for encryptBalance: %w", err)
-		}
-	}
-
-	// 处理 encryptDeductionBalance 列
-	if c.Migrator().HasColumn(&types.Account{}, "encryptDeductionBalance") {
-		//// 将现有 NULL 值更新为 ''
-		// fmt.Println("updating NULL values to '' for encryptDeductionBalance")
-		// err := c.Exec(`UPDATE "Account" SET "encryptDeductionBalance" = '' WHERE "encryptDeductionBalance" IS NULL`).Error
-		// if err != nil {
-		//	return fmt.Errorf("failed to update NULL values for encryptDeductionBalance: %v", err)
-		//}
-
-		// 设置默认值 ''
-		fmt.Println("setting default value '' for encryptDeductionBalance")
-		err := c.Exec(
-			`ALTER TABLE "Account" ALTER COLUMN "encryptDeductionBalance" SET DEFAULT ''`,
-		).Error
-		if err != nil {
-			return fmt.Errorf("failed to set default value for encryptDeductionBalance: %w", err)
-		}
-	}
-
 	return nil
 }
 
