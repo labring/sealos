@@ -24,22 +24,12 @@ import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
 function NeedToMerge({ ...props }: BoxProps & {}) {
-  const {
-    mergeUserStatus,
-    mergeUserData,
-    isForceMerge,
-    setMergeUserStatus,
-    setMergeUserData,
-    setForceMerge
-  } = useCallbackStore();
+  const { mergeUserStatus, mergeUserData, setMergeUserStatus, setMergeUserData } =
+    useCallbackStore();
   const [isOpen, setIsOpen] = useState(false);
 
   const onClose = () => {
-    // Only allow close if not forced
-    if (!isForceMerge) {
-      setMergeUserStatus(MergeUserStatus.IDLE);
-      setForceMerge(false);
-    }
+    setMergeUserStatus(MergeUserStatus.IDLE);
   };
 
   const { t } = useTranslation();
@@ -64,7 +54,6 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
     onSettled() {
       setMergeUserData();
       setMergeUserStatus(MergeUserStatus.IDLE);
-      setForceMerge(false);
     }
   });
   useEffect(() => {
@@ -75,8 +64,8 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
       isOpen={isOpen}
       onClose={onClose}
       isCentered
-      closeOnOverlayClick={!isForceMerge}
-      closeOnEsc={!isForceMerge}
+      closeOnOverlayClick={true}
+      closeOnEsc={true}
     >
       <ModalOverlay />
       <ModalContent
@@ -85,7 +74,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
         bgColor={'#FFF'}
         backdropFilter="blur(150px)"
       >
-        {!isForceMerge && <ModalCloseButton top={'8px'} right={'20px'} />}
+        <ModalCloseButton top={'8px'} right={'20px'} />
         <ModalHeader
           px={'20px'}
           py={'12px'}
@@ -113,10 +102,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
               {mergeUserStatus === MergeUserStatus.CONFLICT ? (
                 <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
                   <Button
-                    onClick={() => {
-                      setMergeUserStatus(MergeUserStatus.IDLE);
-                      setForceMerge(false);
-                    }}
+                    onClick={onClose}
                     variant={'unstyled'}
                     border={'1px'}
                     borderColor={'grayModern.250'}
@@ -130,20 +116,18 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
                 </HStack>
               ) : (
                 <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
-                  {!isForceMerge && (
-                    <Button
-                      onClick={onClose}
-                      variant={'unstyled'}
-                      border={'1px'}
-                      borderColor={'grayModern.250'}
-                      p={'8px 19px'}
-                      fontSize={'12px'}
-                      fontWeight={'500'}
-                      color={'grayModern.600'}
-                    >
-                      {t('common:cancel')}
-                    </Button>
-                  )}
+                  <Button
+                    onClick={onClose}
+                    variant={'unstyled'}
+                    border={'1px'}
+                    borderColor={'grayModern.250'}
+                    p={'8px 19px'}
+                    fontSize={'12px'}
+                    fontWeight={'500'}
+                    color={'grayModern.600'}
+                  >
+                    {t('common:cancel')}
+                  </Button>
                   <Button
                     onClick={() => {
                       if (!mergeUserData)

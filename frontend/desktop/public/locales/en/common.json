@@ -74,6 +74,7 @@
   "bound": "Bound",
   "business_license": "business license",
   "cancel": "Cancel",
+  "go_back": "Go Back",
   "captcha_init_failed": "Failed to initialize CAPTCHA",
   "change": "Change",
   "change_binding": "Change Binding",
