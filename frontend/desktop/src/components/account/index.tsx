@@ -44,6 +44,7 @@ import { useSubscriptionStore } from '@/stores/subscription';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { cn } from '@sealos/shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
+import { AlertSettings } from './AlertSettings';
 
 const baseItemStyle = {
   minW: '36px',
@@ -72,6 +73,7 @@ export default function Account() {
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
+  const [alertSettingsOpen, setAlertSettingsOpen] = useState(false);
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -264,6 +266,23 @@ export default function Account() {
                     </MenuItem>
                   </AccountCenter>
                 )}
+                <MenuItem
+                  mt="0px"
+                  py="6px"
+                  px="8px"
+                  borderRadius="8px"
+                  _hover={{ bg: '#F4F4F5' }}
+                  onClick={() => setAlertSettingsOpen(true)}
+                >
+                  <Flex alignItems="center" gap="8px">
+                    <Center w="20px" h="20px">
+                      <Bell size={16} color="#737373" />
+                    </Center>
+                    <Text fontSize="14px" fontWeight="400">
+                      告警设置
+                    </Text>
+                  </Flex>
+                </MenuItem>
                 {layoutConfig?.common.subscriptionEnabled && (
                   <MenuItem
                     mt="0px"
@@ -433,6 +452,8 @@ export default function Account() {
             </MenuList>
           </Menu>
         </Flex>
+
+        <AlertSettings open={alertSettingsOpen} onOpenChange={setAlertSettingsOpen} />
 
         {/*
         {layoutConfig?.common.workorderEnabled && (
