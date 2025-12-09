@@ -24,7 +24,6 @@ import App from 'next/app';
 import Script from 'next/script';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
 import { createQuotaGuarded } from '@sealos/shared';
-import useSessionStore from '@/store/session';
 
 // Initialize quota guarded hook with session getter
 createQuotaGuarded({
