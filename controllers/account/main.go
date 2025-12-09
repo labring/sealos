@@ -20,12 +20,14 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"github.com/labring/sealos/controllers/account/controllers/utils"
+	// devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
@@ -61,21 +63,24 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
+	// utilruntime.Must(devboxv1alpha1.AddToScheme(scheme))
 	// utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		probeAddr            string
-		concurrent           int
-		development          bool
-		rateLimiterOptions   = &utils.LimiterOptions{}
-		leaseDuration        time.Duration
-		renewDeadline        time.Duration
-		retryPeriod          time.Duration
+		metricsAddr              string
+		enableLeaderElection     bool
+		probeAddr                string
+		concurrent               int
+		deleteResourceConcurrent int
+		deleteBackupConcurrent   int
+		development              bool
+		rateLimiterOptions       = &utils.LimiterOptions{}
+		leaseDuration            time.Duration
+		renewDeadline            time.Duration
+		retryPeriod              time.Duration
 	)
 	flag.StringVar(
 		&metricsAddr,
@@ -94,6 +99,18 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.IntVar(&concurrent, "concurrent", 100, "The number of concurrent cluster reconciles.")
+	flag.IntVar(
+		&deleteResourceConcurrent,
+		"delete-resource-concurrent",
+		3,
+		"The number of concurrent DeleteUserResource calls.",
+	)
+	flag.IntVar(
+		&deleteBackupConcurrent,
+		"delete-backup-concurrent",
+		30,
+		"The maximum number of concurrent backup deletions.",
+	)
 	flag.DurationVar(
 		&leaseDuration,
 		"leader-elect-lease-duration",
@@ -204,6 +221,12 @@ func main() {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
 	}
+	if os.Getenv(cockroach.EnvBaseBalance) != "" {
+		balance, err := strconv.ParseInt(os.Getenv(cockroach.EnvBaseBalance), 10, 64)
+		if err == nil {
+			v2Account.ZeroAccount.Balance = balance
+		}
+	}
 	skipExpiredUserTimeDuration := time.Hour * 24 * 2
 	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
 		skipExpiredUserTimeDuration, err = time.ParseDuration(os.Getenv("SKIP_EXPIRED_USER_TIME"))
@@ -313,15 +336,16 @@ func main() {
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts); err != nil {
+	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent, deleteBackupConcurrent); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
 	if err = (&controllers.PaymentReconciler{
-		Account:     accountReconciler,
-		WatchClient: watchClient,
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
+		Account:        accountReconciler,
+		DebtReconciler: debtController,
+		WatchClient:    watchClient,
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}

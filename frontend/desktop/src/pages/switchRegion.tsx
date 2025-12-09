@@ -93,7 +93,7 @@ const Callback: NextPage = () => {
   useEffect(() => {
     if (!router.isReady) return;
     const { query } = router;
-    const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
+    const { appkey, appQuery, appPath } = parseOpenappQuery((query?.openapp as string) || '');
     let workspaceUid: string | undefined;
 
     const switchRegionType = query.switchRegionType;
@@ -132,8 +132,8 @@ const Callback: NextPage = () => {
       })();
     } else {
       if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
-      if (appkey && typeof appQuery === 'string') {
-        setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
+      if (appkey && (appQuery || appPath)) {
+        setAutoLaunch(appkey, { raw: appQuery, pathname: appPath }, workspaceUid);
       }
       (async () => {
         try {

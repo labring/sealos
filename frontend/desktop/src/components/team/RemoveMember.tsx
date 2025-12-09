@@ -35,7 +35,7 @@ export default function RemoveMember({
 } & Parameters<typeof Button>[0]) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
-  const selfUserCrUid = session?.user.userCrUid;
+  const selfUserCrUid = session?.user?.userCrUid;
   const queryClient = useQueryClient();
 
   const { toast } = useCustomToast({ status: 'error' });
@@ -57,8 +57,8 @@ export default function RemoveMember({
     status === InvitedStatus.Inviting
       ? t('common:cancel')
       : selfUserCrUid === targetUserCrUid
-      ? t('common:quit')
-      : t('common:remove');
+        ? t('common:quit')
+        : t('common:remove');
   const removeTips =
     selfUserCrUid === targetUserCrUid
       ? t('common:quit_workspace_tips')

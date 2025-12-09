@@ -23,5 +23,15 @@
   "selectedItems": "已选择 {{count}} 项",
   "clickToAscend": "点击升序",
   "clickToDescend": "点击降序",
-  "clickToCancelSort": "点击取消排序"
+  "clickToCancelSort": "点击取消排序",
+  "prepareUpload": "准备上传",
+  "selectedFolder": "已选择文件夹",
+  "containsFiles": "包含 {{count}} 个文件",
+  "preserveStructure": "保留文件夹结构",
+  "flattenStructure": "仅上传文件夹内容",
+  "pathExample": "路径示例",
+  "overwriteWarning": "注意：可能会覆盖当前目录下的同名文件。",
+  "confirmUpload": "确认上传",
+  "forStaticHosting": "可用于静态托管",
+  "default": "默认"
 }

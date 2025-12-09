@@ -5,8 +5,6 @@ import { getCluster } from '@/pages/api/getDBByName';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { PatchUtils } from '@kubernetes/client-node';
 import { NextApiRequest } from 'next';
-import { adaptDBDetail } from '@/utils/adapt';
-import { raw2schema } from './get-database';
 
 export async function startDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
@@ -48,6 +46,4 @@ export async function startDatabase(
     type: 'Start'
   });
   await k8s.applyYamlList([yaml], 'update');
-
-  return { data: raw2schema(adaptDBDetail(body)) };
 }

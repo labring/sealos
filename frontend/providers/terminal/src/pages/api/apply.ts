@@ -34,11 +34,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const terminalUserDesc = await GetCRD(kc, terminal_meta_user, terminal_name);
       if (terminalUserDesc?.body?.status) {
         const terminalStatus = terminalUserDesc.body.status as TerminalStatus;
+        const encodedAuth = terminalStatus.secretHeader
+          ? Buffer.from(terminalStatus.secretHeader).toString('base64')
+          : '';
         if (terminalStatus.availableReplicas > 0) {
-          // temporarily add domain scheme
-          return jsonRes(res, { data: terminalStatus.domain || '' });
+          return jsonRes(res, {
+            data: terminalStatus.domain
+              ? terminalStatus.domain + '?authorization=' + encodedAuth
+              : ''
+          });
         } else {
-          return jsonRes(res, { code: 201, data: terminalStatus.domain || '' });
+          return jsonRes(res, {
+            code: 201,
+            data: terminalStatus.domain
+              ? terminalStatus.domain + '?authorization=' + encodedAuth
+              : ''
+          });
         }
       }
     } catch (error) {}

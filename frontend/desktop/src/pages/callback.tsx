@@ -5,7 +5,13 @@ import useSigninPageStore from '@/stores/signinPageStore';
 import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
-import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
+import {
+  bindRequest,
+  getRegionToken,
+  signInRequest,
+  unBindRequest,
+  autoInitRegionToken
+} from '@/api/auth';
 import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
@@ -14,6 +20,7 @@ import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
+import { useGuideModalStore } from '@/stores/guideModal';
 
 export default function Callback() {
   const router = useRouter();
@@ -31,12 +38,20 @@ export default function Callback() {
         if (!provider || !['GITHUB', 'WECHAT', 'GOOGLE', 'OAUTH2'].includes(provider))
           throw new Error('provider error');
         const { code, state } = router.query;
-        if (!isString(code) || !isString(state)) throw new Error('failed to get code and state');
-        const compareResult = compareState(state);
-        if (!compareResult.isSuccess) throw new Error('invalid state');
-        if (compareResult.action === 'PROXY') {
+        if (!isString(code)) throw new Error('failed to get code');
+
+        // Parse state to get action, default to LOGIN if state is not provided
+        let action = 'LOGIN';
+        let statePayload: string[] = [];
+        if (isString(state)) {
+          const compareResult = compareState(state);
+          action = compareResult.action;
+          statePayload = compareResult.statePayload;
+        }
+
+        if (action === 'PROXY') {
           // proxy oauth2.0, PROXY_URL_[ACTION]_STATE
-          const [_url, ...ret] = compareResult.statePayload;
+          const [_url, ...ret] = statePayload;
           await new Promise<URL>((resolve, reject) => {
             resolve(new URL(decodeURIComponent(_url)));
           })
@@ -61,7 +76,6 @@ export default function Callback() {
             return;
           }
         } else {
-          const { statePayload, action } = compareResult;
           // return
           if (action === 'LOGIN') {
             const data = await signInRequest(provider)({
@@ -98,12 +112,29 @@ export default function Callback() {
               const needInit = data.data.needInit;
 
               if (needInit) {
-                gtmLoginSuccess({
-                  user_type: 'new',
-                  method: 'oauth2',
-                  oauth2Provider: provider
-                });
-                await router.push('/workspace');
+                try {
+                  const initResult = await autoInitRegionToken();
+
+                  if (initResult?.data) {
+                    gtmLoginSuccess({
+                      user_type: 'new',
+                      method: 'oauth2',
+                      oauth2Provider: provider
+                    });
+                    await sessionConfig(initResult.data);
+                    const { setInitGuide } = useGuideModalStore.getState();
+                    setInitGuide(true);
+                    await router.replace('/');
+                  }
+                } catch (error) {
+                  console.error('Auto init failed, fallback to manual:', error);
+                  gtmLoginSuccess({
+                    user_type: 'new',
+                    method: 'oauth2',
+                    oauth2Provider: provider
+                  });
+                  await router.push('/workspace');
+                }
                 return;
               }
               gtmLoginSuccess({
@@ -170,7 +201,7 @@ export default function Callback() {
     </Flex>
   );
 }
-// 所有含动态数据的页面（如/callback）
+
 export async function getServerSideProps() {
   return { props: {} };
 }

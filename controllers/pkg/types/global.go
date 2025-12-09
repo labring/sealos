@@ -25,16 +25,13 @@ import (
 )
 
 type Account struct {
-	UserUID       uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
-	ActivityBonus int64     `gorm:"column:activityBonus;type:bigint;not null"`
-	// Discard EncryptBalance and EncryptDeductionBalance
-	EncryptBalance          string    `gorm:"column:encryptBalance;type:text"`
-	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text"`
-	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	UpdatedAt               time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
-	CreateRegionID          string    `gorm:"type:text;not null"`
-	Balance                 int64
-	DeductionBalance        int64
+	UserUID          uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
+	ActivityBonus    int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	CreatedAt        time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt        time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
+	CreateRegionID   string    `gorm:"type:text;not null"`
+	Balance          int64
+	DeductionBalance int64
 }
 
 func (Account) TableName() string {

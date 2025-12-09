@@ -17,6 +17,17 @@ const HostnameLength = 8;
 
 const nanoid = customAlphabet(LetterBytes, HostnameLength);
 
+/**
+ * Determines the user type based on the global subscription configuration.
+ *
+ * @returns {'subscription' | 'payg'} - Returns 'subscription' if subscription is enabled, otherwise 'payg'
+ */
+function getUserType(): 'subscription' | 'payg' {
+  return global.AppConfig?.desktop?.layout?.common?.subscriptionEnabled === true
+    ? 'subscription'
+    : 'payg';
+}
+
 export async function get_k8s_username() {
   return await retrySerially<string | null>(async () => {
     const crName = nanoid();
@@ -29,6 +40,7 @@ export async function get_k8s_username() {
     else return Promise.reject(null);
   }, 3);
 }
+
 export async function getRegionToken({
   userUid,
   userId
@@ -324,7 +336,7 @@ export async function getRegionToken({
     const kubeconfig = await getUserKubeconfig(
       payload.userCrUid,
       payload.userCrName,
-      'subscription'
+      getUserType()
     );
     if (!kubeconfig) {
       throw new Error('Failed to get user from k8s');
@@ -534,7 +546,7 @@ export async function initRegionToken({
     const kubeconfig = await getUserKubeconfig(
       regionalDbResult.userCrUid,
       regionalDbResult.userCrName,
-      'subscription'
+      getUserType()
     );
     if (!kubeconfig) {
       const failureMessage = 'failed to get user from k8s';
@@ -567,4 +579,25 @@ export async function initRegionToken({
     token: generateAccessToken(payload),
     appToken: generateAppToken(payload)
   };
+}
+
+export async function autoInitRegionToken({
+  userUid,
+  userId
+}: {
+  userUid: string;
+  userId: string;
+}): Promise<{
+  kubeconfig: string;
+  token: string;
+  appToken: string;
+} | null> {
+  const defaultWorkspaceName = 'My Workspace';
+
+  return await initRegionToken({
+    userUid,
+    userId,
+    regionUid: getRegionUid(),
+    workspaceName: defaultWorkspaceName
+  });
 }

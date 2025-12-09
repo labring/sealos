@@ -23,6 +23,7 @@ export type CommonConfigType = {
   applaunchpadUrl: string;
   dbproviderUrl: string;
   trackingEnabled: boolean;
+  licenseCheckEnabled?: boolean;
 };
 export type CommonClientConfigType = DeepRequired<
   Omit<
@@ -84,6 +85,7 @@ export type LayoutConfigType = {
     aiAssistantEnabled: boolean;
     bannerEnabled: boolean;
     subscriptionEnabled: boolean;
+    guestModeEnabled?: boolean;
   };
   gtmId: string | null;
 };
@@ -278,7 +280,8 @@ export const DefaultCommonClientConfig: CommonClientConfigType = {
   realNameReward: 0,
   guideEnabled: false,
   rechargeEnabled: false,
-  cfSiteKey: ''
+  cfSiteKey: '',
+  licenseCheckEnabled: false
 };
 
 export const DefaultCloudConfig: CloudConfigType = {
@@ -317,7 +320,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     accountSettingEnabled: false,
     aiAssistantEnabled: false,
     bannerEnabled: false,
-    subscriptionEnabled: false
+    subscriptionEnabled: false,
+    guestModeEnabled: false
   },
   gtmId: null
 };

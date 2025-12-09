@@ -9,6 +9,7 @@ import {
   TNotification
 } from '@/types';
 import { AdClickData } from '@/types/adClick';
+import { LicenseCheckResponse } from '@/types/license';
 import { UserTask } from '@/types/task';
 import { WorkspaceQuotaResponse } from '@/types/workspace';
 
@@ -123,3 +124,6 @@ export const getRunningApps = () => {
 
 export const getWorkspaceQuota = () =>
   request.get<any, ApiResp<WorkspaceQuotaResponse>>('/api/workspace/getQuota');
+
+export const checkLicense = () =>
+  request.get<any, ApiResp<LicenseCheckResponse>>('/api/license/check');

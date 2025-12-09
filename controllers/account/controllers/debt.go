@@ -491,7 +491,7 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		ticker := time.NewTicker(1 * time.Hour)
+		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
 			if err := db.Model(&types.Debt{}).Where("account_debt_status = ? AND updated_at < ?", types.DebtPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
@@ -523,7 +523,7 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		ticker := time.NewTicker(1 * time.Hour)
+		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
 			if err := db.Model(&types.Debt{}).Where("account_debt_status = ? AND updated_at < ?", types.DebtDeletionPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
@@ -583,70 +583,70 @@ func (r *DebtReconciler) start() {
 	}()
 
 	// 2.2 subscription change processing
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.processWithTimeRange(
-			&types.Subscription{},
-			"update_at",
-			1*time.Minute,
-			24*time.Hour,
-			func(db *gorm.DB, start, end time.Time) error {
-				users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
-				if err != nil {
-					return fmt.Errorf("failed to get unique users: %w", err)
-				}
-				if len(users) > 0 {
-					r.processUsersInParallel(users)
-					r.Info(
-						"processed subscription changes",
-						"count",
-						len(users),
-						"users",
-						users,
-						"start",
-						start,
-						"end",
-						end,
-					)
-				}
-				return nil
-			},
-		)
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	r.processWithTimeRange(
+	// 		&types.Subscription{},
+	// 		"update_at",
+	// 		1*time.Minute,
+	// 		24*time.Hour,
+	// 		func(db *gorm.DB, start, end time.Time) error {
+	// 			users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
+	// 			if err != nil {
+	// 				return fmt.Errorf("failed to get unique users: %w", err)
+	// 			}
+	// 			if len(users) > 0 {
+	// 				r.processUsersInParallel(users)
+	// 				r.Info(
+	// 					"processed subscription changes",
+	// 					"count",
+	// 					len(users),
+	// 					"users",
+	// 					users,
+	// 					"start",
+	// 					start,
+	// 					"end",
+	// 					end,
+	// 				)
+	// 			}
+	// 			return nil
+	// 		},
+	// 	)
+	// }()
 
 	// 2.3 credits refresh processing
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.processWithTimeRange(
-			&types.Credits{},
-			"updated_at",
-			1*time.Minute,
-			24*time.Hour,
-			func(db *gorm.DB, start, end time.Time) error {
-				users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
-				if err != nil {
-					return fmt.Errorf("failed to get unique users: %w", err)
-				}
-				if len(users) > 0 {
-					r.processUsersInParallel(users)
-					r.Info(
-						"processed credits refresh",
-						"count",
-						len(users),
-						"users",
-						users,
-						"start",
-						start,
-						"end",
-						end,
-					)
-				}
-				return nil
-			},
-		)
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	r.processWithTimeRange(
+	// 		&types.Credits{},
+	// 		"updated_at",
+	// 		1*time.Minute,
+	// 		24*time.Hour,
+	// 		func(db *gorm.DB, start, end time.Time) error {
+	// 			users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
+	// 			if err != nil {
+	// 				return fmt.Errorf("failed to get unique users: %w", err)
+	// 			}
+	// 			if len(users) > 0 {
+	// 				r.processUsersInParallel(users)
+	// 				r.Info(
+	// 					"processed credits refresh",
+	// 					"count",
+	// 					len(users),
+	// 					"users",
+	// 					users,
+	// 					"start",
+	// 					start,
+	// 					"end",
+	// 					end,
+	// 				)
+	// 			}
+	// 			return nil
+	// 		},
+	// 	)
+	// }()
 
 	// 3 retry failed users
 	wg.Add(1)
@@ -669,6 +669,9 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 	}
 	if account == nil {
 		return fmt.Errorf("account %s not found", userUID)
+	}
+	if account.DeductionBalance == 0 {
+		return nil
 	}
 	debt := types.Debt{}
 	err = r.AccountV2.GetGlobalDB().
@@ -1055,7 +1058,7 @@ func getUniqueUsers(
 	switch table.(type) {
 	case *types.Account:
 		if err := db.Model(table).Where(timeField+" BETWEEN ? AND ?", startTime, endTime).
-			Where("deduction_balance > ?", 0).
+			// Where("deduction_balance > ?", 0).
 			Distinct(`"userUid"`).Pluck(`"userUid"`, &users).Error; err != nil {
 			return nil, fmt.Errorf("failed to query unique users: %w", err)
 		}

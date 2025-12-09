@@ -72,6 +72,123 @@ const PortConfig = z.union([UpdatePortConfig, CreatePortConfig]).openapi({
   description: 'Port configuration - with portName to update existing port, without portName to create new port'
 });
 
+const EnvSchema = z.object({
+  name: z.string().openapi({
+    description: 'Environment variable name'
+  }),
+  value: z.string().optional().openapi({
+    description: 'Direct value of the environment variable'
+  }),
+  valueFrom: z.object({
+    secretKeyRef: z.object({
+      name: z.string().openapi({
+        description: 'Secret name'
+      }),
+      key: z.string().openapi({
+        description: 'Secret key'
+      })
+    })
+  }).optional().openapi({
+    description: 'Reference to a secret value'
+  })
+})
+  .refine((data) => data.value || data.valueFrom, {
+    message: "Either 'value' or 'valueFrom' must be provided"
+  })
+  .openapi({
+    description: 'Environment variable configuration'
+  });
+
+const ResourceSchema = z.object({
+  cpu: z.number().openapi({
+    description: 'CPU allocation in cores',
+    example: 1
+  }),
+  memory: z.number().openapi({
+    description: 'Memory allocation in GB',
+    example: 2
+  })
+}).openapi({
+  description: 'Resource allocation'
+});
+
+const SshSchema = z.object({
+  host: z.string().openapi({
+    description: 'SSH host address',
+    example: 'devbox.cloud.sealos.io'
+  }),
+  port: z.number().openapi({
+    description: 'SSH port number',
+    example: 40001
+  }),
+  user: z.string().openapi({
+    description: 'SSH username',
+    example: 'devbox'
+  }),
+  workingDir: z.string().openapi({
+    description: 'Working directory path',
+    example: '/home/devbox/project'
+  }),
+  privateKey: z.string().optional().openapi({
+    description: 'Base64 encoded private key (optional)'
+  })
+}).openapi({
+  description: 'SSH connection information'
+});
+
+const PortSchema = z.object({
+  number: z.number().openapi({
+    description: 'Port number',
+    example: 8080
+  }),
+  portName: z.string().optional().openapi({
+    description: 'Port name identifier'
+  }),
+  protocol: z.string().optional().openapi({
+    description: 'Protocol type (HTTP, GRPC, WS)',
+    example: 'HTTP'
+  }),
+  serviceName: z.string().optional().openapi({
+    description: 'Kubernetes service name'
+  }),
+  privateAddress: z.string().optional().openapi({
+    description: 'Private access address',
+    example: 'http://my-devbox.ns-user123:8080'
+  }),
+  privateHost: z.string().optional().openapi({
+    description: 'Private host',
+    example: 'my-devbox.ns-user123'
+  }),
+  networkName: z.string().optional().openapi({
+    description: 'Network/Ingress name'
+  }),
+  publicHost: z.string().optional().openapi({
+    description: 'Public host domain',
+    example: 'xyz789.cloud.sealos.io'
+  }),
+  publicAddress: z.string().optional().openapi({
+    description: 'Public access address',
+    example: 'https://xyz789.cloud.sealos.io'
+  }),
+  customDomain: z.string().optional().openapi({
+    description: 'Custom domain (if configured)'
+  })
+}).openapi({
+  description: 'Port configuration details'
+});
+
+const PodSchema = z.object({
+  name: z.string().openapi({
+    description: 'Pod name'
+  }),
+  status: z.string().openapi({
+    description: 'Pod status (Running, Pending, Failed, etc.)',
+    example: 'Running'
+  })
+}).openapi({
+  description: 'Pod information'
+});
+
 // Combined request schema
 export const UpdateDevboxRequestSchema = z.object({
   resource: ResourceConfig.optional().openapi({
@@ -181,4 +298,54 @@ export const ErrorResponseSchema = z.object({
 }).openapi({
   title: 'Error Response',
   description: 'Error response schema'
+});
+
+export const DevboxDetailResponseSchema = z.object({
+  data: z.object({
+    name: z.string().openapi({
+      description: 'Devbox name',
+      example: 'my-devbox'
+    }),
+    uid: z.string().openapi({
+      description: 'Unique identifier',
+      example: 'abc123-def456'
+    }),
+    resourceType: z.string().default('devbox').openapi({
+      description: 'Resource type',
+      example: 'devbox'
+    }),
+    runtime: z.string().openapi({
+      description: 'Runtime environment name',
+      example: 'node.js'
+    }),
+    image: z.string().openapi({
+      description: 'Container image',
+      example: 'ghcr.io/labring/sealos-devbox-nodejs:latest'
+    }),
+    status: z.string().openapi({
+      description: 'Devbox status (Running, Stopped, Pending, etc.)',
+      example: 'Running'
+    }),
+    resources: ResourceSchema.openapi({
+      description: 'CPU and memory resources'
+    }),
+    ssh: SshSchema.openapi({
+      description: 'SSH connection details'
+    }),
+    env: z.array(EnvSchema).optional().openapi({
+      description: 'Environment variables (optional)'
+    }),
+    ports: z.array(PortSchema).openapi({
+      description: 'Port configurations'
+    }),
+    pods: z.array(PodSchema).openapi({
+      description: 'Pod information'
+    }),
+    operationalStatus: z.any().optional().openapi({
+      description: 'Operational status details (optional)'
+    })
+  })
+}).openapi({
+  title: 'Get DevBox Detail Response',
+  description: 'Response schema for getting Devbox details'
 });

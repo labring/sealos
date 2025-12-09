@@ -3,6 +3,7 @@ import { jsonRes } from '@/services/backend/response';
 import { strongPassword } from '@/utils/crypto';
 import { enablePassword } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
+import { AuthError } from '@/services/backend/errors';
 import { ProviderType } from 'prisma/global/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -50,8 +51,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (err) {
     console.log(err);
+    let message = 'Failed to authorize with password';
+
+    if (err instanceof AuthError) {
+      message = err.message;
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+
     return jsonRes(res, {
-      message: 'Failed to authorize with password',
+      message,
       code: 500
     });
   }

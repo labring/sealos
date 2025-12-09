@@ -5,8 +5,6 @@ import { getCluster } from '@/pages/api/getDBByName';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { PatchUtils } from '@kubernetes/client-node';
 import { NextApiRequest } from 'next';
-import { raw2schema } from './get-database';
-import { adaptDBDetail } from '@/utils/adapt';
 
 export async function pauseDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
@@ -63,6 +61,4 @@ export async function pauseDatabase(
     type: 'Stop'
   });
   await k8s.applyYamlList([yaml], 'update');
-
-  return { data: raw2schema(adaptDBDetail(body)) };
 }

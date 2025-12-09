@@ -16,9 +16,8 @@ package claims
 
 import (
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/mitchellh/mapstructure"
-
 	v1 "github.com/labring/sealos/controllers/license/api/v1"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Claims is the data structure of license claims
@@ -30,18 +29,10 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type ClaimData map[string]interface{}
-
-func (c *ClaimData) SwitchToAccountData(data *AccountClaimData) error {
-	return mapstructure.Decode(c, data)
-}
+type ClaimData map[string]any
 
 func (c *ClaimData) SwitchToClusterData(data *ClusterClaimData) error {
 	return mapstructure.Decode(c, data)
-}
-
-type AccountClaimData struct {
-	Amount int64 `json:"amount"`
 }
 
 // ClusterClaimData is the data structure of cluster license
@@ -53,15 +44,16 @@ type AccountClaimData struct {
 //	}
 
 type ClusterClaimData struct {
-	NodeCount   int `json:"nodeCount"`
-	TotalCPU    int `json:"totalCPU"`    // in core
-	TotalMemory int `json:"totalMemory"` // in GB
+	NodeCount   int `json:"nodeCount"   mapstructure:"nodeCount"`
+	TotalCPU    int `json:"totalCPU"    mapstructure:"totalCPU"`    // in core
+	TotalMemory int `json:"totalMemory" mapstructure:"totalMemory"` // in GB
 }
 
 // Compare compares the claims with the data
 // return true if the claims is equal or lager to the data
 func (c *ClusterClaimData) Compare(data *ClusterClaimData) bool {
-	if c.NodeCount > data.NodeCount || c.TotalCPU > data.TotalCPU || c.TotalMemory > data.TotalMemory {
+	if c.NodeCount > data.NodeCount || c.TotalCPU > data.TotalCPU ||
+		c.TotalMemory > data.TotalMemory {
 		return false
 	}
 	return true

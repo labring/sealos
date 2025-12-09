@@ -17,16 +17,19 @@ limitations under the License.
 package server
 
 import (
-	"strings"
+    "strings"
 
-	"github.com/docker/docker/api/types/registry"
+    "github.com/docker/docker/api/types/registry"
 
-	"github.com/labring/sreg/pkg/registry/crane"
+    "github.com/labring/sreg/pkg/registry/crane"
 
-	"github.com/labring/sealos/pkg/utils/logger"
+    "github.com/labring/sealos/pkg/utils/logger"
 
-	name "github.com/google/go-containerregistry/pkg/name"
+    name "github.com/google/go-containerregistry/pkg/name"
 )
+
+// craneGetImageManifest is declared as a var so tests can replace it with a stub implementation.
+var craneGetImageManifest = crane.GetImageManifestFromAuth
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
 func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
@@ -37,7 +40,7 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 
 	ref, err := name.ParseReference(image)
 	if err != nil {
-		logger.Warn("failed to parse image reference %s: %v", image, err)
+		logger.Warn("rewrite skipped: unable to parse image reference %s: %v", image, err)
 		return image, false, nil
 	}
 
@@ -47,16 +50,14 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 		return image, false, nil
 	}
 
-	newImage, _, cfg, err = crane.GetImageManifestFromAuth(image, authConfig)
+	newImage, _, cfg, err = craneGetImageManifest(image, authConfig)
 	if err != nil {
 		if strings.Contains(image, "@") {
 			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
 		}
-		logger.Warn("get image %s manifest error %s", newImage, err.Error())
-		logger.Debug("image %s not found in registry, skipping", image)
+		logger.Warn("rewrite skipped: failed to fetch manifest for %s (action=%s): %v", image, action, err)
 		return image, false, cfg
 	}
-	logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
 	return newImage, true, cfg
 }
 
@@ -90,4 +91,32 @@ func referenceSuffix(ref name.Reference) string {
 		}
 	}
 	return ""
+}
+
+const defaultDockerRegistry = "docker.io"
+
+func extractDomainFromImage(image string) string {
+	if image == "" {
+		return ""
+	}
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		return normalizeDomainCandidate(registryFromImage(image))
+	}
+	domain := ref.Context().RegistryStr()
+	if domain == "" {
+		return defaultDockerRegistry
+	}
+	return normalizeDomainCandidate(domain)
+}
+
+func normalizeDomainCandidate(domain string) string {
+    switch domain {
+    case "", "library", "docker", "index.docker.io", "registry-1.docker.io":
+        return defaultDockerRegistry
+    }
+    if !strings.Contains(domain, ".") && !strings.Contains(domain, ":") && domain != "localhost" {
+        return defaultDockerRegistry
+    }
+    return domain
 }

@@ -29,7 +29,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         items: NotificationCR[];
       };
     };
-    const data = result.body?.items?.map(adaptNotification);
+    const data = result.body?.items?.map(adaptNotification).filter((notification) => {
+      const started = notification.startTime
+        ? new Date(notification.startTime).getTime() < Date.now()
+        : true;
+      const notEnded = notification.endTime
+        ? new Date(notification.endTime).getTime() > Date.now()
+        : true;
+
+      return started && notEnded;
+    });
 
     jsonRes(res, { data: data });
   } catch (err: any) {

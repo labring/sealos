@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -158,10 +157,14 @@ func DeleteWorkspaceSubscription(c *gin.Context) {
 				sub, err := services.StripeServiceInstance.CancelSubscription(
 					subscription.Stripe.SubscriptionID)
 				if err != nil {
-					return fmt.Errorf("failed to cancel Stripe subscription %s: %v", subscription.Stripe.SubscriptionID, err)
+					return fmt.Errorf(
+						"failed to cancel Stripe subscription %s: %w",
+						subscription.Stripe.SubscriptionID,
+						err,
+					)
 				}
 				if sub == nil {
-					return fmt.Errorf("stripe subscription cancel failed with nil subscription")
+					return errors.New("stripe subscription cancel failed with nil subscription")
 				}
 			}
 		}
@@ -1752,8 +1755,9 @@ func NewWorkspaceSubscriptionNotifyHandler(c *gin.Context) {
 	if err != nil {
 		// logrus.Errorf("Failed to process workspace subscription webhook event %s: %v", event.Type, err)
 		dao.Logger.Errorf(
-			"Failed to process workspace subscription webhook event %s: %v",
+			"Failed to process workspace subscription webhook %s event : %v, err: %v",
 			event.Type,
+			event,
 			err,
 		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process webhook"})
@@ -1893,9 +1897,11 @@ func finalizeWorkspaceSubscriptionSuccess(
 	if workspaceSubscription != nil {
 		workspaceSubscriptionID = workspaceSubscription.ID
 		workspaceSubscription.CancelAtPeriodEnd = false
+		wsTransaction.OldPlanStatus = workspaceSubscription.Status
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
 	} else {
 		workspaceSubscriptionID = uuid.New()
+		wsTransaction.OldPlanStatus = types.SubscriptionStatusNormal
 	}
 	payment.WorkspaceSubscriptionID = &workspaceSubscriptionID
 	wsTransaction.Status = types.SubscriptionTransactionStatusCompleted
@@ -2869,7 +2875,7 @@ func validatePlanAndPrice(
 		return nil, nil, err
 	}
 
-	// Get plan price
+	// Get plan price - for admin operations, we can be more flexible
 	var price *types.ProductPrice
 	for _, p := range plan.Prices {
 		if string(p.BillingCycle) == string(req.Period) {
@@ -2877,20 +2883,25 @@ func validatePlanAndPrice(
 			break
 		}
 	}
+
+	// For admin operations, if no exact price is found for the period,
+	// we can either use a default price or create a zero-price entry
+	// since admin operations don't require actual payment processing
 	if price == nil {
-		SetErrorResp(
-			c,
-			http.StatusBadRequest,
-			gin.H{
-				"error": fmt.Sprintf(
-					"no price found for plan %s with period %s",
-					req.PlanName,
-					req.Period,
-				),
-			},
+		// Log a warning instead of returning an error for admin operations
+		logrus.Warnf(
+			"No price found for plan %s with period %s, using zero price for admin operation",
+			req.PlanName,
+			req.Period,
 		)
-		return nil, nil, fmt.Errorf("no price found for plan %s with period %s",
-			req.PlanName, req.Period)
+
+		// Create a zero-price entry for admin operations
+		price = &types.ProductPrice{
+			ProductID:     plan.ID, // Set the product ID from the plan
+			BillingCycle:  req.Period,
+			Price:         0, // Admin operations don't need payment
+			OriginalPrice: 0,
+		}
 	}
 
 	return plan, price, nil
@@ -2918,8 +2929,14 @@ func validateExistingSubscription(
 	if req.Operator == "" {
 		if existingSubscription != nil &&
 			existingSubscription.Status != types.SubscriptionStatusDeleted {
-			// If subscription exists and not deleted, default to upgrade
-			req.Operator = types.SubscriptionTransactionTypeUpgraded
+			// Check if it's the same plan (renewal) or different plan (upgrade)
+			if existingSubscription.PlanName == req.PlanName {
+				// Same plan - this is a renewal
+				req.Operator = types.SubscriptionTransactionTypeRenewed
+			} else {
+				// Different plan - this is an upgrade
+				req.Operator = types.SubscriptionTransactionTypeUpgraded
+			}
 		} else {
 			// No existing subscription or deleted, default to create
 			req.Operator = types.SubscriptionTransactionTypeCreated
@@ -3032,21 +3049,65 @@ func createOrUpdateWorkspaceSubscription(
 	var workspaceSubscription *types.WorkspaceSubscription
 	if existingSubscription != nil {
 		workspaceSubscription = existingSubscription
-		workspaceSubscription.PlanName = req.PlanName
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
 		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
+		workspaceSubscription.PayMethod = types.PaymentMethodBalance // Admin operations use balance payment
 
-		// Update period for renewals
-		if req.Operator == types.SubscriptionTransactionTypeRenewed {
+		// Parse period duration
+		periodDuration, err := types.ParsePeriod(req.Period)
+		if err != nil {
+			// Fallback to monthly if parsing fails
+			periodDuration = 30 * 24 * time.Hour
+		}
+
+		// Handle different operators
+		switch req.Operator {
+		case types.SubscriptionTransactionTypeRenewed:
+			// For renewal: only extend ExpireAt, don't modify current period
+			// The processor will handle period renewal when CurrentPeriodEndAt approaches
+			if workspaceSubscription.ExpireAt == nil {
+				expireTime := existingSubscription.CurrentPeriodEndAt.Add(periodDuration)
+				workspaceSubscription.ExpireAt = &expireTime
+			} else {
+				expireTime := workspaceSubscription.ExpireAt.Add(periodDuration)
+				workspaceSubscription.ExpireAt = &expireTime
+			}
+			logrus.Infof(
+				"Renewal: Extended ExpireAt to %s, current period unchanged (ends at %s)",
+				workspaceSubscription.ExpireAt.Format(time.RFC3339),
+				workspaceSubscription.CurrentPeriodEndAt.Format(time.RFC3339),
+			)
+
+		case types.SubscriptionTransactionTypeUpgraded, types.SubscriptionTransactionTypeDowngraded:
+			// For upgrade/downgrade: immediately update current period and plan
+			workspaceSubscription.PlanName = req.PlanName
 			workspaceSubscription.CurrentPeriodStartAt = now
-			workspaceSubscription.CurrentPeriodEndAt = now.AddDate(0, 1, 0) // Monthly
-			workspaceSubscription.ExpireAt = stripe.Time(
-				workspaceSubscription.CurrentPeriodEndAt,
+			workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
+
+			// Set ExpireAt to the new current period end if not set, or extend it
+			if workspaceSubscription.ExpireAt == nil ||
+				workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+				workspaceSubscription.ExpireAt = &workspaceSubscription.CurrentPeriodEndAt
+			}
+			logrus.Infof(
+				"Upgrade/Downgrade: Updated current period to %s - %s, plan=%s",
+				workspaceSubscription.CurrentPeriodStartAt.Format(time.RFC3339),
+				workspaceSubscription.CurrentPeriodEndAt.Format(time.RFC3339),
+				req.PlanName,
 			)
 		}
 	} else {
-		// Create new subscription
+		// Create new subscription - parse period for correct end time
+		periodDuration, err := types.ParsePeriod(req.Period)
+		var endTime time.Time
+		if err != nil {
+			// Fallback to monthly if parsing fails
+			endTime = now.AddDate(0, 1, 0)
+		} else {
+			endTime = now.Add(periodDuration)
+		}
+
 		workspaceSubscription = &types.WorkspaceSubscription{
 			ID:                   uuid.New(),
 			PlanName:             req.PlanName,
@@ -3056,11 +3117,11 @@ func createOrUpdateWorkspaceSubscription(
 			Status:               types.SubscriptionStatusNormal,
 			TrafficStatus:        types.WorkspaceTrafficStatusActive,
 			PayStatus:            types.SubscriptionPayStatusNoNeed,
-			PayMethod:            types.PaymentMethodErrAndUseBalance, // Internal admin method
+			PayMethod:            types.PaymentMethodBalance, // Internal admin method
 			CurrentPeriodStartAt: now,
-			CurrentPeriodEndAt:   now.AddDate(0, 1, 0), // Monthly
+			CurrentPeriodEndAt:   endTime,
 			CreateAt:             now,
-			ExpireAt:             stripe.Time(now.AddDate(0, 1, 0)),
+			ExpireAt:             stripe.Time(endTime),
 		}
 	}
 
@@ -3075,13 +3136,18 @@ func addTrafficAndAIPackages(
 	existingSubscription, workspaceSubscription *types.WorkspaceSubscription,
 	transactionID string,
 ) error {
+	// For renewal operations, skip adding packages - they will be handled by the processor
+	// when the current period is about to end
+	if req.Operator == types.SubscriptionTransactionTypeRenewed {
+		logrus.Infof(
+			"Skipping traffic/AI package addition for renewal: will be handled by processor before period end",
+		)
+		return nil
+	}
+
+	// For upgrade/downgrade/create operations, add packages immediately
 	// Add traffic package
 	if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-		period, err := types.ParsePeriod(req.Period)
-		if err != nil {
-			return fmt.Errorf("invalid subscription period: %w", err)
-		}
-
 		// Calculate additional traffic for upgrades
 		additionalTraffic := plan.Traffic
 		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
@@ -3100,12 +3166,12 @@ func addTrafficAndAIPackages(
 		}
 
 		if additionalTraffic > 0 {
-			err = helper.AddTrafficPackage(
+			err := helper.AddTrafficPackage(
 				tx,
 				dao.K8sManager.GetClient(),
 				workspaceSubscription,
 				plan,
-				time.Now().Add(period),
+				workspaceSubscription.CurrentPeriodEndAt,
 				types.WorkspaceTrafficFromWorkspaceSubscription,
 				transactionID,
 			)
@@ -3117,11 +3183,6 @@ func addTrafficAndAIPackages(
 
 	// Add AI quota package
 	if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-		period, err := types.ParsePeriod(req.Period)
-		if err != nil {
-			return fmt.Errorf("invalid subscription period: %w", err)
-		}
-
 		// Calculate additional AI quota for upgrades
 		additionalAIQuota := plan.AIQuota
 		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
@@ -3140,11 +3201,11 @@ func addTrafficAndAIPackages(
 		}
 
 		if additionalAIQuota > 0 {
-			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+			err := cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
 				tx,
 				workspaceSubscription.ID,
 				additionalAIQuota,
-				time.Now().Add(period),
+				workspaceSubscription.CurrentPeriodEndAt,
 				types.PKGFromWorkspaceSubscription,
 				transactionID,
 			)
@@ -3186,7 +3247,8 @@ func processSubscriptionTransaction(
 			return fmt.Errorf("failed to save workspace subscription: %w", err)
 		}
 
-		// Update resource quota for creation or upgrade
+		// Update resource quota for creation, upgrade or downgrade (not for renewal)
+		// Renewal doesn't change the current period plan, so no quota update needed
 		if req.Operator != types.SubscriptionTransactionTypeRenewed {
 			if err := updateWorkspaceSubscriptionQuota(req.PlanName, workspaceSubscription.Workspace); err != nil {
 				return fmt.Errorf("failed to update workspace subscription quota: %w", err)
@@ -3194,6 +3256,7 @@ func processSubscriptionTransaction(
 		}
 
 		// Add traffic and AI packages
+		// For renewal, this will be skipped and handled by the processor
 		if err := addTrafficAndAIPackages(tx, req, plan, existingSubscription, workspaceSubscription, transaction.ID.String()); err != nil {
 			return err
 		}
@@ -3215,54 +3278,6 @@ func processSubscriptionTransaction(
 		)
 
 		return nil
-	})
-}
-
-// @Success 200 {object} gin.H
-// @Router /admin/v1alpha1/workspace-subscription/add [post]
-func AdminAddWorkspaceSubscription(c *gin.Context) {
-	req, err := authenticateAndParseAdminRequest(c)
-	if err != nil {
-		return
-	}
-
-	if err := setDefaultValues(c, req); err != nil {
-		return
-	}
-
-	plan, price, err := validatePlanAndPrice(c, req)
-	if err != nil {
-		return
-	}
-
-	existingSubscription, err := validateExistingSubscription(c, req)
-	if err != nil {
-		return
-	}
-
-	if err := checkSubscriptionQuota(c, req); err != nil {
-		return
-	}
-
-	// Process subscription transaction
-	err = processSubscriptionTransaction(req, plan, price, existingSubscription)
-	if err != nil {
-		dao.Logger.Errorf("Failed to add workspace subscription via admin interface: %v", err)
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to add workspace subscription: %v", err)},
-		)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": fmt.Sprintf(
-			"Workspace subscription '%s' added successfully for workspace '%s'",
-			req.PlanName,
-			req.Workspace,
-		),
 	})
 }
 
@@ -3340,519 +3355,4 @@ func GetWorkspaceSubscriptionPlans(c *gin.Context) {
 	c.JSON(http.StatusOK, WorkspaceSubscriptionPlansResp{
 		Plans: plans,
 	})
-}
-
-// AdminWorkspaceSubscriptionList
-// @Summary Admin get workspace subscription list
-// @Description Admin interface to get paginated workspace subscription list with filtering options
-// @Tags WorkspaceSubscription
-// @Accept json
-// @Produce json
-// @Param req body AdminWorkspaceSubscriptionListReq true "AdminWorkspaceSubscriptionListReq"
-// @Success 200 {object} AdminWorkspaceSubscriptionListResp
-// @Router /admin/v1alpha1/workspace-subscription/list [post]
-func AdminWorkspaceSubscriptionList(c *gin.Context) {
-	// Authenticate admin request
-	if err := authenticateAdminRequest(c); err != nil {
-		SetErrorResp(
-			c,
-			http.StatusForbidden,
-			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
-		)
-		return
-	}
-
-	// Parse request
-	req, err := helper.ParseAdminWorkspaceSubscriptionListReq(c)
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusBadRequest,
-			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
-		)
-		return
-	}
-
-	logrus.Infof("Admin getting workspace subscription list: page=%d, size=%d, filters=%+v",
-		req.PageIndex, req.PageSize, req)
-
-	// Build query conditions
-	conditions := map[string]any{}
-	if req.Workspace != "" {
-		conditions["workspace"] = req.Workspace
-	}
-	if req.UserUID != uuid.Nil {
-		conditions["userUid"] = req.UserUID
-	}
-	if req.PlanName != "" {
-		conditions["planName"] = req.PlanName
-	}
-	if req.Status != "" {
-		conditions["status"] = req.Status
-	}
-	if req.RegionDomain != "" {
-		conditions["regionDomain"] = req.RegionDomain
-	}
-
-	// Get subscriptions with pagination
-	subscriptions, total, err := dao.DBClient.ListWorkspaceSubscriptionsWithPagination(
-		conditions,
-		req.PageIndex,
-		req.PageSize,
-	)
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to get workspace subscription list: %v", err)},
-		)
-		return
-	}
-
-	// Calculate pagination info
-	totalPages := int(total) / req.PageSize
-	if int(total)%req.PageSize > 0 {
-		totalPages++
-	}
-
-	// Format response
-	type SubscriptionInfo struct {
-		ID                   uuid.UUID  `json:"id"`
-		Workspace            string     `json:"workspace"`
-		RegionDomain         string     `json:"regionDomain"`
-		UserUID              uuid.UUID  `json:"userUID"`
-		PlanName             string     `json:"planName"`
-		Status               string     `json:"status"`
-		PayStatus            string     `json:"payStatus"`
-		PayMethod            string     `json:"payMethod"`
-		CurrentPeriodStartAt time.Time  `json:"currentPeriodStartAt"`
-		CurrentPeriodEndAt   time.Time  `json:"currentPeriodEndAt"`
-		CreateAt             time.Time  `json:"createAt"`
-		ExpireAt             *time.Time `json:"expireAt"`
-	}
-
-	subscriptionInfos := make([]SubscriptionInfo, len(subscriptions))
-	for i, sub := range subscriptions {
-		subscriptionInfos[i] = SubscriptionInfo{
-			ID:                   sub.ID,
-			Workspace:            sub.Workspace,
-			RegionDomain:         sub.RegionDomain,
-			UserUID:              sub.UserUID,
-			PlanName:             sub.PlanName,
-			Status:               string(sub.Status),
-			PayStatus:            string(sub.PayStatus),
-			PayMethod:            string(sub.PayMethod),
-			CurrentPeriodStartAt: sub.CurrentPeriodStartAt,
-			CurrentPeriodEndAt:   sub.CurrentPeriodEndAt,
-			CreateAt:             sub.CreateAt,
-			ExpireAt:             sub.ExpireAt,
-		}
-	}
-
-	resp := gin.H{
-		"subscriptions": subscriptionInfos,
-		"pagination": gin.H{
-			"pageIndex":    req.PageIndex,
-			"pageSize":     req.PageSize,
-			"totalRecords": total,
-			"totalPages":   totalPages,
-		},
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
-// AdminSubscriptionPlans
-// @Summary Admin get subscription plans
-// @Description Admin interface to get all available subscription plans
-// @Tags WorkspaceSubscription
-// @Accept json
-// @Produce json
-// @Param req body AdminSubscriptionPlansReq true "AdminSubscriptionPlansReq"
-// @Success 200 {object} AdminSubscriptionPlansResp
-// @Router /admin/v1alpha1/subscription-plans [post]
-func AdminSubscriptionPlans(c *gin.Context) {
-	// Authenticate admin request
-	if err := authenticateAdminRequest(c); err != nil {
-		SetErrorResp(
-			c,
-			http.StatusForbidden,
-			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
-		)
-		return
-	}
-
-	// Parse request
-	req, err := helper.ParseAdminSubscriptionPlansReq(c)
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusBadRequest,
-			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
-		)
-		return
-	}
-
-	logrus.Infof("Admin getting subscription plans: includeInactive=%v, planType=%s",
-		req.IncludeInactive, req.PlanType)
-
-	// Get subscription plans
-	plans, err := dao.DBClient.GetWorkspaceSubscriptionPlanList()
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to get subscription plans: %v", err)},
-		)
-		return
-	}
-
-	// Filter plans based on request parameters
-	filteredPlans := []types.WorkspaceSubscriptionPlan{}
-	for _, plan := range plans {
-		// Filter by plan type if specified (check tags for type classification)
-		if req.PlanType != "" {
-			hasType := false
-			for _, tag := range plan.Tags {
-				if tag == req.PlanType {
-					hasType = true
-					break
-				}
-			}
-			if !hasType {
-				continue
-			}
-		}
-
-		// For now, include all plans since there's no explicit status field
-		// The includeInactive parameter can be used later if status tracking is added
-		filteredPlans = append(filteredPlans, plan)
-	}
-
-	// Format response with pricing information
-	type PlanPriceInfo struct {
-		BillingCycle string `json:"billingCycle"`
-		Price        int64  `json:"price"`
-		Currency     string `json:"currency"`
-	}
-
-	type PlanInfo struct {
-		ID           string          `json:"id"`
-		Name         string          `json:"name"`
-		Description  string          `json:"description"`
-		Order        int             `json:"order"`
-		Tags         []string        `json:"tags"`
-		Prices       []PlanPriceInfo `json:"prices"`
-		Traffic      int64           `json:"traffic"`
-		AIQuota      int64           `json:"aiQuota"`
-		MaxResources string          `json:"maxResources"`
-		MaxSeats     int             `json:"maxSeats"`
-	}
-
-	planInfos := make([]PlanInfo, len(filteredPlans))
-	for i, plan := range filteredPlans {
-		prices := make([]PlanPriceInfo, len(plan.Prices))
-		for j, price := range plan.Prices {
-			prices[j] = PlanPriceInfo{
-				BillingCycle: string(price.BillingCycle),
-				Price:        price.Price,
-				Currency:     "USD", // Default currency
-			}
-		}
-
-		planInfos[i] = PlanInfo{
-			ID:           plan.ID.String(),
-			Name:         plan.Name,
-			Description:  plan.Description,
-			Order:        plan.Order,
-			Tags:         plan.Tags,
-			Prices:       prices,
-			Traffic:      plan.Traffic,
-			AIQuota:      plan.AIQuota,
-			MaxResources: plan.MaxResources,
-			MaxSeats:     plan.MaxSeats,
-		}
-	}
-
-	resp := gin.H{
-		"plans": planInfos,
-		"total": len(planInfos),
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
-// AdminWorkspaceSubscriptionListGET
-// @Summary Admin get workspace subscription list (GET)
-// @Description Admin interface to get paginated workspace subscription list with filtering options using GET method
-// @Tags WorkspaceSubscription
-// @Accept json
-// @Produce json
-// @Param pageIndex query int false "Page index (0-based)" example(0)
-// @Param pageSize query int false "Page size (optional, defaults to 10)" example(10)
-// @Param workspace query string false "Filter by workspace name" example("ns-8gmgq0jn")
-// @Param userUID query string false "Filter by user ID" example("36ca5ee6-7b6e-4c15-922b-e861b3fbc061")
-// @Param planName query string false "Filter by plan name" example("Hobby")
-// @Param status query string false "Filter by subscription status" example("NORMAL")
-// @Param regionDomain query string false "Filter by region domain" example("192.168.10.35.nip.io")
-// @Success 200 {object} AdminWorkspaceSubscriptionListResp
-// @Router /admin/v1alpha1/workspace-subscription/list [get]
-func AdminWorkspaceSubscriptionListGET(c *gin.Context) {
-	// Authenticate admin request
-	if err := authenticateAdminRequest(c); err != nil {
-		SetErrorResp(
-			c,
-			http.StatusForbidden,
-			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
-		)
-		return
-	}
-
-	// Parse query parameters
-	req := &helper.AdminWorkspaceSubscriptionListReq{}
-
-	// Parse pagination parameters
-	if pageIndexStr := c.Query("pageIndex"); pageIndexStr != "" {
-		if pageIndex, err := strconv.Atoi(pageIndexStr); err == nil {
-			req.PageIndex = pageIndex
-		}
-	}
-	if pageSizeStr := c.Query("pageSize"); pageSizeStr != "" {
-		if pageSize, err := strconv.Atoi(pageSizeStr); err == nil {
-			req.PageSize = pageSize
-		}
-	}
-
-	// Parse filter parameters
-	req.Workspace = c.Query("workspace")
-	req.PlanName = c.Query("planName")
-	req.Status = c.Query("status")
-	req.RegionDomain = c.Query("regionDomain")
-
-	// Parse userUID parameter
-	if userUIDStr := c.Query("userUID"); userUIDStr != "" {
-		if userUID, err := uuid.Parse(userUIDStr); err == nil {
-			req.UserUID = userUID
-		}
-	}
-
-	// Set default values
-	if req.PageIndex < 0 {
-		req.PageIndex = 0
-	}
-	if req.PageSize <= 0 {
-		req.PageSize = 10
-	}
-	if req.PageSize > 100 {
-		req.PageSize = 100 // Limit max page size
-	}
-
-	logrus.Infof("Admin getting workspace subscription list (GET): page=%d, size=%d, filters=%+v",
-		req.PageIndex, req.PageSize, req)
-
-	// Build query conditions
-	conditions := map[string]any{}
-	if req.Workspace != "" {
-		conditions["workspace"] = req.Workspace
-	}
-	if req.UserUID != uuid.Nil {
-		conditions["userUid"] = req.UserUID
-	}
-	if req.PlanName != "" {
-		conditions["planName"] = req.PlanName
-	}
-	if req.Status != "" {
-		conditions["status"] = req.Status
-	}
-	if req.RegionDomain != "" {
-		conditions["regionDomain"] = req.RegionDomain
-	}
-
-	// Get subscriptions with pagination
-	subscriptions, total, err := dao.DBClient.ListWorkspaceSubscriptionsWithPagination(
-		conditions,
-		req.PageIndex,
-		req.PageSize,
-	)
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to get workspace subscription list: %v", err)},
-		)
-		return
-	}
-
-	// Calculate pagination info
-	totalPages := int(total) / req.PageSize
-	if int(total)%req.PageSize > 0 {
-		totalPages++
-	}
-
-	// Format response
-	type SubscriptionInfo struct {
-		ID                   uuid.UUID  `json:"id"`
-		Workspace            string     `json:"workspace"`
-		RegionDomain         string     `json:"regionDomain"`
-		UserUID              uuid.UUID  `json:"userUID"`
-		PlanName             string     `json:"planName"`
-		Status               string     `json:"status"`
-		PayStatus            string     `json:"payStatus"`
-		PayMethod            string     `json:"payMethod"`
-		CurrentPeriodStartAt time.Time  `json:"currentPeriodStartAt"`
-		CurrentPeriodEndAt   time.Time  `json:"currentPeriodEndAt"`
-		CreateAt             time.Time  `json:"createAt"`
-		ExpireAt             *time.Time `json:"expireAt"`
-	}
-
-	subscriptionInfos := make([]SubscriptionInfo, len(subscriptions))
-	for i, sub := range subscriptions {
-		subscriptionInfos[i] = SubscriptionInfo{
-			ID:                   sub.ID,
-			Workspace:            sub.Workspace,
-			RegionDomain:         sub.RegionDomain,
-			UserUID:              sub.UserUID,
-			PlanName:             sub.PlanName,
-			Status:               string(sub.Status),
-			PayStatus:            string(sub.PayStatus),
-			PayMethod:            string(sub.PayMethod),
-			CurrentPeriodStartAt: sub.CurrentPeriodStartAt,
-			CurrentPeriodEndAt:   sub.CurrentPeriodEndAt,
-			CreateAt:             sub.CreateAt,
-			ExpireAt:             sub.ExpireAt,
-		}
-	}
-
-	resp := gin.H{
-		"subscriptions": subscriptionInfos,
-		"pagination": gin.H{
-			"pageIndex":    req.PageIndex,
-			"pageSize":     req.PageSize,
-			"totalRecords": total,
-			"totalPages":   totalPages,
-		},
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
-// AdminSubscriptionPlansGET
-// @Summary Admin get subscription plans (GET)
-// @Description Admin interface to get all available subscription plans using GET method
-// @Tags WorkspaceSubscription
-// @Accept json
-// @Produce json
-// @Param includeInactive query bool false "Include inactive plans" example(false)
-// @Param planType query string false "Filter by plan type" example("workspace")
-// @Success 200 {object} AdminSubscriptionPlansResp
-// @Router /admin/v1alpha1/subscription-plans [get]
-func AdminSubscriptionPlansGET(c *gin.Context) {
-	// Authenticate admin request
-	if err := authenticateAdminRequest(c); err != nil {
-		SetErrorResp(
-			c,
-			http.StatusForbidden,
-			gin.H{"error": fmt.Sprintf("admin authenticate error: %v", err)},
-		)
-		return
-	}
-
-	// Parse query parameters
-	req := &helper.AdminSubscriptionPlansReq{}
-
-	if includeInactiveStr := c.Query("includeInactive"); includeInactiveStr != "" {
-		if includeInactive, err := strconv.ParseBool(includeInactiveStr); err == nil {
-			req.IncludeInactive = includeInactive
-		}
-	}
-
-	req.PlanType = c.Query("planType")
-
-	logrus.Infof("Admin getting subscription plans (GET): includeInactive=%v, planType=%s",
-		req.IncludeInactive, req.PlanType)
-
-	// Get subscription plans
-	plans, err := dao.DBClient.GetWorkspaceSubscriptionPlanList()
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to get subscription plans: %v", err)},
-		)
-		return
-	}
-
-	// Filter plans based on request parameters
-	filteredPlans := []types.WorkspaceSubscriptionPlan{}
-	for _, plan := range plans {
-		// Filter by plan type if specified (check tags for type classification)
-		if req.PlanType != "" {
-			hasType := false
-			for _, tag := range plan.Tags {
-				if tag == req.PlanType {
-					hasType = true
-					break
-				}
-			}
-			if !hasType {
-				continue
-			}
-		}
-
-		// For now, include all plans since there's no explicit status field
-		// The includeInactive parameter can be used later if status tracking is added
-		filteredPlans = append(filteredPlans, plan)
-	}
-
-	// Format response with pricing information
-	type PlanPriceInfo struct {
-		BillingCycle string `json:"billingCycle"`
-		Price        int64  `json:"price"`
-		Currency     string `json:"currency"`
-	}
-
-	type PlanInfo struct {
-		ID           string          `json:"id"`
-		Name         string          `json:"name"`
-		Description  string          `json:"description"`
-		Order        int             `json:"order"`
-		Tags         []string        `json:"tags"`
-		Prices       []PlanPriceInfo `json:"prices"`
-		Traffic      int64           `json:"traffic"`
-		AIQuota      int64           `json:"aiQuota"`
-		MaxResources string          `json:"maxResources"`
-		MaxSeats     int             `json:"maxSeats"`
-	}
-
-	planInfos := make([]PlanInfo, len(filteredPlans))
-	for i, plan := range filteredPlans {
-		prices := make([]PlanPriceInfo, len(plan.Prices))
-		for j, price := range plan.Prices {
-			prices[j] = PlanPriceInfo{
-				BillingCycle: string(price.BillingCycle),
-				Price:        price.Price,
-				Currency:     "USD", // Default currency
-			}
-		}
-
-		planInfos[i] = PlanInfo{
-			ID:           plan.ID.String(),
-			Name:         plan.Name,
-			Description:  plan.Description,
-			Order:        plan.Order,
-			Tags:         plan.Tags,
-			Prices:       prices,
-			Traffic:      plan.Traffic,
-			AIQuota:      plan.AIQuota,
-			MaxResources: plan.MaxResources,
-			MaxSeats:     plan.MaxSeats,
-		}
-	}
-
-	resp := gin.H{
-		"plans": planInfos,
-		"total": len(planInfos),
-	}
-
-	c.JSON(http.StatusOK, resp)
 }

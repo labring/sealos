@@ -17,6 +17,8 @@ export const adaptNotification = (item: NotificationCR): TNotification => {
     licenseFrontend: item.metadata.labels?.[LicenseFrontendKey],
     timestamp: item.spec.timestamp,
     desktopPopup: item.spec.desktopPopup || false,
+    startTime: item.spec.startTime,
+    endTime: item.spec.endTime,
     i18n: {
       en: defaultLanguage,
       zh: item.spec.i18ns?.zh || defaultLanguage

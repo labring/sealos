@@ -52,8 +52,10 @@ spec:
               value: {{ .minioAccessKey }}
             - name: MINIO_SECRET_KEY
               value: {{ .minioSecretKey }}
-            - name: MIGRATE_FILE_IMAGE
-              value: {{ .migrateFileImage }}
+            - name: MIGRATE_FILE_FETCH_FILE_IMAGE
+              value: {{ .migrateFileFetchFileImage }}
+            - name: MIGRATE_FILE_IMPORT_DATA_IMAGE
+              value: {{ .migrateFileImportDataImage }}
             - name: MINIO_PORT
               value: '{{ .minioPort }}'
             - name: MINIO_BUCKET_NAME
@@ -70,6 +72,18 @@ spec:
               value: "false"
             - name: VLOGS_BASE_URL
               value: {{ .vlogsBaseUrl }}
+            - name: MIGRATION_JOB_CPU_REQUIREMENT
+              value: {{ .migrationJobCPURequirement }}
+            - name: MIGRATION_JOB_MEMORY_REQUIREMENT
+              value: {{ .migrationJobMemoryRequirement }}
+            - name: DUMPIMPORT_JOB_CPU_REQUIREMENT
+              value: {{ .dumpImportJobCPURequirement }}
+            - name: DUMPIMPORT_JOB_MEMORY_REQUIREMENT
+              value: {{ .dumpImportJobMemoryRequirement }}
+            - name: BACKUP_JOB_CPU_REQUIREMENT
+              value: {{ .backupJobCPURequirement }}
+            - name: BACKUP_JOB_MEMORY_REQUIREMENT
+              value: {{ .backupJobMemoryRequirement }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

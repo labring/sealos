@@ -40,6 +40,7 @@ import (
 type PaymentReconciler struct {
 	client.Client
 	Account           *AccountReconciler
+	DebtReconciler    *DebtReconciler
 	WatchClient       client.WithWatch
 	Scheme            *runtime.Scheme
 	Logger            logr.Logger
@@ -265,6 +266,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		if err := r.Status().Update(context.Background(), payment); err != nil {
 			return fmt.Errorf("update payment failed: %w", err)
 		}
+		go r.DebtReconciler.processUsersInParallel([]uuid.UUID{userUID})
 	// case pay.PaymentFailed, pay.PaymentExpired:
 	default:
 		if err := r.expiredOvertimePayment(payment); err != nil {

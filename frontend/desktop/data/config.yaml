@@ -19,6 +19,7 @@ common:
   apiEnabled: false
   rechargeEnabled: false
   cfSiteKey: ""
+  licenseCheckEnabled: false
 database:
   mongodbURI: "thisismongodburi"
   globalCockroachdbURI: "thisisglobalcockroachdburi"
@@ -42,6 +43,7 @@ desktop:
       aiAssistantEnabled: false
       bannerEnabled: false
       subscriptionEnabled: false
+      guestModeEnabled: false
     gtmId: null
   auth:
     proxyAddress: ""

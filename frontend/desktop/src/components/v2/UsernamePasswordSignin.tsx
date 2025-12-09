@@ -20,12 +20,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 
-import { passwordLoginRequest } from '@/api/auth';
+import { passwordLoginRequest, autoInitRegionToken } from '@/api/auth';
 import useSessionStore from '@/stores/session';
 import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
 import { getRegionToken } from '@/api/auth';
+import { useGuideModalStore } from '@/stores/guideModal';
 
 // Form validation schema - simplified for login only
 const loginSchema = z.object({
@@ -43,8 +44,8 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   const router = useRouter();
   const { t } = useTranslation();
   const toast = useToast();
-  const { setToken } = useSessionStore();
-
+  const { setToken, setSession } = useSessionStore();
+  const isGuest = useSessionStore((state) => state.isGuest);
   const [showPassword, setShowPassword] = useState(false);
 
   const bg = useColorModeValue('white', 'gray.700');
@@ -80,7 +81,19 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
       if (result?.data?.token) {
         setToken(result.data.token);
         if (result.data.needInit) {
-          await router.replace('/workspace');
+          try {
+            const initResult = await autoInitRegionToken();
+
+            if (initResult?.data) {
+              await sessionConfig(initResult.data);
+              const { setInitGuide } = useGuideModalStore.getState();
+              setInitGuide(true);
+              await router.replace('/');
+            }
+          } catch (error) {
+            console.error('Auto init failed, fallback to manual:', error);
+            await router.replace('/workspace');
+          }
         } else {
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
@@ -97,8 +110,10 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
     onError: (error: any) => {
       console.error('Login failed:', error);
 
-      // Set specific field errors based on the error type
-      if (error.response?.status === 401) {
+      // Handle authentication errors (500 status code with specific messages)
+      const errorMessage = error?.message || 'Login failed';
+
+      if (errorMessage === 'User not found.' || errorMessage === 'Incorrect password.') {
         setError('password', {
           type: 'manual',
           message: t('common:invalid_username_or_password')
@@ -106,7 +121,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
       } else {
         toast({
           title: t('v2:unknown_error'),
-          description: error?.message,
+          description: errorMessage,
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -129,7 +144,13 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
+    <Flex
+      minH={isGuest() ? '60vh' : '100vh'}
+      align="center"
+      justify="center"
+      bg={bg}
+      direction={'column'}
+    >
       <Stack mx="auto" maxW="lg" px={4} gap={'16px'} width="360px" minW={'352px'}>
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
           {t('v2:sign_in')}
@@ -223,16 +244,6 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
             >
               {t('v2:sign_in')}
             </Button>
-
-            {/* Error Message */}
-            {loginMutation.isError && (
-              <Flex align="center" gap={2} mt={2}>
-                <OctagonAlertIcon size={16} color="#DC2626" />
-                <Text fontSize="sm" color="#DC2626">
-                  {t('common:invalid_username_or_password')}
-                </Text>
-              </Flex>
-            )}
           </Stack>
         </form>
 

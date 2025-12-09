@@ -30,7 +30,7 @@
   "subscribe": "Subscribe",
   "choose_your_workspace_plan": "Choose Your Workspace Plan",
   "no_plans_available": "No plans available",
-  "still_want_to_charge_by_volume": "Still want to charge by volume?",
+  "still_want_to_charge_by_volume": "Still want to pay based on usage?",
   "workspace_name": "Workspace Name",
   "order_summary": "Order Summary",
   "total_billed_monthly": "Total Billed Monthly",
@@ -161,9 +161,11 @@
   "credit_purchase": "Credit Purchase",
   "custom_amount": "Custom Amount",
   "duration": "duration",
-  "first_recharge_tips": "Earn credits when making a first-time purchase for some tiers.",
   "free_plan": "Free Plan",
   "orders": {
+    "invoiced": "Invoiced",
+    "refunded": "Refunded",
+    "source_balance": "Paid with balance",
     "apply_inovice_tips": "Apply for an invoice need to 3 to 5 days",
     "apply_invoice": "Apply Invoice",
     "transaction_time": "Transaction Time",
@@ -204,6 +206,7 @@
     "page": "/ Page",
     "invoice_request_time": "Invoice Request Time",
     "invoice_issued_time": "Invoice Issued Time",
+    "invoice_details_button": "Details",
     "action": "Action",
     "download": "Download",
     "status_label": "Status",
@@ -330,9 +333,13 @@
   },
   "payg_cost_drawer": {
     "amount": "Amount",
-    "total_amount": "Total Amount"
+    "total_amount": "Total Amount",
+    "unknown_region": "Unknown Region"
   },
   "bonus_amount": "Bonus Amount",
   "sealos_coin_text": "Sealos Coin icon",
-  "sealos_coin_alt": "A coin icon that indicates some type of currency."
+  "sealos_coin_alt": "A coin icon that indicates some type of currency.",
+  "recharge_doubled": "Doubled!",
+  "recharge_bonus": "Bonus!",
+  "loading_data": "Loading data..."
 }

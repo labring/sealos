@@ -14,7 +14,12 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { HiddenCaptchaComponent, AliyunCaptchaHandles } from '../signin/Captcha';
 
-export function PhoneSigninForm() {
+interface PhoneSigninFormProps {
+  isModal?: boolean;
+  onVerifyStep?: () => void;
+}
+
+export function PhoneSigninForm({ isModal = false, onVerifyStep }: PhoneSigninFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useCustomToast();
@@ -32,6 +37,15 @@ export function PhoneSigninForm() {
   } = useSigninFormStore();
 
   const [captchaSolved, setCaptchaSolved] = useState(false);
+
+  // If captcha is disabled, automatically set captchaSolved to true
+  useEffect(() => {
+    if (!authConfig?.captcha.ali.enabled) {
+      setCaptchaSolved(true);
+    } else {
+      setCaptchaSolved(false);
+    }
+  }, [authConfig?.captcha.ali.enabled]);
 
   // Countdown
   const getRemainingTime = useCallback(
@@ -130,11 +144,16 @@ export function PhoneSigninForm() {
 
     if (codeSent) {
       updateStartTime();
-
-      router.push('/phoneCheck');
+      if (isModal && onVerifyStep) {
+        onVerifyStep();
+      } else {
+        router.push('/phoneCheck');
+      }
     } else {
       clearStartTime();
-      handleCaptchaError();
+      // On send failure, only clear token and re-init captcha
+      // Keep captchaSolved=true so user can retry without re-verifying
+      clearCaptchaToken();
       aliCaptchaRef.current?.init();
     }
   };

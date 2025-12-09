@@ -75,7 +75,7 @@ const ConfigHeader = ({
           fontWeight={'500'}
           backgroundColor={'grayModern.900'}
         >
-          {t('application')}
+          {t('Deploy')}
         </Button>
       </Flex>
     </Flex>

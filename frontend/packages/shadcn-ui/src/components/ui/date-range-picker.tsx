@@ -38,10 +38,34 @@ export function DateRangePicker({
   const date = value !== undefined ? value : internalDate;
 
   const handleDateChange = (newDate: DateRange | undefined) => {
+    // Normalize date to 00:00:00.000 to 23:59:59.999
+    const fromDate = !!newDate?.from ? new Date(newDate?.from) : undefined;
+    if (fromDate) {
+      fromDate.setHours(0);
+      fromDate.setMinutes(0);
+      fromDate.setSeconds(0);
+      fromDate.setMilliseconds(0);
+    }
+
+    const toDate = !!newDate?.to ? new Date(newDate.to) : undefined;
+    if (toDate) {
+      toDate.setHours(23);
+      toDate.setMinutes(59);
+      toDate.setSeconds(59);
+      toDate.setMilliseconds(999);
+    }
+
+    const finalNewDate = newDate
+      ? {
+          from: fromDate,
+          to: toDate
+        }
+      : undefined;
+
     if (onChange) {
-      onChange(newDate);
+      onChange(finalNewDate);
     } else {
-      setInternalDate(newDate);
+      setInternalDate(finalNewDate);
     }
   };
 

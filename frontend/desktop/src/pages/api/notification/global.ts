@@ -26,7 +26,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     };
 
-    const listData = listCrd.body?.items?.map(adaptNotification) || [];
+    const listData =
+      listCrd.body?.items?.map(adaptNotification).filter((notification) => {
+        const started = notification.startTime
+          ? new Date(notification.startTime).getTime() < Date.now()
+          : true;
+        const notEnded = notification.endTime
+          ? new Date(notification.endTime).getTime() > Date.now()
+          : true;
+
+        return started && notEnded;
+      }) || [];
 
     if (listData.length > 0) {
       listData.sort(compareByTimestamp);
