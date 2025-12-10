@@ -369,6 +369,7 @@
   },
   "please_upload_file": "Please upload a file",
   "port": "Port",
+  "port_9999_reserved": "Port 9999 is reserved for system use. Please use a different port",
   "prepare": "Pending",
   "privacy_and_security_agreement": "Privacy and Security Agreement",
   "privacy_and_security_agreement_tips": "Please read and agree to the Privacy and Security Agreement.",
@@ -529,6 +530,7 @@
   "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
   "waiting_devbox_ready": "Waiting for DevBox to be ready...",
+  "webide_fee_warning": "Starting the online IDE will listen on port 9999 and enable public access for this port. This may incur associated fees. Do you wish to continue?",
   "will_get_ready_soon": "Will get ready soon...",
   "yaml_file": "YAML"
 }

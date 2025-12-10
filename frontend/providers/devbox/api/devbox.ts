@@ -104,3 +104,49 @@ export const uploadAndExtractFile = (
     timeout: 0,
     onUploadProgress
   });
+
+export const getDevboxPorts = (devboxName: string) =>
+  GET<{
+    ports: {
+      portName: string;
+      number: number;
+      protocol: string;
+      networkName: string;
+      exposesPublicDomain: boolean;
+      publicDomain: string;
+      customDomain: string;
+      serviceName: string;
+      privateAddress: string;
+    }[];
+  }>(`/api/getDevboxPorts?devboxName=${devboxName}`);
+
+export const updateDevboxPorts = (
+  devboxName: string,
+  ports: {
+    portName?: string;
+    networkName?: string;
+    number: number;
+    protocol?: string;
+    exposesPublicDomain?: boolean;
+    publicDomain?: string;
+    customDomain?: string;
+  }[]
+) =>
+  POST<{
+    ports: {
+      portName: string;
+      number: number;
+      protocol: string;
+      networkName: string;
+      exposesPublicDomain: boolean;
+      publicDomain: string;
+      customDomain: string;
+      serviceName: string;
+      privateAddress: string;
+    }[];
+  }>(`/api/updateDevboxPorts`, { devboxName, ports });
+
+export const updateDevboxWebIDEPort = (devboxName: string, port: number) =>
+  POST<{
+    publicDomain: string;
+  }>(`/api/updateDevboxWebIDEPort`, { devboxName, port });

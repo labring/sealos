@@ -3,7 +3,7 @@ import yaml from 'js-yaml';
 import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
 import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
-import { parseTemplateConfig, str2Num } from './tools';
+import { nanoid, parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
 import { RuntimeNamespaceMap } from '@/types/static';
 
@@ -229,16 +229,16 @@ export const json2Ingress = (
 
   const result = data.networks
     .filter((item) => item.openPublicDomain)
-    .map((network, i) => {
+    .map((network) => {
       const host = network.customDomain ? network.customDomain : network.publicDomain;
+      const networkName = network.networkName || nanoid();
 
-      const secretName = network.customDomain ? network.networkName : ingressSecret;
-      const protocol = network.protocol;
+      const secretName = network.customDomain ? networkName : ingressSecret;
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
-          name: network.networkName,
+          name: networkName,
           labels: {
             [devboxKey]: data.name,
             [publicDomainKey]: network.publicDomain
@@ -283,7 +283,7 @@ export const json2Ingress = (
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
         metadata: {
-          name: network.networkName,
+          name: networkName,
           labels: {
             [devboxKey]: data.name
           }
@@ -312,7 +312,7 @@ export const json2Ingress = (
         apiVersion: 'cert-manager.io/v1',
         kind: 'Certificate',
         metadata: {
-          name: network.networkName,
+          name: networkName,
           labels: {
             [devboxKey]: data.name
           }
@@ -321,7 +321,7 @@ export const json2Ingress = (
           secretName,
           dnsNames: [network.customDomain],
           issuerRef: {
-            name: network.networkName,
+            name: networkName,
             kind: 'Issuer'
           }
         }
@@ -350,10 +350,10 @@ export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) 
       }
     },
     spec: {
-      ports: data.networks.map((item, i) => ({
+      ports: data.networks.map((item) => ({
         port: str2Num(item.port),
         targetPort: str2Num(item.port),
-        name: item.portName
+        name: item.portName || nanoid()
       })),
       selector: {
         ['app.kubernetes.io/name']: data.name,

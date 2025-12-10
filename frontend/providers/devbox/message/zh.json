@@ -371,6 +371,7 @@
   },
   "please_upload_file": "请上传文件",
   "port": "端口",
+  "port_9999_reserved": "端口 9999 为系统保留端口，请使用其他端口",
   "prepare": "准备中",
   "privacy_and_security_agreement": "安全隐私说明",
   "privacy_and_security_agreement_tips": "请阅读并同意安全隐私协议。",
@@ -531,6 +532,7 @@
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
   "waiting_devbox_ready": "等待 DevBox 就绪...",
+  "webide_fee_warning": "启动在线 IDE 将同时监听 9999 端口并开启该端口的公网访问，可能会产生相应的费用。是否继续？",
   "will_get_ready_soon": "即将准备就绪...",
   "yaml_file": "YAML 文件"
 }

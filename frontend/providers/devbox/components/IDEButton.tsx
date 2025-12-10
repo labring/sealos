@@ -18,7 +18,7 @@ import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { IDEType, useIDEStore } from '@/stores/ide';
-import { getSSHConnectionInfo } from '@/api/devbox';
+import { getSSHConnectionInfo, getDevboxPorts, updateDevboxWebIDEPort } from '@/api/devbox';
 import { DevboxStatusMapType } from '@/types/devbox';
 import { destroyDriver, startDriver, startConnectIDE } from '@/hooks/driver';
 
@@ -27,6 +27,7 @@ import JetBrainsGuideDrawer from './drawers/JetbrainsGuideDrawer';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname } from '@/i18n';
 import { track } from '@sealos/gtm';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export interface JetBrainsGuideData {
   devboxName: string;
@@ -82,6 +83,13 @@ const IDEButton = memo(
     const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType;
     const { guideIDE, setGuideIDE } = useGuideStore();
 
+    const { openConfirm, ConfirmChild } = useConfirm({
+      title: 'prompt',
+      content: 'webide_fee_warning',
+      confirmText: 'confirm',
+      cancelText: 'cancel'
+    });
+
     const handleGotoIDE = useCallback(
       async (currentIDE: IDEType = 'cursor') => {
         track({
@@ -96,10 +104,37 @@ const IDEButton = memo(
 
         setLoading(true);
 
-        // TODO: Add a reminder: If you haven't opened it for a long time, please check whether the corresponding IDE is installed.
-        if (currentIDE !== 'gateway' && currentIDE !== 'toolbox') toast.info(t('opening_ide'));
+        if (currentIDE !== 'gateway' && currentIDE !== 'toolbox' && currentIDE !== 'webide')
+          toast.info(t('opening_ide'));
 
         try {
+          if (currentIDE === 'webide') {
+            const portsResponse = await getDevboxPorts(devboxName);
+            const existingPorts = portsResponse.ports || [];
+            const port9999 = existingPorts.find((p) => p.number === 9999);
+
+            if (port9999 && port9999.exposesPublicDomain && port9999.publicDomain) {
+              const webIDEUrl = `https://${port9999.publicDomain}/?folder=/home/devbox/project`;
+              window.open(webIDEUrl, '_blank');
+              return;
+            }
+
+            const executeWebIDE = async () => {
+              toast.info('Creating Web IDE network...');
+              const response = await updateDevboxWebIDEPort(devboxName, 9999);
+
+              if (response.publicDomain) {
+                const webIDEUrl = `https://${response.publicDomain}/?folder=/home/devbox/project`;
+                window.open(webIDEUrl, '_blank');
+              } else {
+                toast.error('Failed to create Web IDE network');
+              }
+            };
+
+            openConfirm(executeWebIDE)();
+            return;
+          }
+
           const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
             devboxName
           });
@@ -136,11 +171,12 @@ const IDEButton = memo(
           window.location.href = fullUri;
         } catch (error: any) {
           console.error(error, '==');
+          toast.error(error?.message || 'Failed to open IDE');
         } finally {
           setLoading(false);
         }
       },
-      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort, setGuideIDE]
+      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort, setGuideIDE, openConfirm]
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -350,6 +386,7 @@ const IDEButton = memo(
             />
           )}
         </div>
+        <ConfirmChild />
       </div>
     );
   },
@@ -372,6 +409,10 @@ export const ideObj = {
   vscode: {
     label: 'VSCode',
     prefix: 'vscode://'
+  },
+  webide: {
+    label: 'Online',
+    prefix: '-'
   },
   vscodeInsiders: {
     label: 'Insiders',
@@ -469,7 +510,15 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
 };
 const rightColumnItems: MenuItem[] = [
   { value: 'cursor', menuLabel: 'Cursor' },
-  { value: 'vscode', menuLabel: 'VSCode' },
+  {
+    value: 'vscode-group' as IDEType,
+    menuLabel: 'VSCode',
+    group: 'vscode',
+    options: [
+      { value: 'vscode', menuLabel: 'VSCode' },
+      { value: 'webide', menuLabel: 'Online' }
+    ]
+  },
   { value: 'vscodeInsiders', menuLabel: 'Insiders' },
   { value: 'windsurf', menuLabel: 'Windsurf' },
   {
