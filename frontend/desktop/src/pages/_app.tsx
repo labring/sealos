@@ -14,6 +14,7 @@ import '@sealos/driver/src/driver.css';
 import '@/styles/globals.css';
 import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
 import useAppStore from '@/stores/app';
+import useSessionStore from '@/stores/session';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,27 @@ const App = ({ Component, pageProps }: AppProps) => {
     const lang = getCookie('NEXT_LOCALE');
     i18n?.changeLanguage?.(lang);
   }, [i18n]);
+
+  // Record user's last activity time when leaving the page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('document.visibilityState === hidden');
+        const { isUserLogin, token } = useSessionStore.getState();
+        if (isUserLogin() && token) {
+          // Use sendBeacon to ensure the request is sent even when the page is unloading
+          // Put token in query params since sendBeacon cannot set custom headers
+          const url = `/api/account/updateActivity?token=${encodeURIComponent(token)}`;
+          navigator.sendBeacon(url, JSON.stringify({}));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
