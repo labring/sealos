@@ -17,8 +17,9 @@ import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
 import { Textarea } from '@sealos/shadcn-ui/textarea';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import type { GitImportFormData, ImportStage } from '@/types/import';
-import { createDevbox, getDevboxByName, execCommandInDevboxPod } from '@/api/devbox';
+import { createDevbox, getDevboxByName, execCommandInDevboxPod, autostartDevbox } from '@/api/devbox';
 import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { generateGitImportCommand } from '@/utils/importCommandGenerator';
@@ -44,7 +45,8 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     templateRepositoryUid: '',
     templateUid: '',
     containerPort: 8080,
-    startupCommand: ''
+    startupCommand: '',
+    autoStart: true
   });
 
   const [importStage, setImportStage] = useState<ImportStage>('idle');
@@ -252,6 +254,20 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
       if (isSuccess || commandOutput.includes('Git import completed successfully')) {
         setImportStage('success');
         toast.success(t('import_success'));
+
+        if (formData.autoStart) {
+          try {
+            await autostartDevbox({
+              devboxName,
+              execCommand: 'nohup /home/devbox/project/entrypoint.sh > /dev/null 2>&1 &'
+            });
+            toast.success(t('autostart_initiated'));
+          } catch (error) {
+            console.error('Autostart failed:', error);
+            toast.warning(t('autostart_failed_but_import_success'));
+          }
+        }
+
         onSuccess(devboxName);
       } else {
         setImportStage('error');
@@ -280,7 +296,8 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
         templateRepositoryUid: '',
         templateUid: '',
         containerPort: 8080,
-        startupCommand: ''
+        startupCommand: '',
+        autoStart: true
       });
       setImportStage('idle');
       setImportError('');
@@ -502,6 +519,23 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                 {formErrors.startupCommand && (
                   <p className="text-sm text-red-600">{formErrors.startupCommand}</p>
                 )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="auto-start"
+                  checked={formData.autoStart}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, autoStart: checked === true })
+                  }
+                  disabled={isImporting}
+                />
+                <Label
+                  htmlFor="auto-start"
+                  className="text-sm font-normal text-zinc-700 cursor-pointer"
+                >
+                  {t('auto_start_after_import')}
+                </Label>
               </div>
 
               {importError && (

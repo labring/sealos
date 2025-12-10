@@ -7,6 +7,7 @@ export interface GitImportFormData {
   templateUid: string;
   containerPort: number;
   startupCommand?: string;
+  autoStart?: boolean;
 }
 
 export interface LocalImportFormData {
@@ -16,6 +17,7 @@ export interface LocalImportFormData {
   templateUid: string;
   containerPort: number;
   startupCommand?: string;
+  autoStart?: boolean;
 }
 
 export type ImportType = 'git' | 'local';

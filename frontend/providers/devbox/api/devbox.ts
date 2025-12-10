@@ -150,3 +150,13 @@ export const updateDevboxWebIDEPort = (devboxName: string, port: number) =>
   POST<{
     publicDomain: string;
   }>(`/api/updateDevboxWebIDEPort`, { devboxName, port });
+
+export const autostartDevbox = (data: { devboxName: string; execCommand?: string }) =>
+  POST<{
+    devboxName: string;
+    autostartCreated: boolean;
+    jobRecreated: boolean;
+    resources: string[];
+  }>(`/api/v1/devbox/${data.devboxName}/autostart`, {
+    execCommand: data.execCommand
+  });

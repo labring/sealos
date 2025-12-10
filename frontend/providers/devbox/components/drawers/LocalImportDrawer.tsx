@@ -16,8 +16,9 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { Textarea } from '@sealos/shadcn-ui/textarea';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import type { LocalImportFormData, ImportStage } from '@/types/import';
-import { createDevbox, getDevboxByName, uploadAndExtractFile } from '@/api/devbox';
+import { createDevbox, getDevboxByName, uploadAndExtractFile, autostartDevbox } from '@/api/devbox';
 import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import RuntimeSelector from '@/components/RuntimeSelector';
@@ -44,7 +45,8 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     templateRepositoryUid: '',
     templateUid: '',
     containerPort: 8080,
-    startupCommand: ''
+    startupCommand: '',
+    autoStart: true
   });
 
   const [importStage, setImportStage] = useState<ImportStage>('idle');
@@ -291,6 +293,19 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportLogs('Import completed successfully');
       toast.success(t('import_success'));
 
+      if (formData.autoStart) {
+        try {
+          await autostartDevbox({
+            devboxName,
+            execCommand: 'nohup /home/devbox/project/entrypoint.sh > /dev/null 2>&1 &'
+          });
+          toast.success(t('autostart_initiated'));
+        } catch (error) {
+          console.error('Autostart failed:', error);
+          toast.warning(t('autostart_failed_but_import_success'));
+        }
+      }
+
       onSuccess(devboxName);
       onClose();
     } catch (error: any) {
@@ -321,7 +336,8 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
         templateRepositoryUid: '',
         templateUid: '',
         containerPort: 8080,
-        startupCommand: ''
+        startupCommand: '',
+        autoStart: true
       });
       setImportStage('idle');
       setImportError('');
@@ -549,6 +565,23 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                 {formErrors.startupCommand && (
                   <p className="text-sm text-red-600">{formErrors.startupCommand}</p>
                 )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="auto-start"
+                  checked={formData.autoStart}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, autoStart: checked === true })
+                  }
+                  disabled={isImporting}
+                />
+                <Label
+                  htmlFor="auto-start"
+                  className="text-sm font-normal text-zinc-700 cursor-pointer"
+                >
+                  {t('auto_start_after_import')}
+                </Label>
               </div>
 
               {importError && (
