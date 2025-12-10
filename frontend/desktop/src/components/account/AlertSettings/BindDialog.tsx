@@ -14,7 +14,7 @@ interface BindDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   type: 'phone' | 'email';
-  onConfirm?: (value: string, code: string) => void;
+  onConfirm?: (value: string, code: string) => Promise<void>;
 }
 
 export function BindDialog({ open = false, onOpenChange, type, onConfirm }: BindDialogProps) {
@@ -134,21 +134,30 @@ export function BindDialog({ open = false, onOpenChange, type, onConfirm }: Bind
     }
 
     setVerifying(true);
+    setCodeError('');
     try {
-      onConfirm?.(value, code);
+      await onConfirm?.(value, code);
       setValue('');
       setCode('');
       setValueError('');
       setCodeError('');
       onOpenChange?.(false);
     } catch (error) {
-      setCodeError(
-        error instanceof Error ? error.message : t('common:alert_settings.bind.verify_failed')
-      );
-      toast({
-        title:
-          error instanceof Error ? error.message : t('common:alert_settings.bind.verify_failed')
-      });
+      // Check if it's a verification code error by error code (409 = SMS code is wrong)
+      const errorCode = (error as Error & { code?: number })?.code;
+      const isCodeError = errorCode === 409;
+
+      if (isCodeError) {
+        // no toast
+        setCodeError(t('common:alert_settings.bind.code_invalid'));
+      } else {
+        // show toast
+        const errorMessage =
+          error instanceof Error ? error.message : t('common:alert_settings.bind.verify_failed');
+        toast({
+          title: errorMessage
+        });
+      }
     } finally {
       setVerifying(false);
     }

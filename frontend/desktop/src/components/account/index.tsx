@@ -58,7 +58,7 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, authConfig } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -74,6 +74,10 @@ export default function Account() {
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
   const [alertSettingsOpen, setAlertSettingsOpen] = useState(false);
+
+  const emailAlertEnabled = layoutConfig?.common.emailAlertEnabled && authConfig?.idp.email.enabled;
+  const phoneAlertEnabled = layoutConfig?.common.phoneAlertEnabled && authConfig?.idp.sms.enabled;
+  const alertSettingsEnabled = emailAlertEnabled || phoneAlertEnabled;
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -273,6 +277,7 @@ export default function Account() {
                   borderRadius="8px"
                   _hover={{ bg: '#F4F4F5' }}
                   onClick={() => setAlertSettingsOpen(true)}
+                  display={alertSettingsEnabled ? 'block' : 'none'}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
@@ -453,7 +458,12 @@ export default function Account() {
           </Menu>
         </Flex>
 
-        <AlertSettings open={alertSettingsOpen} onOpenChange={setAlertSettingsOpen} />
+        <AlertSettings
+          open={alertSettingsOpen}
+          onOpenChange={setAlertSettingsOpen}
+          emailEnabled={emailAlertEnabled}
+          phoneEnabled={phoneAlertEnabled}
+        />
 
         {/*
         {layoutConfig?.common.workorderEnabled && (

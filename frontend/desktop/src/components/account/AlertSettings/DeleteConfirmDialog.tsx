@@ -46,15 +46,27 @@ export function DeleteConfirmDialog({
         <div className="text-sm leading-5 text-zinc-900">
           {phoneNumber ? (
             <>
-              {t('common:alert_settings.delete.confirm_phone.0')}
+              {
+                // @ts-expect-error i18n typing issues
+                t('common:alert_settings.delete.confirm_phone.0')
+              }
               <span className="font-medium">{phoneNumber}</span>
-              {t('common:alert_settings.delete.confirm_phone.1')}
+              {
+                // @ts-expect-error i18n typing issues
+                t('common:alert_settings.delete.confirm_phone.1')
+              }
             </>
           ) : email ? (
             <>
-              {t('common:alert_settings.delete.confirm_email.0')}
+              {
+                // @ts-expect-error i18n typing issues
+                t('common:alert_settings.delete.confirm_email.0')
+              }
               <span className="font-medium">{email}</span>
-              {t('common:alert_settings.delete.confirm_email.1')}
+              {
+                // @ts-expect-error i18n typing issues
+                t('common:alert_settings.delete.confirm_email.1')
+              }
             </>
           ) : (
             t('common:alert_settings.delete.confirm_generic')

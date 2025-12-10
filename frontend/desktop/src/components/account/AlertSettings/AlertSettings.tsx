@@ -27,6 +27,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { UserInfo } from '@/api/auth';
 import { useTranslation } from 'next-i18next';
+import { useConfigStore } from '@/stores/config';
 
 interface PhoneNumber {
   id: string;
@@ -45,13 +46,21 @@ interface Email {
 interface AlertSettingsProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  emailEnabled?: boolean;
+  phoneEnabled?: boolean;
 }
 
-export function AlertSettings({ open = false, onOpenChange }: AlertSettingsProps) {
+export function AlertSettings({
+  open = false,
+  onOpenChange,
+  emailEnabled = false,
+  phoneEnabled = false
+}: AlertSettingsProps) {
   const { t } = useTranslation();
   const { session } = useSessionStore();
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     type: 'phone' | 'email';
@@ -146,19 +155,16 @@ export function AlertSettings({ open = false, onOpenChange }: AlertSettingsProps
     }) => {
       const res = await createAlert({ providerType, providerId, code });
       if (res.code !== 200) {
-        throw new Error(res.message || 'Failed to create alert');
+        const error = new Error(res.message || 'Failed to create alert') as Error & {
+          code?: number;
+        };
+        error.code = res.code;
+        throw error;
       }
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alert-notification-accounts'] });
-      toast({ title: t('common:alert_settings.messages.create_success'), status: 'success' });
-    },
-    onError: (error) => {
-      toast({
-        title:
-          error instanceof Error ? error.message : t('common:alert_settings.messages.create_failed')
-      });
     }
   });
 
@@ -258,9 +264,24 @@ export function AlertSettings({ open = false, onOpenChange }: AlertSettingsProps
     setBindDialogOpen(true);
   };
 
-  const handleBindConfirm = async (value: string, code: string) => {
-    const providerType: ProviderType = bindDialogType === 'phone' ? 'PHONE' : 'EMAIL';
-    createMutation.mutate({ providerType, providerId: value, code });
+  const handleBindConfirm = async (value: string, code: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const providerType: ProviderType = bindDialogType === 'phone' ? 'PHONE' : 'EMAIL';
+      createMutation.mutate(
+        { providerType, providerId: value, code },
+        {
+          onSuccess: () => {
+            toast({ title: t('common:alert_settings.messages.create_success'), status: 'success' });
+            setBindDialogOpen(false);
+            resolve();
+          },
+          onError: (error) => {
+            // Don't show toast here - let BindDialog handle error display
+            reject(error);
+          }
+        }
+      );
+    });
   };
 
   const phoneSelectAllChecked = phoneNumbers.length > 0 && phoneNumbers.every((p) => p.checked);
@@ -285,169 +306,173 @@ export function AlertSettings({ open = false, onOpenChange }: AlertSettingsProps
             </div>
           ) : (
             <div className="flex flex-col gap-8">
-              <div className="flex flex-col gap-3">
-                <p className="text-sm font-medium leading-none text-black">
-                  {t('common:alert_settings.phone.section_title')}
-                </p>
-                <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden w-full">
-                  <div className="bg-zinc-50 border-b border-zinc-200 flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={phoneSelectAllChecked}
-                        onCheckedChange={handlePhoneSelectAll}
-                        className="w-4 h-4"
-                        disabled={phoneNumbers.length === 0 || toggleMutation.isLoading}
-                      />
-                      <p className="text-sm leading-5 text-black">
-                        {t('common:alert_settings.phone.enable_all')}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col">
-                    {phoneNumbers.length === 0 ? (
-                      <div className="flex items-center justify-center h-11 text-sm text-zinc-500">
-                        {t('common:alert_settings.phone.no_phone_numbers')}
+              {phoneEnabled && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm font-medium leading-none text-black">
+                    {t('common:alert_settings.phone.section_title')}
+                  </p>
+                  <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden w-full">
+                    <div className="bg-zinc-50 border-b border-zinc-200 flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={phoneSelectAllChecked}
+                          onCheckedChange={handlePhoneSelectAll}
+                          className="w-4 h-4"
+                          disabled={phoneNumbers.length === 0 || toggleMutation.isLoading}
+                        />
+                        <p className="text-sm leading-5 text-black">
+                          {t('common:alert_settings.phone.enable_all')}
+                        </p>
                       </div>
-                    ) : (
-                      phoneNumbers.map((phone, index) => (
-                        <div
-                          key={phone.id}
-                          className={`flex items-center h-11 ${
-                            index < phoneNumbers.length - 1 ? 'border-b border-zinc-100' : ''
-                          }`}
-                        >
-                          <div className="flex-1 flex items-center gap-2.5 px-4 min-w-[85px]">
-                            <Checkbox
-                              checked={phone.checked}
-                              onCheckedChange={(checked) =>
-                                handlePhoneCheck(phone.id, checked === true)
-                              }
-                              className="w-4 h-4"
-                              disabled={toggleMutation.isLoading}
-                            />
-                            <p className="text-sm leading-none text-zinc-900">{phone.number}</p>
-                          </div>
-                          <div className="flex items-center justify-center px-3 py-4 h-full">
-                            {phone.isBound ? (
-                              <Badge
-                                variant="secondary"
-                                className="bg-zinc-100 text-zinc-900 text-xs font-medium px-2.5 py-0.5 rounded-full border-0"
-                              >
-                                {t('common:alert_settings.phone.bound_badge')}
-                              </Badge>
-                            ) : (
-                              <button
-                                onClick={() => handleDeletePhone(phone.id)}
-                                className="flex items-center justify-center p-2.5 w-8 h-8 hover:bg-zinc-100 rounded transition-colors"
-                                disabled={deleteMutation.isLoading}
-                              >
-                                <Trash2 className="w-4 h-4 text-zinc-500" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    </div>
 
-                    <div className="flex items-center justify-center h-11 border-t border-zinc-100">
-                      <Button
-                        variant="ghost"
-                        onClick={handleAddPhoneNumber}
-                        className="flex-1 flex items-center gap-2 h-11 px-4 py-2 text-zinc-900 hover:bg-zinc-50"
-                        disabled={createMutation.isLoading}
-                      >
-                        <Plus className="w-4 h-4 text-zinc-500" />
-                        <span className="text-sm font-medium leading-5">
-                          {t('common:alert_settings.phone.add_phone')}
-                        </span>
-                      </Button>
+                    <div className="flex flex-col">
+                      {phoneNumbers.length === 0 ? (
+                        <div className="flex items-center justify-center h-11 text-sm text-zinc-500">
+                          {t('common:alert_settings.phone.no_phone_numbers')}
+                        </div>
+                      ) : (
+                        phoneNumbers.map((phone, index) => (
+                          <div
+                            key={phone.id}
+                            className={`flex items-center h-11 ${
+                              index < phoneNumbers.length - 1 ? 'border-b border-zinc-100' : ''
+                            }`}
+                          >
+                            <div className="flex-1 flex items-center gap-2.5 px-4 min-w-[85px]">
+                              <Checkbox
+                                checked={phone.checked}
+                                onCheckedChange={(checked) =>
+                                  handlePhoneCheck(phone.id, checked === true)
+                                }
+                                className="w-4 h-4"
+                                disabled={toggleMutation.isLoading}
+                              />
+                              <p className="text-sm leading-none text-zinc-900">{phone.number}</p>
+                            </div>
+                            <div className="flex items-center justify-center px-3 py-4 h-full">
+                              {phone.isBound ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-zinc-100 text-zinc-900 text-xs font-medium px-2.5 py-0.5 rounded-full border-0"
+                                >
+                                  {t('common:alert_settings.phone.bound_badge')}
+                                </Badge>
+                              ) : (
+                                <button
+                                  onClick={() => handleDeletePhone(phone.id)}
+                                  className="flex items-center justify-center p-2.5 w-8 h-8 hover:bg-zinc-100 rounded transition-colors"
+                                  disabled={deleteMutation.isLoading}
+                                >
+                                  <Trash2 className="w-4 h-4 text-zinc-500" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+
+                      <div className="flex items-center justify-center h-11 border-t border-zinc-100">
+                        <Button
+                          variant="ghost"
+                          onClick={handleAddPhoneNumber}
+                          className="flex-1 flex items-center gap-2 h-11 px-4 py-2 text-zinc-900 hover:bg-zinc-50"
+                          disabled={createMutation.isLoading}
+                        >
+                          <Plus className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm font-medium leading-5">
+                            {t('common:alert_settings.phone.add_phone')}
+                          </span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex flex-col gap-3">
-                <p className="text-sm font-medium leading-none text-black">
-                  {t('common:alert_settings.email.section_title')}
-                </p>
-                <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden w-full">
-                  <div className="bg-zinc-50 border-b border-zinc-200 flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={emailSelectAllChecked}
-                        onCheckedChange={handleEmailSelectAll}
-                        className="w-4 h-4"
-                        disabled={emails.length === 0 || toggleMutation.isLoading}
-                      />
-                      <p className="text-sm leading-5 text-black">
-                        {t('common:alert_settings.email.enable_all')}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col">
-                    {emails.length === 0 ? (
-                      <div className="flex items-center justify-center h-11 text-sm text-zinc-500">
-                        {t('common:alert_settings.email.no_emails')}
+              {emailEnabled && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm font-medium leading-none text-black">
+                    {t('common:alert_settings.email.section_title')}
+                  </p>
+                  <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden w-full">
+                    <div className="bg-zinc-50 border-b border-zinc-200 flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={emailSelectAllChecked}
+                          onCheckedChange={handleEmailSelectAll}
+                          className="w-4 h-4"
+                          disabled={emails.length === 0 || toggleMutation.isLoading}
+                        />
+                        <p className="text-sm leading-5 text-black">
+                          {t('common:alert_settings.email.enable_all')}
+                        </p>
                       </div>
-                    ) : (
-                      emails.map((email, index) => (
-                        <div
-                          key={email.id}
-                          className={`flex items-center h-11 ${
-                            index < emails.length - 1 ? 'border-b border-zinc-100' : ''
-                          }`}
-                        >
-                          <div className="flex-1 flex items-center gap-2.5 px-4 min-w-[85px]">
-                            <Checkbox
-                              checked={email.checked}
-                              onCheckedChange={(checked) =>
-                                handleEmailCheck(email.id, checked === true)
-                              }
-                              className="w-4 h-4"
-                              disabled={toggleMutation.isLoading}
-                            />
-                            <p className="text-sm leading-none text-zinc-900">{email.address}</p>
-                          </div>
-                          <div className="flex items-center justify-center px-3 py-4 h-full">
-                            {email.isBound ? (
-                              <Badge
-                                variant="secondary"
-                                className="bg-zinc-100 text-zinc-900 text-xs font-medium px-2.5 py-0.5 rounded-full border-0"
-                              >
-                                {t('common:alert_settings.email.bound_badge')}
-                              </Badge>
-                            ) : (
-                              <button
-                                onClick={() => handleDeleteEmail(email.id)}
-                                className="flex items-center justify-center p-2.5 w-8 h-8 hover:bg-zinc-100 rounded transition-colors"
-                                disabled={deleteMutation.isLoading}
-                              >
-                                <Trash2 className="w-4 h-4 text-zinc-500" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    </div>
 
-                    <div className="flex items-center justify-center h-11 border-t border-zinc-100">
-                      <Button
-                        variant="ghost"
-                        onClick={handleAddEmail}
-                        className="flex-1 flex items-center gap-2 h-11 px-4 py-2 text-zinc-900 hover:bg-zinc-50"
-                        disabled={createMutation.isLoading}
-                      >
-                        <Plus className="w-4 h-4 text-zinc-500" />
-                        <span className="text-sm font-medium leading-5">
-                          {t('common:alert_settings.email.add_email')}
-                        </span>
-                      </Button>
+                    <div className="flex flex-col">
+                      {emails.length === 0 ? (
+                        <div className="flex items-center justify-center h-11 text-sm text-zinc-500">
+                          {t('common:alert_settings.email.no_emails')}
+                        </div>
+                      ) : (
+                        emails.map((email, index) => (
+                          <div
+                            key={email.id}
+                            className={`flex items-center h-11 ${
+                              index < emails.length - 1 ? 'border-b border-zinc-100' : ''
+                            }`}
+                          >
+                            <div className="flex-1 flex items-center gap-2.5 px-4 min-w-[85px]">
+                              <Checkbox
+                                checked={email.checked}
+                                onCheckedChange={(checked) =>
+                                  handleEmailCheck(email.id, checked === true)
+                                }
+                                className="w-4 h-4"
+                                disabled={toggleMutation.isLoading}
+                              />
+                              <p className="text-sm leading-none text-zinc-900">{email.address}</p>
+                            </div>
+                            <div className="flex items-center justify-center px-3 py-4 h-full">
+                              {email.isBound ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-zinc-100 text-zinc-900 text-xs font-medium px-2.5 py-0.5 rounded-full border-0"
+                                >
+                                  {t('common:alert_settings.email.bound_badge')}
+                                </Badge>
+                              ) : (
+                                <button
+                                  onClick={() => handleDeleteEmail(email.id)}
+                                  className="flex items-center justify-center p-2.5 w-8 h-8 hover:bg-zinc-100 rounded transition-colors"
+                                  disabled={deleteMutation.isLoading}
+                                >
+                                  <Trash2 className="w-4 h-4 text-zinc-500" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+
+                      <div className="flex items-center justify-center h-11 border-t border-zinc-100">
+                        <Button
+                          variant="ghost"
+                          onClick={handleAddEmail}
+                          className="flex-1 flex items-center gap-2 h-11 px-4 py-2 text-zinc-900 hover:bg-zinc-50"
+                          disabled={createMutation.isLoading}
+                        >
+                          <Plus className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm font-medium leading-5">
+                            {t('common:alert_settings.email.add_email')}
+                          </span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
