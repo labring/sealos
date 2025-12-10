@@ -102,7 +102,7 @@ export function NetworkSection({
               ...currentNetwork,
               serviceName: '',
               protocol: protocol as any,
-              appProtocol: 'HTTP',
+              appProtocol: undefined,
               openNodePort: true,
               openPublicDomain: false,
               customDomain: '',
@@ -125,13 +125,13 @@ export function NetworkSection({
           const { index, network } = action.payload;
           const currentNetwork = currentNetworks[index];
 
-          if (APPLICATION_PROTOCOLS.includes(network.appProtocol)) {
+          if (network.appProtocol && APPLICATION_PROTOCOLS.includes(network.appProtocol)) {
             updateNetworks(index, {
               ...currentNetwork,
               serviceName: '',
               networkName: network.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
-              appProtocol: network.appProtocol || 'HTTP',
+              appProtocol: network.appProtocol,
               openPublicDomain: true,
               openNodePort: false,
               publicDomain: network.publicDomain || nanoid(),
@@ -143,7 +143,7 @@ export function NetworkSection({
               serviceName: '',
               networkName: network.networkName || `network-${nanoid()}`,
               protocol: network.protocol,
-              appProtocol: 'HTTP',
+              appProtocol: undefined,
               openNodePort: true,
               openPublicDomain: false,
               customDomain: ''

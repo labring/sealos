@@ -390,7 +390,7 @@ export const json2Ingress = (data: AppEditType) => {
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.appProtocol]
+            ...map[network.appProtocol ?? 'HTTP']
           }
         },
         spec: {

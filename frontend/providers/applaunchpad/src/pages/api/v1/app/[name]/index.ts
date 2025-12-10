@@ -777,7 +777,9 @@ async function manageAppPorts(
             }
           } else {
             throw new PortValidationError(
-              `Cannot set exposesPublicDomain for non-application protocol. Current protocol: ${finalAppProtocol || updatedNetwork.protocol}`,
+              `Cannot set exposesPublicDomain for non-application protocol. Current protocol: ${
+                finalAppProtocol || updatedNetwork.protocol
+              }`,
               {
                 currentAppProtocol: finalAppProtocol,
                 currentProtocol: updatedNetwork.protocol,
@@ -816,9 +818,7 @@ async function manageAppPorts(
           });
         }
 
-        const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(
-          portConfig.protocol || 'HTTP'
-        );
+        const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(portConfig.protocol);
         const newNetwork = {
           serviceName: `service-${nanoid()}`,
           networkName: `network-${nanoid()}`,
