@@ -10,7 +10,7 @@
   "added": "已加入",
   "agree_policy": "我已阅读并同意",
   "alarm_pod": "告警 Pods: {{count}}",
-  "alert": "通知",
+  "notification_alert": "通知",
   "alerts": "告警",
   "all_apps": "所有应用",
   "already_sent_code": "已经发送验证码",
@@ -376,6 +376,7 @@
   "you_have_not_purchased_the_license": "您还没有购买 License",
   "yuan": "元",
   "alert_settings": {
+    "menu_item": "告警设置",
     "title": "告警设置",
     "description": "当余额不足或服务异常时，我们将通过以下方式通知您。",
     "loading": "加载中...",

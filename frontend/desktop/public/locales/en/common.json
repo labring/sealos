@@ -10,7 +10,7 @@
   "added": "Added",
   "agree_policy": "I have read and agree to the",
   "alarm_pod": "Unhealthy Pods: {{count}}",
-  "alert": "Alert",
+  "notification_alert": "Alert",
   "alerts": "Alerts",
   "all_apps": "All Apps",
   "already_sent_code": "Already sent code",
@@ -384,6 +384,7 @@
   "you_have_not_purchased_the_license": "You have not purchased the License",
   "yuan": "Yuan",
   "alert_settings": {
+    "menu_item": "Alert Settings",
     "title": "Alert Settings",
     "description": "When your balance is insufficient or service is abnormal, we will notify you through the following methods.",
     "loading": "Loading...",

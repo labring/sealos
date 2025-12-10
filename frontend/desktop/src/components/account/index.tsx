@@ -284,7 +284,7 @@ export default function Account() {
                       <Bell size={16} color="#737373" />
                     </Center>
                     <Text fontSize="14px" fontWeight="400">
-                      告警设置
+                      {t('common:alert_settings.menu_item')}
                     </Text>
                   </Flex>
                 </MenuItem>
