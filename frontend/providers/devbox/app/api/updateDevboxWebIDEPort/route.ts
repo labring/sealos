@@ -66,6 +66,43 @@ export async function POST(req: NextRequest) {
       customDomain: ''
     };
 
+    const devboxResponse = await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName
+    );
+    const devbox = devboxResponse.body as any;
+    const existingExtraPorts = devbox?.spec?.network?.extraPorts || [];
+    const existingAppPorts = devbox?.spec?.config?.appPorts || [];
+
+    const extraPorts = [...existingExtraPorts];
+    const existingExtraPortIndex = extraPorts.findIndex(
+      (p: any) => p.containerPort === port
+    );
+    if (existingExtraPortIndex === -1) {
+      extraPorts.push({ containerPort: port });
+    }
+
+    const appPorts = [...existingAppPorts];
+    const existingAppPortIndex = appPorts.findIndex((p: any) => p.port === str2Num(port));
+    if (existingAppPortIndex === -1) {
+      appPorts.push({
+        port: str2Num(port),
+        name: portName,
+        protocol: 'TCP',
+        targetPort: str2Num(port)
+      });
+    } else {
+      appPorts[existingAppPortIndex] = {
+        port: str2Num(port),
+        name: portName,
+        protocol: 'TCP',
+        targetPort: str2Num(port)
+      };
+    }
+
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -76,17 +113,10 @@ export async function POST(req: NextRequest) {
         spec: {
           network: {
             type: 'NodePort',
-            extraPorts: [{ containerPort: port }]
+            extraPorts
           },
           config: {
-            appPorts: [
-              {
-                port: str2Num(port),
-                name: portName,
-                protocol: 'TCP',
-                targetPort: str2Num(port)
-              }
-            ]
+            appPorts
           }
         }
       },
@@ -100,18 +130,33 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
+    const existingServicePorts = serviceResponse.body.spec?.ports || [];
+
+    const servicePorts = [...existingServicePorts];
+    const existingServicePortIndex = servicePorts.findIndex(
+      (p: any) => p.port === str2Num(port)
+    );
+    if (existingServicePortIndex === -1) {
+      servicePorts.push({
+        port: str2Num(port),
+        targetPort: str2Num(port),
+        name: portName
+      });
+    } else {
+      servicePorts[existingServicePortIndex] = {
+        port: str2Num(port),
+        targetPort: str2Num(port),
+        name: portName
+      };
+    }
+
     await k8sCore.patchNamespacedService(
       devboxName,
       namespace,
       {
         spec: {
-          ports: [
-            {
-              port: str2Num(port),
-              targetPort: str2Num(port),
-              name: portName
-            }
-          ]
+          ports: servicePorts
         }
       },
       undefined,
