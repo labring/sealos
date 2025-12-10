@@ -113,9 +113,9 @@ export default function Network({
           {/* Add Port Button when no port */}
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
           {/* Port List */}
-          {networks
-            .filter((network) => network.port !== 9999)
-            .map((network, i) => (
+          {networks.map((network, i) => {
+            const isReservedPort = network.port === 9999;
+            return (
               <div key={network.id} className="flex w-full flex-col gap-3">
                 <div className="guide-network-configuration flex w-full items-center gap-4">
                   {/* left part */}
@@ -130,6 +130,7 @@ export default function Network({
                         type="number"
                         min={1}
                         max={65535}
+                        disabled={isReservedPort}
                         {...register(`networks.${i}.port`, {
                           valueAsNumber: true,
                           min: {
@@ -172,6 +173,7 @@ export default function Network({
                             className="driver-deploy-network-switch"
                             id={`openPublicDomain-${i}`}
                             checked={!!network.openPublicDomain}
+                            disabled={isReservedPort}
                             onCheckedChange={(checked) => {
                               const devboxName = getValues('name');
                               if (!devboxName) {
@@ -193,6 +195,7 @@ export default function Network({
                           <div className="flex items-center">
                             <Select
                               value={network.protocol}
+                              disabled={isReservedPort}
                               onValueChange={(val: ProtocolType) => {
                                 updateNetworks(i, {
                                   ...getValues('networks')[i],
@@ -220,6 +223,7 @@ export default function Network({
                               <Button
                                 variant="ghost"
                                 className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
+                                disabled={isReservedPort}
                                 onClick={() =>
                                   setCustomAccessModalData({
                                     publicDomain: network.publicDomain!,
@@ -242,6 +246,7 @@ export default function Network({
                         variant="outline"
                         size="icon"
                         className="h-9 w-9 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        disabled={isReservedPort}
                         onClick={() => removeNetworks(i)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -255,7 +260,8 @@ export default function Network({
                   <AppendNetworksButton onClick={() => appendNetworks()} />
                 )}
               </div>
-            ))}
+            );
+          })}
         </div>
       </div>
       {!!customAccessModalData && (
