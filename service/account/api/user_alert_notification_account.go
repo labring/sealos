@@ -1,8 +1,10 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +12,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
+	"gorm.io/gorm"
 )
 
 // CreateUserAlertNotificationAccount
@@ -66,6 +69,16 @@ func CreateUserAlertNotificationAccount(c *gin.Context) {
 	}
 
 	if err := dao.DBClient.CreateUserAlertNotificationAccount(account); err != nil {
+		// Check for duplicate key error
+		if errors.Is(err, gorm.ErrDuplicatedKey) || isDuplicatedKeyError(err) {
+			c.JSON(
+				http.StatusConflict,
+				helper.ErrorMessage{
+					Error: fmt.Sprintf("user alert notification account already exists: %v", err),
+				},
+			)
+			return
+		}
 		c.JSON(
 			http.StatusInternalServerError,
 			helper.ErrorMessage{
@@ -247,4 +260,14 @@ func ToggleUserAlertNotificationAccounts(c *gin.Context) {
 		},
 		Message: fmt.Sprintf("Successfully toggled %d user alert notification accounts", updatedCount),
 	})
+}
+
+// isDuplicatedKeyError checks if the error indicates a duplicate key violation
+func isDuplicatedKeyError(err error) bool {
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "duplicate") ||
+		   strings.Contains(errStr, "duplicated") ||
+		   strings.Contains(errStr, "unique constraint") ||
+		   strings.Contains(errStr, "violates unique constraint") ||
+		   strings.Contains(errStr, "primary key violation")
 }
