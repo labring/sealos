@@ -52,7 +52,7 @@ on:
 
 env:
   # Common versions
-  GO_VERSION: "1.25"
+  GO_VERSION: "1.24"
   DEFAULT_OWNER: "labring"
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
