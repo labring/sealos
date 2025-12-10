@@ -16,7 +16,8 @@ import {
   Box,
   Flex,
   HStack,
-  Spinner
+  Spinner,
+  ModalCloseButton
 } from '@chakra-ui/react';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'next-i18next';
@@ -253,7 +254,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false} closeOnEsc={false}>
+    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
       <ModalOverlay />
       <ModalContent
         maxW="450px"
@@ -261,6 +262,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
         bgColor={currentStep === 'BINDING' ? undefined : '#FFF'}
         backdropFilter={currentStep === 'BINDING' ? undefined : 'blur(150px)'}
       >
+        <ModalCloseButton top={'8px'} right={'20px'} />
         <ModalHeader
           fontSize={currentStep === 'BINDING' ? '20px' : '16px'}
           fontWeight={currentStep === 'BINDING' ? 600 : 500}
