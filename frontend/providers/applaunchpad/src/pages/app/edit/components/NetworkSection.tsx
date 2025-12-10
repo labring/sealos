@@ -94,7 +94,8 @@ export function NetworkSection({
               openNodePort: false,
               openPublicDomain: true,
               networkName: currentNetwork.networkName || `network-${nanoid()}`,
-              publicDomain: currentNetwork.publicDomain || nanoid()
+              publicDomain: currentNetwork.publicDomain || nanoid(),
+              nodePort: undefined
             });
           } else {
             updateNetworks(index, {
@@ -104,7 +105,8 @@ export function NetworkSection({
               appProtocol: 'HTTP',
               openNodePort: true,
               openPublicDomain: false,
-              customDomain: ''
+              customDomain: '',
+              nodePort: undefined
             });
           }
           break;
@@ -156,7 +158,8 @@ export function NetworkSection({
             ...currentNetworks[index],
             serviceName: '',
             openPublicDomain: false,
-            openNodePort: false
+            openNodePort: false,
+            nodePort: undefined
           });
           break;
         }
