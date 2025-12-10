@@ -229,7 +229,7 @@ func ToggleUserAlertNotificationAccounts(c *gin.Context) {
 		return
 	}
 
-	updatedCount, updatedIDs, err := dao.DBClient.ToggleUserAlertNotificationAccounts(req.IDs, req.IsEnabled)
+	updatedCount, updatedIDs, err := dao.DBClient.ToggleUserAlertNotificationAccounts(req.IDs, *req.IsEnabled)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

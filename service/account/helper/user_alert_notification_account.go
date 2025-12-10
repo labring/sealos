@@ -125,7 +125,7 @@ type ToggleUserAlertNotificationAccountsReq struct {
 	// @Summary Enable flag
 	// @Description Set to true to enable, false to disable
 	// @JSONSchema required
-	IsEnabled bool `json:"isEnabled" bson:"isEnabled" binding:"required" example:"true"`
+	IsEnabled *bool `json:"isEnabled" bson:"isEnabled" binding:"required" example:"true"`
 
 	AuthBase `json:",inline" bson:",inline"`
 }
@@ -141,7 +141,7 @@ func ParseToggleUserAlertNotificationAccountsReq(c *gin.Context) (*ToggleUserAle
 // ToggleUserAlertNotificationAccountsResp represents the response for toggling user alert notification accounts
 type ToggleUserAlertNotificationAccountsResp struct {
 	Data    ToggleUserAlertNotificationAccountsRespData `json:"data"`
-	Message string                                     `json:"message"`
+	Message string                                      `json:"message"`
 }
 
 type ToggleUserAlertNotificationAccountsRespData struct {
