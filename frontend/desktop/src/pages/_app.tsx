@@ -58,7 +58,6 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        console.log('document.visibilityState === hidden');
         const { isUserLogin, token } = useSessionStore.getState();
         if (isUserLogin() && token) {
           // Use sendBeacon to ensure the request is sent even when the page is unloading
