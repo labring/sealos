@@ -68,6 +68,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+
+        // Already bound - billing service returns 409 for duplicate accounts
+        if (response.status === 409) {
+          return jsonRes(res, {
+            code: 410,
+            message: errorData.error || 'Alert notification account already exists'
+          });
+        }
+
         throw new Error(
           errorData.error || `Failed to create alert notification account: ${response.statusText}`
         );

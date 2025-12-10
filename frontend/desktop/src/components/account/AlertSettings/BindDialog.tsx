@@ -6,9 +6,9 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { ProviderType } from '@/types/alert';
-import { sendAlertBindEmailCode, sendAlertBindPhoneCode } from '@/api/platform';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useTranslation } from 'next-i18next';
+import { sendAlertBindEmailCode, sendAlertBindPhoneCode } from '@/api/platform';
 
 interface BindDialogProps {
   open?: boolean;
@@ -143,15 +143,20 @@ export function BindDialog({ open = false, onOpenChange, type, onConfirm }: Bind
       setCodeError('');
       onOpenChange?.(false);
     } catch (error) {
-      // Check if it's a verification code error by error code (409 = SMS code is wrong)
       const errorCode = (error as Error & { code?: number })?.code;
-      const isCodeError = errorCode === 409;
 
-      if (isCodeError) {
-        // no toast
+      // 409 = SMS code is wrong (from verifyCodeGuard)
+      // 410 = Already bound (from billing service)
+      if (errorCode === 409) {
+        // Verification code error - show in input field, no toast
         setCodeError(t('common:alert_settings.bind.code_invalid'));
+      } else if (errorCode === 410) {
+        // Already bound - show toast
+        toast({
+          title: t('common:alert_settings.bind.already_bound')
+        });
       } else {
-        // show toast
+        // Other errors - show toast
         const errorMessage =
           error instanceof Error ? error.message : t('common:alert_settings.bind.verify_failed');
         toast({
