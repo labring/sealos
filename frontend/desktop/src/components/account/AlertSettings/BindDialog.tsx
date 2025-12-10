@@ -34,6 +34,19 @@ export function BindDialog({ open = false, onOpenChange, type, onConfirm }: Bind
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  useEffect(() => {
+    if (!open) {
+      // Reset all state when dialog closes
+      setValue('');
+      setCode('');
+      setValueError('');
+      setCodeError('');
+      setCooldown(0);
+      setSendingCode(false);
+      setVerifying(false);
+    }
+  }, [open]);
+
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setValue(newValue);
@@ -173,6 +186,9 @@ export function BindDialog({ open = false, onOpenChange, type, onConfirm }: Bind
     setCode('');
     setValueError('');
     setCodeError('');
+    setCooldown(0);
+    setSendingCode(false);
+    setVerifying(false);
     onOpenChange?.(false);
   };
 
