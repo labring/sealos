@@ -15,9 +15,18 @@ interface BindDialogProps {
   onOpenChange?: (open: boolean) => void;
   type: 'phone' | 'email';
   onConfirm?: (value: string, code: string) => Promise<void>;
+  userPhone?: string;
+  userEmail?: string;
 }
 
-export function BindDialog({ open = false, onOpenChange, type, onConfirm }: BindDialogProps) {
+export function BindDialog({
+  open = false,
+  onOpenChange,
+  type,
+  onConfirm,
+  userPhone,
+  userEmail
+}: BindDialogProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [code, setCode] = useState('');
@@ -78,10 +87,20 @@ export function BindDialog({ open = false, onOpenChange, type, onConfirm }: Bind
         setValueError(t('common:alert_settings.bind.phone_invalid'));
         return;
       }
+      // Check if phone is already bound to account
+      if (userPhone && value === userPhone) {
+        setValueError(t('common:alert_settings.bind.account_bound_phone'));
+        return;
+      }
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         setValueError(t('common:alert_settings.bind.email_invalid'));
+        return;
+      }
+      // Check if email is already bound to account
+      if (userEmail && value === userEmail) {
+        setValueError(t('common:alert_settings.bind.account_bound_email'));
         return;
       }
     }
@@ -127,11 +146,17 @@ export function BindDialog({ open = false, onOpenChange, type, onConfirm }: Bind
         if (!phoneRegex.test(value)) {
           setValueError(t('common:alert_settings.bind.phone_invalid'));
           hasError = true;
+        } else if (userPhone && value === userPhone) {
+          setValueError(t('common:alert_settings.bind.account_bound_phone'));
+          hasError = true;
         }
       } else {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) {
           setValueError(t('common:alert_settings.bind.email_invalid'));
+          hasError = true;
+        } else if (userEmail && value === userEmail) {
+          setValueError(t('common:alert_settings.bind.account_bound_email'));
           hasError = true;
         }
       }

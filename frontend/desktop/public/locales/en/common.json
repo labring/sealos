@@ -423,6 +423,8 @@
       "code_required": "Please enter verification code",
       "code_invalid": "Verification code is incorrect",
       "already_bound": "This phone number/email is already bound",
+      "account_bound_phone": "This phone number is already bound to your account, no need to bind again",
+      "account_bound_email": "This email is already bound to your account, no need to bind again",
       "code_sent": "Verification code sent",
       "send_code_failed": "Failed to send verification code",
       "verify_failed": "Verification failed"

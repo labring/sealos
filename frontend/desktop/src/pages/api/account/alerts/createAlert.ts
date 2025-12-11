@@ -2,6 +2,7 @@ import { verifyAccessToken, generateBillingToken } from '@/services/backend/auth
 import { jsonRes } from '@/services/backend/response';
 import { CreateAlertRequest, CreateAlertResponse, ProviderType } from '@/types/alert';
 import { verifyCodeGuard } from '@/services/backend/middleware/sms';
+import { globalPrisma } from '@/services/backend/db/init';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -24,10 +25,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const body: CreateAlertRequest = req.body;
     const { providerType, providerId, code } = body;
 
-    if (!providerType || !providerId || !code) {
+    if (!providerType || !providerId) {
       return jsonRes(res, {
         code: 400,
-        message: 'Missing required fields: providerType, providerId, code'
+        message: 'Missing required fields: providerType, providerId'
+      });
+    }
+
+    // Check if phone/email is already bound to user account
+    const userInfo = await globalPrisma.user.findUnique({
+      where: { uid: session.userUid },
+      include: {
+        oauthProvider: {
+          select: {
+            providerType: true,
+            providerId: true
+          }
+        }
+      }
+    });
+
+    const isAccountBound =
+      userInfo?.oauthProvider?.some(
+        (p) => p.providerType.toString() === providerType && p.providerId === providerId
+      ) || false;
+
+    // Do not create alert for phone/email already bound to account
+    if (isAccountBound) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'Cannot create alert for phone/email already bound to account'
+      });
+    }
+
+    if (!code) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'Missing required field: code'
       });
     }
 

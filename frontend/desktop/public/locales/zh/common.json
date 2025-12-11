@@ -415,6 +415,8 @@
       "code_required": "请输入验证码",
       "code_invalid": "验证码错误",
       "already_bound": "该手机号/邮箱已绑定",
+      "account_bound_phone": "该手机号已绑定到账户，无需重复绑定",
+      "account_bound_email": "该邮箱已绑定到账户，无需重复绑定",
       "code_sent": "验证码已发送",
       "send_code_failed": "发送验证码失败",
       "verify_failed": "验证失败"

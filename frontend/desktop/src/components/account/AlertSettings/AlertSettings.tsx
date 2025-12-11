@@ -77,12 +77,12 @@ export function AlertSettings({
     select: (d) => d.data?.info
   });
 
-  const boundPhone = useMemo(() => {
+  const userPhone = useMemo(() => {
     const phoneProvider = userInfo?.oauthProvider?.find((p) => p.providerType === 'PHONE');
     return phoneProvider?.providerId || '';
   }, [userInfo]);
 
-  const boundEmail = useMemo(() => {
+  const userEmail = useMemo(() => {
     const emailProvider = userInfo?.oauthProvider?.find((p) => p.providerType === 'EMAIL');
     return emailProvider?.providerId || '';
   }, [userInfo]);
@@ -115,33 +115,52 @@ export function AlertSettings({
   }, [open, alertsError, toast, t]);
 
   const { phoneNumbers, emails } = useMemo(() => {
-    if (!alertsData) {
-      return { phoneNumbers: [], emails: [] };
-    }
-
     const phones: PhoneNumber[] = [];
     const emailsList: Email[] = [];
 
-    alertsData.forEach((alert: AlertNotificationAccount) => {
-      if (alert.providerType === 'PHONE') {
-        phones.push({
-          id: alert.id,
-          number: alert.providerId,
-          isBound: alert.providerId === boundPhone,
-          checked: alert.isEnabled
-        });
-      } else if (alert.providerType === 'EMAIL') {
-        emailsList.push({
-          id: alert.id,
-          address: alert.providerId,
-          isBound: alert.providerId === boundEmail,
-          checked: alert.isEnabled
-        });
-      }
-    });
+    // Add alerts from the list
+    if (alertsData) {
+      alertsData.forEach((alert: AlertNotificationAccount) => {
+        if (alert.providerType === 'PHONE') {
+          phones.push({
+            id: alert.id,
+            number: alert.providerId,
+            isBound: alert.providerId === userPhone,
+            checked: alert.isEnabled
+          });
+        } else if (alert.providerType === 'EMAIL') {
+          emailsList.push({
+            id: alert.id,
+            address: alert.providerId,
+            isBound: alert.providerId === userEmail,
+            checked: alert.isEnabled
+          });
+        }
+      });
+    }
+
+    // Add user phone if it exists but not in alerts list
+    if (userPhone && !phones.find((p) => p.number === userPhone)) {
+      phones.push({
+        id: `bound-phone-${userPhone}`,
+        number: userPhone,
+        isBound: true,
+        checked: false
+      });
+    }
+
+    // Add user email if it exists but not in alerts list
+    if (userEmail && !emailsList.find((e) => e.address === userEmail)) {
+      emailsList.push({
+        id: `bound-email-${userEmail}`,
+        address: userEmail,
+        isBound: true,
+        checked: false
+      });
+    }
 
     return { phoneNumbers: phones, emails: emailsList };
-  }, [alertsData, boundPhone, boundEmail]);
+  }, [alertsData, userPhone, userEmail]);
 
   const createMutation = useMutation({
     mutationFn: async ({
@@ -225,10 +244,18 @@ export function AlertSettings({
   };
 
   const handlePhoneCheck = (id: string, checked: boolean) => {
+    // Virtual entries (bound-phone-xxx) cannot be enabled/disabled
+    if (id.startsWith('bound-phone-')) {
+      return;
+    }
     toggleMutation.mutate({ ids: [id], isEnabled: checked });
   };
 
   const handleEmailCheck = (id: string, checked: boolean) => {
+    // Virtual entries (bound-email-xxx) cannot be enabled/disabled
+    if (id.startsWith('bound-email-')) {
+      return;
+    }
     toggleMutation.mutate({ ids: [id], isEnabled: checked });
   };
 
@@ -346,7 +373,9 @@ export function AlertSettings({
                                   handlePhoneCheck(phone.id, checked === true)
                                 }
                                 className="w-4 h-4"
-                                disabled={toggleMutation.isLoading}
+                                disabled={
+                                  toggleMutation.isLoading || phone.id.startsWith('bound-phone-')
+                                }
                               />
                               <p className="text-sm leading-none text-zinc-900">{phone.number}</p>
                             </div>
@@ -430,7 +459,9 @@ export function AlertSettings({
                                   handleEmailCheck(email.id, checked === true)
                                 }
                                 className="w-4 h-4"
-                                disabled={toggleMutation.isLoading}
+                                disabled={
+                                  toggleMutation.isLoading || email.id.startsWith('bound-email-')
+                                }
                               />
                               <p className="text-sm leading-none text-zinc-900">{email.address}</p>
                             </div>
@@ -491,6 +522,8 @@ export function AlertSettings({
         onOpenChange={setBindDialogOpen}
         type={bindDialogType}
         onConfirm={handleBindConfirm}
+        userPhone={userPhone}
+        userEmail={userEmail}
       />
     </Dialog>
   );
