@@ -1,4 +1,5 @@
 import {
+  AppstoreOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   GatewayOutlined,
@@ -19,7 +20,11 @@ export enum SideNavItemKey {
   StatefulSet = 'stateful-set',
   Secret = 'secret',
   Ingress = 'ingress',
-  Service = 'service'
+  Service = 'service',
+  // CustomResource
+  Devbox = 'devbox',
+  Cluster = 'cluster',
+  Bucket = 'bucket'
 }
 
 function getItem(
@@ -55,6 +60,11 @@ const items: MenuProps['items'] = [
   ]),
   getItem('Storage', 'storage', <DatabaseOutlined />, [
     getItem('Persistent Volume Claims', SideNavItemKey.PersistentVolumeClaim)
+  ]),
+  getItem('CustomResource', 'custom-resource', <AppstoreOutlined />, [
+    getItem('Devbox', SideNavItemKey.Devbox),
+    getItem('Cluster', SideNavItemKey.Cluster),
+    getItem('Bucket', SideNavItemKey.Bucket)
   ])
 ];
 
@@ -66,22 +76,23 @@ export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
   const router = useRouter();
 
   return (
-    <Flex vertical>
-      <div className="border-b-[1px] border-color-border border-solid px-[18px] py-[12px] w-full">
+    <Flex vertical className="h-full bg-[#FAFAFA] border-r border-[#E8E8E8]">
+      <div className="px-[18px] py-3 w-full">
         <div className="flex justify-between items-center">
-          <div className="text-[#24282C] text-[16px] font-medium pl-2 align-middle">
+          <div className="text-[#262626] text-[16px] font-semibold pl-2 align-middle">
             <span>KubePanel</span>
           </div>
           <Button
-            className="flex items-center justify-center"
+            className="flex items-center justify-center hover:bg-black/5"
             type="text"
-            icon={<ReloadOutlined style={{ color: '#219BF4', fontSize: 'large' }} />}
+            icon={<ReloadOutlined style={{ color: '#18181B', fontSize: 'large' }} />}
             onClick={() => router.reload()}
           />
         </div>
       </div>
       <Menu
-        style={{ backgroundColor: '#f4f4f7', borderRight: 'none', fontWeight: 500 }}
+        className="kubepanel-sidebar-menu"
+        style={{ backgroundColor: 'transparent', borderRight: 'none', fontWeight: 500 }}
         defaultSelectedKeys={['overview']}
         defaultOpenKeys={['workload']}
         mode="inline"

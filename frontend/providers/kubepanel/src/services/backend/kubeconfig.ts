@@ -55,12 +55,15 @@ type KubeConfig = {
 export function loadKubeConfig(yaml: string): KubeConfig {
   const yamlKC = jsYaml.load(yaml) as YamlKubeConfig;
 
-  if (!yamlKC['current-context']) throw new Error('current-context is required in kubeconfig');
+  // YAML kubeconfig uses 'current-context' (kebab-case), but KebabCasedPropertiesDeep type
+  // expects accessing via original structure. We need to access it via bracket notation.
+  const currentContext = (yamlKC as any)['current-context'] as string | undefined;
+  if (!currentContext) throw new Error('current-context is required in kubeconfig');
   return {
     clusters: loadNamedItems(yamlKC.clusters, 'cluster', ['server']),
     users: loadNamedItems(yamlKC.users, 'user'),
     contexts: loadNamedItems(yamlKC.contexts, 'context', ['cluster', 'user']),
-    currentContext: yamlKC['current-context']
+    currentContext
   };
 }
 

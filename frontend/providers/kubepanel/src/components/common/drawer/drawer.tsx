@@ -5,20 +5,22 @@ interface Props {
   children: React.ReactNode;
   open: boolean;
   onClose: () => void;
+  width?: string | number;
+  extra?: React.ReactNode;
 }
-export const Drawer = ({ title, children, open, onClose }: Props) => {
+export const Drawer = ({ title, children, open, onClose, width = '550px', extra }: Props) => {
   return (
     <AntdDrawer
       styles={{
         header: {
-          padding: '12px',
-          backgroundColor: '#24282C'
+          padding: '16px 24px'
         }
       }}
       open={open}
-      closeIcon={<CloseOutlined style={{ color: 'white', fontSize: '24px', padding: '4px' }} />}
-      title={<span className="text-white font-medium text-base">{title}</span>}
-      width="550px"
+      closeIcon={<CloseOutlined style={{ fontSize: '18px' }} />}
+      title={<span className="text-gray-900 font-medium text-base">{title}</span>}
+      width={width}
+      extra={extra}
       onClose={onClose}
       destroyOnClose
     >

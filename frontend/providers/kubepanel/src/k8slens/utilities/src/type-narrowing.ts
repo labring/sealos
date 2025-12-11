@@ -3,9 +3,6 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import type { ExecException, ExecFileException } from 'child_process';
-import type { IncomingMessage } from 'http';
-
 /**
  * Narrows `val` to include the property `key` (if true is returned)
  * @param val The object to be tested
@@ -198,91 +195,4 @@ export function isPromiseSettledFulfilled<T>(
   result: PromiseSettledResult<T>
 ): result is PromiseFulfilledResult<T> {
   return result.status === 'fulfilled';
-}
-
-export function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
-  return (
-    isObject(error) &&
-    hasOptionalTypedProperty(error, 'code', isString) &&
-    hasOptionalTypedProperty(error, 'path', isString) &&
-    hasOptionalTypedProperty(error, 'syscall', isString) &&
-    hasOptionalTypedProperty(error, 'errno', isNumber) &&
-    error instanceof Error
-  );
-}
-
-export function isExecException(error: unknown): error is ExecException {
-  return (
-    isObject(error) &&
-    hasOptionalTypedProperty(error, 'cmd', isString) &&
-    hasOptionalTypedProperty(error, 'killed', isBoolean) &&
-    hasOptionalTypedProperty(error, 'signal', isString) &&
-    hasOptionalTypedProperty(error, 'code', isNumber) &&
-    error instanceof Error
-  );
-}
-
-export function isExecFileException(error: unknown): error is ExecFileException {
-  return isExecException(error) && isErrnoException(error);
-}
-
-export type OutputFormat = 'string' | 'buffer';
-export type ComputeOutputFormat<Format> = Format extends 'string'
-  ? string
-  : Format extends 'buffer'
-  ? Buffer
-  : string | Buffer;
-
-export interface ChildProcessExecpetion<Format> extends ExecFileException {
-  stderr: ComputeOutputFormat<Format>;
-  stdout: ComputeOutputFormat<Format>;
-}
-
-const isStringOrBuffer = (val: unknown): val is string | Buffer => isString(val) || isBuffer(val);
-
-export function isChildProcessError(
-  error: unknown,
-  format?: OutputFormat
-): error is ChildProcessExecpetion<typeof format> {
-  if (!isExecFileException(error)) {
-    return false;
-  }
-
-  if (format === 'string') {
-    return (
-      hasTypedProperty(error, 'stderr', isString) && hasTypedProperty(error, 'stdout', isString)
-    );
-  } else if (format === 'buffer') {
-    return (
-      hasTypedProperty(error, 'stderr', isBuffer) && hasTypedProperty(error, 'stdout', isBuffer)
-    );
-  } else {
-    return (
-      hasTypedProperty(error, 'stderr', isStringOrBuffer) &&
-      hasTypedProperty(error, 'stdout', isStringOrBuffer)
-    );
-  }
-}
-
-export interface RequestLikeError extends Error {
-  statusCode?: number;
-  failed?: boolean;
-  timedOut?: boolean;
-  error?: string;
-  response?: IncomingMessage & { body?: any };
-}
-
-/**
- * A type guard for checking if the error is similar in shape to a request package error
- */
-export function isRequestError(error: unknown): error is RequestLikeError {
-  return (
-    isObject(error) &&
-    hasOptionalTypedProperty(error, 'statusCode', isNumber) &&
-    hasOptionalTypedProperty(error, 'failed', isBoolean) &&
-    hasOptionalTypedProperty(error, 'timedOut', isBoolean) &&
-    hasOptionalTypedProperty(error, 'error', isString) &&
-    hasOptionalTypedProperty(error, 'response', isObject) &&
-    error instanceof Error
-  );
 }

@@ -1,16 +1,18 @@
-import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
-import { ConfigMap } from '@/k8slens/kube-object';
-import { ColumnsType } from 'antd/es/table';
-import ConfigMapDetail from './config-map-detail';
-import { useConfigMapStore } from '@/store/kube';
-import { PanelTable } from '@/components/common/panel-table/table';
 import { ActionButton } from '@/components/common/action/action-button';
+import { PanelTable } from '@/components/common/panel-table/table';
+import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
+import { ResponsiveKeyList } from '@/components/kube/object/responsive-key-list';
+import { ConfigMap } from '@/k8slens/kube-object';
+import { useConfigMapStore } from '@/store/kube';
+import { ColumnsType } from 'antd/es/table';
+import { useEffect, useRef, useState } from 'react';
+import ConfigMapDetail from './config-map-detail';
 
 const columns: ColumnsType<ConfigMap> = [
   {
     title: 'Keys',
     key: 'keys',
-    render: (_, configMap) => configMap.getKeys().join(', ')
+    render: (_, configMap) => <ResponsiveKeyList keys={configMap.getKeys()} />
   },
   {
     title: 'Age',
@@ -25,7 +27,7 @@ const columns: ColumnsType<ConfigMap> = [
 ];
 
 const ConfigMapOverviewPage = () => {
-  const { items, initialize, isLoaded, watch } = useConfigMapStore();
+  const { items, initialize, isLoaded } = useConfigMapStore();
 
   return (
     <PanelTable
@@ -36,7 +38,6 @@ const ConfigMapOverviewPage = () => {
       DetailDrawer={ConfigMapDetail}
       getRowKey={(configMap) => configMap.getId()}
       initializers={[initialize]}
-      watchers={[watch]}
       getDetailItem={(configMap) => configMap}
     />
   );

@@ -3,18 +3,40 @@ interface DrawerItemProps {
   value?: React.ReactNode;
   hidden?: boolean;
   padding?: boolean;
+  className?: string;
+  vertical?: boolean;
 }
 
-export const DrawerItem = ({ name, value, hidden = false }: DrawerItemProps) => {
+export const DrawerItem = ({
+  name,
+  value,
+  hidden = false,
+  padding = true,
+  className = '',
+  vertical = false
+}: DrawerItemProps) => {
   if (hidden) return null;
+
+  if (vertical) {
+    return (
+      <div
+        className={`flex flex-col ${padding ? 'py-3' : ''} border-b border-[#E8E8E8] last:border-b-0 ${className}`}
+      >
+        <span className="text-[#8C8C8C] font-medium text-sm mb-2">{name}</span>
+        <div className="text-[#262626] text-sm break-all">{value}</div>
+      </div>
+    );
+  }
 
   return (
     <div
-      className={`grid  last:border-b-0`}
-      style={{ gridTemplateColumns: 'minmax(30%, min-content) auto' }}
+      className={`grid ${
+        padding ? 'py-3' : ''
+      } border-b border-[#E8E8E8] last:border-b-0 items-start ${className}`}
+      style={{ gridTemplateColumns: '120px minmax(0, 1fr)', gap: '16px' }}
     >
-      <span className="overflow-hidden text-ellipsis text-[#5A646E] font-semibold">{name}</span>
-      <span className="max-w-full min-w-0 text-[#24282C]">{value}</span>
+      <span className="text-[#8C8C8C] font-medium text-sm">{name}</span>
+      <div className="text-[#262626] text-sm break-all">{value}</div>
     </div>
   );
 };

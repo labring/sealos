@@ -7,5 +7,9 @@ export enum KubeObjectKind {
   Secret = 'Secret',
   Ingress = 'Ingress',
   Event = 'Event',
-  Service = 'Service'
+  Service = 'Service',
+  // CustomResource
+  Devbox = 'Devbox',
+  Cluster = 'Cluster',
+  Bucket = 'Bucket'
 }

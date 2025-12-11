@@ -63,5 +63,5 @@ export const ReactiveDuration = ({ timestamp, compact = true }: ReactiveDuration
     return () => clearInterval(interval);
   }, [compact, ms, timestampSeconds]);
 
-  return <>{formatDuration(duration, compact)}</>;
+  return <span suppressHydrationWarning>{formatDuration(duration, compact)}</span>;
 };
