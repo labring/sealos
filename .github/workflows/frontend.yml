@@ -20,7 +20,7 @@ on:
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
