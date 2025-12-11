@@ -86,6 +86,8 @@ export type LayoutConfigType = {
     bannerEnabled: boolean;
     subscriptionEnabled: boolean;
     guestModeEnabled?: boolean;
+    emailAlertEnabled: boolean;
+    phoneAlertEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -321,7 +323,9 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     aiAssistantEnabled: false,
     bannerEnabled: false,
     subscriptionEnabled: false,
-    guestModeEnabled: false
+    guestModeEnabled: false,
+    emailAlertEnabled: false,
+    phoneAlertEnabled: false
   },
   gtmId: null
 };

@@ -10,7 +10,7 @@
   "added": "Added",
   "agree_policy": "I have read and agree to the",
   "alarm_pod": "Unhealthy Pods: {{count}}",
-  "alert": "Alert",
+  "notification_alert": "Alert",
   "alerts": "Alerts",
   "all_apps": "All Apps",
   "already_sent_code": "Already sent code",
@@ -382,5 +382,69 @@
   "you_can_use_the_kubectl_command_directly_from_the_terminal": "You can use the kubectl command directly from the terminal",
   "you_can_view_fees_through_the_fee_center": "You can view fees through the fee center",
   "you_have_not_purchased_the_license": "You have not purchased the License",
-  "yuan": "Yuan"
+  "yuan": "Yuan",
+  "alert_settings": {
+    "menu_item": "Alert Settings",
+    "title": "Alert Settings",
+    "description": "When your balance is insufficient or service is abnormal, we will notify you through the following methods.",
+    "loading": "Loading...",
+    "phone": {
+      "section_title": "Send SMS",
+      "enable_all": "Enable (Select All)",
+      "no_phone_numbers": "No phone numbers",
+      "add_phone": "Add Phone Number",
+      "bound_badge": "Bound Phone"
+    },
+    "email": {
+      "section_title": "Send Email",
+      "enable_all": "Enable (Select All)",
+      "no_emails": "No emails",
+      "add_email": "Add Email",
+      "bound_badge": "Bound Email"
+    },
+    "bind": {
+      "phone_title": "Bind Phone Number",
+      "email_title": "Bind Email",
+      "phone_label": "Phone Number",
+      "email_label": "Email",
+      "phone_placeholder": "Please enter phone number",
+      "email_placeholder": "Please enter email",
+      "code_label": "Verification Code",
+      "code_placeholder": "Please enter verification code",
+      "send_code": "Send Verification Code",
+      "sending": "Sending...",
+      "resend": "Resend ({{count}}s)",
+      "complete_bind": "Complete Binding",
+      "verifying": "Verifying...",
+      "phone_required": "Please enter phone number",
+      "email_required": "Please enter email",
+      "phone_invalid": "Please enter a valid phone number",
+      "email_invalid": "Please enter a valid email",
+      "code_required": "Please enter verification code",
+      "code_invalid": "Verification code is incorrect",
+      "already_bound": "This phone number/email is already bound",
+      "account_bound_phone": "This phone number is already bound to your account, no need to bind again",
+      "account_bound_email": "This email is already bound to your account, no need to bind again",
+      "code_sent": "Verification code sent",
+      "send_code_failed": "Failed to send verification code",
+      "verify_failed": "Verification failed"
+    },
+    "delete": {
+      "title": "Confirm Delete",
+      "confirm_phone": ["Are you sure you want to delete phone number ", "?"],
+      "confirm_email": ["Are you sure you want to delete email ", "?"],
+      "confirm_generic": "Are you sure you want to delete?",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "messages": {
+      "fetch_failed": "Failed to fetch alert list",
+      "create_success": "Created successfully",
+      "create_failed": "Failed to create",
+      "delete_success": "Deleted successfully",
+      "delete_failed": "Failed to delete",
+      "update_success": "Updated successfully",
+      "update_failed": "Failed to update"
+    }
+  }
 }

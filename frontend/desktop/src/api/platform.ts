@@ -12,6 +12,15 @@ import { AdClickData } from '@/types/adClick';
 import { LicenseCheckResponse } from '@/types/license';
 import { UserTask } from '@/types/task';
 import { WorkspaceQuotaResponse } from '@/types/workspace';
+import {
+  CreateAlertRequest,
+  CreateAlertResponse,
+  ListAlertsResponse,
+  ToggleAlertsRequest,
+  ToggleAlertsResponse,
+  DeleteAlertsRequest,
+  DeleteAlertsResponse
+} from '@/types/alert';
 
 /**
  * Upload advertisement conversion data to the platform.
@@ -127,3 +136,21 @@ export const getWorkspaceQuota = () =>
 
 export const checkLicense = () =>
   request.get<any, ApiResp<LicenseCheckResponse>>('/api/license/check');
+
+export const createAlert = (data: CreateAlertRequest) =>
+  request.post<any, ApiResp<CreateAlertResponse>>('/api/account/alerts/createAlert', data);
+
+export const listAlerts = () =>
+  request.post<any, ApiResp<ListAlertsResponse>>('/api/account/alerts/listAlerts', {});
+
+export const updateAlerts = (data: ToggleAlertsRequest) =>
+  request.post<any, ApiResp<ToggleAlertsResponse>>('/api/account/alerts/updateAlerts', data);
+
+export const deleteAlerts = (data: DeleteAlertsRequest) =>
+  request.post<any, ApiResp<DeleteAlertsResponse>>('/api/account/alerts/deleteAlerts', data);
+
+export const sendAlertBindEmailCode = (data: { id: string }) =>
+  request.post<any, ApiResp>('/api/account/alerts/bind/email/sms', data);
+
+export const sendAlertBindPhoneCode = (data: { id: string }) =>
+  request.post<any, ApiResp>('/api/account/alerts/bind/phone/sms', data);
