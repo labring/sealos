@@ -58,13 +58,16 @@ func (c *SMTPConfig) SendEmailWithTitleMultiple(subject, emailBody string, toEma
 	m := gomail.NewMessage()
 
 	// Set multiple recipients
+	var validEmails []string
 	for _, email := range toEmails {
-		if email == "" {
-			continue
+		if email != "" {
+			validEmails = append(validEmails, email)
 		}
-		m.SetHeader("To", email)
 	}
-
+	if len(validEmails) == 0 {
+		return fmt.Errorf("no valid email addresses")
+	}
+	m.SetHeader("To", validEmails...)
 	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", emailBody)
