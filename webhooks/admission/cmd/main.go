@@ -24,6 +24,7 @@ import (
 	kbappsv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -228,6 +229,39 @@ func main() {
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create replicaset webhook")
+		os.Exit(1)
+	}
+
+	// Register DaemonSet webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.DaemonSet{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create daemonset webhook")
+		os.Exit(1)
+	}
+
+	// Register Job webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&batchv1.Job{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create job webhook")
+		os.Exit(1)
+	}
+
+	// Register CronJob webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&batchv1.CronJob{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create cronjob webhook")
 		os.Exit(1)
 	}
 
