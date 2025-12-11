@@ -20,7 +20,6 @@ import (
 	"time"
 
 	client2 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
-	"github.com/alibabacloud-go/tea/tea"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
