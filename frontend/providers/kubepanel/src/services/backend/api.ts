@@ -78,5 +78,24 @@ const ApiBaseParamsRecord: Record<KubeObjectKind, KubeApiUrlParams> = {
     apiPrefix: 'api',
     apiVersion: 'v1',
     resource: 'services'
+  },
+  // CustomResource
+  [KubeObjectKind.Devbox]: {
+    apiPrefix: 'apis',
+    apiGroup: 'devbox.sealos.io',
+    apiVersion: 'v1alpha2',
+    resource: 'devboxes'
+  },
+  [KubeObjectKind.Cluster]: {
+    apiPrefix: 'apis',
+    apiGroup: 'apps.kubeblocks.io',
+    apiVersion: 'v1alpha1',
+    resource: 'clusters'
+  },
+  [KubeObjectKind.Bucket]: {
+    apiPrefix: 'apis',
+    apiGroup: 'objectstorage.sealos.io',
+    apiVersion: 'v1',
+    resource: 'objectstoragebuckets'
   }
 };

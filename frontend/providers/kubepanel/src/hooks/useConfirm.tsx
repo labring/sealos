@@ -1,13 +1,12 @@
 import { useCallback, useRef } from 'react';
+import { useDisclosure, Button } from '@chakra-ui/react';
 import {
   AlertDialog,
   AlertDialogBody,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogContent,
-  AlertDialogOverlay,
-  useDisclosure,
-  Button
+  AlertDialogOverlay
 } from '@chakra-ui/react';
 // import { useTranslation } from 'next-i18next';
 

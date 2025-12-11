@@ -1,6 +1,6 @@
-import { Datum, PieConfig } from '@ant-design/charts';
 import { sum } from 'lodash';
 import dynamic from 'next/dynamic';
+import React from 'react';
 
 export type PieChartData = {
   type: string;
@@ -13,57 +13,59 @@ interface PieChartProps {
   color: (type: string) => string;
 }
 
+// @ts-ignore - @ant-design/plots has complex types that cause deep instantiation in full tsc
 const DynamicPie = dynamic(() => import('@ant-design/plots').then((item) => item.Pie), {
   ssr: false
 });
 
 export const PieChart = ({ title, data, color }: PieChartProps) => {
-  const config: PieConfig = {
+  const total = sum(data.map((d) => d.value));
+
+  const config = {
     data: data,
     angleField: 'value',
-    style: {
-      transform: 'scale(0.95)'
-    },
     colorField: 'type',
-    color: (datum: Datum) => color(datum['type']),
-    padding: 0.1, //Try to avoid dial misalignment caused by different legends' number
-    width: 200,
+    color: data.map((item) => color(item.type)),
+    width: 220,
     height: 350,
-    radius: 0.9,
-    innerRadius: 0.75,
-    statistic: {
-      title: false,
-      content: {
-        customHtml: () => {
-          return (
-            <div>
-              <div className="font-medium text-base text-black">{title}</div>
-              <div className="font-medium text-4xl text-black">{sum(data.map((d) => d.value))}</div>
-            </div>
-          ) as unknown as string;
-        }
-      }
-    },
+    innerRadius: 0.6,
+    radius: 0.92,
     label: false,
     legend: {
-      layout: 'vertical',
-      position: 'bottom',
+      position: 'bottom' as const,
+      layout: 'vertical' as const,
       offsetY: -30,
       marker: {
-        symbol: (x: number, y: number, r: number) => {
-          const width = r * 4;
-          const height = width * 0.5;
-          return [
-            ['M', x - width / 2, y - height / 2],
-            ['L', x + width / 2, y - height / 2],
-            ['L', x + width / 2, y + height / 2],
-            ['L', x - width / 2, y + height / 2],
-            ['Z']
-          ];
-        },
-        spacing: 13
+        symbol: 'square' as const,
+        style: {
+          r: 6
+        }
+      },
+      itemSpacing: 13
+    },
+    annotations: [
+      {
+        type: 'text',
+        style: {
+          text: `${title}\n${total}`,
+          x: '50%',
+          y: '50%',
+          textAlign: 'center',
+          fontSize: 16,
+          fontWeight: '500',
+          textBaseline: 'middle'
+        }
       }
+    ],
+    tooltip: {
+      items: [
+        (d: any) => ({
+          name: d.type,
+          value: d.value
+        })
+      ]
     }
   };
-  return <DynamicPie {...config} animation={false} />;
+
+  return <DynamicPie {...config} />;
 };

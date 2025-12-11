@@ -4,7 +4,6 @@
  */
 
 import assert from 'assert';
-import { iter } from './iter';
 
 // Helper to convert memory from units Ki, Mi, Gi, Ti, Pi to bytes and vise versa
 
@@ -42,23 +41,4 @@ export function unitsToBytes(value: string): number {
   assert(magnitude, 'UnitRegex is wrong some how');
 
   return parseInt((parsedValue * magnitude).toFixed(1));
-}
-
-export interface BytesToUnitesOptions {
-  /**
-   * The number of decimal places. MUST be an integer. MUST be in the range [0, 20].
-   * @default 1
-   */
-  precision?: number;
-}
-
-export function bytesToUnits(bytes: number, { precision = 1 }: BytesToUnitesOptions = {}): string {
-  if (bytes <= 0 || isNaN(bytes) || !isFinite(bytes)) {
-    return 'N/A';
-  }
-
-  const index = Math.floor(Math.log(bytes) / Math.log(baseMagnitude));
-  const [suffix, magnitude] = iter.nth(magnitudes.entries(), index) ?? maxMagnitude;
-
-  return `${(bytes / magnitude).toFixed(precision)}${suffix}`;
 }

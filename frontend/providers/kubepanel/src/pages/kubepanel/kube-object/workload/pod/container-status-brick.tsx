@@ -1,5 +1,5 @@
 import { PodContainerStatus } from '@/k8slens/kube-object';
-import { getStatusColor } from '@/utils/status-color';
+import { getStatusBadgeTone } from '@/utils/status-color';
 import { lowerCase } from 'lodash';
 
 interface ContainerStatusBrickProps {
@@ -7,14 +7,23 @@ interface ContainerStatusBrickProps {
   status?: PodContainerStatus | null;
 }
 
+const statusToColor: Record<string, string> = {
+  success: '#52c41a',
+  warning: '#faad14',
+  error: '#ff4d4f',
+  default: '#d9d9d9',
+  processing: '#1890ff'
+};
+
 const ContainerStatusBrick = ({ state, status }: ContainerStatusBrickProps) => {
   const { ready = false } = status ?? {};
 
-  let color: string;
-  if (!ready && lowerCase(state) === 'running') color = 'color-warning';
-  else color = getStatusColor(state) ?? 'color-terminated';
+  const badgeTone =
+    !ready && lowerCase(state) === 'running' ? 'warning' : (getStatusBadgeTone(state) ?? 'default');
 
-  return <div className={`inline-block w-2 h-2 mr-2 rounded-sm bg-${color}`} />;
+  const color = statusToColor[badgeTone];
+
+  return <div className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />;
 };
 
 export default ContainerStatusBrick;

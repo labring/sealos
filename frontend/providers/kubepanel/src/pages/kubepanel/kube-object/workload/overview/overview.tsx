@@ -1,7 +1,7 @@
 import { Flex } from 'antd';
 import WorkloadStatusOverview from './status-overview';
 import { convertToPieChartStatusData } from '@/utils/pie-chart';
-import { entries, startCase } from 'lodash';
+import { countBy, entries, startCase } from 'lodash';
 import {
   getDeploymentsStatuses,
   getStatefulSetsStatuses,
@@ -15,26 +15,15 @@ import EventOverview from './event-overview';
 import { useWatcher } from '@/hooks/useWatcher';
 
 const OverviewPage = () => {
-  const {
-    items: pods,
-    initialize: initializePods,
-    watch: watchPods,
-    getStatuses: getPodStatuses
-  } = usePodStore();
-  const {
-    items: deps,
-    initialize: initializeDeployments,
-    watch: watchDeployments
-  } = useDeploymentStore();
-  const {
-    items: stats,
-    initialize: initializeStatefulSets,
-    watch: watchStatefulSets
-  } = useStatefulSetStore();
+  const { items: pods, initialize: initializePods } = usePodStore();
+
+  const getPodStatuses = countBy(pods, (pod) => pod.getStatus());
+
+  const { items: deps, initialize: initializeDeployments } = useDeploymentStore();
+  const { items: stats, initialize: initializeStatefulSets } = useStatefulSetStore();
 
   const cxtHolder = useWatcher({
-    initializers: [initializePods, initializeDeployments, initializeStatefulSets],
-    watchers: [watchPods, watchDeployments, watchStatefulSets]
+    initializers: [initializePods, initializeDeployments, initializeStatefulSets]
   });
 
   const statuses = {
@@ -49,13 +38,13 @@ const OverviewPage = () => {
   }));
 
   return (
-    <Flex vertical gap="15px" className="bg-[#f4f4f7]">
+    <Flex vertical gap="12px" className="p-0">
       <Section>
         <Title type="primary">Overview</Title>
+        <div className="w-full flex flex-col flex-wrap gap-3 mt-2">
+          <WorkloadStatusOverview data={overviewStatuses} />
+        </div>
       </Section>
-      <div className="w-full bg-white px-5  flex flex-col flex-wrap gap-3 rounded-lg">
-        <WorkloadStatusOverview data={overviewStatuses} />
-      </div>
       <Section>
         <Title type="primary">Events</Title>
         <EventOverview />

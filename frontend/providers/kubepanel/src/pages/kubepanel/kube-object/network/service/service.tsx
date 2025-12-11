@@ -17,7 +17,15 @@ const columns: ColumnsType<Service> = [
   {
     title: 'ClusterIps',
     key: 'ClusterIps',
-    render: (_, service: Service) => service.getClusterIps().map((ip) => <p key={ip}>{ip}</p>)
+    render: (_, service: Service) => (
+      <div className="flex flex-col gap-0.5">
+        {service.getClusterIps().map((ip) => (
+          <span key={ip} className="leading-snug">
+            {ip}
+          </span>
+        ))}
+      </div>
+    )
   },
   {
     title: 'Type',
@@ -27,44 +35,59 @@ const columns: ColumnsType<Service> = [
   {
     title: 'Selector',
     key: 'selector',
-    render: (_, service: Service) =>
-      service.getSelector().map((selector) => <p key={selector}>{selector}</p>)
+    render: (_, service: Service) => (
+      <div className="flex flex-col gap-0.5">
+        {service.getSelector().map((selector) => (
+          <span key={selector} className="leading-snug">
+            {selector}
+          </span>
+        ))}
+      </div>
+    )
   },
   {
     title: 'Ports',
     key: 'ports',
-    render: (_, service: Service) =>
-      service.getPorts().map((port) => (
-        <div key={port.toString()} className="overflow-hidden">
-          {port.toString()}
-        </div>
-      ))
-  },
-  {
-    title: 'Load Balancer IPs',
-    key: 'load-balancer-ips',
-    render: (_, service: Service) => service.getExternalIps().map((ip) => <p key={ip}>{ip}</p>)
+    render: (_, service: Service) => (
+      <div className="flex flex-col gap-0.5">
+        {service.getPorts().map((port) => (
+          <span key={port.toString()} className="leading-snug">
+            {port.toString()}
+          </span>
+        ))}
+      </div>
+    )
   },
   {
     title: 'Status',
     key: 'status',
     render: (_, service: Service) => <span>{service.getStatus()}</span>
+  },
+  {
+    title: 'Age',
+    key: 'age',
+    render: (_, service: Service) => <KubeObjectAge key="age" obj={service} />
+  },
+  {
+    key: 'action',
+    fixed: 'right',
+    width: 20,
+    render: (_, service: Service) => <ActionButton obj={service} />
   }
 ];
 
 const ServiceOverviewPage = () => {
-  const { items, initialize, isLoaded, watch } = useServiceStore();
+  const { items, initialize, isLoaded } = useServiceStore();
 
   return (
     <PanelTable
       columns={columns}
       dataSource={items}
       loading={!isLoaded}
-      sectionTitle="service"
+      sectionTitle="Services"
       DetailDrawer={ServiceDetail}
       getRowKey={(service) => service.getId()}
       initializers={[initialize]}
-      watchers={[watch]}
       getDetailItem={(service) => service}
     />
   );

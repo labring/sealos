@@ -1,7 +1,8 @@
 import { PodContainerStatus } from '@/k8slens/kube-object';
 import { LocaleDate } from '@/components/kube/local-date';
 import moment from 'moment-timezone';
-import { getStatusColor } from '@/utils/status-color';
+import { Typography } from 'antd';
+import { getStatusTextTone } from '@/utils/status-color';
 import { entries, startCase } from 'lodash';
 import React from 'react';
 
@@ -14,14 +15,14 @@ const ContainerStatus = ({ state, status }: ContainerStatusProps) => {
   const { ready = false, state: containerState = {} } = status ?? {};
   const { terminated } = containerState;
 
-  const color = getStatusColor(state) ?? 'color-terminated';
+  const textTone = getStatusTextTone(state);
 
   return (
-    <span className={`text-${color}`}>
+    <Typography.Text type={textTone}>
       {state}
       {ready ? ', ready' : null}
       {terminated ? ` - ${terminated.reason} (exit code: ${terminated.exitCode})` : null}
-    </span>
+    </Typography.Text>
   );
 };
 
@@ -34,21 +35,21 @@ export const ContainerLastState = ({ lastState, status }: ContainerLastStateProp
   const { lastState: lastContainerState = {} } = status ?? {};
   const { terminated } = lastContainerState;
   const localeTimezone = moment.tz.guess();
+
   if (lastState === 'terminated' && terminated) {
     return (
-      <span>
-        {lastState}
-        <br />
-        Reason:
-        {`Reason: ${terminated.reason} - exit code: ${terminated.exitCode}`}
-        <br />
-        {'Started at: '}
-        {<LocaleDate date={terminated.startedAt} localeTimezone={localeTimezone} />}
-        <br />
-        {'Finished at: '}
-        {<LocaleDate date={terminated.finishedAt} localeTimezone={localeTimezone} />}
-        <br />
-      </span>
+      <div className="text-sm text-gray-600">
+        <div className="font-medium mb-1">{lastState}</div>
+        <div>
+          Reason: {terminated.reason} - exit code: {terminated.exitCode}
+        </div>
+        <div>
+          Started at: <LocaleDate date={terminated.startedAt} localeTimezone={localeTimezone} />
+        </div>
+        <div>
+          Finished at: <LocaleDate date={terminated.finishedAt} localeTimezone={localeTimezone} />
+        </div>
+      </div>
     );
   }
 

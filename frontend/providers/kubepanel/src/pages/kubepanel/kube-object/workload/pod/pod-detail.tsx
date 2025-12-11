@@ -15,8 +15,10 @@ const PodDetail = ({ obj: pod, open, onClose }: DetailDrawerProps<Pod>) => {
 
   return (
     <Drawer open={open} title={`Pod: ${pod.getName()}`} onClose={onClose}>
-      <PodInfo pod={pod} />
-      <ContainerDetail pod={pod} />
+      <DrawerPanel>
+        <PodInfo pod={pod} />
+        <ContainerDetail pod={pod} editable={false} />
+      </DrawerPanel>
     </Drawer>
   );
 };
@@ -44,16 +46,20 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
   // }));
 
   return (
-    <DrawerPanel>
+    <>
       <KubeObjectInfoList obj={pod} />
       <DrawerItem name="Status" value={<PodStatus status={pod.getStatusMessage()} />} />
       <DrawerItem name="Pod IP" value={podIP} />
       <DrawerItem
-        hidden={podIPs.length === 0}
+        hidden={podIPs.length === 0 || (podIPs.length === 1 && podIPs[0] === podIP)}
         name="Pod IPs"
-        value={podIPs.map((label) => (
-          <KubeBadge key={label} label={label} />
-        ))}
+        value={
+          <div className="flex flex-wrap gap-1">
+            {podIPs.map((label) => (
+              <KubeBadge key={label} label={label} />
+            ))}
+          </div>
+        }
       />
       <DrawerItem
         name="Service Account"
@@ -84,7 +90,7 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
         hidden={conditions.length === 0}
         name={'Conditions'}
         value={
-          <>
+          <div className="flex flex-wrap gap-1">
             {conditions.map(({ type, status, lastTransitionTime }) => (
               <Tooltip
                 key={type}
@@ -93,7 +99,7 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
                 <KubeBadge label={type} disabled={status === 'False'} />
               </Tooltip>
             ))}
-          </>
+          </div>
         }
       />
       <PodDetailTolerations workload={pod} />
@@ -108,7 +114,7 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
           </div>
         ))}
       />
-    </DrawerPanel>
+    </>
   );
 };
 

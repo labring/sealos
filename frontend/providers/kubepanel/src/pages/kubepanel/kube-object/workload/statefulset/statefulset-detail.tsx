@@ -4,23 +4,18 @@ import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
-import PodDetailStatuses from '../pod/pod-detail-statuses';
+import ContainerDetail from '../pod/container-detail';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import { isArray } from 'lodash';
-import { getPodsByOwnerId, usePodStore } from '@/store/kube';
+import { useStatefulSetStore } from '@/store/kube';
+import { DetailDrawerProps } from '@/components/common/panel-table/table';
 
 const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<StatefulSet>) => {
-  if (!stat) return null;
-
-  const { items: pods } = usePodStore();
-  const childPods = getPodsByOwnerId(pods, stat.getId());
-
   if (!stat || !(stat instanceof StatefulSet)) return null;
-  if (!childPods || !isArray(childPods)) return null;
 
-  const images = stat.getImages();
   const selectors = stat.getSelectors();
+  const spec = stat.spec;
+  const { initialize } = useStatefulSetStore();
 
   return (
     <Drawer open={open} title={`StatefulSet: ${stat.getName()}`} onClose={onClose}>
@@ -28,23 +23,24 @@ const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<State
         <KubeObjectInfoList obj={stat} />
         {selectors.length > 0 && (
           <DrawerItem
-            name="Selector"
-            value={selectors.map((label) => (
-              <KubeBadge key={label} label={label} />
-            ))}
-          />
-        )}
-        {images.length > 0 && (
-          <DrawerItem
-            name="Images"
-            value={images.map((image) => (
-              <p key={image}>{image}</p>
-            ))}
+            name={<div className="pt-1">Selector</div>}
+            value={
+              <div className="flex flex-wrap gap-1">
+                {selectors.map((label) => (
+                  <KubeBadge key={label} label={label} className="m-0!" />
+                ))}
+              </div>
+            }
           />
         )}
         <PodDetailTolerations workload={stat} />
         <PodDetailAffinities workload={stat} />
-        <DrawerItem name="Pod Status" value={<PodDetailStatuses pods={childPods} />} />
+        <ContainerDetail
+          containers={spec?.template?.spec?.containers}
+          initContainers={spec?.template?.spec?.initContainers}
+          workload={stat}
+          onUpdate={() => initialize(() => {}, true)}
+        />
       </DrawerPanel>
     </Drawer>
   );

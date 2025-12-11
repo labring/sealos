@@ -39,7 +39,6 @@ const WorkloadStatus = ({ title, data }: { title: string; data?: Array<WorkloadS
   if (data.length === 0) {
     data = [{ type: 'Empty', value: 0 }];
   }
-  console.log(data);
 
   return (
     <PieChart

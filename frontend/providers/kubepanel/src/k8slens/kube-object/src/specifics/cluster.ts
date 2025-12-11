@@ -1,71 +1,100 @@
-/**
- * Copyright (c) OpenLens Authors. All rights reserved.
- * Licensed under MIT License. See LICENSE in root directory for more information.
- */
+import { KubeObject, KubeObjectMetadata, KubeObjectScope } from '@/k8slens/kube-object';
 
-import { KubeObject } from '../kube-object';
-
-export enum ClusterStatus {
-  ACTIVE = 'Active',
-  CREATING = 'Creating',
-  REMOVING = 'Removing',
-  ERROR = 'Error'
+export interface ClusterComponentSpec {
+  componentDefRef?: string;
+  name?: string;
+  replicas?: number;
+  resources?: {
+    limits?: { cpu?: string; memory?: string };
+    requests?: { cpu?: string; memory?: string };
+  };
+  volumeClaimTemplates?: Array<{
+    name?: string;
+    spec?: {
+      resources?: {
+        requests?: { storage?: string };
+      };
+    };
+  }>;
 }
 
-export interface Cluster {
-  spec: {
-    clusterNetwork?: {
-      serviceDomain?: string;
-      pods?: {
-        cidrBlocks?: string[];
-      };
-      services?: {
-        cidrBlocks?: string[];
-      };
-    };
-    providerSpec: {
-      value: {
-        profile: string;
-      };
-    };
-  };
-  status?: {
-    apiEndpoints: {
-      host: string;
-      port: string;
-    }[];
-    providerStatus: {
-      adminUser?: string;
-      adminPassword?: string;
-      kubeconfig?: string;
-      processState?: string;
-      lensAddress?: string;
-    };
-    errorMessage?: string;
-    errorReason?: string;
+export interface ClusterSpec {
+  clusterDefinitionRef?: string;
+  clusterVersionRef?: string;
+  terminationPolicy?: string;
+  componentSpecs?: ClusterComponentSpec[];
+  backup?: {
+    enabled?: boolean;
+    cronExpression?: string;
+    method?: string;
   };
 }
 
-export class Cluster extends KubeObject {
-  static kind = 'Cluster';
+export interface ClusterComponentStatus {
+  phase?: string;
+  podsReady?: boolean;
+}
 
-  static apiBase = '/apis/cluster.k8s.io/v1alpha1/clusters';
+export interface ClusterStatus {
+  phase?: string;
+  components?: Record<string, ClusterComponentStatus>;
+  conditions?: Array<{
+    type?: string;
+    status?: string;
+    reason?: string;
+    message?: string;
+  }>;
+}
 
-  static namespaced = true;
+export class Cluster extends KubeObject<
+  KubeObjectMetadata<KubeObjectScope.Namespace>,
+  ClusterStatus,
+  ClusterSpec
+> {
+  static readonly kind = 'Cluster';
+  static readonly namespaced = true;
+  static readonly apiBase = '/apis/apps.kubeblocks.io/v1alpha1/clusters';
 
-  getStatus() {
-    if (this.metadata.deletionTimestamp) {
-      return ClusterStatus.REMOVING;
-    }
+  getPhase(): string {
+    return this.status?.phase || 'Unknown';
+  }
 
-    if (!this.status || !this.status) {
-      return ClusterStatus.CREATING;
-    }
+  getClusterDefinition(): string {
+    return this.spec?.clusterDefinitionRef || '';
+  }
 
-    if (this.status.errorMessage) {
-      return ClusterStatus.ERROR;
-    }
+  getClusterVersion(): string {
+    return this.spec?.clusterVersionRef || '';
+  }
 
-    return ClusterStatus.ACTIVE;
+  getTerminationPolicy(): string {
+    return this.spec?.terminationPolicy || '';
+  }
+
+  getReplicas(): number {
+    return this.spec?.componentSpecs?.[0]?.replicas || 0;
+  }
+
+  getCpu(): string {
+    return this.spec?.componentSpecs?.[0]?.resources?.limits?.cpu || '';
+  }
+
+  getMemory(): string {
+    return this.spec?.componentSpecs?.[0]?.resources?.limits?.memory || '';
+  }
+
+  getStorage(): string {
+    return (
+      this.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests
+        ?.storage || ''
+    );
+  }
+
+  isBackupEnabled(): boolean {
+    return this.spec?.backup?.enabled || false;
+  }
+
+  getComponentPhase(componentName: string): string {
+    return this.status?.components?.[componentName]?.phase || '';
   }
 }

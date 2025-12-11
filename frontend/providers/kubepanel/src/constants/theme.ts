@@ -25,7 +25,7 @@ export const theme: ThemeConfig = {
   token: {
     controlItemBgHover: '#1118240D'
   },
-  cssVar: true
+  cssVar: {}
 };
 
 export const monacoTheme: editor.IStandaloneThemeData = {

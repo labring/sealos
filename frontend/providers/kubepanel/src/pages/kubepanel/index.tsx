@@ -13,6 +13,9 @@ import { PlusOutlined } from '@ant-design/icons';
 import SecretOverviewPage from './kube-object/config/secret/secret';
 import IngressOverviewPage from './kube-object/network/ingress/ingress';
 import ServiceOverviewPage from './kube-object/network/service/service';
+import DevboxPage from './kube-object/custom-resource/devbox/devbox';
+import ClusterPage from './kube-object/custom-resource/cluster/cluster';
+import BucketPage from './kube-object/custom-resource/bucket/bucket';
 
 const switchPage = (key: SideNavItemKey): React.ReactNode => {
   switch (key) {
@@ -34,6 +37,12 @@ const switchPage = (key: SideNavItemKey): React.ReactNode => {
       return <IngressOverviewPage />;
     case SideNavItemKey.Service:
       return <ServiceOverviewPage />;
+    case SideNavItemKey.Devbox:
+      return <DevboxPage />;
+    case SideNavItemKey.Cluster:
+      return <ClusterPage />;
+    case SideNavItemKey.Bucket:
+      return <BucketPage />;
     default:
       return <OverviewPage />;
   }

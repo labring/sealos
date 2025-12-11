@@ -75,7 +75,6 @@ const ServiceDetail = ({ obj: service, open, onClose }: DetailDrawerProps<Servic
       <DrawerPanel>
         <KubeObjectInfoList obj={service} />
         <DrawerItem name="Cluster IP" value={service.getClusterIp()} />
-        <DrawerItem name="External IPs" value={service.getExternalIps().join(', ')} />
         <DrawerItem name="Type" value={service.getType()} />
         <DrawerItem
           name="Ports"

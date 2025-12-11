@@ -1,18 +1,11 @@
-import { Form, Input, Button, Select, Space, message, Modal, Divider } from 'antd';
+import { Form, Input, Button, Select, Space, message, Modal } from 'antd';
 import { Drawer } from '@/components/common/drawer/drawer';
-import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import { DrawerTitle } from '@/components/common/drawer/drawer-title';
-import {
-  Ingress,
-  IngressBackend,
-  ExtensionsBackend,
-  NetworkingBackend
-} from '@/k8slens/kube-object';
+import { Ingress, ExtensionsBackend, NetworkingBackend } from '@/k8slens/kube-object';
 import { updateResource } from '@/api/kubernetes';
 import { buildErrorResponse } from '@/services/backend/response';
 import { dumpKubeObject } from '@/utils/yaml';
-import { PlusOutlined, DeleteOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
-import { useEffect, useState } from 'react';
+import { PlusOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
+import { useEffect, useState, useCallback } from 'react';
 
 type PathForm = {
   path?: string;
@@ -44,6 +37,23 @@ export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Pro
   const [msgApi, contextHolder] = message.useMessage();
   const msgKey = 'ingressVisualEditMsg';
   const [submitting, setSubmitting] = useState(false);
+
+  // Helper function to check if path is root path
+  const getPathValue = useCallback(
+    (fieldName: number, pathFieldName: number): string => {
+      return String(
+        form.getFieldValue(['rules', fieldName, 'paths'])?.[pathFieldName]?.path ?? ''
+      ).trim();
+    },
+    [form]
+  );
+
+  const isRootPath = useCallback(
+    (fieldName: number, pathFieldName: number): boolean => {
+      return getPathValue(fieldName, pathFieldName) === '/';
+    },
+    [getPathValue]
+  );
 
   const initialValues: FormValues = {
     rules:
@@ -149,254 +159,177 @@ export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Pro
   return (
     <>
       {contextHolder}
-      <Drawer open={open} onClose={handleCancel} title={`Edit Ingress Paths: ${ingress.getName()}`}>
-        <DrawerPanel
-          title={
-            <DrawerTitle>
-              <div className="flex items-center justify-between">
-                <span>Edit Paths</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleCancel}
-                    icon={<CloseOutlined />}
-                    size="small"
-                    type="default"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="primary"
-                    onClick={handleSubmit}
-                    icon={<SaveOutlined />}
-                    size="small"
-                    loading={submitting}
-                  >
-                    Save
-                  </Button>
-                </div>
-              </div>
-            </DrawerTitle>
-          }
+      <Drawer
+        open={open}
+        onClose={handleCancel}
+        title={`Edit Ingress Paths: ${ingress.getName()}`}
+        width="750px"
+        extra={
+          <div className="flex items-center gap-2">
+            <Button onClick={handleCancel} size="middle" type="default">
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              icon={<SaveOutlined />}
+              size="middle"
+              loading={submitting}
+            >
+              Save
+            </Button>
+          </div>
+        }
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={initialValues}
+          style={{ paddingRight: 8 }}
         >
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={initialValues}
-            style={{ paddingRight: 8 }}
-          >
-            <Form.List name="rules">
-              {(fields) => (
-                <div>
-                  {fields.map((field) => (
-                    <div
-                      key={field.key}
-                      className="mb-4 rounded-md border border-[#e5e7eb] bg-[#fafafa]"
-                    >
-                      <DrawerTitle>
-                        Host: {ingress.spec.rules?.[field.name]?.host || '*'}
-                      </DrawerTitle>
-                      <div className="p-3">
-                        <Form.List name={[field.name, 'paths']}>
-                          {(pathFields, { add: addPath, remove: removePath }) => (
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-[#5A646E]">Paths</span>
-                                <Button
-                                  onClick={() =>
-                                    addPath({
-                                      path: '',
-                                      pathType: 'Prefix',
-                                      serviceName: '',
-                                      servicePort: ''
-                                    })
-                                  }
-                                  type="dashed"
-                                  size="small"
-                                  icon={<PlusOutlined />}
-                                >
-                                  Add Path
-                                </Button>
-                              </div>
-                              {pathFields.map((pf) => (
-                                <div
-                                  key={pf.key}
-                                  className="mb-2 p-2 rounded border border-[#e5e7eb] bg-white"
-                                >
-                                  <Space wrap style={{ width: '100%' }}>
-                                    <Form.Item
-                                      label="Path"
-                                      name={[pf.name, 'path']}
-                                      rules={[{ required: true, message: 'Please enter Path' }]}
-                                    >
-                                      <Input
-                                        placeholder="e.g. /, /api"
-                                        style={{ width: 220 }}
-                                        size="middle"
-                                        readOnly={
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/'
-                                        }
-                                        disabled={
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/'
-                                        }
-                                      />
-                                    </Form.Item>
-
-                                    <Form.Item
-                                      label="PathType"
-                                      name={[pf.name, 'pathType']}
-                                      rules={[
-                                        { required: true, message: 'Please select PathType' }
-                                      ]}
-                                    >
-                                      {(() => {
-                                        const isRoot =
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/';
-                                        return (
-                                          <Select
-                                            allowClear
-                                            size="middle"
-                                            style={{ width: 180 }}
-                                            disabled={isRoot}
-                                            options={[
-                                              { label: 'Prefix', value: 'Prefix' },
-                                              { label: 'Exact', value: 'Exact' },
-                                              {
-                                                label: 'ImplementationSpecific',
-                                                value: 'ImplementationSpecific'
-                                              }
-                                            ]}
-                                          />
-                                        );
-                                      })()}
-                                    </Form.Item>
-
-                                    <Form.Item
-                                      label="Service Name"
-                                      name={[pf.name, 'serviceName']}
-                                      rules={[
-                                        { required: true, message: 'Please enter Service Name' }
-                                      ]}
-                                    >
-                                      <Input
-                                        placeholder="Backend Service Name"
-                                        style={{ width: 220 }}
-                                        size="middle"
-                                        readOnly={
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/'
-                                        }
-                                        disabled={
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/'
-                                        }
-                                      />
-                                    </Form.Item>
-
-                                    <Form.Item
-                                      label="Service Port"
-                                      name={[pf.name, 'servicePort']}
-                                      tooltip="Supports port number or named port"
-                                    >
-                                      <Input
-                                        placeholder="Number or named port"
-                                        style={{ width: 180 }}
-                                        size="middle"
-                                        readOnly={
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/'
-                                        }
-                                        disabled={
-                                          String(
-                                            form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                              pf.name
-                                            ]?.path ?? ''
-                                          ).trim() === '/'
-                                        }
-                                      />
-                                    </Form.Item>
-
-                                    <Form.Item
-                                      noStyle
-                                      shouldUpdate={(prev, curr) => {
-                                        const prevPath =
-                                          prev?.rules?.[field.name]?.paths?.[pf.name]?.path;
-                                        const currPath =
-                                          curr?.rules?.[field.name]?.paths?.[pf.name]?.path;
-                                        return prevPath !== currPath;
-                                      }}
-                                    >
-                                      {() => {
-                                        const pathVal = String(
-                                          form.getFieldValue(['rules', field.name, 'paths'])?.[
-                                            pf.name
-                                          ]?.path ?? ''
-                                        ).trim();
-                                        const isRoot = pathVal === '/';
-                                        return (
-                                          <Button
-                                            danger
-                                            type="link"
-                                            disabled={isRoot}
-                                            onClick={() => {
-                                              const current = String(
-                                                form.getFieldValue([
-                                                  'rules',
-                                                  field.name,
-                                                  'paths'
-                                                ])?.[pf.name]?.path ?? ''
-                                              ).trim();
-                                              if (current === '/') {
-                                                msgApi.warning(
-                                                  'The root path "/" cannot be deleted'
-                                                );
-                                                return;
-                                              }
-                                              removePath(pf.name);
-                                            }}
-                                            icon={<DeleteOutlined />}
-                                          >
-                                            Delete Path
-                                          </Button>
-                                        );
-                                      }}
-                                    </Form.Item>
-                                  </Space>
-                                </div>
-                              ))}
-                              <Divider dashed style={{ margin: '8px 0' }} />
-                            </div>
-                          )}
-                        </Form.List>
-                      </div>
+          <Form.List name="rules">
+            {(fields) => (
+              <div className="flex flex-col gap-6">
+                {fields.map((field) => (
+                  <div key={field.key} className="flex flex-col gap-4">
+                    <div className="font-medium text-base text-gray-900 border-b border-gray-200 pb-2">
+                      Host: {ingress.spec.rules?.[field.name]?.host || '*'}
                     </div>
-                  ))}
-                </div>
-              )}
-            </Form.List>
-          </Form>
-        </DrawerPanel>
+                    <Form.List name={[field.name, 'paths']}>
+                      {(pathFields, { add: addPath, remove: removePath }) => (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600 font-medium">Paths</span>
+                            <Button
+                              onClick={() =>
+                                addPath({
+                                  path: '',
+                                  pathType: 'Prefix',
+                                  serviceName: '',
+                                  servicePort: ''
+                                })
+                              }
+                              type="dashed"
+                              size="small"
+                              icon={<PlusOutlined />}
+                            >
+                              Add Path
+                            </Button>
+                          </div>
+                          {pathFields.map((pf) => (
+                            <div
+                              key={pf.key}
+                              className="p-4 rounded-lg bg-gray-50 border border-gray-100"
+                            >
+                              <Space wrap align="start" style={{ width: '100%' }} size="middle">
+                                <Form.Item
+                                  label="Path"
+                                  name={[pf.name, 'path']}
+                                  rules={[{ required: true, message: 'Please enter Path' }]}
+                                  className="mb-0!"
+                                >
+                                  <Input
+                                    placeholder="/"
+                                    style={{ width: 160 }}
+                                    disabled={isRootPath(field.name, pf.name)}
+                                    readOnly={isRootPath(field.name, pf.name)}
+                                  />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label="PathType"
+                                  name={[pf.name, 'pathType']}
+                                  rules={[{ required: true, message: 'Please select PathType' }]}
+                                  className="mb-0!"
+                                >
+                                  <Select
+                                    style={{ width: 140 }}
+                                    disabled={isRootPath(field.name, pf.name)}
+                                    options={[
+                                      { label: 'Prefix', value: 'Prefix' },
+                                      { label: 'Exact', value: 'Exact' },
+                                      {
+                                        label: 'ImplementationSpecific',
+                                        value: 'ImplementationSpecific'
+                                      }
+                                    ]}
+                                  />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label="Service Name"
+                                  name={[pf.name, 'serviceName']}
+                                  rules={[{ required: true, message: 'Please enter Service Name' }]}
+                                  className="mb-0!"
+                                >
+                                  <Input
+                                    placeholder="Service Name"
+                                    style={{ width: 160 }}
+                                    disabled={isRootPath(field.name, pf.name)}
+                                    readOnly={isRootPath(field.name, pf.name)}
+                                  />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label="Port"
+                                  name={[pf.name, 'servicePort']}
+                                  tooltip="Port number or name"
+                                  className="mb-0!"
+                                >
+                                  <Input
+                                    placeholder="80"
+                                    style={{ width: 80 }}
+                                    disabled={isRootPath(field.name, pf.name)}
+                                    readOnly={isRootPath(field.name, pf.name)}
+                                  />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label=" "
+                                  colon={false}
+                                  className="mb-0!"
+                                  shouldUpdate={(prev, curr) => {
+                                    const prevPath =
+                                      prev?.rules?.[field.name]?.paths?.[pf.name]?.path;
+                                    const currPath =
+                                      curr?.rules?.[field.name]?.paths?.[pf.name]?.path;
+                                    return prevPath !== currPath;
+                                  }}
+                                >
+                                  {() => {
+                                    const isRoot = isRootPath(field.name, pf.name);
+                                    return (
+                                      <Button
+                                        danger
+                                        type="text"
+                                        disabled={isRoot}
+                                        onClick={() => {
+                                          if (isRoot) {
+                                            msgApi.warning('The root path "/" cannot be deleted');
+                                            return;
+                                          }
+                                          removePath(pf.name);
+                                        }}
+                                        icon={<DeleteOutlined />}
+                                      />
+                                    );
+                                  }}
+                                </Form.Item>
+                              </Space>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Form.List>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Form.List>
+        </Form>
       </Drawer>
     </>
   );
 };
+
+export default IngressVisualEditorDrawer;

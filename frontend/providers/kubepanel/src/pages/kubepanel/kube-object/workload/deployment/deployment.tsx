@@ -1,7 +1,7 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { Deployment } from '@/k8slens/kube-object';
-import { getConditionColor } from '@/utils/condtion-color';
-import { Tooltip } from 'antd';
+import { getConditionTextTone } from '@/utils/condtion-color';
+import { Tooltip, Typography } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import DeploymentDetail from './deployment-detail';
 import { useDeploymentStore } from '@/store/kube';
@@ -17,26 +17,24 @@ const columns: ColumnsType<Deployment> = [
       return `${availableReplicas}/${replicas}`;
     }
   },
-  {
-    title: 'Replicas',
-    key: 'replicas',
-    render: (_, dep) => dep.getReplicas()
-  },
-  {
-    title: 'Age',
-    dataIndex: 'creationTimestamp',
-    key: 'age',
-    render: (_, dep) => <KubeObjectAge obj={dep} />
-  },
+
   {
     title: 'Conditions',
     key: 'conditions',
     render: (_, dep) =>
       dep.getConditions().map(({ type, message }) => (
         <Tooltip key={type} title={message}>
-          <span className={`mr-2 last:mr-0 text-${getConditionColor(type)}`}>{type}</span>
+          <Typography.Text className="mr-2 last:mr-0" type={getConditionTextTone(type)}>
+            {type}
+          </Typography.Text>
         </Tooltip>
       ))
+  },
+  {
+    title: 'Age',
+    dataIndex: 'creationTimestamp',
+    key: 'age',
+    render: (_, dep) => <KubeObjectAge obj={dep} />
   },
   {
     key: 'action',
@@ -46,7 +44,7 @@ const columns: ColumnsType<Deployment> = [
 ];
 
 const DeploymentOverviewPage = () => {
-  const { items, initialize, isLoaded, watch } = useDeploymentStore();
+  const { items, initialize, isLoaded } = useDeploymentStore();
 
   return (
     <PanelTable
@@ -57,7 +55,6 @@ const DeploymentOverviewPage = () => {
       DetailDrawer={DeploymentDetail}
       getRowKey={(deployment) => deployment.getId()}
       initializers={[initialize]}
-      watchers={[watch]}
       getDetailItem={(deployment) => deployment}
     />
   );

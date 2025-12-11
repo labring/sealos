@@ -23,23 +23,26 @@ const columns: ColumnsType<{ volumeClaim: PersistentVolumeClaim; pods: Pod[] }> 
     ellipsis: true,
     render: (_, { volumeClaim, pods }) => {
       const podsNames = volumeClaim.getPods(pods).map((pod) => pod.getName());
-      return podsNames.map((name) => (
-        <span key={name} className="text-blue-300 mr-1">
-          {name}
-        </span>
-      ));
+      return (
+        <div className="flex flex-col gap-0.5">
+          {podsNames.map((name) => (
+            <span key={name} className="leading-snug text-[#1890FF]">
+              {name}
+            </span>
+          ))}
+        </div>
+      );
     }
+  },
+  {
+    title: 'Status',
+    key: 'status',
+    render: (_, { volumeClaim }) => volumeClaim.getStatus()
   },
   {
     title: 'Age',
     key: 'age',
     render: (_, { volumeClaim }) => <KubeObjectAge obj={volumeClaim} />
-  },
-  {
-    title: 'Status',
-    fixed: 'right',
-    key: 'status',
-    render: (_, { volumeClaim }) => volumeClaim.getStatus()
   },
   {
     key: 'action',
@@ -52,15 +55,9 @@ const PersistentVolumeClaimOverviewPage = () => {
   const {
     items: volumeClaims,
     initialize: initializeVolumeClaims,
-    isLoaded: isVolumeClaimsLoaded,
-    watch: watchVolumeClaims
+    isLoaded: isVolumeClaimsLoaded
   } = useVolumeClaimStore();
-  const {
-    items: pods,
-    initialize: initializePods,
-    isLoaded: isPodsLoaded,
-    watch: watchPods
-  } = usePodStore();
+  const { items: pods, initialize: initializePods, isLoaded: isPodsLoaded } = usePodStore();
 
   const dataSource = volumeClaims.map((volumeClaim) => ({
     volumeClaim,
@@ -82,7 +79,6 @@ const PersistentVolumeClaimOverviewPage = () => {
       )}
       getRowKey={({ volumeClaim }) => volumeClaim.getId()}
       initializers={[initializeVolumeClaims, initializePods]}
-      watchers={[watchVolumeClaims, watchPods]}
       getDetailItem={(record) => record.volumeClaim}
     />
   );
