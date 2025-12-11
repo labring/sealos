@@ -16,24 +16,18 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { BindDialog } from './BindDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listAlerts, createAlert, deleteAlerts, updateAlerts } from '@/api/platform';
-import {
-  AlertNotificationAccount,
-  ProviderType,
-  CreateAlertRequest,
-  DeleteAlertsRequest
-} from '@/types/alert';
+import { AlertNotificationAccount, ProviderType } from '@/types/alert';
 import useSessionStore from '@/stores/session';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { ApiResp } from '@/types';
 import { UserInfo } from '@/api/auth';
 import { useTranslation } from 'next-i18next';
-import { useConfigStore } from '@/stores/config';
 
 interface PhoneNumber {
   id: string;
   number: string;
   isBound: boolean;
   checked: boolean;
+  isFromAlert: boolean;
 }
 
 interface Email {
@@ -41,6 +35,7 @@ interface Email {
   address: string;
   isBound: boolean;
   checked: boolean;
+  isFromAlert: boolean;
 }
 
 interface AlertSettingsProps {
@@ -126,14 +121,16 @@ export function AlertSettings({
             id: alert.id,
             number: alert.providerId,
             isBound: alert.providerId === userPhone,
-            checked: alert.isEnabled
+            checked: alert.isEnabled,
+            isFromAlert: true
           });
         } else if (alert.providerType === 'EMAIL') {
           emailsList.push({
             id: alert.id,
             address: alert.providerId,
             isBound: alert.providerId === userEmail,
-            checked: alert.isEnabled
+            checked: alert.isEnabled,
+            isFromAlert: true
           });
         }
       });
@@ -145,7 +142,8 @@ export function AlertSettings({
         id: `bound-phone-${userPhone}`,
         number: userPhone,
         isBound: true,
-        checked: false
+        checked: true,
+        isFromAlert: false
       });
     }
 
@@ -155,7 +153,8 @@ export function AlertSettings({
         id: `bound-email-${userEmail}`,
         address: userEmail,
         isBound: true,
-        checked: false
+        checked: true,
+        isFromAlert: false
       });
     }
 
@@ -230,14 +229,16 @@ export function AlertSettings({
   });
 
   const handlePhoneSelectAll = (checked: boolean) => {
-    const ids = phoneNumbers.map((p) => p.id);
+    // Only select non-virtual entries (from alerts)
+    const ids = phoneNumbers.filter((p) => p.isFromAlert).map((p) => p.id);
     if (ids.length > 0) {
       toggleMutation.mutate({ ids, isEnabled: checked });
     }
   };
 
   const handleEmailSelectAll = (checked: boolean) => {
-    const ids = emails.map((e) => e.id);
+    // Only select non-virtual entries (from alerts)
+    const ids = emails.filter((e) => e.isFromAlert).map((e) => e.id);
     if (ids.length > 0) {
       toggleMutation.mutate({ ids, isEnabled: checked });
     }
@@ -311,8 +312,8 @@ export function AlertSettings({
     });
   };
 
-  const phoneSelectAllChecked = phoneNumbers.length > 0 && phoneNumbers.every((p) => p.checked);
-  const emailSelectAllChecked = emails.length > 0 && emails.every((e) => e.checked);
+  const phoneSelectAllChecked = phoneNumbers.filter((p) => p.isFromAlert).every((p) => p.checked);
+  const emailSelectAllChecked = emails.filter((e) => e.isFromAlert).every((e) => e.checked);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -431,7 +432,10 @@ export function AlertSettings({
                           checked={emailSelectAllChecked}
                           onCheckedChange={handleEmailSelectAll}
                           className="w-4 h-4"
-                          disabled={emails.length === 0 || toggleMutation.isLoading}
+                          disabled={
+                            emails.filter((e) => e.isFromAlert).length === 0 ||
+                            toggleMutation.isLoading
+                          }
                         />
                         <p className="text-sm leading-5 text-black">
                           {t('common:alert_settings.email.enable_all')}
