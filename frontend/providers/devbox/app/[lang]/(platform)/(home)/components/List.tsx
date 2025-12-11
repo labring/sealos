@@ -366,6 +366,7 @@ const DevboxList = ({
             <DevboxStatusTag
               status={item.status}
               isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
+              isSSHGateStopped={item.networkType === 'SSHGate' && item.status.value === DevboxStatusEnum.Stopped}
             />
           );
         }

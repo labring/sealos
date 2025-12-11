@@ -118,6 +118,7 @@
   "devbox_shutdown_notice1": "Suspend port billing in cost-saving shutdown mode.",
   "devbox_shutdown_notice2": "Due to the reclaiming of port resources, after startup, the <black>public access port will be reassigned. You can click the IDE icon (or reconfigure the SSH connection information)</black> to update to the latest connection information.",
   "devbox_shutdown_notice3": "Due to the reclaiming of fixed public IP addresses, <black>the fixed public IP address may change after a restart,</black> but this will not affect the private IP address. If the instance was bound to an elastic public IP address before shutdown, the IP address will remain unchanged after the restart.",
+  "devbox_sshgate_stopped_notice": "Ports are not billed while the DevBox is stopped. Since resources are reclaimed, public ports will be reassigned upon restart. Please click the IDE icon (or re-run the one-click SSH setup) to update your connection details.",
   "devbox_template": "DevBox Templates",
   "disabled": "Disabled",
   "docs": "Docs",
