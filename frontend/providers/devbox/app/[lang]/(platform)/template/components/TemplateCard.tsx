@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
@@ -12,6 +11,7 @@ import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
 import { type Tag as TTag } from '@/prisma/generated/client';
 import { tagColorMap, defaultTagColor } from '@/constants/tag';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 import {
   Select,
@@ -90,22 +90,6 @@ const TemplateCard = ({
     }
   });
 
-  useEffect(() => {
-    const preloadImage = (src: string): Promise<void> => {
-      return new Promise((resolve) => {
-        const img = document.createElement('img');
-        img.onload = () => resolve();
-        img.src = src;
-      });
-    };
-
-    const loadImages = async () => {
-      await preloadImage(`/images/runtime/${iconId}.svg`);
-      setImageLoaded(true);
-    };
-
-    loadImages();
-  }, [iconId]);
 
   const handleSelectTemplate = () => {
     setStartedTemplate({
@@ -139,11 +123,11 @@ const TemplateCard = ({
               {/* logo */}
               <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
                 {!imageLoaded && <Skeleton className="absolute inset-0 h-8 w-8 rounded-lg" />}
-                <Image
+                <RuntimeIcon
+                  iconId={iconId}
+                  alt={templateRepositoryName}
                   width={32}
                   height={32}
-                  src={`/images/runtime/${iconId}.svg`}
-                  alt={templateRepositoryName}
                   className={cn(
                     'transition-opacity duration-200',
                     imageLoaded ? 'opacity-100' : 'opacity-0'

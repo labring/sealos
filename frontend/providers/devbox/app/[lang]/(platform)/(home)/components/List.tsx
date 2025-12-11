@@ -59,6 +59,7 @@ import { track } from '@sealos/gtm';
 import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
 import { Separator } from '@sealos/shadcn-ui/separator';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 import SearchEmpty from './SearchEmpty';
 
 const DeleteDevboxDialog = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
@@ -199,22 +200,18 @@ const DevboxList = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                    <Image
-                      width={21}
-                      height={21}
+                    <RuntimeIcon
+                      iconId={item.template.templateRepository.iconId}
                       alt={item.id}
-                      src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
                     />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="start" sideOffset={1}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                      <Image
-                        width={21}
-                        height={21}
+                      <RuntimeIcon
+                        iconId={item.template.templateRepository.iconId}
                         alt={item.id}
-                        src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
                       />
                     </div>
                     <div className="flex flex-col">
@@ -366,7 +363,9 @@ const DevboxList = ({
             <DevboxStatusTag
               status={item.status}
               isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
-              isSSHGateStopped={item.networkType === 'SSHGate' && item.status.value === DevboxStatusEnum.Stopped}
+              isSSHGateStopped={
+                item.networkType === 'SSHGate' && item.status.value === DevboxStatusEnum.Stopped
+              }
             />
           );
         }
