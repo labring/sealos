@@ -39,6 +39,16 @@ export function PhoneSigninForm() {
     [startTime]
   );
   const [remainingTime, setRemainingTime] = useState(getRemainingTime());
+
+  // If captcha is disabled, automatically set captchaSolved to true
+  useEffect(() => {
+    if (!authConfig?.captcha.ali.enabled) {
+      setCaptchaSolved(true);
+    } else {
+      setCaptchaSolved(false);
+    }
+  }, [authConfig?.captcha.ali.enabled]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       const newRemainingTime = getRemainingTime();

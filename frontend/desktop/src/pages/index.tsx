@@ -26,6 +26,7 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useMemo, useState } from 'react';
 import 'react-contexify/dist/ReactContexify.css';
+import useScriptStore from '@/stores/script';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -42,9 +43,10 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const { autolaunchWorkspaceUid } = useAppStore();
   const { session } = useSessionStore();
-  const { layoutConfig, commonConfig, trackingConfig } = useConfigStore();
+  const { layoutConfig, commonConfig, trackingConfig, cloudConfig, authConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
+  const { setCaptchaIsLoad } = useScriptStore();
 
   // Initialize license check after user login
   useLicenseCheck({
@@ -250,6 +252,14 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       {/* {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
       })} */}
+      {authConfig?.captcha.ali.enabled && (
+        <Script
+          src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"
+          onLoad={() => {
+            setCaptchaIsLoad();
+          }}
+        />
+      )}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
       </MoreAppsContext.Provider>
