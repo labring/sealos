@@ -336,7 +336,7 @@ export const document = createDocument({
                   parameterConfig: {
                     maxConnections: '100',
                     timeZone: 'Asia/Shanghai',
-                    lowerCaseTableNames: '1'
+                    lowerCaseTableNames: '0'
                   }
                 }
               }
