@@ -840,7 +840,7 @@ export default function Apps() {
       </svg>
 
       <Flex width={'full'} height={'full'} overflow={'hidden'} flexDirection={'column'}>
-        {!isGuest() && (
+        {!isGuest() && layoutConfig?.common.announcementEnabled && (
           <Center mx={'12px'}>
             <Center
               width={'fit-content'}
