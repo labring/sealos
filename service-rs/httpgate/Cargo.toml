@@ -1,0 +1,41 @@
+[package]
+name = "httpgate"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Pingora HTTP proxy
+pingora-core = "0.6"
+pingora-proxy = "0.6"
+pingora-http = "0.6"
+
+# Kubernetes
+kube = { version = "2.0", features = ["runtime", "derive"] }
+k8s-openapi = { version = "0.26", features = ["v1_32"] }
+
+# Serialization (for CRD)
+schemars = "1.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Utilities
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+regex = "1"
+dashmap = "6"
+
+[profile.release]
+opt-level = 3
+debug = 0
+lto = "fat"
+codegen-units = 1
+incremental = false
+panic = "unwind"
+strip = "symbols"
+debug-assertions = false
+overflow-checks = false
