@@ -1,6 +1,6 @@
 import { KubeObjectTolerations } from '@/components/kube/object/kube-object-tolerations';
 import { KubeObject, Toleration } from '@/k8slens/kube-object';
-import { DrawerCollapse } from '@/components/common/drawer/drawer-collapse';
+import { DrawerItem } from '@/components/common/drawer/drawer-item';
 
 interface KubeObjectWithTolerations extends KubeObject {
   getTolerations(): Toleration[];
@@ -16,9 +16,10 @@ const PodDetailTolerations = ({ workload }: Props) => {
   if (tolerations.length === 0) return null;
 
   return (
-    <DrawerCollapse header={{ name: 'Tolerations', value: tolerations.length }}>
+    <>
+      <DrawerItem name="Tolerations" />
       <KubeObjectTolerations tolerations={tolerations} />
-    </DrawerCollapse>
+    </>
   );
 };
 

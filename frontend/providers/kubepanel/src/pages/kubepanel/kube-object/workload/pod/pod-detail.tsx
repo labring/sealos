@@ -31,7 +31,6 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
   const priorityClassName = pod.getPriorityClassName();
   const runtimeClassName = pod.getRuntimeClassName();
   const serviceAccountName = pod.getServiceAccountName();
-  const secrets = pod.getSecrets();
 
   // TODO: Link
   // const priorityClassDetailsUrl = getDetailsUrl(this.props.priorityClassApi.formatUrlForNotListing({
@@ -104,16 +103,6 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
       />
       <PodDetailTolerations workload={pod} />
       <PodDetailAffinities workload={pod} />
-
-      <DrawerItem
-        hidden={secrets.length === 0}
-        name="Secrets"
-        value={secrets.map((secret) => (
-          <div className="mb-1 last:mb-0" key={secret}>
-            {secret}
-          </div>
-        ))}
-      />
     </>
   );
 };

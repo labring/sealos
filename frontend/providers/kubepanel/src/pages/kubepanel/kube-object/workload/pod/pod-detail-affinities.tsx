@@ -1,5 +1,5 @@
 import { DaemonSet, Deployment, Job, Pod, ReplicaSet, StatefulSet } from '@/k8slens/kube-object';
-import { DrawerCollapse } from '@/components/common/drawer/drawer-collapse';
+import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { KubeObjectAffinities } from '@/components/kube/object/kube-object-affinities';
 
 export type Props = {
@@ -14,9 +14,10 @@ const PodDetailAffinities = ({ workload }: Props) => {
   if (!affinitiesNum || !affinities) return null;
 
   return (
-    <DrawerCollapse header={{ name: 'Affinities', value: affinitiesNum }}>
+    <>
+      <DrawerItem name="Affinities" />
       <KubeObjectAffinities affinity={affinities} />
-    </DrawerCollapse>
+    </>
   );
 };
 

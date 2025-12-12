@@ -111,5 +111,5 @@ export function stringifyLabels(labels?: Partial<Record<string, string>>): strin
     return [];
   }
 
-  return Object.entries(labels).map(([name, value]) => `${name}=${value}`);
+  return Object.entries(labels).map(([name, value]) => `${name}: ${value}`);
 }

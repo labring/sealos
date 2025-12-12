@@ -737,16 +737,6 @@ export class Pod extends KubeObject<NamespaceScopedMetadata, PodStatus, PodSpec>
     return this.spec?.volumes ?? [];
   }
 
-  getSecrets(): string[] {
-    return this.getVolumes()
-      .map((vol) => vol.secret?.secretName)
-      .filter(isDefined);
-  }
-
-  getNodeSelectors(): string[] {
-    return Object.entries(this.spec?.nodeSelector ?? {}).map((values) => values.join(': '));
-  }
-
   getTolerations() {
     return this.spec?.tolerations ?? [];
   }
