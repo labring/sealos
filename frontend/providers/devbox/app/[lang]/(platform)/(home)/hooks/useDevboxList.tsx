@@ -10,6 +10,7 @@ export const useDevboxList = () => {
   const router = useRouter();
   const [refresh, setFresh] = useState(false);
   const { devboxList, setDevboxList, loadAvgMonitorData, intervalLoadPods } = useDevboxStore();
+  const { isInitialized, isImporting } = useGlobalStore();
   const list = useRef<DevboxListItemTypeV2[]>(devboxList);
 
   const { isLoading, refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
@@ -50,7 +51,7 @@ export const useDevboxList = () => {
     {
       refetchOnMount: true,
       refetchInterval: 3000,
-      enabled: !isLoading,
+      enabled: !isLoading && !isImporting,
       onSettled() {
         refreshList();
       }
@@ -64,7 +65,8 @@ export const useDevboxList = () => {
       return null;
     },
     {
-      refetchInterval: 3000
+      refetchInterval: 3000,
+      enabled: !isImporting
     }
   );
 
@@ -79,7 +81,7 @@ export const useDevboxList = () => {
     {
       refetchOnMount: true,
       refetchInterval: 2 * 60 * 1000,
-      enabled: !isLoading,
+      enabled: !isLoading && !isImporting,
       onSettled() {
         refreshList();
       }
