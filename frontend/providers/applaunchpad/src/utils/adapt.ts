@@ -467,21 +467,24 @@ export const adaptAppDetail = async (
     networks:
       allServicePorts?.map((item) => {
         const service = allServices.find((svc) =>
-          svc.spec?.ports?.some((port) => port.port === item.port)
+          svc.spec?.ports?.some(
+            (port) => port.port === item.port && port.protocol === item.protocol
+          )
         );
         const ingress = configs.find(
           (config: any) =>
+            item.protocol === 'TCP' &&
             config.kind === YamlKindEnum.Ingress &&
             config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
         ) as V1Ingress;
         const domain = ingress?.spec?.rules?.[0].host || '';
 
+        const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
+
         const appProtocol =
           (ingress?.metadata?.annotations?.[
             'nginx.ingress.kubernetes.io/backend-protocol'
-          ] as ApplicationProtocolType) || 'HTTP';
-
-        const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
+          ] as ApplicationProtocolType) ?? undefined;
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&

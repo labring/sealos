@@ -1,6 +1,7 @@
-import { getPlanInfo } from '@/api/auth';
+import { getPlanInfo, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
+import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
 import { useLicenseCheck } from '@/hooks/useLicenseCheck';
@@ -17,7 +18,7 @@ import { parseOpenappQuery } from '@/utils/format';
 import { sessionConfig, setAdClickData, setInviterId, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { compareFirstLanguages } from '@/utils/tools';
-import { Box, useColorMode } from '@chakra-ui/react';
+import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
@@ -71,6 +72,45 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   useLicenseCheck({
     enabled: isUserLogin() && !!commonConfig?.licenseCheckEnabled
   });
+
+  // Phone binding check for domestic version
+  const {
+    isOpen: isPhoneBindingModalOpen,
+    onOpen: onPhoneBindingModalOpen,
+    onClose: onPhoneBindingModalClose
+  } = useDisclosure();
+
+  const { data: userInfo } = useQuery({
+    queryKey: [token, 'UserInfo'],
+    queryFn: UserInfo,
+    enabled: isUserLogin() && !!token,
+    select: (data) => data.data?.info
+  });
+
+  // Check if phone binding is required
+  useEffect(() => {
+    if (!isUserLogin() || !userInfo || !layoutConfig || !authConfig) {
+      return;
+    }
+
+    const isDomesticVersion = layoutConfig.version === 'cn';
+    if (!isDomesticVersion) {
+      return;
+    }
+
+    const isSmsEnabled = authConfig.idp?.sms?.enabled && authConfig.idp?.sms?.ali?.enabled;
+    if (!isSmsEnabled) {
+      return;
+    }
+
+    const hasPhoneBinding = userInfo.oauthProvider?.some(
+      (provider) => provider.providerType === 'PHONE'
+    );
+
+    if (!hasPhoneBinding) {
+      onPhoneBindingModalOpen();
+    }
+  }, [isUserLogin, userInfo, layoutConfig, authConfig, onPhoneBindingModalOpen]);
 
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
@@ -409,6 +449,9 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
       </MoreAppsContext.Provider>
+
+      {/* Phone binding modal for domestic version */}
+      <PhoneBindingModal isOpen={isPhoneBindingModalOpen} onClose={onPhoneBindingModalClose} />
     </Box>
   );
 }

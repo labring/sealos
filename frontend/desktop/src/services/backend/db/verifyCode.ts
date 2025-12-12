@@ -7,12 +7,14 @@ export type SmsType =
   | 'phone_change_old'
   | 'phone_change_new'
   | 'phone_unbind'
+  | 'alert_bind_phone'
   | 'email'
   | 'email_login'
   | 'email_bind'
   | 'email_unbind'
   | 'email_change_old'
-  | 'email_change_new';
+  | 'email_change_new'
+  | 'alert_bind_email';
 export type TVerification_Codes = {
   id: string;
   smsType: SmsType;

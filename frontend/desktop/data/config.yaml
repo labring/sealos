@@ -44,6 +44,8 @@ desktop:
       bannerEnabled: false
       subscriptionEnabled: false
       guestModeEnabled: false
+      emailAlertEnabled: false
+      phoneAlertEnabled: false
     gtmId: null
   auth:
     proxyAddress: ""

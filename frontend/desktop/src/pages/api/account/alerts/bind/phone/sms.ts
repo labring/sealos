@@ -6,17 +6,20 @@ import { sendPhoneCodeSvc } from '@/services/backend/svc/sms';
 import { enablePhoneSms } from '@/services/enable';
 import { NextApiRequest, NextApiResponse } from 'next';
 
+/**
+ * Sends verification code for phone alert binding.
+ */
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   await cnVersionMiddleware()(req, res, async () => {
     if (!enablePhoneSms()) {
       throw new Error('SMS is not enabled');
     }
-    await filterAccessToken(req, res, async () =>
-      filterPhoneParams(req, res, async ({ phoneNumbers: phone }) =>
+    await filterAccessToken(req, res, () =>
+      filterPhoneParams(req, res, ({ phoneNumbers: phone }) =>
         sendSmsCodeGuard({
           id: phone,
-          smsType: 'phone_bind'
-        })(req, res, async () => await sendPhoneCodeSvc(phone, 'phone_bind')(res))
+          smsType: 'alert_bind_phone'
+        })(req, res, () => sendPhoneCodeSvc(phone, 'alert_bind_phone')(res))
       )
     );
   });

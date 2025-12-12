@@ -82,7 +82,7 @@ export interface AppEditType {
     portName: string;
     port: number;
     protocol: TransportProtocolType;
-    appProtocol: ApplicationProtocolType;
+    appProtocol?: ApplicationProtocolType;
     openPublicDomain: boolean;
     publicDomain: string; //  domainPrefix
     customDomain: string; // custom domain
