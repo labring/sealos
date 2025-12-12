@@ -71,6 +71,10 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  authBackgroundImage?: {
+    zh: string;
+    en: string;
+  };
   meta: MetaConfigType;
   customerServiceURL?: string;
   discordInviteLink?: string;
@@ -84,6 +88,7 @@ export type LayoutConfigType = {
     docsUrl?: string;
     aiAssistantEnabled: boolean;
     bannerEnabled: boolean;
+    announcementEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -317,7 +322,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     workorderEnabled: false,
     accountSettingEnabled: false,
     aiAssistantEnabled: false,
-    bannerEnabled: false
+    bannerEnabled: false,
+    announcementEnabled: false
   },
   gtmId: null
 };

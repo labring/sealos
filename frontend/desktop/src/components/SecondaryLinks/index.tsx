@@ -137,7 +137,7 @@ export default function SecondaryLinks() {
           </Center>
         )}
 
-        {layoutConfig?.version === 'cn' && (
+        {layoutConfig?.common.workorderEnabled && (
           <Center
             cursor={'pointer'}
             {...baseItemStyle}
@@ -146,11 +146,11 @@ export default function SecondaryLinks() {
             border={'1px solid transparent'}
             onClick={openWorkOrderApp}
           >
-            {t('v2:support')}
+            {t('v2:ticket')}
           </Center>
         )}
 
-        {layoutConfig?.version === 'en' && (
+        {layoutConfig?.discordInviteLink && (
           <JoinDiscordPrompt>
             <Center
               cursor={'pointer'}
@@ -242,7 +242,7 @@ export default function SecondaryLinks() {
           </MenuItem>
         )}
 
-        {layoutConfig?.version === 'cn' && (
+        {layoutConfig?.common.workorderEnabled && (
           <MenuItem
             py="8px"
             px="12px"
@@ -252,11 +252,11 @@ export default function SecondaryLinks() {
             fontSize="14px"
             fontWeight="500"
           >
-            {t('v2:support')}
+            {t('v2:ticket')}
           </MenuItem>
         )}
 
-        {layoutConfig?.version === 'en' && (
+        {layoutConfig?.discordInviteLink && (
           <JoinDiscordPrompt>
             <MenuItem
               py="8px"

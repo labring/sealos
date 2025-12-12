@@ -52,7 +52,7 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, authConfig } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -273,7 +273,7 @@ export default function Account() {
                   </Flex>
                 </MenuItem>
 
-                {layoutConfig?.version === 'cn' && (
+                {authConfig?.invite.enabled && (
                   <MenuItem
                     mt="0px"
                     py="6px"
