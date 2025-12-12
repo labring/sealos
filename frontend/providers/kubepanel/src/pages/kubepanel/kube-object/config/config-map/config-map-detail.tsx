@@ -175,7 +175,7 @@ const ConfigMapDetail = ({ obj: configMap, open, onClose }: DetailDrawerProps<Co
                           }
                         />
                       ) : (
-                        <pre className="bg-[#F4F4F5] p-3 rounded-md text-sm font-mono overflow-auto max-h-[300px] whitespace-pre-wrap break-all text-[#262626] border border-[#E8E8E8] m-0">
+                        <pre className="bg-[#F4F4F5] p-3 rounded-md text-sm font-mono overflow-auto max-h-75 whitespace-pre-wrap break-all text-[#262626] border border-[#E8E8E8] m-0">
                           {value}
                         </pre>
                       )}

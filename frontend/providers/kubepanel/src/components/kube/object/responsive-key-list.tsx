@@ -55,7 +55,7 @@ export const ResponsiveKeyList = ({ keys }: { keys: string[] }) => {
   const hiddenKeys = keys.slice(visibleCount);
 
   return (
-    <div ref={containerRef} className="w-full flex flex-wrap gap-1 overflow-hidden h-[24px]">
+    <div ref={containerRef} className="w-full flex flex-wrap gap-1 overflow-hidden h-6">
       {visibleKeys.map((key) => (
         <Tag key={key} className="mr-0" bordered={false}>
           {key}
