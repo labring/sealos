@@ -42,7 +42,7 @@ export interface JetBrainsGuideData {
 }
 
 interface MenuItem {
-  value: IDEType;
+  value: IDEType | string;
   menuLabel: string;
   group?: string;
   options?: { value: IDEType; menuLabel: string }[];
@@ -284,8 +284,8 @@ const IDEButton = memo(
                           currentIDE === item.value && 'text-zinc-900'
                         )}
                         onClick={() => {
-                          updateDevboxIDE(item.value, devboxName);
-                          handleGotoIDE(item.value);
+                          updateDevboxIDE(item.value as IDEType, devboxName);
+                          handleGotoIDE(item.value as IDEType);
                         }}
                       >
                         <div className="flex items-center gap-1.5">
@@ -348,8 +348,8 @@ const IDEButton = memo(
                           currentIDE === item.value && 'text-zinc-900'
                         )}
                         onClick={() => {
-                          updateDevboxIDE(item.value, devboxName);
-                          handleGotoIDE(item.value);
+                          updateDevboxIDE(item.value as IDEType, devboxName);
+                          handleGotoIDE(item.value as IDEType);
                         }}
                       >
                         <div className="flex items-center gap-1.5">
@@ -470,7 +470,7 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
     { value: 'qoder', menuLabel: 'Qoder' },
     { value: 'lingma', menuLabel: 'Lingma' },
     {
-      value: 'trae-group' as IDEType,
+      value: 'trae-group',
       menuLabel: 'Trae',
       group: 'trae',
       options: [
@@ -479,7 +479,7 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
       ]
     },
     {
-      value: 'codebuddy-group' as IDEType,
+      value: 'codebuddy-group',
       menuLabel: 'CodeBuddy',
       group: 'codebuddy',
       options: [
@@ -512,7 +512,7 @@ const getRightColumnItems = (enableWebideFeature: string): MenuItem[] => {
   const baseItems: MenuItem[] = [
     { value: 'cursor', menuLabel: 'Cursor' },
     {
-      value: 'vscode-group' as IDEType,
+      value: 'vscode-group',
       menuLabel: 'VSCode',
       group: 'vscode',
       options: [
@@ -523,7 +523,7 @@ const getRightColumnItems = (enableWebideFeature: string): MenuItem[] => {
     { value: 'vscodeInsiders', menuLabel: 'Insiders' },
     { value: 'windsurf', menuLabel: 'Windsurf' },
     {
-      value: 'jetbrains-group' as IDEType,
+      value: 'jetbrains-group',
       menuLabel: 'JetBrains',
       group: 'jetbrains',
       options: [
