@@ -77,7 +77,7 @@ export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
 
   return (
     <Flex vertical className="h-full bg-[#FAFAFA] border-r border-[#E8E8E8]">
-      <div className="px-[18px] py-3 w-full">
+      <div className="px-4.5 py-3 w-full">
         <div className="flex justify-between items-center">
           <div className="text-[#262626] text-[16px] font-semibold pl-2 align-middle">
             <span>KubePanel</span>
