@@ -346,7 +346,10 @@ export function AlertSettings({
                           checked={phoneSelectAllChecked}
                           onCheckedChange={handlePhoneSelectAll}
                           className="w-4 h-4"
-                          disabled={phoneNumbers.length === 0 || toggleMutation.isLoading}
+                          disabled={
+                            phoneNumbers.filter((e) => e.isFromAlert).length === 0 ||
+                            toggleMutation.isLoading
+                          }
                         />
                         <p className="text-sm leading-5 text-black">
                           {t('common:alert_settings.phone.enable_all')}

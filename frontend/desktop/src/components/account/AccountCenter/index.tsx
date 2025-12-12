@@ -341,7 +341,7 @@ export default function AccountCenter(props: AccountCenterProps) {
                       }
                     />
                   )}
-                  {conf.authConfig?.idp.sms.enabled && conf.authConfig.idp.sms.ali.enabled && (
+                  {conf.authConfig?.idp.sms.enabled && (
                     <ConfigItem
                       LeftElement={<Text>{t('common:phone')}</Text>}
                       RightElement={
