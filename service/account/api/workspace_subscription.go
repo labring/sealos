@@ -2792,6 +2792,17 @@ func CreateWorkspaceSubscriptionCardManagePortal(c *gin.Context) {
 		return
 	}
 
+	// Get workspace subscription to find the specific subscription ID
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(req.Workspace, req.RegionDomain)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get workspace subscription: %v", err)},
+		)
+		return
+	}
+
 	// Get or create customer
 	customer, err := services.StripeServiceInstance.GetCustomer(req.UserUID.String(), "")
 	if err != nil {
@@ -2803,8 +2814,16 @@ func CreateWorkspaceSubscriptionCardManagePortal(c *gin.Context) {
 		return
 	}
 
-	// Create portal session with card management focus
-	portalSession, err := services.StripeServiceInstance.CreatePortalSession(customer.ID)
+	var portalSession *stripe.BillingPortalSession
+
+	// If subscription exists and has Stripe subscription ID, create a filtered portal session
+	if subscription != nil && subscription.Stripe != nil && subscription.Stripe.SubscriptionID != "" {
+		portalSession, err = services.StripeServiceInstance.CreateSubscriptionPortalSession(customer.ID, subscription.Stripe.SubscriptionID)
+	} else {
+		// Fallback to regular portal session if no subscription found
+		portalSession, err = services.StripeServiceInstance.CreatePortalSession(customer.ID)
+	}
+
 	if err != nil {
 		SetErrorResp(
 			c,

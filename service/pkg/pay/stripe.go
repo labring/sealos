@@ -434,6 +434,26 @@ func (s *StripeService) CreatePortalSession(customerID string) (*stripe.BillingP
 	return ps, nil
 }
 
+// CreateSubscriptionPortalSession creates a customer portal session for managing a specific subscription
+func (s *StripeService) CreateSubscriptionPortalSession(customerID, subscriptionID string) (*stripe.BillingPortalSession, error) {
+	// Create a custom request to filter the portal session to specific subscriptions
+	// We'll use flow_data to restrict the portal to payment method updates only
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(customerID),
+		ReturnURL: stripe.String(s.Domain),
+		FlowData: &stripe.BillingPortalSessionFlowDataParams{
+			Type: stripe.String("payment_method_update"),
+		},
+	}
+
+	ps, err := portalsession.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("portalsession.New: %v", err)
+	}
+
+	return ps, nil
+}
+
 // CreateCustomer creates a new Stripe customer
 //func (s *StripeService) CreateCustomer(userUID, email string) (*stripe.Customer, error) {
 //	params := &stripe.CustomerParams{
