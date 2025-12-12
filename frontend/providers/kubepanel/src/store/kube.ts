@@ -7,3 +7,6 @@ export * from './k8s/ingress.store';
 export * from './k8s/secret.store';
 export * from './k8s/kube.store';
 export * from './k8s/service.store';
+export * from './k8s/devbox.store';
+export * from './k8s/bucket.store';
+export * from './k8s/cluster.store';

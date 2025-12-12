@@ -1,5 +1,6 @@
 import { Pod } from '@/k8slens/kube-object';
-import { getStatusColor } from '@/utils/status-color';
+import { Typography } from 'antd';
+import { getStatusTextTone } from '@/utils/status-color';
 import { countBy, entries } from 'lodash';
 
 interface Props {
@@ -13,10 +14,11 @@ const PodDetailStatuses = ({ pods }: Props) => {
   return (
     <div>
       {entries(statuses).map(([phase, count]) => (
-        <span
+        <Typography.Text
           key={phase}
-          className={`mr-1 text-${getStatusColor(phase)}`}
-        >{`${phase}: ${count}`}</span>
+          className="mr-1"
+          type={getStatusTextTone(phase)}
+        >{`${phase}: ${count}`}</Typography.Text>
       ))}
     </div>
   );

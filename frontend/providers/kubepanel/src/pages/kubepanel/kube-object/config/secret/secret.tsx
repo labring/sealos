@@ -1,28 +1,23 @@
-import { KubeBadge } from '@/components/kube/kube-badge';
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { Secret } from '@/k8slens/kube-object';
 import { ColumnsType } from 'antd/lib/table';
 import { useSecretStore } from '@/store/kube';
 import SecretDetail from './secret-detail';
+import { ResponsiveKeyList } from '@/components/kube/object/responsive-key-list';
 import { PanelTable } from '@/components/common/panel-table/table';
 import { ActionButton } from '@/components/common/action/action-button';
 
 const columns: ColumnsType<Secret> = [
   {
-    title: 'Labels',
-    key: 'labels',
-    render: (_, secret) =>
-      secret.getLabels().map((label) => <KubeBadge key={label} label={label} expandable={false} />)
-  },
-  {
     title: 'Keys',
     key: 'keys',
-    render: (_, secret) => secret.getKeys().join(', ')
+    render: (_, secret) => <ResponsiveKeyList keys={secret.getKeys()} />
   },
   {
     title: 'Type',
     key: 'type',
-    dataIndex: 'type'
+    dataIndex: 'type',
+    width: 250 // Keeping Type explicit width as it's usually short but important
   },
   {
     title: 'Age',
@@ -37,7 +32,7 @@ const columns: ColumnsType<Secret> = [
 ];
 
 const SecretOverviewPage = () => {
-  const { items, initialize, isLoaded, watch } = useSecretStore();
+  const { items, initialize, isLoaded } = useSecretStore();
 
   return (
     <PanelTable
@@ -48,7 +43,6 @@ const SecretOverviewPage = () => {
       DetailDrawer={SecretDetail}
       getRowKey={(secret) => secret.getId()}
       initializers={[initialize]}
-      watchers={[watch]}
       getDetailItem={(secret) => secret}
     />
   );

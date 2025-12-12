@@ -1,11 +1,5 @@
-import {
-  LeftOutlined,
-  RightOutlined,
-  VerticalLeftOutlined,
-  VerticalRightOutlined
-} from '@ant-design/icons';
-import { PaginationProps, Space } from 'antd';
-import { useCallback, useMemo, useState } from 'react';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { useMemo, useState } from 'react';
 
 interface SwitchButtonProps {
   onClick?: () => void;
@@ -14,9 +8,11 @@ interface SwitchButtonProps {
 }
 
 const SwitchButton = ({ onClick, disabled, icon }: SwitchButtonProps) => {
-  const disabledClass = disabled
-    ? 'cursor-no-drop text-[#667085]'
-    : 'cursor-pointer text-[#111824]';
+  const baseClass =
+    'flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-200 border border-[#E8E8E8] bg-white';
+  const stateClass = disabled
+    ? 'cursor-not-allowed text-gray-300 bg-gray-50 border-gray-100' // Disabled: lighter grey, no border
+    : 'cursor-pointer text-gray-600 hover:text-[#1890FF] hover:border-[#1890FF] hover:bg-[#E6F7FF]'; // Active: Blue hover
 
   return (
     <button
@@ -25,73 +21,101 @@ const SwitchButton = ({ onClick, disabled, icon }: SwitchButtonProps) => {
         if (disabled) return;
         onClick?.();
       }}
-      className={`w-6 h-6 rounded-full bg-[#F4F4F7] ${disabledClass}`}
+      disabled={disabled}
+      className={`${baseClass} ${stateClass}`}
     >
       {icon}
     </button>
   );
 };
 
-export function usePaginationProps(total: number): PaginationProps {
-  const [nxtPage, setNxtPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+export const PanelPagination = ({
+  total,
+  current,
+  pageSize,
+  onChange
+}: {
+  total: number;
+  current: number;
+  pageSize: number;
+  onChange: (page: number) => void;
+}) => {
+  const totalPage = Math.ceil(total / pageSize);
+  const [inputVal, setInputVal] = useState(current.toString());
 
-  const totalPageNum = useMemo(() => Math.ceil(total / pageSize), [total, pageSize]);
+  // Sync input with external current page change
+  useMemo(() => {
+    setInputVal(current.toString());
+  }, [current]);
 
-  const itemRender = useCallback<Required<PaginationProps>['itemRender']>(
-    (_, type, originalElement) => {
-      let disabled: boolean;
-      switch (type) {
-        case 'prev':
-          disabled = nxtPage === 1; // current is index-0 page
-          return (
-            <Space>
-              <SwitchButton
-                icon={<VerticalRightOutlined />}
-                onClick={() => setNxtPage(1)}
-                disabled={disabled}
-              />
-              <SwitchButton
-                icon={<LeftOutlined />}
-                onClick={() => setNxtPage(nxtPage - 1)}
-                disabled={disabled}
-              />
-            </Space>
-          );
-        case 'next':
-          disabled = nxtPage === totalPageNum;
-          return (
-            <Space>
-              <SwitchButton
-                icon={<RightOutlined />}
-                onClick={() => setNxtPage(nxtPage + 1)}
-                disabled={disabled}
-              />
-              <SwitchButton
-                icon={<VerticalLeftOutlined />}
-                onClick={() => setNxtPage(totalPageNum)}
-                disabled={disabled}
-              />
-            </Space>
-          );
-      }
-      return originalElement;
-    },
-    [nxtPage, totalPageNum]
-  );
-
-  return {
-    showTotal: (total) => <span>{`Total Items: ${total}`}</span>,
-    current: nxtPage,
-    pageSize,
-    size: 'default',
-    simple: true,
-    hideOnSinglePage: true,
-    onChange: (page) => setNxtPage(page),
-    onShowSizeChange(_, size) {
-      setNxtPage(1);
-      setPageSize(size);
-    },
-    itemRender
+  const handleValuesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^\d*$/.test(val)) {
+      setInputVal(val);
+    }
   };
-}
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      let val = parseInt(inputVal);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > totalPage) val = totalPage;
+      onChange(val);
+      setInputVal(val.toString());
+    }
+  };
+
+  const handleBlur = () => {
+    let val = parseInt(inputVal);
+    if (isNaN(val) || val < 1) val = 1;
+    if (val > totalPage) val = totalPage;
+    // Only trigger change if different (optional, but good for UX)
+    if (val !== current) {
+      onChange(val);
+    }
+    setInputVal(val.toString());
+  };
+
+  const isFirst = current === 1;
+  const isLast = current === totalPage;
+
+  return (
+    <div className="flex items-center justify-end w-full py-3 select-none">
+      {/* Total Items Text */}
+      <span className="text-gray-500 font-medium mr-4">Total Items: {total}</span>
+
+      <div className="flex items-center gap-2">
+        {/* Previous Button */}
+        <SwitchButton
+          icon={<LeftOutlined />}
+          onClick={() => onChange(current - 1)}
+          disabled={isFirst}
+        />
+
+        {/* Pager Block: Input / Total */}
+        <div
+          className="flex items-center bg-white border border-[#E8E8E8] rounded-md px-2 h-8"
+          style={{ gap: '4px' }}
+        >
+          <input
+            className="w-8 h-full text-center border-none outline-none bg-transparent font-medium text-gray-800 p-0 m-0"
+            value={inputVal}
+            onChange={handleValuesChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+          />
+          <span className="text-gray-400 font-medium">/</span>
+          {/* THE REQUESTED DOM STRUCTURE FOR "2" */}
+          <span className="text-gray-500 font-medium w-8 text-center">{totalPage}</span>
+        </div>
+
+        {/* Next Button */}
+        <SwitchButton
+          icon={<RightOutlined />}
+          onClick={() => onChange(current + 1)}
+          disabled={isLast}
+        />
+      </div>
+    </div>
+  );
+};

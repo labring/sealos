@@ -27,11 +27,10 @@ const columns: ColumnsType<Pod> = [
         };
       });
       return (
-        <div>
+        <div className="flex flex-wrap gap-1.5">
           {containers.map(({ name, state, status }) => (
             <Tooltip key={name} title={renderContainerStateTooltipTitle(name, state, status)}>
-              {/* wrapper */}
-              <span>
+              <span className="inline-block">
                 <ContainerStatusBrick state={state} status={status} />
               </span>
             </Tooltip>
@@ -48,26 +47,28 @@ const columns: ColumnsType<Pod> = [
   {
     title: 'Controlled By',
     key: 'controlled-by',
-    render: (_, pod) => pod.getOwnerRefs().map(({ name, kind }) => <span key={name}>{kind}</span>)
+    render: (_, pod) => (
+      <div className="flex flex-col gap-0.5">
+        {pod.getOwnerRefs().map(({ name, kind }) => (
+          <span key={name} className="leading-snug">
+            {kind}
+          </span>
+        ))}
+      </div>
+    )
   },
   {
-    title: 'QoS',
-    dataIndex: 'qosClass',
-    key: 'qos-class'
+    title: 'Status',
+    key: 'status',
+    filters: PodStatusMessage.map((value) => ({ text: value, value })),
+    onFilter: (value, pod) => pod.getStatusMessage() === value,
+    render: (_, pod) => <PodStatus status={pod.getStatusMessage()} />
   },
   {
     title: 'Age',
     dataIndex: 'creationTimestamp',
     key: 'age',
     render: (_, pod) => <KubeObjectAge obj={pod} />
-  },
-  {
-    title: 'Status',
-    fixed: 'right',
-    key: 'status',
-    filters: PodStatusMessage.map((value) => ({ text: value, value })),
-    onFilter: (value, pod) => pod.getStatusMessage() === value,
-    render: (_, pod) => <PodStatus status={pod.getStatusMessage()} />
   },
   {
     fixed: 'right',
@@ -77,7 +78,7 @@ const columns: ColumnsType<Pod> = [
 ];
 
 const PodOverviewPage = () => {
-  const { items, initialize, isLoaded, watch } = usePodStore();
+  const { items, initialize, isLoaded } = usePodStore();
 
   return (
     <PanelTable
@@ -89,7 +90,6 @@ const PodOverviewPage = () => {
       getRowKey={(pod) => pod.getId()}
       getDetailItem={(pod) => pod}
       initializers={[initialize]}
-      watchers={[watch]}
     />
   );
 };

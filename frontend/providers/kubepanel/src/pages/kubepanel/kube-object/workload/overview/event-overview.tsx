@@ -4,7 +4,7 @@ import { ReactiveDuration } from '@/components/kube/reactive-duration';
 import { useWatcher } from '@/hooks/useWatcher';
 import { KubeEvent, ObjectReference } from '@/k8slens/kube-object';
 import { useEventStore } from '@/store/k8s/event.store';
-import { Table, Tooltip } from 'antd';
+import { Table, Tooltip, Typography } from 'antd';
 import { ColumnsType } from 'antd/lib/table';
 
 const columns: ColumnsType<KubeEvent> = [
@@ -28,7 +28,7 @@ const columns: ColumnsType<KubeEvent> = [
       let renderedMessage: React.ReactNode;
       switch (event.type) {
         case 'Warning':
-          renderedMessage = <span className="text-color-error ">{message}</span>;
+          renderedMessage = <Typography.Text type="danger">{message}</Typography.Text>;
           break;
         case 'Normal':
         default:
@@ -81,8 +81,8 @@ const columns: ColumnsType<KubeEvent> = [
 ];
 
 const EventOverview = () => {
-  const { items, initialize, isLoaded, watch } = useEventStore();
-  const cxtHolder = useWatcher({ initializers: [initialize], watchers: [watch] });
+  const { items, initialize, isLoaded } = useEventStore();
+  const cxtHolder = useWatcher({ initializers: [initialize] });
 
   return (
     <>

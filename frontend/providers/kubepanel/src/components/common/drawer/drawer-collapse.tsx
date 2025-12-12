@@ -11,11 +11,12 @@ interface Props {
 export const DrawerCollapse = ({ children, header }: Props) => {
   if (!header) return null;
   return (
-    <Collapse className="bg-transparent rounded-none" expandIconPosition="end" bordered={false}>
-      <Collapse.Panel
-        header={<DrawerItem padding={false} name={header.name} value={header.value} />}
-        key="1"
-      >
+    <Collapse
+      className="bg-transparent rounded-none [&_.ant-collapse-header]:p-0! [&_.ant-collapse-content-box]:p-0!"
+      expandIconPosition="end"
+      bordered={false}
+    >
+      <Collapse.Panel header={<DrawerItem name={header.name} value={header.value} />} key="1">
         {children}
       </Collapse.Panel>
     </Collapse>

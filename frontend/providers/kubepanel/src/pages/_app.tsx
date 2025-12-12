@@ -45,9 +45,7 @@ export default function App({ Component, pageProps }: AppProps) {
       try {
         const res = await sealosApp.getSession();
         localStorage.setItem('session', JSON.stringify(res));
-        console.log('app init success');
       } catch (err) {
-        console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
           openConfirm(() => {

@@ -5,18 +5,23 @@ import { KubeStoreAction } from '@/types/state';
 import { TableProps } from 'antd';
 import { Table } from 'antd';
 import { useMemo, useState } from 'react';
-import { usePaginationProps } from './pagination';
+import { PanelPagination } from './pagination';
 import { KubeObject } from '@/k8slens/kube-object';
 import { useSearchNameFilterProps } from './search-filter';
 
 type DefaultRecordType = Record<string, any>;
+
+export interface DetailDrawerProps<T = any> {
+  open: boolean;
+  obj: T | null;
+  onClose: () => void;
+}
 
 interface Props<RecordType = unknown, Item = any> extends Omit<TableProps<RecordType>, 'title'> {
   sectionTitle: string;
   getRowKey: (record: RecordType) => string;
   getDetailItem: (record: RecordType) => Item;
   initializers: Array<KubeStoreAction<any>['initialize']>;
-  watchers: Array<KubeStoreAction<any>['watch']>;
   DetailDrawer: (props: DetailDrawerProps<Item>) => JSX.Element | null;
 }
 
@@ -30,20 +35,38 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
     DetailDrawer,
     getRowKey,
     getDetailItem,
-    initializers,
-    watchers
+    initializers
   } = tableProps;
+
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-  const cxtHolder = useWatcher({ initializers, watchers });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const cxtHolder = useWatcher({ initializers });
   const searchNameFilterProps = useSearchNameFilterProps<RecordType>((_, record) =>
     getDetailItem(record).getName()
   );
-  const paginationProps = usePaginationProps(tableProps.dataSource?.length || 0);
+
+  const dataSource = tableProps.dataSource || [];
+  const total = dataSource.length;
+
+  // Calculate current page data
+  const currentData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return dataSource.slice(start, end);
+  }, [dataSource, currentPage, pageSize]);
 
   const modifiedCols = useMemo(
     () => [
-      { title: 'Name', key: 'name', fixed: 'left' as 'left', ...searchNameFilterProps },
+      {
+        title: 'Name',
+        key: 'name',
+        className: 'min-w-[150px]',
+        ellipsis: true,
+        ...searchNameFilterProps
+      },
       ...columns
     ],
     [columns, searchNameFilterProps]
@@ -54,11 +77,13 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
       {cxtHolder}
       <Title type="primary">{title}</Title>
       <Table
+        className="kubepanel-table"
         {...tableProps}
+        dataSource={currentData}
         columns={modifiedCols}
         rowKey={getRowKey}
         scroll={scroll}
-        pagination={paginationProps}
+        pagination={false}
         rowClassName="cursor-pointer"
         onRow={(record) => ({
           onClick: () => {
@@ -67,6 +92,14 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
           }
         })}
       />
+      {total > 0 && (
+        <PanelPagination
+          total={total}
+          current={currentPage}
+          pageSize={pageSize}
+          onChange={(page) => setCurrentPage(page)}
+        />
+      )}
       {/* nextjs prerender fix */}
       {DetailDrawer && (
         <DetailDrawer open={openDetail} obj={selectedItem} onClose={() => setOpenDetail(false)} />

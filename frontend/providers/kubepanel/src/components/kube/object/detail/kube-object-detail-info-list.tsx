@@ -6,9 +6,8 @@ import { KubeBadge } from '../../kube-badge';
 import { Box } from '@chakra-ui/react';
 import { KubeObject } from '@/k8slens/kube-object';
 import { KubeObjectInfo, getKubeObjectInfo } from '@/utils/kube-object-info';
-import { StringKeyOf } from 'type-fest';
 
-export type HiddenField = StringKeyOf<KubeObjectInfo>;
+export type HiddenField = Extract<keyof KubeObjectInfo, string>;
 
 interface Props {
   hiddenFields?: Array<HiddenField>;
@@ -35,10 +34,6 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
         value={
           <>
             <KubeObjectAge obj={obj} compact={false} />
-            {' ago '}
-            {creationTimestamp && (
-              <LocaleDate date={creationTimestamp} localeTimezone={moment.tz.guess()} />
-            )}
           </>
         }
       />
@@ -57,18 +52,38 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
         <DrawerItem
           hidden={hiddenFields.includes('labels')}
           name="Labels"
-          value={labels.map((label) => (
-            <KubeBadge key={label} label={label} />
-          ))}
+          vertical
+          value={
+            <div className="flex flex-wrap gap-1">
+              {labels.map((label) => (
+                <KubeBadge key={label} label={label} className="m-0!" />
+              ))}
+            </div>
+          }
         />
       )}
       {annotations.length > 0 && (
         <DrawerItem
           hidden={hiddenFields.includes('annotations')}
           name="Annotations"
-          value={annotations.map((label) => (
-            <KubeBadge key={label} label={label} />
-          ))}
+          vertical
+          value={
+            <div className="flex flex-wrap gap-1">
+              {annotations.map((label) => {
+                if (label.startsWith('kubectl.kubernetes.io/last-applied-configuration')) {
+                  return (
+                    <KubeBadge
+                      key={label}
+                      label="kubectl.kubernetes.io/last-applied-configuration: -"
+                      expandedLabel={label}
+                      className="m-0!"
+                    />
+                  );
+                }
+                return <KubeBadge key={label} label={label} className="m-0!" />;
+              })}
+            </div>
+          }
         />
       )}
 
@@ -76,9 +91,13 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
         <DrawerItem
           hidden={hiddenFields.includes('finalizers')}
           name="Finalizers"
-          value={finalizers.map((label) => (
-            <KubeBadge key={label} label={label} />
-          ))}
+          value={
+            <div className="flex flex-wrap gap-1">
+              {finalizers.map((label) => (
+                <KubeBadge key={label} label={label} />
+              ))}
+            </div>
+          }
         />
       )}
       {ownerRefs.length > 0 && (
@@ -88,7 +107,7 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
           value={ownerRefs.map(({ name, kind }) => (
             <Box key={name}>
               {kind}{' '}
-              <Box as="span" textColor={'blue.300'}>
+              <Box as="span" color={'blue.300'}>
                 {name}
               </Box>
             </Box>

@@ -9,16 +9,6 @@ import { ActionButton } from '@/components/common/action/action-button';
 
 const columns: ColumnsType<Ingress> = [
   {
-    title: 'LoadBalancers',
-    key: 'load-balancers',
-    render: (_, ingress) => ingress.getLoadBalancers().map((lb) => <p key={lb}>{lb}</p>)
-  },
-  {
-    title: 'Age',
-    key: 'age',
-    render: (_, ingress) => <KubeObjectAge obj={ingress} />
-  },
-  {
     title: 'Rules',
     key: 'rules',
     render: (_, ingress) =>
@@ -45,6 +35,11 @@ const columns: ColumnsType<Ingress> = [
       ))
   },
   {
+    title: 'Age',
+    key: 'age',
+    render: (_, ingress) => <KubeObjectAge obj={ingress} />
+  },
+  {
     fixed: 'right',
     key: 'action',
     render: (_, ingress) => <ActionButton obj={ingress} />
@@ -52,7 +47,7 @@ const columns: ColumnsType<Ingress> = [
 ];
 
 const IngressOverviewPage = () => {
-  const { items, initialize, isLoaded, watch } = useIngressStore();
+  const { items, initialize, isLoaded } = useIngressStore();
 
   return (
     <PanelTable
@@ -63,7 +58,6 @@ const IngressOverviewPage = () => {
       DetailDrawer={IngressDetail}
       getRowKey={(ingress) => ingress.getId()}
       initializers={[initialize]}
-      watchers={[watch]}
       getDetailItem={(ingress) => ingress}
     />
   );

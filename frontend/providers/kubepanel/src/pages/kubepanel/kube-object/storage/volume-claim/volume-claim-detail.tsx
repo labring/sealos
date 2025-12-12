@@ -40,14 +40,17 @@ const PersistentVolumeClaimDetail = ({
           ))}
         />
         <DrawerItem name="Status" value={volumeClaim.getStatus()} />
-      </DrawerPanel>
 
-      <DrawerPanel title="Selector">
+        <div className="text-[#262626] font-medium text-base mt-8 mb-4">Selector</div>
         <DrawerItem
           name="Match Labels"
-          value={volumeClaim.getMatchLabels().map((label) => (
-            <KubeBadge key={label} label={label} />
-          ))}
+          value={
+            <div className="flex flex-wrap gap-1">
+              {volumeClaim.getMatchLabels().map((label) => (
+                <KubeBadge key={label} label={label} />
+              ))}
+            </div>
+          }
         />
         <DrawerItem
           name="Match Expressions"

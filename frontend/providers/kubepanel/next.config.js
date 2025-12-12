@@ -6,20 +6,9 @@ const nextConfig = {
   reactStrictMode: false,
   compress: true,
   transpilePackages: ['monaco-editor'],
-  webpack: (config) => {
-    config.module.rules = config.module.rules.concat([
-      {
-        test: /\.svg$/i,
-        issuer: /\.[jt]sx?$/,
-        use: ['@svgr/webpack']
-      }
-    ]);
-    config.plugins = [...config.plugins];
-    return config;
-  },
-  experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../../')
-  }
+  outputFileTracingRoot: path.join(__dirname, '../../'),
+  // Opt into Turbopack explicitly.
+  turbopack: {}
 };
 
 module.exports = nextConfig;

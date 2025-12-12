@@ -15,11 +15,7 @@ const columns: ColumnsType<StatefulSet> = [
       return `${readyReplicas}/${replicas}`;
     }
   },
-  {
-    title: 'Replicas',
-    key: 'replicas',
-    render: (_, stat) => stat.getReplicas()
-  },
+
   {
     title: 'Age',
     key: 'age',
@@ -34,12 +30,11 @@ const columns: ColumnsType<StatefulSet> = [
 
 const StatefulSetOverviewPage = () => {
   // The detailed information of Stateful Set resource needs to be provided by Pod resource.
-  const { initialize: initializePods, isLoaded: isPodsLoaded, watch: watchPods } = usePodStore();
+  const { initialize: initializePods, isLoaded: isPodsLoaded } = usePodStore();
   const {
     items: stats,
     initialize: initializeStats,
-    isLoaded: isStatsLoaded,
-    watch: watchStats
+    isLoaded: isStatsLoaded
   } = useStatefulSetStore();
 
   return (
@@ -51,7 +46,6 @@ const StatefulSetOverviewPage = () => {
       DetailDrawer={StatefulSetDetail}
       getRowKey={(stat) => stat.getId()}
       initializers={[initializeStats, initializePods]}
-      watchers={[watchStats, watchPods]}
       getDetailItem={(stat) => stat}
     />
   );
