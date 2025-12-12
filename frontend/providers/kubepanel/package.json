@@ -23,7 +23,7 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.6.0",
     "monaco-editor": "^0.55.1",
-    "next": "16.0.8",
+    "next": "16.0.10",
     "next-i18next": "^15.4.3",
     "nprogress": "^0.2.0",
     "react": "^18.3.1",
