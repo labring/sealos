@@ -306,7 +306,7 @@ const IDEButton = memo(
                 <div className="mx-1.5 w-px bg-gray-200"></div>
                 {/* right column */}
                 <div className="h-20 w-[230px] space-y-1">
-                  {rightColumnItems.map((item) =>
+                  {getRightColumnItems(env.enableWebideFeature).map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
                         {item.options?.map((option, index) => (
@@ -508,28 +508,35 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
 
   return baseItems;
 };
-const rightColumnItems: MenuItem[] = [
-  { value: 'cursor', menuLabel: 'Cursor' },
-  {
-    value: 'vscode-group' as IDEType,
-    menuLabel: 'VSCode',
-    group: 'vscode',
-    options: [
-      { value: 'vscode', menuLabel: 'VSCode' },
-      { value: 'webide', menuLabel: 'Online' }
-    ]
-  },
-  { value: 'vscodeInsiders', menuLabel: 'Insiders' },
-  { value: 'windsurf', menuLabel: 'Windsurf' },
-  {
-    value: 'jetbrains-group' as IDEType,
-    menuLabel: 'JetBrains',
-    group: 'jetbrains',
-    options: [
-      { value: 'toolbox', menuLabel: 'Toolbox' },
-      { value: 'gateway', menuLabel: 'Gateway' }
-    ]
-  }
-];
+const getRightColumnItems = (enableWebideFeature: string): MenuItem[] => {
+  const vscodeOptions =
+    enableWebideFeature === 'true'
+      ? [
+          { value: 'vscode', menuLabel: 'VSCode' },
+          { value: 'webide', menuLabel: 'Online' }
+        ]
+      : [{ value: 'vscode', menuLabel: 'VSCode' }];
+
+  return [
+    { value: 'cursor', menuLabel: 'Cursor' },
+    {
+      value: 'vscode-group' as IDEType,
+      menuLabel: 'VSCode',
+      group: 'vscode',
+      options: vscodeOptions
+    },
+    { value: 'vscodeInsiders', menuLabel: 'Insiders' },
+    { value: 'windsurf', menuLabel: 'Windsurf' },
+    {
+      value: 'jetbrains-group' as IDEType,
+      menuLabel: 'JetBrains',
+      group: 'jetbrains',
+      options: [
+        { value: 'toolbox', menuLabel: 'Toolbox' },
+        { value: 'gateway', menuLabel: 'Gateway' }
+      ]
+    }
+  ];
+};
 
 export default IDEButton;

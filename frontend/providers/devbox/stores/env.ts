@@ -19,7 +19,8 @@ export const defaultEnv: Env = {
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
   currencySymbol: 'shellCoin',
-  enableImportFeature: 'false'
+  enableImportFeature: 'false',
+  enableWebideFeature: 'false'
 };
 
 type State = {

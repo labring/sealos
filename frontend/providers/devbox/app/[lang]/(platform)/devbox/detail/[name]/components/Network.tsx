@@ -250,7 +250,7 @@ const Network = () => {
             </TableHeader>
             <TableBody>
               {devboxDetail.networks
-                .filter((network) => network.port !== 9999)
+                .filter((network) => !(env.enableWebideFeature === 'true' && network.port === 9999))
                 .map((network, index) => (
                   <TableRow key={`${network.port}-${index}`}>
                     {networkColumn.map((column) => (

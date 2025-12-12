@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
           | 'shellCoin'
           | 'cny'
           | 'usd',
-        enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature
+        enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature,
+        enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature
       }
     });
   } catch (err: any) {
