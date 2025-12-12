@@ -73,7 +73,6 @@ desktop:
 #          clientSecret: "{{ .wechatClientSecret }}"
 #        sms:
 #          ali:
-#            enabled: "{{ .smsEnabled }}"
 #            endpoint: "{{ .aliSmsEndpoint }}"
 #            signName: "{{ .aliSmsSignName }}"
 #            accessKeyId: "{{ .aliAccessKeyID }}"
