@@ -294,13 +294,13 @@ func (r *WorkloadMutator) mutateDaemonSet(
 	oversellRatio := r.DefaultOversellRatio
 
 	// Mutate all containers
-	for i := range daemonSet.Spec.Template.Spec.Containers {
-		r.mutateContainerResources(&daemonSet.Spec.Template.Spec.Containers[i], oversellRatio)
+	for _, v := range daemonSet.Spec.Template.Spec.Containers {
+		r.mutateContainerResources(&v, oversellRatio)
 	}
 
 	// Mutate init containers
-	for i := range daemonSet.Spec.Template.Spec.InitContainers {
-		r.mutateContainerResources(&daemonSet.Spec.Template.Spec.InitContainers[i], oversellRatio)
+	for _, v := range daemonSet.Spec.Template.Spec.InitContainers {
+		r.mutateContainerResources(&v, oversellRatio)
 	}
 
 	return nil
@@ -621,15 +621,15 @@ func (r *WorkloadMutator) mutatePodSpec(podSpec *corev1.PodSpec, labels map[stri
 		r.mutateContainerResources(&podSpec.Containers[0], oversellRatio)
 	} else {
 		// For non-database pods, mutate all containers
-		for i := range podSpec.Containers {
-			r.mutateContainerResources(&podSpec.Containers[i], oversellRatio)
+		for _, v := range podSpec.Containers {
+			r.mutateContainerResources(&v, oversellRatio)
 		}
 	}
 
 	// Mutate init containers if any (skip for database pods)
 	if !isDatabasePod {
-		for i := range podSpec.InitContainers {
-			r.mutateContainerResources(&podSpec.InitContainers[i], oversellRatio)
+		for _, v := range podSpec.InitContainers {
+			r.mutateContainerResources(&v, oversellRatio)
 		}
 	}
 }
@@ -862,7 +862,7 @@ func shouldSkipMutation(obj runtime.Object) bool {
 	case *corev1.Pod:
 		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
 	case *kbappsv1alpha1.Cluster:
-		return hasFinalizersOrController(o.Finalizers, o.OwnerReferences)
+		return hasController(o.OwnerReferences)
 	default:
 		return false
 	}
@@ -875,6 +875,10 @@ func hasFinalizersOrController(finalizers []string, ownerRefs []metav1.OwnerRefe
 		return true
 	}
 
+	return hasController(ownerRefs)
+}
+
+func hasController(ownerRefs []metav1.OwnerReference) bool {
 	// Check if any ownerReference has controller set to true
 	for _, owner := range ownerRefs {
 		if owner.Controller != nil && *owner.Controller {
@@ -893,8 +897,8 @@ func (r *WorkloadMutator) mutateCluster(_ context.Context, cluster *kbappsv1alph
 			"namespace", cluster.Namespace)
 
 	// Mutate component specs using database oversell ratio
-	for i := range cluster.Spec.ComponentSpecs {
-		r.mutateClusterComponentSpec(&cluster.Spec.ComponentSpecs[i])
+	for _, v := range cluster.Spec.ComponentSpecs {
+		r.mutateClusterComponentSpec(&v)
 	}
 
 	return nil
@@ -921,8 +925,8 @@ func (r *WorkloadMutator) validateCluster(
 		"namespace", cluster.Namespace)
 
 	// Validate all component specs
-	for i := range cluster.Spec.ComponentSpecs {
-		if err := r.validateClusterComponentResources(&cluster.Spec.ComponentSpecs[i]); err != nil {
+	for _, v := range cluster.Spec.ComponentSpecs {
+		if err := r.validateClusterComponentResources(&v); err != nil {
 			return err
 		}
 	}
