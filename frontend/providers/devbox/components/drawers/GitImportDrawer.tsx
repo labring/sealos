@@ -46,7 +46,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
     templateUid: '',
     containerPort: 8080,
     startupCommand: '',
-    autoStart: true
+    autoStart: false
   });
 
   const [importStage, setImportStage] = useState<ImportStage>('idle');
@@ -297,7 +297,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
         templateUid: '',
         containerPort: 8080,
         startupCommand: '',
-        autoStart: true
+        autoStart: false
       });
       setImportStage('idle');
       setImportError('');

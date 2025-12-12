@@ -46,7 +46,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
     templateUid: '',
     containerPort: 8080,
     startupCommand: '',
-    autoStart: true
+    autoStart: false
   });
 
   const [importStage, setImportStage] = useState<ImportStage>('idle');
@@ -337,7 +337,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
         templateUid: '',
         containerPort: 8080,
         startupCommand: '',
-        autoStart: true
+        autoStart: false
       });
       setImportStage('idle');
       setImportError('');
