@@ -37,7 +37,7 @@ const useCallbackStore = create<CallbackState>()(
         });
       },
       setWorkspaceInviteCode: (id?: string) => {
-        set((state) => ({ workspaceInviteCode: id }));
+        set({ workspaceInviteCode: id });
       }
     })),
     {

@@ -112,6 +112,8 @@ export type NotificationCR = {
     timestamp: number;
     title: string;
     desktopPopup?: boolean;
+    startTime?: string;
+    endTime?: string;
     i18ns?: {
       zh?: {
         from: string;
@@ -131,6 +133,8 @@ export type TNotification = {
   licenseFrontend?: string;
   timestamp: number;
   desktopPopup: boolean;
+  startTime?: string;
+  endTime?: string;
   i18n: {
     [key in string]: {
       from: string; // Debt-System Active-System

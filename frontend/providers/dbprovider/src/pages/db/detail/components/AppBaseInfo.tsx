@@ -166,9 +166,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
-      (item) => item === db.dbType
+      (item) => item === db?.dbType
     );
-  }, [db.dbType]);
+  }, [db?.dbType]);
 
   // load user quota on component mount
   useEffect(() => {
@@ -198,7 +198,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           })
         : null,
     {
-      enabled: supportConnectDB
+      enabled: !!db.dbName && !!db.dbType
     }
   );
 
@@ -206,7 +206,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
-      enabled: supportConnectDB,
+      enabled: !!db.dbName && !!db.dbType,
       retry: 3,
       onSuccess(data) {
         setIsChecked(!!data);
@@ -747,6 +747,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
+                isDisabled={!supportConnectDB}
                 onChange={(e) => {
                   if (isChecked) {
                     closeNetWorkService();

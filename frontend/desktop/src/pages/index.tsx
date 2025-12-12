@@ -1,6 +1,7 @@
-import { getPlanInfo } from '@/api/auth';
+import { getPlanInfo, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
+import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
 import { useLicenseCheck } from '@/hooks/useLicenseCheck';
@@ -17,7 +18,7 @@ import { parseOpenappQuery } from '@/utils/format';
 import { sessionConfig, setAdClickData, setInviterId, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { compareFirstLanguages } from '@/utils/tools';
-import { Box, useColorMode } from '@chakra-ui/react';
+import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
@@ -72,6 +73,45 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     enabled: isUserLogin() && !!commonConfig?.licenseCheckEnabled
   });
 
+  // Phone binding check for domestic version
+  const {
+    isOpen: isPhoneBindingModalOpen,
+    onOpen: onPhoneBindingModalOpen,
+    onClose: onPhoneBindingModalClose
+  } = useDisclosure();
+
+  const { data: userInfo } = useQuery({
+    queryKey: [token, 'UserInfo'],
+    queryFn: UserInfo,
+    enabled: isUserLogin() && !!token,
+    select: (data) => data.data?.info
+  });
+
+  // Check if phone binding is required
+  useEffect(() => {
+    if (!isUserLogin() || !userInfo || !layoutConfig || !authConfig) {
+      return;
+    }
+
+    const isDomesticVersion = layoutConfig.version === 'cn';
+    if (!isDomesticVersion) {
+      return;
+    }
+
+    const isSmsEnabled = authConfig.idp?.sms?.enabled && authConfig.idp?.sms?.ali?.enabled;
+    if (!isSmsEnabled) {
+      return;
+    }
+
+    const hasPhoneBinding = userInfo.oauthProvider?.some(
+      (provider) => provider.providerType === 'PHONE'
+    );
+
+    if (!hasPhoneBinding) {
+      onPhoneBindingModalOpen();
+    }
+  }, [isUserLogin, userInfo, layoutConfig, authConfig, onPhoneBindingModalOpen]);
+
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
   }, [colorMode, toggleColorMode]);
@@ -108,7 +148,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     const handleInit = async () => {
       const { query } = router;
       const is_login = isUserLogin();
-      const whitelistApps = ['system-template', 'system-fastdeploy'];
 
       if (!is_login) {
         // check if user has logged in before
@@ -120,20 +159,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         // Invited new user
         if (query?.uid && typeof query?.uid === 'string') {
           setInviterId(query.uid);
-        }
-        // sealos_inside=true internal call
-        if (whitelistApps.includes(appkey)) {
-          if (appQuery.indexOf('sealos_inside=true') === -1) {
-            sessionStorage.setItem(
-              'accessTemplatesNoLogin',
-              `https://template.${sealos_cloud_domain}/deploy?${appQuery}`
-            );
-            return;
-          } else {
-            // If sealos_inside=true, redirect to login page to avoid guest mode
-            router.replace('/signin');
-            return;
-          }
         }
 
         // save autolaunch info (for guest and logged in user)
@@ -284,9 +309,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           }
 
           if (!appkey) return;
-          if (appkey === 'system-fastdeploy') {
-            appkey = 'system-template';
-          }
           if (appkey === 'system-brain' && appRoute === '/trial') {
             appRoute = '/';
             // Remove sessionId from appQuery but keep other parameters
@@ -427,6 +449,9 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
       </MoreAppsContext.Provider>
+
+      {/* Phone binding modal for domestic version */}
+      <PhoneBindingModal isOpen={isPhoneBindingModalOpen} onClose={onPhoneBindingModalClose} />
     </Box>
   );
 }

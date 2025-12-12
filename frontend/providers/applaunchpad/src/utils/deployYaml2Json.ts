@@ -39,8 +39,8 @@ const getServiceName = (data: AppEditType, forNodePort: boolean = false): string
   }
 
   const portsOfType = data.networks.filter((n) => n.openNodePort === forNodePort);
-  const ports = portsOfType.map((n) => n.port).sort();
-  const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${ports.join(',')}`;
+  const portSlugs = portsOfType.map((n) => n.protocol + n.port).sort();
+  const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${portSlugs.join(',')}`;
   const deterministicId = createDeterministicNanoid(seed);
   const suffix = forNodePort ? '-nodeport' : '';
 
@@ -390,7 +390,7 @@ export const json2Ingress = (data: AppEditType) => {
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.appProtocol]
+            ...map[network.appProtocol ?? 'HTTP']
           }
         },
         spec: {

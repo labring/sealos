@@ -70,6 +70,8 @@ data:
           bannerEnabled: false
           subscriptionEnabled: false
           guestModeEnabled: false
+          emailAlertEnabled: false
+          phoneAlertEnabled: false
       auth:
         proxyAddress: ""
         callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"

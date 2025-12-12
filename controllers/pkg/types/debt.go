@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	DebtNamespaceAnnoStatusKey                       = "debt.sealos/status"
 	NormalDebtNamespaceAnnoStatus                    = "Normal"
 	SuspendDebtNamespaceAnnoStatus                   = "Suspend"
 	SuspendCompletedDebtNamespaceAnnoStatus          = "SuspendCompleted"

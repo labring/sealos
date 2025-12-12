@@ -299,6 +299,7 @@ function NewSms({
       }
     },
     onError(error) {
+      console.log('error', error);
       toast({ title: (error as ApiResp).message });
     }
   });
