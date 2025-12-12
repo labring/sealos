@@ -82,6 +82,11 @@ func RegisterPayRouter() {
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo).
 		POST(helper.WorkspaceGetResourceQuota, api.GetWorkspaceResourceQuota).
+		// UserAlertNotificationAccount routes
+		POST(helper.UserAlertNotificationAccountCreate, api.CreateUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountList, api.ListUserAlertNotificationAccounts).
+		POST(helper.UserAlertNotificationAccountDelete, api.DeleteUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountToggle, api.ToggleUserAlertNotificationAccounts).
 		// WorkspaceSubscription routes
 		POST(helper.WorkspaceSubscriptionInfo, api.GetWorkspaceSubscriptionInfo).
 		POST(helper.WorkspaceSubscriptionList, api.GetWorkspaceSubscriptionList).
