@@ -19,6 +19,7 @@ import { CloseOutlined, SaveOutlined } from '@ant-design/icons';
 import { updateResource } from '@/api/kubernetes';
 import { dumpKubeObject } from '@/utils/yaml';
 import { buildErrorResponse } from '@/services/backend/response';
+import { KubeBadge } from '@/components/kube/kube-badge';
 
 interface Props {
   pod?: Pod;
@@ -179,6 +180,17 @@ const ContainerInfo = ({
   };
 
   const isModified = useMemo(() => !isEqual(probes, draftProbes), [probes, draftProbes]);
+
+  // Resolve the relevant pod spec for the current context (Pod or Workload)
+  const podSpec = useMemo(() => {
+    const owner = workload || pod;
+    if (!owner || !owner.spec) return null;
+
+    const ownerSpec = owner.spec as any;
+    const hasTemplateSpec = Boolean(ownerSpec?.template?.spec);
+
+    return hasTemplateSpec ? cloneDeep(ownerSpec.template.spec) : cloneDeep(ownerSpec);
+  }, [workload, pod]);
 
   const handleSaveProbes = async () => {
     if (!isModified) return;
@@ -373,18 +385,104 @@ const ContainerInfo = ({
         />
       )}
 
+      {container.resources?.limits && (
+        <DrawerItem
+          name="Resources"
+          value={
+            <div className="flex flex-wrap gap-4 text-sm">
+              {container.resources.limits.cpu && (
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500">CPU:</span>
+                  <span className="font-medium text-gray-900">
+                    {container.resources.limits.cpu}
+                  </span>
+                </div>
+              )}
+              {container.resources.limits.memory && (
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500">Memory:</span>
+                  <span className="font-medium text-gray-900">
+                    {container.resources.limits.memory}
+                  </span>
+                </div>
+              )}
+              {container.resources.limits['ephemeral-storage'] && (
+                <div className="flex items-center gap-1 basis-full">
+                  <span className="text-gray-500">Ephemeral Storage:</span>
+                  <span className="font-medium text-gray-900">
+                    {container.resources.limits['ephemeral-storage']}
+                  </span>
+                </div>
+              )}
+            </div>
+          }
+        />
+      )}
+
       {volumeMounts && volumeMounts.length > 0 && (
         <DrawerItem
           name="Mounts"
           value={volumeMounts.map((mount) => {
             const { name, mountPath, readOnly } = mount;
+            const volume = podSpec?.volumes?.find((v: any) => v.name === name);
+            let sourceLabel = '';
+            let sourceValue = '';
+
+            if (volume) {
+              if (volume.persistentVolumeClaim) {
+                sourceLabel = 'pvc';
+                sourceValue = volume.persistentVolumeClaim.claimName;
+              } else if (volume.configMap) {
+                sourceLabel = 'cm';
+                sourceValue = volume.configMap.name;
+              } else if (volume.secret) {
+                sourceLabel = 's';
+                sourceValue = volume.secret.secretName;
+              } else if (volume.emptyDir) {
+                sourceLabel = 'emptyDir';
+              } else if (volume.hostPath) {
+                sourceLabel = 'hostPath';
+                sourceValue = volume.hostPath.path;
+              } else if (volume.downwardAPI) {
+                sourceLabel = 'downwardAPI';
+                sourceValue =
+                  volume.downwardAPI.items?.map((item: any) => item.path).join(', ') ||
+                  'downwardAPI';
+              } else if (volume.projected) {
+                sourceLabel = 'projected';
+                sourceValue =
+                  (
+                    volume.projected.sources?.map((s: any) => {
+                      if (s.serviceAccountToken) return 'serviceAccountToken';
+                      if (s.configMap) return `cm/${s.configMap.name}`;
+                      if (s.secret) return `secret/${s.secret.name}`;
+                      if (s.downwardAPI) return 'downwardAPI';
+                      return 'unknown';
+                    }) || []
+                  ).join(', ') || 'projected';
+              }
+            }
+
+            const isImmutableSource =
+              sourceLabel === 'cm' ||
+              sourceLabel === 's' ||
+              sourceLabel === 'downwardAPI' ||
+              sourceLabel === 'projected';
 
             return (
               <div key={name + mountPath} className="mb-2 last:mb-0">
                 <span className="mount-path mr-2">{mountPath}</span>
-                <span className="mount-from text-gray-500">{`from ${name} (${
-                  readOnly ? 'ro' : 'rw'
-                })`}</span>
+                <span className="mount-from text-gray-500">
+                  {`from ${name}`}
+                  {!isImmutableSource && ` (${readOnly ? 'ro' : 'rw'})`}
+                </span>
+                {sourceLabel && (
+                  <Tooltip title={sourceValue}>
+                    <span className="ml-2 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded border border-gray-200 cursor-pointer">
+                      {sourceLabel}
+                    </span>
+                  </Tooltip>
+                )}
               </div>
             );
           })}

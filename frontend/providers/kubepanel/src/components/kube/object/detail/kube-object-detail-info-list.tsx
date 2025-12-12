@@ -54,10 +54,27 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
           name="Labels"
           vertical
           value={
-            <div className="flex flex-wrap gap-1">
-              {labels.map((label) => (
-                <KubeBadge key={label} label={label} className="m-0!" />
-              ))}
+            <div className="flex flex-col gap-1 items-start">
+              {labels.map((label) => {
+                const sepIndex = label.indexOf(': ');
+                if (sepIndex === -1)
+                  return <KubeBadge key={label} label={label} className="m-0!" />;
+                const key = label.slice(0, sepIndex);
+                const value = label.slice(sepIndex + 2);
+                return (
+                  <KubeBadge
+                    key={label}
+                    label={
+                      <span>
+                        <span className="font-medium text-gray-900">{key}</span>
+                        <span className="text-gray-900 mr-1">:</span>
+                        <span className="text-gray-600">{value}</span>
+                      </span>
+                    }
+                    className="m-0!"
+                  />
+                );
+              })}
             </div>
           }
         />
@@ -68,7 +85,7 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
           name="Annotations"
           vertical
           value={
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-col gap-1 items-start">
               {annotations.map((label) => {
                 if (label.startsWith('kubectl.kubernetes.io/last-applied-configuration')) {
                   return (
@@ -80,7 +97,25 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
                     />
                   );
                 }
-                return <KubeBadge key={label} label={label} className="m-0!" />;
+                const sepIndex = label.indexOf(': ');
+                if (sepIndex === -1)
+                  return <KubeBadge key={label} label={label} className="m-0!" />;
+                const key = label.slice(0, sepIndex);
+                const value = label.slice(sepIndex + 2);
+
+                return (
+                  <KubeBadge
+                    key={label}
+                    label={
+                      <span>
+                        <span className="font-medium text-gray-900">{key}</span>
+                        <span className="text-gray-400 mr-1">:</span>
+                        <span className="text-gray-600">{value}</span>
+                      </span>
+                    }
+                    className="m-0!"
+                  />
+                );
               })}
             </div>
           }
