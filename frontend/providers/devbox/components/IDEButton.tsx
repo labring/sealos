@@ -509,21 +509,16 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
   return baseItems;
 };
 const getRightColumnItems = (enableWebideFeature: string): MenuItem[] => {
-  const vscodeOptions =
-    enableWebideFeature === 'true'
-      ? [
-          { value: 'vscode', menuLabel: 'VSCode' },
-          { value: 'webide', menuLabel: 'Online' }
-        ]
-      : [{ value: 'vscode', menuLabel: 'VSCode' }];
-
-  return [
+  const baseItems: MenuItem[] = [
     { value: 'cursor', menuLabel: 'Cursor' },
     {
       value: 'vscode-group' as IDEType,
       menuLabel: 'VSCode',
       group: 'vscode',
-      options: vscodeOptions
+      options: [
+        { value: 'vscode', menuLabel: 'VSCode' },
+        { value: 'webide', menuLabel: 'Online' }
+      ]
     },
     { value: 'vscodeInsiders', menuLabel: 'Insiders' },
     { value: 'windsurf', menuLabel: 'Windsurf' },
@@ -537,6 +532,25 @@ const getRightColumnItems = (enableWebideFeature: string): MenuItem[] => {
       ]
     }
   ];
+
+  if (enableWebideFeature !== 'true') {
+    return baseItems.map((item) => {
+      if (item.options && item.value === 'vscode-group') {
+        const filteredOptions = item.options.filter((option) => option.value !== 'webide');
+        // If only one option remains after filtering, flatten the group to a single item
+        if (filteredOptions.length === 1) {
+          return {
+            value: filteredOptions[0].value,
+            menuLabel: filteredOptions[0].menuLabel
+          };
+        }
+        return { ...item, options: filteredOptions };
+      }
+      return item;
+    });
+  }
+
+  return baseItems;
 };
 
 export default IDEButton;
