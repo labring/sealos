@@ -22,6 +22,7 @@ import (
 	portalsession "github.com/stripe/stripe-go/v82/billingportal/session"
 	checkoutsession "github.com/stripe/stripe-go/v82/checkout/session"
 	"github.com/stripe/stripe-go/v82/customer"
+	"github.com/stripe/stripe-go/v82/paymentmethod"
 	"github.com/stripe/stripe-go/v82/price"
 	"github.com/stripe/stripe-go/v82/product"
 	"github.com/stripe/stripe-go/v82/subscription"
@@ -655,6 +656,55 @@ func (s *StripeService) GetCustomer(userUID, email string) (*stripe.Customer, er
 
 // Global StripeService instance
 var StripeServiceInstance *StripeService
+
+// GetCustomerPaymentMethods retrieves all payment methods for a customer
+func (s *StripeService) GetCustomerPaymentMethods(customerID string) ([]*stripe.PaymentMethod, error) {
+	params := &stripe.PaymentMethodListParams{
+		Customer: stripe.String(customerID),
+		Type:     stripe.String("card"),
+	}
+
+	var paymentMethods []*stripe.PaymentMethod
+	iter := paymentmethod.List(params)
+	for iter.Next() {
+		paymentMethods = append(paymentMethods, iter.PaymentMethod())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("paymentmethod.List: %v", err)
+	}
+
+	return paymentMethods, nil
+}
+
+// GetCustomerInvoices retrieves all invoices for a customer
+func (s *StripeService) GetCustomerInvoices(customerID string, limit int64) ([]*stripe.Invoice, error) {
+	params := &stripe.InvoiceListParams{
+		Customer: stripe.String(customerID),
+	}
+	if limit > 0 {
+		params.Limit = stripe.Int64(limit)
+	}
+
+	var invoices []*stripe.Invoice
+	iter := invoice.List(params)
+	for iter.Next() {
+		invoices = append(invoices, iter.Invoice())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("invoice.List: %v", err)
+	}
+
+	return invoices, nil
+}
+
+// GetPaymentMethod retrieves a specific payment method by ID
+func (s *StripeService) GetPaymentMethod(paymentMethodID string) (*stripe.PaymentMethod, error) {
+	pm, err := paymentmethod.Get(paymentMethodID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("paymentmethod.Get: %v", err)
+	}
+	return pm, nil
+}
 
 // InitStripeService initializes the global Stripe service
 func InitStripeService() {

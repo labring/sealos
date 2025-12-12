@@ -2754,6 +2754,195 @@ func CreateWorkspaceSubscriptionPortalSession(c *gin.Context) {
 	})
 }
 
+// CreateWorkspaceSubscriptionCardManagePortal
+// @Summary Create workspace subscription card management portal session
+// @Description Create a Stripe billing portal session for managing payment methods for workspace subscription
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param req body helper.WorkspaceSubscriptionInfoReq true "WorkspaceSubscriptionInfoReq"
+// @Success 200 {object} gin.H{url:string,success:bool}
+// @Router /payment/v1alpha1/workspace-subscription/card-manage [post]
+
+func CreateWorkspaceSubscriptionCardManagePortal(c *gin.Context) {
+	req, err := helper.ParseWorkspaceSubscriptionInfoReq(c)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+	if err := authenticateWorkspaceSubscriptionRequest(c, req, false); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusUnauthorized,
+			gin.H{"error": fmt.Sprintf("authenticate error : %v", err)},
+		)
+		return
+	}
+
+	if services.StripeServiceInstance == nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": "Stripe service not configured"},
+		)
+		return
+	}
+
+	// Get or create customer
+	customer, err := services.StripeServiceInstance.GetCustomer(req.UserUID.String(), "")
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get/create customer: %v", err)},
+		)
+		return
+	}
+
+	// Create portal session with card management focus
+	portalSession, err := services.StripeServiceInstance.CreatePortalSession(customer.ID)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to create portal session: %v", err)},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"url":     portalSession.URL,
+		"success": true,
+	})
+}
+
+// GetWorkspaceSubscriptionCardInfo
+// @Summary Get workspace subscription card payment information
+// @Description Get the latest payment method for the specified workspace subscription
+// @Tags WorkspaceSubscription
+// @Accept json
+// @Produce json
+// @Param req body helper.WorkspaceSubscriptionCardInfoReq true "WorkspaceSubscriptionCardInfoReq"
+// @Success 200 {object} gin.H{payment_method:interface{},success:bool}
+// @Router /payment/v1alpha1/workspace-subscription/card-info [post]
+
+func GetWorkspaceSubscriptionCardInfo(c *gin.Context) {
+	req, err := helper.ParseWorkspaceSubscriptionCardInfoReq(c)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+
+	// Set default region domain if not provided
+	if req.RegionDomain == "" {
+		req.RegionDomain = dao.DBClient.GetLocalRegion().Domain
+	}
+
+	if err := authenticateWorkspaceSubscriptionRequest(c, &helper.WorkspaceSubscriptionInfoReq{
+		AuthBase:     req.AuthBase,
+		Workspace:    req.Workspace,
+		RegionDomain: req.RegionDomain,
+	}, false); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusUnauthorized,
+			gin.H{"error": fmt.Sprintf("authenticate error : %v", err)},
+		)
+		return
+	}
+
+	if services.StripeServiceInstance == nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": "Stripe service not configured"},
+		)
+		return
+	}
+
+	// Get the workspace subscription
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(req.Workspace, req.RegionDomain)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get workspace subscription: %v", err)},
+		)
+		return
+	}
+
+	if subscription == nil || subscription.Stripe == nil || subscription.Stripe.SubscriptionID == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"payment_method": nil,
+			"success":        true,
+		})
+		return
+	}
+
+	// Get the subscription from Stripe to find the latest payment method
+	stripeSubscription, err := services.StripeServiceInstance.GetSubscription(subscription.Stripe.SubscriptionID)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get Stripe subscription: %v", err)},
+		)
+		return
+	}
+
+	// Get the payment method from the subscription's default payment method
+	if stripeSubscription.DefaultPaymentMethod != nil {
+		paymentMethodID := stripeSubscription.DefaultPaymentMethod.ID
+		paymentMethod, err := services.StripeServiceInstance.GetPaymentMethod(paymentMethodID)
+		if err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to get payment method: %v", err)},
+			)
+			return
+		}
+
+		// Format the payment method for response
+		if paymentMethod.Card != nil {
+			formattedPaymentMethod := gin.H{
+				"id":      paymentMethod.ID,
+				"type":    paymentMethod.Type,
+				"created": paymentMethod.Created,
+				"card": gin.H{
+					"brand":     paymentMethod.Card.Brand,
+					"last4":     paymentMethod.Card.Last4,
+					"exp_month": paymentMethod.Card.ExpMonth,
+					"exp_year":  paymentMethod.Card.ExpYear,
+					"funding":   paymentMethod.Card.Funding,
+					"country":   paymentMethod.Card.Country,
+				},
+				"metadata": paymentMethod.Metadata,
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"payment_method": formattedPaymentMethod,
+				"success":        true,
+			})
+			return
+		}
+	}
+
+	// If no payment method found, return empty result
+	c.JSON(http.StatusOK, gin.H{
+		"payment_method": nil,
+		"success":        true,
+	})
+}
+
 // ProcessExpiredWorkspaceSubscriptions processes all expired workspace subscriptions
 // @Summary Process expired workspace subscriptions
 // @Description Process all expired workspace subscriptions in the current region
@@ -2763,6 +2952,7 @@ func CreateWorkspaceSubscriptionPortalSession(c *gin.Context) {
 // @Param req body helper.AuthBase true "AuthBase"
 // @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/process-expired [post]
+
 func AdminProcessExpiredWorkspaceSubscriptions(c *gin.Context) {
 	if err := authenticateAdminRequest(c); err != nil {
 		SetErrorResp(

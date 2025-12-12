@@ -754,6 +754,23 @@ type WorkspaceSubscriptionInfoReq struct {
 	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
 }
 
+type WorkspaceSubscriptionCardInfoReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Workspace name
+	// @Description Workspace name
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain (optional, defaults to current region)
+	// @JSONSchema optional
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" example:"example.com"`
+}
+
 type WorkspaceSubscriptionUpgradeAmountReq struct {
 	WorkspaceSubscriptionOperatorReq `json:",inline" bson:",inline"`
 }
@@ -812,6 +829,18 @@ func ParseWorkspaceSubscriptionInfoReq(c *gin.Context) (*WorkspaceSubscriptionIn
 	if req.RegionDomain == "" {
 		return nil, errors.New("regionDomain cannot be empty")
 	}
+	return req, nil
+}
+
+func ParseWorkspaceSubscriptionCardInfoReq(c *gin.Context) (*WorkspaceSubscriptionCardInfoReq, error) {
+	req := &WorkspaceSubscriptionCardInfoReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+	if req.Workspace == "" {
+		return nil, errors.New("workspace cannot be empty")
+	}
+	// regionDomain is optional, so we don't validate it here
 	return req, nil
 }
 
