@@ -42,6 +42,7 @@ desktop:
       docsUrl: "https://sealos.run/docs/Intro/"
       aiAssistantEnabled: false
       bannerEnabled: false
+      announcementEnabled: false
     gtmId: null
   auth:
     proxyAddress: ""
