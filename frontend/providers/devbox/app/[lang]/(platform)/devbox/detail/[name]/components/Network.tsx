@@ -23,10 +23,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
-
-export const ProtocolList = [
-  { value: 'HTTP', label: 'https://', inline: 'http://' },
-];
+export const ProtocolList = [{ value: 'HTTP', label: 'https://', inline: 'http://' }];
 
 const Network = () => {
   const locale = useLocale();
@@ -105,7 +102,8 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const protocolPrefix = ProtocolList.find(p => p.value === item.protocol)?.inline || 'http://';
+        const protocolPrefix =
+          ProtocolList.find((p) => p.value === item.protocol)?.inline || 'http://';
         const prefix = item.openPublicDomain ? protocolPrefix : 'http://';
         const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
@@ -251,20 +249,22 @@ const Network = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {devboxDetail.networks.map((network, index) => (
-                <TableRow key={`${network.port}-${index}`}>
-                  {networkColumn.map((column) => (
-                    <TableCell
-                      key={`${network.port}-${column.key}`}
-                      className="px-4 break-words whitespace-normal"
-                    >
-                      {column.render
-                        ? column.render(network as NetworkType)
-                        : network[column.dataIndex as keyof NetworkType]}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {devboxDetail.networks
+                .filter((network) => !(env.enableWebideFeature === 'true' && network.port === 9999))
+                .map((network, index) => (
+                  <TableRow key={`${network.port}-${index}`}>
+                    {networkColumn.map((column) => (
+                      <TableCell
+                        key={`${network.port}-${column.key}`}
+                        className="px-4 break-words whitespace-normal"
+                      >
+                        {column.render
+                          ? column.render(network as NetworkType)
+                          : network[column.dataIndex as keyof NetworkType]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </ScrollArea>

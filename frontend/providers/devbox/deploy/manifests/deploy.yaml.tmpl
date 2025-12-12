@@ -79,6 +79,10 @@ spec:
               value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
               value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+            - name: ENABLE_IMPORT_FEATURE
+              value: 'false'
+            - name: ENABLE_WEBIDE_FEATURE
+              value: 'false'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

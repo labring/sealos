@@ -25,6 +25,8 @@ export interface Env {
   rootRuntimeNamespace: string;
   ingressDomain: string;
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
+  enableImportFeature: string;
+  enableWebideFeature: string;
 }
 
 export interface RuntimeTypeMap {

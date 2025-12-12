@@ -41,3 +41,19 @@ export type CreateTemplateRepositoryType = z.infer<typeof createTemplateReposito
 export type UpdateTemplateRepositoryType = z.infer<typeof updateTemplateRepositorySchema>;
 export type UpdateTemplateListType = z.infer<typeof updateTemplateListSchema>;
 export type UpdateTemplateType = z.infer<typeof updateTemplateSchema>;
+
+const ZIP_MAGIC_BYTES = [0x50, 0x4b, 0x03, 0x04];
+
+export function validateZipFile(buffer: Buffer): boolean {
+  if (buffer.length < 4) {
+    return false;
+  }
+
+  for (let i = 0; i < ZIP_MAGIC_BYTES.length; i++) {
+    if (buffer[i] !== ZIP_MAGIC_BYTES[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}

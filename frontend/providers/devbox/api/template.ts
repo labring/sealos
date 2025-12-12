@@ -124,6 +124,16 @@ export const getTemplateConfig = (uid: string) =>
       config: string;
     };
   }>(`/api/templateRepository/template/getConfig?uid=${uid}`);
+export const getTemplate = (uid: string) =>
+  GET<{
+    template: {
+      name: string;
+      uid: string;
+      config: string;
+      image: string;
+      templateRepositoryUid: string;
+    };
+  }>(`/api/templateRepository/template/get?uid=${uid}`);
 export const listTemplate = (templateRepositoryUid: string) =>
   GET<{
     templateList: {
