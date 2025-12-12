@@ -70,9 +70,13 @@ const items: MenuProps['items'] = [
 
 interface Props {
   onClick?: (key: SideNavItemKey) => void;
+  selectedKey?: SideNavItemKey;
 }
 
-export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
+export const ResourceSideNav = ({
+  onClick = () => {},
+  selectedKey = SideNavItemKey.Overview
+}: Props) => {
   const router = useRouter();
 
   return (
@@ -93,7 +97,7 @@ export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
       <Menu
         className="kubepanel-sidebar-menu"
         style={{ backgroundColor: 'transparent', borderRight: 'none', fontWeight: 500 }}
-        defaultSelectedKeys={['overview']}
+        selectedKeys={[selectedKey]}
         defaultOpenKeys={['workload']}
         mode="inline"
         items={items}

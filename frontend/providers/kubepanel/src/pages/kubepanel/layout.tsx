@@ -9,6 +9,7 @@ const { Sider, Content } = Layout;
 interface Props {
   children: React.ReactNode;
   onClickSideNavItem?: (key: SideNavItemKey) => void;
+  selectedKey?: SideNavItemKey;
 }
 
 type CollapseCallback = (collapsed: boolean, type: CollapseType) => void;
@@ -16,7 +17,7 @@ type CollapseCallback = (collapsed: boolean, type: CollapseType) => void;
 const siderWidth = 256;
 const collapsedWidth = 0;
 
-export default function AppLayout({ children, onClickSideNavItem }: Props) {
+export default function AppLayout({ children, onClickSideNavItem, selectedKey }: Props) {
   const [contentMargin, setContentMargin] = useState(siderWidth);
 
   const onCollapse = useCallback<CollapseCallback>((collapsed, _) => {
@@ -41,7 +42,7 @@ export default function AppLayout({ children, onClickSideNavItem }: Props) {
           breakpoint="lg"
           collapsedWidth={collapsedWidth}
         >
-          <ResourceSideNav onClick={onClickSideNavItem} />
+          <ResourceSideNav onClick={onClickSideNavItem} selectedKey={selectedKey} />
         </Sider>
         <Layout style={{ marginLeft: contentMargin }}>
           <Content
