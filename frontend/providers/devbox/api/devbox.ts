@@ -11,6 +11,7 @@ import {
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { AxiosProgressEvent } from 'axios';
 import { AppListItemType } from '@/types/app';
+import type { ImportResponse } from '@/types/import';
 
 export const getMyDevboxList = () => GET<DevboxListItemTypeV2[]>('/api/getDevboxList');
 
@@ -91,3 +92,71 @@ export const execCommandInDevboxPod = (data: {
 
 export const updateDevboxRemark = (data: { devboxName: string; remark: string }) =>
   POST('/api/updateDevboxRemark', data);
+
+export const uploadAndExtractFile = (
+  formData: FormData,
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+) =>
+  POST<{ success: boolean }>('/api/uploadAndExtractFile', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 0,
+    onUploadProgress
+  });
+
+export const getDevboxPorts = (devboxName: string) =>
+  GET<{
+    ports: {
+      portName: string;
+      number: number;
+      protocol: string;
+      networkName: string;
+      exposesPublicDomain: boolean;
+      publicDomain: string;
+      customDomain: string;
+      serviceName: string;
+      privateAddress: string;
+    }[];
+  }>(`/api/getDevboxPorts?devboxName=${devboxName}`);
+
+export const updateDevboxPorts = (
+  devboxName: string,
+  ports: {
+    portName?: string;
+    networkName?: string;
+    number: number;
+    protocol?: string;
+    exposesPublicDomain?: boolean;
+    publicDomain?: string;
+    customDomain?: string;
+  }[]
+) =>
+  POST<{
+    ports: {
+      portName: string;
+      number: number;
+      protocol: string;
+      networkName: string;
+      exposesPublicDomain: boolean;
+      publicDomain: string;
+      customDomain: string;
+      serviceName: string;
+      privateAddress: string;
+    }[];
+  }>(`/api/updateDevboxPorts`, { devboxName, ports });
+
+export const updateDevboxWebIDEPort = (devboxName: string, port: number) =>
+  POST<{
+    publicDomain: string;
+  }>(`/api/updateDevboxWebIDEPort`, { devboxName, port });
+
+export const autostartDevbox = (data: { devboxName: string; execCommand?: string }) =>
+  POST<{
+    devboxName: string;
+    autostartCreated: boolean;
+    jobRecreated: boolean;
+    resources: string[];
+  }>(`/api/v1/devbox/${data.devboxName}/autostart`, {
+    execCommand: data.execCommand
+  });

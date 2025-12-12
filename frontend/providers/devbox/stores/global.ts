@@ -19,6 +19,8 @@ type State = {
   setLastRoute: (val: string) => void;
   isInitialized: boolean;
   setInitialized: (val: boolean) => void;
+  isImporting: boolean;
+  setIsImporting: (val: boolean) => void;
 };
 
 export const useGlobalStore = create<State>()(
@@ -40,6 +42,12 @@ export const useGlobalStore = create<State>()(
       setInitialized(val) {
         set((state) => {
           state.isInitialized = val;
+        });
+      },
+      isImporting: false,
+      setIsImporting(val) {
+        set((state) => {
+          state.isImporting = val;
         });
       }
     }))

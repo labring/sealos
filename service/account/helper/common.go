@@ -35,6 +35,12 @@ const (
 	UserUsage                     = "/user-usage"
 	GetRechargeDiscount           = "/recharge-discount"
 	GetUserRealNameInfo           = "/real-name-info"
+
+	// UserAlertNotificationAccount routes
+	UserAlertNotificationAccountCreate = "/user-alert-notification-account/create"
+	UserAlertNotificationAccountList   = "/user-alert-notification-account/list"
+	UserAlertNotificationAccountDelete = "/user-alert-notification-account/delete"
+	UserAlertNotificationAccountToggle = "/user-alert-notification-account/toggle"
 )
 
 const (
