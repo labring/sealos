@@ -177,8 +177,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
             protocol: 'HTTP',
             openPublicDomain: true
           } as any
-        ],
-        env: []
+        ]
       });
 
       setImportStage('waiting');

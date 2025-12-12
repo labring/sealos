@@ -247,8 +247,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
             protocol: 'HTTP',
             openPublicDomain: true
           } as any
-        ],
-        env: []
+        ]
       });
 
       setImportStage('waiting');

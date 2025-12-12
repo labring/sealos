@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
+import { useGlobalStore } from '@/stores/global';
 import { isElementInViewport } from '@/utils/tools';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 
