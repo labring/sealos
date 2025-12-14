@@ -48,7 +48,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
           );
           iframeRef.current?.contentWindow?.postMessage(
             {
-              command: `echo -e "This is a temporary terminal for debugging and testing. The session will automatically end 30 minutes after you leave.\\n\\nYou are now working in: namespace ${nsid}" && history -c`
+              command: `clear && echo -e "\\033[36mThis is a temporary terminal for debugging and testing. The session will automatically end \\033[1m30 minutes\\033[22m after you leave.\\033[0m\\n\\nYou are now working in namespace: \\033[1;32m${nsid}\\033[0m" && history -c`
             },
             url
           );
