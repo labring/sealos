@@ -339,7 +339,7 @@ export default function Account() {
                   </Flex>
                 </MenuItem>
 
-                {layoutConfig?.version === 'cn' && (
+                {authConfig?.invite.enabled && (
                   <MenuItem
                     mt="0px"
                     py="6px"

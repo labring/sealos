@@ -71,6 +71,10 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  authBackgroundImage?: {
+    zh: string;
+    en: string;
+  };
   meta: MetaConfigType;
   customerServiceURL?: string;
   discordInviteLink?: string;
@@ -88,6 +92,7 @@ export type LayoutConfigType = {
     guestModeEnabled?: boolean;
     emailAlertEnabled: boolean;
     phoneAlertEnabled: boolean;
+    announcementEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -325,7 +330,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     subscriptionEnabled: false,
     guestModeEnabled: false,
     emailAlertEnabled: false,
-    phoneAlertEnabled: false
+    phoneAlertEnabled: false,
+    announcementEnabled: false
   },
   gtmId: null
 };
