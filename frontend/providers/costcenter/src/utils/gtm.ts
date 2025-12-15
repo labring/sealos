@@ -23,3 +23,46 @@ export const gtmTopupSuccess = ({ amount, paid }: { amount: number; paid: number
     amount,
     paid
   });
+
+export const gtmSubscribeCheckout = ({
+  amount,
+  plan,
+  type
+}: {
+  amount: number;
+  plan: string;
+  type: 'new' | 'upgrade' | 'downgrade';
+}) =>
+  window?.dataLayer?.push({
+    event: 'subscribe_checkout',
+    method: 'stripe',
+    module: 'costcenter',
+    context: 'app',
+    curreny: 'USD',
+    amount,
+    plan,
+    type
+  });
+
+export const gtmSubscribeSuccess = ({
+  amount,
+  paid,
+  plan,
+  type
+}: {
+  amount: number;
+  paid: number;
+  plan: string;
+  type: 'new' | 'upgrade' | 'downgrade';
+}) =>
+  window?.dataLayer?.push({
+    event: 'subscribe_success',
+    module: 'costcenter',
+    method: 'stripe',
+    context: 'app',
+    curreny: 'USD',
+    amount,
+    paid,
+    plan,
+    type
+  });
