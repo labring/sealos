@@ -177,7 +177,7 @@ func (s *StripeService) CancelWorkspaceSubscriptionSession(sessionID string) err
 	if err != nil {
 		return fmt.Errorf("checkoutsession.Get: %v", err)
 	}
-	if sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusUnpaid {
+	if sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusUnpaid && sess.Status == stripe.CheckoutSessionStatusOpen {
 		_, err := checkoutsession.Expire(sessionID, nil)
 		if err != nil {
 			return fmt.Errorf("checkoutsession.Cancel: %v", err)
@@ -324,11 +324,11 @@ func (s *StripeService) UpdatePlanPricePreviewWithDiscount(subscriptionID, newPr
 					Price: stripe.String(newPriceID),
 				},
 			},
-			ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
+			//ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
 			ProrationBehavior:     stripe.String("create_prorations"),
 			BillingCycleAnchorNow: stripe.Bool(true),
 			// Ensure billing cycle anchors to now for upgrade
-			BillingCycleAnchor: stripe.Int64(time.Now().UTC().Unix()),
+			//BillingCycleAnchor: stripe.Int64(time.Now().UTC().Unix()),
 		},
 	}
 

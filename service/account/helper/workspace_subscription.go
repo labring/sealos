@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
@@ -16,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// AddTrafficPackage adds traffic package with backward compatibility
 func AddTrafficPackage(
 	globalDB *gorm.DB,
 	client client.Client,
@@ -25,6 +29,30 @@ func AddTrafficPackage(
 	from types.WorkspaceTrafficFrom,
 	fromID string,
 ) error {
+	return AddTrafficPackageWithUpgrade(globalDB, client, sub, plan, expireAt, from, fromID, false, 0)
+}
+
+// AddTrafficPackageWithUpgrade adds traffic package with upgrade support
+func AddTrafficPackageWithUpgrade(
+	globalDB *gorm.DB,
+	client client.Client,
+	sub *types.WorkspaceSubscription,
+	plan *types.WorkspaceSubscriptionPlan,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+	isUpgrade bool,
+	oldPlanTraffic int64,
+) error {
+	logrus.Infof("start to add traffic package: subID=%s, plan=%s, isUpgrade=%v, oldPlanTraffic=%d", sub.ID, plan.Name, isUpgrade, oldPlanTraffic)
+	// For upgrade scenarios, expire existing traffic packages from the old plan
+	if isUpgrade && oldPlanTraffic > 0 {
+		err := expireOldTrafficPackages(globalDB, sub.ID, fromID)
+		if err != nil {
+			return fmt.Errorf("failed to expire old traffic packages: %w", err)
+		}
+	}
+
 	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(
 		globalDB,
 		sub.ID,
@@ -53,6 +81,29 @@ func AddTrafficPackage(
 		return fmt.Errorf("failed to resume workspace traffic: %w", err)
 		// Note: We don't rollback here as the traffic package was successfully added
 	}
+	return nil
+}
+
+// expireOldTrafficPackages expires existing traffic packages from old subscription plan
+func expireOldTrafficPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFromID string) error {
+	now := time.Now()
+
+	// Update all existing active traffic packages to expired status
+	// We don't need to exclude newFromID because the new package hasn't been created yet
+	// The newFromID parameter is kept for API consistency but not used in the query
+	err := globalDB.Debug().Model(&types.WorkspaceTraffic{}).
+		Where("workspace_subscription_id = ? AND status = ?",
+			subscriptionID, types.WorkspaceTrafficStatusActive).
+		Updates(map[string]interface{}{
+			"status":     types.WorkspaceTrafficStatusExpired,
+			"expired_at": now,
+			"updated_at": now,
+		}).Error
+
+	if err != nil {
+		return fmt.Errorf("failed to expire old traffic packages: %w", err)
+	}
+
 	return nil
 }
 

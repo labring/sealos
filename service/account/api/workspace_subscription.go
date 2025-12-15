@@ -2069,65 +2069,74 @@ func finalizeWorkspaceSubscriptionSuccess(
 		}
 	}
 
-	// Add traffic package
+	// Add traffic package with upgrade support
 	plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(wsTransaction.NewPlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	traffic := plan.Traffic
-	aiQuota := plan.AIQuota
+
+	if wsTransaction.Period == "" {
+		wsTransaction.Period = types.SubscriptionPeriodMonthly
+	}
+
+	var oldPlan *types.WorkspaceSubscriptionPlan
+	var oldPlanTraffic int64
+	var oldPlanAIQuota int64
+
+	// Get old plan info for upgrades
 	if (wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded || wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed) &&
 		oldPlanName != "" &&
 		oldPlanName != types.FreeSubscriptionPlanName &&
 		oldPlanName != wsTransaction.NewPlanName {
-		oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(oldPlanName)
+		oldPlan, err = dao.DBClient.GetWorkspaceSubscriptionPlan(oldPlanName)
 		if err != nil {
 			return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
 		}
-		traffic -= oldPlan.Traffic
-		if traffic < 0 {
-			traffic = 0
-		}
-		aiQuota -= oldPlan.AIQuota
-		if aiQuota < 0 {
-			aiQuota = 0
+		oldPlanTraffic = oldPlan.Traffic
+		oldPlanAIQuota = oldPlan.AIQuota
+	}
+
+	// Handle traffic package with upgrade-aware logic
+	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded && plan.Traffic > 0 {
+		// Use upgrade-aware traffic package method
+		err = helper.AddTrafficPackageWithUpgrade(
+			tx,
+			dao.K8sManager.GetClient(),
+			workspaceSubscription,
+			plan,
+			workspaceSubscription.CurrentPeriodEndAt,
+			types.WorkspaceTrafficFromWorkspaceSubscription,
+			wsTransaction.ID.String(),
+			wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded,
+			oldPlanTraffic,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to add traffic package: %w", err)
 		}
 	}
-	if wsTransaction.Period == "" {
-		wsTransaction.Period = types.SubscriptionPeriodMonthly
-	}
-	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded {
-		if traffic > 0 {
-			period, err := types.ParsePeriod(wsTransaction.Period)
-			if err != nil {
-				return fmt.Errorf("invalid subscription period: %w", err)
-			}
-			err = helper.AddTrafficPackage(
-				tx,
-				dao.K8sManager.GetClient(),
-				workspaceSubscription,
-				plan,
-				time.Now().Add(period),
-				types.WorkspaceTrafficFromWorkspaceSubscription,
-				wsTransaction.ID.String(),
-			)
-			// err = dao.AddWorkspaceSubscriptionTrafficPackage(tx, workspaceSubscription.ID, traffic, workspaceSubscription.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, wsTransaction.ID.String())
-			if err != nil {
-				return fmt.Errorf("failed to add traffic package: %w", err)
+
+	// Handle AI quota package with upgrade-aware logic
+	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded && plan.AIQuota > 0 {
+		// Calculate additional AI quota (only for upgrades)
+		additionalAIQuota := plan.AIQuota
+		if wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded && oldPlan != nil {
+			additionalAIQuota -= oldPlanAIQuota
+			if additionalAIQuota < 0 {
+				additionalAIQuota = 0
 			}
 		}
-		if aiQuota > 0 {
-			period, err := types.ParsePeriod(wsTransaction.Period)
-			if err != nil {
-				return fmt.Errorf("invalid subscription period: %w", err)
-			}
-			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+
+		// Use upgrade-aware AI quota package method
+		if additionalAIQuota > 0 {
+			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 				tx,
 				workspaceSubscription.ID,
-				plan.AIQuota,
-				time.Now().Add(period),
+				additionalAIQuota,
+				workspaceSubscription.CurrentPeriodEndAt,
 				types.PKGFromWorkspaceSubscription,
 				wsTransaction.ID.String(),
+				wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded,
+				oldPlanAIQuota,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to add AI quota package: %w", err)
@@ -3444,19 +3453,28 @@ func addTrafficAndAIPackages(
 	}
 
 	// For upgrade/downgrade/create operations, add packages immediately
+	var oldPlan *types.WorkspaceSubscriptionPlan
+	var isUpgrade bool
+
+	// Get old plan for upgrade scenarios
+	if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
+		existingSubscription != nil &&
+		existingSubscription.PlanName != types.FreeSubscriptionPlanName {
+		plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(
+			existingSubscription.PlanName,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
+		}
+		oldPlan = plan
+		isUpgrade = true
+	}
+
 	// Add traffic package
 	if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
 		// Calculate additional traffic for upgrades
 		additionalTraffic := plan.Traffic
-		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
-			existingSubscription != nil &&
-			existingSubscription.PlanName != types.FreeSubscriptionPlanName {
-			oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(
-				existingSubscription.PlanName,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
-			}
+		if isUpgrade && oldPlan != nil {
 			additionalTraffic -= oldPlan.Traffic
 			if additionalTraffic < 0 {
 				additionalTraffic = 0
@@ -3464,7 +3482,11 @@ func addTrafficAndAIPackages(
 		}
 
 		if additionalTraffic > 0 {
-			err := helper.AddTrafficPackage(
+			var oldPlanTraffic int64
+			if isUpgrade && oldPlan != nil {
+				oldPlanTraffic = oldPlan.Traffic
+			}
+			err := helper.AddTrafficPackageWithUpgrade(
 				tx,
 				dao.K8sManager.GetClient(),
 				workspaceSubscription,
@@ -3472,6 +3494,8 @@ func addTrafficAndAIPackages(
 				workspaceSubscription.CurrentPeriodEndAt,
 				types.WorkspaceTrafficFromWorkspaceSubscription,
 				transactionID,
+				isUpgrade,
+				oldPlanTraffic,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to add traffic package: %w", err)
@@ -3483,15 +3507,7 @@ func addTrafficAndAIPackages(
 	if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
 		// Calculate additional AI quota for upgrades
 		additionalAIQuota := plan.AIQuota
-		if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
-			existingSubscription != nil &&
-			existingSubscription.PlanName != types.FreeSubscriptionPlanName {
-			oldPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(
-				existingSubscription.PlanName,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
-			}
+		if isUpgrade && oldPlan != nil {
 			additionalAIQuota -= oldPlan.AIQuota
 			if additionalAIQuota < 0 {
 				additionalAIQuota = 0
@@ -3499,13 +3515,19 @@ func addTrafficAndAIPackages(
 		}
 
 		if additionalAIQuota > 0 {
-			err := cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+			var oldPlanAIQuota int64
+			if isUpgrade && oldPlan != nil {
+				oldPlanAIQuota = oldPlan.AIQuota
+			}
+			err := cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 				tx,
 				workspaceSubscription.ID,
 				additionalAIQuota,
 				workspaceSubscription.CurrentPeriodEndAt,
 				types.PKGFromWorkspaceSubscription,
 				transactionID,
+				isUpgrade,
+				oldPlanAIQuota,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to add AI quota package: %w", err)
