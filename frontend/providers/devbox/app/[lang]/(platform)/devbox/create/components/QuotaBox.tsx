@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
+import { CircuitBoard, Cpu, HdmiPort, MemoryStick, HardDrive, Network } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useUserStore } from '@/stores/user';
@@ -26,6 +26,10 @@ const sourceMap = {
     unit: 'Gi',
     icon: (className: string) => <MemoryStick className={className} />
   },
+  nodeport: {
+    unit: '',
+    icon: (className: string) => <HdmiPort className={className} />
+  },
   nodeports: {
     unit: '',
     icon: (className: string) => <HdmiPort className={className} />
@@ -33,6 +37,14 @@ const sourceMap = {
   gpu: {
     unit: 'Card',
     icon: (className: string) => <CircuitBoard className={className} />
+  },
+  storage: {
+    unit: 'Gi',
+    icon: (className: string) => <HardDrive className={className} />
+  },
+  traffic: {
+    unit: 'Gi',
+    icon: (className: string) => <Network className={className} />
   }
 };
 

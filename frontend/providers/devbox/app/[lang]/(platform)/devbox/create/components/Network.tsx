@@ -113,139 +113,155 @@ export default function Network({
           {/* Add Port Button when no port */}
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
           {/* Port List */}
-          {networks.map((network, i) => (
-            <div key={network.id} className="flex w-full flex-col gap-3">
-              <div className="guide-network-configuration flex w-full items-center gap-4">
-                {/* left part */}
-                <div className="flex flex-shrink-0 items-start gap-8">
-                  {/* container port */}
-                  <div className="flex flex-col gap-3">
-                    <span className="text-sm font-medium text-foreground">
-                      {t('Container Port')}
-                    </span>
-                    <Input
-                      className="h-10 w-25"
-                      type="number"
-                      min={1}
-                      max={65535}
-                      {...register(`networks.${i}.port`, {
-                        valueAsNumber: true,
-                        min: {
-                          value: 1,
-                          message: t('The minimum exposed port is 1')
-                        },
-                        max: {
-                          value: 65535,
-                          message: t('The maximum number of exposed ports is 65535')
-                        },
-                        validate: {
-                          repeatPort: (value) => {
-                            const ports = getValues('networks').map((network, index) => ({
-                              port: network.port,
-                              index
-                            }));
-                            const isDuplicate = ports.some(
-                              (item) => item.port === value && item.index !== i
-                            );
-                            return !isDuplicate || t('The port number cannot be repeated');
-                          }
-                        }
-                      })}
-                    />
-                  </div>
-                  {/* open public access */}
-                  <div className="flex flex-col gap-3">
-                    <span className="text-sm font-medium text-foreground">
-                      {t('Open Public Access')}
-                    </span>
-                    <div className="flex h-10 items-center justify-between gap-5">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          className="driver-deploy-network-switch"
-                          id={`openPublicDomain-${i}`}
-                          checked={!!network.openPublicDomain}
-                          onCheckedChange={(checked) => {
-                            const devboxName = getValues('name');
-                            if (!devboxName) {
-                              toast.error(t('Please enter the devbox name first'));
-                              return;
+          {networks.map((network, i) => {
+            const isReservedPort = env.enableWebideFeature === 'true' && network.port === 9999;
+            return (
+              <div key={network.id} className="flex w-full flex-col gap-3">
+                <div className="guide-network-configuration flex w-full items-center gap-4">
+                  {/* left part */}
+                  <div className="flex flex-shrink-0 items-start gap-8">
+                    {/* container port */}
+                    <div className="flex flex-col gap-3">
+                      <span className="text-sm font-medium text-foreground">
+                        {t('Container Port')}
+                      </span>
+                      <Input
+                        className="h-10 w-25"
+                        type="number"
+                        min={1}
+                        max={65535}
+                        disabled={isReservedPort}
+                        {...register(`networks.${i}.port`, {
+                          valueAsNumber: true,
+                          min: {
+                            value: 1,
+                            message: t('The minimum exposed port is 1')
+                          },
+                          max: {
+                            value: 65535,
+                            message: t('The maximum number of exposed ports is 65535')
+                          },
+                          validate: {
+                            repeatPort: (value) => {
+                              const ports = getValues('networks').map((network, index) => ({
+                                port: network.port,
+                                index
+                              }));
+                              const isDuplicate = ports.some(
+                                (item) => item.port === value && item.index !== i
+                              );
+                              return !isDuplicate || t('The port number cannot be repeated');
+                            },
+                            reservedPort: (value) => {
+                              if (value === 9999) {
+                                return t('port_9999_reserved');
+                              }
+                              return true;
                             }
-                            updateNetworks(i, {
-                              ...getValues('networks')[i],
-                              networkName: network.networkName || `${devboxName}-${nanoid()}`,
-                              protocol: network.protocol || ('HTTP' as ProtocolType),
-                              openPublicDomain: checked,
-                              publicDomain:
-                                network.publicDomain || `${nanoid()}.${env.ingressDomain}`
-                            });
-                          }}
-                        />
-                      </div>
-                      {network.openPublicDomain && (
-                        <div className="flex items-center">
-                          <Select
-                            value={network.protocol}
-                            onValueChange={(val: ProtocolType) => {
+                          }
+                        })}
+                      />
+                    </div>
+                    {/* open public access */}
+                    <div className="flex flex-col gap-3">
+                      <span className="text-sm font-medium text-foreground">
+                        {t('Open Public Access')}
+                      </span>
+                      <div className="flex h-10 items-center justify-between gap-5">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            className="driver-deploy-network-switch"
+                            id={`openPublicDomain-${i}`}
+                            checked={!!network.openPublicDomain}
+                            disabled={isReservedPort}
+                            onCheckedChange={(checked) => {
+                              const devboxName = getValues('name');
+                              if (!devboxName) {
+                                toast.error(t('Please enter the devbox name first'));
+                                return;
+                              }
                               updateNetworks(i, {
                                 ...getValues('networks')[i],
-                                protocol: val
+                                networkName: network.networkName || `${devboxName}-${nanoid()}`,
+                                protocol: network.protocol || ('HTTP' as ProtocolType),
+                                openPublicDomain: checked,
+                                publicDomain:
+                                  network.publicDomain || `${nanoid()}.${env.ingressDomain}`
                               });
                             }}
-                          >
-                            <SelectTrigger className="w-27 rounded-r-none">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ProtocolList.map((protocol) => (
-                                <SelectItem key={protocol.value} value={protocol.value}>
-                                  {protocol.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
-                            <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
-                              {network.customDomain ? network.customDomain : network.publicDomain!}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
-                              onClick={() =>
-                                setCustomAccessModalData({
-                                  publicDomain: network.publicDomain!,
-                                  customDomain: network.customDomain!
-                                })
-                              }
-                            >
-                              {t('Custom Domain')}
-                            </Button>
-                          </div>
+                          />
                         </div>
-                      )}
+                        {network.openPublicDomain && (
+                          <div className="flex items-center">
+                            <Select
+                              value={network.protocol}
+                              disabled={isReservedPort}
+                              onValueChange={(val: ProtocolType) => {
+                                updateNetworks(i, {
+                                  ...getValues('networks')[i],
+                                  protocol: val
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="w-27 rounded-r-none">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ProtocolList.map((protocol) => (
+                                  <SelectItem key={protocol.value} value={protocol.value}>
+                                    {protocol.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
+                              <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
+                                {network.customDomain
+                                  ? network.customDomain
+                                  : network.publicDomain!}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
+                                disabled={isReservedPort}
+                                onClick={() =>
+                                  setCustomAccessModalData({
+                                    publicDomain: network.publicDomain!,
+                                    customDomain: network.customDomain!
+                                  })
+                                }
+                              >
+                                {t('Custom Domain')}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {/* trash button  */}
+                  {networks.length >= 1 && (
+                    <div className="pt-8">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        disabled={isReservedPort}
+                        onClick={() => removeNetworks(i)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {/* trash button  */}
-                {networks.length >= 1 && (
-                  <div className="pt-8">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                      onClick={() => removeNetworks(i)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <Separator />
+                {/* Add Port Button when last port */}
+                {i === networks.length - 1 && networks.length < 15 && (
+                  <AppendNetworksButton onClick={() => appendNetworks()} />
                 )}
               </div>
-              <Separator />
-              {/* Add Port Button when last port */}
-              {i === networks.length - 1 && networks.length < 15 && (
-                <AppendNetworksButton onClick={() => appendNetworks()} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       {!!customAccessModalData && (
