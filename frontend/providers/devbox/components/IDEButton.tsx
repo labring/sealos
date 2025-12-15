@@ -176,7 +176,16 @@ const IDEButton = memo(
           setLoading(false);
         }
       },
-      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort, setGuideIDE, openConfirm]
+      [
+        t,
+        devboxName,
+        runtimeType,
+        env.sealosDomain,
+        env.namespace,
+        sshPort,
+        setGuideIDE,
+        openConfirm
+      ]
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);

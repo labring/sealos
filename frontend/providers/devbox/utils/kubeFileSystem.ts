@@ -56,7 +56,11 @@ export class KubeFileSystem {
         const stderrText = chunk.toString();
         console.log('stderr output:', stderrText);
 
-        if (stderrText.includes('Error:') || stderrText.includes('error:') || stderrText.includes('failed')) {
+        if (
+          stderrText.includes('Error:') ||
+          stderrText.includes('error:') ||
+          stderrText.includes('failed')
+        ) {
           hasError = true;
         }
       });

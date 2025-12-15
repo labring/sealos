@@ -19,11 +19,11 @@ const waitForResourceDeletion = async (
   intervalMs = 1000
 ): Promise<boolean> => {
   console.log(`Waiting for ${resourceName} to be completely deleted...`);
-  
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       await checkFn();
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
     } catch (error: any) {
       if (is404Error(error)) {
         console.log(`${resourceName} successfully deleted`);
@@ -32,11 +32,11 @@ const waitForResourceDeletion = async (
       throw error;
     }
   }
-  
+
   return false;
 };
 
-// check resource 
+// check resource
 const checkResourceExists = async (
   checkFn: () => Promise<any>,
   resourceName: string
@@ -53,14 +53,11 @@ const checkResourceExists = async (
   }
 };
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { name: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: { name: string } }) {
   try {
     const requestText = await req.text();
     const body = requestText.trim() ? JSON.parse(requestText) : {};
-    
+
     const validationResult = AutostartRequestSchema.safeParse(body);
     if (!validationResult.success) {
       return jsonRes({
@@ -80,25 +77,18 @@ export async function POST(
       });
     }
 
-    const { 
-      applyYamlList, 
-      delYamlList,
-      k8sCustomObjects, 
-      k8sCore,
-      k8sAuth,
-      k8sBatch,
-      namespace 
-    } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+    const { applyYamlList, delYamlList, k8sCustomObjects, k8sCore, k8sAuth, k8sBatch, namespace } =
+      await getK8s({
+        kubeconfig: await authSession(req.headers)
+      });
 
-    const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
       'devboxes',
       devboxName
-    ) as { body: any };
+    )) as { body: any };
 
     if (!devboxBody.metadata?.uid) {
       return jsonRes({
@@ -124,17 +114,17 @@ export async function POST(
 
     // check and collect RBAC resources
     const resources = [
-      { 
+      {
         checkFn: () => k8sCore.readNamespacedServiceAccount(executorName, namespace),
         yaml: serviceAccountYaml,
         name: 'ServiceAccount'
       },
-      { 
+      {
         checkFn: () => k8sAuth.readNamespacedRole(roleName, namespace),
         yaml: roleYaml,
         name: 'Role'
       },
-      { 
+      {
         checkFn: () => k8sAuth.readNamespacedRoleBinding(roleBindingName, namespace),
         yaml: roleBindingYaml,
         name: 'RoleBinding'
@@ -159,16 +149,17 @@ export async function POST(
       console.log('Job exists, deleting before recreating');
       await delYamlList([jobYaml]);
       jobDeleted = true;
-      
+
       const deleted = await waitForResourceDeletion(
         () => k8sBatch.readNamespacedJob(jobName, namespace),
         'Job'
       );
-      
+
       if (!deleted) {
         return jsonRes({
           code: 408,
-          message: 'Timeout waiting for previous Job to be deleted. Please try again in a few seconds.'
+          message:
+            'Timeout waiting for previous Job to be deleted. Please try again in a few seconds.'
         });
       }
     }
@@ -187,7 +178,6 @@ export async function POST(
         resources: [executorName, roleName, roleBindingName, jobName]
       }
     });
-
   } catch (err: any) {
     if (is404Error(err)) {
       return jsonRes({

@@ -77,13 +77,9 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     ]);
 
     const deployments =
-      response[0].status === 'fulfilled'
-        ? (response[0].value.body.items as V1Deployment[])
-        : [];
+      response[0].status === 'fulfilled' ? (response[0].value.body.items as V1Deployment[]) : [];
     const statefulSets =
-      response[1].status === 'fulfilled'
-        ? (response[1].value.body.items as V1StatefulSet[])
-        : [];
+      response[1].status === 'fulfilled' ? (response[1].value.body.items as V1StatefulSet[]) : [];
 
     const deploymentItems = deployments.map((deployment) => {
       const image =
@@ -120,4 +116,3 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     });
   }
 }
-

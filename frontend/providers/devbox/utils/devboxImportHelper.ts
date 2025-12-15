@@ -44,13 +44,13 @@ export async function waitForDevboxReady(
   let retries = 0;
   while (retries < maxRetries) {
     try {
-      const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
+      const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
         'devbox.sealos.io',
         'v1alpha1',
         namespace,
         'devboxes',
         devboxName
-      ) as { body: KBDevboxTypeV2 };
+      )) as { body: KBDevboxTypeV2 };
 
       if (devboxBody.status?.phase === 'Running') {
         try {
@@ -64,22 +64,29 @@ export async function waitForDevboxReady(
           );
 
           const pods = podsResponse.body.items;
-          const readyPod = pods.find((pod: any) =>
-            pod.status?.phase === 'Running' &&
-            pod.status?.conditions?.some((condition: any) =>
-              condition.type === 'Ready' && condition.status === 'True'
-            )
+          const readyPod = pods.find(
+            (pod: any) =>
+              pod.status?.phase === 'Running' &&
+              pod.status?.conditions?.some(
+                (condition: any) => condition.type === 'Ready' && condition.status === 'True'
+              )
           );
 
           if (readyPod) {
             return true;
           }
         } catch (podError) {
-          console.warn(`Failed to check pod status (attempt ${retries + 1}/${maxRetries}):`, podError);
+          console.warn(
+            `Failed to check pod status (attempt ${retries + 1}/${maxRetries}):`,
+            podError
+          );
         }
       }
     } catch (error) {
-      console.warn(`Failed to check devbox ready status (attempt ${retries + 1}/${maxRetries}):`, error);
+      console.warn(
+        `Failed to check devbox ready status (attempt ${retries + 1}/${maxRetries}):`,
+        error
+      );
     }
 
     await sleep(interval);

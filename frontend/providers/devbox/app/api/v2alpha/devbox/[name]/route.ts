@@ -31,7 +31,11 @@ const normalizeProtocol = (protocol?: string): ProtocolType => {
 
 //19-34 PortError
 class PortError extends Error {
-  constructor(message: string, public code: number = 500, public details?: any) {
+  constructor(
+    message: string,
+    public code: number = 500,
+    public details?: any
+  ) {
     super(message);
     this.name = 'PortError';
   }
@@ -108,7 +112,12 @@ async function getExistingPorts(
 
     const label = `${devboxKey}=${devboxName}`;
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
-      namespace, undefined, undefined, undefined, undefined, label
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      label
     );
     const existingIngresses = ingressesResponse.body.items || [];
 
@@ -117,7 +126,8 @@ async function getExistingPorts(
       const portName = port.name;
 
       const correspondingIngress = existingIngresses.find((ingress: V1Ingress) => {
-        const ingressPort = ingress.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number;
+        const ingressPort =
+          ingress.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number;
         return ingressPort === portNumber;
       });
 
@@ -131,7 +141,9 @@ async function getExistingPorts(
         networkName = correspondingIngress.metadata?.name || '';
         const defaultDomain = correspondingIngress.metadata?.labels?.[publicDomainKey];
         const tlsHost = correspondingIngress.spec?.tls?.[0]?.hosts?.[0];
-        protocol = normalizeProtocol(correspondingIngress.metadata?.annotations?.[ingressProtocolKey]);
+        protocol = normalizeProtocol(
+          correspondingIngress.metadata?.annotations?.[ingressProtocolKey]
+        );
 
         exposesPublicDomain = !!defaultDomain;
         publicDomain = defaultDomain === tlsHost ? tlsHost : defaultDomain || '';
@@ -170,12 +182,7 @@ async function createNewPort(
 ) {
   const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
 
-  const {
-    number: port,
-    protocol = 'HTTP',
-    exposesPublicDomain = true,
-    customDomain
-  } = portConfig;
+  const { number: port, protocol = 'HTTP', exposesPublicDomain = true, customDomain } = portConfig;
   const normalizedProtocol = normalizeProtocol(protocol);
 
   const networkName = `${devboxName}-${nanoid()}`;
@@ -215,7 +222,9 @@ async function createNewPort(
       if (portExistsInService) {
         throw new PortConflictError(`Port ${port} already exists in service`, {
           portNumber: port,
-          conflictingPorts: existingServicePorts.filter((p: any) => p.port === port).map((p: any) => p.name)
+          conflictingPorts: existingServicePorts
+            .filter((p: any) => p.port === port)
+            .map((p: any) => p.name)
         });
       }
 
@@ -283,21 +292,18 @@ async function updateExistingPort(
 ) {
   const { portName, ...updateFields } = portConfig;
 
-  const existingPort = existingPorts.find(p => p.portName === portName);
+  const existingPort = existingPorts.find((p) => p.portName === portName);
   if (!existingPort) {
-    throw new PortNotFoundError(
-      `Port with name '${portName}' not found`,
-      {
-        requestedPortName: portName,
-        availablePortNames: existingPorts.map(p => p.portName)
-      }
-    );
+    throw new PortNotFoundError(`Port with name '${portName}' not found`, {
+      requestedPortName: portName,
+      availablePortNames: existingPorts.map((p) => p.portName)
+    });
   }
 
   // Check for port number conflicts
   if (updateFields.number && updateFields.number !== existingPort.number) {
-    const conflictingPort = existingPorts.find(p =>
-      p.number === updateFields.number && p.portName !== portName
+    const conflictingPort = existingPorts.find(
+      (p) => p.number === updateFields.number && p.portName !== portName
     );
     if (conflictingPort) {
       throw new PortConflictError(
@@ -310,7 +316,9 @@ async function updateExistingPort(
     }
   }
 
-  const normalizedProtocol = updateFields.protocol ? normalizeProtocol(updateFields.protocol) : undefined;
+  const normalizedProtocol = updateFields.protocol
+    ? normalizeProtocol(updateFields.protocol)
+    : undefined;
   const updatedPort = {
     ...existingPort,
     ...updateFields,
@@ -394,7 +402,7 @@ async function updateExistingPort(
         updatedPort.publicDomain = '';
       }
     }
-    
+
     return updatedPort;
   } catch (error: any) {
     if (error instanceof PortError) {
@@ -413,7 +421,7 @@ async function deletePort(
   k8sNetworkingApp: any,
   existingPorts: any[]
 ) {
-  const portToDelete = existingPorts.find(p => p.portName === portName);
+  const portToDelete = existingPorts.find((p) => p.portName === portName);
   if (!portToDelete) {
     return;
   }
@@ -450,7 +458,6 @@ async function deletePort(
         // Ignore 404 errors
       }
     }
-
   } catch (error: any) {
     throw new PortError(`Failed to delete port '${portName}': ${error.message}`, 500, error);
   }
@@ -569,7 +576,7 @@ async function updateDevboxPorts(
 
   // Delete ports not in the request
   const portsToDelete = existingPorts.filter(
-    existingPort => !requestPortNames.has(existingPort.portName)
+    (existingPort) => !requestPortNames.has(existingPort.portName)
   );
 
   for (const portToDelete of portsToDelete) {
@@ -589,12 +596,9 @@ async function updateDevboxPorts(
 export async function GET(req: NextRequest, { params }: { params: { name: string } }) {
   try {
     const { name: devboxName } = params;
-    
+
     if (!devboxName) {
-      return NextResponse.json(
-        { error: 'Devbox name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Devbox name is required' }, { status: 400 });
     }
 
     const { k8sCustomObjects, namespace, k8sCore, k8sNetworkingApp } = await getK8s({
@@ -633,10 +637,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     });
 
     if (!template) {
-      return NextResponse.json(
-        { error: 'Template not found' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Template not found' }, { status: 500 });
     }
 
     const label = `${devboxKey}=${devboxName}`;
@@ -650,7 +651,9 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
         .catch(() => null),
       k8sCore.readNamespacedService(devboxName, namespace).catch(() => null),
       k8sCore.readNamespacedSecret(devboxName, namespace).catch(() => null),
-      k8sCore.listNamespacedPod(namespace, undefined, undefined, undefined, undefined, podLabel).catch(() => null)
+      k8sCore
+        .listNamespacedPod(namespace, undefined, undefined, undefined, undefined, podLabel)
+        .catch(() => null)
     ]);
 
     const ingresses = ingressesResponse?.body.items || [];
@@ -664,7 +667,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     // Build SSH information
     const sshPort = devboxBody.status?.network?.nodePort || 0;
     const base64PrivateKey = secret?.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string | undefined;
-    
+
     const ssh = {
       host: SEALOS_DOMAIN || '',
       port: sshPort,
@@ -694,28 +697,25 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
       };
     });
 
-    const ports = service?.spec?.ports?.map((svcport: any) => {
-      const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port);
-      const portNumber = svcport.port;
-      const protocol = (ingressInfo?.protocol || 'HTTP').toLowerCase();
-      const privateHost = `${devboxName}.${namespace}`;
-      const publicScheme = protocol === 'grpc'
-        ? 'grpcs'
-        : protocol === 'ws'
-          ? 'wss'
-          : 'https';
-      
-      return {
-        number: portNumber,
-        portName: svcport.name,
-        protocol,
-        privateAddress: `http://${privateHost}:${portNumber}`,
-        ...(ingressInfo?.publicDomain && { 
-          publicAddress: `${publicScheme}://${ingressInfo.publicDomain}`
-        }),
-        ...(ingressInfo?.customDomain && { customDomain: ingressInfo.customDomain })
-      };
-    }) || [];
+    const ports =
+      service?.spec?.ports?.map((svcport: any) => {
+        const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port);
+        const portNumber = svcport.port;
+        const protocol = (ingressInfo?.protocol || 'HTTP').toLowerCase();
+        const privateHost = `${devboxName}.${namespace}`;
+        const publicScheme = protocol === 'grpc' ? 'grpcs' : protocol === 'ws' ? 'wss' : 'https';
+
+        return {
+          number: portNumber,
+          portName: svcport.name,
+          protocol,
+          privateAddress: `http://${privateHost}:${portNumber}`,
+          ...(ingressInfo?.publicDomain && {
+            publicAddress: `${publicScheme}://${ingressInfo.publicDomain}`
+          }),
+          ...(ingressInfo?.customDomain && { customDomain: ingressInfo.customDomain })
+        };
+      }) || [];
 
     const podsData = pods.map((pod: any) => ({
       name: pod.metadata?.name || '',
@@ -742,14 +742,11 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     console.error('Get devbox detail error:', err);
 
     if (err.statusCode === 404 || err.response?.statusCode === 404) {
-      return NextResponse.json(
-        { error: 'Devbox not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Devbox not found' }, { status: 404 });
     }
 
     return NextResponse.json(
-      { 
+      {
         error: err?.message || 'Internal server error occurred while retrieving devbox details',
         ...(process.env.NODE_ENV === 'development' && { details: err })
       },
@@ -761,7 +758,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 export async function PATCH(req: NextRequest, { params }: { params: { name: string } }) {
   try {
     const { name: devboxName } = params;
-    
+
     if (!devboxName) {
       return new NextResponse(null, { status: 400 });
     }
@@ -785,12 +782,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
     // Update resource if provided
     if (quota) {
       try {
-        resourceResult = await updateDevboxResource(
-          devboxName,
-          quota,
-          k8sCustomObjects,
-          namespace
-        );
+        resourceResult = await updateDevboxResource(devboxName, quota, k8sCustomObjects, namespace);
       } catch (error: any) {
         if (error.message === 'Devbox not found') {
           return new NextResponse(null, { status: 404 });
@@ -808,11 +800,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
     if (ports) {
       try {
         // Map isPublic -> exposesPublicDomain for internal logic
-        const mappedPorts = ports.map((p: any) => (
+        const mappedPorts = ports.map((p: any) =>
           p && Object.prototype.hasOwnProperty.call(p, 'isPublic')
             ? { ...p, exposesPublicDomain: p.isPublic }
             : p
-        ));
+        );
 
         portsResult = await updateDevboxPorts(
           devboxName,
@@ -856,7 +848,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
     }
 
     return new NextResponse(null, { status: 204 });
-
   } catch (err: any) {
     console.error('Devbox update error:', err);
 

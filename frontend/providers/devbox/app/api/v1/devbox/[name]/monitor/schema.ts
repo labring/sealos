@@ -3,28 +3,18 @@ import { z } from 'zod';
 
 export const MonitorQuerySchema = z
   .object({
-    start: z
-      .string()
-      .optional()
-      .openapi({
-        description: 'Range starting timestamp (seconds since epoch)',
-        example: '1760506680'
-      }),
-    end: z
-      .string()
-      .optional()
-      .openapi({
-        description: 'Range ending timestamp (seconds since epoch)',
-        example: '1760510280'
-      }),
-    step: z
-      .string()
-      .optional()
-      .default('2m')
-      .openapi({
-        description: 'Sampling interval supported by VictoriaMetrics',
-        example: '2m'
-      })
+    start: z.string().optional().openapi({
+      description: 'Range starting timestamp (seconds since epoch)',
+      example: '1760506680'
+    }),
+    end: z.string().optional().openapi({
+      description: 'Range ending timestamp (seconds since epoch)',
+      example: '1760510280'
+    }),
+    step: z.string().optional().default('2m').openapi({
+      description: 'Sampling interval supported by VictoriaMetrics',
+      example: '2m'
+    })
   })
   .openapi({
     description: 'Query parameters for fetching devbox monitor timeline data'
@@ -49,11 +39,9 @@ export const MonitorDataPointSchema = z.object({
   })
 });
 
-export const GetSuccessResponseSchema = z
-  .array(MonitorDataPointSchema)
-  .openapi({
-    description: 'Chronological sequence of devbox CPU and memory usage'
-  });
+export const GetSuccessResponseSchema = z.array(MonitorDataPointSchema).openapi({
+  description: 'Chronological sequence of devbox CPU and memory usage'
+});
 
 export const MonitorSuccessResponseSchema = GetSuccessResponseSchema;
 

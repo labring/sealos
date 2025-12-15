@@ -50,10 +50,7 @@
                     "description": "内存数, 使用2048, 4096,代表2G, 4G"
                   }
                 },
-                "required": [
-                  "name",
-                  "runtimeName"
-                ]
+                "required": ["name", "runtimeName"]
               }
             }
           }
@@ -104,9 +101,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -128,10 +123,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -153,10 +145,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -178,10 +167,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -203,10 +189,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -240,10 +223,7 @@
                     "description": "新版本的介绍"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "tag"
-                ]
+                "required": ["devboxName", "tag"]
               }
             }
           }
@@ -286,19 +266,11 @@
                   },
                   "action": {
                     "type": "string",
-                    "enum": [
-                      "start",
-                      "stop",
-                      "restart",
-                      "shutdown"
-                    ],
+                    "enum": ["start", "stop", "restart", "shutdown"],
                     "description": "操作方式：start为开机，stop为关机，restart为重启，shutdown为冷关机"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "action"
-                ]
+                "required": ["devboxName", "action"]
               }
             }
           }
@@ -328,19 +300,12 @@
                   },
                   "protocol": {
                     "type": "string",
-                    "enum": [
-                      "HTTP",
-                      "GRPC",
-                      "WS"
-                    ],
+                    "enum": ["HTTP", "GRPC", "WS"],
                     "default": "HTTP",
                     "description": "这个端口的通信方式，有三种通信方式可选：HTTP，GRPC，WS"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "port"
-                ]
+                "required": ["devboxName", "port"]
               }
             }
           }
@@ -386,10 +351,7 @@
                     "description": "内存大小，使用2048、4096，分别代表2G、4G"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "tag"
-                ]
+                "required": ["devboxName", "tag"]
               }
             }
           }
@@ -398,9 +360,7 @@
     },
     "/api/v1/DevBox/list": {
       "get": {
-        "tags": [
-          "Query"
-        ],
+        "tags": ["Query"],
         "summary": "getDevboxList",
         "description": "获取DevBox列表，获得每个DevBox的详细信息"
       }

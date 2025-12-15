@@ -118,18 +118,18 @@ const TemplateButton = ({
           <div className="flex items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
             <Image src={`/images/runtime/${iconId || ''}.svg`} width={32} height={32} alt={title} />
           </div>
-          <div className="flex w-full flex-col items-start min-w-0">
+          <div className="flex w-full min-w-0 flex-col items-start">
             {/* name */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-medium truncate w-80">{title}</span>
+                <span className="w-80 truncate font-medium">{title}</span>
               </TooltipTrigger>
               <TooltipContent side="bottom">{title}</TooltipContent>
             </Tooltip>
             {/* description */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="h-5 truncate text-sm/5 font-normal text-zinc-500 w-80">
+                <span className="h-5 w-80 truncate text-sm/5 font-normal text-zinc-500">
                   {description || t('no_description')}
                 </span>
               </TooltipTrigger>

@@ -50,10 +50,7 @@
                     "description": "Memory size, using the format 2048, 4096, representing 2G, 4G"
                   }
                 },
-                "required": [
-                  "name",
-                  "runtimeName"
-                ]
+                "required": ["name", "runtimeName"]
               }
             }
           }
@@ -104,9 +101,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -128,10 +123,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -153,10 +145,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -178,10 +167,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -203,10 +189,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "code",
-                    "message"
-                  ]
+                  "required": ["code", "message"]
                 }
               }
             }
@@ -240,10 +223,7 @@
                     "description": "Description of the new version"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "tag"
-                ]
+                "required": ["devboxName", "tag"]
               }
             }
           }
@@ -286,19 +266,11 @@
                   },
                   "action": {
                     "type": "string",
-                    "enum": [
-                      "start",
-                      "stop",
-                      "restart",
-                      "shutdown"
-                    ],
+                    "enum": ["start", "stop", "restart", "shutdown"],
                     "description": "Manage methods: start for powering on, stop for shutting down, restart for restarting, shutdown for cold shutdown"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "action"
-                ]
+                "required": ["devboxName", "action"]
               }
             }
           }
@@ -328,19 +300,12 @@
                   },
                   "protocol": {
                     "type": "string",
-                    "enum": [
-                      "HTTP",
-                      "GRPC",
-                      "WS"
-                    ],
+                    "enum": ["HTTP", "GRPC", "WS"],
                     "default": "HTTP",
                     "description": "Communication method for this port, three communication methods available: HTTP, GRPC, WS"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "port"
-                ]
+                "required": ["devboxName", "port"]
               }
             }
           }
@@ -386,10 +351,7 @@
                     "description": "Memory size, using the format 2048, 4096, representing 2G, 4G"
                   }
                 },
-                "required": [
-                  "devboxName",
-                  "tag"
-                ]
+                "required": ["devboxName", "tag"]
               }
             }
           }
@@ -398,9 +360,7 @@
     },
     "/api/v1/DevBox/list": {
       "get": {
-        "tags": [
-          "Query"
-        ],
+        "tags": ["Query"],
         "summary": "getDevboxList",
         "description": "Get DevBox list, obtain detailed information for each DevBox"
       }

@@ -22,7 +22,17 @@ export interface LocalImportFormData {
 
 export type ImportType = 'git' | 'local';
 
-export type ImportStage = 'idle' | 'creating' | 'waiting' | 'cloning' | 'uploading' | 'extracting' | 'configuring' | 'starting' | 'success' | 'error';
+export type ImportStage =
+  | 'idle'
+  | 'creating'
+  | 'waiting'
+  | 'cloning'
+  | 'uploading'
+  | 'extracting'
+  | 'configuring'
+  | 'starting'
+  | 'success'
+  | 'error';
 
 export interface ImportProgress {
   stage: ImportStage;

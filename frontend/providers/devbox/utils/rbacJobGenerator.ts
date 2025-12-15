@@ -132,10 +132,5 @@ export function generateDevboxRbacAndJob({
     }
   };
 
-  return [
-    yaml.dump(serviceAccount),
-    yaml.dump(role), 
-    yaml.dump(roleBinding),
-    yaml.dump(job)
-  ];
+  return [yaml.dump(serviceAccount), yaml.dump(role), yaml.dump(roleBinding), yaml.dump(job)];
 }

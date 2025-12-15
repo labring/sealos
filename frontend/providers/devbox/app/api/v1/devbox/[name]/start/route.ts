@@ -10,7 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
   try {
     const devboxName = params.name;
     const headerList = req.headers;
-    
+
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
@@ -24,7 +24,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       `${devboxKey}=${devboxName}`
     );
     const ingresses: any = (ingressesResponse.body as { items: any[] }).items;
-
 
     const ingressUpdatePromises = ingresses.map(async (ingress: any) => {
       const annotationsIngressClass =
@@ -88,11 +87,11 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       }
     );
 
-    return jsonRes({ 
-      data: { 
+    return jsonRes({
+      data: {
         message: 'DevBox started successfully',
-        devboxName 
-      } 
+        devboxName
+      }
     });
   } catch (err: any) {
     return jsonRes({

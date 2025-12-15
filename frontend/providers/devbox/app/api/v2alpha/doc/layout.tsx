@@ -10,4 +10,3 @@ export default function ApiDocsLayout({ children }: { children: React.ReactNode 
     </html>
   );
 }
-

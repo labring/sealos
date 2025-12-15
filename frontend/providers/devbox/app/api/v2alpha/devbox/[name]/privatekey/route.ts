@@ -38,8 +38,8 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     // Decode base6
     const privateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
     return NextResponse.json({
-        privateKey: privateKey,
-      });
+      privateKey: privateKey
+    });
   } catch (err: any) {
     console.error('Get devbox private key error:', err);
 
@@ -60,4 +60,3 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     });
   }
 }
-
