@@ -2,21 +2,20 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-import { getUserIsOutStandingPayment } from '@/api/platform';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { getUserQuota, getUserIsOutStandingPayment } from '@/api/platform';
+import { UserQuotaItemType } from '@/types/user';
 import { SessionV1 } from 'sealos-desktop-sdk';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 
 type State = {
   session: SessionV1 | null;
   setSession: (session: SessionV1) => void;
-  userQuota: WorkspaceQuotaItem[];
+  userQuota: UserQuotaItemType[];
   isOutStandingPayment: boolean;
   loadUserQuota: () => Promise<null>;
   loadUserDebt: () => Promise<null>;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'traffic', number>>
-  ) => WorkspaceQuotaItem[];
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeports', number>>
+  ) => UserQuotaItemType[];
 };
 
 export const useUserStore = create<State>()(
@@ -29,7 +28,7 @@ export const useUserStore = create<State>()(
       userQuota: [],
       isOutStandingPayment: false,
       loadUserQuota: async () => {
-        const response = await sealosApp.getWorkspaceQuota();
+        const response = await getUserQuota();
         set((state) => {
           state.userQuota = response.quota;
         });

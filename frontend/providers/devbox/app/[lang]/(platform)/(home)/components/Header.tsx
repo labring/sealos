@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger
 } from '@sealos/shadcn-ui/dropdown-menu';
 import { useUserStore } from '@/stores/user';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { UserQuotaItemType } from '@/types/user';
 import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
 import type { ImportType } from '@/types/import';
 import GitImportDrawer from '@/components/drawers/GitImportDrawer';
@@ -43,7 +43,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
 
   const userStore = useUserStore();
   const [quotaLoaded, setQuotaLoaded] = useState(false);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededQuotas, setExceededQuotas] = useState<UserQuotaItemType[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
   const [importDrawerType, setImportDrawerType] = useState<ImportType | null>(null);
 
@@ -73,8 +73,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
 
     const exceededQuotaItems = userStore.checkExceededQuotas({
       cpu: 1,
-      memory: 1,
-      ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+      memory: 1
     });
 
     console.log('exceededQuotaItems', exceededQuotaItems);
@@ -92,8 +91,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     (type: ImportType) => {
       const exceededQuotaItems = userStore.checkExceededQuotas({
         cpu: 4,
-        memory: 8,
-        ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+        memory: 8
       });
 
       if (exceededQuotaItems.length > 0) {

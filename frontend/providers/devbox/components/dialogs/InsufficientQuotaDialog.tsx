@@ -1,4 +1,4 @@
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { UserQuotaItemType } from '@/types/user';
 import { resourcePropertyMap } from '@/constants/resource';
 import { Separator } from '@sealos/shadcn-ui';
 import {
@@ -21,7 +21,7 @@ export function InsufficientQuotaDialog({
   onConfirm,
   showFooter = true
 }: {
-  items: WorkspaceQuotaItem[];
+  items: UserQuotaItemType[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;

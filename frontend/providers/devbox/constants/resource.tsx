@@ -1,8 +1,8 @@
-import { WorkspaceQuotaItem } from '@/types/workspace';
-import { Cpu, CircuitBoard, HardDrive, HdmiPort, MemoryStick, Network } from 'lucide-react';
+import { UserQuotaItemType } from '@/types/user';
+import { Cpu, CircuitBoard, HdmiPort, MemoryStick } from 'lucide-react';
 
 export const resourcePropertyMap: Record<
-  WorkspaceQuotaItem['type'],
+  UserQuotaItemType['type'],
   {
     unit: string;
     icon: ({ className }: { className?: string }) => JSX.Element;
@@ -19,7 +19,7 @@ export const resourcePropertyMap: Record<
     icon: ({ className }: { className?: string }) => <MemoryStick className={className} />,
     scale: 1024
   },
-  nodeport: {
+  nodeports: {
     unit: '',
     icon: ({ className }: { className?: string }) => <HdmiPort className={className} />,
     scale: 1
@@ -28,15 +28,5 @@ export const resourcePropertyMap: Record<
     unit: 'Card',
     icon: ({ className }: { className?: string }) => <CircuitBoard className={className} />,
     scale: 1
-  },
-  storage: {
-    unit: 'Gi',
-    icon: ({ className }: { className?: string }) => <HardDrive className={className} />,
-    scale: 1024
-  },
-  traffic: {
-    unit: 'Gi',
-    icon: ({ className }: { className?: string }) => <Network className={className} />,
-    scale: 1024 * 1024 * 1024
   }
 };
