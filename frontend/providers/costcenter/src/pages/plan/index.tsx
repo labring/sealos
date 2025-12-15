@@ -28,6 +28,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
 import { Skeleton } from '@sealos/shadcn-ui';
 import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
+import { gtmSubscribeCheckout, gtmSubscribeSuccess } from '@/utils/gtm';
 
 export default function Plan() {
   const router = useRouter();
@@ -62,6 +63,8 @@ export default function Plan() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   const [defaultSelectedPlan, setDefaultSelectedPlan] = useState<string>('');
+  // Track if Stripe success has been tracked to prevent duplicates
+  const [hasTrackedStripeSuccess, setHasTrackedStripeSuccess] = useState(false);
 
   const handleSubscriptionModalOpenChange = useCallback(
     (open: boolean) => {
@@ -128,6 +131,7 @@ export default function Plan() {
     if (router.query.stripeState === 'success' && router.query.payId) {
       console.log('Setting showCongratulations to true');
       setShowCongratulations(true);
+      setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
       return;
     }
   }, [router, handleSubscriptionModalOpenChange]);
@@ -180,8 +184,57 @@ export default function Plan() {
     refetchOnMount: true
   });
 
+  // Get last transaction for the workspace (for Stripe callback)
+  const { data: workspaceLastTransactionData } = useQuery({
+    queryKey: ['workspace-last-transaction', workspaceId, region?.uid],
+    queryFn: () =>
+      getLastTransaction({
+        workspace: workspaceId || '',
+        regionDomain: region?.domain || ''
+      }),
+    enabled: !!(workspaceId && region?.uid && router.query.stripeState === 'success'),
+    refetchOnMount: true
+  });
+
+  // Track subscription success for Stripe payments when data is loaded
+  useEffect(() => {
+    if (
+      router.query.stripeState === 'success' &&
+      router.query.payId &&
+      workspaceSubscriptionData?.data?.subscription &&
+      !hasTrackedStripeSuccess
+    ) {
+      const subscription = workspaceSubscriptionData.data.subscription;
+      const plan = plansData?.plans?.find((p) => p.Name === subscription.PlanName);
+      const monthlyPrice = plan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+
+      // Determine subscription type from transaction
+      let subscriptionType: 'new' | 'upgrade' | 'downgrade' = 'new';
+      if (workspaceLastTransactionData?.data?.transaction?.Operator) {
+        const operator = workspaceLastTransactionData.data.transaction.Operator;
+        subscriptionType =
+          operator === 'created' ? 'new' : operator === 'downgraded' ? 'downgrade' : 'upgrade';
+      }
+
+      gtmSubscribeSuccess({
+        amount: monthlyPrice,
+        paid: monthlyPrice, // For Stripe payments, user pays full amount
+        plan: subscription.PlanName,
+        type: subscriptionType
+      });
+
+      setHasTrackedStripeSuccess(true);
+    }
+  }, [
+    router.query,
+    workspaceSubscriptionData,
+    workspaceLastTransactionData,
+    plansData,
+    hasTrackedStripeSuccess
+  ]);
+
   // Get last transaction and sync to store
-  const { data: userLastTransactionData } = useQuery({
+  useQuery({
     queryKey: ['last-transaction', session?.user?.nsid, region?.uid],
     queryFn: () =>
       getLastTransaction({
@@ -213,7 +266,7 @@ export default function Plan() {
   // Subscription mutation
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
       if (data?.message && String(data?.message) === '10004') {
         return toast({
           title: 'Quota Reached',
@@ -240,6 +293,26 @@ export default function Plan() {
         if (data.data?.redirectUrl) {
           window.parent.location.href = data.data.redirectUrl;
         } else if (data.data?.success === true) {
+          // Track subscription success for balance payments
+          // Note: For Stripe payments, tracking happens after redirect
+          const plan = plansData?.plans?.find((p) => p.Name === variables.planName);
+          if (plan) {
+            const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+            const subscriptionType: 'new' | 'upgrade' | 'downgrade' =
+              variables.operator === 'created'
+                ? 'new'
+                : variables.operator === 'downgraded'
+                  ? 'downgrade'
+                  : 'upgrade';
+
+            gtmSubscribeSuccess({
+              amount: monthlyPrice,
+              paid: monthlyPrice,
+              plan: plan.Name,
+              type: subscriptionType
+            });
+          }
+
           if (isCreateMode) {
             toast({
               title: 'Workspace creation successful',
@@ -315,6 +388,12 @@ export default function Plan() {
         subscriptionMutation.mutate(paymentRequest);
       } else if (plan) {
         // Subscription mode: create workspace + subscription
+        const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+        gtmSubscribeCheckout({
+          amount: monthlyPrice,
+          plan: plan.Name,
+          type: 'new'
+        });
         const paymentRequest: SubscriptionPayRequest = {
           workspace: '', // Will be filled by API after workspace creation
           regionDomain: region?.domain || '',
@@ -362,13 +441,24 @@ export default function Plan() {
       return 'upgraded';
     };
 
+    const operator = getOperator();
+    const subscriptionType: 'new' | 'upgrade' | 'downgrade' =
+      operator === 'created' ? 'new' : operator === 'downgraded' ? 'downgrade' : 'upgrade';
+
+    const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+    gtmSubscribeCheckout({
+      amount: monthlyPrice,
+      plan: plan.Name,
+      type: subscriptionType
+    });
+
     const paymentRequest: SubscriptionPayRequest = {
       workspace: session.user.nsid,
       regionDomain: region.domain,
       planName: plan.Name,
       period: '1m',
       payMethod: 'stripe',
-      operator: getOperator()
+      operator: operator
     };
 
     subscriptionMutation.mutate(paymentRequest);
