@@ -47,7 +47,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.476.0",
     "nanoid": "^4.0.2",
-    "next": "13.5.9",
+    "next": "14.2.35",
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "octokit": "^3.1.1",
