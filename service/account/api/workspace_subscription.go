@@ -619,10 +619,24 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			)
 			return
 		}
-		amount, err := services.StripeServiceInstance.UpdatePlanPricePreview(
-			currentSubscription.Stripe.SubscriptionID,
-			*price.StripePrice,
-		)
+
+		var amount int64
+		var err error
+
+		// Use discount-aware preview if discount code is provided
+		if req.DiscountCode != "" {
+			amount, err = services.StripeServiceInstance.UpdatePlanPricePreviewWithDiscount(
+				currentSubscription.Stripe.SubscriptionID,
+				*price.StripePrice,
+				req.DiscountCode,
+			)
+		} else {
+			amount, err = services.StripeServiceInstance.UpdatePlanPricePreview(
+				currentSubscription.Stripe.SubscriptionID,
+				*price.StripePrice,
+			)
+		}
+
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,
@@ -632,9 +646,18 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			)
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+
+		response := gin.H{
 			"amount": amount * 10_000, // Convert cents to dollars
-		})
+		}
+
+		// Include discount information if discount code was provided
+		if req.DiscountCode != "" {
+			response["discount_code"] = req.DiscountCode
+			response["has_discount"] = true
+		}
+
+		c.JSON(http.StatusOK, response)
 		return
 	}
 
@@ -661,18 +684,41 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		return
 	}
 
-	// Calculate prorated amount based on usage
-	alreadyUsedDays := time.Since(currentSubscription.CurrentPeriodStartAt).Hours() / 24
+	// Calculate upgrade amount using new logic:
+	// A = current plan remaining days value
+	// B = new plan full price
+	// Upgrade fee = B - A
+	remainingDays := time.Until(currentSubscription.CurrentPeriodEndAt).Hours() / 24
 	periodDays := float64(30) // Default to monthly
 	if req.Period == types.SubscriptionPeriodYearly {
 		periodDays = 365
 	}
 
-	usedAmount := (periodDays - alreadyUsedDays) / periodDays * float64(currentPrice)
-	amount := float64(targetPrice) - usedAmount
+	// A: Calculate remaining value of current plan (proportional refund)
+	remainingValue := remainingDays / periodDays * float64(currentPrice)
+
+	// B: Full price of new plan
+	newPlanFullPrice := float64(targetPrice)
+
+	// Upgrade fee = B - A
+	upgradeFee := newPlanFullPrice - remainingValue
+	finalAmount := upgradeFee
+
+	// Apply discount code if provided
+	if req.DiscountCode != "" {
+		// For now, we'll return the discount code in the response so frontend can validate it
+		// The actual discount application will happen during payment
+		c.JSON(http.StatusOK, gin.H{
+			"amount":        int64(finalAmount),
+			"original_amount": int64(upgradeFee),
+			"discount_code": req.DiscountCode,
+			"has_discount":  true,
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"amount": int64(amount),
+		"amount": int64(finalAmount),
 	})
 }
 
@@ -847,8 +893,11 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 			return
 		}
 		if currentPlanPrice != nil && currentPlanPrice.Price > 0 {
-			// Calculate prorated amount based on usage
-			alreadyUsedDays := time.Since(currentSubscription.CurrentPeriodStartAt).Hours() / 24
+			// Calculate upgrade amount using new logic:
+			// A = current plan remaining days value
+			// B = new plan full price
+			// Upgrade fee = B - A
+			remainingDays := time.Until(currentSubscription.CurrentPeriodEndAt).Hours() / 24
 			period, err := types.ParsePeriod(req.Period)
 			if err != nil {
 				SetErrorResp(
@@ -859,14 +908,24 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 				return
 			}
 			periodDays := getPeriodDays(period)
-			usedAmount := (periodDays - alreadyUsedDays) / periodDays * float64(
-				currentPlanPrice.Price,
-			)
-			value := float64(planPrice.Price) - usedAmount
-			if value > 0 {
-				transaction.Amount = int64(value)
+
+			// A: Calculate remaining value of current plan (proportional refund)
+			remainingValue := remainingDays / periodDays * float64(currentPlanPrice.Price)
+
+			// B: Full price of new plan
+			newPlanFullPrice := float64(planPrice.Price)
+
+			// Upgrade fee = B - A
+			upgradeFee := newPlanFullPrice - remainingValue
+			if upgradeFee > 0 {
+				transaction.Amount = int64(upgradeFee)
 			} else {
 				transaction.Amount = 0
+			}
+
+			// Store discount code for later use in Stripe session creation
+			if req.DiscountCode != "" {
+				transaction.StatusDesc = fmt.Sprintf("Discount code: %s", req.DiscountCode)
 			}
 		}
 
@@ -1495,12 +1554,30 @@ func createStripeSessionAndPaymentOrder(
 		dao.Logger.Infof("get user stripe customer id empty: %v", req.UserUID)
 	}
 
+	// Extract discount code from transaction status description for upgrades
+	discountCode := ""
+	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded && strings.HasPrefix(transaction.StatusDesc, "Discount code: ") {
+		discountCode = strings.TrimPrefix(transaction.StatusDesc, "Discount code: ")
+	}
+
 	// Create Stripe subscription session
-	stripeResp, err := services.StripeServiceInstance.CreateWorkspaceSubscriptionSession(
-		paymentReq,
-		*price.StripePrice,
-		&transaction,
-	)
+	var stripeResp *services.StripeResponse
+	if discountCode != "" {
+		// For upgrades with discount code, use the new method
+		stripeResp, err = services.StripeServiceInstance.CreateWorkspaceSubscriptionSessionWithDiscount(
+			paymentReq,
+			*price.StripePrice,
+			&transaction,
+			discountCode,
+		)
+	} else {
+		// For other operations, use the standard method
+		stripeResp, err = services.StripeServiceInstance.CreateWorkspaceSubscriptionSession(
+			paymentReq,
+			*price.StripePrice,
+			&transaction,
+		)
+	}
 	if err != nil {
 		SetErrorResp(
 			c,
@@ -1962,10 +2039,22 @@ func finalizeWorkspaceSubscriptionSuccess(
 		}
 	}
 
-	// Set period for renewal
+	// Set period for renewal and upgrade
 	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed {
+		// Renewal: extend from current period
 		workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
 		workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
+		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+	} else if wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
+		// Upgrade: reset period from today with new billing cycle
+		now := time.Now().UTC()
+		periodDuration, err := types.ParsePeriod(wsTransaction.Period)
+		if err != nil {
+			// Fallback to monthly if parsing fails
+			periodDuration = 30 * 24 * time.Hour
+		}
+		workspaceSubscription.CurrentPeriodStartAt = now
+		workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
 		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
 	}
 

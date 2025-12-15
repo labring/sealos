@@ -72,6 +72,11 @@ func buildURLs(s *StripeService, transaction *types.WorkspaceSubscriptionTransac
 
 // CreateWorkspaceSubscriptionSession creates a Stripe Checkout Session following official pattern
 func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction) (*StripeResponse, error) {
+	return s.CreateWorkspaceSubscriptionSessionWithDiscount(paymentReq, priceID, transaction, "")
+}
+
+// CreateWorkspaceSubscriptionSessionWithDiscount creates a Stripe Checkout Session with optional discount code
+func (s *StripeService) CreateWorkspaceSubscriptionSessionWithDiscount(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction, discountCode string) (*StripeResponse, error) {
 	// 构造成功与取消回调URL，避免硬编码斜杠问题
 	// Assuming workspaceID and transaction.PayID are your custom variables
 	successURL, cancelURL, err := buildURLs(s, transaction)
@@ -79,7 +84,14 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		return nil, fmt.Errorf("failed to build return URLs: %v", err)
 	}
 	// Create checkout session following official example pattern
-	anchorTime := time.Now().AddDate(0, 0, 30).Unix()
+	var anchorTime int64
+
+	// For upgrades, start new billing cycle from now. For other operations, use 30 days later.
+	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded {
+		anchorTime = time.Now().UTC().Unix()
+	} else {
+		anchorTime = time.Now().AddDate(0, 0, 30).Unix()
+	}
 
 	extra := &stripe.ExtraValues{
 		Values: url.Values{},
@@ -123,6 +135,15 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		},
 		ExpiresAt:           stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
 		AllowPromotionCodes: stripe.Bool(true),
+	}
+
+	// Add discount code if provided
+	if discountCode != "" {
+		checkoutParams.Discounts = []*stripe.CheckoutSessionDiscountParams{
+			{
+				Coupon: stripe.String(discountCode),
+			},
+		}
 	}
 
 	// Create session using official SDK
@@ -224,7 +245,8 @@ func (s *StripeService) UpdatePlan(subscriptionID, newPriceID, newPlanName strin
 			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
 			"last_payment_id":       payReqID,
 		},
-		ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		BillingCycleAnchorNow: stripe.Bool(true),
+		ProrationBehavior:     stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
 		//PaymentBehavior:   stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
 	}
 
@@ -278,6 +300,11 @@ func (s *StripeService) DowngradePlan(subscriptionID, newPriceID, newPlanName st
 }
 
 func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string) (int64, error) {
+	return s.UpdatePlanPricePreviewWithDiscount(subscriptionID, newPriceID, "")
+}
+
+// UpdatePlanPricePreviewWithDiscount previews subscription price changes with optional discount code
+func (s *StripeService) UpdatePlanPricePreviewWithDiscount(subscriptionID, newPriceID, discountCode string) (int64, error) {
 	// Retrieve the current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
@@ -288,7 +315,7 @@ func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string
 		return 0, fmt.Errorf("subscription has no items to update")
 	}
 
-	inv, err := s.UpdatePreview(&stripe.InvoiceCreatePreviewParams{
+	params := &stripe.InvoiceCreatePreviewParams{
 		Subscription: &subscriptionID,
 		SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
 			Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
@@ -300,8 +327,21 @@ func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string
 			ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
 			ProrationBehavior:     stripe.String("create_prorations"),
 			BillingCycleAnchorNow: stripe.Bool(true),
+			// Ensure billing cycle anchors to now for upgrade
+			BillingCycleAnchor: stripe.Int64(time.Now().UTC().Unix()),
 		},
-	})
+	}
+
+	// Add discount code if provided
+	if discountCode != "" {
+		params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
+			{
+				Coupon: stripe.String(discountCode),
+			},
+		}
+	}
+
+	inv, err := s.UpdatePreview(params)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get Stripe invoice preview: %v", err)
 	}
