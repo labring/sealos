@@ -3,7 +3,7 @@ import { Ingress, IngressRule } from '@/k8slens/kube-object';
 import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
 import { Drawer } from '@/components/common/drawer/drawer';
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
-import { Button, message, Modal } from 'antd';
+import { Button, Divider, message, Modal } from 'antd';
 import { useState, useEffect } from 'react';
 import IngressPathEditor from './ingress-path-editor';
 import { useIngressStore } from '@/store/kube';
@@ -23,7 +23,6 @@ const IngressDetail = ({ obj: ingress, open, onClose }: DetailDrawerProps<Ingres
   const msgKey = 'ingressEditMsg';
 
   const latest = items.find((it) => it.getId() === ingress.getId()) ?? ingress;
-  const port = latest.getServiceNamePort();
 
   // Reset editing state when drawer opens/closes or ingress changes
   useEffect(() => {
@@ -88,7 +87,7 @@ const IngressDetail = ({ obj: ingress, open, onClose }: DetailDrawerProps<Ingres
               <p key={tls.secretName || idx}>{tls.secretName}</p>
             ))}
           />
-          {port && <DrawerItem name="Service" value={`${port.serviceName}:${port.servicePort}`} />}
+          <Divider />
 
           <div
             className="flex items-center justify-between mt-8 mb-4"

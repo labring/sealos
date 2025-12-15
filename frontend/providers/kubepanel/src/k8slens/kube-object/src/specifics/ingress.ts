@@ -124,25 +124,6 @@ export class Ingress extends KubeObject<NamespaceScopedMetadata, IngressStatus, 
     return computeRouteDeclarations(this).map(({ url, service }) => `${url} ⇢ ${service}`);
   }
 
-  getServiceNamePort(): ExtensionsBackend | undefined {
-    const { spec: { backend, defaultBackend } = {} } = this;
-
-    const serviceName = defaultBackend?.service?.name ?? backend?.serviceName;
-    const servicePort =
-      defaultBackend?.service?.port.number ??
-      defaultBackend?.service?.port.name ??
-      backend?.servicePort;
-
-    if (!serviceName || !servicePort) {
-      return undefined;
-    }
-
-    return {
-      serviceName,
-      servicePort
-    };
-  }
-
   getHosts() {
     const {
       spec: { rules = [] }

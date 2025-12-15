@@ -74,16 +74,25 @@ const ServiceDetail = ({ obj: service, open, onClose }: DetailDrawerProps<Servic
     <Drawer open={open} title={`Service: ${service.getName()}`} onClose={onClose}>
       <DrawerPanel>
         <KubeObjectInfoList obj={service} />
-        <DrawerItem name="Cluster IP" value={service.getClusterIp()} />
-        <DrawerItem name="Type" value={service.getType()} />
-        <DrawerItem
-          name="Ports"
-          value={service
-            .getPorts()
-            .map((port) => port.toString())
-            .join(', ')}
-        />
-        {/* Add other relevant details here */}
+        <div className="flex items-center justify-between py-2 border-b border-[#E8E8E8]">
+          <div>
+            <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Cluster IP</span>
+            <span className="text-[#262626] text-sm">{service.getClusterIp()}</span>
+          </div>
+          <div>
+            <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Type</span>
+            <span className="text-[#262626] text-sm">{service.getType()}</span>
+          </div>
+          <div>
+            <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Ports</span>
+            <span className="text-[#262626] text-sm">
+              {service
+                .getPorts()
+                .map((port) => port.toString())
+                .join(', ')}
+            </span>
+          </div>
+        </div>
       </DrawerPanel>
     </Drawer>
   );
