@@ -264,11 +264,18 @@ const ProbeCard = ({ title, probe, onChange, isEditing = false }: ProbeCardProps
     }
   }, [draftProbe, isEditing, onChange]);
 
+  if (!displayProbe && !isEditing) {
+    return (
+      <div className="flex-1 min-w-75 bg-[#F9F9FA] p-3 rounded-lg border border-[#E8E8E8] flex items-center justify-between">
+        <div className="text-gray-500 text-xs font-medium">{title}</div>
+        <div className="text-gray-400 text-sm">-</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 min-w-75 bg-[#F9F9FA] p-3 rounded-lg border border-[#E8E8E8]">
       <div className="text-gray-500 text-xs font-medium mb-2">{title}</div>
-
-      {!displayProbe && !isEditing && <div className="text-gray-400 text-sm italic">Null</div>}
 
       {(isEditing || displayProbe) && (
         <div className="flex flex-col">

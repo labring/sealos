@@ -78,6 +78,7 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
       <Title type="primary">{title}</Title>
       <Table
         className="kubepanel-table"
+        size="middle"
         {...tableProps}
         dataSource={currentData}
         columns={modifiedCols}

@@ -236,8 +236,6 @@ const SecretDetail = ({ obj: secret, open, onClose }: DetailDrawerProps<Secret>)
           <KubeObjectInfoList obj={secret} />
         </DrawerPanel>
 
-        {hasData && <div className="h-px bg-[#E8E8E8] my-6" />}
-
         {hasData && (
           <div className="flex flex-col pb-6">
             <SecretDataForm secret={secret} />

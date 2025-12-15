@@ -29,7 +29,7 @@ const PersistentVolumeClaimDetail = ({
       <DrawerPanel>
         <KubeObjectInfoList obj={volumeClaim} />
         <DrawerItem name={'Access Modes'} value={accessModes?.join(', ')} />
-        <DrawerItem name="Storage Class Names" value={storageClassName} />
+        <DrawerItem name="Storage Class" value={storageClassName} />
         <DrawerItem name="Storage" value={volumeClaim.getStorage()} />
         <DrawerItem
           name="Pods"
@@ -41,27 +41,36 @@ const PersistentVolumeClaimDetail = ({
         />
         <DrawerItem name="Status" value={volumeClaim.getStatus()} />
 
-        <div className="text-[#262626] font-medium text-base mt-8 mb-4">Selector</div>
-        <DrawerItem
-          name="Match Labels"
-          value={
-            <div className="flex flex-wrap gap-1">
-              {volumeClaim.getMatchLabels().map((label) => (
-                <KubeBadge key={label} label={label} />
-              ))}
-            </div>
-          }
-        />
-        <DrawerItem
-          name="Match Expressions"
-          value={volumeClaim.getMatchExpressions().map(({ key, operator, values }, i) => (
-            <React.Fragment key={i}>
-              <DrawerItem name="Key" value={key} />
-              <DrawerItem name="Operator" value={operator} />
-              <DrawerItem name="Values" value={values?.join(', ')} />
-            </React.Fragment>
-          ))}
-        />
+        {(volumeClaim.getMatchLabels().length > 0 ||
+          volumeClaim.getMatchExpressions().length > 0) && (
+          <>
+            <div className="text-[#262626] font-medium text-base mt-8 mb-4">Selector</div>
+            {volumeClaim.getMatchLabels().length > 0 && (
+              <DrawerItem
+                name="Match Labels"
+                value={
+                  <div className="flex flex-wrap gap-1">
+                    {volumeClaim.getMatchLabels().map((label) => (
+                      <KubeBadge key={label} label={label} />
+                    ))}
+                  </div>
+                }
+              />
+            )}
+            {volumeClaim.getMatchExpressions().length > 0 && (
+              <DrawerItem
+                name="Match Expressions"
+                value={volumeClaim.getMatchExpressions().map(({ key, operator, values }, i) => (
+                  <React.Fragment key={i}>
+                    <DrawerItem name="Key" value={key} />
+                    <DrawerItem name="Operator" value={operator} />
+                    <DrawerItem name="Values" value={values?.join(', ')} />
+                  </React.Fragment>
+                ))}
+              />
+            )}
+          </>
+        )}
       </DrawerPanel>
     </Drawer>
   );

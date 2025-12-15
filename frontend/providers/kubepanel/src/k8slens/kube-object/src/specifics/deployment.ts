@@ -33,7 +33,6 @@ export interface DeploymentStatus extends KubeObjectStatus {
   updatedReplicas: number;
   readyReplicas: number;
   availableReplicas?: number;
-  unavailableReplicas?: number;
 }
 
 export class Deployment extends KubeObject<

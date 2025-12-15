@@ -20,7 +20,7 @@ export const DrawerItem = ({
   if (vertical) {
     return (
       <div
-        className={`flex flex-col ${padding ? 'py-3' : ''} border-b border-[#E8E8E8] last:border-b-0 ${className}`}
+        className={`flex flex-col ${padding ? 'py-2' : ''} border-b border-[#E8E8E8] last:border-b-0 ${className}`}
       >
         <span className="text-[#8C8C8C] font-medium text-sm mb-2">{name}</span>
         <div className="text-[#262626] text-sm break-all">{value}</div>
@@ -31,9 +31,9 @@ export const DrawerItem = ({
   return (
     <div
       className={`grid ${
-        padding ? 'py-3' : ''
+        padding ? 'py-2' : ''
       } border-b border-[#E8E8E8] last:border-b-0 items-start ${className}`}
-      style={{ gridTemplateColumns: '120px minmax(0, 1fr)', gap: '16px' }}
+      style={{ gridTemplateColumns: '100px minmax(0, 1fr)', gap: '16px' }}
     >
       <span className="text-[#8C8C8C] font-medium text-sm">{name}</span>
       <div className="text-[#262626] text-sm break-all">{value}</div>

@@ -64,79 +64,71 @@ const SelectorBadges = ({ selector }: { selector?: LabelSelector }) => {
 
 // --- NodeAffinity Rendering ---
 const NodeAffinityCard = ({ affinity }: { affinity: SpecificAffinity<NodeAffinity> }) => {
-  // In K8s NodeAffinity, required... is a NodeSelector object, not an array.
-  // We cast to any to safely access nodeSelectorTerms.
-  const required = affinity.requiredDuringSchedulingIgnoredDuringExecution as any;
-  const nodeSelectorTerms = required?.nodeSelectorTerms || [];
+  const required =
+    (affinity.requiredDuringSchedulingIgnoredDuringExecution as any)?.nodeSelectorTerms || [];
   const preferred = affinity.preferredDuringSchedulingIgnoredDuringExecution || [];
 
-  const hasRequired = nodeSelectorTerms.length > 0;
-  const hasPreferred = preferred.length > 0;
-
-  if (!hasRequired && !hasPreferred) return null;
+  if (required.length === 0 && preferred.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <div className="font-medium text-gray-900">Node Affinity</div>
-      {nodeSelectorTerms.map((term: any, i: number) => (
-        <div key={`req-${i}`} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs border border-red-200 font-medium">
-              Required
-            </span>
-            <span className="text-gray-500">nodes where</span>
-            {term.matchExpressions?.map((expr: any, k: number) => (
-              <div key={k} className="contents">
-                {k > 0 && <span className="text-gray-500">and</span>}
-                <span className="font-semibold text-gray-900 break-all">{expr.key}</span>
-                <span className="text-gray-500">{expr.operator.toLowerCase()}</span>
-                {expr.values && (
-                  <span className="font-semibold text-gray-900 break-all">
-                    [{expr.values.join(', ')}]
-                  </span>
-                )}
-              </div>
-            ))}
-            {/* Handle matchFields if present */}
-            {term.matchFields?.map((expr: any, k: number) => (
-              <div key={`field-${k}`} className="contents">
-                {(k > 0 || (term.matchExpressions?.length ?? 0) > 0) && (
-                  <span className="text-gray-500">and</span>
-                )}
-                <span className="font-semibold text-gray-900 break-all">{expr.key}</span>
-                <span className="text-gray-500">{expr.operator.toLowerCase()}</span>
-                {expr.values && (
-                  <span className="font-semibold text-gray-900 break-all">
-                    [{expr.values.join(', ')}]
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+      {required.map((term: any, i: number) => (
+        <div key={`req-${i}`} className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs border border-red-200 font-medium">
+            Required
+          </span>
+          <span className="text-gray-500 mr-1">:</span>
+          <span className="text-gray-500">node</span>
+          {term.matchExpressions?.map((expr: any, k: number) => (
+            <div key={k} className="contents">
+              {k > 0 && <span className="text-gray-500">and</span>}
+              <span className="font-semibold text-gray-900 break-all">{expr.key}</span>
+              <span className="text-gray-500">{expr.operator.toLowerCase()}</span>
+              {expr.values && (
+                <span className="font-semibold text-gray-900 break-all">
+                  [{expr.values.join(', ')}]
+                </span>
+              )}
+            </div>
+          ))}
+          {term.matchFields?.map((expr: any, k: number) => (
+            <div key={`field-${k}`} className="contents">
+              {(k > 0 || (term.matchExpressions?.length ?? 0) > 0) && (
+                <span className="text-gray-500">and</span>
+              )}
+              <span className="font-semibold text-gray-900 break-all">{expr.key}</span>
+              <span className="text-gray-500">{expr.operator.toLowerCase()}</span>
+              {expr.values && (
+                <span className="font-semibold text-gray-900 break-all">
+                  [{expr.values.join(', ')}]
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       ))}
 
-      {preferred?.map((pref, i) => (
-        <div key={`pref-${i}`} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            <span className="inline-block bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-xs border border-orange-200 font-medium">
-              Preferred
-            </span>
-            <span className="text-gray-500">nodes where</span>
-            {pref.preference?.matchExpressions?.map((expr, j) => (
-              <div key={j} className="contents">
-                {j > 0 && <span className="text-gray-500">and</span>}
-                <span className="font-semibold text-gray-900 break-all">{expr.key}</span>
-                <span className="text-gray-500">{expr.operator.toLowerCase()}</span>
-                {expr.values && (
-                  <span className="font-semibold text-gray-900 break-all">
-                    [{expr.values.join(', ')}]
-                  </span>
-                )}
-              </div>
-            ))}
-            <span className="text-gray-400 text-xs ml-auto">(weight: {pref.weight})</span>
-          </div>
+      {preferred.map((pref: any, i: number) => (
+        <div key={`pref-${i}`} className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="inline-block bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-xs border border-orange-200 font-medium">
+            Preferred
+          </span>
+          <span className="text-gray-400 text-xs">(weight: {pref.weight})</span>
+          <span className="text-gray-500 mr-1">:</span>
+          <span className="text-gray-500">node</span>
+          {pref.preference?.matchExpressions?.map((expr: any, j: number) => (
+            <div key={j} className="contents">
+              {j > 0 && <span className="text-gray-500">and</span>}
+              <span className="font-semibold text-gray-900 break-all">{expr.key}</span>
+              <span className="text-gray-500">{expr.operator.toLowerCase()}</span>
+              {expr.values && (
+                <span className="font-semibold text-gray-900 break-all">
+                  [{expr.values.join(', ')}]
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -160,8 +152,6 @@ const PodAffinityCard = ({
 
   if (!hasRequired && !hasPreferred) return null;
 
-  // Simplified text: just "Avoid pods" or "Run with pods".
-  // The badge (Required/Preferred) provides the context of stringency/preference.
   const actionText = isAnti ? 'Avoid pods' : 'Run with pods';
 
   const renderSelector = (selector?: LabelSelector) => {
@@ -200,44 +190,41 @@ const PodAffinityCard = ({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <div className="font-medium text-gray-900">{title}</div>
       {required?.map((term, i) => (
-        <div key={`req-${i}`} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs border border-red-200 font-medium">
-              Required
+        <div key={`req-${i}`} className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs border border-red-200 font-medium">
+            Required
+          </span>
+          <span className="text-gray-500 mr-1">:</span>
+          <span className="text-gray-500">{actionText.toLowerCase()}</span>
+          {renderSelector(term.labelSelector)}
+          <span className="text-gray-500">in</span>
+          <span className="font-semibold text-gray-900 break-all">{term.topologyKey}</span>
+          {(term as any).namespaces && (
+            <span className="text-gray-400 text-xs">
+              (ns: {(term as any).namespaces.join(', ')})
             </span>
-            <span className="text-gray-500">{actionText}</span>
-            {renderSelector(term.labelSelector)}
-            <span className="text-gray-500">in</span>
-            <span className="font-semibold text-gray-900 break-all">{term.topologyKey}</span>
-            {(term as any).namespaces && (
-              <span className="text-gray-400 text-xs">
-                (ns: {(term as any).namespaces.join(', ')})
-              </span>
-            )}
-          </div>
+          )}
         </div>
       ))}
 
       {preferred?.map((pref, i) => {
-        // Cast to any because PodAffinity type in api-types.ts lacks weight/podAffinityTerm
         const weight = (pref as any).weight;
         const term = (pref as any).podAffinityTerm || pref;
 
         return (
-          <div key={`pref-${i}`} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <div className="flex flex-wrap items-center gap-1.5 text-sm">
-              <span className="inline-block bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-xs border border-orange-200 font-medium">
-                Preferred
-              </span>
-              <span className="text-gray-500">{actionText}</span>
-              {renderSelector(term.labelSelector)}
-              <span className="text-gray-500">in</span>
-              <span className="font-semibold text-gray-900 break-all">{term.topologyKey}</span>
-              <span className="text-gray-400 text-xs ml-auto">(weight: {weight})</span>
-            </div>
+          <div key={`pref-${i}`} className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="inline-block bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-xs border border-orange-200 font-medium">
+              Preferred
+            </span>
+            <span className="text-gray-400 text-xs">(weight: {weight})</span>
+            <span className="text-gray-500 mr-1">:</span>
+            <span className="text-gray-500">{actionText.toLowerCase()}</span>
+            {renderSelector(term.labelSelector)}
+            <span className="text-gray-500">in</span>
+            <span className="font-semibold text-gray-900 break-all">{term.topologyKey}</span>
           </div>
         );
       })}

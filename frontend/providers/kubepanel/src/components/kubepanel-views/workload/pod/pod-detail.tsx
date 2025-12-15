@@ -1,7 +1,7 @@
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Pod } from '@/k8slens/kube-object';
-import { Tooltip } from 'antd';
+import { Divider, Tooltip } from 'antd';
 import PodStatus from './pod-status';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import PodDetailTolerations from './pod-detail-tolerations';
@@ -17,6 +17,7 @@ const PodDetail = ({ obj: pod, open, onClose }: DetailDrawerProps<Pod>) => {
     <Drawer open={open} title={`Pod: ${pod.getName()}`} onClose={onClose}>
       <DrawerPanel>
         <PodInfo pod={pod} />
+        <Divider />
         <ContainerDetail pod={pod} editable={false} />
       </DrawerPanel>
     </Drawer>
@@ -26,7 +27,6 @@ const PodDetail = ({ obj: pod, open, onClose }: DetailDrawerProps<Pod>) => {
 const PodInfo = ({ pod }: { pod: Pod }) => {
   const { status } = pod;
   const { conditions = [], podIP } = status ?? {};
-  const podIPs = pod.getIPs();
 
   const priorityClassName = pod.getPriorityClassName();
   const runtimeClassName = pod.getRuntimeClassName();
@@ -47,26 +47,20 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
   return (
     <>
       <KubeObjectInfoList obj={pod} />
-      <DrawerItem name="Status" value={<PodStatus status={pod.getStatusMessage()} />} />
-      <DrawerItem name="Pod IP" value={podIP} />
-      <DrawerItem
-        hidden={podIPs.length === 0 || (podIPs.length === 1 && podIPs[0] === podIP)}
-        name="Pod IPs"
-        value={
-          <div className="flex flex-wrap gap-1">
-            {podIPs.map((label) => (
-              <KubeBadge key={label} label={label} />
-            ))}
-          </div>
-        }
-      />
-      <DrawerItem
-        name="Service Account"
-        value={
-          // TODO: Link
-          <>{serviceAccountName}</>
-        }
-      />
+      <div className="flex items-center justify-between py-2 border-b border-[#E8E8E8]">
+        <div>
+          <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Pod IP</span>
+          <span className="text-blue-600 text-sm">{podIP || '-'}</span>
+        </div>
+        <div>
+          <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Service Account</span>
+          <span className="text-[#262626] text-sm">{serviceAccountName || '-'}</span>
+        </div>
+        <div>
+          <span className="text-[#8C8C8C] font-medium text-sm block mb-1">QoS Class</span>
+          <span className="text-[#262626] text-sm">{pod.getQosClass() || '-'}</span>
+        </div>
+      </div>
       <DrawerItem
         hidden={priorityClassName === ''}
         name="Priority Class"
@@ -75,7 +69,6 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
           <>{priorityClassName}</>
         }
       />
-      <DrawerItem name="QoS Class" value={pod.getQosClass()} />
       <DrawerItem
         hidden={runtimeClassName === ''}
         name="Runtime Class"

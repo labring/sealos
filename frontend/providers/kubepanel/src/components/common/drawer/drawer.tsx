@@ -22,7 +22,7 @@ export const Drawer = ({ title, children, open, onClose, width = '550px', extra 
       width={width}
       extra={extra}
       onClose={onClose}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="flex flex-col gap-6">{children}</div>
     </AntdDrawer>

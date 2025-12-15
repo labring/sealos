@@ -3,7 +3,7 @@ import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Deployment } from '@/k8slens/kube-object';
 import { getConditionTextTone } from '@/utils/condtion-color';
-import { Tooltip, Typography } from 'antd';
+import { Divider, Tooltip, Typography } from 'antd';
 import { useDeploymentStore } from '@/store/kube';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
@@ -30,19 +30,35 @@ const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deploym
           value={
             <>
               {`${spec.replicas} desired, ${status?.updatedReplicas ?? 0} updated, `}
-              {`${status?.replicas ?? 0} total, ${status?.availableReplicas ?? 0} available, `}
-              {`${status?.unavailableReplicas ?? 0} unavailable`}
+              {`${status?.replicas ?? 0} total, ${status?.availableReplicas ?? 0} available`}
             </>
           }
         />
         {selectors.length > 0 && (
           <DrawerItem
-            name={<div className="pt-1">Selector</div>}
+            name="Selector"
             value={
               <div className="flex flex-wrap gap-1">
-                {selectors.map((label) => (
-                  <KubeBadge key={label} label={label} className="m-0!" />
-                ))}
+                {selectors.map((label) => {
+                  const sepIndex = label.indexOf(': ');
+                  if (sepIndex === -1)
+                    return <KubeBadge key={label} label={label} className="m-0!" />;
+                  const key = label.slice(0, sepIndex);
+                  const value = label.slice(sepIndex + 2);
+                  return (
+                    <KubeBadge
+                      key={label}
+                      label={
+                        <span>
+                          <span className="font-medium text-gray-900">{key}</span>
+                          <span className="text-gray-900 mr-1">:</span>
+                          <span className="text-gray-600">{value}</span>
+                        </span>
+                      }
+                      className="m-0!"
+                    />
+                  );
+                })}
               </div>
             }
           />
@@ -73,6 +89,7 @@ const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deploym
         />
         <PodDetailTolerations workload={dep} />
         <PodDetailAffinities workload={dep} />
+        <Divider />
 
         <ContainerDetail
           containers={spec.template.spec.containers}

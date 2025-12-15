@@ -341,9 +341,22 @@ const ContainerInfo = ({
     return <span className="text-gray-400">-</span>;
   };
 
+  // Helper to split image name for visual truncation
+  const splitImage = (img: string) => {
+    const lastColon = img.lastIndexOf(':');
+    const lastAt = img.lastIndexOf('@');
+    const index = Math.max(lastColon, lastAt);
+    if (index > -1) {
+      return { prefix: img.slice(0, index), suffix: img.slice(index) };
+    }
+    return { prefix: img, suffix: '' };
+  };
+
+  const { prefix, suffix } = splitImage(image || '');
+
   return (
     <>
-      <div className="mb-5 flex gap-5 items-center">
+      <div className="mb-4 flex gap-5 items-center">
         {pod && (
           <ContainerStatusBrick
             state={state as any}
@@ -364,18 +377,23 @@ const ContainerInfo = ({
       <DrawerItem
         name="Image"
         value={
-          <Tooltip title={imageId || image}>
-            <div className="cursor-pointer max-w-75 truncate">{image}</div>
-          </Tooltip>
+          <div className="flex items-center gap-2 min-w-0 text-xs">
+            <Tooltip title={imageId || image}>
+              <div className="flex items-center min-w-0 cursor-pointer text-[#262626]">
+                <span className="truncate">{prefix}</span>
+                <span className="whitespace-nowrap shrink-0">{suffix}</span>
+              </div>
+            </Tooltip>
+            {imagePullPolicy && <KubeBadge label={imagePullPolicy} />}
+          </div>
         }
       />
-      <DrawerItem name="ImagePullPolicy" value={imagePullPolicy} />
 
       {ports && ports.length > 0 && (
         <DrawerItem
           name="Ports"
           value={ports.map((port) => (
-            <div key={port.containerPort} className="mb-1 last:mb-0">
+            <div key={port.containerPort} className="mb-1 last:mb-0 text-xs">
               <span className="mr-2">
                 {port.containerPort}/{port.protocol}
               </span>
@@ -389,7 +407,7 @@ const ContainerInfo = ({
         <DrawerItem
           name="Resources"
           value={
-            <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex flex-wrap gap-4 text-xs">
               {container.resources.limits.cpu && (
                 <div className="flex items-center gap-1">
                   <span className="text-gray-500">CPU:</span>
@@ -407,7 +425,7 @@ const ContainerInfo = ({
                 </div>
               )}
               {container.resources.limits['ephemeral-storage'] && (
-                <div className="flex items-center gap-1 basis-full">
+                <div className="flex items-center gap-1">
                   <span className="text-gray-500">Ephemeral Storage:</span>
                   <span className="font-medium text-gray-900">
                     {container.resources.limits['ephemeral-storage']}
@@ -470,7 +488,7 @@ const ContainerInfo = ({
               sourceLabel === 'projected';
 
             return (
-              <div key={name + mountPath} className="mb-2 last:mb-0">
+              <div key={name + mountPath} className="mb-2 last:mb-0 text-xs">
                 <span className="mount-path mr-2">{mountPath}</span>
                 <span className="mount-from text-gray-500">
                   {`from ${name}`}
@@ -489,13 +507,17 @@ const ContainerInfo = ({
         />
       )}
 
-      {command && <DrawerItem name="Command" value={command.join(' ')} />}
-      {args && <DrawerItem name="Arguments" value={args.join(' ')} />}
+      {command && (
+        <DrawerItem name="Command" value={<span className="text-xs">{command.join(' ')}</span>} />
+      )}
+      {args && (
+        <DrawerItem name="Arguments" value={<span className="text-xs">{args.join(' ')}</span>} />
+      )}
 
       {env && env.length > 0 && (
         <div className="py-3 border-b border-[#E8E8E8] last:border-b-0">
           <div className="text-[#8C8C8C] font-medium text-sm mb-2">Env</div>
-          <div className="max-h-48 overflow-y-auto overflow-x-auto text-sm text-[#262626] bg-[#F9F9FA] p-3 rounded-lg border border-[#E8E8E8]">
+          <div className="max-h-48 overflow-y-auto overflow-x-auto text-xs text-[#262626] bg-[#F9F9FA] p-3 rounded-lg border border-[#E8E8E8]">
             {env.map((envVar: any) => (
               <div key={envVar.name} className="mb-1 last:mb-0 whitespace-nowrap">
                 <span className="font-medium">{envVar.name}=</span>
@@ -508,9 +530,9 @@ const ContainerInfo = ({
 
       {contextHolder}
       {!isInitial && (
-        <div className="py-3 border-b border-[#E8E8E8] last:border-b-0">
+        <div className="pt-3 border-b border-[#E8E8E8] last:border-b-0">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[#8C8C8C] font-medium text-sm">Probes</div>
+            <div className="text-[#8C8C8C] font-medium text-sm">Health Check</div>
             {editable && (
               <div className="flex items-center gap-2">
                 {!isEditingProbes && (

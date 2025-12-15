@@ -44,16 +44,17 @@ export const KubeBadge = ({
   const { textColor, backgroundColor } = color ?? {};
   const disabledClass = disabled && 'opacity-50 cursor-not-allowed';
   const expandableClass = isExpandable && 'cursor-pointer';
-  const bgColorClass = backgroundColor ? `bg-${backgroundColor}` : 'bg-[#F4F4F5]';
+  const bgColorClass = backgroundColor ? `bg-${backgroundColor}` : 'bg-[#FDFDFD]';
 
   return (
     <div
-      className={`py-1 px-1.5 mr-2 rounded-md ${disabledClass} ${expandableClass} ${bgColorClass} ${className}`}
+      className={`py-0.5 px-2 rounded-xl ${!isExpanded ? 'max-w-125' : ''} ${disabledClass} ${expandableClass} ${bgColorClass} ${className}`}
+      style={{ border: '0.5px solid #D4D4D8' }}
       onClick={onClick}
     >
       <span
         ref={spanRef}
-        className={`block text-xs font-medium ${textColor ? `text-${textColor}` : 'text-black'} ${isExpanded ? 'whitespace-pre-wrap break-all' : 'truncate max-w-125'}`}
+        className={`block text-xs font-medium ${textColor ? `text-${textColor}` : 'text-black'} ${isExpanded ? 'whitespace-pre-wrap break-all' : 'truncate'}`}
       >
         {isExpanded && expandedLabel ? expandedLabel : label}
       </span>

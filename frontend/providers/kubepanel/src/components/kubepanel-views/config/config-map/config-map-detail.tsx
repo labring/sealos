@@ -80,8 +80,6 @@ const ConfigMapDetail = ({ obj: configMap, open, onClose }: DetailDrawerProps<Co
           <KubeObjectInfoList obj={configMap} />
         </DrawerPanel>
 
-        {data.length > 0 && <div className="h-px bg-[#E8E8E8] my-6" />}
-
         {data.length > 0 && (
           <div className="flex flex-col gap-6 pb-6">
             {contextHolder}
