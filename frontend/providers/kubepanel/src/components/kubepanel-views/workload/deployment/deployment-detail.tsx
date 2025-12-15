@@ -37,6 +37,7 @@ const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deploym
         {selectors.length > 0 && (
           <DrawerItem
             name="Selector"
+            className="items-center!"
             value={
               <div className="flex flex-wrap gap-1">
                 {selectors.map((label) => {

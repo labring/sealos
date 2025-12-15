@@ -376,6 +376,7 @@ const ContainerInfo = ({
 
       <DrawerItem
         name="Image"
+        className="items-center!"
         value={
           <div className="flex items-center gap-2 min-w-0 text-xs">
             <Tooltip title={imageId || image}>
@@ -508,10 +509,18 @@ const ContainerInfo = ({
       )}
 
       {command && (
-        <DrawerItem name="Command" value={<span className="text-xs">{command.join(' ')}</span>} />
+        <DrawerItem
+          name="Command"
+          className="items-center!"
+          value={<span className="text-xs">{command.join(' ')}</span>}
+        />
       )}
       {args && (
-        <DrawerItem name="Arguments" value={<span className="text-xs">{args.join(' ')}</span>} />
+        <DrawerItem
+          name="Arguments"
+          className="items-center!"
+          value={<span className="text-xs">{args.join(' ')}</span>}
+        />
       )}
 
       {env && env.length > 0 && (

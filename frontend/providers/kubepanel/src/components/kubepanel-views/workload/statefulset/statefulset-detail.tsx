@@ -25,6 +25,7 @@ const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<State
         {selectors.length > 0 && (
           <DrawerItem
             name="Selector"
+            className="items-center!"
             value={
               <div className="flex flex-wrap gap-1">
                 {selectors.map((label) => {
