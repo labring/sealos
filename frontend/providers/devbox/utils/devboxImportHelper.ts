@@ -25,7 +25,7 @@ export async function waitForDevboxStatus(
         return devboxBody;
       }
     } catch (error) {
-      console.warn(`Failed to get devbox status (attempt ${retries + 1}/${maxRetries}):`, error);
+      console.warn('Failed to get devbox status (attempt', retries + 1, '/', maxRetries, '):', error);
     }
     await sleep(interval);
     retries++;
@@ -75,11 +75,11 @@ export async function waitForDevboxReady(
             return true;
           }
         } catch (podError) {
-          console.warn(`Failed to check pod status (attempt ${retries + 1}/${maxRetries}):`, podError);
+          console.warn('Failed to check pod status (attempt', retries + 1, '/', maxRetries, '):', podError);
         }
       }
     } catch (error) {
-      console.warn(`Failed to check devbox ready status (attempt ${retries + 1}/${maxRetries}):`, error);
+      console.warn('Failed to check devbox ready status (attempt', retries + 1, '/', maxRetries, '):', error);
     }
 
     await sleep(interval);

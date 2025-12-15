@@ -179,7 +179,7 @@ echo "=========================================="
       '-c',
       command
     ]);
-    console.log(`File extracted successfully to ${targetDir}, output:`, result);
+    console.log('File extracted successfully to', targetDir, ', output:', result);
     return result;
   } catch (error: any) {
     console.error('Extract failed:', error?.message || String(error));
@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
         break;
       } catch (error: any) {
         lastError = error;
-        console.error(`Upload attempt ${attempt} failed:`, error.message);
+        console.error('Upload attempt', attempt, 'failed:', error.message);
         if (attempt < 3) {
           console.log('Retrying in 3 seconds...');
           await sleep(3000);
