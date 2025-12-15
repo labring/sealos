@@ -4,9 +4,9 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
-import { devboxKey} from '@/constants/devbox';
+import { devboxKey } from '@/constants/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
-import { json2DevboxV2, json2Service, json2Ingress } from '@/utils/json2Yaml';
+import { json2Devbox, json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
@@ -61,7 +61,9 @@ async function retryWithBackoff<T>(
     }
   }
 
-  throw new Error(`${context} - All ${maxRetries} attempts failed. Last error: ${lastError!.message}`);
+  throw new Error(
+    `${context} - All ${maxRetries} attempts failed. Last error: ${lastError!.message}`
+  );
 }
 
 //check-devbox-status
@@ -73,13 +75,13 @@ async function waitForDevboxStatus(
   interval = RETRY_CONFIG.STATUS_CHECK_INTERVAL
 ): Promise<KBDevboxTypeV2> {
   for (let retries = 0; retries < maxRetries; retries++) {
-    const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
       'devboxes',
       devboxName
-    ) as { body: KBDevboxTypeV2 };
+    )) as { body: KBDevboxTypeV2 };
 
     if (devboxBody.status) {
       return devboxBody;
@@ -107,13 +109,13 @@ async function waitForDevboxReady(
 ): Promise<boolean> {
   for (let retries = 0; retries < maxRetries; retries++) {
     try {
-      const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
+      const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
         'devbox.sealos.io',
         'v1alpha1',
         namespace,
         'devboxes',
         devboxName
-      ) as { body: KBDevboxTypeV2 };
+      )) as { body: KBDevboxTypeV2 };
 
       if (devboxBody.status?.phase === 'Running') {
         const podsResponse = await k8sCore.listNamespacedPod(
@@ -125,19 +127,19 @@ async function waitForDevboxReady(
           `${devboxKey}=${devboxName}`
         );
 
-        const readyPod = podsResponse.body.items.find((pod: any) =>
-          pod.status?.phase === 'Running' &&
-          pod.status?.conditions?.some((condition: any) =>
-            condition.type === 'Ready' && condition.status === 'True'
-          )
+        const readyPod = podsResponse.body.items.find(
+          (pod: any) =>
+            pod.status?.phase === 'Running' &&
+            pod.status?.conditions?.some(
+              (condition: any) => condition.type === 'Ready' && condition.status === 'True'
+            )
         );
 
         if (readyPod) {
           return true;
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
 
     await sleep(interval);
   }
@@ -159,63 +161,71 @@ class ServiceManager {
 
   //ensure-service-with-ports:exists-update not-exists-create
   async ensureServiceWithPorts(devboxName: string, ports: any[]): Promise<void> {
-    return retryWithBackoff(async () => {
-      try {
-        const serviceResponse = await this.k8sCore.readNamespacedService(devboxName, this.namespace);
-        const existingService = serviceResponse.body;
-
-        const existingPortNumbers = new Set(
-          (existingService.spec?.ports || []).map((p: any) => p.port)
-        );
-
-        const newPorts = ports.filter(port => !existingPortNumbers.has(port.number));
-
-        if (newPorts.length > 0) {
-          await this.k8sCore.patchNamespacedService(
+    return retryWithBackoff(
+      async () => {
+        try {
+          const serviceResponse = await this.k8sCore.readNamespacedService(
             devboxName,
-            this.namespace,
-            {
-              spec: {
-                ports: [
-                  ...(existingService.spec?.ports || []),
-                  ...newPorts.map(port => ({
-                    port: port.number,
-                    targetPort: port.number,
-                    name: `port-${nanoid()}`
-                  }))
-                ]
-              }
-            },
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            {
-              headers: {
-                'Content-Type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH
-              }
-            }
+            this.namespace
           );
+          const existingService = serviceResponse.body;
+
+          const existingPortNumbers = new Set(
+            (existingService.spec?.ports || []).map((p: any) => p.port)
+          );
+
+          const newPorts = ports.filter((port) => !existingPortNumbers.has(port.number));
+
+          if (newPorts.length > 0) {
+            await this.k8sCore.patchNamespacedService(
+              devboxName,
+              this.namespace,
+              {
+                spec: {
+                  ports: [
+                    ...(existingService.spec?.ports || []),
+                    ...newPorts.map((port) => ({
+                      port: port.number,
+                      targetPort: port.number,
+                      name: `port-${nanoid()}`
+                    }))
+                  ]
+                }
+              },
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              {
+                headers: {
+                  'Content-Type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH
+                }
+              }
+            );
+          }
+        } catch (error: any) {
+          if (error.response?.statusCode === 404) {
+            await this.createServiceWithAllPorts(devboxName, ports);
+          } else {
+            throw error;
+          }
         }
-      } catch (error: any) {
-        if (error.response?.statusCode === 404) {
-          await this.createServiceWithAllPorts(devboxName, ports);
-        } else {
-          throw error;
-        }
-      }
-    }, RETRY_CONFIG.MAX_RETRIES, 200, `Service management for ${devboxName}`);
+      },
+      RETRY_CONFIG.MAX_RETRIES,
+      200,
+      `Service management for ${devboxName}`
+    );
   }
 
   private async createServiceWithAllPorts(devboxName: string, ports: any[]): Promise<void> {
     const networkConfig = {
       name: devboxName,
-      networks: ports.map(port => ({
+      networks: ports.map((port) => ({
         networkName: `${devboxName}-${nanoid()}`,
         portName: `port-${nanoid()}`,
         port: port.number,
-          protocol: resolveProtocol(port.protocol),
+        protocol: resolveProtocol(port.protocol),
         openPublicDomain: port.isPublic || false,
         publicDomain: '',
         customDomain: port.customDomain || ''
@@ -225,12 +235,15 @@ class ServiceManager {
     await this.applyYamlList([json2Service(networkConfig)], 'create');
   }
 
-  async getServicePortInfo(devboxName: string, portNumber: number): Promise<{ portName: string } | null> {
+  async getServicePortInfo(
+    devboxName: string,
+    portNumber: number
+  ): Promise<{ portName: string } | null> {
     try {
       const serviceResponse = await this.k8sCore.readNamespacedService(devboxName, this.namespace);
       const existingService = serviceResponse.body;
       const existingPorts = existingService.spec?.ports || [];
-      
+
       const portInfo = existingPorts.find((p: any) => p.port === portNumber);
       return portInfo ? { portName: portInfo.name } : null;
     } catch (error) {
@@ -250,31 +263,39 @@ class IngressManager {
     this.ingressDomain = ingressDomain;
   }
 
-  async createIngress(devboxName: string, portConfig: any): Promise<{ networkName: string; publicDomain: string }> {
+  async createIngress(
+    devboxName: string,
+    portConfig: any
+  ): Promise<{ networkName: string; publicDomain: string }> {
     const networkName = `${devboxName}-${nanoid()}`;
     const generatedPublicDomain = `${nanoid()}.${this.ingressDomain}`;
 
-    return retryWithBackoff(async () => {
-      const networkConfig = {
-        name: devboxName,
-        networks: [
-          {
-            networkName,
-            portName: `port-${nanoid()}`,
-            port: portConfig.number,
-            protocol: resolveProtocol(portConfig.protocol),
-            openPublicDomain: portConfig.isPublic || false,
-            publicDomain: generatedPublicDomain,
-            customDomain: portConfig.customDomain || ''
-          }
-        ]
-      };
+    return retryWithBackoff(
+      async () => {
+        const networkConfig = {
+          name: devboxName,
+          networks: [
+            {
+              networkName,
+              portName: `port-${nanoid()}`,
+              port: portConfig.number,
+              protocol: resolveProtocol(portConfig.protocol),
+              openPublicDomain: portConfig.isPublic || false,
+              publicDomain: generatedPublicDomain,
+              customDomain: portConfig.customDomain || ''
+            }
+          ]
+        };
 
-      const ingressYaml = json2Ingress(networkConfig, this.ingressSecret);
-      await this.applyYamlList([ingressYaml], 'create');
+        const ingressYaml = json2Ingress(networkConfig, this.ingressSecret);
+        await this.applyYamlList([ingressYaml], 'create');
 
-      return { networkName, publicDomain: generatedPublicDomain };
-    }, RETRY_CONFIG.MAX_RETRIES, 200, `Ingress creation for ${devboxName}:${portConfig.number}`);
+        return { networkName, publicDomain: generatedPublicDomain };
+      },
+      RETRY_CONFIG.MAX_RETRIES,
+      200,
+      `Ingress creation for ${devboxName}:${portConfig.number}`
+    );
   }
 }
 
@@ -293,14 +314,19 @@ async function createPortsAndNetworks(
 
   const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
   const serviceManager = new ServiceManager(k8sCore, namespace, applyYamlList);
-  const ingressManager = INGRESS_SECRET ? new IngressManager(applyYamlList, INGRESS_SECRET, INGRESS_DOMAIN!) : null;
+  const ingressManager = INGRESS_SECRET
+    ? new IngressManager(applyYamlList, INGRESS_SECRET, INGRESS_DOMAIN!)
+    : null;
 
   try {
     await serviceManager.ensureServiceWithPorts(devboxName, ports);
 
     const portResults = await Promise.allSettled(
       ports.map(async (portConfig) => {
-        const servicePortInfo = await serviceManager.getServicePortInfo(devboxName, portConfig.number);
+        const servicePortInfo = await serviceManager.getServicePortInfo(
+          devboxName,
+          portConfig.number
+        );
         const portName = servicePortInfo?.portName || `port-${nanoid()}`;
 
         let networkName = '';
@@ -318,7 +344,7 @@ async function createPortsAndNetworks(
           protocol: portConfig.protocol || 'http',
           networkName,
           isPublic: portConfig.isPublic || false,
-          publicDomain: (portConfig.isPublic && publicDomain) ? publicDomain : '',
+          publicDomain: portConfig.isPublic && publicDomain ? publicDomain : '',
           customDomain: portConfig.customDomain || '',
           serviceName: devboxName,
           privateAddress: `http://${devboxName}.${namespace}:${portConfig.number}`
@@ -346,9 +372,8 @@ async function createPortsAndNetworks(
         error: result.reason?.message || 'Unknown error'
       };
     });
-
   } catch (error: any) {
-    return ports.map(portConfig => ({
+    return ports.map((portConfig) => ({
       portName: `port-${portConfig.number}-failed`,
       number: portConfig.number,
       protocol: portConfig.protocol || 'http',
@@ -411,8 +436,10 @@ function buildPortResponseData(
   domain: string | undefined,
   autostartSuccess: boolean | undefined
 ) {
-  const failedPorts = createdPorts.filter((port): port is PortResult & { error: string } => !!port.error);
-  const successfulPorts = createdPorts.filter(port => !port.error);
+  const failedPorts = createdPorts.filter(
+    (port): port is PortResult & { error: string } => !!port.error
+  );
+  const successfulPorts = createdPorts.filter((port) => !port.error);
 
   return {
     name: adaptedData.name,
@@ -424,7 +451,7 @@ function buildPortResponseData(
     ports: createdPorts,
     ...(autostartSuccess !== undefined && { autostarted: autostartSuccess }),
     ...(failedPorts.length > 0 && {
-      portErrors: failedPorts.map(p => ({ port: p.number, error: p.error }))
+      portErrors: failedPorts.map((p) => ({ port: p.number, error: p.error }))
     }),
     summary: {
       totalPorts: createdPorts.length,
@@ -452,14 +479,14 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(req.headers)
     });
 
-    const { body: devboxListBody } = await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: devboxListBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
       'devboxes'
-    ) as { body: { items: KBDevboxTypeV2[] } };
+    )) as { body: { items: KBDevboxTypeV2[] } };
 
-    if (devboxListBody?.items?.find(item => item.metadata.name === devboxForm.name)) {
+    if (devboxListBody?.items?.find((item) => item.metadata.name === devboxForm.name)) {
       return jsonRes({
         code: 409,
         message: 'Devbox already exists'
@@ -519,14 +546,14 @@ export async function POST(req: NextRequest) {
         finalPorts = templateConfig.appPorts.map((appPort: any) => ({
           number: appPort.port,
           protocol: appPort.protocol?.toLowerCase() || 'http',
-          isPublic: true    // Default to public for template ports
+          isPublic: true // Default to public for template ports
         }));
       }
     }
 
     const resourceConfig = convertResourceConfig(devboxForm.quota);
     const { DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
-    const devbox = json2DevboxV2(
+    const devbox = json2Devbox(
       {
         ...devboxForm,
         ...resourceConfig,
@@ -558,9 +585,10 @@ export async function POST(req: NextRequest) {
 
     let autostartSuccess: boolean | undefined;
     if (devboxForm.autostart && devboxBody.metadata?.uid) {
-      const execCommand = templateConfig.releaseCommand && templateConfig.releaseArgs
-        ? `${templateConfig.releaseCommand.join(' ')} ${templateConfig.releaseArgs.join(' ')}`
-        : '/bin/bash /home/devbox/project/entrypoint.sh';
+      const execCommand =
+        templateConfig.releaseCommand && templateConfig.releaseArgs
+          ? `${templateConfig.releaseCommand.join(' ')} ${templateConfig.releaseArgs.join(' ')}`
+          : '/bin/bash /home/devbox/project/entrypoint.sh';
 
       autostartSuccess = await handleAutostart(
         devboxForm.name,
@@ -598,10 +626,10 @@ export async function POST(req: NextRequest) {
       autostartSuccess
     );
 
-    const hasFailedPorts = createdPorts.some(port => 'error' in port && port.error);
+    const hasFailedPorts = createdPorts.some((port) => 'error' in port && port.error);
 
     if (hasFailedPorts) {
-      const failedCount = createdPorts.filter(p => 'error' in p && p.error).length;
+      const failedCount = createdPorts.filter((p) => 'error' in p && p.error).length;
       return jsonRes({
         code: 500,
         message: `DevBox created, but ${failedCount} port(s) had issues${devboxForm.autostart ? (autostartSuccess ? ', autostart succeeded' : ', autostart failed') : ''}`,
@@ -611,7 +639,6 @@ export async function POST(req: NextRequest) {
 
     // Success: return 204 No Content
     return new NextResponse(null, { status: 204 });
-
   } catch (err: any) {
     return jsonRes({
       code: 500,
@@ -636,8 +663,8 @@ export async function GET(req: NextRequest) {
 
     const devboxBody = devboxResponse.body as { items: KBDevboxTypeV2[] };
     //2.get-template-uid
-    const uidList = devboxBody.items.map(item => item.spec.templateID);
-  //3.uid to database search template
+    const uidList = devboxBody.items.map((item) => item.spec.templateID);
+    //3.uid to database search template
     const templateResultList = await devboxDB.template.findMany({
       where: {
         uid: {
@@ -655,11 +682,11 @@ export async function GET(req: NextRequest) {
     });
 
     const templateMap = new Map(
-      templateResultList.map(template => [template.uid, template.templateRepository.iconId])
+      templateResultList.map((template) => [template.uid, template.templateRepository.iconId])
     );
 
     const data = devboxBody.items
-      .map(item => {
+      .map((item) => {
         const runtime = templateMap.get(item.spec.templateID);
         if (!runtime) return null;
 

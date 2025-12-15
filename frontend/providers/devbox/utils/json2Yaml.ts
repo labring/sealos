@@ -1,84 +1,12 @@
 import yaml from 'js-yaml';
 
-import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
-import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
+import { devboxKey, publicDomainKey } from '@/constants/devbox';
+import { DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
 import { nanoid, parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
-import { RuntimeNamespaceMap } from '@/types/static';
 
 export const json2Devbox = (
-  data: DevboxEditType,
-  runtimeNamespaceMap: RuntimeNamespaceMap,
-  devboxAffinityEnable: string = 'true',
-  squashEnable: string = 'false'
-) => {
-  // runtimeNamespace inject
-  const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
-  // gpu node selector
-  const gpuMap = !!data.gpu?.type
-    ? {
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
-        }
-      }
-    : {};
-  let json: any = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
-    kind: 'Devbox',
-    metadata: {
-      name: data.name
-    },
-    spec: {
-      squash: squashEnable === 'true',
-      network: {
-        type: 'NodePort',
-        extraPorts: data.networks.map((item) => ({
-          containerPort: item.port
-        }))
-      },
-      resource: {
-        cpu: `${str2Num(Math.floor(data.cpu))}m`,
-        memory: `${str2Num(data.memory)}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
-      },
-      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
-      runtimeRef: {
-        name: data.runtimeVersion,
-        namespace: runtimeNamespace
-      },
-      state: 'Running',
-      ...gpuMap
-    }
-  };
-  if (devboxAffinityEnable === 'true') {
-    json.spec.tolerations = [
-      {
-        key: 'devbox.sealos.io/node',
-        operator: 'Exists',
-        effect: 'NoSchedule'
-      }
-    ];
-    json.spec.affinity = {
-      nodeAffinity: {
-        requiredDuringSchedulingIgnoredDuringExecution: {
-          nodeSelectorTerms: [
-            {
-              matchExpressions: [
-                {
-                  key: 'devbox.sealos.io/node',
-                  operator: 'Exists'
-                }
-              ]
-            }
-          ]
-        }
-      }
-    };
-  }
-  return yaml.dump(json);
-};
-export const json2DevboxV2 = (
   data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
@@ -147,6 +75,7 @@ export const json2DevboxV2 = (
   }
   return yaml.dump(json);
 };
+
 export const json2StartOrStop = ({
   devboxName,
   type
@@ -387,7 +316,7 @@ export const generateYamlList = (
   return [
     {
       filename: 'devbox.yaml',
-      value: json2DevboxV2(data, env.devboxAffinityEnable, env.squashEnable)
+      value: json2Devbox(data, env.devboxAffinityEnable, env.squashEnable)
     },
     ...(data.networks.length > 0
       ? [
