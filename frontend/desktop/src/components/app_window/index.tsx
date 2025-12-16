@@ -29,6 +29,7 @@ export default function AppWindow(props: {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragDom = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   if (!wnapp) return null;
 
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
@@ -110,9 +111,23 @@ export default function AppWindow(props: {
         data-hide={!wnapp?.isShow}
         id={wnapp?.icon + 'App'}
         style={{
-          zIndex: wnapp?.zIndex
+          zIndex: wnapp?.zIndex,
+          overflow: wnapp?.size === 'maximize' ? 'hidden' : 'visible'
         }}
       >
+        {wnapp?.size === 'maximize' && wnapp?.key === 'system-brain' && (
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            height="10px"
+            zIndex={999}
+            background="transparent"
+            pointerEvents="auto"
+            onMouseEnter={() => setIsHeaderHovered(true)}
+          />
+        )}
         {/* app window header */}
         <Flex
           cursor={'pointer'}
@@ -120,6 +135,8 @@ export default function AppWindow(props: {
           background={'grayModern.100'}
           className={'windowHeader'}
           borderRadius={'6px 6px 0 0'}
+          position="relative"
+          zIndex={998}
           onClick={() => {
             setToHighestLayerById(pid);
           }}
@@ -127,6 +144,14 @@ export default function AppWindow(props: {
             e.stopPropagation();
             e.preventDefault();
           }}
+          onMouseEnter={() => setIsHeaderHovered(true)}
+          onMouseLeave={() => setIsHeaderHovered(false)}
+          marginTop={
+            wnapp?.size === 'maximize' && wnapp?.key === 'system-brain' && !isHeaderHovered
+              ? '-28px'
+              : '0'
+          }
+          transition="margin-top 0.2s ease-in-out"
         >
           <Flex ml="16px" alignItems={'center'} fontSize={'12px'} fontWeight={400}>
             <Image
