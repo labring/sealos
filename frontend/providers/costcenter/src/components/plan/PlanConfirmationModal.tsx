@@ -1,15 +1,15 @@
-import { CheckCircle } from 'lucide-react';
 import { forwardRef } from 'react';
-import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
+import { Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
-import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
-import { getUpgradeAmount } from '@/api/plan';
-import { useQuery } from '@tanstack/react-query';
+import { formatMoney } from '@/utils/format';
+import { getUpgradeAmount, getCardInfo, createCardManageSession } from '@/api/plan';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
-import CurrencySymbol from '../CurrencySymbol';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { PlanConfirmationModalView } from './PlanConfirmationModalView';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
@@ -24,6 +24,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const { plan, workspaceName, isCreateMode = false, isOpen = false, onConfirm, onCancel } = props;
 
   const { t } = useTranslation();
+  const { toast } = useCustomToast();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   const isPaygType = usePlanStore((state) => state.isPaygType);
@@ -57,33 +58,63 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       isOpen && !!(plan && workspace && regionDomain && operator === 'upgraded' && !isPaygUser)
   });
 
+  // Query card info
+  const { data: cardInfoData, isLoading: cardInfoLoading } = useQuery({
+    queryKey: ['card-info', workspace, regionDomain],
+    queryFn: () =>
+      getCardInfo({
+        workspace,
+        regionDomain
+      }),
+    enabled: isOpen && !!workspace && !!regionDomain,
+    refetchOnMount: true
+  });
+
+  // Mutation for creating card management session
+  const manageCardMutation = useMutation({
+    mutationFn: createCardManageSession,
+    onSuccess: (data) => {
+      if (data?.data?.success && data?.data?.url) {
+        // Open Stripe portal in new tab
+        window.open(data.data.url, '_blank', 'noopener,noreferrer');
+      } else {
+        toast({
+          title: t('common:error'),
+          description: t('common:failed_to_create_portal_session'),
+          status: 'error'
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description: error?.response?.data?.message || t('common:failed_to_create_portal_session'),
+        status: 'error'
+      });
+    }
+  });
+
+  const handleManageCards = () => {
+    if (!workspace || !regionDomain) {
+      toast({
+        title: t('common:error'),
+        description: t('common:missing_workspace_or_region'),
+        status: 'error'
+      });
+      return;
+    }
+
+    manageCardMutation.mutate({
+      workspace,
+      regionDomain
+    });
+  };
+
   const handleConfirm = () => {
     onConfirm?.();
   };
 
   if (!plan) return null;
-
-  // Format plan resources
-  const formatCpu = (cpu: string) => {
-    const cpuNum = parseFloat(cpu);
-    return `${cpuNum} vCPU`;
-  };
-
-  const formatMemory = (memory: string) => {
-    return memory.replace('Gi', 'GB RAM');
-  };
-
-  const formatStorage = (storage: string) => {
-    return storage.replace('Gi', 'GB Disk');
-  };
-
-  // Parse plan resources
-  let planResources: any = {};
-  try {
-    planResources = JSON.parse(plan.MaxResources || '{}');
-  } catch (e) {
-    planResources = {};
-  }
 
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === period)?.Price || 0;
   const upgradeAmount = upgradeAmountData?.data?.amount || 0;
@@ -101,132 +132,28 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       }}
     >
       <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
-      <DialogContent className="max-w-[400px] pb-8 pt-0 px-10 gap-0">
+      <DialogContent className="max-w-4xl! pb-8 pt-0 px-10 gap-0">
         {/* Header */}
         <div className="flex justify-center items-center px-6 py-5">
-          <h2 className="text-lg font-semibold text-gray-900 text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
             {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
           </h2>
         </div>
 
-        <div className="p-6 border border-zinc-200 rounded-xl">
-          {/* Order Summary */}
-          <h3 className="text-base font-semibold text-gray-900 mb-6 leading-4">
-            {t('common:order_summary')}
-          </h3>
-
-          {/* Plan Info */}
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-base font-medium text-gray-900">
-              {plan.Name} {t('common:plan')}
-            </span>
-            <span className="text-base font-medium text-gray-900">
-              <CurrencySymbol />
-              <span>
-                {displayMoney(formatMoney(monthlyPrice))}/{t('common:month')}
-              </span>
-            </span>
-          </div>
-
-          {/* Plan Resources */}
-          <div className="flex flex-col gap-2 mb-6">
-            {planResources.cpu && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatCpu(planResources.cpu)}</span>
-              </div>
-            )}
-            {planResources.memory && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatMemory(planResources.memory)}</span>
-              </div>
-            )}
-            {planResources.storage && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">
-                  {formatStorage(planResources.storage)}
-                </span>
-              </div>
-            )}
-            {plan.Traffic && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatTrafficAuto(plan.Traffic)}</span>
-              </div>
-            )}
-            {planResources.nodeports && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{planResources.nodeports} Nodeport</span>
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-gray-100 mb-5" />
-
-          {/* Billing Summary */}
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">
-                {t('common:total_billed_monthly')}
-              </span>
-              <span className="text-sm font-medium text-gray-900">
-                <CurrencySymbol />
-                <span>{displayMoney(formatMoney(monthlyPrice))}</span>
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">{t('common:due_today')}</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {isCreateMode || isPaygUser || amountLoading ? (
-                  isCreateMode || isPaygUser ? (
-                    <>
-                      <CurrencySymbol />
-                      <span>{formatMoney(dueToday)}</span>
-                    </>
-                  ) : (
-                    t('common:calculating')
-                  )
-                ) : (
-                  <>
-                    <CurrencySymbol />
-                    <span>{formatMoney(dueToday)}</span>
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Workspace Name Display for Create Mode */}
-          {isCreateMode && workspaceName && (
-            <>
-              <div className="border-t border-gray-100 mb-5" />
-              <div className="mb-6">
-                <div className="text-sm font-medium text-gray-900 mb-2">
-                  {t('common:workspace_name')}
-                </div>
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <span className="text-sm text-gray-700">{workspaceName}</span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-        {/* Checkout Button */}
-        <Button
-          className="w-full mt-5"
-          size="lg"
-          onClick={handleConfirm}
-          disabled={!(isCreateMode || isPaygUser) && amountLoading}
-        >
-          {!(isCreateMode || isPaygUser) && amountLoading
-            ? t('common:calculating')
-            : isCreateMode
-              ? t('common:create_workspace')
-              : t('common:checkout')}
-        </Button>
+        {/* Main Content */}
+        <PlanConfirmationModalView
+          plan={plan}
+          workspaceName={workspaceName}
+          isCreateMode={isCreateMode}
+          monthlyPrice={monthlyPrice}
+          dueToday={dueToday}
+          amountLoading={!(isCreateMode || isPaygUser) && amountLoading}
+          paymentMethod={cardInfoData?.data?.payment_method}
+          cardInfoLoading={cardInfoLoading}
+          manageCardLoading={manageCardMutation.isLoading}
+          onConfirm={handleConfirm}
+          onManageCards={handleManageCards}
+        />
       </DialogContent>
     </Dialog>
   );

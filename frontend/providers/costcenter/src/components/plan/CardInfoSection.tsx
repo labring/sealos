@@ -89,6 +89,11 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
     return null;
   }
 
+  // Hide section if no card and not loading
+  if (!cardInfoLoading && !hasCard) {
+    return null;
+  }
+
   return (
     <div className="p-2 border rounded-2xl">
       <div className="bg-plan-payg flex justify-between items-center rounded-xl px-3 py-3 gap-6">
@@ -122,26 +127,19 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
                 </span>
               </div>
             </>
-          ) : (
-            <>
-              <div className="h-9 w-14 bg-gray-100 border border-gray-200 rounded flex items-center justify-center shrink-0">
-                <CreditCard className="size-4 text-gray-400" />
-              </div>
-              <span className="text-sm font-medium text-zinc-900">
-                {t('common:no_payment_method')}
-              </span>
-            </>
-          )}
+          ) : null}
         </div>
 
-        <Button
-          variant="outline"
-          onClick={handleManageCards}
-          disabled={manageCardMutation.isLoading}
-          className="h-10"
-        >
-          {manageCardMutation.isLoading ? t('common:loading') : t('common:manage_card_info')}
-        </Button>
+        {hasCard && (
+          <Button
+            variant="outline"
+            onClick={handleManageCards}
+            disabled={manageCardMutation.isLoading}
+            className="h-10"
+          >
+            {manageCardMutation.isLoading ? t('common:loading') : t('common:manage_card_info')}
+          </Button>
+        )}
       </div>
     </div>
   );

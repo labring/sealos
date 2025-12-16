@@ -37,6 +37,7 @@ export default function Plan() {
   const { getRegion } = useBillingStore();
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
   const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
   const stripePromise = useEnvStore((s) => s.stripePromise);
   const region = getRegion();
   const { toast } = useCustomToast();
@@ -528,6 +529,7 @@ export default function Plan() {
             <BalanceSection
               balance={balance}
               rechargeEnabled={rechargeEnabled}
+              subscriptionEnabled={subscriptionEnabled}
               onTopUpClick={() => rechargeRef?.current?.onOpen()}
             />
           </div>
@@ -567,6 +569,7 @@ export default function Plan() {
           <BalanceSection
             balance={balance}
             rechargeEnabled={rechargeEnabled}
+            subscriptionEnabled={subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current!.onOpen()}
           />
         </>
