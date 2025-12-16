@@ -1,0 +1,13 @@
+apiVersion: v2
+name: rauth
+description: Registry Authentication Service for Kubernetes namespace-based image access control
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - registry
+  - authentication
+  - docker
+  - kubernetes
+maintainers:
+  - name: rauth

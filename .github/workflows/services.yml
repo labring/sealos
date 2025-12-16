@@ -113,6 +113,7 @@ jobs:
             vlogs,
             hubble,
             sshgate,
+            rauth,
           ]
     steps:
       - name: Checkout
@@ -243,6 +244,7 @@ jobs:
             vlogs,
             hubble,
             sshgate,
+            rauth,
           ]
     steps:
       - name: Checkout

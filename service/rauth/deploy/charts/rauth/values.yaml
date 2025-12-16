@@ -1,0 +1,78 @@
+# Default values for rauth
+
+replicaCount: 2
+
+image: ghcr.io/labring/sealos-rauth-service:latest
+imagePullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# rauth configuration
+config:
+  port: 8080
+  issuer: "rauth"
+  service: "internal-registry.io"
+  secretName: "devbox-registry"
+  tokenExpiry: "5m"
+  logLevel: "info"
+  # Path to RSA private key (optional, will auto-generate if not provided)
+  privateKeyPath: ""
+
+# If you want to use an existing secret for the private key
+existingPrivateKeySecret:
+  enabled: false
+  name: ""
+  key: "tls.key"
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+# RBAC configuration
+rbac:
+  create: true
