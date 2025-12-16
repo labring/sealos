@@ -1,24 +1,31 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: node-controller-role
+  name: node-gpu-info-cm-reader
+  namespace: node-system
 rules:
 - apiGroups:
-    - '*'
+    - ""
+  resourceNames:
+    - node-gpu-info
   resources:
-    - '*'
+    - configmaps
   verbs:
-    - '*'
+    - get
+    - watch
+    - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: node-controller-clusterrolebinding
+  name: node-gpu-info-cm-reader-rolebinding
+  namespace: node-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: node-controller-role
+  name: node-gpu-info-cm-reader
 subjects:
-  - kind: ServiceAccount
-    name: {{ include "node.serviceAccountName" . }}
-    namespace: {{.Release.Namespace}}
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:serviceaccounts
