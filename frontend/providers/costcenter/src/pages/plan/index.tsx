@@ -15,6 +15,7 @@ import {
 import { AllPlansSection } from '@/components/plan/AllPlansSection';
 import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
+import { CardInfoSection } from '@/components/plan/CardInfoSection';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -570,6 +571,8 @@ export default function Plan() {
           />
         </>
       )}
+
+      <CardInfoSection workspace={session?.user?.nsid} regionDomain={region?.domain} />
 
       <AllPlansSection />
       {/* Modals */}

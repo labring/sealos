@@ -36,13 +36,6 @@ export function CostPanel({ children, region, workspace, totalCost, className }:
             <span>{formatMoney(totalCost).toFixed(2)}</span>
           </span>
         </div>
-
-        {/* // [TODO] AI is currently not available */}
-        {/* <div className="font-semibold">
-          <Button variant="link" className="text-blue-600 p-0 h-fit">
-            Questions about charges? Ask AI
-          </Button>
-        </div> */}
       </div>
 
       {children}

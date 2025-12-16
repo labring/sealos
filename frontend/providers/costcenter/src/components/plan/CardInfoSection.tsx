@@ -1,0 +1,148 @@
+import { Button } from '@sealos/shadcn-ui';
+import { CreditCard } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getCardInfo, createCardManageSession } from '@/api/plan';
+import { useTranslation } from 'next-i18next';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import useSessionStore from '@/stores/session';
+import useBillingStore from '@/stores/billing';
+
+interface CardInfoSectionProps {
+  workspace?: string;
+  regionDomain?: string;
+}
+
+export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProps) {
+  const { t } = useTranslation();
+  const { toast } = useCustomToast();
+  const { session } = useSessionStore();
+  const { getRegion } = useBillingStore();
+  const region = getRegion();
+
+  const effectiveWorkspace = workspace || session?.user?.nsid || '';
+  const effectiveRegionDomain = regionDomain || region?.domain || '';
+
+  // Query card info
+  const { data: cardInfoData, isLoading: cardInfoLoading } = useQuery({
+    queryKey: ['card-info', effectiveWorkspace, effectiveRegionDomain],
+    queryFn: () =>
+      getCardInfo({
+        workspace: effectiveWorkspace,
+        regionDomain: effectiveRegionDomain
+      }),
+    enabled: !!effectiveWorkspace && !!effectiveRegionDomain,
+    refetchOnMount: true
+  });
+
+  // Mutation for creating card management session
+  const manageCardMutation = useMutation({
+    mutationFn: createCardManageSession,
+    onSuccess: (data) => {
+      if (data?.data?.success && data?.data?.url) {
+        // Open Stripe portal in new tab
+        window.open(data.data.url, '_blank', 'noopener,noreferrer');
+      } else {
+        toast({
+          title: t('common:error'),
+          description: t('common:failed_to_create_portal_session'),
+          status: 'error'
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description: error?.response?.data?.message || t('common:failed_to_create_portal_session'),
+        status: 'error'
+      });
+    }
+  });
+
+  const handleManageCards = () => {
+    if (!effectiveWorkspace || !effectiveRegionDomain) {
+      toast({
+        title: t('common:error'),
+        description: t('common:missing_workspace_or_region'),
+        status: 'error'
+      });
+      return;
+    }
+
+    manageCardMutation.mutate({
+      workspace: effectiveWorkspace,
+      regionDomain: effectiveRegionDomain
+    });
+  };
+
+  const paymentMethod = cardInfoData?.data?.payment_method;
+  const hasCard = !!paymentMethod;
+
+  const formatCardBrand = (brand: string) => {
+    return brand.charAt(0).toUpperCase() + brand.slice(1).toLowerCase();
+  };
+
+  const formatExpiryDate = (month: number, year: number) => {
+    return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
+  };
+
+  if (!effectiveWorkspace || !effectiveRegionDomain) {
+    return null;
+  }
+
+  return (
+    <div className="p-2 border rounded-2xl">
+      <div className="bg-plan-payg flex justify-between items-center rounded-xl px-3 py-3 gap-6">
+        <div className="flex items-center gap-3 flex-1">
+          {cardInfoLoading ? (
+            <>
+              <div className="h-9 w-14 bg-gray-200 rounded animate-pulse" />
+              <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+            </>
+          ) : hasCard ? (
+            <>
+              <div className="h-9 w-14 bg-white border border-zinc-200 rounded flex items-center justify-center shrink-0">
+                <span className="text-xs font-medium text-zinc-900">
+                  {formatCardBrand(paymentMethod.card.brand).slice(0, 4).toUpperCase()}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-zinc-900">
+                {formatCardBrand(paymentMethod.card.brand)}
+              </span>
+              <span className="text-sm font-medium text-zinc-900">
+                •••• {paymentMethod.card.last4}
+              </span>
+              <span className="text-xs text-zinc-500">
+                {t('common:expires')}:{' '}
+                {formatExpiryDate(paymentMethod.card.exp_month, paymentMethod.card.exp_year)}
+              </span>
+              <div className="h-3 w-px bg-zinc-200" />
+              <div className="bg-zinc-200 px-2 rounded-full">
+                <span className="text-sm font-medium text-zinc-500 leading-none">
+                  {t('common:default')}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="h-9 w-14 bg-gray-100 border border-gray-200 rounded flex items-center justify-center shrink-0">
+                <CreditCard className="size-4 text-gray-400" />
+              </div>
+              <span className="text-sm font-medium text-zinc-900">
+                {t('common:no_payment_method')}
+              </span>
+            </>
+          )}
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={handleManageCards}
+          disabled={manageCardMutation.isLoading}
+          className="h-10"
+        >
+          {manageCardMutation.isLoading ? t('common:loading') : t('common:manage_card_info')}
+        </Button>
+      </div>
+    </div>
+  );
+}

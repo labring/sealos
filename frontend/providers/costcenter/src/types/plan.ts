@@ -200,3 +200,62 @@ export const WorkspaceSubscriptionListResponseSchema = z.object({
 export type WorkspaceSubscriptionListResponse = z.infer<
   typeof WorkspaceSubscriptionListResponseSchema
 >;
+
+/**
+ * Card list request schema
+ */
+export const WorkspaceSubscriptionCardInfoRequestSchema = z.object({
+  workspace: z.string(),
+  regionDomain: z.string().optional()
+});
+export type WorkspaceSubscriptionCardInfoRequest = z.infer<
+  typeof WorkspaceSubscriptionCardInfoRequestSchema
+>;
+
+/**
+ * Payment method (card) info
+ */
+export const PaymentMethodInfoSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  created: z.number(),
+  card: z.object({
+    brand: z.string(),
+    last4: z.string(),
+    exp_month: z.number(),
+    exp_year: z.number(),
+    funding: z.string(),
+    country: z.string()
+  }),
+  metadata: z.record(z.string(), z.string())
+});
+export type PaymentMethodInfo = z.infer<typeof PaymentMethodInfoSchema>;
+
+/**
+ * Card info response
+ */
+export const CardInfoResponseSchema = z.object({
+  success: z.boolean(),
+  payment_method: PaymentMethodInfoSchema.nullable()
+});
+export type CardInfoResponse = z.infer<typeof CardInfoResponseSchema>;
+
+/**
+ * Card management request
+ */
+export const WorkspaceSubscriptionManageCardRequestSchema = z.object({
+  workspace: z.string(),
+  regionDomain: z.string()
+});
+export type WorkspaceSubscriptionManageCardRequest = z.infer<
+  typeof WorkspaceSubscriptionManageCardRequestSchema
+>;
+
+/**
+ * Card management session response
+ */
+export const PortalSessionResponseSchema = z.object({
+  success: z.boolean(),
+  url: z.string()
+});
+export type PortalSessionResponse = z.infer<typeof PortalSessionResponseSchema>;
