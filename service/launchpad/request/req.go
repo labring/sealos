@@ -58,6 +58,9 @@ func GetQuery(query *api.VMRequest) (string, error) {
 
 func getPodName(str string) string {
 	index := strings.LastIndex(str, "-")
+	if index == -1 {
+		return str
+	}
 	firstPart := str[:index]
 	return firstPart
 }
