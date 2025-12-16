@@ -8,6 +8,7 @@ import (
 	"github.com/labring/sealos/service/sshgate/registry"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -55,11 +56,22 @@ func (m *Manager) Start(ctx context.Context) error {
 	// Create a cancellable context for the informer lifecycle
 	ctx, m.cancel = context.WithCancel(ctx)
 
-	// Create informer factory
-	m.factory = informers.NewSharedInformerFactory(m.clientset, m.resyncPeriod)
+	// Create informer factory with label selector to only watch devbox resources
+	m.factory = informers.NewSharedInformerFactoryWithOptions(
+		m.clientset,
+		m.resyncPeriod,
+		informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
+			opts.LabelSelector = registry.DevboxPartOfLabel + "=" + registry.DevboxPartOfValue
+		}),
+	)
 
-	// Setup secret informer
+	// Setup secret informer with transform to minimize memory usage
 	secretInformer := m.factory.Core().V1().Secrets().Informer()
+
+	// Transform secret to only keep required fields
+	if err := secretInformer.SetTransform(transformSecret); err != nil {
+		return fmt.Errorf("failed to set secret transform: %w", err)
+	}
 
 	_, err := secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    m.handleSecretAdd,
@@ -70,8 +82,13 @@ func (m *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Setup pod informer
+	// Setup pod informer with transform to minimize memory usage
 	podInformer := m.factory.Core().V1().Pods().Informer()
+
+	// Transform pod to only keep required fields
+	if err := podInformer.SetTransform(transformPod); err != nil {
+		return fmt.Errorf("failed to set pod transform: %w", err)
+	}
 
 	_, err = podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    m.handlePodAdd,
@@ -223,4 +240,51 @@ func (m *Manager) handlePodDelete(obj any) {
 	}
 
 	m.registry.DeletePod(pod)
+}
+
+// transformSecret transforms a Secret to only keep required fields, reducing memory usage
+func transformSecret(obj any) (any, error) {
+	secret, ok := obj.(*corev1.Secret)
+	if !ok {
+		return nil, fmt.Errorf("expected *corev1.Secret, got %T", obj)
+	}
+
+	// Only keep required data fields
+	minData := make(map[string][]byte, 2)
+	if v, ok := secret.Data[registry.DevboxPublicKeyField]; ok {
+		minData[registry.DevboxPublicKeyField] = v
+	}
+	if v, ok := secret.Data[registry.DevboxPrivateKeyField]; ok {
+		minData[registry.DevboxPrivateKeyField] = v
+	}
+
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            secret.Name,
+			Namespace:       secret.Namespace,
+			Labels:          secret.Labels,
+			OwnerReferences: secret.OwnerReferences,
+		},
+		Data: minData,
+	}, nil
+}
+
+// transformPod transforms a Pod to only keep required fields, reducing memory usage
+func transformPod(obj any) (any, error) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return nil, fmt.Errorf("expected *corev1.Pod, got %T", obj)
+	}
+
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            pod.Name,
+			Namespace:       pod.Namespace,
+			Labels:          pod.Labels,
+			OwnerReferences: pod.OwnerReferences,
+		},
+		Status: corev1.PodStatus{
+			PodIP: pod.Status.PodIP,
+		},
+	}, nil
 }
