@@ -13,7 +13,7 @@ import (
 	"github.com/labring/sealos/service/sshgate/informer"
 	"github.com/labring/sealos/service/sshgate/logger"
 	"github.com/labring/sealos/service/sshgate/pprof"
-	"github.com/labring/sealos/service/sshgate/recover"
+	"github.com/labring/sealos/service/sshgate/recovery"
 	"github.com/labring/sealos/service/sshgate/registry"
 	proxyproto "github.com/pires/go-proxyproto"
 	"github.com/sirupsen/logrus"
@@ -52,7 +52,7 @@ func main() {
 
 	// Start pprof server if enabled
 	if cfg.PprofEnabled {
-		recover.Go(logrus.WithField("component", "pprof"), func() {
+		recovery.Go(logrus.WithField("component", "pprof"), func() {
 			_ = pprof.RunPprofServer(cfg.PprofPort)
 		})
 	}
@@ -112,7 +112,7 @@ func main() {
 			continue
 		}
 
-		recover.Go(log, func() {
+		recovery.Go(log, func() {
 			gw.HandleConnection(conn)
 		})
 	}

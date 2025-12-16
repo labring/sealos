@@ -1,4 +1,4 @@
-package recover
+package recovery
 
 import (
 	"bytes"
@@ -36,7 +36,7 @@ func TestWithLogger_Error(t *testing.T) {
 	if !strings.Contains(output, "Panic recovered") {
 		t.Errorf("expected 'Panic recovered' message, got: %s", output)
 	}
-	if !strings.Contains(output, "recover_test.go") {
+	if !strings.Contains(output, "recovery_test.go") {
 		t.Errorf("expected stack trace with file name, got: %s", output)
 	}
 }
@@ -61,7 +61,7 @@ func TestWithLogger_NonError(t *testing.T) {
 	if !strings.Contains(output, "Panic recovered: string panic") {
 		t.Errorf("expected panic value in message, got: %s", output)
 	}
-	if !strings.Contains(output, "recover_test.go") {
+	if !strings.Contains(output, "recovery_test.go") {
 		t.Errorf("expected stack trace with file name, got: %s", output)
 	}
 }

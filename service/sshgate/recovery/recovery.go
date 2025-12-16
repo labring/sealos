@@ -1,4 +1,4 @@
-package recover
+package recovery
 
 import (
 	"bytes"

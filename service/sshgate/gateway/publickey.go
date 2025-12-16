@@ -44,9 +44,8 @@ func (g *Gateway) handlePublicKeyMode(
 	})
 
 	for newChannel := range chans {
-		newChan := newChannel
 		SafeGo(logger, func() {
-			g.handleChannelPublicKey(newChan, backendConn, logger)
+			g.handleChannelPublicKey(newChannel, backendConn, logger)
 		})
 	}
 }
