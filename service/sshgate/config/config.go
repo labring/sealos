@@ -29,7 +29,7 @@ type Config struct {
 	LogFormat string `env:"LOG_FORMAT" envDefault:"text"`
 
 	// Informer configuration
-	InformerResyncPeriod time.Duration `env:"INFORMER_RESYNC_PERIOD" envDefault:"30s"`
+	InformerResyncPeriod time.Duration `env:"INFORMER_RESYNC_PERIOD" envDefault:"0s"`
 
 	// Security configuration
 	SSHHostKeySeed string `env:"SSH_HOST_KEY_SEED" envDefault:"sealos-devbox"`
@@ -122,7 +122,7 @@ func NewDefaultConfig() *Config {
 		Debug:                false,
 		LogLevel:             "info",
 		LogFormat:            "text",
-		InformerResyncPeriod: 30 * time.Second,
+		InformerResyncPeriod: 0,
 		SSHHostKeySeed:       "sealos-devbox",
 		PprofEnabled:         true,
 		PprofPort:            0,

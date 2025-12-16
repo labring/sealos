@@ -229,8 +229,8 @@ func TestNewDefaultConfig(t *testing.T) {
 		t.Errorf("LogFormat = %s, want text", cfg.LogFormat)
 	}
 
-	if cfg.InformerResyncPeriod != 30*time.Second {
-		t.Errorf("InformerResyncPeriod = %v, want 30s", cfg.InformerResyncPeriod)
+	if cfg.InformerResyncPeriod != 0 {
+		t.Errorf("InformerResyncPeriod = %v, want 0", cfg.InformerResyncPeriod)
 	}
 
 	if cfg.SSHHostKeySeed != "sealos-devbox" {

@@ -38,7 +38,7 @@ func New(clientset kubernetes.Interface, reg *registry.Registry, opts ...Option)
 	m := &Manager{
 		clientset:    clientset,
 		registry:     reg,
-		resyncPeriod: 30 * time.Second, // Default value
+		resyncPeriod: 0, // Disable periodic resync, rely on Watch
 		logger:       log.WithField("component", "informer"),
 	}
 
