@@ -69,7 +69,7 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
       alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
-      inventory: +gpuNode['gpu.count'],
+      inventory: +gpuNode['gpu.available'],
       vm: +gpuNode['gpu.memory'] / 1024
     });
   });
