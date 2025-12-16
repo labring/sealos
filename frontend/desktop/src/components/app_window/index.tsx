@@ -117,7 +117,7 @@ export default function AppWindow(props: {
           overflow: wnapp?.size === 'maximize' ? 'hidden' : 'visible'
         }}
       >
-        {wnapp?.size === 'maximize' && (
+        {wnapp?.size === 'maximize' && wnapp?.key === 'system-brain' && (
           <Box
             position="absolute"
             top={0}
@@ -148,7 +148,11 @@ export default function AppWindow(props: {
           }}
           onMouseEnter={() => setIsHeaderHovered(true)}
           onMouseLeave={() => setIsHeaderHovered(false)}
-          marginTop={wnapp?.size === 'maximize' && !isHeaderHovered ? '-28px' : '0'}
+          marginTop={
+            wnapp?.size === 'maximize' && wnapp?.key === 'system-brain' && !isHeaderHovered
+              ? '-28px'
+              : '0'
+          }
           transition="margin-top 0.2s ease-in-out"
         >
           <Flex ml="16px" alignItems={'center'} fontSize={'12px'} fontWeight={400}>

@@ -1,6 +1,8 @@
+'use client';
+
 import { useConfigStore } from '@/stores/config';
-import { Box, Flex, Img, useDisclosure, VStack } from '@chakra-ui/react';
-import { useEffect, useState, useMemo } from 'react';
+import { Box, Flex, useDisclosure, VStack } from '@chakra-ui/react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import bgimage from 'public/images/signin_bg.png';
 import bgimageZh from 'public/images/signin_bg_zh.png';
 import LangSelectSimple from '../LangSelect/simple';
@@ -20,6 +22,7 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
   const { signinPageAction, setSigninPageAction, clearSigninPageAction } = useSigninPageStore();
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (session?.user && !session?.isGuest && !!token) {
@@ -53,19 +56,32 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     return isZh ? bgimageZh.src : bgimage.src;
   }, [i18n.language, layoutConfig?.authBackgroundImage]);
 
+  // Check if image is already loaded from cache
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      console.log('Image already loaded from cache!');
+      setImageLoaded(true);
+    }
+  }, [backgroundImageSrc]);
+
   return (
     <Box>
       <Flex width={'full'}>
-        <Img
-          objectFit={'cover'}
+        <Box
+          ref={imgRef}
+          as="img"
           src={backgroundImageSrc}
           alt="signin-bg"
-          fill={'cover'}
+          objectFit={'cover'}
           w={'50%'}
           display={{ base: 'none', md: 'block' }}
           opacity={imageLoaded ? 1 : 0}
           transition="opacity 0.3s ease-in-out"
-          onLoad={() => setImageLoaded(true)}
+          onLoad={() => {
+            console.log('Native img onLoad triggered!');
+            setImageLoaded(true);
+          }}
         />
 
         <VStack w="full" position={'relative'}>
