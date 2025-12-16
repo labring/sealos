@@ -39,10 +39,15 @@ func (g *Gateway) handlePublicKeyMode(
 
 	logger.Info("Backend connected")
 
-	go g.handleGlobalRequestsPublicKey(reqs, backendConn, logger)
+	SafeGo(logger, func() {
+		g.handleGlobalRequestsPublicKey(reqs, backendConn, logger)
+	})
 
 	for newChannel := range chans {
-		go g.handleChannelPublicKey(newChannel, backendConn, logger)
+		newChan := newChannel
+		SafeGo(logger, func() {
+			g.handleChannelPublicKey(newChan, backendConn, logger)
+		})
 	}
 }
 

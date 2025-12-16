@@ -37,24 +37,26 @@ func (g *Gateway) proxyChannelWithRequests(
 	logger *log.Entry,
 ) {
 	// Client to backend: requests and data
-	go func() {
+	SafeGo(logger, func() {
 		g.proxyRequests(clientReqs, backendChannel, logger)
-	}()
+	})
 
-	go func() {
+	SafeGo(logger, func() {
 		_, _ = io.Copy(backendChannel, channel)
 		_ = backendChannel.CloseWrite()
-	}()
+	})
 
 	// Backend to client: wait for both data and requests before CloseWrite
 	var backendToClientWg sync.WaitGroup
 
 	backendToClientWg.Go(func() {
+		defer recoverWithLogger(logger)
 		_, _ = io.Copy(channel, backendChannel)
 		_ = channel.CloseWrite()
 	})
 
 	backendToClientWg.Go(func() {
+		defer recoverWithLogger(logger)
 		g.proxyRequests(backendReqs, channel, logger)
 	})
 
@@ -66,6 +68,7 @@ func (g *Gateway) proxyChannelWithRequests(
 func (g *Gateway) proxyChannelToConn(channel ssh.Channel, conn net.Conn) {
 	var wg sync.WaitGroup
 	wg.Go(func() {
+		defer recoverWithLogger(g.logger)
 		_, _ = io.Copy(channel, conn)
 		_ = channel.CloseWrite()
 	})

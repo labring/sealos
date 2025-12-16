@@ -185,7 +185,9 @@ func (g *Gateway) createAgentChannelToClient(ctx *sessionContext) ssh.Channel {
 	ctx.logger.Info("Agent channel to client established")
 
 	// Discard requests on the agent channel
-	go ssh.DiscardRequests(agentReqs)
+	SafeGo(ctx.logger, func() {
+		ssh.DiscardRequests(agentReqs)
+	})
 
 	return agentChannel
 }

@@ -32,7 +32,9 @@ func (g *Gateway) handleCustomKeyOrNoAuthMode(
 		}),
 	}
 
-	go ssh.DiscardRequests(reqs)
+	SafeGo(logger, func() {
+		ssh.DiscardRequests(reqs)
+	})
 
 	for newChannel := range chans {
 		g.handleChannelCustomKeyOrNoAuth(newChannel, ctx)
