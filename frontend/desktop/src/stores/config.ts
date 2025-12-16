@@ -16,6 +16,7 @@ type State = {
   commonConfig?: CommonClientConfigType;
   layoutConfig?: LayoutConfigType;
   trackingConfig?: TrackingConfigType;
+  isLoaded: boolean;
   initAppConfig: () => Promise<void>;
 };
 
@@ -27,6 +28,7 @@ export const useConfigStore = create<State>()(
       commonConfig: undefined,
       layoutConfig: undefined,
       trackingConfig: undefined,
+      isLoaded: false,
       async initAppConfig() {
         const data = await getAppConfig();
         console.log('initAppConfig', data.data);
@@ -36,6 +38,7 @@ export const useConfigStore = create<State>()(
           state.authConfig = data.data.desktop.auth;
           state.cloudConfig = data.data.cloud;
           state.commonConfig = data.data.common;
+          state.isLoaded = true;
         });
       }
     }))

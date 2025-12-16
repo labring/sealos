@@ -17,7 +17,7 @@ import { GitHubReauthPrompt } from './GitHubReauthPrompt';
 export default function SignLayout({ children }: { children: React.ReactNode }) {
   useLanguageSwitcher(); // force set language
   const { i18n } = useTranslation();
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, isLoaded } = useConfigStore();
   const { session, token } = useSessionStore();
   const { signinPageAction, setSigninPageAction, clearSigninPageAction } = useSigninPageStore();
   const router = useRouter();
@@ -44,8 +44,9 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     }
   }, [signinPageAction, onGitHubReauthPromptOpen, setSigninPageAction, clearSigninPageAction]);
 
-  // Prevent flickering when custom image is set.
   const backgroundImageSrc = useMemo(() => {
+    if (!isLoaded) return null;
+
     const isZh = i18n.language === 'zh';
     const customImage = layoutConfig?.authBackgroundImage;
 
@@ -54,13 +55,11 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     }
 
     return isZh ? bgimageZh.src : bgimage.src;
-  }, [i18n.language, layoutConfig?.authBackgroundImage]);
+  }, [i18n.language, layoutConfig?.authBackgroundImage, isLoaded]);
 
-  // Check if image is already loaded from cache
   useEffect(() => {
     const img = imgRef.current;
     if (img && img.complete && img.naturalWidth > 0) {
-      console.log('Image already loaded from cache!');
       setImageLoaded(true);
     }
   }, [backgroundImageSrc]);
@@ -68,21 +67,24 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
   return (
     <Box>
       <Flex width={'full'}>
-        <Box
-          ref={imgRef}
-          as="img"
-          src={backgroundImageSrc}
-          alt="signin-bg"
-          objectFit={'cover'}
-          w={'50%'}
-          display={{ base: 'none', md: 'block' }}
-          opacity={imageLoaded ? 1 : 0}
-          transition="opacity 0.3s ease-in-out"
-          onLoad={() => {
-            console.log('Native img onLoad triggered!');
-            setImageLoaded(true);
-          }}
-        />
+        {backgroundImageSrc ? (
+          <Box
+            ref={imgRef}
+            as="img"
+            src={backgroundImageSrc}
+            alt="signin-bg"
+            objectFit={'cover'}
+            w={'50%'}
+            display={{ base: 'none', md: 'block' }}
+            opacity={imageLoaded ? 1 : 0}
+            transition="opacity 0.3s ease-in-out"
+            onLoad={() => {
+              setImageLoaded(true);
+            }}
+          />
+        ) : (
+          <Box w={'50%'} display={{ base: 'none', md: 'block' }} />
+        )}
 
         <VStack w="full" position={'relative'}>
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
