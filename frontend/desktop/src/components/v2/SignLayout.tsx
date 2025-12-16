@@ -1,6 +1,8 @@
+'use client';
+
 import { useConfigStore } from '@/stores/config';
-import { Box, Flex, Img, useDisclosure, VStack } from '@chakra-ui/react';
-import { useEffect, useState, useMemo } from 'react';
+import { Box, Flex, useDisclosure, VStack } from '@chakra-ui/react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import bgimage from 'public/images/signin_bg.png';
 import bgimageZh from 'public/images/signin_bg_zh.png';
 import LangSelectSimple from '../LangSelect/simple';
@@ -15,11 +17,12 @@ import { GitHubReauthPrompt } from './GitHubReauthPrompt';
 export default function SignLayout({ children }: { children: React.ReactNode }) {
   useLanguageSwitcher(); // force set language
   const { i18n } = useTranslation();
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, isLoaded } = useConfigStore();
   const { session, token } = useSessionStore();
   const { signinPageAction, setSigninPageAction, clearSigninPageAction } = useSigninPageStore();
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (session && token) {
@@ -41,8 +44,9 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     }
   }, [signinPageAction, onGitHubReauthPromptOpen, setSigninPageAction, clearSigninPageAction]);
 
-  // Prevent flickering when custom image is set.
   const backgroundImageSrc = useMemo(() => {
+    if (!isLoaded) return null;
+
     const isZh = i18n.language === 'zh';
     const customImage = layoutConfig?.authBackgroundImage;
 
@@ -51,22 +55,36 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     }
 
     return isZh ? bgimageZh.src : bgimage.src;
-  }, [i18n.language, layoutConfig?.authBackgroundImage]);
+  }, [i18n.language, layoutConfig?.authBackgroundImage, isLoaded]);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setImageLoaded(true);
+    }
+  }, [backgroundImageSrc]);
 
   return (
     <Box>
       <Flex width={'full'}>
-        <Img
-          objectFit={'cover'}
-          src={backgroundImageSrc}
-          alt="signin-bg"
-          fill={'cover'}
-          w={'50%'}
-          display={{ base: 'none', md: 'block' }}
-          opacity={imageLoaded ? 1 : 0}
-          transition="opacity 0.3s ease-in-out"
-          onLoad={() => setImageLoaded(true)}
-        />
+        {backgroundImageSrc ? (
+          <Box
+            ref={imgRef}
+            as="img"
+            src={backgroundImageSrc}
+            alt="signin-bg"
+            objectFit={'cover'}
+            w={'50%'}
+            display={{ base: 'none', md: 'block' }}
+            opacity={imageLoaded ? 1 : 0}
+            transition="opacity 0.3s ease-in-out"
+            onLoad={() => {
+              setImageLoaded(true);
+            }}
+          />
+        ) : (
+          <Box w={'50%'} display={{ base: 'none', md: 'block' }} />
+        )}
 
         <VStack w="full" position={'relative'}>
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
