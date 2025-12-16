@@ -37,6 +37,7 @@
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
     "fast-json-patch": "^3.1.1",
+    "framer-motion": "^10.16.4",
     "github-markdown-css": "^5.2.0",
     "i18next": "^23.11.5",
     "immer": "^9.0.21",
