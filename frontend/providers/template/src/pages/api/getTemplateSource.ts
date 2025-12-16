@@ -13,7 +13,7 @@ import JsYaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
-import { getTemplateEnvs } from '@/utils/tools';
+import { getTemplateEnvs } from '@/utils/common';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
