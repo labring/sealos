@@ -1,6 +1,6 @@
 import { Modal, ModalContent, ModalOverlay, Flex, Text, Box, Img, Divider } from '@chakra-ui/react';
 import { CheckCircle } from 'lucide-react';
-import congratulationsIcon from '@/../public/congratulations.svg';
+import congratsHeaderImage from '@/assets/congrats_header.svg';
 import { Button } from '@sealos/shadcn-ui';
 import { formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
@@ -57,7 +57,7 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
       >
         <Box display="flex" alignItems="center" justifyContent="center" w="100%">
           <Img
-            src={congratulationsIcon.src}
+            src={congratsHeaderImage.src}
             alt="Congratulations"
             maxHeight="180px"
             objectFit="contain"

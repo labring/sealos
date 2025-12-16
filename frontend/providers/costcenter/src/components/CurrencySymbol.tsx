@@ -1,4 +1,4 @@
-import SealosCoinImage from '@/assert/sealos_coin.png';
+import SealosCoinImage from '@/assets/sealos_coin.png';
 import useEnvStore from '@/stores/env';
 import { cn } from '@sealos/shadcn-ui';
 import { useTranslation } from 'next-i18next';

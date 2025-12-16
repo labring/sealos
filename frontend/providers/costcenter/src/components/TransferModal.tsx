@@ -1,4 +1,3 @@
-import vector from '@/assert/Vector.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import request from '@/service/request';
 import { TransferState, transferStatus } from '@/types/Transfer';
@@ -26,6 +25,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { forwardRef, useImperativeHandle, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const TransferModal = forwardRef(
   (
@@ -247,10 +247,10 @@ const TransferModal = forwardRef(
 
               <NumberInputStepper borderColor={'grayModern.200'}>
                 <NumberIncrementStepper width={'24px'} borderColor={'grayModern.200'}>
-                  <Img src={vector.src}></Img>
+                  <ChevronDown size={16} />
                 </NumberIncrementStepper>
                 <NumberDecrementStepper w="24px" borderColor={'grayModern.200'}>
-                  <Img src={vector.src} transform={'rotate(180deg)'}></Img>
+                  <ChevronUp size={16} />
                 </NumberDecrementStepper>
               </NumberInputStepper>
             </NumberInput>
