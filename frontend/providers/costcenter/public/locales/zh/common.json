@@ -66,6 +66,7 @@
   "keep_plan": "保持套餐",
   "last_6_months": "最近6个月",
   "last_7_days": "最近7天",
+  "loading_data": "正在加载...",
   "loading_resource_usage": "正在加载资源使用情况...",
   "loading_subscriptions": "正在加载订阅...",
   "memory": "内存",
@@ -240,6 +241,8 @@
   "processing": "处理中...",
   "quantity": "数量",
   "recharge_amount": "充值金额",
+  "recharge_bonus": "赠",
+  "recharge_doubled": "双倍!",
   "recipient_id": "收款人的ID",
   "recipient_id_is_invalid": "收款人ID无效",
   "redeem": "兑换",
@@ -339,8 +342,5 @@
   "you_have_upgraded_to_plan_benefits_unlocked": "您已升级到 {{planName}}，这些权益已经解锁",
   "your_current_plan": "您当前的套餐",
   "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制",
-  "your_next_plan": "您下一个套餐",
-  "recharge_doubled": "双倍!",
-  "recharge_bonus": "赠",
-  "loading_data": "正在加载..."
+  "your_next_plan": "您下一个套餐"
 }
