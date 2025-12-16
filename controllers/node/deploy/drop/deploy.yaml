@@ -11,19 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: node
-    app.kubernetes.io/instance: system
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: namespace
-    app.kubernetes.io/part-of: node
-    control-plane: controller-manager
-  name: node-system
 ---
 apiVersion: v1
 kind: ServiceAccount

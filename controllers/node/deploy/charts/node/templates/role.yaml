@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: node-controller-role
+rules:
+- apiGroups:
+    - '*'
+  resources:
+    - '*'
+  verbs:
+    - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: node-controller-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: node-controller-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "node.serviceAccountName" . }}
+    namespace: {{.Release.Namespace}}
