@@ -1,6 +1,5 @@
 import { sum } from 'lodash';
 import dynamic from 'next/dynamic';
-import React from 'react';
 
 export type PieChartData = {
   type: string;

@@ -1,15 +1,15 @@
-import { KubeBadge } from '@/components/kube/kube-badge';
+import { Drawer } from '@/components/common/drawer/drawer';
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
+import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
+import { KubeBadge } from '@/components/kube/kube-badge';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Deployment } from '@/k8slens/kube-object';
+import { useDeploymentStore } from '@/store/kube';
 import { getConditionTextTone } from '@/utils/condtion-color';
 import { Divider, Tooltip, Typography } from 'antd';
-import { useDeploymentStore } from '@/store/kube';
-import PodDetailTolerations from '../pod/pod-detail-tolerations';
-import PodDetailAffinities from '../pod/pod-detail-affinities';
-import { Drawer } from '@/components/common/drawer/drawer';
-import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
 import ContainerDetail from '../pod/container-detail';
+import PodDetailAffinities from '../pod/pod-detail-affinities';
+import PodDetailTolerations from '../pod/pod-detail-tolerations';
 
 const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deployment>) => {
   if (!dep || !(dep instanceof Deployment)) {
@@ -37,10 +37,10 @@ const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deploym
         {selectors.length > 0 && (
           <DrawerItem
             name="Selector"
-            className="items-center!"
+            vertical
             value={
               <div className="flex flex-wrap gap-1">
-                {selectors.map((label) => {
+                {[...selectors].sort().map((label) => {
                   const sepIndex = label.indexOf(': ');
                   if (sepIndex === -1)
                     return <KubeBadge key={label} label={label} className="m-0!" />;

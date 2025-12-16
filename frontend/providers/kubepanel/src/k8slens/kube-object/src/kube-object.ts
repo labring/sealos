@@ -3,22 +3,22 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import moment from 'moment';
 import { formatDuration, isObject, isString } from '@/k8slens/utilities';
-import type { Patch } from 'rfc6902';
 import autoBind from 'auto-bind';
-import type { KubeObjectMetadata, KubeObjectScope, KubeJsonApiData } from './api-types';
+import moment from 'moment';
+import type { Patch } from 'rfc6902';
+import type { KubeJsonApiData, KubeObjectMetadata, KubeObjectScope } from './api-types';
 import { KubeCreationError } from './api-types';
 import {
-  isKubeObjectNonSystem,
+  filterOutResourceApplierAnnotations,
   isJsonApiData,
+  isJsonApiDataList,
   isKubeJsonApiListMetadata,
   isKubeJsonApiMetadata,
-  isPartialJsonApiMetadata,
+  isKubeObjectNonSystem,
   isPartialJsonApiData,
-  isJsonApiDataList,
-  stringifyLabels,
-  filterOutResourceApplierAnnotations
+  isPartialJsonApiMetadata,
+  stringifyLabels
 } from './utils';
 
 export function createKubeObject<

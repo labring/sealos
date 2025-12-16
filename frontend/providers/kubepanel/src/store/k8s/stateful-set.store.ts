@@ -1,8 +1,8 @@
 import { Pod, PodStatusPhase, StatefulSet } from '@/k8slens/kube-object';
-import { getPodsByOwnerId } from './pod.store';
-import { create } from 'zustand';
 import { StatefulSetStore } from '@/types/state';
+import { create } from 'zustand';
 import { createKubeStoreSlice } from './kube.store';
+import { getPodsByOwnerId } from './pod.store';
 
 export function getStatefulSetsStatuses(statefulSets: StatefulSet[], pods: Pod[]) {
   const status = { running: 0, failed: 0, pending: 0 };

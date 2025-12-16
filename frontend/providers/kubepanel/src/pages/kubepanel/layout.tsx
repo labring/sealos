@@ -1,8 +1,8 @@
-import { ConfigProvider, Layout } from 'antd';
 import { ResourceSideNav, SideNavItemKey } from '@/components/common/sidebar/sidebar';
 import { theme } from '@/constants/theme';
-import { useCallback, useState } from 'react';
+import { ConfigProvider, Layout } from 'antd';
 import { CollapseType } from 'antd/es/layout/Sider';
+import { useCallback, useState } from 'react';
 
 const { Sider, Content } = Layout;
 
@@ -34,7 +34,8 @@ export default function AppLayout({ children, onClickSideNavItem, selectedKey }:
             position: 'fixed',
             left: 0,
             top: 0,
-            bottom: 0
+            bottom: 0,
+            overflowY: 'auto'
           }}
           width={siderWidth}
           theme="light"

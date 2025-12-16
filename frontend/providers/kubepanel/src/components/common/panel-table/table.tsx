@@ -1,12 +1,11 @@
 import { Section } from '@/components/common/section/section';
 import Title from '@/components/common/title/title';
 import { useWatcher } from '@/hooks/useWatcher';
+import { KubeObject } from '@/k8slens/kube-object';
 import { KubeStoreAction } from '@/types/state';
-import { TableProps } from 'antd';
-import { Table } from 'antd';
+import { Table, TableProps } from 'antd';
 import { useMemo, useState } from 'react';
 import { PanelPagination } from './pagination';
-import { KubeObject } from '@/k8slens/kube-object';
 import { useSearchNameFilterProps } from './search-filter';
 
 type DefaultRecordType = Record<string, any>;

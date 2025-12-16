@@ -5,11 +5,11 @@
 
 import autoBind from 'auto-bind';
 import type {
-  ObjectReference,
   KubeJsonApiData,
   KubeObjectMetadata,
   KubeObjectScope,
-  NamespaceScopedMetadata
+  NamespaceScopedMetadata,
+  ObjectReference
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 
@@ -69,8 +69,11 @@ export interface EndpointSubset {
   ports?: EndpointPort[];
 }
 
-export interface EndpointsData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Namespace>, void, void> {
+export interface EndpointsData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Namespace>,
+  void,
+  void
+> {
   subsets?: EndpointSubset[];
 }
 

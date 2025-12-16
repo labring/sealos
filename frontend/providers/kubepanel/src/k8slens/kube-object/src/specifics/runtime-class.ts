@@ -4,16 +4,19 @@
  */
 
 import type {
+  ClusterScopedMetadata,
   KubeJsonApiData,
   KubeObjectMetadata,
   KubeObjectScope,
-  Toleration,
-  ClusterScopedMetadata
+  Toleration
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 
-export interface RuntimeClassData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Cluster>, void, void> {
+export interface RuntimeClassData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Cluster>,
+  void,
+  void
+> {
   handler: string;
   overhead?: RuntimeClassOverhead;
   scheduling?: RuntimeClassScheduling;

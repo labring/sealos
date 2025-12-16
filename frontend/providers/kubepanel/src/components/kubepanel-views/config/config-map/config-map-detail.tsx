@@ -1,15 +1,15 @@
+import { updateResource } from '@/api/kubernetes';
+import { Drawer } from '@/components/common/drawer/drawer';
+import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
+import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { ConfigMap } from '@/k8slens/kube-object';
 import { useConfigMapStore } from '@/store/kube';
-import { Drawer } from '@/components/common/drawer/drawer';
-import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
-import { entries, isEqual } from 'lodash';
-import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import React from 'react';
-import { Button, Input } from 'antd';
 import { dumpKubeObject } from '@/utils/yaml';
-import { updateResource } from '@/api/kubernetes';
+import { CloseOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
+import { Button, Input } from 'antd';
 import useMessage from 'antd/lib/message/useMessage';
-import { SaveOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons';
+import { entries, isEqual } from 'lodash';
+import React from 'react';
 
 const ConfigMapDetail = ({ obj: configMap, open, onClose }: DetailDrawerProps<ConfigMap>) => {
   if (!configMap || !(configMap instanceof ConfigMap)) {
@@ -145,9 +145,11 @@ const ConfigMapDetail = ({ obj: configMap, open, onClose }: DetailDrawerProps<Co
                             }
                           />
                         ) : (
-                          <span className="text-[#262626] text-sm break-all font-mono select-text">
-                            {value}
-                          </span>
+                          <div className="min-h-[32px] flex items-center">
+                            <span className="text-[#262626] text-sm break-all font-mono select-text">
+                              {value}
+                            </span>
+                          </div>
                         )}
                       </div>
                     );

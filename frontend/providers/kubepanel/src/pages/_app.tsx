@@ -1,15 +1,14 @@
+import { useConfirm } from '@/hooks/useConfirm';
+import { useGlobalStore } from '@/store/global';
+import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
+import { loader } from '@monaco-editor/react';
+import { throttle } from 'lodash';
 import type { AppProps } from 'next/app';
+import Head from 'next/head';
 import { Router, useRouter } from 'next/router';
 import NProgress from 'nprogress';
-import { useGlobalStore } from '@/store/global';
-import { Suspense, useEffect } from 'react';
-import { useConfirm } from '@/hooks/useConfirm';
-import { throttle } from 'lodash';
-import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
-import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
-import Head from 'next/head';
-import { loader } from '@monaco-editor/react';
-import { monacoTheme } from '@/constants/theme';
+import { useEffect } from 'react';
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
 // Client-side Monaco configuration
 if (typeof window !== 'undefined') {
@@ -18,8 +17,8 @@ if (typeof window !== 'undefined') {
   });
 }
 
-import 'nprogress/nprogress.css';
 import '@/styles/globals.css';
+import 'nprogress/nprogress.css';
 
 //Binding router events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -29,7 +28,6 @@ Router.events.on('routeChangeError', () => NProgress.done());
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { setScreenWidth, setLastRoute } = useGlobalStore();
-  // const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'Redirect Notice',
     content: 'This app cannot run standalone. Click confirm to open Sealos Desktop.'

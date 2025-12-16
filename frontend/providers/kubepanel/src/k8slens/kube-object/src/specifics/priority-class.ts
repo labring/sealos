@@ -4,16 +4,19 @@
  */
 
 import type {
+  ClusterScopedMetadata,
   KubeJsonApiData,
   KubeObjectMetadata,
-  KubeObjectScope,
-  ClusterScopedMetadata
+  KubeObjectScope
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 import type { PreemptionPolicy } from '../types/preemption-policy';
 
-export interface PriorityClassData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Cluster>, void, void> {
+export interface PriorityClassData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Cluster>,
+  void,
+  void
+> {
   description?: string;
   globalDefault?: boolean;
   preemptionPolicy?: PreemptionPolicy;

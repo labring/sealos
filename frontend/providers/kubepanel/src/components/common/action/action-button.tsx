@@ -1,9 +1,9 @@
-import { CloseOutlined, RetweetOutlined, MoreOutlined } from '@ant-design/icons';
-import { Button, type MenuProps, Dropdown } from 'antd';
-import { useState } from 'react';
-import { UpdateEditorModal } from './update-editor-modal';
 import { KubeObject } from '@/k8slens/kube-object';
+import { CloseOutlined, MoreOutlined, RetweetOutlined } from '@ant-design/icons';
+import { Button, Dropdown, type MenuProps } from 'antd';
+import { useState } from 'react';
 import { DeletePopconfirm } from './delete-popconfirm';
+import { UpdateEditorModal } from './update-editor-modal';
 
 interface Props<K extends KubeObject> {
   obj: K;

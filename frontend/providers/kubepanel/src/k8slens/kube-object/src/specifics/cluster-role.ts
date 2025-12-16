@@ -4,17 +4,20 @@
  */
 
 import type {
+  ClusterScopedMetadata,
   KubeJsonApiData,
   KubeObjectMetadata,
-  KubeObjectScope,
-  ClusterScopedMetadata
+  KubeObjectScope
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 import type { AggregationRule } from '../types/aggregation-rule';
 import type { PolicyRule } from '../types/policy-rule';
 
-export interface ClusterRoleData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Cluster>, void, void> {
+export interface ClusterRoleData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Cluster>,
+  void,
+  void
+> {
   rules?: PolicyRule[];
   aggregationRule?: AggregationRule;
 }

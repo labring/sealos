@@ -1,11 +1,11 @@
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
-import { KubeObjectAge } from '../kube-object-age';
-import { KubeBadge } from '../../kube-badge';
-import { Box } from '@chakra-ui/react';
 import { KubeObject } from '@/k8slens/kube-object';
 import { getKubeObjectInfo } from '@/utils/kube-object-info';
 import { getStatusTextTone } from '@/utils/status-color';
+import { Box } from '@chakra-ui/react';
 import { Divider } from 'antd';
+import { KubeBadge } from '../../kube-badge';
+import { KubeObjectAge } from '../kube-object-age';
 
 interface Props {
   obj: KubeObject;
@@ -29,17 +29,17 @@ export const KubeObjectInfoList = ({ obj }: Props) => {
         <div className="flex items-center justify-between py-2 border-b border-[#E8E8E8]">
           <div>
             <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Name</span>
-            <span className="text-[#262626] text-sm">{name}</span>
+            <span className="text-[#262626] text-xs">{name}</span>
           </div>
           <div>
             <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Created</span>
-            <span className="text-[#262626] text-sm">
+            <span className="text-[#262626] text-xs">
               <KubeObjectAge obj={obj} compact={false} />
             </span>
           </div>
           <div>
             <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Status</span>
-            <span className="text-[#262626] text-sm">
+            <span className="text-[#262626] text-xs">
               {(() => {
                 const status =
                   (obj as any).getStatusMessage?.() ||
@@ -96,7 +96,7 @@ export const KubeObjectInfoList = ({ obj }: Props) => {
               vertical
               value={
                 <div className="flex flex-wrap gap-1 items-start">
-                  {labels.map((label) => {
+                  {[...labels].sort().map((label) => {
                     const sepIndex = label.indexOf(': ');
                     if (sepIndex === -1)
                       return <KubeBadge key={label} label={label} className="m-0!" />;
@@ -126,7 +126,7 @@ export const KubeObjectInfoList = ({ obj }: Props) => {
               vertical
               value={
                 <div className="flex flex-wrap gap-1 items-start">
-                  {annotations.map((label) => {
+                  {[...annotations].sort().map((label) => {
                     if (label.startsWith('kubectl.kubernetes.io/last-applied-configuration')) {
                       return (
                         <KubeBadge
@@ -161,9 +161,9 @@ export const KubeObjectInfoList = ({ obj }: Props) => {
               }
             />
           )}
-          <Divider />
         </div>
       )}
+      <>{(labels.length > 0 || annotations.length > 0) && <Divider />}</>
     </>
   );
 };

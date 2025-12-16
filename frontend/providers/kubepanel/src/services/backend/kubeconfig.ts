@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
-import jsYaml from 'js-yaml';
 import https from 'https';
+import jsYaml from 'js-yaml';
 import { camelCase, entries } from 'lodash';
 import { KebabCasedPropertiesDeep, ReadonlyDeep } from 'type-fest';
 

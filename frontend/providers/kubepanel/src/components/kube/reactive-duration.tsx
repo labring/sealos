@@ -3,8 +3,8 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import React, { useEffect, useState } from 'react';
 import { formatDuration } from '@/k8slens/utilities';
+import { useEffect, useState } from 'react';
 
 export interface ReactiveDurationProps {
   timestamp: string | undefined;

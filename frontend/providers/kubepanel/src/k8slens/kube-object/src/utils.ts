@@ -4,21 +4,21 @@
  */
 
 import {
-  isObject,
-  hasTypedProperty,
-  isString,
-  hasOptionalTypedProperty,
   bindPredicate,
-  isTypedArray,
-  isRecord
+  hasOptionalTypedProperty,
+  hasTypedProperty,
+  isObject,
+  isRecord,
+  isString,
+  isTypedArray
 } from '@//k8slens/utilities';
 import type {
   KubeJsonApiData,
-  KubeObjectMetadata,
-  KubeObjectScope,
+  KubeJsonApiDataList,
   KubeJsonApiListMetadata,
   KubeJsonApiObjectMetadata,
-  KubeJsonApiDataList
+  KubeObjectMetadata,
+  KubeObjectScope
 } from './api-types';
 import type { KubeObject } from './kube-object';
 

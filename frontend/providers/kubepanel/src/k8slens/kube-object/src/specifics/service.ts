@@ -37,8 +37,8 @@ export class ServicePort {
     const targetPort = this.nodePort
       ? `:${this.nodePort}`
       : this.port !== this.targetPort
-      ? `:${this.targetPort}`
-      : '';
+        ? `:${this.targetPort}`
+        : '';
 
     return `${this.port}${targetPort}/${this.protocol}`;
   }

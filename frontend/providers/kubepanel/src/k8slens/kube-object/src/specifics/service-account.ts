@@ -8,13 +8,16 @@ import type {
   KubeObjectMetadata,
   KubeObjectScope,
   LocalObjectReference,
-  ObjectReference,
-  NamespaceScopedMetadata
+  NamespaceScopedMetadata,
+  ObjectReference
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 
-export interface ServiceAccountData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Namespace>, void, void> {
+export interface ServiceAccountData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Namespace>,
+  void,
+  void
+> {
   automountServiceAccountToken?: boolean;
   imagePullSecrets?: LocalObjectReference[];
   secrets?: ObjectReference[];

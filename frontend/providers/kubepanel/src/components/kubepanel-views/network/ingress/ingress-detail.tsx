@@ -1,16 +1,15 @@
+import { updateResource } from '@/api/kubernetes';
+import { Drawer } from '@/components/common/drawer/drawer';
+import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Ingress, IngressRule } from '@/k8slens/kube-object';
-import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import { Drawer } from '@/components/common/drawer/drawer';
-import { DrawerItem } from '@/components/common/drawer/drawer-item';
-import { Button, Divider, message, Modal } from 'antd';
-import { useState, useEffect } from 'react';
-import IngressPathEditor from './ingress-path-editor';
-import { useIngressStore } from '@/store/kube';
-import { updateResource } from '@/api/kubernetes';
 import { buildErrorResponse } from '@/services/backend/response';
+import { useIngressStore } from '@/store/kube';
 import { dumpKubeObject } from '@/utils/yaml';
 import { SaveOutlined } from '@ant-design/icons';
+import { Button, message } from 'antd';
+import { useEffect, useState } from 'react';
+import IngressPathEditor from './ingress-path-editor';
 
 const IngressDetail = ({ obj: ingress, open, onClose }: DetailDrawerProps<Ingress>) => {
   if (!ingress || !(ingress instanceof Ingress)) return null;
@@ -81,13 +80,6 @@ const IngressDetail = ({ obj: ingress, open, onClose }: DetailDrawerProps<Ingres
       <Drawer open={open} title={`Ingress: ${latest.getName()}`} onClose={onClose}>
         <DrawerPanel>
           <KubeObjectInfoList obj={latest} />
-          <DrawerItem
-            name="TLS"
-            value={latest.spec.tls.map((tls, idx) => (
-              <p key={tls.secretName || idx}>{tls.secretName}</p>
-            ))}
-          />
-          <Divider />
 
           <div
             className="flex items-center justify-between mt-8 mb-4"

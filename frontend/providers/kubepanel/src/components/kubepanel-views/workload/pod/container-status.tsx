@@ -38,7 +38,7 @@ export const ContainerLastState = ({ lastState, status }: ContainerLastStateProp
 
   if (lastState === 'terminated' && terminated) {
     return (
-      <div className="text-sm text-gray-600">
+      <div className="text-xs text-gray-600">
         <div className="font-medium mb-1">{lastState}</div>
         <div>
           Reason: {terminated.reason} - exit code: {terminated.exitCode}

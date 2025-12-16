@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Input, Select, Space, Table, Tooltip } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import { ColumnsType } from 'antd/lib/table';
-import { isEqual } from 'lodash';
 import {
+  ComputedIngressRoute,
+  computeRuleDeclarations,
+  ExtensionsBackend,
   Ingress,
   IngressRule,
-  ExtensionsBackend,
-  NetworkingBackend,
-  ComputedIngressRoute,
-  computeRuleDeclarations
+  NetworkingBackend
 } from '@/k8slens/kube-object';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Input, Select, Table, Tooltip } from 'antd';
+import { ColumnsType } from 'antd/lib/table';
+import { isEqual } from 'lodash';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface IngressPathEditorProps {
   ingress: Ingress;
@@ -20,7 +20,7 @@ interface IngressPathEditorProps {
 
 type PathForm = {
   path?: string;
-  pathType: 'Exact' | 'Prefix' | 'ImplementationSpecific';
+  pathType: 'Exact' | 'Prefix';
   serviceName: string;
   servicePort?: number | string;
 };
@@ -42,7 +42,10 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
         host: rule.host || '*',
         paths: (rule.http?.paths || []).map((p) => ({
           path: p.path || '/',
-          pathType: p.pathType || 'Prefix',
+          pathType:
+            p.pathType === 'ImplementationSpecific'
+              ? 'Prefix'
+              : (p.pathType as 'Exact' | 'Prefix') || 'Prefix',
           serviceName:
             (p.backend as NetworkingBackend)?.service?.name ??
             (p.backend as ExtensionsBackend)?.serviceName ??
@@ -218,11 +221,32 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
                   dataSource={computeRuleDeclarations(ingress, rule)}
                   pagination={false}
                   rowKey={(record) => record.url}
-                  title={() => (
-                    <div className="font-medium text-gray-900">
-                      {rule.host ? `Host: ${rule.host}` : 'Host: *'}
-                    </div>
-                  )}
+                  title={() => {
+                    const tlsEntry = ingress.spec.tls?.find((tls) =>
+                      tls.hosts?.includes(rule.host || '')
+                    );
+                    const isHttps = !!tlsEntry;
+                    const protocol = isHttps ? 'https' : 'http';
+
+                    return (
+                      <div className="font-medium text-gray-900 flex items-center gap-1">
+                        <span className="flex items-center">
+                          {isHttps ? (
+                            <Tooltip title={`Secret: ${tlsEntry.secretName}`}>
+                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 border border-green-200 cursor-help">
+                                {protocol.toUpperCase()}
+                              </span>
+                            </Tooltip>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                              {protocol.toUpperCase()}
+                            </span>
+                          )}
+                        </span>
+                        <span>{rule.host || '*'}</span>
+                      </div>
+                    );
+                  }}
                 />
               )}
             </div>
@@ -253,7 +277,7 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
             <div className="divide-y divide-gray-200">
               {rule.paths.map((path, pathIndex) => (
                 <div key={pathIndex} className="p-3">
-                  <div className="grid grid-cols-[200px_1fr] gap-3 mb-2">
+                  <div className="grid grid-cols-[140px_1fr] gap-3 mb-2">
                     <div className="flex flex-col gap-1">
                       <label className="text-xs text-gray-600 font-medium">Type</label>
                       <Select
@@ -264,8 +288,7 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
                         disabled={String(path.path || '').trim() === '/'}
                         options={[
                           { label: 'Prefix', value: 'Prefix' },
-                          { label: 'Exact', value: 'Exact' },
-                          { label: 'ImplementationSpecific', value: 'ImplementationSpecific' }
+                          { label: 'Exact', value: 'Exact' }
                         ]}
                       />
                     </div>

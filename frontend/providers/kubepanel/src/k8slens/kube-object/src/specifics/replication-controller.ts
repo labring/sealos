@@ -4,9 +4,9 @@
  */
 
 import type {
+  BaseKubeObjectCondition,
   KubeObjectStatus,
-  NamespaceScopedMetadata,
-  BaseKubeObjectCondition
+  NamespaceScopedMetadata
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 import type { PodTemplateSpec } from '../types/pod-template-spec';

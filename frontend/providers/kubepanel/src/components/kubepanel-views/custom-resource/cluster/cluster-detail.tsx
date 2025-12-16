@@ -1,10 +1,10 @@
-import { Cluster } from '@/k8slens/kube-object/src/specifics/cluster';
+import { Drawer } from '@/components/common/drawer/drawer';
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import { Drawer } from '@/components/common/drawer/drawer';
-import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { DetailDrawerProps } from '@/components/common/panel-table/table';
 import { StatusTag } from '@/components/common/status-tag';
+import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
+import { Cluster } from '@/k8slens/kube-object/src/specifics/cluster';
 
 const getPhaseColor = (phase: string) => {
   switch (phase) {
@@ -65,7 +65,7 @@ const ClusterDetail = ({ open, obj: cluster, onClose }: DetailDrawerProps<Cluste
           }
         />
 
-        <DrawerItem name="Termination Policy" value={cluster.getTerminationPolicy() || '-'} />
+        <DrawerItem name="Termination" value={cluster.getTerminationPolicy() || '-'} />
       </DrawerPanel>
     </Drawer>
   );

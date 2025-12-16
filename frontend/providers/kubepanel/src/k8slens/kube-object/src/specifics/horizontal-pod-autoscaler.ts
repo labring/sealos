@@ -4,7 +4,7 @@
  */
 
 import type { OptionVariant } from '@//k8slens/utilities';
-import type { LabelSelector, BaseKubeObjectCondition, NamespaceScopedMetadata } from '../api-types';
+import type { BaseKubeObjectCondition, LabelSelector, NamespaceScopedMetadata } from '../api-types';
 import { KubeObject } from '../kube-object';
 import type { CrossVersionObjectReference } from '../types/cross-version-object-reference';
 

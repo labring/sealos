@@ -1,10 +1,10 @@
-import { Devbox } from '@/k8slens/kube-object/src/specifics/devbox';
+import { Drawer } from '@/components/common/drawer/drawer';
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import { Drawer } from '@/components/common/drawer/drawer';
-import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { DetailDrawerProps } from '@/components/common/panel-table/table';
 import { StatusTag } from '@/components/common/status-tag';
+import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
+import { Devbox } from '@/k8slens/kube-object/src/specifics/devbox';
 
 const getStateColor = (state: string) => {
   switch (state.toLowerCase()) {
@@ -27,11 +27,16 @@ const DevboxDetail = ({ open, obj: devbox, onClose }: DetailDrawerProps<Devbox>)
 
   const networkType = devbox.getNetworkType();
   const nodePort = devbox.getNodePort();
-  const networkDisplay = networkType
-    ? nodePort
-      ? `${networkType}: ${nodePort}`
-      : networkType
-    : '-';
+  const networkDisplay = networkType ? (
+    <div className="flex items-center gap-2">
+      <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded border border-gray-200">
+        {networkType}
+      </span>
+      {nodePort && <span className="text-sm">{nodePort}</span>}
+    </div>
+  ) : (
+    '-'
+  );
 
   return (
     <Drawer open={open} title={`Devbox: ${devbox.getName()}`} onClose={onClose}>

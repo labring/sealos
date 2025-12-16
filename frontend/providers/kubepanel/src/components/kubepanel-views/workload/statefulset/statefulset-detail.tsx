@@ -1,15 +1,15 @@
-import { StatefulSet } from '@/k8slens/kube-object';
 import { Drawer } from '@/components/common/drawer/drawer';
-import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
-import PodDetailTolerations from '../pod/pod-detail-tolerations';
-import PodDetailAffinities from '../pod/pod-detail-affinities';
 import { DrawerItem } from '@/components/common/drawer/drawer-item';
-import ContainerDetail from '../pod/container-detail';
-import { KubeBadge } from '@/components/kube/kube-badge';
 import { DrawerPanel } from '@/components/common/drawer/drawer-panel';
-import { useStatefulSetStore } from '@/store/kube';
 import { DetailDrawerProps } from '@/components/common/panel-table/table';
+import { KubeBadge } from '@/components/kube/kube-badge';
+import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
+import { StatefulSet } from '@/k8slens/kube-object';
+import { useStatefulSetStore } from '@/store/kube';
 import { Divider } from 'antd';
+import ContainerDetail from '../pod/container-detail';
+import PodDetailAffinities from '../pod/pod-detail-affinities';
+import PodDetailTolerations from '../pod/pod-detail-tolerations';
 
 const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<StatefulSet>) => {
   if (!stat || !(stat instanceof StatefulSet)) return null;
@@ -25,10 +25,10 @@ const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<State
         {selectors.length > 0 && (
           <DrawerItem
             name="Selector"
-            className="items-center!"
+            vertical
             value={
               <div className="flex flex-wrap gap-1">
-                {selectors.map((label) => {
+                {[...selectors].sort().map((label) => {
                   const sepIndex = label.indexOf(': ');
                   if (sepIndex === -1)
                     return <KubeBadge key={label} label={label} className="m-0!" />;

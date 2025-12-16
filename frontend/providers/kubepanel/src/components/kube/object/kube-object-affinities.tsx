@@ -1,12 +1,12 @@
-import React from 'react';
 import {
   Affinity,
-  LabelSelector,
   LabelMatchExpression,
+  LabelSelector,
   NodeAffinity,
   PodAffinity,
   SpecificAffinity
 } from '@/k8slens/kube-object';
+import React from 'react';
 
 interface Props {
   affinity: Affinity;
@@ -72,7 +72,7 @@ const NodeAffinityCard = ({ affinity }: { affinity: SpecificAffinity<NodeAffinit
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="font-medium text-gray-900">Node Affinity</div>
+      <div className="font-medium text-gray-900 text-xs">Node Affinity</div>
       {required.map((term: any, i: number) => (
         <div key={`req-${i}`} className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs border border-red-200 font-medium">
@@ -191,7 +191,7 @@ const PodAffinityCard = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="font-medium text-gray-900">{title}</div>
+      <div className="font-medium text-gray-900 text-xs">{title}</div>
       {required?.map((term, i) => (
         <div key={`req-${i}`} className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs border border-red-200 font-medium">

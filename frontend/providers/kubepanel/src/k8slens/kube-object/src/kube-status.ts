@@ -4,11 +4,11 @@
  */
 
 import {
-  isObject,
-  hasTypedProperty,
   hasOptionalTypedProperty,
-  isString,
-  isNumber
+  hasTypedProperty,
+  isNumber,
+  isObject,
+  isString
 } from '@/k8slens/utilities';
 import type { KubeStatusData } from './api-types';
 

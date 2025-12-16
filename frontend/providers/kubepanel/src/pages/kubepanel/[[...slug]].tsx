@@ -1,22 +1,22 @@
-import AppLayout from './layout';
-import OverviewPage from '@/components/kubepanel-views/workload/overview/overview';
-import { useState, useEffect } from 'react';
-import { SideNavItemKey } from '../../components/common/sidebar/sidebar';
-import { useRouter } from 'next/router';
-import PodOverviewPage from '@/components/kubepanel-views/workload/pod/pod';
-import DeploymentOverviewPage from '@/components/kubepanel-views/workload/deployment/deployment';
-import StatefulSetOverviewPage from '@/components/kubepanel-views/workload/statefulset/statefulset';
-import ConfigMapOverviewPage from '@/components/kubepanel-views/config/config-map/config-map';
-import PersistentVolumeClaimOverviewPage from '@/components/kubepanel-views/storage/volume-claim/volume-claim';
-import { FloatButton } from 'antd';
 import { CreateResourceModal } from '@/components/common/action/create-resource-modal';
-import { PlusOutlined } from '@ant-design/icons';
+import ConfigMapOverviewPage from '@/components/kubepanel-views/config/config-map/config-map';
 import SecretOverviewPage from '@/components/kubepanel-views/config/secret/secret';
+import BucketPage from '@/components/kubepanel-views/custom-resource/bucket/bucket';
+import ClusterPage from '@/components/kubepanel-views/custom-resource/cluster/cluster';
+import DevboxPage from '@/components/kubepanel-views/custom-resource/devbox/devbox';
 import IngressOverviewPage from '@/components/kubepanel-views/network/ingress/ingress';
 import ServiceOverviewPage from '@/components/kubepanel-views/network/service/service';
-import DevboxPage from '@/components/kubepanel-views/custom-resource/devbox/devbox';
-import ClusterPage from '@/components/kubepanel-views/custom-resource/cluster/cluster';
-import BucketPage from '@/components/kubepanel-views/custom-resource/bucket/bucket';
+import PersistentVolumeClaimOverviewPage from '@/components/kubepanel-views/storage/volume-claim/volume-claim';
+import DeploymentOverviewPage from '@/components/kubepanel-views/workload/deployment/deployment';
+import OverviewPage from '@/components/kubepanel-views/workload/overview/overview';
+import PodOverviewPage from '@/components/kubepanel-views/workload/pod/pod';
+import StatefulSetOverviewPage from '@/components/kubepanel-views/workload/statefulset/statefulset';
+import { PlusOutlined } from '@ant-design/icons';
+import { FloatButton } from 'antd';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { SideNavItemKey } from '../../components/common/sidebar/sidebar';
+import AppLayout from './layout';
 
 const switchPage = (key: SideNavItemKey): React.ReactNode => {
   switch (key) {

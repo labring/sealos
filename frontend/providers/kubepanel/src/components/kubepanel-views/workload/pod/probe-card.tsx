@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Probe } from '@/k8slens/kube-object';
 import { ConfigProvider, Input, InputNumber, Select } from 'antd';
 import { isEqual } from 'lodash';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface ProbeCardProps {
   title: string;
@@ -283,13 +283,13 @@ const ProbeCard = ({ title, probe, onChange, isEditing = false }: ProbeCardProps
             {!isEditing && displayProbe && (
               <>
                 <span
-                  className="text-[#262626] text-sm font-medium shrink-0 w-28"
+                  className="text-[#262626] text-xs font-medium shrink-0 w-28"
                   style={{ paddingLeft: '8px' }}
                 >
                   {deriveTypeLabel(deriveProbeType(displayProbe))}
                 </span>
                 <span
-                  className="text-[#262626] text-sm font-medium flex-1 truncate"
+                  className="text-[#262626] text-xs font-medium flex-1 truncate"
                   style={{ paddingLeft: '8px' }}
                 >
                   {actionDescription}
@@ -299,80 +299,90 @@ const ProbeCard = ({ title, probe, onChange, isEditing = false }: ProbeCardProps
 
             {isEditing && (
               <>
-                <Select
-                  className="w-28"
-                  size="small"
-                  value={probeType}
-                  onChange={(val) => setProbeType(val as ProbeType)}
-                  options={[
-                    { value: 'none', label: 'Null' },
-                    { value: 'httpGet', label: 'HTTP GET' },
-                    { value: 'tcpSocket', label: 'TCP Socket' },
-                    { value: 'exec', label: 'Exec' },
-                    { value: 'grpc', label: 'gRPC' }
-                  ]}
-                />
-                {probeType === 'httpGet' && (
-                  <Input
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Select: { fontSize: 12 },
+                      Input: { fontSize: 12 },
+                      InputNumber: { fontSize: 12 }
+                    }
+                  }}
+                >
+                  <Select
+                    className="w-26 font-medium"
                     size="small"
-                    placeholder="http://example.com:8080/path (optional host)"
-                    className="flex-1"
-                    value={httpUrl}
-                    onChange={(e) => {
-                      setHttpUrl(e.target.value);
-                      const parsed = parseHttpUrl(e.target.value);
-                      setHttpFields((prev) => ({
-                        ...prev,
-                        scheme: parsed.scheme,
-                        host: parsed.host || '',
-                        port: parsed.port,
-                        path: parsed.path
-                      }));
-                    }}
+                    value={probeType}
+                    onChange={(val) => setProbeType(val as ProbeType)}
+                    options={[
+                      { value: 'none', label: 'Null' },
+                      { value: 'httpGet', label: 'HTTP GET' },
+                      { value: 'tcpSocket', label: 'TCP Socket' },
+                      { value: 'exec', label: 'Exec' },
+                      { value: 'grpc', label: 'gRPC' }
+                    ]}
                   />
-                )}
-                {probeType === 'tcpSocket' && (
-                  <InputNumber
-                    size="small"
-                    min={0}
-                    placeholder="Port"
-                    className="w-25"
-                    value={tcpPort}
-                    onChange={(val) => setTcpPort(val ?? undefined)}
-                  />
-                )}
-                {probeType === 'grpc' && (
-                  <>
+                  {probeType === 'httpGet' && (
+                    <Input
+                      size="small"
+                      placeholder="http://example.com:8080/path (optional host)"
+                      className="flex-1 font-medium"
+                      value={httpUrl}
+                      onChange={(e) => {
+                        setHttpUrl(e.target.value);
+                        const parsed = parseHttpUrl(e.target.value);
+                        setHttpFields((prev) => ({
+                          ...prev,
+                          scheme: parsed.scheme,
+                          host: parsed.host || '',
+                          port: parsed.port,
+                          path: parsed.path
+                        }));
+                      }}
+                    />
+                  )}
+                  {probeType === 'tcpSocket' && (
                     <InputNumber
                       size="small"
                       min={0}
                       placeholder="Port"
-                      className="w-25"
-                      value={grpcFields.port}
-                      onChange={(val) =>
-                        setGrpcFields((prev) => ({ ...prev, port: val ?? undefined }))
-                      }
+                      className="w-25 font-medium"
+                      value={tcpPort}
+                      onChange={(val) => setTcpPort(val ?? undefined)}
                     />
+                  )}
+                  {probeType === 'grpc' && (
+                    <>
+                      <InputNumber
+                        size="small"
+                        min={0}
+                        placeholder="Port"
+                        className="w-25 font-medium"
+                        value={grpcFields.port}
+                        onChange={(val) =>
+                          setGrpcFields((prev) => ({ ...prev, port: val ?? undefined }))
+                        }
+                      />
+                      <Input
+                        size="small"
+                        placeholder="Service (optional)"
+                        className="flex-1 min-w-30 font-medium"
+                        value={grpcFields.service}
+                        onChange={(e) =>
+                          setGrpcFields((prev) => ({ ...prev, service: e.target.value }))
+                        }
+                      />
+                    </>
+                  )}
+                  {probeType === 'exec' && (
                     <Input
                       size="small"
-                      placeholder="Service (optional)"
-                      className="flex-1 min-w-30"
-                      value={grpcFields.service}
-                      onChange={(e) =>
-                        setGrpcFields((prev) => ({ ...prev, service: e.target.value }))
-                      }
+                      placeholder={'Command (e.g. /bin/sh -c "echo ok")'}
+                      className="flex-1 font-medium"
+                      value={execCommand}
+                      onChange={(e) => setExecCommand(e.target.value)}
                     />
-                  </>
-                )}
-                {probeType === 'exec' && (
-                  <Input
-                    size="small"
-                    placeholder={'Command (e.g. /bin/sh -c "echo ok")'}
-                    className="flex-1"
-                    value={execCommand}
-                    onChange={(e) => setExecCommand(e.target.value)}
-                  />
-                )}
+                  )}
+                </ConfigProvider>
               </>
             )}
           </div>

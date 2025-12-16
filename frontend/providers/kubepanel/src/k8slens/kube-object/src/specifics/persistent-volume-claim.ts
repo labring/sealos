@@ -3,15 +3,15 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import type { Pod } from './pod';
 import { object } from '@//k8slens/utilities';
 import type {
-  TypedLocalObjectReference,
   LabelSelector,
-  NamespaceScopedMetadata
+  NamespaceScopedMetadata,
+  TypedLocalObjectReference
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 import type { ResourceRequirements } from '../types/resource-requirements';
+import type { Pod } from './pod';
 
 export interface PersistentVolumeClaimSpec {
   accessModes?: string[];

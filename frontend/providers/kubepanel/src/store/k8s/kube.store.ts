@@ -2,12 +2,10 @@ import { listResources } from '@/api/kubernetes';
 import { KubeJsonApiDataFor, KubeObject, KubeObjectConstructor } from '@/k8slens/kube-object';
 import { isDefined } from '@/k8slens/utilities';
 import { buildErrorResponse } from '@/services/backend/response';
-import { APICallback } from '@/types/state';
-import { KubeList, KubeStatus, WatchEvent } from '@/types/kube-resource';
-import { KubeStore } from '@/types/state';
+import { KubeList } from '@/types/kube-resource';
+import { APICallback, KubeStore } from '@/types/state';
 import { entries } from 'lodash';
 import { StateCreator } from 'zustand';
-import { Errno, ErrnoCode } from '@/services/backend/error';
 
 export function createKubeStoreSlice<
   K extends KubeObject = KubeObject,

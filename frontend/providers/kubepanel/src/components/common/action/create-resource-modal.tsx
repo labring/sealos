@@ -1,12 +1,12 @@
-import { editor as EditorNS } from 'monaco-editor';
-import { Button, Flex, Modal, Spin, notification } from 'antd';
-import React, { useCallback, useRef, useState } from 'react';
 import { createResource, getTemplate } from '@/api/kubernetes';
-import { TemplateToggle, TemplateToggleChooseEventHandler } from './toggle';
-import { buildErrorResponse } from '@/services/backend/response';
-import { KubeObjectKind } from '@/constants/kube-object';
-import Title from '@/components/common/title/title';
 import StyledEditor from '@/components/common/editor/styled';
+import Title from '@/components/common/title/title';
+import { KubeObjectKind } from '@/constants/kube-object';
+import { buildErrorResponse } from '@/services/backend/response';
+import { Button, Flex, Modal, Spin, notification } from 'antd';
+import { editor as EditorNS } from 'monaco-editor';
+import { useCallback, useRef, useState } from 'react';
+import { TemplateToggle, TemplateToggleChooseEventHandler } from './toggle';
 
 interface Props {
   open: boolean;

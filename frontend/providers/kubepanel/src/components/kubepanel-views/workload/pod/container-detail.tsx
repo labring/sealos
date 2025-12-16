@@ -1,25 +1,25 @@
+import { updateResource } from '@/api/kubernetes';
+import { DrawerItem } from '@/components/common/drawer/drawer-item';
+import { KubeBadge } from '@/components/kube/kube-badge';
 import {
   Container,
-  Pod,
-  Deployment,
-  StatefulSet,
   DaemonSet,
+  Deployment,
+  Job,
+  Pod,
   ReplicaSet,
-  Job
+  StatefulSet
 } from '@/k8slens/kube-object';
-import ContainerStatusBrick from './container-status-brick';
-import { keys, isEqual, cloneDeep } from 'lodash';
-import { DrawerItem } from '@/components/common/drawer/drawer-item';
-import ContainerStatus, { ContainerLastState } from './container-status';
-import { Tooltip, Select, Button } from 'antd';
-import React, { useState, useEffect, useMemo } from 'react';
-import ProbeCard, { ExtendedProbe } from './probe-card';
-import useMessage from 'antd/lib/message/useMessage';
-import { CloseOutlined, SaveOutlined } from '@ant-design/icons';
-import { updateResource } from '@/api/kubernetes';
-import { dumpKubeObject } from '@/utils/yaml';
 import { buildErrorResponse } from '@/services/backend/response';
-import { KubeBadge } from '@/components/kube/kube-badge';
+import { dumpKubeObject } from '@/utils/yaml';
+import { CloseOutlined, SaveOutlined } from '@ant-design/icons';
+import { Button, Select, Tooltip } from 'antd';
+import useMessage from 'antd/lib/message/useMessage';
+import { cloneDeep, isEqual, keys } from 'lodash';
+import React, { useEffect, useMemo, useState } from 'react';
+import ContainerStatus, { ContainerLastState } from './container-status';
+import ContainerStatusBrick from './container-status-brick';
+import ProbeCard, { ExtendedProbe } from './probe-card';
 
 interface Props {
   pod?: Pod;
@@ -356,16 +356,17 @@ const ContainerInfo = ({
 
   return (
     <>
-      <div className="mb-4 flex gap-5 items-center">
-        {pod && (
-          <ContainerStatusBrick
-            state={state as any}
-            status={status as any} // Forced cast to bypass strict check for now
-          />
-        )}
-        <div className="text-base font-medium">{name}</div>
-        {pod && <ContainerStatus state={state as any} status={status as any} />}
-      </div>
+      {pod && (
+        <DrawerItem
+          name="Phase"
+          className="items-center!"
+          value={
+            <div className="flex items-center gap-2">
+              <ContainerStatus state={state as any} status={status as any} />
+            </div>
+          }
+        />
+      )}
 
       {pod && lastState === 'terminated' && (
         <DrawerItem
@@ -526,13 +527,38 @@ const ContainerInfo = ({
       {env && env.length > 0 && (
         <div className="py-3 border-b border-[#E8E8E8] last:border-b-0">
           <div className="text-[#8C8C8C] font-medium text-sm mb-2">Env</div>
-          <div className="max-h-48 overflow-y-auto overflow-x-auto text-xs text-[#262626] bg-[#F9F9FA] p-3 rounded-lg border border-[#E8E8E8]">
-            {env.map((envVar: any) => (
-              <div key={envVar.name} className="mb-1 last:mb-0 whitespace-nowrap">
-                <span className="font-medium">{envVar.name}=</span>
-                {renderEnvValueSource(envVar)}
-              </div>
-            ))}
+          <div className="overflow-x-auto text-xs text-[#262626] bg-[#F9F9FA] p-3 rounded-lg border border-[#E8E8E8]">
+            {(() => {
+              const getTypeScore = (e: any) => {
+                if (e.value !== undefined) return 0;
+                if (e.valueFrom?.fieldRef || e.valueFrom?.resourceFieldRef) return 1;
+                if (e.valueFrom?.configMapKeyRef || e.valueFrom?.secretKeyRef) return 2;
+                return 3;
+              };
+
+              const sortedEnv = [...env].sort((a: any, b: any) => {
+                const scoreA = getTypeScore(a);
+                const scoreB = getTypeScore(b);
+                if (scoreA !== scoreB) return scoreA - scoreB;
+                return a.name.localeCompare(b.name);
+              });
+
+              return sortedEnv.map((envVar: any, index: number) => {
+                const currentScore = getTypeScore(envVar);
+                const prevScore = index > 0 ? getTypeScore(sortedEnv[index - 1]) : currentScore;
+                const showDivider = index > 0 && currentScore !== prevScore;
+
+                return (
+                  <React.Fragment key={envVar.name}>
+                    {showDivider && <div className="h-px bg-[#E8E8E8] my-1" />}
+                    <div className="mb-1 last:mb-0 whitespace-nowrap">
+                      <span className="font-medium">{envVar.name}=</span>
+                      {renderEnvValueSource(envVar)}
+                    </div>
+                  </React.Fragment>
+                );
+              });
+            })()}
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
-import { EditorProps } from '@monaco-editor/react';
-import dynamic from 'next/dynamic';
-import { Spin } from 'antd';
-import { useEffect } from 'react';
 import { monacoTheme } from '@/constants/theme';
+import { EditorProps } from '@monaco-editor/react';
+import { Spin } from 'antd';
+import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
 
 const Editor = dynamic(
   () => import('@monaco-editor/react').then((mod) => ({ default: mod.Editor })),

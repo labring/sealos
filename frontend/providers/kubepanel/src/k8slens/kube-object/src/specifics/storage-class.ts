@@ -5,10 +5,10 @@
 
 import autoBind from 'auto-bind';
 import type {
+  ClusterScopedMetadata,
   KubeJsonApiData,
   KubeObjectMetadata,
-  KubeObjectScope,
-  ClusterScopedMetadata
+  KubeObjectScope
 } from '../api-types';
 import { KubeObject } from '../kube-object';
 
@@ -21,8 +21,11 @@ export interface TopologySelectorTerm {
   matchLabelExpressions?: TopologySelectorLabelRequirement[];
 }
 
-export interface StorageClassData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Cluster>, void, void> {
+export interface StorageClassData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Cluster>,
+  void,
+  void
+> {
   allowVolumeExpansion?: boolean;
   allowedTopologies?: TopologySelectorTerm[];
   mountOptions?: string[];
