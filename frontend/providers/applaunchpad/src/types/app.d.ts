@@ -238,4 +238,6 @@ export type GpuNodeType = {
   'gpu.memory': number;
   'gpu.product': string;
   'gpu.alias': string;
+  'gpu.available': number;
+  'gpu.used': number;
 };
