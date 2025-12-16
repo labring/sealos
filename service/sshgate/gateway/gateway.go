@@ -196,7 +196,9 @@ func (g *Gateway) HandleConnection(nConn net.Conn) {
 		connLogger.Warn("Devbox not running")
 		// Reject all incoming channels and close connection
 
-		go ssh.DiscardRequests(reqs)
+		SafeGo(connLogger, func() {
+			ssh.DiscardRequests(reqs)
+		})
 
 		for newChannel := range chans {
 			_ = newChannel.Reject(

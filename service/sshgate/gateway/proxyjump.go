@@ -67,7 +67,9 @@ func (g *Gateway) handleProxyJumpMode(
 	defer channel.Close()
 
 	// Discard any requests on this channel
-	go ssh.DiscardRequests(requests)
+	SafeGo(proxyLogger, func() {
+		ssh.DiscardRequests(requests)
+	})
 
 	proxyLogger.Info("Tunnel established")
 

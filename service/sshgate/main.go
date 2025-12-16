@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net"
 	"os"
 	"time"
@@ -14,8 +13,10 @@ import (
 	"github.com/labring/sealos/service/sshgate/informer"
 	"github.com/labring/sealos/service/sshgate/logger"
 	"github.com/labring/sealos/service/sshgate/pprof"
+	"github.com/labring/sealos/service/sshgate/recovery"
 	"github.com/labring/sealos/service/sshgate/registry"
 	proxyproto "github.com/pires/go-proxyproto"
+	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -39,7 +40,7 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		logrus.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	// Initialize logger with configuration
@@ -51,15 +52,15 @@ func main() {
 
 	// Start pprof server if enabled
 	if cfg.PprofEnabled {
-		go func() {
+		recovery.Go(logrus.WithField("component", "pprof"), func() {
 			_ = pprof.RunPprofServer(cfg.PprofPort)
-		}()
+		})
 	}
 
 	// Create Kubernetes client
 	clientset, err := createKubernetesClient()
 	if err != nil {
-		log.Fatalf("Failed to create Kubernetes client: %v", err)
+		logrus.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
 
 	// Create devbox registry
@@ -72,13 +73,13 @@ func main() {
 
 	ctx := context.Background()
 	if err := infMgr.Start(ctx); err != nil {
-		log.Fatalf("Failed to start informers: %v", err)
+		logrus.Fatalf("Failed to start informers: %v", err)
 	}
 
 	// Load SSH server host key
 	hostKey, err := hostkey.Load(cfg.SSHHostKeySeed)
 	if err != nil {
-		log.Fatalf("Failed to load host key: %v", err)
+		logrus.Fatalf("Failed to load host key: %v", err)
 	}
 
 	// Create gateway with embedded options
@@ -88,7 +89,7 @@ func main() {
 	//nolint:noctx
 	listener, err := net.Listen("tcp", cfg.SSHListenAddr)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	// Wrap listener with proxy protocol support if enabled
@@ -97,19 +98,23 @@ func main() {
 			Listener:   listener,
 			ConnPolicy: cfg.ProxyProtocolConnPolicy(),
 		}
-		log.Printf("SSH Gateway listening on %s (proxy protocol enabled)", cfg.SSHListenAddr)
+		logrus.Printf("SSH Gateway listening on %s (proxy protocol enabled)", cfg.SSHListenAddr)
 	} else {
-		log.Printf("SSH Gateway listening on %s", cfg.SSHListenAddr)
+		logrus.Printf("SSH Gateway listening on %s", cfg.SSHListenAddr)
 	}
+
+	log := logrus.WithFields(nil)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Printf("Accept error: %v", err)
+			logrus.Printf("Accept error: %v", err)
 			continue
 		}
 
-		go gw.HandleConnection(conn)
+		recovery.Go(log, func() {
+			gw.HandleConnection(conn)
+		})
 	}
 }
 
