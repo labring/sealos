@@ -260,10 +260,9 @@ jobs:
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             # Always use GHCR docker image to avoid Aliyun bandwidth costs
             IMAGE_TAG="${TAG##*:}"
-            OLD_DOCKER_IMAGE="${OLD_DOCKER_REPO}:latest"
             NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            echo "Updating manifests: ${OLD_DOCKER_IMAGE} -> ${NEW_DOCKER_IMAGE}"
-            sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+            echo "Updating manifests to: ${NEW_DOCKER_IMAGE}"
+            sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
             sudo rm -rf registry
             echo "Building ${TAG}-amd64"
             sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
@@ -272,9 +271,8 @@ jobs:
           # Build cluster images for each tag (arm64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             IMAGE_TAG="${TAG##*:}"
-            OLD_DOCKER_IMAGE="${OLD_DOCKER_REPO}:latest"
             NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+            sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
             sudo rm -rf registry
             echo "Building ${TAG}-arm64"
             sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
