@@ -296,14 +296,13 @@ jobs:
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             # Always use GHCR docker image to avoid Aliyun bandwidth costs
             IMAGE_TAG="${TAG##*:}"
-            OLD_DOCKER_IMAGE="${OLD_DOCKER_REPO}:latest"
             NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            echo "Updating deploy files: ${OLD_DOCKER_IMAGE} -> ${NEW_DOCKER_IMAGE}"
+            echo "Updating deploy files to: ${NEW_DOCKER_IMAGE}"
             if [[ -d manifests ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
             fi
             if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-amd64"
@@ -313,13 +312,12 @@ jobs:
           # Build cluster images for each tag (arm64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             IMAGE_TAG="${TAG##*:}"
-            OLD_DOCKER_IMAGE="${OLD_DOCKER_REPO}:latest"
             NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
             if [[ -d manifests ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
             fi
             if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
-              sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-arm64"
