@@ -20,7 +20,9 @@ export const defaultEnv: Env = {
   ingressDomain: 'sealosusw.site',
   currencySymbol: 'shellCoin',
   enableImportFeature: 'false',
-  enableWebideFeature: 'false'
+  enableWebideFeature: 'false',
+  cpuSlideMarkList: '1,2,4,8,16',
+  memorySlideMarkList: '2,4,8,16,32'
 };
 
 type State = {
