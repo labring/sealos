@@ -560,6 +560,116 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		return
 	}
 
+	// Handle subscription creation - return the plan price with optional discount
+	if req.Operator == types.SubscriptionTransactionTypeCreated {
+		// Get the target plan
+		targetPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(req.PlanName)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("failed to get target plan: %v", err)},
+			)
+			return
+		}
+
+		// Find price for the specified period
+		price := getCurrentWorkspacePlanPrice(targetPlan, req.Period)
+		if price == nil || price.StripePrice == nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{
+					Error: fmt.Sprintf(
+						"no price found for target plan %s and period %s",
+						targetPlan.Name,
+						req.Period,
+					),
+				},
+			)
+			return
+		}
+
+		// For creation with no discount code, return the standard plan price
+		if req.DiscountCode == "" {
+			response := gin.H{
+				"amount": price.Price,
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
+
+		// For creation with discount code, use Stripe's invoice preview to get the exact discounted price
+		// Get customer ID for the invoice preview
+		customerID, err := dao.DBClient.GetUserStripeCustomerID(req.UserUID)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("failed to get user stripe customer id: %v", err)},
+			)
+			return
+		}
+		if customerID == "" {
+			c.JSON(
+				http.StatusBadRequest,
+				helper.ErrorMessage{Error: "no stripe customer found for user, please create a subscription first"},
+			)
+			return
+		}
+
+		// Create invoice preview parameters for new subscription
+		params := &stripe.InvoiceCreatePreviewParams{
+			Customer: stripe.String(customerID),
+			SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
+				Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
+					{
+						Price: price.StripePrice,
+					},
+				},
+			},
+		}
+
+		// Add discount code if provided
+		if req.DiscountCode != "" {
+			params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
+				{
+					Coupon: stripe.String(req.DiscountCode),
+				},
+			}
+		}
+
+		// Create the invoice preview to get the discounted amount
+		invoice, err := services.StripeServiceInstance.UpdatePreview(params)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("failed to create invoice preview with discount: %v", err)},
+			)
+			return
+		}
+
+		// Calculate the total amount from the invoice
+		var totalAmount int64 = 0
+		for _, line := range invoice.Lines.Data {
+			if line.Amount > 0 {
+				totalAmount += line.Amount
+			}
+		}
+
+		// If no positive amounts found, fall back to standard price
+		if totalAmount == 0 {
+			totalAmount = price.Price
+		}
+
+		response := gin.H{
+			"amount":          totalAmount * 10_000, // Convert cents to dollars
+			"original_amount": price.Price * 10_000, // Original price without discount
+			"discount_code":   req.DiscountCode,
+			"has_discount":    totalAmount < price.Price,
+		}
+
+		c.JSON(http.StatusOK, response)
+		return
+	}
+
 	currentSubscription, err := dao.DBClient.GetWorkspaceSubscription(
 		req.Workspace,
 		req.RegionDomain,
