@@ -42,9 +42,10 @@ const ConfigMapDetail = ({ obj: configMap, open, onClose }: DetailDrawerProps<Co
     }
   }, [open]);
 
+  const id = configMap?.getId();
   React.useEffect(() => {
     setIsEditing(false);
-  }, [configMap?.getId()]);
+  }, [id]);
 
   const data = Array.from(entries(formValues));
   const simpleData = data.filter(([_, val]) => !val?.includes('\n') && (val?.length || 0) < 50);

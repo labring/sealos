@@ -5,10 +5,7 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: false,
   compress: true,
-  transpilePackages: ['monaco-editor'],
-  outputFileTracingRoot: path.join(__dirname, '../../'),
-  // Opt into Turbopack explicitly.
-  turbopack: {}
+  transpilePackages: ['monaco-editor']
 };
 
 module.exports = nextConfig;

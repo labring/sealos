@@ -31,10 +31,11 @@ const IngressDetail = ({ obj: ingress, open, onClose }: DetailDrawerProps<Ingres
     }
   }, [open]);
 
+  const id = ingress?.getId();
   useEffect(() => {
     setIsEditing(false);
     setDraftRules([]);
-  }, [ingress?.getId()]);
+  }, [id]);
 
   const handleSave = async () => {
     try {

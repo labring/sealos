@@ -33,7 +33,7 @@ export function useWatcher({ initializers }: Props) {
     };
 
     Promise.allSettled(initializersRef.current.map((initializer) => initializer(callback, true)));
-  }, []); // Empty dependency array - only run once on mount
+  }, [notifyApi]); // Only run once per component mount (guarded by hasRunRef)
 
   return cxtHolder;
 }

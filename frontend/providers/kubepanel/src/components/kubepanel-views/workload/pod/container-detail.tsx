@@ -38,8 +38,14 @@ const ContainerDetail = ({
   workload,
   onUpdate
 }: Props) => {
-  const initContainers = pod ? pod.getInitContainers() : propInitContainers || [];
-  const containers = pod ? pod.getContainers() : propContainers || [];
+  const initContainers = useMemo(
+    () => (pod ? pod.getInitContainers() : propInitContainers || []),
+    [pod, propInitContainers]
+  );
+  const containers = useMemo(
+    () => (pod ? pod.getContainers() : propContainers || []),
+    [pod, propContainers]
+  );
 
   if (initContainers.length === 0 && containers.length === 0) return null;
 
@@ -47,9 +53,10 @@ const ContainerDetail = ({
     containers[0]?.name || initContainers[0]?.name || ''
   );
 
+  const podId = pod?.getId();
   useEffect(() => {
     setSelectedContainer(containers[0]?.name || initContainers[0]?.name || '');
-  }, [pod?.getId(), containers.length, initContainers.length]);
+  }, [podId, containers, initContainers]);
 
   const currentContainer =
     containers.find((c) => c.name === selectedContainer) ||
@@ -165,11 +172,6 @@ const ContainerInfo = ({
   }, [startupProbe, livenessProbe, readinessProbe]);
 
   // Reset editing state when drawer closes or container changes
-  useEffect(() => {
-    if (!open) {
-      setIsEditingProbes(false);
-    }
-  }, [open]);
 
   useEffect(() => {
     setIsEditingProbes(false);

@@ -1,7 +1,7 @@
 import { Probe } from '@/k8slens/kube-object';
 import { ConfigProvider, Input, InputNumber, Select } from 'antd';
 import { isEqual } from 'lodash';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface ProbeCardProps {
   title: string;
@@ -115,7 +115,7 @@ const ProbeCard = ({ title, probe, onChange, isEditing = false }: ProbeCardProps
     return 'none';
   };
 
-  const resetDraft = (target?: ExtendedProbe) => {
+  const resetDraft = useCallback((target?: ExtendedProbe) => {
     setProbeType(deriveProbeType(target));
 
     setTiming({
@@ -154,21 +154,21 @@ const ProbeCard = ({ title, probe, onChange, isEditing = false }: ProbeCardProps
       port: toNumberOrUndefined(target?.grpc?.port),
       service: target?.grpc?.service || ''
     });
-  };
+  }, []);
 
   useEffect(() => {
     // Refresh draft when source probe changes while not editing
     if (!isEditing) {
       resetDraft(probe);
     }
-  }, [probe, isEditing]);
+  }, [probe, isEditing, resetDraft]);
 
   useEffect(() => {
     // Initialize draft when entering edit mode
     if (isEditing) {
       resetDraft(probe);
     }
-  }, [isEditing, probe]);
+  }, [isEditing, probe, resetDraft]);
 
   const draftProbe = useMemo(() => {
     const base = { ...timing } as ExtendedProbe;

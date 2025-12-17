@@ -63,7 +63,7 @@ const Home = () => {
         setSideNavItemKey(key);
       }
     }
-  }, [router.isReady, router.query.slug]);
+  }, [router.isReady, router.query, router.query.slug]);
 
   const handleSideNavClick = (key: SideNavItemKey) => {
     setSideNavItemKey(key);

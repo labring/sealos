@@ -47,7 +47,7 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
     getDetailItem(record).getName()
   );
 
-  const dataSource = tableProps.dataSource || [];
+  const dataSource = useMemo(() => tableProps.dataSource || [], [tableProps.dataSource]);
   const total = dataSource.length;
 
   // Calculate current page data

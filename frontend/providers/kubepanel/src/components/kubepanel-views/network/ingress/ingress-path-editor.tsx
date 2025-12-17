@@ -10,7 +10,7 @@ import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Input, Select, Table, Tooltip } from 'antd';
 import { ColumnsType } from 'antd/lib/table';
 import { isEqual } from 'lodash';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface IngressPathEditorProps {
   ingress: Ingress;
@@ -33,47 +33,52 @@ type RuleForm = {
 const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPathEditorProps) => {
   const [rules, setRules] = useState<RuleForm[]>([]);
 
-  const convertIngressToForm = (ing: Ingress): RuleForm[] => {
-    if (!ing || !ing.spec) {
-      return [];
-    }
-    return (
-      ing.spec.rules?.map((rule) => ({
-        host: rule.host || '*',
-        paths: (rule.http?.paths || []).map((p) => ({
-          path: p.path || '/',
-          pathType:
-            p.pathType === 'ImplementationSpecific'
-              ? 'Prefix'
-              : (p.pathType as 'Exact' | 'Prefix') || 'Prefix',
-          serviceName:
-            (p.backend as NetworkingBackend)?.service?.name ??
-            (p.backend as ExtensionsBackend)?.serviceName ??
-            '',
-          servicePort:
-            (p.backend as NetworkingBackend)?.service?.port?.number ??
-            (p.backend as NetworkingBackend)?.service?.port?.name ??
-            (p.backend as ExtensionsBackend)?.servicePort
-        }))
-      })) || []
-    );
-  };
+  const convertIngressToForm = useMemo(() => {
+    return (ing: Ingress): RuleForm[] => {
+      if (!ing || !ing.spec) {
+        return [];
+      }
+      return (
+        ing.spec.rules?.map((rule) => ({
+          host: rule.host || '*',
+          paths: (rule.http?.paths || []).map((p) => ({
+            path: p.path || '/',
+            pathType:
+              p.pathType === 'ImplementationSpecific'
+                ? 'Prefix'
+                : (p.pathType as 'Exact' | 'Prefix') || 'Prefix',
+            serviceName:
+              (p.backend as NetworkingBackend)?.service?.name ??
+              (p.backend as ExtensionsBackend)?.serviceName ??
+              '',
+            servicePort:
+              (p.backend as NetworkingBackend)?.service?.port?.number ??
+              (p.backend as NetworkingBackend)?.service?.port?.name ??
+              (p.backend as ExtensionsBackend)?.servicePort
+          }))
+        })) || []
+      );
+    };
+  }, []);
 
-  const resetDraft = (ing: Ingress) => {
-    setRules(convertIngressToForm(ing));
-  };
+  const resetDraft = useCallback(
+    (ing: Ingress) => {
+      setRules(convertIngressToForm(ing));
+    },
+    [convertIngressToForm]
+  );
 
   useEffect(() => {
     if (!isEditing) {
       resetDraft(ingress);
     }
-  }, [ingress, isEditing]);
+  }, [ingress, isEditing, resetDraft]);
 
   useEffect(() => {
     if (isEditing) {
       resetDraft(ingress);
     }
-  }, [isEditing, ingress]);
+  }, [isEditing, ingress, resetDraft]);
 
   const draftRules = useMemo(() => {
     return rules.map((rule) => ({

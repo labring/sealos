@@ -9,7 +9,6 @@ import {
   useDisclosure
 } from '@chakra-ui/react';
 import { useCallback, useRef } from 'react';
-// import { useTranslation } from 'next-i18next';
 
 export const useConfirm = ({
   title = 'Prompt',
