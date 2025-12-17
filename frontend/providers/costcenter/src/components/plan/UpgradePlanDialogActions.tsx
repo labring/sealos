@@ -43,6 +43,7 @@ export function UpgradePlanDialogActions({
   currentPlanObj
 }: UpgradePlanDialogActionsProps) {
   const { t } = useTranslation();
+  const showConfirmationModal = usePlanStore((state) => state.showConfirmationModal);
 
   // Upgrade mode: show upgrade button
   if (!isCreateMode) {
@@ -115,7 +116,7 @@ export function UpgradePlanDialogActions({
               // Create workspace with selected plan
               const selectedPlan = plans?.find((p) => p.ID === selectedPlanId);
               if (selectedPlan) {
-                onSubscribe?.(selectedPlan, workspaceName, false);
+                showConfirmationModal(selectedPlan, { workspaceName, isCreateMode });
               }
             }
           }}

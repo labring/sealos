@@ -114,8 +114,6 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       )}`
     );
 
-    console.log('PAYMENT CONFIRMATION REDIRECT URL: ', desktopUrl.toString());
-
     manageCardMutation.mutate({
       workspace,
       regionDomain,
