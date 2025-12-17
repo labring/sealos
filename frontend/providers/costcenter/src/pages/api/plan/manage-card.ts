@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { workspace, regionDomain } = parseResult.data;
+    const { workspace, regionDomain, redirectUrl } = parseResult.data;
 
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
@@ -25,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const response = await client.post<PortalSessionResponse>(
       '/account/v1alpha1/workspace-subscription/card-manage',
       {
+        redirectUrl,
         workspace,
         regionDomain
       }

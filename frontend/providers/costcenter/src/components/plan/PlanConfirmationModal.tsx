@@ -104,9 +104,22 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       return;
     }
 
+    const desktopUrl = new URL(
+      `https://${regionDomain}/?openapp=system-costcenter?${encodeURIComponent(
+        new URLSearchParams({
+          mode: operator === 'created' ? 'create' : 'upgrade',
+          plan: plan?.Name ?? '',
+          showPaymentConfirmation: 'true'
+        }).toString()
+      )}`
+    );
+
+    console.log('PAYMENT CONFIRMATION REDIRECT URL: ', desktopUrl.toString());
+
     manageCardMutation.mutate({
       workspace,
-      regionDomain
+      regionDomain,
+      redirectUrl: desktopUrl.toString()
     });
   };
 

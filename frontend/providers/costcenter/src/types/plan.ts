@@ -245,7 +245,8 @@ export type CardInfoResponse = z.infer<typeof CardInfoResponseSchema>;
  */
 export const WorkspaceSubscriptionManageCardRequestSchema = z.object({
   workspace: z.string(),
-  regionDomain: z.string()
+  regionDomain: z.string(),
+  redirectUrl: z.string()
 });
 export type WorkspaceSubscriptionManageCardRequest = z.infer<
   typeof WorkspaceSubscriptionManageCardRequestSchema
