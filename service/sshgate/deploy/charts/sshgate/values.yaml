@@ -89,6 +89,10 @@ tolerations: []
 # Affinity rules for DaemonSet scheduling
 affinity: {}
 
+# Priority class name for pod scheduling priority
+# system-node-critical ensures the pod has high priority and is less likely to be evicted
+priorityClassName: system-node-critical
+
 # Update strategy for DaemonSet
 updateStrategy:
   type: RollingUpdate
