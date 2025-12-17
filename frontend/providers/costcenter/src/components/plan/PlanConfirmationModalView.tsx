@@ -1,5 +1,5 @@
-import { CheckCircle, ArrowUpRight, HelpCircle, CreditCard } from 'lucide-react';
-import { Button, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
+import { CheckCircle, ArrowUpRight, HelpCircle, CreditCard, CircleCheck, Info } from 'lucide-react';
+import { Button, Tooltip, TooltipTrigger, TooltipContent, Input } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethodInfo } from '@/types/plan';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
@@ -7,19 +7,22 @@ import CurrencySymbol from '../CurrencySymbol';
 import { BankCardIcon } from '../BankCardIcon';
 import { BankCardBrand } from '../BankCardBrand';
 import usePlanStore from '@/stores/plan';
+import { useState, useEffect } from 'react';
 
 interface PlanConfirmationModalViewProps {
   plan: SubscriptionPlan;
   workspaceName?: string;
   isCreateMode?: boolean;
   monthlyPrice: number;
-  dueToday: number;
+  upgradeAmount?: number;
   amountLoading: boolean;
   paymentMethod?: PaymentMethodInfo | null;
   cardInfoLoading: boolean;
   manageCardLoading: boolean;
   onConfirm: () => void;
   onManageCards: () => void;
+  onValidateRedeemCode?: (code: string) => Promise<void>;
+  redeemCodeValidating?: boolean;
 }
 
 export function PlanConfirmationModalView({
@@ -27,27 +30,44 @@ export function PlanConfirmationModalView({
   workspaceName,
   isCreateMode = false,
   monthlyPrice,
-  dueToday,
+  upgradeAmount,
   amountLoading,
   paymentMethod,
   cardInfoLoading,
   manageCardLoading,
   onConfirm,
-  onManageCards
+  onManageCards,
+  onValidateRedeemCode,
+  redeemCodeValidating = false
 }: PlanConfirmationModalViewProps) {
   const { t } = useTranslation();
   const isPaygType = usePlanStore((state) => state.isPaygType);
+  const redeemCode = usePlanStore((state) => state.redeemCode);
+  const redeemCodeDiscountRaw = usePlanStore((state) => state.redeemCodeDiscount);
+  const redeemCodeValidated = usePlanStore((state) => state.redeemCodeValidated);
+
+  const dueToday = upgradeAmount !== undefined ? upgradeAmount : monthlyPrice;
+  const redeemCodeDiscount = redeemCodeDiscountRaw
+    ? parseFloat(formatMoney(redeemCodeDiscountRaw).toFixed(2))
+    : null;
+
+  const [showRedeemInput, setShowRedeemInput] = useState(false);
+  const [redeemInputValue, setRedeemInputValue] = useState('');
+
+  useEffect(() => {
+    if (redeemCode && !redeemCodeValidated) {
+      setRedeemInputValue(redeemCode);
+      setShowRedeemInput(true);
+    }
+  }, [redeemCode, redeemCodeValidated]);
 
   const hasCard = !!paymentMethod;
-
-  // Check if should show tooltip: upgrade/downgrade mode and current plan is not PAYG
   const shouldShowTooltip = !isCreateMode && !isPaygType();
 
   const formatExpiryDate = (month: number, year: number) => {
     return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
   };
 
-  // Format plan resources
   const formatCpu = (cpu: string) => {
     const cpuNum = parseFloat(cpu);
     return `${cpuNum} vCPU`;
@@ -61,13 +81,23 @@ export function PlanConfirmationModalView({
     return storage.replace('Gi', 'GB Disk');
   };
 
-  // Parse plan resources
   let planResources: any = {};
   try {
     planResources = JSON.parse(plan.MaxResources || '{}');
   } catch (e) {
     planResources = {};
   }
+
+  const handleApplyRedeemCode = () => {
+    if (!redeemInputValue.trim() || !onValidateRedeemCode) return;
+    onValidateRedeemCode(redeemInputValue.trim()).catch(() => {});
+  };
+
+  useEffect(() => {
+    if (redeemCodeValidated) {
+      setShowRedeemInput(false);
+    }
+  }, [redeemCodeValidated]);
 
   return (
     <div className="flex border border-zinc-200 rounded-xl overflow-hidden">
@@ -128,6 +158,74 @@ export function PlanConfirmationModalView({
           {/* Separator */}
           <div className="border-t border-zinc-100" />
 
+          {/* Redeem Code Section */}
+          <div className="flex flex-col gap-1">
+            {!showRedeemInput && !redeemCodeValidated ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-900">{t('common:discount')}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowRedeemInput(true)}
+                  className="flex items-center gap-2 text-blue-600 text-sm font-medium hover:text-blue-700"
+                >
+                  <span>{t('common:enter_redeem_code')}</span>
+                  <ArrowUpRight size={16} />
+                </button>
+              </div>
+            ) : showRedeemInput && !redeemCodeValidated ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-900">{t('common:discount')}</span>
+                </div>
+                <div className="flex gap-1 items-start">
+                  <Input
+                    type="text"
+                    placeholder={t('common:enter_redeem_code')}
+                    value={redeemInputValue}
+                    onChange={(e) => setRedeemInputValue(e.target.value)}
+                    className="flex-1 h-10"
+                    disabled={redeemCodeValidating}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleApplyRedeemCode}
+                    disabled={!redeemInputValue.trim()}
+                    className="h-10 px-4"
+                  >
+                    {redeemCodeValidating ? t('common:calculating') : t('common:apply')}
+                  </Button>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <Info size={16} className="text-zinc-500 shrink-0" />
+                  <p className="text-sm text-zinc-500">
+                    <span className="text-blue-600">{t('common:one_time_discount')}</span>{' '}
+                    {t('common:renews_at_full_price')}
+                  </p>
+                </div>
+              </div>
+            ) : redeemCodeValidated ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-900">{t('common:discount')}</span>
+                  <span className="text-sm font-medium text-red-600">
+                    -<CurrencySymbol />
+                    {displayMoney(redeemCodeDiscount || 0)}
+                  </span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <CircleCheck size={16} className="text-emerald-600 shrink-0" />
+                  <p className="text-sm text-emerald-600">
+                    {t('common:redeem_code_applied', { code: redeemCode })}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Separator */}
+          <div className="border-t border-zinc-100" />
+
           {/* Billing Summary */}
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-center">
@@ -144,10 +242,8 @@ export function PlanConfirmationModalView({
                 <span className="text-sm font-medium text-gray-900">{t('common:due_today')}</span>
                 {shouldShowTooltip && (
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center">
-                        <HelpCircle size={16} className="text-zinc-500" />
-                      </button>
+                    <TooltipTrigger className="inline-flex items-center cursor-help">
+                      <HelpCircle size={16} className="text-zinc-500" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p className="max-w-xs">

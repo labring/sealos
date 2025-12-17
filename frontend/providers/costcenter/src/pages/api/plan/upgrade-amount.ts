@@ -23,12 +23,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { workspace, regionDomain, planName, period, payMethod, operator } = parseResult.data;
+    const { workspace, regionDomain, planName, period, payMethod, operator, discountCode } =
+      parseResult.data;
 
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
 
-    console.log('parseResult.data', parseResult.data);
     const response = await client.post<UpgradeAmountResponse>(
       '/account/v1alpha1/workspace-subscription/upgrade-amount',
       {
@@ -37,15 +37,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         planName,
         period,
         payMethod,
-        operator
+        operator,
+        discountCode
       }
     );
-    console.log('response.data', response.data);
+
+    const responseParseResult = UpgradeAmountResponseSchema.safeParse(response.data);
+    if (!responseParseResult.success) {
+      return jsonRes(res, {
+        code: 500,
+        message: 'Invalid response format from backend',
+        error: responseParseResult.error.flatten()
+      });
+    }
 
     return jsonRes<UpgradeAmountResponse>(res, {
-      data: response.data
+      data: responseParseResult.data
     });
   } catch (error: any) {
+    console.log({ error: error.response?.data });
+    // Handle 404 as invalid discount code
+    if (error.response?.status === 404) {
+      return jsonRes(res, {
+        code: 404,
+        message: 'Invalid discount code'
+      });
+    }
     return jsonRes(res, {
       code: 500,
       message: 'Internal server error'

@@ -21,6 +21,11 @@ export interface PlanStoreState {
     isCreateMode?: boolean;
   };
 
+  // Redeem code state
+  redeemCode: string | null;
+  redeemCodeDiscount: number | null;
+  redeemCodeValidated: boolean;
+
   // Data actions
   setPlansData: (data: PlanListResponse | null) => void;
   setSubscriptionData: (data: SubscriptionInfoResponse | null) => void;
@@ -37,6 +42,12 @@ export interface PlanStoreState {
   ) => void;
   hideModal: () => void;
   confirmPendingPlan: () => SubscriptionPlan | null;
+
+  // Redeem code actions
+  setRedeemCode: (code: string | null) => void;
+  setRedeemCodeDiscount: (discount: number | null) => void;
+  setRedeemCodeValidated: (validated: boolean) => void;
+  clearRedeemCode: () => void;
 
   // Computed getters
   getCurrentPlan: () => SubscriptionPlan | null;
@@ -59,6 +70,11 @@ const usePlanStore = create<PlanStoreState>()(
     pendingPlan: null,
     modalType: null,
     modalContext: {},
+
+    // Redeem code initial state
+    redeemCode: null,
+    redeemCodeDiscount: null,
+    redeemCodeValidated: false,
 
     // Data actions
     setPlansData: (data) => set({ plansData: data }),
@@ -96,6 +112,17 @@ const usePlanStore = create<PlanStoreState>()(
       });
       return plan;
     },
+
+    // Redeem code actions
+    setRedeemCode: (code) => set({ redeemCode: code }),
+    setRedeemCodeDiscount: (discount) => set({ redeemCodeDiscount: discount }),
+    setRedeemCodeValidated: (validated) => set({ redeemCodeValidated: validated }),
+    clearRedeemCode: () =>
+      set({
+        redeemCode: null,
+        redeemCodeDiscount: null,
+        redeemCodeValidated: false
+      }),
 
     // Computed getters
     getCurrentPlan: () => {
@@ -137,7 +164,10 @@ const usePlanStore = create<PlanStoreState>()(
         lastTransactionData: null,
         pendingPlan: null,
         modalType: null,
-        modalContext: {}
+        modalContext: {},
+        redeemCode: null,
+        redeemCodeDiscount: null,
+        redeemCodeValidated: false
       })
   }))
 );

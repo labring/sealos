@@ -56,7 +56,8 @@ export default function Plan() {
     modalContext,
     hideModal,
     confirmPendingPlan,
-    showConfirmationModal
+    showConfirmationModal,
+    setRedeemCode
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
@@ -117,6 +118,11 @@ export default function Plan() {
       // Handle workspaceName parameter for default workspace name
       if (router.query.workspaceName) {
         setDefaultWorkspaceName(router.query.workspaceName as string);
+      }
+
+      // Handle redeem code parameter
+      if (router.query.redeem) {
+        setRedeemCode(router.query.redeem as string);
       }
 
       if (router.query.showPaymentConfirmation === 'true') {
