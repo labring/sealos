@@ -281,13 +281,15 @@ func main() {
 			DefaultLimit:   resource.MustParse(limitEphemeralStorage),
 			MaximumLimit:   resource.MustParse(maximumLimitEphemeralStorage),
 		},
-		PodMatchers:              podMatchers,
-		DebugMode:                debugMode,
-		RestartPredicateDuration: restartPredicateDuration,
-		NodeName:                 nodes.GetNodeName(),
-		AcceptanceThreshold:      acceptanceThreshold,
-		NodeStatsProvider:        &stat.NodeStatsProviderImpl{},
-		MergeBaseImageTopLayer:   mergeBaseImageTopLayer,
+		PodMatchers:               podMatchers,
+		DebugMode:                 debugMode,
+		StartupConfigMapName:      startupCMName,
+		StartupConfigMapNamespace: startupCMNamespace,
+		RestartPredicateDuration:  restartPredicateDuration,
+		NodeName:                  nodes.GetNodeName(),
+		AcceptanceThreshold:       acceptanceThreshold,
+		NodeStatsProvider:         &stat.NodeStatsProviderImpl{},
+		MergeBaseImageTopLayer:    mergeBaseImageTopLayer,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
