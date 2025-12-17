@@ -8,7 +8,7 @@ import { MouseEvent, useMemo, useState } from 'react';
 import { Menu, useContextMenu } from 'react-contexify';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import Iconfont from '../iconfont';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import dockStyles from '@/components/AppDock/index.module.css';
 import { useTranslation } from 'next-i18next';
 
@@ -133,8 +133,8 @@ export default function FloatingButton() {
       x < leftBoundary
         ? handleSuction(Suction.Left)
         : x > rightBoundary
-        ? handleSuction(Suction.Right)
-        : null;
+          ? handleSuction(Suction.Right)
+          : null;
     } catch (error) {
       console.log(error);
     }

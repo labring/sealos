@@ -4,6 +4,7 @@ import {
   DBEditType,
   DBSourceType,
   DBType,
+  ParameterConfigField,
   PodDetailType,
   ReconfigStatusMapType
 } from '@/types/db';
@@ -28,6 +29,8 @@ export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',
   mysql = 'apecloud-mysql',
+  // ! Uncomment this after KB 0.9 upgrade!
+  // notapemysql = 'mysql',
   redis = 'redis',
   kafka = 'kafka',
   qdrant = 'qdrant',
@@ -228,12 +231,12 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' }
-  // { id: DBTypeEnum.qdrant, label: 'qdrant' },
-  // { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
-  // { id: DBTypeEnum.nebula, label: 'nebula' },
-  // { id: DBTypeEnum.weaviate, label: 'weaviate' }
+  { id: DBTypeEnum.milvus, label: 'Milvus' },
+  { id: DBTypeEnum.weaviate, label: 'Weaviate' }
+  // { id: DBTypeEnum.qdrant, label: 'Qdrant' },
+  // { id: DBTypeEnum.pulsar, label: 'Pulsar' },
+  // { id: DBTypeEnum.clickhouse, label: 'ClickHouse' },
+  // { id: DBTypeEnum.nebula, label: 'Nebula' }
 ];
 
 export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
@@ -294,11 +297,16 @@ export const defaultDBEditValue: DBEditType = {
     week: [],
     hour: '12',
     minute: '00',
-    saveTime: 100,
+    saveTime: 14,
     saveType: 'd'
   },
   terminationPolicy: 'Delete',
-  dataSourceId: undefined
+  parameterConfig: {
+    maxConnections: undefined,
+    timeZone: 'UTC',
+    lowerCaseTableNames: '1',
+    isMaxConnectionsCustomized: false
+  }
 };
 
 export const RedisHAConfig = (ha = true) => {
@@ -320,6 +328,7 @@ export const RedisHAConfig = (ha = true) => {
 
 export const defaultDBDetail: DBDetailType = {
   ...defaultDBEditValue,
+  rawDbType: DBTypeEnum.postgresql,
   id: '',
   createTime: '2022/1/22',
   status: dbStatusMap.Creating,
@@ -512,3 +521,25 @@ export const BackupSupportedDBTypeList: DBType[] = [
   'apecloud-mysql',
   'redis'
 ];
+
+export const PARAMETER_CONFIG_OVERRIDES: Partial<Record<DBTypeEnum, ParameterConfigField[]>> = {
+  postgresql: [
+    {
+      name: 'log_timezone',
+      type: 'enum',
+      values: ['UTC', 'Asia/Shanghai']
+    },
+    {
+      name: 'timezone',
+      type: 'enum',
+      values: ['UTC', 'Asia/Shanghai']
+    }
+  ],
+  'apecloud-mysql': [
+    {
+      name: 'mysqld.default-time-zone',
+      type: 'enum',
+      values: ['UTC', 'Asia/Shanghai']
+    }
+  ]
+};

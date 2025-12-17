@@ -4,9 +4,15 @@ import { immer } from 'zustand/middleware/immer';
 
 export type IDEType =
   | 'vscode'
+  | 'webide'
   | 'cursor'
   | 'vscodeInsiders'
   | 'windsurf'
+  | 'kiro'
+  | 'qoder'
+  | 'codebuddy'
+  | 'codebuddyCN'
+  | 'lingma'
   | 'trae'
   | 'traeCN'
   | 'gateway'
@@ -22,9 +28,15 @@ type State = {
 
 const validIDETypes: IDEType[] = [
   'vscode',
+  'webide',
   'cursor',
   'vscodeInsiders',
   'windsurf',
+  'kiro',
+  'qoder',
+  'codebuddy',
+  'codebuddyCN',
+  'lingma',
   'trae',
   'traeCN',
   'gateway',

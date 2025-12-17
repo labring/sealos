@@ -98,7 +98,12 @@ async function watchCustomClusterObject({
   return null;
 }
 
-async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: string) {
+async function setUserKubeconfig(
+  kc: k8s.KubeConfig,
+  uid: string,
+  k8s_username: string,
+  userType: 'subscription' | 'payg'
+) {
   const resourceKind = 'User';
   const group = 'user.sealos.io';
   const version = 'v1';
@@ -128,6 +133,9 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
       kind: resourceKind,
       metadata: {
         name: k8s_username,
+        annotations: {
+          'user.sealos.io/workspace-status': userType
+        },
         labels: {
           uid,
           updateTime
@@ -160,7 +168,12 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
   return k8s_username;
 }
 
-async function setUserTeamCreate(kc: k8s.KubeConfig, k8s_username: string, owner: string) {
+async function setUserTeamCreate(
+  kc: k8s.KubeConfig,
+  k8s_username: string,
+  owner: string,
+  userType: 'subscription' | 'payg'
+) {
   const group = 'user.sealos.io';
   const resourceKind = 'User';
   const version = 'v1';
@@ -172,7 +185,8 @@ async function setUserTeamCreate(kc: k8s.KubeConfig, k8s_username: string, owner
     kind: resourceKind,
     metadata: {
       annotations: {
-        'user.sealos.io/owner': owner
+        'user.sealos.io/owner': owner,
+        'user.sealos.io/workspace-status': userType
       },
       name: k8s_username,
       labels: {
@@ -261,12 +275,16 @@ export const getUserKubeconfigNotPatch = async (name: string) => {
   }
 };
 // for update sign in
-export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
+export const getUserKubeconfig = async (
+  uid: string,
+  k8s_username: string,
+  userType: 'subscription' | 'payg'
+) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
-  await setUserKubeconfig(kc, uid, k8s_username);
+  await setUserKubeconfig(kc, uid, k8s_username, userType);
 
   let kubeconfig = await watchClusterObject({
     kc,
@@ -278,12 +296,16 @@ export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
   return kubeconfig;
 };
 // for create workspace
-export const getTeamKubeconfig = async (k8s_username: string, owner: string) => {
+export const getTeamKubeconfig = async (
+  k8s_username: string,
+  owner: string,
+  userType: 'subscription' | 'payg'
+) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
-  await setUserTeamCreate(kc, k8s_username, owner);
+  await setUserTeamCreate(kc, k8s_username, owner, userType);
 
   let body = await watchCustomClusterObject({
     kc,
@@ -353,6 +375,36 @@ export const setUserWorkspaceLock = async (namespace: string) => {
   try {
     const kc = K8sApiDefault();
     const client = kc.makeApiClient(k8s.CoreV1Api);
+
+    try {
+      const currentNamespace = await client.readNamespace(namespace);
+      const currentStatus = currentNamespace.body.metadata?.annotations?.['debt.sealos/status'];
+      if (currentStatus === WorkspaceDebtStatus.TerminateSuspendCompleted) {
+        return true;
+      }
+    } catch (readError) {
+      if (
+        readError instanceof k8s.HttpError &&
+        (readError.statusCode === 404 ||
+          (readError.body && (readError.body.code === 404 || readError.body.code === '404')))
+      ) {
+        console.log('setUserWorkspaceLock error: namespace not found');
+        return true;
+      }
+      if (
+        readError instanceof k8s.HttpError &&
+        readError.body &&
+        typeof readError.body.message === 'string' &&
+        readError.body.message.includes('not found') &&
+        (readError.statusCode === 404 ||
+          readError.body.code === 404 ||
+          readError.body.code === '404')
+      ) {
+        console.log('setUserWorkspaceLock error: namespace not found');
+        return true;
+      }
+    }
+
     const res = await client.patchNamespace(
       namespace,
       {
@@ -378,11 +430,23 @@ export const setUserWorkspaceLock = async (namespace: string) => {
       WorkspaceDebtStatus.TerminateSuspend
     );
   } catch (e) {
-    if (e instanceof k8s.HttpError && e.body instanceof k8s.V1Status && e.body.code === 404) {
-      console.log('namespace not found');
+    if (
+      e instanceof k8s.HttpError &&
+      (e.statusCode === 404 || (e.body && (e.body.code === 404 || e.body.code === '404')))
+    ) {
+      console.log('setUserWorkspaceLock error: namespace not found');
       return true;
     }
-    console.log(e);
+    if (
+      e instanceof k8s.HttpError &&
+      e.body &&
+      typeof e.body.message === 'string' &&
+      e.body.message.includes('not found') &&
+      (e.statusCode === 404 || e.body.code === 404 || e.body.code === '404')
+    ) {
+      console.log('setUserWorkspaceLock error: namespace not found');
+      return true;
+    }
     throw e;
   }
 };
@@ -391,5 +455,6 @@ enum WorkspaceDebtStatus {
   Normal = 'Normal',
   Suspend = 'Suspend',
   Resume = 'Resume',
-  TerminateSuspend = 'TerminateSuspend'
+  TerminateSuspend = 'TerminateSuspend',
+  TerminateSuspendCompleted = 'TerminateSuspendCompleted'
 }

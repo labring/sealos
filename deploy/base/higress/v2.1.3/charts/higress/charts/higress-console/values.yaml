@@ -15,7 +15,7 @@ global:
     grafana:
       replicas: 1
       image:
-        repository: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/grafana
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/grafana
         tag: 9.3.6
       port: 3000
       storage: 1Gi
@@ -25,7 +25,7 @@ global:
     prometheus:
       replicas: 1
       image:
-        repository: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/prometheus
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/prometheus
         tag: v2.40.7
       port: 9090
       storage: 1Gi
@@ -39,7 +39,7 @@ global:
     loki:
       replicas: 1
       image:
-        repository: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/loki
+        repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/loki
         tag: 2.9.4
       ports:
         http: 3100
@@ -57,7 +57,7 @@ enabled: true
 replicaCount: 1
 
 image:
-  repository: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/console
+  repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/console
   pullPolicy: IfNotPresent
   tag: ""
 
@@ -121,7 +121,7 @@ certmanager:
   enabled: false
   replicas: 1
   image:
-    repository: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress
+    repository: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress
     tag: v1.11.0
 
 o11y:

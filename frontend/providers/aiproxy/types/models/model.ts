@@ -12,6 +12,8 @@ export interface ModelConfig {
   price: {
     input_price: number
     output_price: number
+    image_input_price: number
+    thinking_mode_output_price: number
     per_request_price: number
   }
   rpm: number
@@ -44,4 +46,6 @@ export interface ModelConfigDetail {
   tool_choice?: boolean
   support_formats?: string[]
   support_voices?: string[]
+  coder?: boolean
+  limited_time_free?: boolean
 }

@@ -39,6 +39,7 @@ export type MonitorQueryKey = {
   disk: string;
   average_memory: string;
   average_cpu: string;
+  storage: string;
 };
 
 export type MonitorDataResult = {

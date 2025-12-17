@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -65,7 +66,11 @@ func checkPerformance(notificationInfo *api.Info, checkType string) (float64, er
 }
 
 func getKubeConfig(namespace string) (string, error) {
+	if !strings.Contains(namespace, "ns-") {
+		return "", fmt.Errorf("invalid namespace format for %s", namespace)
+	}
 	userName := strings.Split(namespace, "-")[1]
+
 	user, err := api.DynamicClient.Resource(userGVR).Namespace("").Get(context.TODO(), userName, metav1.GetOptions{})
 	if err != nil {
 		return "", err

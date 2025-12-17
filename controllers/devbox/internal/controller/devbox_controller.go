@@ -89,6 +89,7 @@ type DevboxReconciler struct {
 // +kubebuilder:rbac:groups="",resources=nodes/status,verbs=get
 // +kubebuilder:rbac:groups="",resources=services,verbs=*
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=*
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=*
 // +kubebuilder:rbac:groups="",resources=events,verbs=*
 
 func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -105,6 +106,10 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		PartOf:    devboxv1alpha2.LabelDevBoxPartOf,
 	})
 
+	logger.Info("start reconciling devbox", "devbox", devbox.Name)
+	if r.StartupConfigMapName != "" {
+		logger.Info("startup config map set", "startupConfigMapName", r.StartupConfigMapName, "startupConfigMapNamespace", r.StartupConfigMapNamespace)
+	}
 	if devbox.ObjectMeta.DeletionTimestamp.IsZero() {
 		// retry add finalizer
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -922,6 +927,10 @@ func (r *DevboxReconciler) handleSubResourceDelete(ctx context.Context, devbox *
 	}
 	// Delete Service
 	if err := r.deleteResourcesByLabels(ctx, &corev1.Service{}, devbox.Namespace, recLabels); err != nil {
+		return err
+	}
+	// Delete Configmap
+	if err := r.deleteResourcesByLabels(ctx, &corev1.ConfigMap{}, devbox.Namespace, recLabels); err != nil {
 		return err
 	}
 	// Delete Secret

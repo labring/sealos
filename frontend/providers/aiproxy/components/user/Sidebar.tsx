@@ -1,36 +1,38 @@
-'use client'
-import { Button, Flex, Text } from '@chakra-ui/react'
-import Image, { StaticImageData } from 'next/image'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+'use client';
+import { Button, Flex, Text } from '@chakra-ui/react';
+import Image, { StaticImageData } from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-import { useTranslationClientSide } from '@/app/i18n/client'
-import homeIcon from '@/ui/svg/icons/sidebar/home.svg'
-import homeIcon_a from '@/ui/svg/icons/sidebar/home_a.svg'
-import logsIcon from '@/ui/svg/icons/sidebar/logs.svg'
-import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg'
-import priceIcon from '@/ui/svg/icons/sidebar/price.svg'
-import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg'
-import keysIcon from '@/ui/svg/icons/sidebar/key.svg'
-import keysIcon_a from '@/ui/svg/icons/sidebar/key_a.svg'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useBackendStore } from '@/store/backend'
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import homeIcon from '@/ui/svg/icons/sidebar/home.svg';
+import homeIcon_a from '@/ui/svg/icons/sidebar/home_a.svg';
+import keysIcon from '@/ui/svg/icons/sidebar/key.svg';
+import keysIcon_a from '@/ui/svg/icons/sidebar/key_a.svg';
+import logsIcon from '@/ui/svg/icons/sidebar/logs.svg';
+import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg';
+import mcpIcon from '@/ui/svg/icons/sidebar/mcp.svg';
+import mcpIcon_a from '@/ui/svg/icons/sidebar/mcp_a.svg';
+import priceIcon from '@/ui/svg/icons/sidebar/price.svg';
+import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg';
 
 type Menu = {
-  id: string
-  url: string
-  value: string
-  icon: StaticImageData
-  activeIcon: StaticImageData
-  display: boolean
-}
+  id: string;
+  url: string;
+  value: string;
+  icon: StaticImageData;
+  activeIcon: StaticImageData;
+  display: boolean;
+};
 
 const SideBar = (): JSX.Element => {
-  const pathname = usePathname()
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const pathname = usePathname();
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
 
-  const { invitationUrl, docUrl } = useBackendStore()
+  const { invitationUrl, docUrl } = useBackendStore();
 
   const menus: Menu[] = [
     {
@@ -39,7 +41,7 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.Keys'),
       icon: keysIcon,
       activeIcon: keysIcon_a,
-      display: true
+      display: true,
     },
     {
       id: 'home',
@@ -47,7 +49,7 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.Home'),
       icon: homeIcon,
       activeIcon: homeIcon_a,
-      display: true
+      display: true,
     },
     {
       id: 'logs',
@@ -55,7 +57,7 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.Logs'),
       icon: logsIcon,
       activeIcon: logsIcon_a,
-      display: true
+      display: true,
     },
     {
       id: 'price',
@@ -63,9 +65,17 @@ const SideBar = (): JSX.Element => {
       value: t('Sidebar.Price'),
       icon: priceIcon,
       activeIcon: priceIcon_a,
-      display: true
-    }
-  ]
+      display: true,
+    },
+    {
+      id: 'mcp-hub',
+      url: '/mcp-hub',
+      value: t('Sidebar.McpHub'),
+      icon: mcpIcon,
+      activeIcon: mcpIcon_a,
+      display: true,
+    },
+  ];
 
   return (
     <Flex
@@ -76,13 +86,14 @@ const SideBar = (): JSX.Element => {
       justifyContent="space-between"
       height="100%"
       overflowY="auto"
-      overflowX="hidden">
+      overflowX="hidden"
+    >
       <Flex flexDirection="column" gap="var(--md, 8px)" alignContent="center">
         {menus
           .filter((menu) => menu.display)
           .map((menu) => {
-            const fullUrl = `/${lng}${menu.url}`
-            const isActive = pathname === fullUrl
+            const fullUrl = `/${lng}${menu.url}`;
+            const isActive = pathname === fullUrl || pathname.startsWith(fullUrl + '/');
 
             return (
               <Link href={fullUrl} key={menu.id} style={{ textDecoration: 'none' }}>
@@ -99,7 +110,8 @@ const SideBar = (): JSX.Element => {
                   cursor="pointer"
                   role="group"
                   backgroundColor={isActive ? '#9699B426' : 'transparent'}
-                  _hover={{ backgroundColor: '#9699B426' }}>
+                  _hover={{ backgroundColor: '#9699B426' }}
+                >
                   <Image
                     src={isActive ? menu.activeIcon : menu.icon}
                     alt={menu.value}
@@ -114,12 +126,13 @@ const SideBar = (): JSX.Element => {
                     lineHeight="16px"
                     letterSpacing="0.5px"
                     textAlign="center"
-                    whiteSpace="nowrap">
+                    whiteSpace="nowrap"
+                  >
                     {menu.value}
                   </Text>
                 </Flex>
               </Link>
-            )
+            );
           })}
       </Flex>
       {/* doc */}
@@ -128,7 +141,8 @@ const SideBar = (): JSX.Element => {
         gap="var(--md, 8px)"
         alignContent="center"
         alignItems="flex-start"
-        marginTop="auto">
+        marginTop="auto"
+      >
         <Button
           display="flex"
           padding="8px"
@@ -140,8 +154,9 @@ const SideBar = (): JSX.Element => {
           bg="rgba(150, 153, 180, 0.10)"
           _hover={{ bg: 'rgba(150, 153, 180, 0.15)' }}
           onClick={() => {
-            window.open(docUrl, '_blank')
-          }}>
+            window.open(docUrl, '_blank');
+          }}
+        >
           <Text
             color="grayModern.600"
             fontFamily="PingFang SC"
@@ -149,7 +164,8 @@ const SideBar = (): JSX.Element => {
             fontStyle="normal"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {t('dashboard.doc')}
           </Text>
           <svg
@@ -157,7 +173,8 @@ const SideBar = (): JSX.Element => {
             width="15"
             height="14"
             viewBox="0 0 15 14"
-            fill="none">
+            fill="none"
+          >
             <path
               fillRule="evenodd"
               clipRule="evenodd"
@@ -166,46 +183,51 @@ const SideBar = (): JSX.Element => {
             />
           </svg>
         </Button>
-        <Button
-          display="flex"
-          padding="8px"
-          justifyContent="center"
-          alignItems="center"
-          width="64px"
-          gap="4px"
-          borderRadius="6px"
-          bg="rgba(150, 153, 180, 0.10)"
-          _hover={{ bg: 'rgba(150, 153, 180, 0.15)' }}
-          onClick={() => {
-            window.open(invitationUrl, '_blank')
-          }}>
-          <Text
-            color="grayModern.600"
-            fontFamily="PingFang SC"
-            fontSize="12px"
-            fontStyle="normal"
-            fontWeight={500}
-            lineHeight="16px"
-            letterSpacing="0.5px">
-            {t('dashboard.invite')}
-          </Text>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="15"
-            height="14"
-            viewBox="0 0 15 14"
-            fill="none">
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M5.26675 3.70022C5.26675 4.02239 5.52792 4.28356 5.85009 4.28356L9.39154 4.28356L3.78769 9.88741C3.55988 10.1152 3.55988 10.4846 3.78769 10.7124C4.0155 10.9402 4.38484 10.9402 4.61265 10.7124L10.2165 5.10851L10.2165 8.64997C10.2165 8.97214 10.4777 9.2333 10.7998 9.2333C11.122 9.2333 11.3832 8.97214 11.3832 8.64997L11.3832 3.70022C11.3832 3.37806 11.122 3.11689 10.7998 3.11689L5.85009 3.11689C5.52792 3.11689 5.26675 3.37806 5.26675 3.70022Z"
-              fill="#485264"
-            />
-          </svg>
-        </Button>
+        {invitationUrl && (
+          <Button
+            display="flex"
+            padding="8px"
+            justifyContent="center"
+            alignItems="center"
+            width="64px"
+            gap="4px"
+            borderRadius="6px"
+            bg="rgba(150, 153, 180, 0.10)"
+            _hover={{ bg: 'rgba(150, 153, 180, 0.15)' }}
+            onClick={() => {
+              window.open(invitationUrl, '_blank');
+            }}
+          >
+            <Text
+              color="grayModern.600"
+              fontFamily="PingFang SC"
+              fontSize="12px"
+              fontStyle="normal"
+              fontWeight={500}
+              lineHeight="16px"
+              letterSpacing="0.5px"
+            >
+              {t('dashboard.invite')}
+            </Text>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="14"
+              viewBox="0 0 15 14"
+              fill="none"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M5.26675 3.70022C5.26675 4.02239 5.52792 4.28356 5.85009 4.28356L9.39154 4.28356L3.78769 9.88741C3.55988 10.1152 3.55988 10.4846 3.78769 10.7124C4.0155 10.9402 4.38484 10.9402 4.61265 10.7124L10.2165 5.10851L10.2165 8.64997C10.2165 8.97214 10.4777 9.2333 10.7998 9.2333C11.122 9.2333 11.3832 8.97214 11.3832 8.64997L11.3832 3.70022C11.3832 3.37806 11.122 3.11689 10.7998 3.11689L5.85009 3.11689C5.52792 3.11689 5.26675 3.37806 5.26675 3.70022Z"
+                fill="#485264"
+              />
+            </svg>
+          </Button>
+        )}
       </Flex>
     </Flex>
-  )
-}
+  );
+};
 
-export default SideBar
+export default SideBar;

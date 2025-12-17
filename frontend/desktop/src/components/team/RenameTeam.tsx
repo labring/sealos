@@ -29,7 +29,6 @@ export default function RenameTeam({
   ns_uid: string;
   defaultTeamName: string;
 } & ButtonProps) {
-  console.log(defaultTeamName);
   const { onOpen, isOpen, onClose } = useDisclosure();
   const [teamName, setTeamName] = useState(defaultTeamName);
   const { toast } = useCustomToast({ status: 'error' });

@@ -19,6 +19,7 @@ import { useTranslation } from 'next-i18next';
 import { formatPodTime } from '@/utils/tools';
 import { I18nCommonKey } from '@/types/i18next';
 import { DBStatusEnum } from '@/constants/db';
+import { Maximize2 } from 'lucide-react';
 
 const DBStatusTag = ({
   conditions = [],
@@ -50,25 +51,37 @@ const DBStatusTag = ({
     <>
       <Flex alignItems={'center'}>
         <Flex
-          color={status.color}
-          backgroundColor={status.backgroundColor}
-          border={showBorder ? '1px solid' : 'none'}
-          borderColor={status.color}
-          py={2}
-          px={3}
-          borderRadius={'24px'}
-          fontSize={'xs'}
-          fontWeight={'bold'}
+          display={'flex'}
+          height={'20px'}
+          justifyContent={'center'}
           alignItems={'center'}
-          minW={'88px'}
-          maxW={'110px'}
+          gap={'8px'}
+          py={0}
+          px={0}
+          borderRadius={'0px'}
+          fontSize={'14px'}
+          fontWeight={'500'}
+          minW={'auto'}
+          maxW={'none'}
           whiteSpace={'nowrap'}
         >
-          <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
-          <Box ml={2} flex={1}>
+          <Box
+            w={'8px'}
+            h={'8px'}
+            borderRadius={'2px'}
+            border={'1px solid rgba(0, 0, 0, 0.05)'}
+            backgroundColor={status.value === DBStatusEnum.Running ? '#10B981' : status.dotColor}
+          />
+          <Box
+            color={'#18181B'}
+            fontSize={'14px'}
+            fontWeight={'500'}
+            lineHeight={'20px'}
+            fontFamily={'Geist, sans-serif'}
+          >
             {label}
           </Box>
-          <MyIcon ml={3} w={'16px'} name={'statusDetail'} cursor={'pointer'} onClick={onOpen} />
+          <Maximize2 size={14} color="#71717A" cursor={'pointer'} onClick={onOpen} />
         </Flex>
         {shouldShowQuestionIcon && (
           <Tooltip label={t('click_for_details')} placement="top">

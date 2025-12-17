@@ -82,7 +82,7 @@ export interface AppEditType {
     portName: string;
     port: number;
     protocol: TransportProtocolType;
-    appProtocol: ApplicationProtocolType;
+    appProtocol?: ApplicationProtocolType;
     openPublicDomain: boolean;
     publicDomain: string; //  domainPrefix
     customDomain: string; // custom domain
@@ -176,6 +176,14 @@ export interface PodStatusMapType {
   reason?: string;
   message?: string;
 }
+
+export interface ContainerStatusType {
+  name: string;
+  state: PodStatusMapType;
+  cpuLimit?: string;
+  memoryLimit?: string;
+}
+
 export interface PodDetailType extends V1Pod {
   podName: string;
   status: PodStatusMapType;
@@ -189,7 +197,7 @@ export interface PodDetailType extends V1Pod {
   memory: number;
   podReason?: string;
   podMessage?: string;
-  containerStatus: PodStatusMapType;
+  containerStatuses: ContainerStatusType[];
 }
 export interface PodMetrics {
   podName: string;
@@ -212,3 +220,24 @@ export type AppPatchPropsType = (
   | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
   | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
 )[];
+
+export type ResourceType =
+  | 'cpu'
+  | 'infra-cpu'
+  | 'storage'
+  | 'memory'
+  | 'disk'
+  | 'mongodb'
+  | 'minio'
+  | 'infra-memory'
+  | 'infra-disk'
+  | 'services.nodeports';
+
+export type GpuNodeType = {
+  'gpu.count': number;
+  'gpu.memory': number;
+  'gpu.product': string;
+  'gpu.alias': string;
+  'gpu.available': number;
+  'gpu.used': number;
+};

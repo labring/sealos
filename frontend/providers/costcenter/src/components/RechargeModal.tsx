@@ -1,9 +1,8 @@
 import vector from '@/assert/Vector.svg';
 import stripe_icon from '@/assert/bi_stripe.svg';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
-import alipay_icon from '@/assert/ic_baseline-alipay.svg'
+import alipay_icon from '@/assert/ic_baseline-alipay.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
-import OuterLink from '@/components/outerLink';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import useEnvStore from '@/stores/env';
 import useSessionStore from '@/stores/session';
@@ -30,7 +29,6 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { MyTooltip } from '@sealos/ui';
 import { Stripe } from '@stripe/stripe-js';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
@@ -38,10 +36,11 @@ import { isNumber } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import GiftIcon from './icons/GiftIcon';
-import HelpIcon from './icons/HelpIcon';
 import useRechargeStore from '@/stores/recharge';
 import { gtmOpenTopup, gtmTopupCheckout } from '@/utils/gtm';
+import { Minus, Plus, Loader } from 'lucide-react';
+import { cn } from '@sealos/shadcn-ui';
+
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -80,22 +79,19 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       px="37px"
       justify={'center'}
       align={'center'}
-      m={'auto'}
       display={'flex'}
       justifyContent={'center'}
       alignItems={'center'}
       position={'relative'}
     >
       <Flex
-        width={'267px'}
         height={'295px'}
         direction={'column'}
         align="center"
         justify={'space-between'}
+        pt={'24px'}
       >
-        <Text color="#7B838B" mb="8px" textAlign="center">
-          {t('Scan with WeChat')}
-        </Text>
+        <p className="text-lg font-semibold mb-2 text-center">{t('common:scan_with_wechat')}</p>
         {props.complete === 2 && !!props.codeURL ? (
           <QRCodeSVG
             size={185}
@@ -114,11 +110,18 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
         )}
         <Box mt="8px">
           <Text color="#717D8A" fontSize="12px" fontWeight="normal">
-            {t('Order Number')}： {props.tradeNO || ''}
+            {t('common:order_number')}： {props.tradeNO || ''}
           </Text>
-          <Text color="#717D8A" fontSize="12px">
-            {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
-          </Text>
+          <p className="mt-3 text-blue-600 text-sm font-medium flex gap-0.5 items-center justify-center">
+            {props.complete !== 3 ? (
+              <span className="animate-spin">
+                <Loader size={14} />
+              </span>
+            ) : null}
+            <span>
+              {props.complete === 3 ? t('common:payment_successful') : t('common:in_payment')}
+            </span>
+          </p>
         </Box>
       </Flex>
     </Flex>
@@ -127,162 +130,130 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
 function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: string }) {
   const { t } = useTranslation();
   return (
-      <Flex
-          flexDirection="column"
-          px="37px"
-          justify={'center'}
-          align={'center'}
-          m={'auto'}
-          display={'flex'}
-          justifyContent={'center'}
-          alignItems={'center'}
-          position={'relative'}
-      >
-        <Flex
-            width={'267px'}
-            height={'295px'}
-            direction={'column'}
-            align="center"
-            justify={'space-between'}
-        >
-          <Text color="#7B838B" mb="8px" textAlign="center">
-            {t('Scan with Alipay')}
+    <Flex
+      flexDirection="column"
+      px="37px"
+      justify={'center'}
+      align={'center'}
+      m={'auto'}
+      display={'flex'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      position={'relative'}
+    >
+      <Flex height={'295px'} direction={'column'} align="center" justify={'space-between'}>
+        <p className="text-lg font-semibold mb-2 text-center">{t('common:scan_with_alipay')}</p>
+        {props.complete === 2 && !!props.codeURL ? (
+          <QRCodeSVG
+            size={185}
+            value={props.codeURL}
+            style={{ margin: '0 auto' }}
+            imageSettings={{
+              // 二维码中间的logo图片
+              src: alipay_icon.src,
+              height: 40,
+              width: 40,
+              excavate: true // 中间图片所在的位置是否镂空
+            }}
+          />
+        ) : (
+          <Box>waiting...</Box>
+        )}
+        <Box mt="8px">
+          <Text color="#717D8A" fontSize="12px" fontWeight="normal">
+            {t('common:order_number')}： {props.tradeNO || ''}
           </Text>
-          {props.complete === 2 && !!props.codeURL ? (
-              <QRCodeSVG
-                  size={185}
-                  value={props.codeURL}
-                  style={{ margin: '0 auto' }}
-                  imageSettings={{
-                    // 二维码中间的logo图片
-                    src: alipay_icon.src,
-                    height: 40,
-                    width: 40,
-                    excavate: true // 中间图片所在的位置是否镂空
-                  }}
-              />
-          ) : (
-              <Box>waiting...</Box>
-          )}
-          <Box mt="8px">
-            <Text color="#717D8A" fontSize="12px" fontWeight="normal">
-              {t('Order Number')}： {props.tradeNO || ''}
-            </Text>
-            <Text color="#717D8A" fontSize="12px">
-              {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
-            </Text>
-          </Box>
-        </Flex>
+          <p className="mt-3 text-blue-600 text-sm font-medium flex gap-0.5 items-center justify-center">
+            {props.complete !== 3 ? (
+              <span className="animate-spin">
+                <Loader size={14} />
+              </span>
+            ) : null}
+            <span>
+              {props.complete === 3 ? t('common:payment_successful') : t('common:in_payment')}
+            </span>
+          </p>
+        </Box>
       </Flex>
+    </Flex>
   );
 }
 const BonusBox = (props: {
   onClick: () => void;
   selected: boolean;
-  bouns: number;
-  isFirst?: boolean;
   amount: number;
+  bonus?: number;
+  isSpecialBonus?: boolean;
 }) => {
   const { t } = useTranslation();
-  const currency = useEnvStore((s) => s.currency);
 
   return (
     <Flex
-      width="140px"
-      height="92px"
-      justify={'center'}
+      width="100%"
+      height="72px"
+      justify={'start'}
       align={'center'}
+      padding={'calc(var(--spacing) * 4)'}
       border="1.5px solid"
       {...(props.selected
         ? {
-            color: 'brightBlue.600',
-            borderColor: 'brightBlue.500'
+            color: 'var(--color-zinc-900)',
+            borderColor: 'var(--color-zinc-900)',
+            bg: 'var(--color-zinc-50)'
           }
         : {
-            borderColor: '#EFF0F1'
+            borderColor: 'var(--color-zinc-200)',
+            bg: 'var(--color-white)'
           })}
-      bg={'grayModern.100'}
-      borderRadius="4px"
+      borderRadius="12px"
       position={'relative'}
-      flexGrow="0"
       cursor={'pointer'}
       onClick={(e) => {
         e.preventDefault();
         props.onClick();
       }}
     >
-      {props.bouns === props.amount ? (
-          <Flex
-              position={'absolute'}
-              minW={'max-content'}
-              right={'-6px'}
-              top="-18px"
-              color={'royalBlue.700'}
-              background="royalBlue.100"
-              alignItems={'center'}
-              borderRadius="2px"
-              zIndex={'99'}
-              fontStyle="normal"
-              fontWeight="500"
-              fontSize="12px"
-              _before={{
-                position: 'absolute',
-                inset: 'auto',
-                borderRadius: '2px',
-                width: '50px',
-                height: '50px',
-                content: '""',
-                transform: 'rotate(45deg)',
-                zIndex: '-1',
-                bgColor: 'royalBlue.100'
-              }}
-              w="50px"
-              h="50px"
-              align={'center'}
-              justify={'center'}
-          >
-            <Flex flexDirection={'column'} align={'center'}>
-              <Text>{t('Double')}!</Text>
-              <Flex align={'center'}>
-                +
-                <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
-                <Text>{props.bouns}</Text>
-              </Flex>
-            </Flex>
-          </Flex>
-      ) : props.bouns !== 0 ? (
-          <Flex
-              position={'absolute'}
-              minW={'max-content'}
-              left="78px"
-              top="4px"
-              px={'9.5px'}
-              py={'2.5px'}
-              color={'purple.600'}
-              background="purple.100"
-              alignItems={'center'}
-              borderRadius="10px 10px 10px 0px"
-              zIndex={'99'}
-              fontStyle="normal"
-              fontWeight="500"
-              fontSize="12px"
-          >
-            <Text mr="4px">+</Text>
-            <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
-            <Text>{props.bouns}</Text>
-          </Flex>
-      ) : (
-          <></>
+      {props.bonus && (
+        <div
+          className={cn(
+            'absolute right-0 top-0 text-xs font-medium z-10 flex items-center justify-center',
+            props.isSpecialBonus
+              ? ' text-blue-600 translate-x-4 -translate-y-4'
+              : 'bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-fit whitespace-nowrap'
+          )}
+        >
+          {/*special bouns only*/}
+          {props.isSpecialBonus ? (
+            <div className="absolute right-0 top-0 w-[50px] h-[50px] -z-10 flex items-center justify-center  bg-blue-100 rounded-sm before:absolute before:w-[50px] before:h-[50px] before:bg-blue-100 before:rounded-sm before:rotate-45 before:-z-10 before:content-['']">
+              <span className="text-center">
+                <span>{t('common:recharge_doubled')}</span>
+                <br />
+                <span className="text-nowrap">
+                  <span>+</span>
+                  <CurrencySymbol />
+                  <span>{props.bonus}</span>
+                </span>
+              </span>
+            </div>
+          ) : (
+            <>
+              <span>{t('common:recharge_bonus')}</span>
+
+              <CurrencySymbol className="w-3 shrink-0" />
+              <span>{props.bonus}</span>
+            </>
+          )}
+        </div>
       )}
-      <Flex align={'center'} fontSize="24px">
-        <CurrencySymbol boxSize="20px" type={currency} />
-        <Text ml="4px" fontStyle="normal" fontWeight="500">
-          {props.amount}
-        </Text>
-      </Flex>
+
+      <div className="flex gap-1 items-center font-medium">
+        <CurrencySymbol />
+        <span>{props.amount}</span>
+      </div>
     </Flex>
   );
 };
+
 const RechargeModal = forwardRef(
   (
     props: {
@@ -364,7 +335,8 @@ const RechargeModal = forwardRef(
       ratios.unshift(...temp.map(() => 0));
       return [defaultSteps, ratios, steps, specialBonus];
     }, [bonuses?.data?.discount.defaultSteps, bonuses?.data?.discount.firstRechargeDiscount]);
-    const [amount, setAmount] = useState(() => 0);
+
+    const [amount, setAmount] = useState(() => 16);
     const getBonus = (amount: number) => {
       let ratio = 0;
       let specialIdx = specialBonus.findIndex(([k]) => +k === amount);
@@ -377,6 +349,7 @@ const RechargeModal = forwardRef(
     };
     const { isProcess, setRechargeStatus, resetProcess } = useRechargeStore();
     const { stripeEnabled, wechatEnabled, alipayEnabled } = useEnvStore();
+
     const createPaymentRes = useMutation(
       () =>
         request.post<any, ApiResp<Payment>>('/api/account/payment', {
@@ -470,7 +443,7 @@ const RechargeModal = forwardRef(
       if (amount < 10) {
         toast({
           status: 'error',
-          title: t('Pay Minimum Tips')
+          title: t('common:pay_minimum_tips')
         });
         // 校检，stripe有最低费用的要求
         return;
@@ -498,106 +471,79 @@ const RechargeModal = forwardRef(
                 <ModalHeader
                   px={'20px'}
                   py={'12px'}
-                  bg={'grayModern.25'}
-                  borderBottom={'1px solid'}
-                  fontWeight={500}
-                  fontSize={'16px'}
+                  bg={'var(--color-white)'}
+                  fontWeight={'var(--font-weight-semibold)'}
+                  fontSize={'var(--text-lg)'}
                   borderColor={'grayModern.100'}
                 >
-                  {t('credit_purchase')}
+                  {t('common:credit_purchase')}
                 </ModalHeader>
                 <ModalCloseButton top={'8px'} right={'18px'} />
+
                 <Flex
                   pointerEvents={complete === 0 ? 'auto' : 'none'}
-                  pt="24px"
+                  p="24px"
                   mt={'0'}
-                  pb="28px"
                   w="full"
-                  px={'36px'}
                   flexDirection="column"
                   justifyContent="center"
                   alignItems="center"
                 >
-                  <Flex align={'center'} alignSelf={'flex-start'} mb={'20px'}>
-                    <Text color="grayModern.600" fontWeight={'normal'} mr={'24px'}>
-                      {t('remaining_balance')}
-                    </Text>
-                    <CurrencySymbol boxSize="20px" type={currency} fontSize="24px" />
-                    <Text ml="4px" color="#24282C" fontWeight={'medium'} fontSize="24px">
-                      {formatMoney(balance).toFixed(2)}
-                    </Text>
-                  </Flex>
-                  <Flex direction={'column'} mb={'20px'} width={'full'}>
-                    <Flex mb={'36px'} justify={'space-between'}>
-                      <Text color="grayModern.600" fontWeight={'normal'}>
-                        {t('Select Amount')}
-                      </Text>
-                      {specialBonus && specialBonus.length > 0 && (
-                        <Flex align={'center'}>
-                          <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon>
-                          <Text
-                            mr={'4px'}
-                            color={'grayModern.900'}
-                            fontSize={'14px'}
-                            fontWeight={500}
-                          >
-                            {t('first_recharge_title')}
-                          </Text>
-                          <MyTooltip
-                            px={'12px'}
-                            py={'8px'}
-                            minW={'unset'}
-                            width={'auto'}
-                            label={
-                              <Text fontSize={'12px'} fontWeight={400}>
-                                {t('first_recharge_tips')}
-                              </Text>
-                            }
-                          >
-                            <HelpIcon boxSize={'16px'}></HelpIcon>
-                          </MyTooltip>
-                        </Flex>
-                      )}
-                    </Flex>
-                    <Flex wrap={'wrap'} gap={'16px'}>
+                  <Flex direction={'column'} mb={'24px'} width={'full'}>
+                    <div className="flex flex-col">
+                      <section className="w-full bg-plan-payg px-4 py-3 rounded-xl gap-1 flex flex-col h-[88px]">
+                        <span className="text-slate-500 text-sm">
+                          {t('common:remaining_balance')}
+                        </span>
+                        <span className="text-2xl font-semibold leading-none flex gap-1 items-center">
+                          <CurrencySymbol />
+                          <span>{formatMoney(balance).toFixed(2)}</span>
+                        </span>
+                      </section>
+
+                      <section className="mt-6 mb-2">
+                        <div className="flex justify-between">
+                          <div className="font-medium">{t('common:select_amount')}</div>
+                        </div>
+                      </section>
+                    </div>
+
+                    <SimpleGrid columns={3} gap={'16px'}>
                       {steps.map((amount, index) => (
                         <BonusBox
                           key={index}
                           amount={amount}
-                          isFirst={specialBonus.findIndex((a) => +a[0] === amount) >= 0}
-                          bouns={getBonus(amount)}
                           onClick={() => {
                             setSelectAmount(index);
                             setAmount(amount);
                           }}
                           selected={selectAmount === index}
+                          bonus={specialBonus.find(([step]) => amount.toString() === step)?.[1]}
+                          isSpecialBonus={
+                            (specialBonus.find(([step]) => amount.toString() === step)?.[1] ?? 0) >=
+                            amount
+                          }
                         />
                       ))}
-                    </Flex>
+                    </SimpleGrid>
                   </Flex>
-                  <Flex alignSelf={'flex-start'} align={'center'}>
-                    <Text color="grayModern.600" mr={'36px'}>
-                      {t('custom_amount')}
-                    </Text>
+
+                  <div className="flex gap-8 items-center">
+                    <div className="font-medium">{t('common:custom_amount')}</div>
+
                     <NumberInput
                       defaultValue={15}
                       clampValueOnBlur={false}
                       min={0}
-                      flex={1}
                       step={step}
-                      // mt="8px"
-                      w="200px"
-                      h="32px"
-                      boxSizing="border-box"
-                      background="grayModern.50"
-                      pl={'12px'}
-                      border="1px solid"
-                      borderColor={'grayModern.200'}
-                      borderRadius="8px"
-                      alignItems="center"
-                      display={'flex'}
                       value={amount}
                       variant={'unstyled'}
+                      bg={'transparent'}
+                      className="flex h-10 items-center border hover:border rounded-lg overflow-hidden flex-1"
+                      padding={0}
+                      _hover={{
+                        borderColor: 'var(--border)'
+                      }}
                       onChange={(str, v) => {
                         const maxAmount = 10_000_000;
                         if (!str || !isNumber(v) || isNaN(v)) {
@@ -611,46 +557,32 @@ const RechargeModal = forwardRef(
                         setAmount(v);
                       }}
                     >
-                      <NumberInputField color={'grayModern.900'} borderRadius={'unset'} />
-                      <CurrencySymbol boxSize="14px" mr={'32px'} type={currency} />
-
-                      <NumberInputStepper borderColor={'grayModern.200'}>
-                        <NumberIncrementStepper width={'24px'} borderColor={'grayModern.200'}>
-                          <Img src={vector.src}></Img>
-                        </NumberIncrementStepper>
-                        <NumberDecrementStepper w="24px" borderColor={'grayModern.200'}>
-                          <Img src={vector.src} transform={'rotate(180deg)'}></Img>
+                      <NumberInputStepper
+                        position={'relative'}
+                        border={'unset'}
+                        width={'60px'}
+                        borderRight={'1px solid var(--border)'}
+                      >
+                        <NumberDecrementStepper border={'none'}>
+                          <Minus size={14} />
                         </NumberDecrementStepper>
                       </NumberInputStepper>
-                    </NumberInput>
-                    <Flex fontSize={'12px'} align={'center'}>
-                      <Text
-                        py={'1px'}
-                        px="7px"
-                        ml={'10px'}
-                        color={'purple.600'}
-                        background="purple.100"
-                        borderRadius="6px 6px 6px 0px;"
-                        fontStyle="normal"
-                        fontWeight="500"
-                        fontSize="12px"
-                        mr="4px"
-                      >
-                        {t('Bonus')}
-                      </Text>
 
-                      <CurrencySymbol boxSize={'10px'} type={currency} />
-                      {getBonus(amount)}
-                    </Flex>
-                  </Flex>
-                  <Flex
-                    alignSelf={'flex-start'}
-                    align={'center'}
-                    mt={'24px'}
-                    onClick={() => setDetail(true)}
-                  >
-                    <OuterLink text={t('View Discount Rules')}></OuterLink>
-                  </Flex>
+                      <CurrencySymbol className="mx-2 w-8 aspect-square" />
+                      <NumberInputField bg={'transparent'} />
+
+                      <NumberInputStepper
+                        position={'relative'}
+                        width={'60px'}
+                        borderLeft={'1px solid var(--border)'}
+                      >
+                        <NumberIncrementStepper border={'none'} borderRadius={'0px'}>
+                          <Plus size={14} />
+                        </NumberIncrementStepper>
+                      </NumberInputStepper>
+                    </NumberInput>
+                  </div>
+
                   <Flex gap={'16px'} width={'full'} mt={'24px'}>
                     {stripeEnabled && (
                       <Button
@@ -659,13 +591,15 @@ const RechargeModal = forwardRef(
                         h="auto"
                         py="14px"
                         px="34px"
+                        bg={'var(--primary)'}
+                        borderRadius={'var(--radius-lg)'}
                         onClick={() => {
                           handleStripeConfirm();
                         }}
                       >
                         <Img src={stripe_icon.src} mr="8px" w="24px" h="24px" />
                         <Text fontSize={'14px'} fontWeight={500}>
-                          {t('pay with stripe')}
+                          {t('common:pay_with_stripe')}
                         </Text>
                       </Button>
                     )}
@@ -676,11 +610,13 @@ const RechargeModal = forwardRef(
                         h="auto"
                         py="14px"
                         px="34px"
+                        bg={'var(--primary)'}
+                        borderRadius={'var(--radius-lg)'}
                         onClick={() => handleWechatConfirm()}
                       >
                         <Img src={wechat_icon.src} mr="8px" w="24px" h="24px" fill={'teal.400'} />
                         <Text fontSize={'14px'} fontWeight={500}>
-                          {t('pay with wechat')}
+                          {t('common:pay_with_wechat')}
                         </Text>
                       </Button>
                     )}
@@ -691,11 +627,13 @@ const RechargeModal = forwardRef(
                         h="auto"
                         py="14px"
                         px="34px"
+                        bg={'var(--primary)'}
+                        borderRadius={'var(--radius-lg)'}
                         onClick={() => handleAlipayConfirm()}
                       >
                         <Img src={alipay_icon.src} mr="8px" w="24px" h="24px" fill={'teal.400'} />
                         <Text fontSize={'14px'} fontWeight={500}>
-                          {t('pay with alipay')}
+                          {t('common:pay_with_alipay')}
                         </Text>
                       </Button>
                     )}
@@ -707,11 +645,11 @@ const RechargeModal = forwardRef(
                 <ModalHeader
                   px={'20px'}
                   py={'12px'}
-                  bg={'grayModern.25'}
-                  borderBottom={'1px solid'}
-                  fontWeight={500}
-                  fontSize={'16px'}
+                  bg={'var(--color-white)'}
+                  fontWeight={'var(--font-weight-semibold)'}
+                  fontSize={'var(--text-lg)'}
                   borderColor={'grayModern.100'}
+                  borderBottom={'1px solid var(--color-border)'}
                 >
                   <Img
                     src={vector.src}
@@ -726,7 +664,7 @@ const RechargeModal = forwardRef(
                       cancalPay();
                     }}
                   ></Img>
-                  {t('Recharge Amount')}
+                  {t('common:recharge_amount')}
                 </ModalHeader>
                 <ModalCloseButton top={'8px'} right={'18px'} />
                 {payType === 'wechat' ? (
@@ -736,11 +674,11 @@ const RechargeModal = forwardRef(
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
                   />
                 ) : payType === 'alipay' ? (
-                    <AlipayPayment
-                        complete={complete}
-                        codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
-                        tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
-                    />
+                  <AlipayPayment
+                    complete={complete}
+                    codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
+                    tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
+                  />
                 ) : (
                   <StripeForm
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
@@ -755,13 +693,13 @@ const RechargeModal = forwardRef(
               <ModalHeader
                 py={'12px'}
                 px={'20px'}
-                bg={'grayModern.25'}
-                borderBottom={'1px solid'}
-                fontWeight={500}
-                fontSize={'16px'}
+                bg={'var(--color-white)'}
+                fontWeight={'var(--font-weight-semibold)'}
+                fontSize={'var(--text-lg)'}
                 borderColor={'grayModern.100'}
+                borderBottom={'1px solid var(--color-border)'}
               >
-                <Text>{t('preferential_rules')}</Text>
+                <Text>{t('common:preferential_rules')}</Text>
               </ModalHeader>
               <ModalCloseButton top={'8px'} right={'18px'} />
               <Flex
@@ -777,10 +715,10 @@ const RechargeModal = forwardRef(
               >
                 <SimpleGrid columns={2} rowGap={'13px'}>
                   <Box bgColor={'grayModern.100'} color={'grayModern.600'} px={'24px'} py={'14px'}>
-                    {t('Recharge Amount')}
+                    {t('common:recharge_amount')}
                   </Box>
                   <Box bgColor={'grayModern.100'} px={'24px'} py={'14px'} color={'grayModern.600'}>
-                    {t('preferential_strength')}
+                    {t('common:preferential_strength')}
                   </Box>
                   {steps &&
                     ratios &&
@@ -805,15 +743,15 @@ const RechargeModal = forwardRef(
                           {/* <Text key={idx} pl={'24px'} color={'grayModern.900'}>
                             {pre}
                             {' <= '}
-                            {t('Recharge Amount')}
+                            {t('common:recharge_amount')}
                             {next ? `< ${next}` : ''}
                           </Text> */}
                           <Text key={idx} pl={'24px'} color={'grayModern.900'}>
                             {pre}
-                            {/* = {t('Recharge Amount')}{' '} */}
+                            {/* = {t('common:recharge_amount')}{' '} */}
                           </Text>
                           <Text px={'24px'} color={'grayModern.900'}>
-                            {t('Bonus')}
+                            {t('common:bonus')}
                             {ratio.toFixed(2)}
                           </Text>
                         </>
@@ -823,10 +761,10 @@ const RechargeModal = forwardRef(
                       <>
                         <Text key={i} pl={'24px'} color={'grayModern.900'}>
                           {k}
-                          {/* = {t('Recharge Amount')}{' '} */}
+                          {/* = {t('common:recharge_amount')}{' '} */}
                         </Text>
                         <Text pl={'24px'} color={'grayModern.900'}>
-                          {t('Bonus')} {v}
+                          {t('common:bonus')} {v}
                         </Text>
                       </>
                     ))}

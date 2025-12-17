@@ -1,0 +1,41 @@
+payment:
+  enabled: false
+  wechat:
+    enabled: false
+    MchID: ""
+    AppID: ""
+    MchAPIv3Key: ""
+    MchCertificateSerialNumber: ""
+    WechatPrivateKey: |
+      # Paste your Wechat Private Key here, use --set-file payment.wechat.WechatPrivateKey=./path/to/file.txt
+  alipay:
+    enabled: false
+    ALIPAY_APP_ID: ""
+    ALIPAY_ROOT_CERT: |
+      # Paste your Alipay Root Cert here, use --set-file payment.alipay.ALIPAY_ROOT_CERT=./path/to/file.txt
+    ALIPAY_PRIVATE_KEY: |
+      # Paste your Alipay Private Key here, use --set-file payment.alipay.ALIPAY_PRIVATE_KEY=./path/to/file.txt
+    ALIPAY_CERT_PUBLIC_KEY: |
+      # Paste your Alipay Cert Public Key here, use --set-file payment.alipay.ALIPAY_CERT_PUBLIC_KEY=./path/to/file.txt
+    ALIPAY_APP_CERT_PUBLIC_KEY: |
+      # Paste your Alipay App Cert Public Key here, use --set-file payment.alipay.ALIPAY_APP_CERT_PUBLIC_KEY=./path/to/file.txt
+  stripe:
+    enabled: false
+    STRIPE_API_KEY: ""
+    STRIPE_SUCCESS_POSTFIX: ""
+    STRIPE_CANCEL_POSTFIX: ""
+    STRIPE_CURRENCY: "cny" # cny, usd, eur, etc.
+
+config:
+  cloudDomain: ""
+  cloudPort: ""
+  certSecretName: "wildcard-cert"
+  regionUID: ""
+  databaseMongodbURI: ""
+  databaseLocalCockroachdbURI: ""
+  databaseGlobalCockroachdbURI: ""
+  passwordEnabled: "true"
+  passwordSalt: ""
+  jwtInternal: ""
+  jwtRegional: ""
+  jwtGlobal: ""

@@ -5,12 +5,7 @@ import {
   CreateLaunchpadRequestSchema,
   DeleteAppByNameResponseSchema,
   GetAppByAppNameResponseSchema,
-  UpdateAppResourcesSchema,
-  UpdateConfigMapSchema,
-  CreatePortsSchema,
-  UpdatePortsSchema,
-  DeletePortsSchema,
-  UpdateStorageSchema
+  UpdateAppResourcesSchema
 } from './request_schema';
 
 export const ErrorResponseSchema = z.object({
@@ -58,7 +53,14 @@ export const openApiDocument = (sealosDomain: string) =>
       '/api/v1/app': {
         post: {
           summary: 'Create a new application',
-          description: 'Create a new application with standardized configuration format',
+          description:
+            'Create a new application with standardized configuration format. ' +
+            'Supports both fixed replicas and elastic scaling (HPA): ' +
+            '- For fixed instances: Use resource.replicas only ' +
+            '- For elastic scaling: Use resource.hpa configuration ' +
+            'Image configuration supports both public and private registries: ' +
+            '- For public images: Set image.imageRegistry to null ' +
+            '- For private images: Provide image.imageRegistry with credentials',
           requestBody: {
             content: {
               'application/json': {
@@ -149,8 +151,26 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         },
         patch: {
-          summary: 'Update application resources',
-          description: 'Partially update application resources like CPU, memory, replicas, etc.',
+          summary: 'Update application configuration',
+          description:
+            'Partially update application configuration including resources, ConfigMap, storage, and ports. ' +
+            'This unified endpoint handles all types of application updates: ' +
+            '- Resource updates (CPU, memory, replicas, HPA, etc.) ' +
+            '  * For fixed instances: Update resource.replicas ' +
+            '  * For elastic scaling: Update resource.hpa ' +
+            '  * Can switch between fixed and elastic modes ' +
+            '- Image configuration (imageName and registry authentication) ' +
+            '  * For public images: Set image.imageRegistry to null ' +
+            '  * For private images: Provide image.imageRegistry with credentials ' +
+            '- Launch command configuration (command and args) ' +
+            '- Environment variables ' +
+            '- ConfigMap configuration (replaces existing ConfigMap entirely) ' +
+            '- Storage configuration (incremental updates for StatefulSet only) ' +
+            '- Port configuration (create/update ports) ' +
+            '  * For new ports: Omit identifiers (networkName, portName, serviceName) ' +
+            '  * For updates: Include at least one identifier to locate existing port ' +
+            '- Port deletion via deletePorts field ' +
+            'At least one field must be provided for the update.',
           parameters: [
             {
               name: 'name',
@@ -181,7 +201,8 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             },
             '400': {
-              description: 'Invalid request body or path parameters',
+              description:
+                'Invalid request body, path parameters, unsupported operation (e.g., storage update on Deployment), duplicate ports, or port conflicts',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
@@ -189,7 +210,7 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             },
             '404': {
-              description: 'Application not found',
+              description: 'Application not found or ports not found for update/deletion',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
@@ -197,7 +218,7 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             },
             '500': {
-              description: 'Internal server error',
+              description: 'Internal server error during application update',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
@@ -363,109 +384,35 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/app/{name}/configmap': {
-        patch: {
-          summary: 'Update application ConfigMap',
-          description:
-            'Update application ConfigMap configuration and synchronize volumes and volumeMounts in Deployment/StatefulSet. ' +
-            'This API uses Strategic Merge Patch to safely update only the specified ConfigMap fields without affecting other volumes or volumeMounts. ' +
-            'The ConfigMap will be created if it does not exist, or updated if it already exists.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              description: 'Application name',
-              required: true,
-              schema: {
-                type: 'string'
-              }
-            }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: UpdateConfigMapSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'ConfigMap updated successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: LaunchpadApplicationSchema
-                  })
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request parameters or application structure',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'Application not found',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error during ConfigMap update',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/v1/app/{name}/ports': {
+      '/api/v1/app/{name}/restart': {
         post: {
-          summary: 'Create new application ports',
+          summary: 'Restart application',
           description:
-            'Add new port configurations to an application including container ports, services, and ingresses. ' +
-            'This API creates entirely new ports that do not already exist in the application. ' +
-            'Port conflicts will be rejected.',
+            'Restart an application by updating the restartTime label to trigger pod recreation',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Application name',
+              description: 'Name of the application to restart',
               required: true,
               schema: {
                 type: 'string'
               }
             }
           ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: CreatePortsSchema
-              }
-            }
-          },
           responses: {
             '200': {
-              description: 'Ports created successfully',
+              description: 'Application restarted successfully',
               content: {
                 'application/json': {
                   schema: z.object({
-                    data: LaunchpadApplicationSchema
+                    message: z.string()
                   })
                 }
               }
             },
             '400': {
-              description: 'Invalid request parameters, duplicate ports, or ports already exist',
+              description: 'Invalid path parameters',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
@@ -481,199 +428,7 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             },
             '500': {
-              description: 'Internal server error during ports creation',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        },
-        patch: {
-          summary: 'Update existing application ports',
-          description:
-            'Update existing application port configurations including container ports, services, and ingresses. ' +
-            'This API requires at least one identifier (networkName, portName, or serviceName) to locate the port to update. ' +
-            'Only specified ports will be updated, existing ports not mentioned will remain unchanged.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              description: 'Application name',
-              required: true,
-              schema: {
-                type: 'string'
-              }
-            }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: UpdatePortsSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Ports updated successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: LaunchpadApplicationSchema
-                  })
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request parameters, missing identifiers, or port not found',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'Application not found',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error during ports update',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        },
-        delete: {
-          summary: 'Delete application ports',
-          description:
-            'Delete specified application ports by port number. ' +
-            'This API removes the specified ports from container configuration, services, and ingresses. ' +
-            'At least one port number must be provided.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              description: 'Application name',
-              required: true,
-              schema: {
-                type: 'string'
-              }
-            }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: DeletePortsSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Ports deleted successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: LaunchpadApplicationSchema
-                  })
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request parameters or application structure',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'Application not found or no matching ports found to delete',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error during ports deletion',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/v1/app/{name}/storage': {
-        patch: {
-          summary: 'Update application storage',
-          description:
-            'Incrementally update application persistent storage configuration for StatefulSet applications. ' +
-            'This API manages PVC (Persistent Volume Claims) and volumeClaimTemplates in the StatefulSet. ' +
-            'It supports PVC expansion but prevents shrinking due to Kubernetes limitations. ' +
-            'Only specified storage configurations are updated/added, existing storage not listed will be preserved. ' +
-            'Storage names are auto-generated from paths using mountPathToConfigMapKey function. ' +
-            'StatefulSet will be deleted and recreated due to volumeClaimTemplates immutability.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              description: 'Application name',
-              required: true,
-              schema: {
-                type: 'string'
-              }
-            }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: UpdateStorageSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Storage updated successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: LaunchpadApplicationSchema
-                  })
-                }
-              }
-            },
-            '400': {
-              description:
-                'Invalid request parameters, duplicate paths, or unsupported application type (only StatefulSet supported)',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'Application not found',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error during storage update or PVC expansion',
+              description: 'Internal server error',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema

@@ -17,11 +17,14 @@ import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import { WorkspaceQuotaItem } from '@/types/workspace';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import useEnvStore from '@/store/env';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -40,12 +43,25 @@ const EditApp = ({
   const [errorMessage, setErrorMessage] = useState('');
   const { message: toast } = useMessage();
   const { setIsLoading } = useLoading();
-  const { checkQuotaAllow } = useUserStore();
+  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t('are_you_sure_to_perform_database_migration')
   });
   const { loadDBDetail } = useDBStore();
   const { screenWidth } = useGlobalStore();
+  const { SystemEnv } = useEnvStore();
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
 
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
@@ -195,6 +211,24 @@ const EditApp = ({
     }
   );
 
+  const handleCreateApp = useCallback(() => {
+    // Check quota before creating app
+    const exceededQuotaItems = checkExceededQuotas({
+      cpu: SystemEnv.MIGRATION_JOB_CPU_REQUIREMENT,
+      memory: SystemEnv.MIGRATION_JOB_MEMORY_REQUIREMENT,
+      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+    });
+
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
+    }
+  }, [checkExceededQuotas, session, formHook, openConfirm, submitSuccess, submitError, SystemEnv]);
+
   return (
     <>
       <Flex
@@ -209,9 +243,7 @@ const EditApp = ({
           dbType={dbType}
           title={'data_migration_config'}
           applyBtnText={'migrate_now'}
-          applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
-          }
+          applyCb={handleCreateApp}
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
@@ -230,6 +262,18 @@ const EditApp = ({
           onClose={() => setErrorMessage('')}
         />
       )}
+
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        open={exceededDialogOpen}
+        onOpenChange={(open) => {
+          // Refresh quota on open change
+          loadUserQuota();
+          setExceededDialogOpen(open);
+        }}
+        onConfirm={() => {}}
+        showControls={false}
+      />
     </>
   );
 };

@@ -20,9 +20,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/pflag"
-
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	"github.com/spf13/pflag"
 )
 
 // PrintFlags logs the flags in the flagset
@@ -41,7 +40,7 @@ func SetFlagsFromEnv(prefix string, flags *pflag.FlagSet) {
 		if flag.Changed {
 			return
 		}
-		envVar := strings.ToUpper(strings.Replace(prefix+flag.Name, "-", "_", -1))
+		envVar := strings.ToUpper(strings.ReplaceAll(prefix+flag.Name, "-", "_"))
 		if v := os.Getenv(envVar); v != "" {
 			_ = flags.Set(flag.Name, v)
 		}

@@ -27,7 +27,6 @@ import (
 	"time"
 
 	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -125,8 +124,8 @@ func (nb *Builder) WithMessage(message string) *Builder {
 	return nb
 }
 
-func (nb *Builder) WithLevel(Level v1.Type) *Builder {
-	nb.Level = Level
+func (nb *Builder) WithLevel(level v1.Type) *Builder {
+	nb.Level = level
 	return nb
 }
 
@@ -152,7 +151,7 @@ Return values:
 
 The function also generates a unique ID for each NotificationEvent. If the generation of the ID fails, it uses the current Unix timestamp as the ID.
 */
-func NewNotificationEvent(title string, message string, kind Kind, from string, level v1.Type) Event {
+func NewNotificationEvent(title, message string, kind Kind, from string, level v1.Type) Event {
 	id, err := randStringBytes(idLength)
 	if err != nil || id == "" {
 		id = strings.ToLower(strconv.Itoa(int(time.Now().Unix())))
@@ -191,6 +190,6 @@ func randStringBytes(n int) (string, error) {
 func encodeTime() string {
 	current := time.Now().Unix()
 	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, uint64(current))
+	binary.BigEndian.PutUint64(buf, uint64(current)) // #nosec G115
 	return base64.StdEncoding.EncodeToString(buf)
 }

@@ -1,0 +1,64 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-controller-clusterrole
+rules:
+- apiGroups: [ "" ]
+  resources: [ "namespaces" ]
+  resourceNames: [ "kube-system" ]
+  verbs: [ "get" ]
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/status
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+    - ""
+  resources:
+    - events
+    - configmaps
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  resourceNames:
+  - devboxes.devbox.sealos.io
+  verbs:
+  - get
+- nonResourceURLs:
+    - /metrics
+  verbs:
+    - get
+- apiGroups:
+    - authentication.k8s.io
+  resources:
+    - tokenreviews
+    - subjectaccessreviews
+  verbs:
+    - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: node-controller-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-controller-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "node.serviceAccountName" . }}
+    namespace: {{.Release.Namespace}}

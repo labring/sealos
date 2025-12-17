@@ -16,7 +16,6 @@ import {
   Circle,
   HStack,
   StackProps,
-  Portal,
   Button
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
@@ -35,28 +34,35 @@ import { useTranslation } from 'next-i18next';
 import { AddIcon, CopyIcon, StorageIcon } from '@sealos/ui';
 import NsListItem from '@/components/team/NsListItem';
 import RenameTeam from './RenameTeam';
-import { Plus, Settings } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import useAppStore from '@/stores/app';
 import { track } from '@sealos/gtm';
+import { getWorkspacesPlans } from '@/api/auth';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { cn } from '@sealos/shadcn-ui';
+import { getPlanBackgroundClass } from '@/utils/styling';
+import { useConfigStore } from '@/stores/config';
 
 export default function TeamCenter({
   isOpen,
   onClose
 }: { isOpen: boolean; onClose: () => void } & StackProps) {
+  const { layoutConfig } = useConfigStore();
+
   const createTeamDisclosure = useDisclosure();
   const session = useSessionStore((s) => s.session);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { t } = useTranslation();
   const user = session?.user;
-  const default_ns_uid = user?.ns_uid || '';
-  const default_nsid = user?.nsid || '';
+  const current_ns_uid = user?.ns_uid || '';
+  const current_nsid = user?.nsid || '';
   const userCrUid = user?.userCrUid || '';
   const k8s_username = user?.k8s_username || '';
   const { copyData } = useCopyData();
-  const [nsid, setNsid] = useState(default_nsid);
+  const [nsid, setNsid] = useState(current_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
   const [ns_uid, setNs_uid] = useState(() =>
-    default_nsid === 'ns-' + k8s_username ? '' : default_ns_uid
+    current_nsid === 'ns-' + k8s_username ? '' : current_ns_uid
   );
   // team detail and users list
   const { data } = useQuery(
@@ -86,7 +92,7 @@ export default function TeamCenter({
   });
   const messages: teamMessageDto[] = reciveMessage.data?.data?.messages || [];
   // namespace list
-  const { data: _namespaces } = useQuery({
+  const { data: _namespaces, isSuccess: namespacesQuerySuccess } = useQuery({
     queryKey: ['teamList', 'teamGroup'],
     queryFn: nsListRequest,
     select(data) {
@@ -94,41 +100,60 @@ export default function TeamCenter({
     }
   });
   const namespaces = _namespaces || [];
-  useEffect(() => {
-    const defaultNamespace =
-      namespaces?.length > 0
-        ? namespaces[0]
-        : {
-            uid: '',
-            id: ''
-          };
-    if (defaultNamespace && !_namespaces?.find((ns) => ns.uid === ns_uid)) {
-      // after delete namespace
-      setNs_uid(defaultNamespace.uid);
-      setNsid(defaultNamespace.id);
-    }
-  }, [_namespaces, ns_uid]);
+
+  const { data: _plans } = useQuery({
+    queryKey: ['planList', ...(_namespaces ?? [])?.map((ns) => ns.id)],
+    queryFn: () => getWorkspacesPlans((_namespaces ?? [])?.map((ns) => ns.id)),
+    select(data) {
+      return data.data.plans;
+    },
+    enabled: namespacesQuerySuccess,
+    refetchOnWindowFocus: false
+  });
+
+  const selectedNsPlan = _plans?.find((nsPlan) => nsPlan.namespace === nsid)?.planName;
 
   useEffect(() => {
     if (isOpen) {
+      setNs_uid(current_ns_uid);
+      setNsid(current_nsid);
+
       track('module_view', {
         view_name: 'manage',
         module: 'workspace'
       });
     }
-  }, [isOpen]);
+  }, [isOpen, current_ns_uid, current_nsid]);
 
-  const openAccountCenterApp = (page?: string) => {
+  useEffect(() => {
+    if (_namespaces && _namespaces.length > 0 && ns_uid) {
+      if (!_namespaces.find((ns) => ns.uid === ns_uid)) {
+        setNs_uid(_namespaces[0].uid);
+        setNsid(_namespaces[0].id);
+      }
+    }
+  }, [_namespaces, ns_uid]);
+
+  const openCostCenterApp = () => {
     openDesktopApp({
-      appKey: 'system-account-center',
+      appKey: 'system-costcenter',
+      pathname: '/',
       query: {
-        page: page || 'plan'
+        mode: 'create'
       },
       messageData: {
-        page: page || 'plan'
-      },
-      pathname: '/redirect'
+        type: 'InternalAppCall',
+        mode: 'create'
+      }
     });
+  };
+
+  const handleCreateWorkspace = () => {
+    if (layoutConfig?.common.subscriptionEnabled) {
+      openCostCenterApp();
+    } else {
+      createTeamDisclosure.onOpen();
+    }
   };
 
   return (
@@ -175,7 +200,7 @@ export default function TeamCenter({
                   />
                 ))}
             </Box>
-            <Stack flex="1" py="12px" bg={'#FAFAFA'} borderLeftRadius={'16px'}>
+            <Stack flex="1" py="12px" bg={'#FAFAFA'} borderLeftRadius={'16px'} maxWidth={'280px'}>
               <Flex py="8px" mx="14px" px="4px" justify={'space-between'} align={'center'} mb="4px">
                 <Text fontSize={'16px'} fontWeight={'600'}>
                   {t('common:team')}
@@ -201,6 +226,7 @@ export default function TeamCenter({
                           teamName={ns.teamName}
                           teamAvatar={ns.id}
                           selectedColor="rgba(0, 0, 0, 0.05)"
+                          planName={_plans?.find((nsPlan) => nsPlan.namespace === ns.id)?.planName}
                         />
                       );
                     })
@@ -222,7 +248,9 @@ export default function TeamCenter({
                   height={'40px'}
                   cursor={'pointer'}
                   onClick={() => {
-                    createTeamDisclosure.onOpen();
+                    console.log('create workspace');
+                    handleCreateWorkspace();
+                    onClose();
                   }}
                 >
                   <Plus size={20} color="#737373" />
@@ -249,10 +277,9 @@ export default function TeamCenter({
                     <Box mx="10px">
                       <Flex align={'center'} justifyContent={'space-between'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                          {isPrivate
-                            ? `${t('common:default_team')} - ${namespace.teamName}`
-                            : namespace.teamName}
+                          {namespace.teamName}
                         </Text>
+
                         {curTeamUser?.role === UserRole.Owner && (
                           <HStack>
                             <RenameTeam
@@ -277,6 +304,29 @@ export default function TeamCenter({
                         )}
                       </Flex>
                       <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
+                        {isPrivate && (
+                          <Badge variant="secondary" className="mr-2">
+                            {t('common:default_team')}
+                          </Badge>
+                        )}
+
+                        {/* Subscription plan tag */}
+                        {layoutConfig?.common.subscriptionEnabled && selectedNsPlan && (
+                          <Badge
+                            variant={'subscription'}
+                            className={cn(
+                              'mr-2',
+                              getPlanBackgroundClass(
+                                selectedNsPlan,
+                                selectedNsPlan === 'PAYG',
+                                false
+                              )
+                            )}
+                          >
+                            {selectedNsPlan}
+                          </Badge>
+                        )}
+
                         <Text color={'grayModern.600'}>
                           {t('common:team')} ID: {nsid}
                         </Text>
@@ -334,7 +384,7 @@ export default function TeamCenter({
                     </Text>
                     <Button
                       onClick={() => {
-                        createTeamDisclosure.onOpen();
+                        handleCreateWorkspace();
                       }}
                       variant={'primary'}
                       leftIcon={<AddIcon boxSize={'20px'} color={'white'} />}

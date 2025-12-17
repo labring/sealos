@@ -1,8 +1,9 @@
+import { NextRequest, NextResponse } from 'next/server'
+
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { GlobalLogItem } from '@/types/user/logs'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 export type ApiProxyBackendGlobalLogSearchResponse = ApiProxyBackendResp<{
@@ -78,9 +79,9 @@ async function fetchLogs(
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -94,7 +95,7 @@ async function fetchLogs(
 
     return {
       logs: result.data?.logs || [],
-      total: result.data?.total || 0
+      total: result.data?.total || 0,
     }
   } catch (error) {
     console.error('Error fetching logs:', error)
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GlobalLogS
       model_name: searchParams.get('model_name') || undefined,
       code: searchParams.get('code') || undefined,
       start_timestamp: searchParams.get('start_timestamp') || undefined,
-      end_timestamp: searchParams.get('end_timestamp') || undefined
+      end_timestamp: searchParams.get('end_timestamp') || undefined,
     }
 
     const validationError = validateParams(queryParams)
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GlobalLogS
         {
           code: 400,
           message: validationError,
-          error: validationError
+          error: validationError,
         },
         { status: 400 }
       )
@@ -136,8 +137,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<GlobalLogS
       code: 200,
       data: {
         logs,
-        total
-      }
+        total,
+      },
     } satisfies GlobalLogSearchResponse)
   } catch (error) {
     console.error('Logs search error:', error)
@@ -145,7 +146,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GlobalLogS
       {
         code: 500,
         message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     )

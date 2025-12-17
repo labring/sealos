@@ -4,6 +4,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import type { YamlItemType } from '@/types/index';
+import type { AppEditType } from '@/types/app';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
 import { track } from '@sealos/gtm';
@@ -12,17 +13,20 @@ import { Info, X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback } from 'react';
+import { formData2Yamls } from '../index';
 
 const Header = ({
   appName,
   title,
   yamlList,
+  getFormData,
   applyCb,
   applyBtnText
 }: {
   appName: string;
   title: string;
   yamlList: YamlItemType[];
+  getFormData?: () => AppEditType;
   applyCb: () => void;
   applyBtnText: string;
 }) => {
@@ -32,19 +36,35 @@ const Header = ({
   const isClientSide = useClientSideValue(true);
 
   const handleExportYaml = useCallback(async () => {
-    const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+    let exportYamlList: YamlItemType[];
+    if (getFormData) {
+      const formData = getFormData();
+      exportYamlList = formData2Yamls(formData);
+    } else {
+      exportYamlList = yamlList;
+    }
+
+    const exportYamlString = exportYamlList.map((i) => i.value).join('---\n');
     if (!exportYamlString) return;
     downLoadBold(
       exportYamlString,
       'application/yaml',
       appName ? `${appName}.yaml` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
     );
-  }, [appName, yamlList]);
+  }, [appName, yamlList, getFormData]);
 
   const { createCompleted, startTimeMs } = useGuideStore();
 
   return (
-    <Flex flexDirection={'column'} w={'100%'}>
+    <Flex
+      flexDirection={'column'}
+      w={'100%'}
+      position={'sticky'}
+      top={0}
+      zIndex={10}
+      bg={'grayModern.100'}
+      flexShrink={0}
+    >
       {isClientSide && !createCompleted && (
         <Center
           borderTop={'1px solid #BFDBFE'}
@@ -61,7 +81,14 @@ const Header = ({
           {t('driver.create_launchpad_header')}
         </Center>
       )}
-      <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
+      <Flex
+        w={'100%'}
+        px={10}
+        h={'86px'}
+        alignItems={'center'}
+        borderBottom={'1px solid'}
+        borderColor={'grayModern.200'}
+      >
         <Flex
           alignItems={'center'}
           cursor={'pointer'}

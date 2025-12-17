@@ -1,8 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
-import { UserQuotaItemType } from '@/types/user';
-import { memoryFormatToMi, cpuFormatToM } from '@/utils/tools';
 
 export function K8sApiDefault(): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
@@ -137,45 +135,6 @@ export async function replaceYaml(
   return succeed;
 }
 
-export async function getUserQuota(
-  kc: k8s.KubeConfig,
-  namespace: string
-): Promise<UserQuotaItemType[]> {
-  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-
-  const {
-    body: { status }
-  } = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
-
-  return [
-    {
-      type: 'cpu',
-      limit: cpuFormatToM(status?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(status?.used?.['limits.cpu'] || '') / 1000
-    },
-    {
-      type: 'memory',
-      limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
-    },
-    {
-      type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
-    },
-    {
-      type: 'nodeports',
-      limit: Number(status?.hard?.['services.nodeports']) || 0,
-      used: Number(status?.used?.['services.nodeports']) || 0
-    },
-    {
-      type: 'gpu',
-      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
-    }
-  ];
-}
-
 export async function getUserBalance(kc: k8s.KubeConfig) {
   const user = kc.getCurrentUser();
   if (!user) return 5;
@@ -279,7 +238,6 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     namespace,
     applyYamlList,
     getDeployApp,
-    getUserQuota: () => getUserQuota(kc, namespace),
     getUserBalance: () => getUserBalance(kc)
   });
 }

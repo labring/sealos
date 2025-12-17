@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
+import { useGlobalStore } from '@/stores/global';
 import { isElementInViewport } from '@/utils/tools';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 
@@ -10,9 +11,11 @@ export const useDevboxList = () => {
   const router = useRouter();
   const [refresh, setFresh] = useState(false);
   const { devboxList, setDevboxList, loadAvgMonitorData, intervalLoadPods } = useDevboxStore();
+  const { isInitialized, isImporting } = useGlobalStore();
   const list = useRef<DevboxListItemTypeV2[]>(devboxList);
 
   const { isLoading, refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
+    enabled: isInitialized,
     onSettled(res) {
       if (!res) return;
       refreshList(res);
@@ -50,7 +53,7 @@ export const useDevboxList = () => {
     {
       refetchOnMount: true,
       refetchInterval: 3000,
-      enabled: !isLoading,
+      enabled: !isLoading && !isImporting,
       onSettled() {
         refreshList();
       }
@@ -64,7 +67,8 @@ export const useDevboxList = () => {
       return null;
     },
     {
-      refetchInterval: 3000
+      refetchInterval: 3000,
+      enabled: !isImporting
     }
   );
 
@@ -79,7 +83,7 @@ export const useDevboxList = () => {
     {
       refetchOnMount: true,
       refetchInterval: 2 * 60 * 1000,
-      enabled: !isLoading,
+      enabled: !isLoading && !isImporting,
       onSettled() {
         refreshList();
       }

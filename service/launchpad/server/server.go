@@ -55,7 +55,7 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 	if vr.Pwd == "" {
 		return nil, api.ErrEmptyKubeconfig
 	}
-
+	//fmt.Printf("VR Password: %q\n", vr.Pwd)
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -76,6 +76,8 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 			vr.Type = val[0]
 		case "launchPadName":
 			vr.LaunchPadName = val[0]
+		case "pvcName":
+			vr.PvcName = val[0]
 		}
 	}
 

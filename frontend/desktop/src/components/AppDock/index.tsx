@@ -2,10 +2,13 @@ import { MoreAppsContext } from '@/pages/index';
 import useAppStore, { AppInfo } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
+import { useLicenseCheck } from '@/hooks/useLicenseCheck';
+import useSessionStore from '@/stores/session';
 import { APPTYPE, TApp } from '@/types';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Center, Flex, Image, useBreakpointValue } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { useMessage } from '@sealos/ui';
 import { MouseEvent, useContext, useMemo, useRef, useState } from 'react';
 import { useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
@@ -36,9 +39,9 @@ function StaticIcon({ item, logo, t, i18n, handleNavItem }: any) {
         w="54px"
         h="54px"
         borderRadius={'16px'}
-        bg={'rgba(255, 255, 255, 0.85)'}
+        bg={'#FFF'}
         backdropFilter={'blur(25px)'}
-        boxShadow={' 0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+        boxShadow={'0 0 1px 0 rgba(0, 0, 0, 0.20), 0 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05);'}
         overflow={'hidden'}
       >
         <Image
@@ -127,10 +130,10 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
         }}
         borderRadius={'16px'}
         position="relative"
-        bg={'rgba(255, 255, 255, 0.85)'}
+        bg={'#FFF'}
         backdropFilter={'blur(25px)'}
-        border={'1px solid rgba(0, 0, 0, 0.05)'}
-        boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+        // border={'1px solid rgba(0, 0, 0, 0.05)'}
+        boxShadow={'0 0 1px 0 rgba(0, 0, 0, 0.20), 0 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05);'}
         overflow={'hidden'}
       >
         <Image
@@ -180,6 +183,7 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
 
 export default function AppDock() {
   const { t, i18n } = useTranslation();
+  const { message } = useMessage();
   const {
     installedApps: apps,
     runningInfo,
@@ -189,14 +193,19 @@ export default function AppDock() {
     findAppInfoById,
     updateOpenedAppInfo
   } = useAppStore();
-  const logo = useConfigStore().layoutConfig?.logo;
+  const { layoutConfig, commonConfig } = useConfigStore();
+  const logo = layoutConfig?.logo;
+  const { isUserLogin } = useSessionStore();
   const moreAppsContent = useContext(MoreAppsContext);
   const { isNavbarVisible, toggleNavbarVisibility, getTransitionValue } = useDesktopConfigStore();
+  const { hasLicense } = useLicenseCheck({
+    enabled: isUserLogin() && !!commonConfig?.licenseCheckEnabled
+  });
   const [isMouseOverDock, setIsMouseOverDock] = useState(false);
   const timeoutRef = useRef<number | null>(null);
   const isSmallScreen = useBreakpointValue({ base: true, sm: false });
   const mouseX = useMotionValue(Infinity);
-
+  const { isGuest, openGuestLoginModal } = useSessionStore();
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
   });
@@ -239,6 +248,12 @@ export default function AppDock() {
 
   // Handle icon click event
   const handleNavItem = (e: MouseEvent<HTMLDivElement>, item: AppInfo) => {
+    if (isGuest()) {
+      e.preventDefault();
+      openGuestLoginModal();
+      return;
+    }
+
     if (item.key === 'system-sealos-home') {
       const isNotMinimized = runningInfo.some((item) => item.size !== 'minimize');
       runningInfo.forEach((item) => {
@@ -254,6 +269,20 @@ export default function AppDock() {
       moreAppsContent?.setShowMoreApps(true);
       return;
     }
+
+    if (commonConfig?.licenseCheckEnabled && hasLicense === false && item.key !== 'user-license') {
+      message({
+        title: t('license_required'),
+        status: 'warning',
+        isClosable: true
+      });
+      const licenseApp = apps.find((app) => app.key === 'user-license');
+      if (licenseApp) {
+        openApp(licenseApp);
+      }
+      return;
+    }
+
     if (item.pid === currentAppPid && item.size !== 'minimize') {
       updateOpenedAppInfo({
         ...item,

@@ -9,7 +9,8 @@
     "GlobalLogs": "全局日志",
     "GlobalConfigs": "全局配置",
     "NsManager": "NS管理",
-    "Keys": "API Keys"
+    "Keys": "API Keys",
+    "McpHub": "MCP 广场"
   },
   "keyList": {
     "title": "API Keys",
@@ -122,9 +123,43 @@
     "modelVision": "视觉",
     "modelVisionLabel": "该模型支持视觉能力",
     "modelToolChoice": "工具调用",
+    "modelCoder": "代码编写",
     "response": "输出",
     "fixedPrice": "固定价格",
-    "perRequest": "/次"
+    "limitedTimeFree": "当前限时免费中",
+    "freeLabel": "免费",
+    "perRequest": "/次",
+    "imageInputPrice": "图片输入价格",
+    "thinkingModeOutputPrice": "思考模式输出价格",
+    "thinkingMode": "深度思考"
+  },
+  "mcpHub": {
+    "title": "MCP 广场",
+    "config": "配置",
+    "search": "搜索MCP服务",
+    "searchPlaceholder": "输入服务名称搜索",
+    "serviceType": "服务类型",
+    "allTypes": "全部类型",
+    "hosted": "托管",
+    "local": "本地",
+    "noResults": "未找到相关服务",
+    "connectService": "通过SSE URL连接服务",
+    "sseUrlTitle": "通过SSE URL连接服务",
+    "sseUrlTip": "Hosted MCP 服务的 SSE URL是为您分配的专属连接地址，为敏感信息，请勿对外泄漏！",
+    "httpStreamTitle": "通过HTTP流连接服务",
+    "httpStreamTip": "Hosted MCP 服务的 HTTP流 URL是为您分配的专属连接地址，为敏感信息，请勿对外泄漏！",
+    "configParams": "填写 MCP 参数",
+    "saveParams": "保存参数",
+    "backToInfo": "返回",
+    "paramsSaved": "参数保存成功",
+    "paramsSaveFailed": "参数保存失败",
+    "required": "必填",
+    "optional": "可选",
+    "configTitle": "配置",
+    "sse": "SSE",
+    "httpStream": "HTTP流",
+    "tabSSE": "SSE",
+    "tabHTTP": "HTTP流"
   },
   "createKey2": "新建 Key",
   "dashboard": {
@@ -249,6 +284,7 @@
     "huggingface": "Hugging Face",
     "lingyiwanwu": "零一万物",
     "stepfun": "StepFun",
+    "streamlake": "StreamLake",
     "unknown": "未知"
   },
   "GlobalLogs": {

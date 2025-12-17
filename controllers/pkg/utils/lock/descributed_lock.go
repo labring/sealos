@@ -23,7 +23,7 @@ type DistributedLock struct {
 	once      sync.Once
 }
 
-func NewDistributedLock(db *gorm.DB, lockName string, holderID string) *DistributedLock {
+func NewDistributedLock(db *gorm.DB, lockName, holderID string) *DistributedLock {
 	return &DistributedLock{
 		db:        db,
 		lockName:  lockName,
@@ -95,7 +95,6 @@ func (dl *DistributedLock) TryLock(ctx context.Context, ttl time.Duration) error
 
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -130,7 +129,6 @@ func (dl *DistributedLock) renewLock(ttl time.Duration) {
 
 				return nil
 			})
-
 			if err != nil {
 				// Failed to renew the lock. The lock may have been acquired by another instance
 				close(dl.stopRenew)
@@ -158,7 +156,7 @@ func (dl *DistributedLock) Unlock() error {
 			return result.Error
 		}
 		//
-		//if result.RowsAffected == 0 {
+		// if result.RowsAffected == 0 {
 		//	return ErrLockNotHeld
 		//}
 
@@ -174,7 +172,6 @@ func (dl *DistributedLock) IsHeld(ctx context.Context) (bool, error) {
 		Table("distributed_locks").
 		Where("lock_name = ? AND holder_id = ? AND expires_at > now()", dl.lockName, dl.holderID).
 		Count(&count).Error
-
 	if err != nil {
 		return false, err
 	}

@@ -1,43 +1,45 @@
-'use client'
-import { Button, Flex, Text, useDisclosure } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import { Switch } from '@chakra-ui/react'
-import { EditableText } from './EditableText'
-import { getOption, updateOption } from '@/api/platform'
-import { useMessage } from '@sealos/ui'
-import { QueryKey } from '@/types/query-key'
-import { useState } from 'react'
-import { produce } from 'immer'
+'use client';
+import { useState } from 'react';
+import { Button, Flex, Text, useDisclosure } from '@chakra-ui/react';
+import { Switch } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { produce } from 'immer';
+
+import { getOption, updateOption } from '@/api/platform';
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { QueryKey } from '@/types/query-key';
+
+import { EditableText } from './EditableText';
 
 export enum CommonConfigKey {
   GlobalApiRateLimitNum = 'GlobalApiRateLimitNum',
   DisableServe = 'DisableServe',
   RetryTimes = 'RetryTimes',
-  GroupMaxTokenNum = 'GroupMaxTokenNum'
+  GroupMaxTokenNum = 'GroupMaxTokenNum',
 }
 
 type CommonConfig = {
-  [CommonConfigKey.GlobalApiRateLimitNum]: string
-  [CommonConfigKey.DisableServe]: string
-  [CommonConfigKey.RetryTimes]: string
-  [CommonConfigKey.GroupMaxTokenNum]: string
-}
+  [CommonConfigKey.GlobalApiRateLimitNum]: string;
+  [CommonConfigKey.DisableServe]: string;
+  [CommonConfigKey.RetryTimes]: string;
+  [CommonConfigKey.GroupMaxTokenNum]: string;
+};
 
 const CommonConfig = () => {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const queryClient = useQueryClient()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const queryClient = useQueryClient();
 
   const [commonConfig, setCommonConfig] = useState<CommonConfig>(() =>
     produce({} as CommonConfig, (draft) => {
-      draft.GlobalApiRateLimitNum = ''
-      draft.DisableServe = ''
-      draft.RetryTimes = ''
-      draft.GroupMaxTokenNum = ''
+      draft.GlobalApiRateLimitNum = '';
+      draft.DisableServe = '';
+      draft.RetryTimes = '';
+      draft.GroupMaxTokenNum = '';
     })
-  )
+  );
 
   const { message } = useMessage({
     warningBoxBg: '#FFFAEB',
@@ -45,56 +47,56 @@ const CommonConfig = () => {
     warningIconFill: 'white',
     successBoxBg: '#EDFBF3',
     successIconBg: '#039855',
-    successIconFill: 'white'
-  })
+    successIconFill: 'white',
+  });
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
     queryKey: [QueryKey.GetCommonConfig],
     queryFn: () => getOption(),
     onSuccess: (data) => {
-      if (!data) return
+      if (!data) return;
 
       setCommonConfig(
         produce(commonConfig, (draft) => {
-          draft.GlobalApiRateLimitNum = data.GlobalApiRateLimitNum || ''
-          draft.DisableServe = data.DisableServe || ''
-          draft.RetryTimes = data.RetryTimes || ''
-          draft.GroupMaxTokenNum = data.GroupMaxTokenNum || ''
+          draft.GlobalApiRateLimitNum = data.GlobalApiRateLimitNum || '';
+          draft.DisableServe = data.DisableServe || '';
+          draft.RetryTimes = data.RetryTimes || '';
+          draft.GroupMaxTokenNum = data.GroupMaxTokenNum || '';
         })
-      )
-    }
-  })
+      );
+    },
+  });
 
   const updateOptionMutation = useMutation({
     mutationFn: (params: { key: string; value: string }) => updateOption(params),
     onSuccess: () => {
       message({
         title: t('globalConfigs.saveCommonConfigSuccess'),
-        status: 'success'
-      })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetCommonConfig] })
+        status: 'success',
+      });
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetCommonConfig] });
     },
     onError: () => {
       message({
         title: t('globalConfigs.saveCommonConfigFailed'),
-        status: 'error'
-      })
-    }
-  })
+        status: 'error',
+      });
+    },
+  });
 
   const updateConfigField = (field: CommonConfigKey, value: string) => {
     setCommonConfig(
       produce((draft) => {
-        draft[field] = value
+        draft[field] = value;
       })
-    )
-    updateOptionMutation.mutate({ key: field, value })
-  }
+    );
+    updateOptionMutation.mutate({ key: field, value });
+  };
 
   const handleDisableServeChange = (checked: boolean) => {
-    const value = checked ? 'true' : 'false'
-    updateConfigField(CommonConfigKey.DisableServe, value)
-  }
+    const value = checked ? 'true' : 'false';
+    updateConfigField(CommonConfigKey.DisableServe, value);
+  };
 
   return (
     /*
@@ -114,7 +116,8 @@ const CommonConfig = () => {
           fontStyle="normal"
           fontWeight="500"
           lineHeight="24px"
-          letterSpacing="0.15px">
+          letterSpacing="0.15px"
+        >
           {t('globalConfigs.common_config')}
         </Text>
       </Flex>
@@ -160,7 +163,7 @@ const CommonConfig = () => {
 
       {/* -- config end */}
     </Flex>
-  )
-}
+  );
+};
 
-export default CommonConfig
+export default CommonConfig;

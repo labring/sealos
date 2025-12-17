@@ -17,10 +17,14 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/labring/image-cri-shim/pkg/shim"
 	"github.com/labring/image-cri-shim/pkg/types"
@@ -46,6 +50,7 @@ var rootCmd = &cobra.Command{
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
+		types.SyncConfigFromConfigMap(cmd.Context(), cfgFile)
 		cfg, err = types.Unmarshal(cfgFile)
 		if err != nil {
 			return fmt.Errorf("image shim config load error: %w", err)
@@ -68,7 +73,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&cfgFile, "file", "f", "", "image shim root config")
+	rootCmd.Flags().StringVarP(&cfgFile, "file", "f", types.DefaultImageCRIShimConfig, "image shim root config")
 }
 
 func run(cfg *types.Config, auth *types.ShimAuthConfig) {
@@ -77,6 +82,9 @@ func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 	if err != nil {
 		logger.Fatal("failed to new image_shim, %s", err)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	err = imgShim.Setup()
 	if err != nil {
@@ -88,15 +96,140 @@ func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 		logger.Fatal(fmt.Sprintf("failed to start image_shim, %s", err))
 	}
 
+	statsUpdater := startCacheStatsReporter(ctx, imgShim, cfg.Cache.StatsLogInterval.Duration)
+
+	watchDone := make(chan struct{})
+	go func() {
+		defer close(watchDone)
+		if err := watchAuthConfig(ctx, cfgFile, imgShim, cfg.ReloadInterval.Duration, statsUpdater); err != nil {
+			logger.Error("config watcher stopped with error: %v", err)
+		}
+	}()
+
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
 
-	stopCh := make(chan struct{}, 1)
-	select {
-	case <-signalCh:
-		close(stopCh)
-	case <-stopCh:
-	}
+	<-signalCh
+	cancel()
+	<-watchDone
+	imgShim.Stop()
 	_ = os.Remove(cfg.ImageShimSocket)
 	logger.Info("shutting down the image_shim")
+}
+
+func watchAuthConfig(ctx context.Context, path string, imgShim shim.Shim, interval time.Duration, updateStatsInterval func(time.Duration)) error {
+	if path == "" {
+		logger.Warn("config file path is empty, skip dynamic auth reload")
+		return nil
+	}
+
+	logger.Info("start watching shim config: %s", path)
+	if interval <= 0 {
+		interval = types.DefaultReloadInterval
+	}
+
+	lastHash := ""
+	types.SyncConfigFromConfigMap(ctx, path)
+	if data, err := os.ReadFile(path); err == nil {
+		if _, err := types.UnmarshalData(data); err == nil {
+			sum := sha256.Sum256(data)
+			lastHash = hex.EncodeToString(sum[:])
+		} else {
+			logger.Warn("failed to parse shim config %s: %v", path, err)
+		}
+	}
+
+	currentInterval := interval
+	// ticker acts like a pulse; changing the config lets us tune the heartbeat without restart.
+	ticker := time.NewTicker(currentInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			types.SyncConfigFromConfigMap(ctx, path)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				logger.Warn("failed to read shim config %s: %v", path, err)
+				continue
+			}
+			cfg, err := types.UnmarshalData(data)
+			if err != nil {
+				logger.Warn("failed to parse shim config %s: %v", path, err)
+				continue
+			}
+			sum := sha256.Sum256(data)
+			hash := hex.EncodeToString(sum[:])
+			if hash == lastHash {
+				continue
+			}
+			auth, err := cfg.PreProcess()
+			if err != nil {
+				logger.Warn("failed to preprocess shim config %s: %v", path, err)
+				continue
+			}
+			imgShim.UpdateAuth(auth)
+			imgShim.UpdateCache(shim.CacheOptionsFromConfig(cfg))
+			if updateStatsInterval != nil {
+				updateStatsInterval(cfg.Cache.StatsLogInterval.Duration)
+			}
+			lastHash = hash
+			logger.Info("reloaded shim auth configuration from %s", path)
+			newInterval := cfg.ReloadInterval.Duration
+			if newInterval <= 0 {
+				newInterval = types.DefaultReloadInterval
+			}
+			if newInterval != currentInterval {
+				ticker.Stop()
+				ticker = time.NewTicker(newInterval)
+				currentInterval = newInterval
+				logger.Info("updated reload interval to %s", newInterval)
+			}
+		}
+	}
+}
+
+func startCacheStatsReporter(ctx context.Context, imgShim shim.Shim, interval time.Duration) func(time.Duration) {
+	updateCh := make(chan time.Duration, 1)
+	go func() {
+		var ticker *time.Ticker
+		current := interval
+		if current > 0 {
+			ticker = time.NewTicker(current)
+		}
+		for {
+			var tick <-chan time.Time
+			if ticker != nil {
+				tick = ticker.C
+			}
+			select {
+			case <-ctx.Done():
+				if ticker != nil {
+					ticker.Stop()
+				}
+				return
+			case newInterval := <-updateCh:
+				if ticker != nil {
+					ticker.Stop()
+					ticker = nil
+				}
+				current = newInterval
+				if current > 0 {
+					ticker = time.NewTicker(current)
+				}
+			case <-tick:
+				stats := imgShim.CacheStats()
+				logger.Info("cache stats: image_hits=%d image_misses=%d domain_hits=%d domain_misses=%d image_evictions=%d domain_evictions=%d invalidations=%d generated_at=%s",
+					stats.ImageHits, stats.ImageMisses, stats.DomainHits, stats.DomainMisses, stats.ImageEvictions, stats.DomainEvictions, stats.Invalidations, stats.GeneratedAt.Format(time.RFC3339))
+			}
+		}
+	}()
+	return func(d time.Duration) {
+		select {
+		case updateCh <- d:
+		default:
+		}
+	}
 }

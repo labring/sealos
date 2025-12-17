@@ -1,50 +1,146 @@
+version: "2"
+
 run:
-  go: "1.20"
-
-  # timeout for analysis, e.g. 30s, 5m, default is 1m
-  timeout: 5m
-
-  # include test files or not, default is true
-  tests: true
-
+  go: "1.24"
+  relative-path-mode: gomod
   modules-download-mode: readonly
 
 issues:
-  # https://github.com/golangci/golangci-lint/pull/4509
-  exclude-dirs-use-default: true
-  exclude-dirs:
-    - (^|/)fork($|/)
-    - pkg/registry/save/lib/
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
+  default: none
   enable:
-    - gofmt
-    - goimports
-    - revive
-    - stylecheck
-    - goconst
-    - gosimple
-    - misspell
-    - whitespace
-    - ineffassign
-    - typecheck
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - copyloopvar
+    - durationcheck
     - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gocritic
+    - gocyclo
+    - goprintffuncname
+    - gosec
     - govet
+    - iface
+    - importas
+    - inamedparam
+    - ineffassign
+    - intrange
+    - loggercheck
+    - mirror
+    - misspell
+    - musttag
+    - nakedret
+    - nolintlint
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
     - staticcheck
-    - unused
-    - nilerr
+    - thelper
+    - tparallel
     - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - whitespace
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    revive:
+      rules:
+        - name: var-naming
+          arguments:
+            - []
+            - []
+            - [{ skipPackageNameChecks: true }]
+    copyloopvar:
+      check-alias: true
+    cyclop:
+      max-complexity: 15
+    errcheck:
+      check-type-assertions: true
+    forbidigo:
+      forbid:
+        - pattern: ^print(ln)?$
+      analyze-types: true
+    prealloc:
+      for-loops: true
+    staticcheck:
+      dot-import-whitelist: []
+      http-status-code-whitelist: []
+    usestdlibvars:
+      time-date-month: true
+      time-month: true
+      time-layout: true
+      crypto-hash: true
+      default-rpc-path: true
+      sql-isolation-level: true
+      tls-signature-scheme: true
+      constant-kind: true
+    usetesting:
+      os-temp-dir: true
+    gocritic:
+      disabled-checks:
+        - exitAfterDefer
+    gocyclo:
+      min-complexity: 50
+    gosec:
+      excludes:
+        - G404
+        - G306
+        - G101
+        - G402
 
-linters-settings:
-  errcheck:
-    check-type-assertions: false
-    exclude-functions:
-      - io.Copy(*bytes.Buffer)
-      - io.Copy(os.Stdout)
-  revive:
-    rules:
-      - name: dot-imports
-        disabled: true
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - golines
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: "interface{}"
+          replacement: "any"
+        - pattern: "a[b:len(a)]"
+          replacement: "a[b:]"
+    gofumpt:
+      extra-rules: true

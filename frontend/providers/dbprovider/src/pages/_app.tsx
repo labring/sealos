@@ -21,6 +21,7 @@ import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
+import { useUserStore } from '@/store/user';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -47,6 +48,7 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
   const { i18n } = useTranslation();
   const { SystemEnv, initSystemEnv } = useEnvStore();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
+  const { setSession } = useUserStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -60,16 +62,12 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
       const { desktopDomain } = await initSystemEnv();
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
-        const oldSession = localStorage.getItem('session');
-        if (newSession && newSession !== oldSession) {
-          localStorage.setItem('session', newSession);
-          window.location.reload();
-        }
+        setSession(JSON.parse(newSession));
+
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          localStorage.removeItem('session');
           openConfirm(() => {
             window.open(`https://${desktopDomain}`, '_self');
           })();

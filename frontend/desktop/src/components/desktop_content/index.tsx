@@ -1,37 +1,31 @@
-import { getGlobalNotification } from '@/api/platform';
+import { getWorkspaceQuota } from '@/api/platform';
 import AppWindow from '@/components/app_window';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Center, Flex, Image, Text } from '@chakra-ui/react';
+import { Box, Flex, Image, Button, Text } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
-import Cost from '../account/cost';
 import { ChakraIndicator } from './ChakraIndicator';
 // import Apps from './apps';
-import Assistant from './assistant';
 import IframeWindow from './iframe_window';
-import styles from './index.module.scss';
-import Monitor from './monitor';
-import SearchBox from './searchBox';
-import Warn from './warn';
+import styles from './index.module.css';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
+import LoginModal from '@/components/LoginModal';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount, UserInfo } from '@/api/auth';
-import TaskModal from '../task/taskModal';
-import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import { useGuideModalStore } from '@/stores/guideModal';
 import GuideModal from '../account/GuideModal';
-import AppsRunningPrompt from './AppsRunningPrompt';
+import { GlobalNotification } from './GlobalNotification';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -45,23 +39,24 @@ export const blurBackgroundStyles = {
   borderRadius: '12px'
 };
 
-export default function Desktop(props: any) {
-  const { i18n } = useTranslation();
+export default function Desktop() {
+  const { i18n, t } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
     runningInfo,
     openApp,
     setToHighestLayerById,
-    closeAppById
+    closeAppById,
+    setAutoLaunch
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
-  const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
-  const [showAccount, setShowAccount] = useState(false);
   const { layoutConfig, cloudConfig } = useConfigStore();
   const { session } = useSessionStore();
+  const { isGuest, openGuestLoginModal, showGuestLoginModal, closeGuestLoginModal } =
+    useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
@@ -151,25 +146,49 @@ export default function Desktop(props: any) {
 
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
 
-  useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
-    return cleanup;
-  }, [cloudConfig?.allowedOrigins]);
+  const handleRequestLogin = useCallback(
+    (data: { appKey: string; pathname: string; query: Record<string, string> }) => {
+      console.log('Guest Mode: Received request_login from Brain:', data);
+      if (data?.appKey) {
+        const launchQuery = {
+          pathname: data.pathname || '/',
+          raw: new URLSearchParams(data.query || {}).toString() || ''
+        };
+        console.log('Guest Mode: Saving autolaunch state:', data.appKey, launchQuery);
+        setAutoLaunch(data.appKey, launchQuery, undefined);
+      }
+      openGuestLoginModal();
+    },
+    [openGuestLoginModal, setAutoLaunch]
+  );
 
   useEffect(() => {
-    const cleanup = masterApp?.addEventListen('openDesktopApp', openDesktopApp);
-    return cleanup;
-  }, [openDesktopApp]);
+    const cleanupMaster = createMasterAPP({
+      allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
+      getWorkspaceQuotaApi: async () => {
+        return getWorkspaceQuota().then((res) => res.data?.quota ?? []);
+      }
+    });
+    const cleanups = [
+      masterApp?.addEventListen('openDesktopApp', openDesktopApp),
+      masterApp?.addEventListen('closeDesktopApp', closeDesktopApp),
+      masterApp?.addEventListen('requestLogin', handleRequestLogin),
+      masterApp?.addEventListen('quitGuide', quitGuide)
+    ].filter(Boolean) as Array<() => void>;
 
-  useEffect(() => {
-    const cleanup = masterApp?.addEventListen('closeDesktopApp', closeDesktopApp);
-    return cleanup;
-  }, [closeDesktopApp]);
-
-  useEffect(() => {
-    const cleanup = masterApp?.addEventListen('quitGuide', quitGuide);
-    return cleanup;
-  }, [quitGuide]);
+    return () => {
+      cleanups.forEach((fn) => fn());
+      cleanupMaster?.();
+    };
+  }, [
+    cloudConfig?.allowedOrigins,
+    openDesktopApp,
+    closeDesktopApp,
+    openGuestLoginModal,
+    setAutoLaunch,
+    quitGuide,
+    handleRequestLogin
+  ]);
 
   useEffect(() => {
     if (infoData.isSuccess && commonConfig?.realNameAuthEnabled && account?.data?.balance) {
@@ -187,37 +206,6 @@ export default function Desktop(props: any) {
       }
     };
   }, [infoData.data, commonConfig?.realNameAuthEnabled]);
-
-  useEffect(() => {
-    const globalNotification = async () => {
-      try {
-        const { data: notification } = await getGlobalNotification();
-        if (!notification) return;
-        const newID = notification?.uid;
-        const title = notification?.i18n[i18n?.language]?.title;
-
-        if (notification.licenseFrontend) {
-          message({
-            title: title,
-            status: 'info',
-            isClosable: true
-          });
-        } else {
-          if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
-          localStorage.setItem('GlobalNotification', newID);
-          message({
-            title: title,
-            status: 'info',
-            isClosable: true
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    globalNotification();
-  }, []);
 
   const [isBannerVisible, setIsBannerVisible] = useState(false);
   useEffect(() => {
@@ -242,14 +230,43 @@ export default function Desktop(props: any) {
         />
       </Box>
 
-      {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
+      {!isGuest() && isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
       {layoutConfig?.common?.bannerEnabled && (
         <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
       )}
-      <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
-        <Account />
-      </Flex>
+
+      <GlobalNotification />
+
+      {isClient && !isGuest() && (
+        <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
+          <Account />
+        </Flex>
+      )}
+
+      {isClient && isGuest() && (
+        <Flex
+          height="68px"
+          px={{ base: '16px', md: '32px' }}
+          alignItems="center"
+          justifyContent="space-between"
+          borderBottom="1px solid"
+          borderColor="gray.200"
+          bg="white"
+        >
+          <Flex alignItems="center" gap="12px">
+            <Text fontSize="18px" fontWeight="600" color="gray.800">
+              {t('v2:guest_mode')}
+            </Text>
+            <Text fontSize="14px" color="gray.500">
+              {t('v2:guest_mode_login_tip')}
+            </Text>
+          </Flex>
+          <Button onClick={openGuestLoginModal} colorScheme="blue">
+            {t('v2:login_sign_up')}
+          </Button>
+        </Flex>
+      )}
 
       <Flex
         width={'100%'}
@@ -260,115 +277,12 @@ export default function Desktop(props: any) {
         mx={'auto'}
         position={'relative'}
       >
-        {/* monitor  */}
-        {/* <Flex
-          flex={'0 0 250px'}
-          flexDirection={'column'}
-          display={{
-            base: 'none',
-            xl: 'flex'
-          }}
-          gap={'8px'}
-        >
-          {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
-          <Monitor />
-          <Warn />
-        </Flex> */}
-
         <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'} width={'100%'}>
           <Apps />
         </Flex>
-
-        {/* <Box position={'relative'}>
-          {showAccount && (
-            <Box
-              position={'fixed'}
-              inset={0}
-              zIndex={2}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAccount(false);
-              }}
-            ></Box>
-          )}
-          <Box
-            display={{ base: showAccount ? 'flex' : 'none', lg: 'flex' }}
-            position={{ base: 'absolute', lg: 'relative' }}
-            right={{ base: '0px', lg: 'auto' }}
-            top={{ base: '0px', lg: 'auto' }}
-            flexDirection={'column'}
-            gap={'8px'}
-            flex={'0 0 266px'}
-            width={'266px'}
-            h={'full'}
-            zIndex={3}
-          >
-            <Account />
-            <Cost />
-          </Box>
-        </Box> */}
-
-        {/* onboarding  */}
-        {/* {isClient && (
-          <Box>
-            {desktopGuide && (
-              <>
-                <UserGuide />
-                <Box
-                  position="fixed"
-                  top="0"
-                  left="0"
-                  width="100%"
-                  height="100%"
-                  backgroundColor="rgba(0, 0, 0, 0.7)"
-                  zIndex="11000"
-                />
-              </>
-            )}
-            {taskComponentState === 'modal' && tasks?.length > 0 && (
-              <TaskModal
-                isOpen={taskComponentState === 'modal'}
-                onClose={handleCloseTaskModal}
-                tasks={tasks || []}
-                onTaskClick={(task) => {
-                  switch (task.taskType) {
-                    case 'LAUNCHPAD':
-                      openDesktopApp({
-                        appKey: 'system-applaunchpad',
-                        pathname: '/app/edit',
-                        messageData: {
-                          type: 'InternalAppCall'
-                        }
-                      });
-                      break;
-                    case 'DATABASE':
-                      openDesktopApp({
-                        appKey: 'system-dbprovider',
-                        pathname: '/db/edit',
-                        messageData: { type: 'InternalAppCall' }
-                      });
-                      break;
-                    case 'APPSTORE':
-                      openDesktopApp({
-                        appKey: 'system-template',
-                        pathname: '/',
-                        messageData: {
-                          type: 'InternalAppCall'
-                        }
-                      });
-                      break;
-                    default:
-                      console.log(task.taskType);
-                  }
-                  setTaskComponentState('button');
-                }}
-              />
-            )}
-          </Box>
-        )} */}
       </Flex>
 
-      {isAppBar ? <AppDock /> : <FloatButton />}
+      {!isGuest() && (isAppBar ? <AppDock /> : <FloatButton />)}
 
       <GuideModal />
 
@@ -380,11 +294,10 @@ export default function Desktop(props: any) {
           </AppWindow>
         );
       })}
-      {/* modal */}
+
       <NeedToMerge />
 
-      {/* AppsRunningPrompt is disabled as it conflicts with Stripe payment. */}
-      {/* <AppsRunningPrompt /> */}
+      {isGuest() && <LoginModal isOpen={showGuestLoginModal} onClose={closeGuestLoginModal} />}
     </Box>
   );
 }

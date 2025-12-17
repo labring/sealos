@@ -20,22 +20,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type Account struct {
-	UserUID       uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
-	ActivityBonus int64     `gorm:"column:activityBonus;type:bigint;not null"`
-	// Discard EncryptBalance and EncryptDeductionBalance
-	EncryptBalance          string    `gorm:"column:encryptBalance;type:text"`
-	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text"`
-	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	UpdatedAt               time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
-	CreateRegionID          string    `gorm:"type:text;not null"`
-	Balance                 int64
-	DeductionBalance        int64
+	UserUID          uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
+	ActivityBonus    int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	CreatedAt        time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt        time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
+	CreateRegionID   string    `gorm:"type:text;not null"`
+	Balance          int64
+	DeductionBalance int64
 }
 
 func (Account) TableName() string {
@@ -180,11 +176,11 @@ const (
 	OauthProviderTypeEmail    OauthProviderType = "EMAIL"
 	OauthProviderTypePassword OauthProviderType = "PASSWORD"
 	OauthProviderTypeGithub   OauthProviderType = "GITHUB"
-	//OauthProviderTypeWechat   OauthProviderType = "WECHAT"
+	// OauthProviderTypeWechat   OauthProviderType = "WECHAT"
 
 	RoleOwner Role = "OWNER"
-	//RoleDeveloper Role = "DEVELOPER"
-	//RoleManager   Role = "MANAGER"
+	// RoleDeveloper Role = "DEVELOPER"
+	// RoleManager   Role = "MANAGER"
 
 	JoinStatusInWorkspace JoinStatus = "IN_WORKSPACE"
 )
@@ -219,15 +215,15 @@ const (
 )
 
 type Invoice struct {
-	ID          string    `gorm:"type:text;primary_key" json:"id" bson:"id"`
-	UserID      string    `gorm:"type:text;not null" json:"userID" bson:"userID"`
-	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp" bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp" bson:"updatedAt" json:"updatedAt"`
-	Detail      string    `gorm:"type:text;not null" json:"detail" bson:"detail"`
-	Remark      string    `gorm:"type:text" json:"remark" bson:"remark"`
-	TotalAmount int64     `gorm:"type:bigint;not null" json:"totalAmount" bson:"totalAmount"`
+	ID          string    `gorm:"type:text;primary_key"                                      json:"id"          bson:"id"`
+	UserID      string    `gorm:"type:text;not null"                                         json:"userID"      bson:"userID"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp" json:"createdAt"   bson:"createdAt"`
+	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp" json:"updatedAt"   bson:"updatedAt"`
+	Detail      string    `gorm:"type:text;not null"                                         json:"detail"      bson:"detail"`
+	Remark      string    `gorm:"type:text"                                                  json:"remark"      bson:"remark"`
+	TotalAmount int64     `gorm:"type:bigint;not null"                                       json:"totalAmount" bson:"totalAmount"`
 	// Pending, Completed, Rejected
-	Status InvoiceStatus `gorm:"type:text;not null" json:"status" bson:"status"`
+	Status InvoiceStatus `gorm:"type:text;not null"                                         json:"status"      bson:"status"`
 }
 
 type InvoicePayment struct {
@@ -323,14 +319,14 @@ type UserInfo struct {
 	FirstName string          `gorm:"column:firstname;type:text;default:''::STRING"`
 	LastName  string          `gorm:"column:lastname;type:text;default:''::STRING"`
 	Config    *UserInfoConfig `gorm:"column:config;type:jsonb"`
-	//Config datatypes.JSO `gorm:"column:config;type:jsonb" json:"config"`
+	// Config datatypes.JSO `gorm:"column:config;type:jsonb" json:"config"`
 }
 
 func (UserInfo) TableName() string {
 	return "UserInfo"
 }
 
-func (j *UserInfoConfig) Scan(value interface{}) error {
+func (j *UserInfoConfig) Scan(value any) error {
 	if value == nil {
 		return nil
 	}
@@ -357,50 +353,50 @@ type UserInfoConfig struct {
 }
 
 type Github struct {
-	CreatedAt string      `json:"created_at"`
-	Login     string      `json:"login"`
-	Name      interface{} `json:"name"`
-	ID        int         `json:"id"`
-	//AvatarURL               string      `json:"avatar_url"`
-	//Bio                     interface{} `json:"bio"`
-	//Blog                    string      `json:"blog"`
-	//Collaborators           int         `json:"collaborators"`
-	//Company                 interface{} `json:"company"`
-	//DiskUsage               int         `json:"disk_usage"`
-	//Email                   interface{} `json:"email"`
-	//EventsURL               string      `json:"events_url"`
-	//Followers               int         `json:"followers"`
-	//FollowersURL            string      `json:"followers_url"`
-	//Following               int         `json:"following"`
-	//FollowingURL            string      `json:"following_url"`
-	//GistsURL                string      `json:"gists_url"`
-	//GravatarID              string      `json:"gravatar_id"`
-	//Hireable                interface{} `json:"hireable"`
-	//HtmlURL                 string      `json:"html_url"`
-	//Location                interface{} `json:"location"`
-	//NodeID                  string      `json:"node_id"`
-	//NotificationEmail       interface{} `json:"notification_email"`
-	//OrganizationsURL        string      `json:"organizations_url"`
-	//OwnedPrivateRepos       int         `json:"owned_private_repos"`
-	//Plan                    Plan        `json:"plan"`
-	//PrivateGists            int         `json:"private_gists"`
-	//PublicGists             int         `json:"public_gists"`
-	//PublicRepos             int         `json:"public_repos"`
-	//ReceivedEventsURL       string      `json:"received_events_url"`
-	//ReposURL                string      `json:"repos_url"`
-	//SiteAdmin               bool        `json:"site_admin"`
-	//StarredURL              string      `json:"starred_url"`
-	//SubscriptionsURL        string      `json:"subscriptions_url"`
-	//TotalPrivateRepos       int         `json:"total_private_repos"`
-	//TwitterUsername         interface{} `json:"twitter_username"`
-	//TwoFactorAuthentication bool        `json:"two_factor_authentication"`
-	//Type                    string      `json:"type"`
-	//UpdatedAt               string      `json:"updated_at"`
-	//URL                     string      `json:"url"`
-	//UserViewType            string      `json:"user_view_type"`
+	CreatedAt string `json:"created_at"`
+	Login     string `json:"login"`
+	Name      any    `json:"name"`
+	ID        int    `json:"id"`
+	// AvatarURL               string      `json:"avatar_url"`
+	// Bio                     interface{} `json:"bio"`
+	// Blog                    string      `json:"blog"`
+	// Collaborators           int         `json:"collaborators"`
+	// Company                 interface{} `json:"company"`
+	// DiskUsage               int         `json:"disk_usage"`
+	// Email                   interface{} `json:"email"`
+	// EventsURL               string      `json:"events_url"`
+	// Followers               int         `json:"followers"`
+	// FollowersURL            string      `json:"followers_url"`
+	// Following               int         `json:"following"`
+	// FollowingURL            string      `json:"following_url"`
+	// GistsURL                string      `json:"gists_url"`
+	// GravatarID              string      `json:"gravatar_id"`
+	// Hireable                interface{} `json:"hireable"`
+	// HtmlURL                 string      `json:"html_url"`
+	// Location                interface{} `json:"location"`
+	// NodeID                  string      `json:"node_id"`
+	// NotificationEmail       interface{} `json:"notification_email"`
+	// OrganizationsURL        string      `json:"organizations_url"`
+	// OwnedPrivateRepos       int         `json:"owned_private_repos"`
+	// Plan                    Plan        `json:"plan"`
+	// PrivateGists            int         `json:"private_gists"`
+	// PublicGists             int         `json:"public_gists"`
+	// PublicRepos             int         `json:"public_repos"`
+	// ReceivedEventsURL       string      `json:"received_events_url"`
+	// ReposURL                string      `json:"repos_url"`
+	// SiteAdmin               bool        `json:"site_admin"`
+	// StarredURL              string      `json:"starred_url"`
+	// SubscriptionsURL        string      `json:"subscriptions_url"`
+	// TotalPrivateRepos       int         `json:"total_private_repos"`
+	// TwitterUsername         interface{} `json:"twitter_username"`
+	// TwoFactorAuthentication bool        `json:"two_factor_authentication"`
+	// Type                    string      `json:"type"`
+	// UpdatedAt               string      `json:"updated_at"`
+	// URL                     string      `json:"url"`
+	// UserViewType            string      `json:"user_view_type"`
 }
 
-//type Plan struct {
+// type Plan struct {
 //	Collaborators int    `json:"collaborators"`
 //	Name          string `json:"name"`
 //	PrivateRepos  int    `json:"private_repos"`
@@ -417,4 +413,27 @@ type RegionConfig struct {
 
 func (RegionConfig) TableName() string {
 	return "RegionConfig"
+}
+
+type NotificationRecipient struct {
+	UserName    string    `json:"user_name"              gorm:"column:user_name"`
+	Email       string    `json:"email,omitempty"        gorm:"column:email"`
+	PhoneNumber string    `json:"phone_number,omitempty" gorm:"column:phone_number"`
+	UserID      string    `json:"user_id,omitempty"      gorm:"column:user_id"`
+	UserUID     uuid.UUID `json:"user_uid,omitempty"     gorm:"column:user_uid"`
+}
+
+// UserAlertNotificationAccount 用户自定义告警通知账号
+type UserAlertNotificationAccount struct {
+	ID           uuid.UUID         `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	UserUID      uuid.UUID         `gorm:"column:user_uid;type:uuid;not null;uniqueIndex:idx_user_provider_type_id"`
+	ProviderType OauthProviderType `gorm:"column:provider_type;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	ProviderID   string            `gorm:"column:provider_id;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	IsEnabled    bool              `gorm:"column:is_enabled;type:boolean;not null;default:true"`
+	CreatedAt    time.Time         `gorm:"column:created_at;type:timestamp(3);default:current_timestamp"`
+	UpdatedAt    time.Time         `gorm:"column:updated_at;type:timestamp(3);default:current_timestamp"`
+}
+
+func (UserAlertNotificationAccount) TableName() string {
+	return "UserAlertNotificationAccount"
 }

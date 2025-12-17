@@ -2,15 +2,18 @@ name: Release
 
 env:
   # Common versions
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "*"
 
 jobs:
   releaser:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
       packages: write
@@ -49,25 +52,14 @@ jobs:
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
   cloud-release:
-    runs-on: ubuntu-24.04
+    uses: ./.github/workflows/cloud-release.yml
     needs:
       - releaser
     permissions:
-      contents: read
+      contents: write
       packages: write
       actions: write
-    steps:
-      - name: Trigger Cloud Release Workflow(only when tagged)
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'cloud-release.yml',
-              ref: "refs/tags/${{ github.ref_name }}",
-              inputs: {
-                  tag: "${{ github.ref_name }}",
-                  build_offline_tar_only: false
-              }
-            })
+    secrets: inherit
+    with:
+      tag: ${{ github.ref_name }}
+      build_offline_tar_only: false

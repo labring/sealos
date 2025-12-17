@@ -8,6 +8,8 @@ export type EnvResponse = {
   applaunchpadUrl: string;
   successfulJobsHistoryLimit: number;
   failedJobsHistoryLimit: number;
+  podCpuRequest: number;
+  podMemoryRequest: number;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -16,7 +18,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       domain: process.env.SEALOS_DOMAIN || defaultDomain,
       applaunchpadUrl: process.env.APPLAUNCHPAD_URL || `applaunchpad.${process.env.SEALOS_DOMAIN}`,
       successfulJobsHistoryLimit: Number(process.env.SUCCESSFUL_JOBS_HISTORY_LIMIT) || 3,
-      failedJobsHistoryLimit: Number(process.env.FAILED_JOBS_HISTORY_LIMIT) || 3
+      failedJobsHistoryLimit: Number(process.env.FAILED_JOBS_HISTORY_LIMIT) || 3,
+      podCpuRequest: Number(process.env.CRONJOB_POD_CPU_REQUEST) || 1000,
+      podMemoryRequest: Number(process.env.CRONJOB_POD_MEMORY_REQUEST) || 1000
     }
   });
 }

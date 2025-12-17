@@ -1,50 +1,41 @@
-import {
-  Box,
-  Button,
-  Divider,
-  Input,
-  Stack,
-  Flex,
-  useColorModeValue,
-  Text,
-  InputGroup,
-  InputLeftElement
-} from '@chakra-ui/react';
+import { Box, Button, Divider, Stack, Flex, useColorModeValue, Text } from '@chakra-ui/react';
 import useProtocol from '@/components/signin/auth/useProtocol';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowRight, KeyRound } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 import { useTranslation } from 'next-i18next';
-import { zodResolver } from '@hookform/resolvers/zod';
-
-import { useCustomToast } from '@/hooks/useCustomToast';
 import { GoogleIcon, GithubIcon } from '../icons';
-import { ILoginParams, loginParamsSchema } from '@/schema/auth';
-import { useSignupStore } from '@/stores/signup';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
 import Link from 'next/link';
 import { WechatIcon } from '@sealos/ui';
-import { z } from 'zod';
 import { gtmLoginStart } from '@/utils/gtm';
 import UsernamePasswordSignin from './UsernamePasswordSignin';
+import { EmailSigninForm } from './EmailSigninForm';
+import { PhoneSigninForm } from './PhoneSigninForm';
+import { EmailCheckForm } from './EmailCheckForm';
+import { PhoneCheckForm } from './PhoneCheckForm';
 
-export default function SigninComponent() {
+interface SigninComponentProps {
+  isModal?: boolean;
+}
+
+type LoginStep = 'select' | 'email-verify' | 'phone-verify';
+
+export default function SigninComponent({ isModal = false }: SigninComponentProps) {
   const { t, i18n } = useTranslation();
-  const { toast } = useCustomToast();
   const conf = useConfigStore();
   const router = useRouter();
   const needPhone = conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
   const needEmail = conf.authConfig?.idp.email.enabled;
   const passwordSigninEnabled = conf.authConfig?.idp.password?.enabled;
-  const { setSignupData, signupData } = useSignupStore();
   const authConfig = conf.authConfig;
   const { generateState, setProvider } = useSessionStore();
 
   // State to control password login mode
   const [isPasswordMode, setIsPasswordMode] = useState(false);
+  // State to control login step in modal mode
+  const [loginStep, setLoginStep] = useState<LoginStep>('select');
 
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -177,9 +168,34 @@ export default function SigninComponent() {
     return <UsernamePasswordSignin onBack={() => setIsPasswordMode(false)} />;
   }
 
+  const ContentWrapper = isModal ? Box : Flex;
+  const wrapperProps = isModal
+    ? { p: 6 }
+    : { minH: '100vh', align: 'center', justify: 'center', bg, direction: 'column' as const };
+
+  // If in modal mode and in verification step, render the verification form
+  if (isModal && loginStep === 'email-verify') {
+    return (
+      <ContentWrapper {...wrapperProps}>
+        <EmailCheckForm isModal onBack={() => setLoginStep('select')} />
+      </ContentWrapper>
+    );
+  }
+
+  if (isModal && loginStep === 'phone-verify') {
+    return <PhoneCheckForm isModal onBack={() => setLoginStep('select')} />;
+  }
+
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
-      <Stack mx="auto" maxW="lg" px={4} gap={'16px'} width="360px" minW={'352px'}>
+    <ContentWrapper {...wrapperProps}>
+      <Stack
+        mx="auto"
+        maxW="lg"
+        px={isModal ? 0 : 4}
+        gap={'16px'}
+        width={isModal ? '328px' : '360px'}
+        minW={'328px'}
+      >
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
           {t('v2:workspace_welcome')}
         </Text>
@@ -187,126 +203,20 @@ export default function SigninComponent() {
         {conf.layoutConfig?.version === 'cn' ? (
           needPhone && (
             <>
-              <InputGroup width={'full'}>
-                <InputLeftElement color={'#71717A'} left={'12px'} h={'40px'}>
-                  <Text
-                    pl="10px"
-                    pr="8px"
-                    height={'20px'}
-                    borderRight={'1px'}
-                    fontSize={'14px'}
-                    borderColor={'#E4E4E7'}
-                  >
-                    +86
-                  </Text>
-                </InputLeftElement>
-                <Input
-                  height="40px"
-                  w="full"
-                  fontSize={'14px'}
-                  background="#FFFFFF"
-                  border="1px solid #E4E4E7"
-                  borderRadius="8px"
-                  placeholder={t('common:phone')}
-                  py="10px"
-                  pr={'12px'}
-                  pl={'60px'}
-                  color={'#71717A'}
-                  value={signupData?.providerId || ''}
-                  onChange={(e) => {
-                    setSignupData({
-                      providerId: e.target.value,
-                      providerType: 'PHONE'
-                    });
-                  }}
-                />
-              </InputGroup>
-              <Button
-                variant={'solid'}
-                px={'0'}
-                borderRadius={'8px'}
-                onClick={() => {
-                  const result = z
-                    .string()
-                    .regex(/^1[3-9]\d{9}$/, { message: 'Invalid phone number format' })
-                    .safeParse(signupData?.providerId);
-                  console.log(result);
-                  if (result.error) {
-                    toast({
-                      title: result.error.errors[0].message,
-                      status: 'error'
-                    });
-                    return;
-                  }
-                  if (signupData?.providerId) {
-                    router.push('/phoneCheck');
-                  }
-                }}
-                bgColor={'#0A0A0A'}
-                rightIcon={<ArrowRight size={'14px'}></ArrowRight>}
-              >
-                {t('v2:sign_in')}
-              </Button>
+              <PhoneSigninForm
+                isModal={isModal}
+                onVerifyStep={() => setLoginStep('phone-verify')}
+              />
             </>
           )
         ) : conf.layoutConfig?.version === 'en' ? (
           needEmail && (
-            <>
-              <Input
-                boxSize="border-box"
-                display="flex"
-                flexDirection="row"
-                alignItems="center"
-                padding="8px 12px"
-                gap="4px"
-                height="40px"
-                background="#FFFFFF"
-                border="1px solid #E4E4E7"
-                borderRadius="8px"
-                flex="none"
-                order="0"
-                placeholder={t('v2:email')}
-                alignSelf="stretch"
-                flexGrow="0"
-                value={signupData?.providerId || ''}
-                onChange={(e) => {
-                  setSignupData({
-                    providerId: e.target.value,
-                    providerType: 'EMAIL'
-                  });
-                }}
-              />
-              <Button
-                onClick={() => {
-                  const result = z
-                    .string()
-                    .email({ message: 'Invalid email format' })
-                    .safeParse(signupData?.providerId);
-                  if (result.error) {
-                    toast({
-                      title: result.error.errors[0].message,
-                      status: 'error'
-                    });
-                    return;
-                  }
-                  if (signupData?.providerId) {
-                    gtmLoginStart();
-                    router.push('/emailCheck');
-                  }
-                }}
-                bgColor={'#0A0A0A'}
-                borderRadius={'8px'}
-                variant={'solid'}
-                px={'0'}
-                rightIcon={<ArrowRight size={'16px'}></ArrowRight>}
-              >
-                {t('v2:email_sign_in')}
-              </Button>
-            </>
+            <EmailSigninForm isModal={isModal} onVerifyStep={() => setLoginStep('email-verify')} />
           )
         ) : (
           <></>
         )}
+
         {((conf.layoutConfig?.version === 'cn' && needPhone) ||
           conf.layoutConfig?.version === 'en' ||
           needEmail) && (
@@ -424,6 +334,6 @@ export default function SigninComponent() {
           </>
         )}
       </Stack>
-    </Flex>
+    </ContentWrapper>
   );
 }

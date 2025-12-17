@@ -5,6 +5,9 @@ import { Transporter } from 'nodemailer';
 import SMTPPool from 'nodemailer/lib/smtp-pool';
 import { type AppConfigType } from './system';
 import { BingAdApiClient } from '@/services/backend/bingAdApiClient';
+import { PrismaClient as RegionPrismaClient } from 'prisma/region/generated/client';
+import { PrismaClient as GlobalPrismaClient } from 'prisma/global/generated/client';
+
 export * from './api';
 export * from './app';
 export * from './crd';
@@ -28,4 +31,6 @@ declare global {
   var umami: Umami | undefined;
   var dataLayer: { push: Function } | null;
   var bingAdApiClient: BingAdApiClient | null;
+  var prisma: RegionPrismaClient | undefined;
+  var globalPrisma: GlobalPrismaClient | undefined;
 }

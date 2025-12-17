@@ -34,17 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
-        ...(req.headers['auth_user']
-          ? {
-              auth_user: Array.isArray(req.headers['auth_user'])
-                ? req.headers['auth_user'][0]
-                : req.headers['auth_user']
-            }
-          : {}),
-        'Time-Zone': Array.isArray(req.headers['time-zone'])
-          ? req.headers['time-zone'][0]
-          : req.headers['time-zone'] || 'Asia/Shanghai'
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {})
       }
     });
 
@@ -53,13 +43,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const data = await response.json();
-    jsonRes(res, data);
+
+    jsonRes(res, { data });
   } catch (error) {
-    console.error('Database alerts proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     jsonRes(res, {
       code: 500,
       error: 'Failed to fetch database alerts',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: errorMessage
     });
   }
 }

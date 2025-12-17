@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
       data: {
         documentUrlZH: process.env.DOCUMENT_URL_ZH || defaultEnv.documentUrlZH,
         documentUrlEN: process.env.DOCUMENT_URL_EN || defaultEnv.documentUrlEN,
-        privacyUrl: process.env.PRIVACY_URL || defaultEnv.privacyUrl,
+        privacyUrlZH: process.env.PRIVACY_URL_ZH || defaultEnv.privacyUrlZH,
+        privacyUrlEN: process.env.PRIVACY_URL_EN || defaultEnv.privacyUrlEN,
         sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
         registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
@@ -32,7 +33,9 @@ export async function GET(req: NextRequest) {
         currencySymbol: (process.env.CURRENCY_SYMBOL || defaultEnv.currencySymbol) as
           | 'shellCoin'
           | 'cny'
-          | 'usd'
+          | 'usd',
+        enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature,
+        enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature
       }
     });
   } catch (err: any) {

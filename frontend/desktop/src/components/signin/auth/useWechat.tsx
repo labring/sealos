@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect } from 'react';
-import { UserInfo } from '@/api/auth';
+import { getPlanInfo, UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 
@@ -41,8 +41,11 @@ export default function useWechat() {
         setToken(regionUserToken);
         const infoData = await UserInfo();
         const payload = jwtDecode<AccessTokenPayload>(regionUserToken);
+        const planInfo = await getPlanInfo(payload.workspaceId);
+
         setSession({
           token: regionUserToken,
+          subscription: planInfo.data.subscription,
           user: {
             k8s_username: payload.userCrName,
             name: infoData.data?.info.nickname || '',

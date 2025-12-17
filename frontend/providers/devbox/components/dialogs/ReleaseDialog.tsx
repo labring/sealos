@@ -8,6 +8,7 @@ import { useEnvStore } from '@/stores/env';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
 import { DevboxListItemTypeV2, DevboxVersionListItemType } from '@/types/devbox';
 import { releaseDevbox, shutdownDevbox, startDevbox, getDevboxVersionList } from '@/api/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Dialog,
@@ -34,6 +35,7 @@ interface ReleaseDialogProps {
 const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps) => {
   const t = useTranslations();
   const locale = useLocale();
+  const { getErrorMessage } = useErrorMessage();
 
   const { env } = useEnvStore();
 
@@ -46,13 +48,18 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
 
   useEffect(() => {
     if (open) {
+      setTag('');
+      setReleaseDes('');
+      setTagError(null);
+      setIsAutoStart(devbox.status.value === 'Running');
+
       getDevboxVersionList(devbox.name, devbox.id)
         .then((list) => {
           setVersionList(list);
         })
         .catch(console.error);
     }
-  }, [open, devbox.name, devbox.id]);
+  }, [open, devbox.name, devbox.id, devbox.status.value]);
 
   const validateTag = (value: string) => {
     if (!value) {
@@ -76,9 +83,17 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   const handleSubmit = () => {
     const error = validateTag(tag);
     setTagError(error);
-    if (!error) {
-      handleReleaseDevbox(isAutoStart);
+    if (error) {
+      return;
     }
+
+    const isDuplicate = versionList.some((version) => version.tag === tag);
+    if (isDuplicate) {
+      setTagError(t('tag_already_exists'));
+      return;
+    }
+
+    handleReleaseDevbox(isAutoStart);
   };
 
   const handleReleaseDevbox = useCallback(
@@ -116,9 +131,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
         onSuccess();
         onClose();
       } catch (error: any) {
-        toast.error(
-          typeof error === 'string' ? error : error.message || t('submit_release_failed')
-        );
+        toast.error(getErrorMessage(error, 'submit_release_failed'));
         console.error(error);
       }
       setLoading(false);
@@ -132,7 +145,8 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       t,
       onSuccess,
       onClose,
-      versionList.length
+      versionList.length,
+      getErrorMessage
     ]
   );
 

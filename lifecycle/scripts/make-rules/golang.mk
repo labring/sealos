@@ -16,7 +16,8 @@ GO := go
 GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
 	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
-	-s -w
+	-s -w \
+	-extldflags '-static --static'
 ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
 	GO_LDFLAGS=

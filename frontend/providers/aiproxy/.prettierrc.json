@@ -1,18 +1,33 @@
 {
-  "printWidth": 100,
-  "tabWidth": 2,
-  "useTabs": false,
-  "semi": false,
   "singleQuote": true,
-  "quoteProps": "as-needed",
-  "trailingComma": "none",
-  "bracketSpacing": true,
-  "jsxBracketSameLine": true,
-  "bracketSameLine": true,
+  "trailingComma": "es5",
+  "tabWidth": 2,
+  "printWidth": 100,
+  "semi": false,
+  "jsxSingleQuote": false,
   "arrowParens": "always",
-  "requirePragma": false,
-  "insertPragma": false,
-  "proseWrap": "preserve",
-  "htmlWhitespaceSensitivity": "ignore",
-  "endOfLine": "auto"
+  "bracketSpacing": true,
+  "endOfLine": "lf",
+  "jsxBracketSameLine": false,
+  "embeddedLanguageFormatting": "auto",
+  "overrides": [
+    {
+      "files": "*.tsx",
+      "options": {
+        "semi": true
+      }
+    },
+    {
+      "files": "*.jsx",
+      "options": {
+        "semi": true
+      }
+    },
+    {
+      "files": ["*.json", "*.jsonc"],
+      "options": {
+        "parser": "json"
+      }
+    }
+  ]
 }

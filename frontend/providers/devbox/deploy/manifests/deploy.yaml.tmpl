@@ -37,10 +37,16 @@ spec:
       containers:
         - name: devbox-frontend
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "{{ default "1" .tlsRejectUnauthorized }}"
             - name: DOCUMENT_URL_ZH
               value: https://sealos.run/docs/overview/intro
             - name: DOCUMENT_URL_EN
               value: https://sealos.io/docs/overview/intro
+            - name: PRIVACY_URL_ZH
+              value: https://sealos.run/docs/msa/privacy-policy
+            - name: PRIVACY_URL_EN
+              value: https://sealos.io/docs/msa/privacy-policy
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: INGRESS_SECRET
@@ -73,6 +79,10 @@ spec:
               value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
               value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+            - name: ENABLE_IMPORT_FEATURE
+              value: 'false'
+            - name: ENABLE_WEBIDE_FEATURE
+              value: 'false'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

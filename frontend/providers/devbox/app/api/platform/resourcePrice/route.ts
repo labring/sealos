@@ -43,7 +43,7 @@ const valuationMap: Record<string, number> = {
   memory: 1024,
   storage: 1024,
   gpu: 1000,
-  ['services.nodeports']: 1000
+  ['services.nodeports']: 1
 };
 
 export async function GET(req: NextRequest) {
@@ -67,14 +67,14 @@ export async function GET(req: NextRequest) {
 
     const [priceResponse, gpuNodes] = await Promise.all([
       getResourcePrice() as Promise<ResourcePriceType['data']['properties']>,
-      GPU_ENABLE ? getGpuNode() : Promise.resolve([])
+      GPU_ENABLE==='true' ? getGpuNode() : Promise.resolve([])
     ]);
 
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
       nodeports: countSourcePrice(priceResponse, 'services.nodeports'),
-      gpu: GPU_ENABLE ? countGpuSource(priceResponse, gpuNodes) : undefined
+      gpu: GPU_ENABLE==='true' ? countGpuSource(priceResponse, gpuNodes) : undefined
     };
 
     return jsonRes({

@@ -20,41 +20,36 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
 	"time"
 
-	"k8s.io/utils/ptr"
-	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
-
-	"github.com/labring/sealos/controllers/account/controllers/utils"
-
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/labring/sealos/controllers/pkg/utils/maps"
-
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
+	"github.com/labring/sealos/controllers/account/controllers/utils"
+	// devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/account/controllers"
-	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -68,32 +63,72 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
-	//utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
+	// utilruntime.Must(devboxv1alpha1.AddToScheme(scheme))
+	// utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		probeAddr            string
-		concurrent           int
-		development          bool
-		rateLimiterOptions   = &utils.LimiterOptions{}
-		leaseDuration        time.Duration
-		renewDeadline        time.Duration
-		retryPeriod          time.Duration
+		metricsAddr              string
+		enableLeaderElection     bool
+		probeAddr                string
+		concurrent               int
+		deleteResourceConcurrent int
+		deleteBackupConcurrent   int
+		development              bool
+		rateLimiterOptions       = &utils.LimiterOptions{}
+		leaseDuration            time.Duration
+		renewDeadline            time.Duration
+		retryPeriod              time.Duration
 	)
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&development, "development", false, "Enable development mode.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.IntVar(&concurrent, "concurrent", 10, "The number of concurrent cluster reconciles.")
-	flag.DurationVar(&leaseDuration, "leader-elect-lease-duration", 60*time.Second, "Duration that non-leader candidates will wait to force acquire leadership.")
-	flag.DurationVar(&renewDeadline, "leader-elect-renew-deadline", 40*time.Second, "Duration the acting master will retry refreshing leadership before giving up.")
-	flag.DurationVar(&retryPeriod, "leader-elect-retry-period", 5*time.Second, "Duration the LeaderElector clients should wait between tries of actions.")
+	flag.IntVar(&concurrent, "concurrent", 100, "The number of concurrent cluster reconciles.")
+	flag.IntVar(
+		&deleteResourceConcurrent,
+		"delete-resource-concurrent",
+		3,
+		"The number of concurrent DeleteUserResource calls.",
+	)
+	flag.IntVar(
+		&deleteBackupConcurrent,
+		"delete-backup-concurrent",
+		30,
+		"The maximum number of concurrent backup deletions.",
+	)
+	flag.DurationVar(
+		&leaseDuration,
+		"leader-elect-lease-duration",
+		60*time.Second,
+		"Duration that non-leader candidates will wait to force acquire leadership.",
+	)
+	flag.DurationVar(
+		&renewDeadline,
+		"leader-elect-renew-deadline",
+		40*time.Second,
+		"Duration the acting master will retry refreshing leadership before giving up.",
+	)
+	flag.DurationVar(
+		&retryPeriod,
+		"leader-elect-retry-period",
+		5*time.Second,
+		"Duration the LeaderElector clients should wait between tries of actions.",
+	)
 	opts := zap.Options{
 		Development: development,
 	}
@@ -103,8 +138,8 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	// local test env
-	//err := godotenv.Load()
-	//if err != nil {
+	// err := godotenv.Load()
+	// if err != nil {
 	//	setupLog.Error(err, "unable to load .env file")
 	//}
 
@@ -139,7 +174,7 @@ func main() {
 		MaxConcurrentReconciles: concurrent,
 		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
 	}
-	dbCtx := context.Background()
+	dbCtx, ctx := context.Background(), context.Background()
 	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to mongo")
@@ -168,7 +203,10 @@ func main() {
 			}
 		}
 	}()
-	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
+	v2Account, err := cockroach.NewCockRoach(
+		os.Getenv(database.GlobalCockroachURI),
+		os.Getenv(database.LocalCockroachURI),
+	)
 	if err != nil {
 		setupLog.Error(err, "unable to connect to cockroach")
 		os.Exit(1)
@@ -182,6 +220,12 @@ func main() {
 	if err = database.InitRegionEnv(v2Account.GetGlobalDB(), v2Account.GetLocalRegion().Domain); err != nil {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
+	}
+	if os.Getenv(cockroach.EnvBaseBalance) != "" {
+		balance, err := strconv.ParseInt(os.Getenv(cockroach.EnvBaseBalance), 10, 64)
+		if err == nil {
+			v2Account.ZeroAccount.Balance = balance
+		}
 	}
 	skipExpiredUserTimeDuration := time.Hour * 24 * 2
 	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
@@ -229,7 +273,17 @@ func main() {
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
 	debtController.Init()
-	//if err = (&controllers.DebtReconciler{
+
+	// Setup OperationRequest monitor controller to trigger debt status refresh on owner transfers
+	operationRequestMonitor := &controllers.OperationRequestMonitorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}
+	if err = operationRequestMonitor.SetupWithManager(mgr); err != nil {
+		setupManagerError(err, "OperationRequestMonitor")
+	}
+
+	// if err = (&controllers.DebtReconciler{
 	//	AccountReconciler:           accountReconciler,
 	//	Client:                      mgr.GetClient(),
 	//	Scheme:                      mgr.GetScheme(),
@@ -237,7 +291,7 @@ func main() {
 	//	DebtUserMap:                 debtUserMap,
 	//	InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
 	//	SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
-	//}).SetupWithManager(mgr, rateOpts); err != nil {
+	// }).SetupWithManager(mgr, rateOpts); err != nil {
 	//	setupManagerError(err, "Debt")
 	//}
 
@@ -292,26 +346,26 @@ func main() {
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts); err != nil {
+	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent, deleteBackupConcurrent); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
 	if err = (&controllers.PaymentReconciler{
-		Account:     accountReconciler,
-		WatchClient: watchClient,
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
+		Account:        accountReconciler,
+		DebtReconciler: debtController,
+		WatchClient:    watchClient,
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}
-
+	trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
+	if err != nil {
+		setupLog.Error(err, "unable to connect to traffic mongo")
+		os.Exit(1)
+	}
 	var userTrafficMonitor *controllers.UserTrafficMonitor
-	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" && os.Getenv(database.TrafficMongoURI) != "" {
-		trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
-		if err != nil {
-			setupLog.Error(err, "unable to connect to traffic mongo")
-			os.Exit(1)
-		}
+	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" {
 		userTrafficCtrl := controllers.NewUserTrafficController(accountReconciler, trafficDBClient)
 		go userTrafficCtrl.ProcessTrafficWithTimeRange()
 		if env.GetEnvWithDefault("SUPPORT_MONITOR_USER_TRAFFIC", "false") == _true {
@@ -325,6 +379,22 @@ func main() {
 	} else {
 		setupLog.Info("skip user traffic controller")
 	}
+	workspaceTrafficProcessor := controllers.NewWorkspaceTrafficController(
+		accountReconciler,
+		trafficDBClient,
+	)
+	// workspaceSubscriptionProcessor, err := controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
+	// if err != nil {
+	//	setupLog.Error(err, "unable to create workspace subscription processor")
+	//	os.Exit(1)
+	//}
+	workspaceSubDebtProcessor := controllers.NewWorkspaceSubscriptionDebtProcessor(
+		accountReconciler,
+	)
+	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
+	// workspaceSubscriptionProcessor.Start(ctx)
+	workspaceSubDebtProcessor.Start(ctx)
+
 	defer func() {
 		if userTrafficMonitor != nil {
 			userTrafficMonitor.Stop()
@@ -353,7 +423,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	//go func() {
+	// go func() {
 	//	now := time.Now()
 	//	nextHour := now.Truncate(time.Hour).Add(time.Hour)
 	//	time.Sleep(nextHour.Sub(now))
@@ -367,7 +437,7 @@ func main() {
 	//		}
 	//		<-ticker.C
 	//	}
-	//}()
+	// }()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

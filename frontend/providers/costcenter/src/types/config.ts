@@ -4,6 +4,7 @@ export type AliSms = {
   accessKeySecret: string;
   templateCode: string;
   signName: string;
+  invoiceCompletedTemplateCode: string;
 };
 
 export type Mongo = {
@@ -26,6 +27,11 @@ export type Invoice = {
   serviceToken: string;
   aliSms: AliSms;
   mongo: Mongo;
+  billingInfo: {
+    companyName: string;
+    addressLines: string[];
+    contactLines: string[];
+  };
 };
 
 export type PayMethods = {
@@ -34,7 +40,7 @@ export type PayMethods = {
   };
   alipay: {
     enabled: boolean;
-  }
+  };
   stripe: {
     enabled: boolean;
     publicKey: string;
@@ -50,8 +56,13 @@ export type AccountService = {
   url: string;
 };
 
+export type DesktopService = {
+  url: string;
+};
+
 export type Components = {
   accountService: AccountService;
+  desktopService: DesktopService;
 };
 
 export type AppConfigType = {
@@ -64,6 +75,7 @@ export type AppConfigType = {
     transferEnabled: boolean;
     giftCodeEnabled: boolean;
     currencyType: string;
+    subscriptionEnabled: boolean;
     layout: {
       meta: {
         noscripts: any[];
@@ -89,6 +101,7 @@ export var DefaultAppConfig: AppConfigType = {
     giftCodeEnabled: true,
     transferEnabled: true,
     currencyType: 'shellCoin',
+    subscriptionEnabled: false,
     invoice: {
       enabled: false,
       feishApp: {
@@ -108,10 +121,16 @@ export var DefaultAppConfig: AppConfigType = {
         accessKeyID: '',
         accessKeySecret: '',
         templateCode: '',
-        signName: ''
+        signName: '',
+        invoiceCompletedTemplateCode: ''
       },
       mongo: {
         uri: ''
+      },
+      billingInfo: {
+        companyName: '',
+        addressLines: [],
+        contactLines: []
       }
     },
     recharge: {
@@ -132,6 +151,9 @@ export var DefaultAppConfig: AppConfigType = {
     components: {
       accountService: {
         url: 'http://account-service.account-system.svc:2333'
+      },
+      desktopService: {
+        url: 'http://desktop-frontend.sealos.svc:3000'
       }
     },
     layout: {

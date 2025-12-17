@@ -50,10 +50,10 @@ const DeleteTemplateRepositoryDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        <span className="text-sm/5">
+        <span className="text-sm/5 break-words">
           {t.rich('delete_template_prompt', {
             name: (
-              <span className="font-semibold" key="template-name">
+              <span className="font-semibold break-all" key="template-name">
                 {templateRepositoryName}
               </span>
             ) as any

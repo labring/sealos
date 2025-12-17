@@ -23,6 +23,8 @@ import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
+import { useUserStore } from '@/stores/user';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -31,16 +33,20 @@ import { Loading } from '@sealos/shadcn-ui/loading';
 import { track } from '@sealos/gtm';
 import { listTemplate } from '@/api/template';
 import { z } from 'zod';
+import type { WorkspaceQuotaItem } from '@/types/workspace';
+import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
 
 const DevboxCreatePage = () => {
   const router = useRouter();
   const t = useTranslations();
   const searchParams = useSearchParams();
+  const { getErrorMessage } = useErrorMessage();
 
   const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
   const { setDevboxDetail, setStartedTemplate, startedTemplate } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
+  const userStore = useUserStore();
 
   const crOldYamls = useRef<DevboxKindsType[]>([]);
   const formOldYamls = useRef<YamlItemType[]>([]);
@@ -48,6 +54,9 @@ const DevboxCreatePage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
+  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+  console.log('exceededQuotas', exceededQuotas, exceededDialogOpen);
 
   const tabType = searchParams.get('type') || 'form';
   const devboxName = searchParams.get('name') || '';
@@ -67,17 +76,11 @@ const DevboxCreatePage = () => {
     const scrollTo = searchParams.get('scrollTo');
     if (name) {
       setCaptureDevboxName(name);
-      router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
       if (from) {
         setCaptureFrom(from);
-        router.replace(`/devbox/create?name=${captureDevboxName}&from=${captureFrom}`, undefined);
-        if (scrollTo) {
-          setCaptureScrollTo(scrollTo);
-          router.replace(
-            `/devbox/create?name=${captureDevboxName}&scrollTo=${captureScrollTo}`,
-            undefined
-          );
-        }
+      }
+      if (scrollTo) {
+        setCaptureScrollTo(scrollTo);
       }
     } else if (from === 'template') {
       const savedFormData = localStorage.getItem('devbox_create_form_data');
@@ -91,7 +94,7 @@ const DevboxCreatePage = () => {
         }
       }
     }
-  }, [searchParams, router, captureDevboxName, captureScrollTo, captureFrom, formHook]);
+  }, [searchParams, formHook]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
@@ -264,12 +267,15 @@ const DevboxCreatePage = () => {
       }
       setStartedTemplate(undefined);
       router.push(`/devbox/detail/${formData.name}`);
-    } catch (error) {
+    } catch (error: any) {
       if (typeof error === 'string' && error.includes('402')) {
-        toast.warning(applyError, {
+        toast.warning(t(applyError), {
           description: t('outstanding_tips')
         });
-      } else toast.warning(applyError, { description: JSON.stringify(error) });
+      } else {
+        const errorMsg = getErrorMessage(error, isEdit ? 'update_failed' : 'create_failed');
+        toast.warning(t(applyError), { description: errorMsg });
+      }
     }
     setIsLoading(false);
   };
@@ -298,16 +304,39 @@ const DevboxCreatePage = () => {
             yamlList={yamlList}
             title={title}
             applyBtnText={applyBtnText}
-            applyCb={() =>
+            name={captureDevboxName}
+            from={captureFrom as 'list' | 'detail'}
+            applyCb={() => {
+              const formData = formHook.getValues();
+              const exceededQuotaItems = userStore.checkExceededQuotas({
+                cpu: isEdit ? formData.cpu - (oldDevboxEditData.current?.cpu ?? 0) : formData.cpu,
+                memory: isEdit
+                  ? formData.memory - (oldDevboxEditData.current?.memory ?? 0)
+                  : formData.memory,
+                gpu: 0,
+                nodeport: 0,
+                ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
+              });
+
+              if (exceededQuotaItems.length > 0) {
+                setExceededQuotas(exceededQuotaItems);
+                setExceededDialogOpen(true);
+                return;
+              }
+
               formHook.handleSubmit(
                 (data) => openConfirm(() => submitSuccess(data))(),
                 submitError
-              )()
-            }
+              )();
+            }}
           />
           <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
             {tabType === 'form' ? (
-              <Form isEdit={isEdit} countGpuInventory={countGpuInventory} />
+              <Form
+                isEdit={isEdit}
+                oldDevboxData={oldDevboxEditData.current ?? null}
+                countGpuInventory={countGpuInventory}
+              />
             ) : (
               <Yaml yamlList={yamlList} />
             )}
@@ -315,6 +344,19 @@ const DevboxCreatePage = () => {
         </div>
       </FormProvider>
       <ConfirmChild />
+      <InsufficientQuotaDialog
+        open={exceededDialogOpen}
+        onOpenChange={(open) => {
+          userStore.loadUserQuota();
+          setExceededDialogOpen(open);
+        }}
+        onConfirm={() => {
+          setExceededDialogOpen(false);
+          // formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
+        }}
+        items={exceededQuotas}
+        showFooter={false}
+      />
     </>
   );
 };

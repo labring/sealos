@@ -22,7 +22,7 @@ func ParseAdminActiveBillingReq(c *gin.Context) (*ActiveBillingReq, error) {
 		activeBilling.Time = time.Now().UTC()
 	}
 	if err := c.ShouldBindJSON(activeBilling); err != nil {
-		return nil, fmt.Errorf("bind json error: %v", err)
+		return nil, fmt.Errorf("bind json error: %w", err)
 	}
 	return activeBilling, nil
 }
@@ -33,7 +33,7 @@ type ActiveBillingReconcile struct {
 
 func (a *ActiveBillingReconcile) Execute() error {
 	if err := DBClient.ReconcileActiveBilling(a.StartTime, a.EndTime); err != nil {
-		return fmt.Errorf("reconcile active billing error: %v", err)
+		return fmt.Errorf("reconcile active billing error: %w", err)
 	}
 	return nil
 }
@@ -44,7 +44,7 @@ type ArchiveBillingReconcile struct {
 
 func (a *ArchiveBillingReconcile) Execute() error {
 	if err := DBClient.ArchiveHourlyBilling(a.StartTime, a.StartTime.Add(time.Hour)); err != nil {
-		return fmt.Errorf("archive hourly billing error: %v", err)
+		return fmt.Errorf("archive hourly billing error: %w", err)
 	}
 	return nil
 }

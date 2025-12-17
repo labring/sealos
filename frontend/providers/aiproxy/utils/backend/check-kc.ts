@@ -78,8 +78,8 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
         caData: cluster.caData,
         caFile: cluster.caFile,
         server: clusterEndpoint,
-        skipTLSVerify: cluster.skipTLSVerify
-      }
+        skipTLSVerify: cluster.skipTLSVerify,
+      },
     ]
     verificationKc.users = kc.users
     verificationKc.contexts = kc.contexts
@@ -103,7 +103,7 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
       // 构建请求参数对象
       const params: k8s.CoreV1ApiListNamespacedPodRequest = {
         namespace: namespace,
-        limit: 1
+        limit: 1,
       }
 
       // 尝试获取指定命名空间中的 Pod 列表，这需要对该命名空间的 list pods 权限
@@ -151,7 +151,7 @@ export function CheckIsInCluster(): [boolean, string] {
   ) {
     return [
       true,
-      'https://' + process.env.KUBERNETES_SERVICE_HOST + ':' + process.env.KUBERNETES_SERVICE_PORT
+      'https://' + process.env.KUBERNETES_SERVICE_HOST + ':' + process.env.KUBERNETES_SERVICE_PORT,
     ]
   }
   return [false, '']

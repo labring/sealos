@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { debounce } from 'lodash';
 import { LayoutTemplate, Search, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -18,9 +18,18 @@ const TemplatePage = () => {
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const updateSearchVal = debounce((val: string) => {
     setSearch(val);
   }, 500);
+
+  const clearSearch = () => {
+    setSearch('');
+    if (searchInputRef.current) {
+      searchInputRef.current.value = '';
+    }
+  };
 
   const defaultTab = searchParams.get('tab') === 'private' ? 'private' : 'public';
 
@@ -42,6 +51,7 @@ const TemplatePage = () => {
             </TabsList>
             <div className="flex items-center pr-2">
               <Input
+                ref={searchInputRef}
                 className="w-[370px]"
                 icon={<Search className="h-4 w-4 text-zinc-500" />}
                 placeholder={t('template_search')}
@@ -51,7 +61,7 @@ const TemplatePage = () => {
           </div>
 
           <TabsContent value="public" className="h-full">
-            <PublicTemplate search={search} />
+            <PublicTemplate search={search} onClearSearch={clearSearch} />
           </TabsContent>
           <TabsContent value="private" className="h-full">
             <PrivateTemplate search={search} />

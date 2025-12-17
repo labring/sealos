@@ -17,9 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/labring/sealos/controllers/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -34,7 +33,7 @@ type (
 const (
 	// Consumption 消费
 	Consumption common.Type = iota
-	//Subconsumption 子消费
+	// Subconsumption 子消费
 	SubConsumption
 
 	TransferIn
@@ -98,7 +97,7 @@ type AccountStatus struct {
 	Balance int64 `json:"balance,omitempty"`
 	// ActivityBonus: for demonstration purposes only and does not participate in calculation
 	ActivityBonus int64 `json:"activityBonus,omitempty"`
-	//Deduction amount
+	// Deduction amount
 	DeductionBalance int64 `json:"deductionBalance,omitempty"`
 	// EncryptDeductionBalance is to encrypt DeductionBalance
 	EncryptDeductionBalance *string `json:"encryptDeductionBalance,omitempty"`
@@ -123,8 +122,8 @@ type Account struct {
 
 // AccountList contains a list of Account
 type AccountList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `          json:",inline"`
+	metav1.ListMeta `          json:"metadata,omitempty"`
 	Items           []Account `json:"items"`
 }
 

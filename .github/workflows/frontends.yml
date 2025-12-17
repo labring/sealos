@@ -1,6 +1,18 @@
 name: Build Frontends Image
 
 on:
+  workflow_call:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       push_image:
@@ -14,7 +26,7 @@ on:
         required: false
         type: string
   push:
-    branches: ["main"]
+    branches: ["*"]
     paths:
       - "frontend/desktop/**"
       - "frontend/providers/**"
@@ -33,14 +45,8 @@ on:
       - "!**/*.yaml"
 
 jobs:
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos-frontend
-
   image-build:
     uses: ./.github/workflows/frontend.yml
-    needs: save-sealos
     permissions:
       contents: read
       packages: write
@@ -50,10 +56,10 @@ jobs:
       matrix:
         module:
           [
+            providers/aiproxy,
             providers/license,
             providers/cronjob,
             providers/template,
-            providers/adminer,
             providers/applaunchpad,
             providers/terminal,
             providers/dbprovider,

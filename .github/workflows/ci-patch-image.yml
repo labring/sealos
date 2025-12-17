@@ -2,7 +2,7 @@ name: CI Patch Images Package
 
 env:
   # Common versions
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
   PROJECT_PATH: "./lifecycle"
 
@@ -109,15 +109,10 @@ jobs:
           -t "${DOCKER_REPO}:latest" \
           -f Dockerfile.main \
           .
-  save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
-    with:
-      artifact_name: sealos
   build-on-cluster-patch-image:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
       - call_ci_workflow
-      - save-sealos
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -126,16 +121,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download sealos
-        uses: actions/download-artifact@v4
-        with:
-          name: sealos
-          path: /tmp/
-      - name: Verify sealos
+      - name: Install sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
-          sudo sealos version
+          sudo bash ./.github/scripts/install.sh
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
 

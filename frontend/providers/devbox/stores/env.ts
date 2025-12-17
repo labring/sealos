@@ -14,10 +14,13 @@ export const defaultEnv: Env = {
   devboxAffinityEnable: 'true',
   squashEnable: 'false',
   namespace: 'default',
-  privacyUrl: '',
+  privacyUrlZH: 'https://sealos.run/docs/msa/privacy-policy',
+  privacyUrlEN: 'https://sealos.io/docs/msa/privacy-policy',
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
-  currencySymbol: 'shellCoin'
+  currencySymbol: 'shellCoin',
+  enableImportFeature: 'false',
+  enableWebideFeature: 'false'
 };
 
 type State = {

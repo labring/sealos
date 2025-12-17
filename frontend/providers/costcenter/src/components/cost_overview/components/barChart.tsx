@@ -2,12 +2,12 @@ import ReactEChartsCore from 'echarts-for-react/lib/core';
 // Import the echarts core module, which provides the necessary interfaces for using echarts.
 import { addMonths, differenceInMonths, format, isSameMonth, startOfMonth } from 'date-fns';
 import { BarChart } from 'echarts/charts';
-import { GridComponent, TooltipComponent } from 'echarts/components';
+import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useTranslation } from 'next-i18next';
 
-echarts.use([GridComponent, BarChart, CanvasRenderer, TooltipComponent]);
+echarts.use([GridComponent, BarChart, CanvasRenderer, TooltipComponent, LegendComponent]);
 
 export default function Chart({
   data,
@@ -98,7 +98,7 @@ export default function Chart({
       left: '40px',
       right: '5px'
     },
-    color: ['#24282C', '#11B6FC'],
+    color: ['#18181B', '#3B82F6'],
     tooltip: {
       trigger: 'axis',
       borderWidth: 0

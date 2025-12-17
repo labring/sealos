@@ -4,9 +4,10 @@ import { Box, Flex, Image, Text } from '@chakra-ui/react';
 import clsx from 'clsx';
 import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import { useTranslation } from 'next-i18next';
 import { useConfigStore } from '@/stores/config';
+import useSessionStore from '@/stores/session';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -26,9 +27,11 @@ export default function AppWindow(props: {
   const logo = useConfigStore().layoutConfig?.logo;
   const { t, i18n } = useTranslation();
   const wnapp = findAppInfoById(pid);
+  const isGuest = useSessionStore((state) => state.isGuest);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragDom = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   if (!wnapp) return null;
 
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
@@ -51,8 +54,8 @@ export default function AppWindow(props: {
               ? 0
               : x
             : x > 0.9 * appHeaderWidth
-            ? 0
-            : x,
+              ? 0
+              : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {
@@ -110,9 +113,23 @@ export default function AppWindow(props: {
         data-hide={!wnapp?.isShow}
         id={wnapp?.icon + 'App'}
         style={{
-          zIndex: wnapp?.zIndex
+          zIndex: wnapp?.zIndex,
+          overflow: wnapp?.size === 'maximize' ? 'hidden' : 'visible'
         }}
       >
+        {wnapp?.size === 'maximize' && wnapp?.key === 'system-brain' && (
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            height="10px"
+            zIndex={999}
+            background="transparent"
+            pointerEvents="auto"
+            onMouseEnter={() => setIsHeaderHovered(true)}
+          />
+        )}
         {/* app window header */}
         <Flex
           cursor={'pointer'}
@@ -120,6 +137,8 @@ export default function AppWindow(props: {
           background={'grayModern.100'}
           className={'windowHeader'}
           borderRadius={'6px 6px 0 0'}
+          position="relative"
+          zIndex={998}
           onClick={() => {
             setToHighestLayerById(pid);
           }}
@@ -127,6 +146,14 @@ export default function AppWindow(props: {
             e.stopPropagation();
             e.preventDefault();
           }}
+          onMouseEnter={() => setIsHeaderHovered(true)}
+          onMouseLeave={() => setIsHeaderHovered(false)}
+          marginTop={
+            wnapp?.size === 'maximize' && wnapp?.key === 'system-brain' && !isHeaderHovered
+              ? '-28px'
+              : '0'
+          }
+          transition="margin-top 0.2s ease-in-out"
         >
           <Flex ml="16px" alignItems={'center'} fontSize={'12px'} fontWeight={400}>
             <Image
@@ -206,12 +233,20 @@ export default function AppWindow(props: {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                handleClose();
+                if (isGuest()) {
+                  handleMinimize();
+                } else {
+                  handleClose();
+                }
               }}
               onTouchEnd={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                handleClose();
+                if (isGuest()) {
+                  handleMinimize();
+                } else {
+                  handleClose();
+                }
               }}
             >
               <Image

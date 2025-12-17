@@ -4,6 +4,10 @@ import { CheckIcon } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useState, useEffect } from 'react';
 import BoringAvatar from 'boring-avatars';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { cn } from '@sealos/shadcn-ui';
+import { getPlanBackgroundClass } from '@/utils/styling';
+import { useConfigStore } from '@/stores/config';
 
 const NsListItem = ({
   isSelected,
@@ -13,6 +17,7 @@ const NsListItem = ({
   selectedColor = 'white',
   showCheck = false,
   teamAvatar,
+  planName,
   ...flexprop
 }: {
   displayPoint: boolean;
@@ -22,8 +27,10 @@ const NsListItem = ({
   selectedColor?: string;
   showCheck?: boolean;
   teamAvatar?: string;
+  planName?: string;
 } & FlexProps) => {
   const queryClient = useQueryClient();
+  const { layoutConfig } = useConfigStore();
   const { t } = useTranslation();
 
   return (
@@ -58,12 +65,33 @@ const NsListItem = ({
             />
           </Box>
         )}
-        <Text textTransform={'capitalize'}>
+        <Text
+          textTransform={'capitalize'}
+          textOverflow={'ellipsis'}
+          whiteSpace={'nowrap'}
+          overflow={'hidden'}
+          width={'full'}
+        >
           {/* {isPrivate ? t('common:default_team') : teamName} */}
           {teamName}
         </Text>
-        {isSelected && showCheck && (
-          <CheckIcon style={{ marginLeft: 'auto' }} size={16} color={'#1C4EF5'} />
+
+        {/* Subscription plan tag */}
+        {layoutConfig?.common.subscriptionEnabled && planName && (
+          <Badge
+            variant={'subscription'}
+            className={cn(getPlanBackgroundClass(planName, planName === 'PAYG', false))}
+          >
+            {planName}
+          </Badge>
+        )}
+        {showCheck && (
+          <CheckIcon
+            style={{ marginLeft: 'auto' }}
+            size={16}
+            color={'#1C4EF5'}
+            opacity={isSelected ? 1 : 0}
+          />
         )}
       </HStack>
     </Flex>

@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import { cn } from '@sealos/shadcn-ui';
 import { shutdownDevbox } from '@/api/devbox';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2, ShutdownModeType } from '@/types/devbox';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Dialog,
@@ -28,6 +29,7 @@ interface ShutdownDialogPros {
 
 const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros) => {
   const t = useTranslations();
+  const { getErrorMessage } = useErrorMessage();
   const [loading, setLoading] = useState(false);
   const [shutdownMode, setShutdownMode] = useState<ShutdownModeType>('Stopped');
 
@@ -44,11 +46,11 @@ const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros
       });
       onSuccess();
     } catch (error: any) {
-      toast.error(typeof error === 'string' ? error : error.message || t('pause_error'));
+      toast.error(getErrorMessage(error, 'pause_error'));
       console.error(error);
     }
     setLoading(false);
-  }, [onSuccess, t, devbox.name, shutdownMode]);
+  }, [onSuccess, t, devbox.name, shutdownMode, getErrorMessage]);
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
@@ -78,14 +80,6 @@ const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros
               <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
               <span className="text-xs/4 text-zinc-500">
                 {t.rich('normal_shutdown_mode_desc', {
-                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
-                })}
-              </span>
-            </div>
-            <div className="flex w-full items-start gap-1.5 pl-5">
-              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
-              <span className="text-xs/4 text-zinc-500">
-                {t.rich('normal_shutdown_mode_desc_2', {
                   black: (chunks) => <span className="text-zinc-900">{chunks}</span>
                 })}
               </span>

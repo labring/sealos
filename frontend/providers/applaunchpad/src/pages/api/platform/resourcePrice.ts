@@ -1,9 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getK8s, K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { authSession } from '@/services/backend/auth';
-import { CoreV1Api } from '@kubernetes/client-node';
 import type { userPriceType } from '@/types/user';
+import { GpuNodeType, ResourceType } from '@/types/app';
+import { getGpuNode } from '@/services/backend/gpu';
 
 type ResourcePriceType = {
   data: {
@@ -15,25 +14,6 @@ type ResourcePriceType = {
   };
 };
 
-type ResourceType =
-  | 'cpu'
-  | 'infra-cpu'
-  | 'storage'
-  | 'memory'
-  | 'disk'
-  | 'mongodb'
-  | 'minio'
-  | 'infra-memory'
-  | 'infra-disk'
-  | 'services.nodeports';
-
-type GpuNodeType = {
-  'gpu.count': number;
-  'gpu.memory': number;
-  'gpu.product': string;
-  'gpu.alias': string;
-};
-
 const PRICE_SCALE = 1000000;
 
 export const valuationMap: Record<string, number> = {
@@ -41,7 +21,7 @@ export const valuationMap: Record<string, number> = {
   memory: 1024,
   storage: 1024,
   gpu: 1000,
-  'services.nodeports': 1000
+  'services.nodeports': 1
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -69,52 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-/* get gpu nodes by configmap. */
-export async function getGpuNode() {
-  const gpuCrName = 'node-gpu-info';
-  const gpuCrNS = 'node-system';
-
-  try {
-    const kc = K8sApiDefault();
-    const { body } = await kc.makeApiClient(CoreV1Api).readNamespacedConfigMap(gpuCrName, gpuCrNS);
-    const gpuMap = body?.data?.gpu;
-    if (!gpuMap || !body?.data?.alias) return [];
-    const alias = (JSON.parse(body?.data?.alias) || {}) as Record<string, string>;
-
-    const parseGpuMap = JSON.parse(gpuMap) as Record<
-      string,
-      {
-        'gpu.count': string;
-        'gpu.memory': string;
-        'gpu.product': string;
-      }
-    >;
-
-    const gpuValues = Object.values(parseGpuMap).filter((item) => item['gpu.product']);
-
-    const gpuList: GpuNodeType[] = [];
-
-    // merge same type gpu
-    gpuValues.forEach((item) => {
-      const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
-      if (index > -1) {
-        gpuList[index]['gpu.count'] += Number(item['gpu.count']);
-      } else {
-        gpuList.push({
-          ['gpu.count']: +item['gpu.count'],
-          ['gpu.memory']: +item['gpu.memory'],
-          ['gpu.product']: item['gpu.product'],
-          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product']
-        });
-      }
-    });
-
-    return gpuList;
-  } catch (error) {
-    return [];
-  }
-}
-
 function countSourcePrice(rawData: ResourcePriceType['data']['properties'], type: ResourceType) {
   const rawPrice = rawData.find((item) => item.name === type)?.unit_price || 1;
   const sourceScale = rawPrice * (valuationMap[type] || 1);
@@ -135,7 +69,7 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
       alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
-      inventory: +gpuNode['gpu.count'],
+      inventory: +gpuNode['gpu.available'],
       vm: +gpuNode['gpu.memory'] / 1024
     });
   });

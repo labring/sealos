@@ -4,12 +4,10 @@ import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useCachedStore } from '@/store/cached';
-import { useGlobalStore } from '@/store/global';
 import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
-import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -21,13 +19,17 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
-import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
+import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
+import { ExceededWorkspaceQuotaItem } from '@/types/workspace';
+import { useUserStore } from '@/store/user';
+import useSessionStore from '@/store/session';
+import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -58,24 +60,28 @@ export default function EditApp({
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
-  const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
-  // const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
-  // useEffect(() => {
-  //   loadUserQuota();
-  // }, []);
+  const { loadUserQuota, checkExceededQuotas } = useUserStore();
+  const { getSession } = useSessionStore();
+
+  const [quotaLoaded, setQuotaLoaded] = useState(false);
+  const [exceededQuotas, setExceededQuotas] = useState<ExceededWorkspaceQuotaItem[]>([]);
+  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+
+  // load user quota on component mount
+  useEffect(() => {
+    if (quotaLoaded) return;
+
+    loadUserQuota();
+    setQuotaLoaded(true);
+  }, [quotaLoaded, loadUserQuota]);
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
     [templateSource]
   );
-
-  const usage = useMemo(() => {
-    const usage = getResourceUsage(yamlList?.map((item) => item.value) || []);
-    return usage;
-  }, [yamlList]);
 
   const { data: platformEnvs } = useQuery(
     ['getPlatformEnvs'],
@@ -96,40 +102,12 @@ export default function EditApp({
     content: 'Do you want to jump to the app details page'
   });
 
-  const pxVal = useMemo(() => {
-    const val = Math.floor((screenWidth - 1050) / 2);
-    if (val < 20) {
-      return 20;
-    }
-    return val;
-  }, [screenWidth]);
-
-  const generateYamlData = useCallback(
-    (templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
-      if (!templateSource) return [];
-      const app_name = templateSource?.source?.defaults?.app_name?.value;
-      const { defaults, defaultInputs } = getTemplateValues(templateSource);
-      const data = {
-        ...platformEnvs,
-        ...templateSource?.source,
-        inputs: {
-          ...defaultInputs,
-          ...inputs
-        },
-        defaults: defaults
-      };
-      const generateStr = parseTemplateString(templateSource.appYaml, data);
-      return generateYamlList(generateStr, app_name);
-    },
-    [platformEnvs]
-  );
-
   const debouncedFnRef = useRef<any>(null);
   useEffect(() => {
     debouncedFnRef.current = debounce((inputValues: Record<string, string>) => {
       try {
         if (!templateSource) return;
-        const list = generateYamlData(templateSource, inputValues);
+        const list = generateYamlData(templateSource, inputValues, platformEnvs);
         setYamlList(list);
       } catch (error) {
         console.log(error);
@@ -138,7 +116,7 @@ export default function EditApp({
     return () => {
       debouncedFnRef.current = null;
     };
-  }, [templateSource, generateYamlData]);
+  }, [templateSource, platformEnvs]);
 
   const formOnchangeDebounce = useCallback((inputs: Record<string, string>) => {
     if (debouncedFnRef.current) {
@@ -172,21 +150,82 @@ export default function EditApp({
   }, [formHook, formOnchangeDebounce]);
 
   const { createCompleted } = useGuideStore();
-  const submitSuccess = async () => {
+
+  const handleOutside = useCallback(async () => {
+    setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
+
+    // Ensure platformEnvs is loaded
+    let envs = platformEnvs;
+    if (!envs?.DESKTOP_DOMAIN) {
+      try {
+        envs = await getPlatformEnv({ insideCloud });
+        setEnvs(envs);
+      } catch (error) {
+        console.error('Failed to get platform envs:', error);
+        return;
+      }
+    }
+
+    const params = new URLSearchParams();
+    ['k', 's', 'bd_vid'].forEach((param) => {
+      const value = router.query[param];
+      if (typeof value === 'string') {
+        params.append(param, value);
+      }
+    });
+
+    const queryString = params.toString();
+
+    const baseUrl = `https://${envs.DESKTOP_DOMAIN}/`;
+    const encodedTemplateQuery = encodeURIComponent(
+      `?templateName=${templateName}&sealos_inside=true`
+    );
+    const templateQuery = `openapp=system-template${encodedTemplateQuery}`;
+    const href = `${baseUrl}${
+      queryString ? `?${queryString}&${templateQuery}` : `?${templateQuery}`
+    }`;
+
+    window.open(href, '_self');
+  }, [router, templateName, platformEnvs, setCached, formHook, insideCloud, setEnvs]);
+
+  const handleInside = useCallback(async () => {
+    const yamls = yamlList.map((item) => item.value);
+    await postDeployApp(yamls, 'create');
+
+    toast({
+      title: t(applySuccess),
+      status: 'success'
+    });
+
+    deleteCached();
+    setAppType(ApplicationType.MyApp);
+    router.push({
+      pathname: '/instance',
+      query: { instanceName: detailName }
+    });
+  }, [applySuccess, yamlList, deleteCached, setAppType, router, detailName, t, toast]);
+
+  const submitError = useCallback(async () => {
+    await formHook.trigger();
+    toast({
+      title: deepSearch(formHook.formState.errors),
+      status: 'error',
+      position: 'top',
+      duration: 3000,
+      isClosable: true
+    });
+  }, [formHook, toast]);
+
+  const submitSuccess = useCallback(async () => {
     if (!createCompleted) {
       return router.push('/instance?instanceName=fastgpt-mock');
     }
-    // const quoteCheckRes = checkQuotaAllow({
-    //   cpu: usage.cpu.max,
-    //   memory: usage.memory.max,
-    //   storage: usage.storage.max
-    // });
 
     setIsLoading(true);
 
     try {
       if (!insideCloud) {
-        handleOutside();
+        await handleOutside();
       } else {
         await handleInside();
       }
@@ -205,66 +244,39 @@ export default function EditApp({
       }
     }
     setIsLoading(false);
-  };
+  }, [insideCloud, createCompleted, setIsLoading, t, router, handleOutside, handleInside]);
 
-  const handleOutside = () => {
-    setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
+  const usage = useMemo(() => {
+    const usage = getResourceUsage(yamlList?.map((item) => item.value) || []);
+    return usage;
+  }, [yamlList]);
 
-    const params = new URLSearchParams();
-    ['k', 's', 'bd_vid'].forEach((param) => {
-      const value = router.query[param];
-      if (typeof value === 'string') {
-        params.append(param, value);
-      }
+  const handleCreateApp = useCallback(() => {
+    // console.log('usage', usage);
+    // Check quota before creating app
+    const exceededQuotaItems = checkExceededQuotas({
+      cpu: usage.cpu.max,
+      memory: usage.memory.max,
+      nodeport: usage.nodeport,
+      storage: usage.storage.max,
+      ...(getSession().subscription?.type === 'PAYG' ? {} : { traffic: 1 })
     });
 
-    const queryString = params.toString();
-
-    const baseUrl = `https://${platformEnvs?.DESKTOP_DOMAIN}/`;
-    const encodedTemplateQuery = encodeURIComponent(
-      `?templateName=${templateName}&sealos_inside=true`
-    );
-    const templateQuery = `openapp=system-template${encodedTemplateQuery}`;
-    const href = `${baseUrl}${
-      queryString ? `?${queryString}&${templateQuery}` : `?${templateQuery}`
-    }`;
-
-    window.open(href, '_self');
-  };
-
-  const handleInside = async () => {
-    const yamls = yamlList.map((item) => item.value);
-    await postDeployApp(yamls, 'create');
-
-    toast({
-      title: t(applySuccess),
-      status: 'success'
-    });
-
-    deleteCached();
-    setAppType(ApplicationType.MyApp);
-    router.push({
-      pathname: '/instance',
-      query: { instanceName: detailName }
-    });
-  };
-
-  const submitError = async () => {
-    await formHook.trigger();
-    toast({
-      title: deepSearch(formHook.formState.errors),
-      status: 'error',
-      position: 'top',
-      duration: 3000,
-      isClosable: true
-    });
-  };
+    if (exceededQuotaItems.length > 0) {
+      setExceededQuotas(exceededQuotaItems);
+      setExceededDialogOpen(true);
+      return;
+    } else {
+      setExceededQuotas([]);
+      formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+    }
+  }, [checkExceededQuotas, usage, getSession, openConfirm, submitSuccess, submitError, formHook]);
 
   const parseTemplate = (res: TemplateSourceType) => {
     try {
       setTemplateSource(res);
       const inputs = getCachedValue() ? JSON.parse(cached) : getTemplateInputDefaultValues(res);
-      const list = generateYamlData(res, inputs);
+      const list = generateYamlData(res, inputs, platformEnvs);
       setYamlList(list);
     } catch (err) {
       console.log(err, 'getTemplateData');
@@ -407,17 +419,11 @@ export default function EditApp({
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
-            applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+            applyCb={handleCreateApp}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
             {/* <QuotaBox /> */}
-            <Form
-              formHook={formHook}
-              pxVal={pxVal}
-              formSource={templateSource!}
-              platformEnvs={platformEnvs!}
-            />
-            {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
+            <Form formHook={formHook} formSource={templateSource!} platformEnvs={platformEnvs!} />
             <ReadMe
               key={templateSource?.readUrl || 'readme_url'}
               readUrl={templateSource?.readUrl || ''}
@@ -429,6 +435,14 @@ export default function EditApp({
       <ConfirmChild />
       <ConfirmChild2 />
       <Loading />
+      <InsufficientQuotaDialog
+        items={exceededQuotas}
+        showControls={false}
+        open={exceededDialogOpen}
+        onOpenChange={setExceededDialogOpen}
+        onConfirm={() => {}}
+        showRequirements={['cpu', 'memory', 'nodeport', 'storage']}
+      />
       {!!errorMessage && (
         <ErrorModal
           title={applyError}
@@ -455,11 +469,18 @@ export async function getServerSideProps(content: any) {
   );
 
   try {
-    const { data: templateSource } = await (
-      await fetch(
-        `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
-      )
-    ).json();
+    const response = await fetch(
+      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
+    );
+    if (!response.ok) {
+      throw new Error(`API request failed with status`);
+    }
+    const result = await response.json();
+    const templateSource = result?.data;
+
+    if (!templateSource || typeof templateSource !== 'object') {
+      throw new Error('Invalid template source data');
+    }
 
     const templateDetail = templateSource?.templateYaml;
     const metaData = {

@@ -5,14 +5,16 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
-import Router from 'next/router';
+import Router, { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { GTMScript } from '@sealos/gtm';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
-import '@/styles/globals.scss';
-import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
+import '@/styles/globals.css';
+import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
+import useAppStore from '@/stores/app';
+import useSessionStore from '@/stores/session';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,13 +31,19 @@ Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
   const { i18n } = useTranslation();
+
+  const router = useRouter();
+
   const { initAppConfig, layoutConfig } = useConfigStore();
-  const { setBlockingPageUnload } = useAppsRunningPromptStore();
+  const appStore = useAppStore();
+  const joinDiscordPromptStore = useJoinDiscordPromptStore();
 
   useEffect(() => {
-    // Reset blocking status when opening desktop
-    setBlockingPageUnload(true);
-  }, []);
+    // Block discord prompt under certain circumstances.
+    if (Object.hasOwn(router.query, 'openapp') || appStore.autolaunch) {
+      joinDiscordPromptStore.blockAutoOpen();
+    }
+  }, [router.query, joinDiscordPromptStore]);
 
   useEffect(() => {
     initAppConfig();
@@ -46,6 +54,26 @@ const App = ({ Component, pageProps }: AppProps) => {
     i18n?.changeLanguage?.(lang);
   }, [i18n]);
 
+  // Record user's last activity time when leaving the page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        const { isUserLogin, token } = useSessionStore.getState();
+        if (isUserLogin() && token) {
+          // Use sendBeacon to ensure the request is sent even when the page is unloading
+          // Put token in query params since sendBeacon cannot set custom headers
+          const url = `/api/account/updateActivity?token=${encodeURIComponent(token)}`;
+          navigator.sendBeacon(url, JSON.stringify({}));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <GTMScript
@@ -54,7 +82,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         debug={process.env.NODE_ENV === 'development'}
       />
       <Hydrate state={pageProps.dehydratedState}>
-        <ChakraProvider theme={theme}>
+        <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
           <Component {...pageProps} />
         </ChakraProvider>
       </Hydrate>

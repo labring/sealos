@@ -14,16 +14,19 @@ export interface SourcePrice {
 export interface Env {
   documentUrlZH: string;
   documentUrlEN: string;
+  privacyUrlZH: string;
+  privacyUrlEN: string;
   sealosDomain: string;
   ingressSecret: string;
   registryAddr: string;
-  privacyUrl: string;
   devboxAffinityEnable: string;
   squashEnable: string;
   namespace: string;
   rootRuntimeNamespace: string;
   ingressDomain: string;
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
+  enableImportFeature: string;
+  enableWebideFeature: string;
 }
 
 export interface RuntimeTypeMap {

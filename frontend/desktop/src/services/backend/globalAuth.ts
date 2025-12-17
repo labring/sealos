@@ -1,6 +1,7 @@
 import { uploadConvertData } from '@/api/platform';
 import { generateAuthenticationToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
+import { AuthError } from '@/services/backend/errors';
 import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
@@ -418,20 +419,22 @@ export const getGlobalToken = async ({
       return null;
     }
     if (!_user) {
-      throw new Error('Username or password is invalid.');
+      throw new AuthError('User not found.', 'USER_NOT_FOUND');
     } else {
       const result = await signInByPassword({
         id: providerId,
         password
       });
       // password is wrong
-      if (!result) return null;
+      if (!result) {
+        throw new AuthError('Incorrect password.', 'INCORRECT_PASSWORD');
+      }
       user = result.user;
     }
   } else {
     if (!_user) {
       // sign up
-      if (!enableSignUp()) throw new Error('Failed to signUp user');
+      if (!enableSignUp()) throw new AuthError('Failed to signUp user', 'SIGNUP_FAILED');
       let signUpResult;
       if (forceBindEmail(provider)) {
         // check email
@@ -502,7 +505,7 @@ export const getGlobalToken = async ({
       result && (user = result.user);
     }
   }
-  if (!user) throw new Error('Failed to edit db');
+  if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
   if (!forceBindEmail(provider) && email) {
     try {

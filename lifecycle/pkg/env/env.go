@@ -73,12 +73,20 @@ func (p *processor) RenderAll(host, dir string, envs map[string]string) error {
 }
 
 func (p *processor) getHostEnvInCache(hostIP string) map[string]string {
+	p.mu.Lock()
+	v, ok := p.cache[hostIP]
+	p.mu.Unlock()
+	if ok {
+		return v
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if v, ok := p.cache[hostIP]; ok {
 		return v
 	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	v := p.getHostEnv(hostIP)
+
+	v = p.getHostEnv(hostIP)
 	p.cache[hostIP] = v
 	return v
 }

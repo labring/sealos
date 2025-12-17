@@ -43,7 +43,7 @@ func (p *Pool) Wait() {
 
 func (p *Pool) Run(size int) {
 	p.wg.Add(size)
-	for i := 0; i < size; i++ {
+	for range size {
 		go func() {
 			for f := range p.work {
 				f()

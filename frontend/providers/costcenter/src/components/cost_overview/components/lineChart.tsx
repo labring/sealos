@@ -129,7 +129,14 @@ export default function Trend({
       left: '40px',
       right: '5px'
     },
-    color: ['#485264', '#13C4B9', '#11B6FC', '#8774EE', '#C172E7'],
+    color: [
+      // Does not support CSS vars here.
+      '#49AEFF',
+      '#00D1B5',
+      '#A78BFA',
+      '#F59E0B',
+      '#22D3EE'
+    ],
     tooltip: {
       trigger: 'axis',
       // borderWidth: 0,

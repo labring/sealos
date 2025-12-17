@@ -17,14 +17,23 @@ const nextConfig = {
     config.plugins = [...config.plugins];
     if (!isServer) {
       config.resolve.fallback = {
-        fs: false,
+        fs: false
       };
     }
     return config;
   },
   transpilePackages: ['@sealos/driver', '@sealos/ui'],
   experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../../')
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+    instrumentationHook: true
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/v2alpha/doc',
+        destination: '/doc/v2alpha'
+      }
+    ];
   }
 };
 

@@ -124,6 +124,7 @@ model User {
   uid                         String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt                   DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt                   DateTime                   @updatedAt @db.Timestamptz(3)
+  lastActivityTime            DateTime?                  @db.Timestamptz(3)
   avatarUri                   String
   nickname                    String
   id                          String                     @unique

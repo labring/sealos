@@ -7,7 +7,7 @@ export const useI18n = (): { lng: string } => useContext(I18nContext);
 
 export function I18nProvider({
   children,
-  lng
+  lng,
 }: {
   children: React.ReactNode;
   lng: string;

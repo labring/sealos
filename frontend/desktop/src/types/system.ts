@@ -23,6 +23,7 @@ export type CommonConfigType = {
   applaunchpadUrl: string;
   dbproviderUrl: string;
   trackingEnabled: boolean;
+  licenseCheckEnabled?: boolean;
 };
 export type CommonClientConfigType = DeepRequired<
   Omit<
@@ -70,8 +71,13 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  authBackgroundImage?: {
+    zh: string;
+    en: string;
+  };
   meta: MetaConfigType;
   customerServiceURL?: string;
+  discordInviteLink?: string;
   forcedLanguage?: string;
   currencySymbol?: 'shellCoin' | 'cny' | 'usd';
   protocol?: ProtocolConfigType;
@@ -82,6 +88,11 @@ export type LayoutConfigType = {
     docsUrl?: string;
     aiAssistantEnabled: boolean;
     bannerEnabled: boolean;
+    subscriptionEnabled: boolean;
+    guestModeEnabled?: boolean;
+    emailAlertEnabled: boolean;
+    phoneAlertEnabled: boolean;
+    announcementEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -165,7 +176,6 @@ export type AuthConfigType = {
     };
   };
   captcha?: {
-    enabled: boolean;
     ali?: {
       enabled: boolean;
       sceneId: string;
@@ -174,10 +184,8 @@ export type AuthConfigType = {
       accessKeyID: string;
       accessKeySecret?: string;
     };
-  };
-  turnstile?: {
-    enabled: boolean;
-    cloudflare?: {
+    turnstile?: {
+      enabled: boolean;
       siteKey: string;
       secretKey: string;
     };
@@ -221,7 +229,7 @@ export type AuthClientConfigType = {
       'captcha.ali.accessKeySecret',
       'captcha.ali.endpoint',
       // turnstile
-      'turnstile.cloudflare.secretKey'
+      'captcha.turnstile.secretKey'
     ]
   >
 >;
@@ -279,7 +287,8 @@ export const DefaultCommonClientConfig: CommonClientConfigType = {
   realNameReward: 0,
   guideEnabled: false,
   rechargeEnabled: false,
-  cfSiteKey: ''
+  cfSiteKey: '',
+  licenseCheckEnabled: false
 };
 
 export const DefaultCloudConfig: CloudConfigType = {
@@ -317,7 +326,12 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     workorderEnabled: false,
     accountSettingEnabled: false,
     aiAssistantEnabled: false,
-    bannerEnabled: false
+    bannerEnabled: false,
+    subscriptionEnabled: false,
+    guestModeEnabled: false,
+    emailAlertEnabled: false,
+    phoneAlertEnabled: false,
+    announcementEnabled: false
   },
   gtmId: null
 };
@@ -326,12 +340,6 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
   hasBaiduToken: false,
   invite: {
     enabled: false
-  },
-  turnstile: {
-    enabled: false,
-    cloudflare: {
-      siteKey: ''
-    }
   },
   callbackURL: 'https://cloud.sealos.io/callback',
   idp: {
@@ -374,11 +382,14 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
   },
   billingToken: '',
   captcha: {
-    enabled: false,
     ali: {
       enabled: false,
       sceneId: '',
       prefix: ''
+    },
+    turnstile: {
+      enabled: false,
+      siteKey: ''
     }
   }
 };

@@ -467,7 +467,7 @@ const DevboxList = ({
       {
         id: 'actions',
         header: ({ column }) => <span className="select-none">{t('action')}</span>,
-        size: 270,
+        size: 300,
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -477,6 +477,9 @@ const DevboxList = ({
                 sshPort={item.sshPort}
                 status={item.status}
                 runtimeType={item.template.templateRepository.iconId as string}
+                leftButtonProps={{
+                  className: 'border-r-1 w-36 rounded-r-none px-2'
+                }}
               />
               <Button
                 variant="secondary"
@@ -659,13 +662,20 @@ const DevboxList = ({
         </div>
         {/* pagination */}
         {table.getRowModel().rows.length > 0 && (
-          <Pagination
-            currentPage={table.getState().pagination.pageIndex + 1}
-            totalPages={table.getPageCount()}
-            pageSize={table.getState().pagination.pageSize}
-            totalItems={table.getFilteredRowModel().rows.length}
-            onPageChange={(page) => table.setPageIndex(page - 1)}
-          />
+          <div className="flex items-center justify-between gap-2.5 pt-2 text-sm/5 text-zinc-500">
+            <span>{t('Total') + ': ' + table.getFilteredRowModel().rows.length}</span>
+            <div className="flex items-center gap-3">
+              <Pagination
+                currentPage={table.getState().pagination.pageIndex + 1}
+                totalPages={table.getPageCount()}
+                onPageChange={(page) => table.setPageIndex(page - 1)}
+              />
+              <div className="flex items-center gap-1">
+                <span className="text-zinc-900">{table.getState().pagination.pageSize}</span>/
+                <span>{t('Page')}</span>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

@@ -20,7 +20,7 @@ import clsx from 'clsx';
 import { produce } from 'immer';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 import { TNotification } from '@/types';
 import { listNotification } from '@/api/platform';
 import { TriangleAlert, X } from 'lucide-react';
@@ -203,7 +203,7 @@ export default function Notification(props: NotificationProps) {
                   pr={'16px'}
                   borderBottom={'1px solid #F4F4F5'}
                 >
-                  <Text>{t('common:alert')}</Text>
+                  <Text>{t('common:notification_alert')}</Text>
                   <Flex alignItems={'center'} gap={'12px'} ml={'auto'} cursor={'pointer'}>
                     <Text
                       color={'#1C4EF5'}

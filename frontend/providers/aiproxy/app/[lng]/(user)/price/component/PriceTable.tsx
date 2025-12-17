@@ -1,61 +1,63 @@
-'use client'
+'use client';
+import { useMemo, useState } from 'react';
 import {
+  Badge,
   Box,
+  Button,
+  Center,
   Flex,
-  Text,
+  Spinner,
   Table,
   TableContainer,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
-  Center,
-  Spinner,
-  Button,
-  Badge,
-  useDisclosure
-} from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useMemo, useState } from 'react'
+  useDisclosure,
+} from '@chakra-ui/react';
+import { CurrencySymbol } from '@sealos/ui';
 import {
   createColumnHelper,
+  flexRender,
   getCoreRowModel,
   useReactTable,
-  flexRender
-} from '@tanstack/react-table'
-import { CurrencySymbol } from '@sealos/ui'
-import { MyTooltip } from '@/components/common/MyTooltip'
-import { ModelConfig } from '@/types/models/model'
-import { getTranslationWithFallback } from '@/utils/common'
-import { useBackendStore } from '@/store/backend'
-import ApiDocDrawer from './ApiDoc'
-import { ModelComponent } from './Model'
-import { getTypeStyle } from './Model'
+} from '@tanstack/react-table';
 
-type SortDirection = 'asc' | 'desc' | false
+import { useTranslationClientSide } from '@/app/i18n/client';
+import { MyTooltip } from '@/components/common/MyTooltip';
+import { useI18n } from '@/providers/i18n/i18nContext';
+import { useBackendStore } from '@/store/backend';
+import { ModelConfig } from '@/types/models/model';
+import { getTranslationWithFallback } from '@/utils/common';
+
+import ApiDocDrawer from './ApiDoc';
+import { ModelComponent } from './Model';
+import { getTypeStyle } from './Model';
+
+type SortDirection = 'asc' | 'desc' | false;
 
 export function PriceTable({
   modelConfigs,
-  isLoading
+  isLoading,
 }: {
-  modelConfigs: ModelConfig[]
-  isLoading: boolean
+  modelConfigs: ModelConfig[];
+  isLoading: boolean;
 }) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null)
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, 'common');
+  const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const handleOpenApiDoc = (modelConfig: ModelConfig) => {
-    setSelectedModel(modelConfig)
-    onOpen()
-  }
+    setSelectedModel(modelConfig);
+    onOpen();
+  };
 
-  const { currencySymbol } = useBackendStore()
+  const { currencySymbol } = useBackendStore();
 
-  const columnHelper = createColumnHelper<ModelConfig>()
+  const columnHelper = createColumnHelper<ModelConfig>();
   const columns = [
     columnHelper.accessor((row) => row.model, {
       id: 'model',
@@ -66,11 +68,12 @@ export function PriceTable({
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
+          letterSpacing="0.5px"
+        >
           {t('key.name')}
         </Text>
       ),
-      cell: (info) => <ModelComponent modelConfig={info.row.original} />
+      cell: (info) => <ModelComponent modelConfig={info.row.original} />,
     }),
     columnHelper.accessor((row) => row.type, {
       id: 'type',
@@ -81,7 +84,8 @@ export function PriceTable({
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
+          letterSpacing="0.5px"
+        >
           {t('key.modelType')}
         </Text>
       ),
@@ -92,14 +96,16 @@ export function PriceTable({
           justifyContent="center"
           alignItems="center"
           borderRadius="4px"
-          background={getTypeStyle(info.getValue()).background}>
+          background={getTypeStyle(info.getValue()).background}
+        >
           <Text
             color={getTypeStyle(info.getValue()).color}
             fontFamily="PingFang SC"
             fontSize="12px"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {getTranslationWithFallback(
               `modeType.${String(info.getValue())}`,
               'modeType.0',
@@ -107,7 +113,7 @@ export function PriceTable({
             )}
           </Text>
         </Badge>
-      )
+      ),
     }),
     columnHelper.accessor((row) => row.rpm, {
       id: 'rpm',
@@ -119,7 +125,8 @@ export function PriceTable({
             fontSize="12px"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
+            letterSpacing="0.5px"
+          >
             {t('price.modelRpm')}
           </Text>
           <MyTooltip
@@ -134,16 +141,19 @@ export function PriceTable({
                 fontSize="12px"
                 fontWeight={400}
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.5px"
+              >
                 {t('price.modelRpmTooltip')}
               </Text>
-            }>
+            }
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="15"
               height="14"
               viewBox="0 0 15 14"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -161,30 +171,91 @@ export function PriceTable({
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
+          letterSpacing="0.5px"
+        >
           {info.getValue()}
         </Text>
-      )
+      ),
     }),
-    columnHelper.accessor(
-      (row) => row.price.input_price ?? row.price.output_price ?? row.price.per_request_price ?? 0,
-      {
-        id: 'input_price',
-        header: () => (
-          <Text
-            color="grayModern.600"
-            fontFamily="PingFang SC"
-            fontSize="12px"
-            fontWeight={500}
-            lineHeight="16px"
-            mr={'4px'}
-            letterSpacing="0.5px">
-            {t('pricing')}
-          </Text>
-        ),
-        cell: (info) => {
-          if (info.row.original.price.per_request_price) {
-            return (
+    columnHelper.accessor((row) => row.price ?? 0, {
+      id: 'input_price',
+      header: () => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          mr={'4px'}
+          letterSpacing="0.5px"
+        >
+          {t('pricing')}
+        </Text>
+      ),
+      cell: (info) => {
+        if (info.row.original.config?.limited_time_free) {
+          return (
+            <Flex alignItems="center">
+              <Text
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                mr="4px"
+              >
+                {t('price.limitedTimeFree')}
+              </Text>
+            </Flex>
+          );
+        }
+        if (!info.row.original.price || Object.keys(info.row.original.price).length === 0) {
+          return (
+            <Flex alignItems="center">
+              <Text
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                mr="4px"
+              >
+                {t('price.freeLabel')}
+              </Text>
+            </Flex>
+          );
+        }
+        if (info.row.original.price.per_request_price) {
+          return (
+            <Flex alignItems="center">
+              <Text
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                mr="4px"
+              >
+                {t('price.fixedPrice')}: {info.row.original.price.per_request_price}
+              </Text>
+              <CurrencySymbol
+                type={currencySymbol}
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+              />
+            </Flex>
+          );
+        }
+        return (
+          <Flex direction="column" gap="8px">
+            {info.row.original.price.input_price && (
               <Flex alignItems="center">
                 <Text
                   color="grayModern.600"
@@ -193,8 +264,9 @@ export function PriceTable({
                   fontWeight={500}
                   lineHeight="16px"
                   letterSpacing="0.5px"
-                  mr="4px">
-                  {t('price.fixedPrice')}: {info.row.original.price.per_request_price}
+                  mr="4px"
+                >
+                  {t('key.inputPrice')}: {info.row.original.price.input_price}
                 </Text>
                 <CurrencySymbol
                   type={currencySymbol}
@@ -212,85 +284,122 @@ export function PriceTable({
                   fontWeight={500}
                   lineHeight="16px"
                   letterSpacing="0.5px"
-                  textTransform="lowercase">
+                  textTransform="lowercase"
+                >
                   /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>
-            )
-          }
-          return (
-            <Flex direction="column" gap="8px">
-              {info.row.original.price.input_price && (
-                <Flex alignItems="center">
-                  <Text
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    mr="4px">
-                    {t('key.inputPrice')}: {info.row.original.price.input_price}
-                  </Text>
-                  <CurrencySymbol
-                    type={currencySymbol}
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                  />
-                  <Text
-                    color="grayModern.500"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    textTransform="lowercase">
-                    /{t('price.per1kTokens').toLowerCase()}
-                  </Text>
-                </Flex>
-              )}
-              {info.row.original.price.output_price && (
-                <Flex alignItems="center">
-                  <Text
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    mr="4px">
-                    {t('key.outputPrice')}: {info.row.original.price.output_price}
-                  </Text>
-                  <CurrencySymbol
-                    type={currencySymbol}
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                  />
-                  <Text
-                    color="grayModern.500"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    textTransform="lowercase">
-                    /{t('price.per1kTokens').toLowerCase()}
-                  </Text>
-                </Flex>
-              )}
-            </Flex>
-          )
-        }
-      }
-    ),
+            )}
+            {info.row.original.price.output_price && (
+              <Flex alignItems="center">
+                <Text
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  mr="4px"
+                >
+                  {t('key.outputPrice')}: {info.row.original.price.output_price}
+                </Text>
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase"
+                >
+                  /{t('price.per1kTokens').toLowerCase()}
+                </Text>
+              </Flex>
+            )}
+            {info.row.original.price.image_input_price && (
+              <Flex alignItems="center">
+                <Text
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  mr="4px"
+                >
+                  {t('price.imageInputPrice')}: {info.row.original.price.image_input_price}
+                </Text>
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase"
+                >
+                  /{t('price.per1kTokens').toLowerCase()}
+                </Text>
+              </Flex>
+            )}
+            {info.row.original.price.thinking_mode_output_price && (
+              <Flex alignItems="center">
+                <Text
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  mr="4px"
+                >
+                  {t('price.thinkingModeOutputPrice')}:{' '}
+                  {info.row.original.price.thinking_mode_output_price}
+                </Text>
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase"
+                >
+                  /{t('price.per1kTokens').toLowerCase()}
+                </Text>
+              </Flex>
+            )}
+          </Flex>
+        );
+      },
+    }),
     columnHelper.display({
       header: () => (
         <Text
@@ -299,12 +408,13 @@ export function PriceTable({
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
+          letterSpacing="0.5px"
+        >
           {t('logs.actions')}
         </Text>
       ),
       cell: ({ row }) => {
-        const modelConfig = row.original
+        const modelConfig = row.original;
         return (
           <Button
             onClick={() => handleOpenApiDoc(modelConfig)}
@@ -321,25 +431,27 @@ export function PriceTable({
             transition="all 0.2s ease"
             _hover={{
               transform: 'scale(1.05)',
-              transition: 'transform 0.2s ease'
+              transition: 'transform 0.2s ease',
             }}
             _active={{
               transform: 'scale(0.92)',
-              animation: 'pulse 0.3s ease'
+              animation: 'pulse 0.3s ease',
             }}
             sx={{
               '@keyframes pulse': {
                 '0%': { transform: 'scale(0.92)' },
                 '50%': { transform: 'scale(0.96)' },
-                '100%': { transform: 'scale(0.92)' }
-              }
-            }}>
+                '100%': { transform: 'scale(0.92)' },
+              },
+            }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="12"
               height="12"
               viewBox="0 0 12 12"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -354,25 +466,26 @@ export function PriceTable({
               fontSize="11px"
               fontWeight={500}
               lineHeight="16px"
-              letterSpacing="0.5px">
+              letterSpacing="0.5px"
+            >
               {t('logs.detail')}
             </Text>
           </Button>
-        )
+        );
       },
-      id: 'detail'
-    })
-  ]
+      id: 'detail',
+    }),
+  ];
 
   const tableData = useMemo(() => {
-    return modelConfigs
-  }, [modelConfigs])
+    return modelConfigs;
+  }, [modelConfigs]);
 
   const table = useReactTable({
     data: tableData,
     columns,
-    getCoreRowModel: getCoreRowModel()
-  })
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <>
@@ -388,7 +501,8 @@ export function PriceTable({
                     borderTopLeftRadius={i === 0 ? '6px' : '0'}
                     borderBottomLeftRadius={i === 0 ? '6px' : '0'}
                     borderTopRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
-                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}>
+                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
+                  >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </Th>
                 ))}
@@ -403,7 +517,8 @@ export function PriceTable({
                   textAlign="center"
                   border="none"
                   height="100%"
-                  width="100%">
+                  width="100%"
+                >
                   <Center h="200px">
                     <Spinner size="md" color="grayModern.800" />
                   </Center>
@@ -416,7 +531,8 @@ export function PriceTable({
                   height="48px"
                   alignSelf="stretch"
                   borderBottom="1px solid"
-                  borderColor="grayModern.150">
+                  borderColor="grayModern.150"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <Td key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -432,5 +548,5 @@ export function PriceTable({
         <ApiDocDrawer isOpen={isOpen} onClose={onClose} modelConfig={selectedModel} />
       )}
     </>
-  )
+  );
 }

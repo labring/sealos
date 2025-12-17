@@ -1,20 +1,22 @@
 package types
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type PaymentRaw struct {
-	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
-	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
-	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text"`
-	Method          string    `gorm:"type:text;not null"`
-	Amount          int64     `gorm:"type:bigint;not null"`
-	Gift            int64     `gorm:"type:bigint"`
+	UserUID         uuid.UUID     `gorm:"column:userUid;type:uuid;not null"`
+	RegionUID       uuid.UUID     `gorm:"column:regionUid;type:uuid;not null"`
+	CreatedAt       time.Time     `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	RegionUserOwner string        `gorm:"column:regionUserOwner;type:text"`
+	Method          PaymentMethod `gorm:"type:text;not null"`
+	Amount          int64         `gorm:"type:bigint;not null"`
+	Gift            int64         `gorm:"type:bigint"`
 	// 订单号
 	TradeNO string `gorm:"type:text;unique;not null"`
 	// CodeURL is the codeURL of wechatpay
@@ -23,19 +25,59 @@ type PaymentRaw struct {
 	Remark       string       `gorm:"type:text"`
 	ActivityType ActivityType `gorm:"type:text;column:activityType"`
 	Message      string       `gorm:"type:text;not null"`
-	//TODO 初始化判断 新加字段
-	CardUID      *uuid.UUID    `gorm:"type:uuid"`
-	Type         PaymentType   `gorm:"type:text"` // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
-	ChargeSource ChargeSource  `gorm:"type:text"`
-	Status       PaymentStatus `gorm:"type:text;column:status;not null"`
+	// TODO 初始化判断 新加字段
+	CardUID                 *uuid.UUID    `gorm:"type:uuid"`
+	Type                    PaymentType   `gorm:"type:text"`                              // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
+	ChargeSource            ChargeSource  `gorm:"type:text"`                              // 支付来源: 余额支付, 新卡支付, 绑卡支付, Stripe支付
+	Status                  PaymentStatus `gorm:"type:text;column:status;default:'PAID'"` // 支付状态: PAID, REFUNDED, EXPIRED
+	WorkspaceSubscriptionID *uuid.UUID    `gorm:"type:uuid;column:workspace_subscription_id;not null"`
+	Stripe                  *StripePay    `gorm:"column:stripe;type:json"` // Stripe 相关信息
+}
+
+type StripePay struct {
+	SubscriptionID string `json:"subscriptionId"`
+	CustomerID     string `json:"customerId"`
+	SessionID      string `json:"sessionId"`
+}
+
+func (s *StripePay) Value() (driver.Value, error) {
+	if s == nil {
+		return nil, nil
+	}
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return string(data), nil
+}
+
+func (s *StripePay) Scan(value any) error {
+	if value == nil {
+		*s = StripePay{}
+		return nil
+	}
+	var data []byte
+	switch value := value.(type) {
+	case []byte:
+		data = value
+	case string:
+		data = []byte(value)
+	default:
+		return fmt.Errorf("unexpected type for StripePay: %T", value)
+	}
+	if err := json.Unmarshal(data, s); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON into StripePay: %w", err)
+	}
+	return nil
 }
 
 type ChargeSource string
 
 const (
-	ChargeSourceBalance  ChargeSource = "BALANCE"
+	ChargeSourceBalance  ChargeSource = "balance"
 	ChargeSourceNewCard  ChargeSource = "CARD"
 	ChargeSourceBindCard ChargeSource = "BIND_CARD"
+	ChargeSourceStripe   ChargeSource = "stripe" // Stripe 相关支付
 )
 
 type PaymentOrder struct {
@@ -55,6 +97,7 @@ type (
 const (
 	PaymentStatusPAID     PaymentStatus = "PAID"
 	PaymentStatusRefunded PaymentStatus = "REFUNDED"
+	PaymentStatusExpired  PaymentStatus = "EXPIRED"
 )
 
 const (
@@ -103,7 +146,7 @@ type CardInfo struct {
 	CreatedAt            time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	NetworkTransactionID string    `gorm:"type:text"`
 	Default              bool      `gorm:"type:boolean;default:false"`
-	//上次支付状态
+	// 上次支付状态
 	LastPaymentStatus PaymentOrderStatus `gorm:"type:text"`
 }
 
@@ -131,7 +174,7 @@ type PaymentNotification struct {
 	GrossSettlementAmount    *Amount           `json:"grossSettlementAmount,omitempty"`
 	SettlementQuote          *Quote            `json:"settlementQuote,omitempty"`
 	AcquirerReferenceNo      string            `json:"acquirerReferenceNo,omitempty"`
-	PaymentResultInfo        interface{}       `json:"paymentResultInfo,omitempty"`
+	PaymentResultInfo        any               `json:"paymentResultInfo,omitempty"`
 	PromotionResult          []PromotionResult `json:"promotionResult,omitempty"`
 	PaymentMethodType        string            `json:"paymentMethodType,omitempty"`
 }
@@ -172,8 +215,10 @@ type Result struct {
 	ResultStatus  string `json:"resultStatus"`
 }
 
-const NotifyTypePaymentResult = "PAYMENT_RESULT"
-const NotifyTypeCaptureResult = "CAPTURE_RESULT"
+const (
+	NotifyTypePaymentResult = "PAYMENT_RESULT"
+	NotifyTypeCaptureResult = "CAPTURE_RESULT"
+)
 
 const OrderClosedResultCode = "ORDER_IS_CLOSED"
 
@@ -189,7 +234,10 @@ type CommonResponse struct {
 }
 
 func (c *CommonResponse) Raw() []byte {
-	data, _ := json.Marshal(c)
+	data, err := json.Marshal(c)
+	if err != nil {
+		return nil
+	}
 	return data
 }
 
@@ -223,19 +271,24 @@ type CaptureResponse struct {
 
 // Raw 返回JSON格式的字节数组
 func (c *CaptureResponse) Raw() []byte {
-	data, _ := json.Marshal(c)
+	data, err := json.Marshal(c)
+	if err != nil {
+		return nil
+	}
 	return data
 }
 
 type PaymentRefund struct {
-	TradeNo string `json:"tradeNo" gorm:"type:uuid;not null"`
-	ID      string `json:"Id" gorm:"type:string;not null"`           //外键 跟payment关联
-	Method  string `json:"method" gorm:"type:varchar(255);not null"` // 退款方式
-	//OutTradeNo   string    `json:"outTradeNo" gorm:"type:uuid"`
-	RefundNo     string    `json:"refundNo" gorm:"type:string;not null"`
+	RowID   string        `json:"rowid"        gorm:"type:uuid;column:rowid;primaryKey;default:gen_random_uuid()"` // CockroachDB 主键
+	TradeNo string        `json:"tradeNo"      gorm:"type:string;not null"`
+	OrderID string        `json:"OrderId"      gorm:"type:string;not null"`       // 外键 跟payment关联，不再唯一
+	ID      string        `json:"Id"           gorm:"type:string"`                // 保持兼容性
+	Method  PaymentMethod `json:"method"       gorm:"type:varchar(255);not null"` // 退款方式
+	// OutTradeNo   string    `json:"outTradeNo" gorm:"type:uuid"`
+	RefundNo     string    `json:"refundNo"     gorm:"type:string;not null"`
 	RefundAmount int64     `json:"refundAmount" gorm:"type:float;not null"`
 	DeductAmount int64     `json:"deductAmount" gorm:"type:float;not null"` // 从 account的 balance里面扣款
-	CreatedAt    time.Time `json:"createdAt" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	CreatedAt    time.Time `json:"createdAt"    gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	RefundReason string    `json:"refundReason" gorm:"type:text"`
 }
 
@@ -244,14 +297,15 @@ func (PaymentRefund) TableName() string {
 }
 
 type Corporate struct {
-	UserUID             string    `json:"userUid" gorm:"type:string;not null"`
-	ID                  string    `json:"Id" gorm:"type:string;not null"`
+	UserUID             string    `json:"userUid"             gorm:"type:string;not null"`
+	ID                  string    `json:"Id"                  gorm:"type:string;not null"`
 	ReceiptSerialNumber string    `json:"receiptSerialNumber" gorm:"type:string;not null"`
-	PayerName           string    `json:"payerName" gorm:"type:varchar(255);not null"`
-	PaymentAmount       int64     `json:"paymentAmount" gorm:"type:float;not null"`
-	GiftAmount          int64     `json:"giftAmount" gorm:"type:float;not null"`
-	PayDate             time.Time `json:"payDate" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	CreationDate        time.Time `json:"creationDate" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	PayerName           string    `json:"payerName"           gorm:"type:varchar(255);not null"`
+	PaymentAmount       int64     `json:"paymentAmount"       gorm:"type:float;not null"`
+	GiftAmount          int64     `json:"giftAmount"          gorm:"type:float;not null"`
+	PayDate             time.Time `json:"payDate"             gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	CreationDate        time.Time `json:"creationDate"        gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	Type                string    `json:"type"                gorm:"type:varchar(255);not null"`
 }
 
 func (Corporate) TableName() string {

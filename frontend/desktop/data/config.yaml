@@ -19,6 +19,7 @@ common:
   apiEnabled: false
   rechargeEnabled: false
   cfSiteKey: ""
+  licenseCheckEnabled: false
 database:
   mongodbURI: "thisismongodburi"
   globalCockroachdbURI: "thisisglobalcockroachdburi"
@@ -28,11 +29,12 @@ desktop:
     title: "Sealos Cloud"
     logo: "/logo.png"
     backgroundImage: "/images/bg-blue.svg"
+    discordInviteLink: "https://discord.gg/"
     meta:
       title: "Sealos Cloud"
       description: "Sealos Cloud"
       keywords: "Sealos Cloud"
-      scripts: []
+      scripts: [ ]
     common:
       githubStarEnabled: false
       workorderEnabled: false
@@ -40,6 +42,11 @@ desktop:
       docsUrl: "https://sealos.run/docs/Intro/"
       aiAssistantEnabled: false
       bannerEnabled: false
+      subscriptionEnabled: false
+      guestModeEnabled: false
+      emailAlertEnabled: false
+      phoneAlertEnabled: false
+      announcementEnabled: false
     gtmId: null
   auth:
     proxyAddress: ""

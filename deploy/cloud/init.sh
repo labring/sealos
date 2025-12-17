@@ -1,23 +1,5 @@
 #!/bin/bash
 set -e
-export readonly ARCH=${1:-amd64}
-mkdir -p tars
-
-RetryPullImageInterval=1000
-RetrySleepSeconds=15
-
-retryPullImage() {
-    local image=$1
-    local retry=0
-    set +e
-    while [ $retry -lt $RetryPullImageInterval ]; do
-        sealos pull --policy=always --platform=linux/"${ARCH}" $image >/dev/null && break
-        retry=$(($retry + 1))
-        echo "retry pull image $image, retry times: $retry"
-        sleep $RetrySleepSeconds
-    done
-    set -e
-}
 
 declare -A images=(
   # controllers
@@ -46,13 +28,15 @@ declare -A images=(
   ["ghcr.io/labring/sealos-cloud-job-heartbeat-controller:latest"]="job-heartbeat.tar"
 )
 
-mkdir -p tars
+mkdir -p images/shim
+
+echo ""  > images/shim/allImage.txt
 
 for img in "${!images[@]}"; do
   echo "=== Pulling $img ==="
-  retryPullImage "$img"
-
-  tar_name=${images[$img]}
-  echo "=== Saving $img to tars/$tar_name ==="
-  sealos save -o "tars/$tar_name" "$img"
+  echo "$img" >> images/shim/allImage.txt
+  while ! sealos registry save --registry-dir=registry --images="$img"; do
+    echo "Failed to pull $img, retrying..."
+    sleep 5
+  done
 done

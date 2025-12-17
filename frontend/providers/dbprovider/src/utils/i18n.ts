@@ -4,7 +4,7 @@ import { LANG_KEY } from './cookieUtils';
 export const serviceSideProps = (content: any) => {
   return serverSideTranslations(
     content.req.cookies[LANG_KEY] || 'zh',
-    undefined,
+    ['common'],
     null,
     content.locales
   );

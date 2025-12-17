@@ -17,7 +17,7 @@ limitations under the License.
 package controllers
 
 //
-//import (
+// import (
 //	"context"
 //	"fmt"
 //	"reflect"
@@ -47,7 +47,7 @@ package controllers
 //	"github.com/labring/sealos/controllers/pkg/types"
 //)
 //
-//type ActivityReconciler struct {
+// type ActivityReconciler struct {
 //	client.Client
 //	Scheme   *runtime.Scheme
 //	Logger   logr.Logger
@@ -68,7 +68,7 @@ package controllers
 ////
 //// For more details, check Reconcile and its Result here:
 //// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-//func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 //	r.Logger = log.FromContext(ctx)
 //
 //	account := &accountv1.Account{}
@@ -93,7 +93,7 @@ package controllers
 //	return ctrl.Result{}, nil
 //}
 //
-//func (r *ActivityReconciler) handleBonus(account *accountv1.Account, annotations map[string]string, amount int64) error {
+// func (r *ActivityReconciler) handleBonus(account *accountv1.Account, annotations map[string]string, amount int64) error {
 //	if err := SyncAccountStatus(context.Background(), r.Client, account); err != nil {
 //		return fmt.Errorf("update account status failed: %v", err)
 //	}
@@ -121,7 +121,7 @@ package controllers
 //	return nil
 //}
 //
-//func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) (annotations map[string]string, amount int64, err error) {
+// func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) (annotations map[string]string, amount int64, err error) {
 //	for activityType, userActivity := range userActivities {
 //		activity, exist := r.Activity[activityType]
 //		if !exist {
@@ -151,7 +151,7 @@ package controllers
 //}
 //
 //// SetupWithManager sets up the controller with the Manager.
-//func (r *ActivityReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
+// func (r *ActivityReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 //	const controllerName = "activity_controller"
 //	r.Logger = ctrl.Log.WithName(controllerName)
 //	return ctrl.NewControllerManagedBy(mgr).

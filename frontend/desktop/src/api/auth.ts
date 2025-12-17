@@ -18,6 +18,7 @@ import { ValueOf } from '@/types/tools';
 import { TUserExist } from '@/types/user';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
+import { SubscriptionInfoResponse, WorkspacesPlansResponse } from '@/types/plan';
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
@@ -231,10 +232,16 @@ export const _initRegionToken = (request: AxiosInstance) => (data: InitRegionTok
     data
   );
 
+export const _autoInitRegionToken = (request: AxiosInstance) => () =>
+  request.post<never, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
+    '/api/auth/autoInitRegionToken'
+  );
+
 export const EmailSignIn = _EmailSignIn(request);
 export const EmailSignUp = _EmailSignUp(request);
 export const EmailSignUpCheck = _EmailSignUpCheck(request);
 export const initRegionToken = _initRegionToken(request);
+export const autoInitRegionToken = _autoInitRegionToken(request);
 
 export const passwordLoginRequest = _passwordLoginRequest(request);
 
@@ -268,3 +275,17 @@ export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
 export const getBanksListRequest = _getBanksListRequest(request);
 
 export const getAmount = _getAmount(request);
+
+export const getPlanInfo = (workspace: string) =>
+  request<SubscriptionInfoResponse>('/api/plan/info', {
+    method: 'POST',
+    data: { workspace }
+  });
+
+export const getWorkspacesPlans = (workspaces: string[]) =>
+  request<WorkspacesPlansResponse>('/api/plan/workspaces-plans', {
+    method: 'POST',
+    data: {
+      workspaces
+    }
+  });

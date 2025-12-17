@@ -36,6 +36,7 @@
     "js-yaml": "^4.1.0",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.544.0",
     "nanoid": "^4.0.2",
     "next": "13.1.6",
     "next-i18next": "^15.3.0",
@@ -51,6 +52,7 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
+    "zod": "^4.1.9",
     "zustand": "^4.4.1"
   },
   "devDependencies": {

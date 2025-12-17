@@ -11,28 +11,31 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/labring/sealos/service/account/docs"
-
-	"github.com/labring/sealos/service/account/dao"
-
 	"github.com/labring/sealos/service/account/api"
-
+	"github.com/labring/sealos/service/account/dao"
+	"github.com/labring/sealos/service/account/docs"
 	"github.com/labring/sealos/service/account/helper"
-
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	"github.com/gin-gonic/gin"
 )
 
 func RegisterPayRouter() {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/health", "/health/"}, // 包含可能的路径变体
+		Skip: func(c *gin.Context) bool {
+			// If the returned status code is 200: /admin/v1alpha1/flush-debt-resource-status request, skip the log
+			if c.Request.URL.Path == helper.AdminGroup+helper.AdminFlushDebtResourceStatus &&
+				c.Writer.Status() == http.StatusOK {
+				return true
+			}
+			return false
+		},
+	}))
 	ctx := context.Background()
 	if err := dao.Init(ctx); err != nil {
 		log.Fatalf("Error initializing database: %v", err)
@@ -51,9 +54,13 @@ func RegisterPayRouter() {
 		POST(helper.GetAPPCosts, api.GetAPPCosts).
 		POST(helper.GetAppTypeCosts, api.GetAppTypeCosts).
 		POST(helper.GetAccount, api.GetAccount).
+		POST(helper.DeleteAccount, api.DeleteAccount).
 		POST(helper.GetPayment, api.GetPayment).
+		POST(helper.GetPaymentStatus, api.GetPaymentStatus).
 		POST(helper.GetRechargeAmount, api.GetRechargeAmount).
 		POST(helper.GetConsumptionAmount, api.GetConsumptionAmount).
+		POST(helper.GetWorkspaceConsumptionAmount, api.GetWorkspaceConsumptionAmount).
+		POST(helper.GetWorkspaceAppCosts, api.GetWorkspaceAPPCosts).
 		POST(helper.GetAllRegionConsumptionAmount, api.GetAllRegionConsumptionAmount).
 		POST(helper.GetPropertiesUsed, api.GetPropertiesUsedAmount).
 		POST(helper.SetPaymentInvoice, api.SetPaymentInvoice). // will be deprecated
@@ -73,16 +80,42 @@ func RegisterPayRouter() {
 		POST(helper.UseGiftCode, api.UseGiftCode).
 		POST(helper.UserUsage, api.UserUsage).
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
-		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo)
+		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo).
+		POST(helper.WorkspaceGetResourceQuota, api.GetWorkspaceResourceQuota).
+		// UserAlertNotificationAccount routes
+		POST(helper.UserAlertNotificationAccountCreate, api.CreateUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountList, api.ListUserAlertNotificationAccounts).
+		POST(helper.UserAlertNotificationAccountDelete, api.DeleteUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountToggle, api.ToggleUserAlertNotificationAccounts).
+		// WorkspaceSubscription routes
+		POST(helper.WorkspaceSubscriptionInfo, api.GetWorkspaceSubscriptionInfo).
+		POST(helper.WorkspaceSubscriptionList, api.GetWorkspaceSubscriptionList).
+		POST(helper.WorkspaceSubscriptionDelete, api.DeleteWorkspaceSubscription).
+		POST(helper.WorkspaceSubscriptionPaymentList, api.GetWorkspaceSubscriptionPaymentList).
+		POST(helper.WorkspaceSubscriptionPlanList, api.GetWorkspaceSubscriptionPlanList).
+		POST(helper.WorkspaceSubscriptionLastTransaction, api.GetLastWorkspaceSubscriptionTransaction).
+		POST(helper.WorkspaceSubscriptionUpgradeAmount, api.GetWorkspaceSubscriptionUpgradeAmount).
+		POST(helper.WorkspaceSubscriptionPay, api.CreateWorkspaceSubscriptionPay).
+		POST(helper.WorkspaceSubscriptionNotify, api.NewWorkspaceSubscriptionNotifyHandler).
+		POST(helper.WorkspaceSubscriptionPortalSession, api.CreateWorkspaceSubscriptionPortalSession).
+		POST(helper.WorkspaceSubscriptionPlans, api.GetWorkspaceSubscriptionPlans)
 	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
+		GET(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionListGET).
+		GET(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlansGET).
 		POST(helper.AdminCreateCorporate, api.AdminCreateCorporate).
 		POST(helper.AdminRefundForms, api.AdminPaymentRefund).
 		POST(helper.AdminChargeBilling, api.AdminChargeBilling).
 		POST(helper.AdminFlushDebtResourceStatus, api.AdminFlushDebtResourceStatus).
 		POST(helper.AdminSuspendUserTraffic, api.AdminSuspendUserTraffic).
-		POST(helper.AdminResumeUserTraffic, api.AdminResumeUserTraffic)
+		POST(helper.AdminResumeUserTraffic, api.AdminResumeUserTraffic).
+		POST(helper.AdminWorkspaceSubscriptionProcessExpired, api.AdminProcessExpiredWorkspaceSubscriptions).
+		POST(helper.AdminWorkspaceSubscriptionAdd, api.AdminAddWorkspaceSubscription).
+		POST(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionList).
+		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans).
+		POST(helper.AdminSubscriptionPlanManage, api.AdminManageSubscriptionPlan).
+		POST(helper.AdminSubscriptionPlanDelete, api.AdminDeleteSubscriptionPlan)
 	paymentGroup := router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
 		POST(helper.Notify, api.NewPayNotifyHandler).
@@ -112,9 +145,9 @@ func RegisterPayRouter() {
 		if os.Getenv(helper.EnvKycProcessEnabled) == _true {
 			go processor.StartKYCProcessing(ctx)
 		}
-		//go processor.StartFlushQuotaProcessing(ctx)
+		// go processor.StartFlushQuotaProcessing(ctx)
 	}
-	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
+	// POST(helper.AdminActiveBilling, api.AdminActiveBilling)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	router.GET("/health", func(c *gin.Context) {
@@ -127,8 +160,9 @@ func RegisterPayRouter() {
 
 	// Start the HTTP server to listen on port 2333.
 	srv := &http.Server{
-		Addr:    ":2333",
-		Handler: router,
+		Addr:              ":2333",
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -147,6 +181,12 @@ func RegisterPayRouter() {
 
 	// process hourly archive
 	go startHourlyBillingActiveArchive(ctx)
+
+	// process expired workspace subscriptions
+	go startExpiredWorkspaceSubscriptionProcessing(ctx)
+
+	workspaceSub := api.NewWorkspaceSubscriptionProcessor()
+	workspaceSub.Start(ctx)
 
 	// Wait for interrupt signal.
 	<-rootCtx.Done()
@@ -212,8 +252,12 @@ func startReconcileBilling(ctx context.Context) {
 			return
 		case t := <-ticker.C:
 			currentTime := t.UTC()
-			lastTime := lastReconcileTime.Load().(time.Time)
-			//doBillingReconcile(lastTime, currentTime)
+			lastTime, ok := lastReconcileTime.Load().(time.Time)
+			if !ok {
+				logrus.Errorf("Invalid last reconcile time: %v", lastReconcileTime)
+				continue
+			}
+			// doBillingReconcile(lastTime, currentTime)
 			dao.BillingTask.AddTask(&dao.ActiveBillingReconcile{
 				StartTime: lastTime,
 				EndTime:   currentTime,
@@ -226,7 +270,16 @@ func startReconcileBilling(ctx context.Context) {
 func startHourlyBillingActiveArchive(ctx context.Context) {
 	logrus.Info("Starting hourly billing active archive service")
 	now := time.Now().UTC()
-	lastHourStart := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, now.Location())
+	lastHourStart := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour()-1,
+		0,
+		0,
+		0,
+		now.Location(),
+	)
 
 	dao.BillingTask.AddTask(&dao.ArchiveBillingReconcile{
 		StartTime: lastHourStart,
@@ -243,6 +296,46 @@ func startHourlyBillingActiveArchive(ctx context.Context) {
 				StartTime: currentHour,
 			})
 			nextHour = nextHour.Add(time.Hour)
+		}
+	}
+}
+
+func startExpiredWorkspaceSubscriptionProcessing(ctx context.Context) {
+	logrus.Info("Starting expired workspace subscription processing service")
+
+	// 设置处理间隔，默认每小时处理一次
+	intervalStr := env.GetEnvWithDefault("WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL", "1h")
+	interval, err := time.ParseDuration(intervalStr)
+	if err != nil {
+		logrus.Errorf(
+			"Failed to parse WORKSPACE_SUBSCRIPTION_PROCESS_INTERVAL: %v, using default 1h",
+			err,
+		)
+		interval = time.Hour
+	}
+
+	logrus.Infof("Expired workspace subscription processing interval: %s", interval.String())
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	// 启动后立即执行一次
+	// if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
+	//	logrus.Errorf("Initial expired workspace subscription processing failed: %v", err)
+	//}
+
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Info("Stopping expired workspace subscription processing service")
+			return
+		case <-ticker.C:
+			logrus.Debug("Processing expired workspace subscriptions...")
+			// if err := dao.DBClient.ProcessExpiredWorkspaceSubscriptions(); err != nil {
+			//	logrus.Errorf("Expired workspace subscription processing failed: %v", err)
+			// } else {
+			//	logrus.Debug("Expired workspace subscription processing completed successfully")
+			//}
 		}
 	}
 }

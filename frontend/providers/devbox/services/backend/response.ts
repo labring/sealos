@@ -18,13 +18,26 @@ export const jsonRes = <T = any>(props: {
   if (body instanceof V1Status) {
     if (body.message?.includes('40001:')) {
       return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.outstandingPayment]);
+    } else if (body.code === 403 || body.reason === 'Forbidden') {
+      return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.insufficientPermissions]);
     } else {
       return NextResponse.json({
-        code: 500,
-        statusText: body.message,
-        message: body.message
+        code: body.code || code || 500,
+        statusText: body.message || '',
+        message: body.message || 'Kubernetes error'
       });
     }
+  }
+
+  if (error?.statusCode && error.statusCode >= 400) {
+    if (error.statusCode === 403) {
+      return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.insufficientPermissions]);
+    }
+    return NextResponse.json({
+      code: error.statusCode,
+      statusText: error.message || '',
+      message: error.message || `HTTP error ${error.statusCode}`
+    });
   }
 
   let msg = message;

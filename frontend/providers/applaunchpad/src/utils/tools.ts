@@ -4,7 +4,7 @@ import { AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import yaml from 'js-yaml';
 import { DeployKindsType } from '@/types/app';
-import type { AppPatchPropsType } from '@/types/app';
+import type { AppDetailType, AppPatchPropsType } from '@/types/app';
 import { YamlKindEnum } from './adapt';
 import { useTranslation } from 'next-i18next';
 import * as jsonpatch from 'fast-json-patch';
@@ -339,6 +339,14 @@ export const patchYamlList = ({
 
           if (!crOldYamlJson) return newYamlJson;
 
+          // console.log('[DEBUG JSON COMPARE]', {
+          //   kind: oldFormJson.kind,
+          //   name: oldFormJson.metadata?.name,
+          //   oldFormJson,
+          //   crOldYamlJson,
+          //   newYamlJson
+          // });
+
           /* Fill in volume - Handle Deployment/StatefulSet */
           if (
             oldFormJson.kind === YamlKindEnum.Deployment ||
@@ -355,8 +363,52 @@ export const patchYamlList = ({
           }
 
           /* generate new json */
+          // Check if there are ports-related operations and data inconsistency
+          const hasPortsOperations = patchRes.some((op) => op.path.includes('/ports/'));
+          let shouldReplacePortsArray = false;
+          let portsReplacePath = '';
+          let portsReplaceValue: any = null;
+
+          if (hasPortsOperations) {
+            // Check ports array consistency for Deployment/StatefulSet
+            if (
+              oldFormJson.kind === YamlKindEnum.Deployment ||
+              oldFormJson.kind === YamlKindEnum.StatefulSet
+            ) {
+              const oldFormPorts =
+                (oldFormJson as any)?.spec?.template?.spec?.containers?.[0]?.ports || [];
+              const crOldPorts =
+                (crOldYamlJson as any)?.spec?.template?.spec?.containers?.[0]?.ports || [];
+              const newFormPorts =
+                (newYamlJson as any)?.spec?.template?.spec?.containers?.[0]?.ports || [];
+
+              if (oldFormPorts.length !== crOldPorts.length) {
+                shouldReplacePortsArray = true;
+                portsReplacePath = '/spec/template/spec/containers/0/ports';
+                portsReplaceValue = newFormPorts;
+              }
+            }
+            // Check ports array consistency for Service
+            else if (oldFormJson.kind === YamlKindEnum.Service) {
+              const oldFormPorts = (oldFormJson as any)?.spec?.ports || [];
+              const crOldPorts = (crOldYamlJson as any)?.spec?.ports || [];
+              const newFormPorts = (newYamlJson as any)?.spec?.ports || [];
+
+              if (oldFormPorts.length !== crOldPorts.length) {
+                shouldReplacePortsArray = true;
+                portsReplacePath = '/spec/ports';
+                portsReplaceValue = newFormPorts;
+              }
+            }
+          }
+
           const _patchRes: jsonpatch.Operation[] = patchRes
             .map((item) => {
+              // If we need to replace ports array, filter out all ports-related operations
+              if (shouldReplacePortsArray && item.path.includes('/ports/')) {
+                return null;
+              }
+
               let jsonPatchError = jsonpatch.validate([item], crOldYamlJson);
               if (jsonPatchError?.name === 'OPERATION_PATH_UNRESOLVABLE') {
                 switch (item.op) {
@@ -374,6 +426,15 @@ export const patchYamlList = ({
               return item;
             })
             .filter((op): op is jsonpatch.Operation => op !== null);
+
+          // Add ports array replace operation if needed
+          if (shouldReplacePortsArray && portsReplacePath && portsReplaceValue !== null) {
+            _patchRes.push({
+              op: 'replace',
+              path: portsReplacePath,
+              value: portsReplaceValue
+            });
+          }
 
           const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
 
@@ -529,4 +590,14 @@ export const filterUnusedKeys = <T extends object>(
   });
 
   return filteredData;
+};
+
+export const generatePvcNameRegex = (appDetail?: AppDetailType): string => {
+  if (!appDetail?.storeList?.length || !appDetail?.labels?.app) {
+    return '';
+  }
+  const pvcPrefix = `(${appDetail.storeList.map((item) => item.name).join('|')})`;
+  const appName = appDetail.appName;
+  const pvcNameRegex = `${pvcPrefix}-${appName}-[0-9]+`;
+  return pvcNameRegex;
 };

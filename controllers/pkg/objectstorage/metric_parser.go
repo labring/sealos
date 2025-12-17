@@ -26,6 +26,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -35,12 +36,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/prometheus/prom2json"
-
+	jwtgo "github.com/golang-jwt/jwt/v4"
 	"github.com/minio/minio-go/v7/pkg/s3utils"
 	dto "github.com/prometheus/client_model/go"
-
-	jwtgo "github.com/golang-jwt/jwt/v4"
+	"github.com/prometheus/prom2json"
 )
 
 // MetricsClient implements MinIO metrics operations
@@ -62,7 +61,10 @@ type metricsRequestData struct {
 }
 
 // NewMetricsClient - instantiate minio metrics client honoring Prometheus format
-func NewMetricsClient(endpoint string, accessKeyID, secretAccessKey string, secure bool) (*MetricsClient, error) {
+func NewMetricsClient(
+	endpoint, accessKeyID, secretAccessKey string,
+	secure bool,
+) (*MetricsClient, error) {
 	jwtToken, err := getPrometheusToken(accessKeyID, secretAccessKey)
 	if err != nil {
 		return nil, err
@@ -76,17 +78,33 @@ func NewMetricsClient(endpoint string, accessKeyID, secretAccessKey string, secu
 }
 
 // BucketUsageTotalBytesMetrics - returns Bucket Usage Total Metrics in Prometheus format
-func (client *MetricsClient) BucketUsageTotalBytesMetrics(ctx context.Context) ([]*prom2json.Family, error) {
+func (client *MetricsClient) BucketUsageTotalBytesMetrics(
+	ctx context.Context,
+) ([]*prom2json.Family, error) {
 	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_usage_total_bytes"})
 }
 
 // BucketUsageAndTrafficBytesMetrics - returns Bucket Usage And Traffic Metrics in Prometheus format
-func (client *MetricsClient) BucketUsageAndTrafficBytesMetrics(ctx context.Context) ([]*prom2json.Family, error) {
-	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_usage_total_bytes", "minio_bucket_traffic_sent_bytes", "minio_bucket_traffic_received_bytes"})
+func (client *MetricsClient) BucketUsageAndTrafficBytesMetrics(
+	ctx context.Context,
+) ([]*prom2json.Family, error) {
+	return client.fetchMetrics(
+		ctx,
+		"bucket",
+		[]string{
+			"minio_bucket_usage_total_bytes",
+			"minio_bucket_traffic_sent_bytes",
+			"minio_bucket_traffic_received_bytes",
+		},
+	)
 }
 
 // fetchMetrics - returns Metrics of given subsystem in Prometheus format
-func (client *MetricsClient) fetchMetrics(ctx context.Context, subSystem string, metricsName []string) ([]*prom2json.Family, error) {
+func (client *MetricsClient) fetchMetrics(
+	ctx context.Context,
+	subSystem string,
+	metricsName []string,
+) ([]*prom2json.Family, error) {
 	reqData := metricsRequestData{
 		relativePath: "/v2/metrics/" + subSystem,
 	}
@@ -124,7 +142,10 @@ func closeResponse(resp *http.Response) {
 	}
 }
 
-func parsePrometheusResults(reader io.Reader, prefix []string) (results []*prom2json.Family, err error) {
+func parsePrometheusResults(
+	reader io.Reader,
+	prefix []string,
+) (results []*prom2json.Family, err error) {
 	filteredReader, err := filterMetricsByPrefix(reader, prefix)
 	if err != nil {
 		return nil, err
@@ -157,7 +178,7 @@ func filterMetricsByPrefix(reader io.Reader, prefix []string) (io.Reader, error)
 	var buf bytes.Buffer
 	for {
 		line, err := readLine(reader)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
 			return nil, err
@@ -179,7 +200,7 @@ func filterMetricsByPrefix(reader io.Reader, prefix []string) (io.Reader, error)
 }
 
 func readLine(reader io.Reader) ([]byte, error) {
-	var line []byte
+	line := make([]byte, 0)
 	for {
 		b := make([]byte, 1)
 		_, err := reader.Read(b)
@@ -206,13 +227,13 @@ func httpRespToErrorResponse(resp *http.Response) error {
 	// Limit to 100K
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 100<<10))
 	if err != nil {
-		return ErrorResponse{
+		return ResponseError{
 			Code:    resp.Status,
 			Message: fmt.Sprintf("Failed to read server response: %s.", err),
 		}
 	}
 
-	var errResp ErrorResponse
+	var errResp ResponseError
 	// Decode the json error
 	err = json.Unmarshal(body, &errResp)
 	if err != nil {
@@ -227,9 +248,13 @@ func httpRespToErrorResponse(resp *http.Response) error {
 			if len(bodyString) > 1024 {
 				bodyString = bodyString[:1021] + "..."
 			}
-			return ErrorResponse{
-				Code:    resp.Status,
-				Message: fmt.Sprintf("Failed to parse server response (%s): %s", err.Error(), bodyString),
+			return ResponseError{
+				Code: resp.Status,
+				Message: fmt.Sprintf(
+					"Failed to parse server response (%s): %s",
+					err.Error(),
+					bodyString,
+				),
 			}
 		}
 	}
@@ -237,7 +262,10 @@ func httpRespToErrorResponse(resp *http.Response) error {
 }
 
 // executeGetRequest - instantiates a Get method and performs the request
-func (client *MetricsClient) executeGetRequest(ctx context.Context, reqData metricsRequestData) (res *http.Response, err error) {
+func (client *MetricsClient) executeGetRequest(
+	ctx context.Context,
+	reqData metricsRequestData,
+) (res *http.Response, err error) {
 	req, err := client.newGetRequest(ctx, reqData)
 	if err != nil {
 		return nil, err
@@ -247,7 +275,10 @@ func (client *MetricsClient) executeGetRequest(ctx context.Context, reqData metr
 }
 
 // newGetRequest - instantiate a new HTTP GET request
-func (client *MetricsClient) newGetRequest(ctx context.Context, reqData metricsRequestData) (req *http.Request, err error) {
+func (client *MetricsClient) newGetRequest(
+	ctx context.Context,
+	reqData metricsRequestData,
+) (req *http.Request, err error) {
 	targetURL, err := client.makeTargetURL(reqData)
 	if err != nil {
 		return nil, err
@@ -259,7 +290,7 @@ func (client *MetricsClient) newGetRequest(ctx context.Context, reqData metricsR
 // makeTargetURL make a new target url.
 func (client *MetricsClient) makeTargetURL(r metricsRequestData) (*url.URL, error) {
 	if client.endpointURL == nil {
-		return nil, fmt.Errorf("enpointURL cannot be nil")
+		return nil, errors.New("enpointURL cannot be nil")
 	}
 
 	host := client.endpointURL.Host
@@ -275,7 +306,7 @@ const (
 	libraryMinioURLPrefix      = "/minio"
 	prometheusIssuer           = "prometheus"
 
-	//metricsRespBodyLimit = 20 << 20 // 10 MiB
+	// metricsRespBodyLimit = 20 << 20 // 10 MiB
 )
 
 // getPrometheusToken creates a JWT from MinIO access and secret keys
@@ -289,7 +320,11 @@ func getPrometheusToken(accessKey, secretKey string) (string, error) {
 	return jwt.SignedString([]byte(secretKey))
 }
 
-func privateNewMetricsClient(endpointURL *url.URL, jwtToken string, secure bool) (*MetricsClient, error) {
+func privateNewMetricsClient(
+	endpointURL *url.URL,
+	jwtToken string,
+	secure bool,
+) (*MetricsClient, error) {
 	clnt := new(MetricsClient)
 	clnt.jwtToken = jwtToken
 	clnt.secure = secure
@@ -311,11 +346,9 @@ func getEndpointURL(endpoint string, secure bool) (*url.URL, error) {
 			msg := "Endpoint: " + endpoint + " does not follow ip address or domain name standards."
 			return nil, ErrInvalidArgument(msg)
 		}
-	} else {
-		if !s3utils.IsValidIP(endpoint) && !s3utils.IsValidDomain(endpoint) {
-			msg := "Endpoint: " + endpoint + " does not follow ip address or domain name standards."
-			return nil, ErrInvalidArgument(msg)
-		}
+	} else if !s3utils.IsValidIP(endpoint) && !s3utils.IsValidDomain(endpoint) {
+		msg := "Endpoint: " + endpoint + " does not follow ip address or domain name standards."
+		return nil, ErrInvalidArgument(msg)
 	}
 
 	// If secure is false, use 'http' scheme.
@@ -398,29 +431,29 @@ var DefaultTransport = func(secure bool) http.RoundTripper {
 
 // ErrInvalidArgument - Invalid argument response.
 func ErrInvalidArgument(message string) error {
-	return ErrorResponse{
+	return ResponseError{
 		Code:      "InvalidArgument",
 		Message:   message,
 		RequestID: "minio",
 	}
 }
 
-// ErrorResponse - Is the typed error returned by all API operations.
-type ErrorResponse struct {
-	XMLName    xml.Name `xml:"Error" json:"-"`
-	Code       string
-	Message    string
-	BucketName string
-	Key        string
-	RequestID  string `xml:"RequestId"`
-	HostID     string `xml:"HostId"`
+// ResponseError - Is the typed error returned by all API operations.
+type ResponseError struct {
+	XMLName    xml.Name `xml:"Error"                json:"-"`
+	Code       string   `xml:"Code"                 json:"code"`
+	Message    string   `xml:"Message"              json:"message"`
+	BucketName string   `xml:"BucketName,omitempty" json:"bucket_name,omitempty"`
+	Key        string   `xml:"Key,omitempty"        json:"key,omitempty"`
+	RequestID  string   `xml:"RequestId"            json:"requestID,omitempty"`
+	HostID     string   `xml:"HostId"               json:"hostID,omitempty"`
 
 	// Region where the bucket is located. This header is returned
 	// only in HEAD bucket and ListObjects response.
-	Region string
+	Region string `xml:"-" json:"region,omitempty"`
 }
 
 // Error - Returns HTTP error string
-func (e ErrorResponse) Error() string {
+func (e ResponseError) Error() string {
 	return e.Message
 }

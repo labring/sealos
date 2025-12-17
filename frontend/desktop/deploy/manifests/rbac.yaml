@@ -92,6 +92,9 @@ rules:
   - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["patch"]
+  - apiGroups: ['license.sealos.io']
+    resources: ['licenses']
+    verbs: ['*']
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -101,6 +104,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: account-editor-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: app-reader-role
+rules:
+  - apiGroups: ["app.sealos.io"]
+    resources: ["apps"]
+    verbs: ["list", "get", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-app-reader-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: app-reader-role
 subjects:
   - kind: ServiceAccount
     name: desktop-frontend

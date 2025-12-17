@@ -32,7 +32,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
-import { postAuthCname } from '@/api/platform';
+import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import {
   DOMAIN_BINDING_DOCUMENTATION_LINK,
   DOMAIN_REG_QUERY_LINK,
@@ -40,9 +40,9 @@ import {
   REQUIRES_DOMAIN_REG
 } from '@/store/static';
 import NextLink from 'next/link';
-import { BookOpen, CheckCircle, Copy } from 'lucide-react';
+import { BookOpen, CheckCircle, Copy, AlertTriangle } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
-import { getErrText, useCopyData } from '@/utils/tools';
+import { useCopyData } from '@/utils/tools';
 import { useToast } from '@/hooks/useToast';
 
 export type CustomAccessModalParams = {
@@ -68,10 +68,19 @@ const CustomAccessModal = ({
     'INPUT_DOMAIN'
   );
   const [customDomain, setCustomDomain] = useState(currentCustomDomain);
+  const [verificationMethod, setVerificationMethod] = useState<'CNAME' | 'HTTP_CHALLENGE'>('CNAME');
+  const [proxyDetected, setProxyDetected] = useState<{
+    isProxy: boolean;
+    proxyType?: string;
+    details?: any;
+  }>({ isProxy: false });
 
-  const { mutate: authCNAME, isLoading } = useRequest({
+  const sanitizeDomain = (input: string) =>
+    input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
+
+  const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async (silent: boolean) => {
-      const result = await postAuthCname({
+      let cnameResult = await postAuthCname({
         publicDomain: completePublicDomain,
         customDomain: customDomain
       }).catch((error) => {
@@ -79,26 +88,63 @@ const CustomAccessModal = ({
           error
         };
       });
+      if (!cnameResult?.error) {
+        return {
+          error: null,
+          customDomain,
+          silent,
+          method: 'CNAME'
+        };
+      }
+      setVerificationMethod('HTTP_CHALLENGE');
+
+      const challengeResult = await postAuthDomainChallenge({
+        customDomain: customDomain
+      });
+      console.log('challengeResult', challengeResult);
 
       return {
-        error: result?.error,
+        error: challengeResult?.verified ? null : cnameResult?.error,
         customDomain,
-        silent
+        silent,
+        method: challengeResult?.verified ? 'HTTP_CHALLENGE' : 'CNAME',
+        cnameResult: cnameResult,
+        challengeResult: challengeResult
       };
     },
     onSuccess: (data) => {
+      console.log('data', data);
       if (data?.error) {
         if (!data?.silent) {
-          toast({
-            title:
+          let errorMessage = '';
+          if (data?.method === 'HTTP_CHALLENGE' && data?.challengeError) {
+            errorMessage =
+              t('domain_challenge_verify_failed_toast') +
+              ': ' +
+              (data?.challengeError?.error?.message ??
+                data?.challengeError?.message ??
+                data?.challengeError);
+          } else {
+            errorMessage =
               t('domain_cname_verify_failed_toast') +
               ': ' +
-              (data?.error?.error?.message ?? data?.error?.message ?? data?.error),
+              (data?.error?.error?.message ?? data?.error?.message ?? data?.error);
+          }
+
+          toast({
+            title: errorMessage,
             status: 'error'
           });
         }
 
         return;
+      }
+
+      console.log(`Domain verification successful using ${data.method} method`);
+
+      // Handle proxy detection for HTTP challenge method
+      if (data.method === 'HTTP_CHALLENGE' && data.challengeResult?.data?.proxy) {
+        setProxyDetected(data.challengeResult.data.proxy);
       }
 
       onSuccess(data.customDomain);
@@ -109,12 +155,12 @@ const CustomAccessModal = ({
   useEffect(() => {
     if (processPhase === 'VERIFY_DOMAIN') {
       const interval = setInterval(() => {
-        authCNAME(undefined);
+        authDomain(undefined);
       }, 5000);
 
       return () => clearInterval(interval);
     }
-  }, [processPhase, authCNAME]);
+  }, [processPhase, authDomain]);
 
   const tableCellStyles: BoxProps = {
     textTransform: 'none',
@@ -265,8 +311,18 @@ const CustomAccessModal = ({
                   <Button
                     height={'32px'}
                     onClick={() => {
-                      setProcessPhase('VERIFY_DOMAIN');
-                      authCNAME(true);
+                      const sanitizedDomain = sanitizeDomain(customDomain);
+                      if (sanitizedDomain) {
+                        setCustomDomain(sanitizedDomain);
+                        setProcessPhase('VERIFY_DOMAIN');
+                        setVerificationMethod('CNAME'); // Reset to try CNAME first
+                        authDomain(true);
+                      } else {
+                        toast({
+                          title: t('domain_invalid_toast', { domain: customDomain }),
+                          status: 'error'
+                        });
+                      }
                     }}
                   >
                     {t('domain_verification_input_save')}
@@ -278,7 +334,7 @@ const CustomAccessModal = ({
                     variant={'secondary'}
                     height={'32px'}
                     fontWeight={'normal'}
-                    onClick={() => authCNAME(false)}
+                    onClick={() => authDomain(false)}
                     isLoading={isLoading}
                   >
                     {t('domain_verification_refresh')}
@@ -381,7 +437,7 @@ const CustomAccessModal = ({
           </ModalBody>
 
           {processPhase === 'SUCCESS' && (
-            <ModalFooter>
+            <ModalFooter flexDirection={'column'} gap={3}>
               <Alert
                 variant="subtle"
                 borderRadius={'lg'}
@@ -397,6 +453,28 @@ const CustomAccessModal = ({
                   </Flex>
                 </AlertDescription>
               </Alert>
+
+              {/* Proxy Detection Warning */}
+              {proxyDetected.isProxy && (
+                <Box w={'100%'} mt={'20px'} borderLeft={'2px solid #FED7AA'} px={'16px'}>
+                  <Flex alignItems={'flex-start'} gap={3}>
+                    <Flex flexDirection={'column'} gap={2} flex={1}>
+                      <Text
+                        fontSize={'md'}
+                        fontWeight={500}
+                        color={'#F97316'}
+                        lineHeight={'1.4'}
+                        whiteSpace={'pre-line'}
+                      >
+                        {t('proxy_detected_title')}
+                      </Text>
+                      <Text fontWeight={400} color={'#F97316'}>
+                        {t('proxy_detected_message')}
+                      </Text>
+                    </Flex>
+                  </Flex>
+                </Box>
+              )}
             </ModalFooter>
           )}
         </ModalContent>

@@ -257,6 +257,13 @@ func main() {
 
 	stateChangeBroadcaster := record.NewBroadcaster()
 
+	startupCMName := os.Getenv("DEVBOX_STARTUP_CM_NAME")
+	startupCMNamespace := os.Getenv("DEVBOX_STARTUP_CM_NAMESPACE")
+	if (startupCMName != "" && startupCMNamespace == "") || (startupCMName == "" && startupCMNamespace != "") {
+		setupLog.Error(nil, "both DEVBOX_STARTUP_CM_NAME and DEVBOX_STARTUP_CM_NAMESPACE must be set together")
+		os.Exit(1)
+	}
+
 	if err = (&controller.DevboxReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),

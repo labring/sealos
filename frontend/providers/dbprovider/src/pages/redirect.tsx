@@ -1,15 +1,18 @@
 import { getDBByName } from '@/api/db';
-import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
+import { useUserStore } from '@/store/user';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 const RedirectPage = () => {
   const router = useRouter();
-  const { setLastRoute } = useGlobalStore();
   const { resetGuideState } = useGuideStore();
+  const { session } = useUserStore();
 
   useEffect(() => {
+    // Wait for session initialization.
+    if (!session) return;
+
     const handleRedirect = (name?: string) => {
       if (name) {
         getDBByName({ name })
@@ -36,7 +39,7 @@ const RedirectPage = () => {
       }
       handleRedirect(name);
     }
-  }, [resetGuideState, router, router.isReady, router.query]);
+  }, [session, resetGuideState, router, router.isReady, router.query]);
 
   return null;
 };

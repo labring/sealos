@@ -52,7 +52,7 @@ done
 ## check version is release version
 if [[ ${TAG} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "!!!!! is release version, will update docs"
-    sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/install.sh
+    sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/install-v2.sh
     sed -i "s#${PRE_VERSION}#${TAG}#g" scripts/cloud/build-offline-tar.sh
 fi
 

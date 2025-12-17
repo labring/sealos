@@ -27,12 +27,12 @@ func SendVms(phone, template, numberPollNo string, sendTime time.Time, forbidTim
 	paramList = append(paramList, &vms.SingleParam{
 		Phone: phone,
 		Type:  1,
-		//RingAgainTimes:    1,
-		//RingAgainInterval: 5,
+		// RingAgainTimes:    1,
+		// RingAgainInterval: 5,
 		TriggerTime:  &vms.JsonTime{Time: sendTime},
 		Resource:     template,
 		NumberPoolNo: numberPollNo,
-		SingleOpenId: phone + "-" + sendTime.Format("2006-01-02"),
+		SingleOpenId: phone + "-" + sendTime.Format(time.DateOnly),
 	})
 	if len(forbidTimes) != 0 {
 		paramList[0].ForbidTimeList = []*vms.ForbidTimeItem{
@@ -46,12 +46,67 @@ func SendVms(phone, template, numberPollNo string, sendTime time.Time, forbidTim
 	}
 	result, statusCode, err := vms.DefaultInstance.SingleBatchAppend(req)
 	if err != nil {
-		return fmt.Errorf("failed to SingleBatchAppend: %v", err)
+		return fmt.Errorf("failed to SingleBatchAppend: %w", err)
 	}
 	if result.ResponseMetadata.Error != nil {
 		return fmt.Errorf("failed to send vms: %v", result.ResponseMetadata.Error)
 	}
 	logs.Info("send vms status code: %d, result: %#+v", statusCode, result.Result)
+	if statusCode != 200 {
+		return fmt.Errorf("failed to send vms, status code: %d, err : %v", statusCode, result)
+	}
+	return nil
+}
+
+// SendVmsMultiple sends VMS to multiple phone numbers with the same template and settings
+func SendVmsMultiple(phones []string, template, numberPollNo string, sendTime time.Time, forbidTimes []string) error {
+	if len(phones) == 0 {
+		return fmt.Errorf("phone numbers cannot be empty")
+	}
+
+	var paramList []*vms.SingleParam
+	for _, phone := range phones {
+		if phone == "" {
+			continue
+		}
+		singleParam := &vms.SingleParam{
+			Phone: phone,
+			Type:  1,
+			// RingAgainTimes:    1,
+			// RingAgainInterval: 5,
+			TriggerTime:  &vms.JsonTime{Time: sendTime},
+			Resource:     template,
+			NumberPoolNo: numberPollNo,
+			SingleOpenId: phone + "-" + sendTime.Format(time.DateOnly),
+		}
+
+		if len(forbidTimes) != 0 {
+			singleParam.ForbidTimeList = []*vms.ForbidTimeItem{
+				{
+					Times: forbidTimes,
+				},
+			}
+		}
+
+		paramList = append(paramList, singleParam)
+	}
+
+	if len(paramList) == 0 {
+		return fmt.Errorf("no valid phone numbers provided")
+	}
+
+	req := &vms.SingleAppendRequest{
+		List: paramList,
+	}
+
+	result, statusCode, err := vms.DefaultInstance.SingleBatchAppend(req)
+	if err != nil {
+		return fmt.Errorf("failed to SingleBatchAppend: %w", err)
+	}
+	if result.ResponseMetadata.Error != nil {
+		return fmt.Errorf("failed to send vms: %v", result.ResponseMetadata.Error)
+	}
+	logs.Info("send vms multiple status code: %d, result: %#+v", statusCode, result.Result)
 	if statusCode != 200 {
 		return fmt.Errorf("failed to send vms, status code: %d, err : %v", statusCode, result)
 	}

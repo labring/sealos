@@ -1,24 +1,18 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
 
 import { useEnvStore } from '@/stores/env';
-import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user';
 
 import '@scalar/api-reference-react/style.css';
 
-export default function References() {
+function ApiDocsContent() {
   const { env } = useEnvStore();
   const [apiData, setApiData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const devboxToken = getSessionFromSessionStorage();
-  const session = getDesktopSessionFromSessionStorage();
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
         const response = await fetch('/api/openapi');
         if (!response.ok) {
           throw new Error(`API request failed: ${response.status}`);
@@ -26,14 +20,12 @@ export default function References() {
         const data = await response.json();
         setApiData(data);
       } catch (error) {
-        // @ts-ignore
-        setError(error.message);
-      } finally {
-        setLoading(false);
+        console.error('Error fetching API data:', error);
       }
     };
     fetchData();
   }, []);
+
   const config = {
     content: JSON.stringify(apiData),
     authentication: {
@@ -41,13 +33,11 @@ export default function References() {
       securitySchemes: {
         kubeconfigAuth: {
           in: 'header' as const,
-          name: 'Authorization',
-          value: encodeURIComponent(session?.kubeconfig || '')
+          name: 'Authorization'
         },
         jwtAuth: {
           in: 'header' as const,
-          name: 'Authorization-Bearer',
-          value: encodeURIComponent(devboxToken || session?.token || '')
+          name: 'Authorization-Bearer'
         }
       }
     },
@@ -56,5 +46,17 @@ export default function References() {
       : `https://devbox.${env.sealosDomain}/scalar/cdn.js`
   };
 
+  if (!apiData) {
+    return <div>Loading...</div>;
+  }
+
   return <ApiReferenceReact configuration={config} />;
+}
+
+export default function References() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ApiDocsContent />
+    </Suspense>
+  );
 }

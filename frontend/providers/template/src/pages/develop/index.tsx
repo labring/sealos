@@ -5,21 +5,15 @@ import { editModeMap } from '@/constants/editApp';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { YamlItemType } from '@/types';
-import { TemplateSourceType, TemplateType } from '@/types/app';
-import { EnvResponse } from '@/types/index';
+import { TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
-import {
-  developGenerateYamlList,
-  handleTemplateToInstanceYaml,
-  parseTemplateString,
-  getYamlSource
-} from '@/utils/json-yaml';
-import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
+import { getYamlSource } from '@/utils/json-yaml';
+import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
 import { downLoadBold } from '@/utils/tools';
-import { Button, Center, Flex, Spinner, Text } from '@chakra-ui/react';
+import { Button, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { debounce, has, isObject, mapValues } from 'lodash';
+import { debounce, has, isObject } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -48,25 +42,6 @@ export default function Develop() {
     }
   );
 
-  const generateYamlData = useCallback(
-    (yamlSource: TemplateSourceType, inputs: Record<string, string> = {}): YamlItemType[] => {
-      const { defaults, defaultInputs } = getTemplateValues(yamlSource);
-      const data = {
-        ...platformEnvs,
-        ...yamlSource?.source,
-        inputs: {
-          ...defaultInputs,
-          ...inputs
-        },
-        defaults: defaults
-      };
-      const generateStr = parseTemplateString(yamlSource.appYaml, data);
-      const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
-      return developGenerateYamlList(generateStr, _instanceName);
-    },
-    [platformEnvs]
-  );
-
   const parseTemplate = useCallback(
     (str: string) => {
       if (!str || !str.trim()) {
@@ -78,7 +53,7 @@ export default function Develop() {
         const result = getYamlSource(str, platformEnvs);
         const formInputs = formHook.getValues();
         setTemplateSource(result);
-        const correctYamlList = generateYamlData(result, formInputs);
+        const correctYamlList = generateYamlData(result, formInputs, platformEnvs, true);
         setYamlList(correctYamlList);
       } catch (error: any) {
         toast({
@@ -90,7 +65,7 @@ export default function Develop() {
         });
       }
     },
-    [platformEnvs, generateYamlData]
+    [platformEnvs]
   );
 
   const onYamlChange = useCallback(
@@ -109,14 +84,19 @@ export default function Develop() {
     debounce((formInputData: Record<string, string>) => {
       try {
         if (templateSource) {
-          const correctYamlList = generateYamlData(templateSource, formInputData);
+          const correctYamlList = generateYamlData(
+            templateSource,
+            formInputData,
+            platformEnvs,
+            true
+          );
           setYamlList(correctYamlList);
         }
       } catch (error) {
         console.log(error);
       }
     }, 500),
-    [templateSource, generateYamlData]
+    [templateSource, generateYamlData, platformEnvs]
   );
 
   // watch form change, compute new yaml

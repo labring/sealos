@@ -7,6 +7,10 @@ export enum QueryKey {
   GetDashboardData = 'getDashboardData',
   GetUserLogDetail = 'getUserLogDetail',
 
+  // mcp hub
+  mcpList = 'mcpList',
+  mcpDetail = 'mcpDetail',
+
   // admin
   GetChannels = 'getChannels',
   GetAllChannels = 'getAllChannels',
@@ -18,5 +22,5 @@ export enum QueryKey {
   GetOption = 'getOption',
 
   // 组件自己管理
-  GetCommonConfig = 'getCommonConfig'
+  GetCommonConfig = 'getCommonConfig',
 }

@@ -25,6 +25,11 @@ export const _inviteMemberRequest =
   (request: AxiosInstance) => (props: { ns_uid: string; targetUserId: string; role: UserRole }) =>
     request.post<typeof props, ApiResp<null>>('/api/auth/namespace/invite', props);
 
+export const _setAliasRequest =
+  (request: AxiosInstance) =>
+  (props: { ns_uid: string; targetUserCrUid: string; alias: string | null }) =>
+    request.post<typeof props, ApiResp<null>>('/api/auth/namespace/setAlias', props);
+
 export const _modifyRoleRequest =
   (request: AxiosInstance) =>
   (props: { ns_uid: string; targetUserCrUid: string; tRole: UserRole }) =>
@@ -86,6 +91,7 @@ export const createRequest = _createRequest(request);
 export const deleteTeamRequest = _deleteTeamRequest(request);
 export const inviteMemberRequest = _inviteMemberRequest(request);
 export const modifyRoleRequest = _modifyRoleRequest(request);
+export const setAliasRequest = _setAliasRequest(request);
 export const nsListRequest = _nsListRequest(request);
 export const verifyInviteRequest = _verifyInviteRequest(request);
 export const removeMemberRequest = _removeMemberRequest(request);

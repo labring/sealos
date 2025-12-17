@@ -1,0 +1,24 @@
+{{- $existingConfigMap := lookup "v1" "ConfigMap" .Release.Namespace (include "sshgate.fullname" .) -}}
+{{- $sshHostKeySeed := coalesce .Values.sshHostKeySeed (dig "data" "SSH_HOST_KEY_SEED" "" $existingConfigMap) (randAlphaNum 32) -}}
+{{- $defaults := dict
+  "SSH_HOST_KEY_SEED" $sshHostKeySeed
+  "SSH_LISTEN_ADDR" (printf ":%d" (int .Values.sshPort))
+  "ENABLE_PROXY_PROTOCOL" (.Values.proxyProtocol.enabled | toString)
+-}}
+{{- if .Values.proxyProtocol.trustedCIDRs -}}
+  {{- $_ := set $defaults "PROXY_PROTOCOL_TRUSTED_CIDRS" (.Values.proxyProtocol.trustedCIDRs | join ",") -}}
+{{- end -}}
+{{- if .Values.proxyProtocol.skipCIDRs -}}
+  {{- $_ := set $defaults "PROXY_PROTOCOL_SKIP_CIDRS" (.Values.proxyProtocol.skipCIDRs | join ",") -}}
+{{- end -}}
+{{- $config := mergeOverwrite $defaults .Values.env -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sshgate.fullname" . }}
+  labels:
+    {{- include "sshgate.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := $config }}
+  {{ $key }}: {{ $value | toString | quote }}
+  {{- end }}

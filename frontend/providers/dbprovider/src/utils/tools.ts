@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useTranslation } from 'next-i18next';
+import { DBTypeEnum } from '@/constants/db';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -249,6 +250,37 @@ export const memoryFormatToGi = (memory: string | number = '0'): string => {
  */
 export const storageFormatToNum = (storage = '0') => {
   return +`${storage.replace(/gi/i, '')}`;
+};
+
+/**
+ * Parse storage value to Gi units
+ * @param value Storage value string
+ * @param defaultValue Default value if parsing fails
+ * @returns Storage value in Gi units
+ */
+export const storageFormatToGi = (value: string | undefined, defaultValue: number = 0): number => {
+  if (!value) return defaultValue;
+
+  const valueStr = value.toString();
+  let numValue: number;
+
+  if (valueStr.endsWith('Gi')) {
+    numValue = parseFloat(valueStr.slice(0, -2));
+  } else if (valueStr.endsWith('Mi')) {
+    numValue = parseInt(valueStr.slice(0, -2)) / 1024;
+  } else if (valueStr.endsWith('Ti')) {
+    numValue = parseFloat(valueStr.slice(0, -2)) * 1024;
+  } else if (valueStr.endsWith('G')) {
+    numValue = parseFloat(valueStr.slice(0, -1));
+  } else if (valueStr.endsWith('M')) {
+    numValue = parseInt(valueStr.slice(0, -1)) / 1024;
+  } else if (valueStr.endsWith('T')) {
+    numValue = parseFloat(valueStr.slice(0, -1)) * 1024;
+  } else {
+    numValue = parseFloat(valueStr);
+  }
+
+  return isNaN(numValue) ? defaultValue : numValue;
 };
 
 /**
@@ -540,6 +572,22 @@ export function getPodRoleName(pod: PodDetailType): {
     isCreating: true
   };
 }
+
+export const getScore = (dbType: DBType, cpu: number, memory: number) => {
+  const cpuCores = cpu / 1000; // cpu in cores
+  const memoryGB = memory / 1024; // memory in GB
+  let score = 0;
+  if (
+    dbType === DBTypeEnum.postgresql ||
+    dbType === DBTypeEnum.mongodb ||
+    dbType === DBTypeEnum.mysql
+  ) {
+    score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
+  } else if (dbType === DBTypeEnum.redis) {
+    score = Math.min(cpuCores * 1000 + memoryGB * 500, 100000);
+  }
+  return Math.floor(score);
+};
 
 export type RequiredByKeys<T, K extends keyof T> = {
   [P in K]-?: T[P];

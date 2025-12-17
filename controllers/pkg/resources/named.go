@@ -18,9 +18,7 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/controllers/pkg/utils/label"
-
 	corev1 "k8s.io/api/core/v1"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -117,7 +115,10 @@ func getACMEResolverName(obj client.Object) string {
 		}
 		for _, arg := range container.Args {
 			if strings.HasPrefix(arg, acmesolverContainerArgsDomainPrefix) {
-				return acmesolver + "-" + strings.TrimPrefix(arg, acmesolverContainerArgsDomainPrefix)
+				return acmesolver + "-" + strings.TrimPrefix(
+					arg,
+					acmesolverContainerArgsDomainPrefix,
+				)
 			}
 		}
 	}

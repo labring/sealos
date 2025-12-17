@@ -3382,6 +3382,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
   - services
   verbs:
   - '*'
@@ -3630,6 +3636,8 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
+        - --request-cpu-rate=20
+        - --request-memory-rate=10
         - --registry-addr={{ .registryAddr }}
         - --registry-user={{ .registryUser }}
         - --registry-password={{ .registryPassword }}

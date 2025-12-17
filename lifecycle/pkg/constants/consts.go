@@ -58,7 +58,7 @@ var Contact = `
     \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /
      \/__/         \/__/         \/__/         \/__/     \/__/         \/__/
 
-                  Website: https://www.sealos.io/
+                  Website: https://sealos.io/
                   Address: github.com/labring/sealos
                   Version: %s
 `

@@ -9,9 +9,7 @@ import {
   InputGroup,
   InputLeftElement,
   Text,
-  Box,
-  Button,
-  useBreakpointValue
+  Box
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -29,7 +27,6 @@ export default function AppMenu() {
   const router = useRouter();
   const { setSearchValue, setAppType } = useSearchStore();
   const { insideCloud } = useCachedStore();
-  const firstColumnWidth = useBreakpointValue({ base: '240px', xl: '280px' });
 
   const changeI18n = () => {
     const lastLang = getLangStore();
@@ -157,7 +154,7 @@ export default function AppMenu() {
           color="#fff"
           pointerEvents="auto"
           top={'200px'}
-          left={firstColumnWidth}
+          left={{ base: '240px', xl: '280px' }}
         >
           <Flex alignItems={'center'} justifyContent={'space-between'}>
             <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>

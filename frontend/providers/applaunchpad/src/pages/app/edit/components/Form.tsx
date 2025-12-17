@@ -1,15 +1,22 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
-import { APPLICATION_PROTOCOLS, defaultSliderKey, ProtocolList } from '@/constants/app';
+import {
+  APPLICATION_PROTOCOLS,
+  defaultSliderKey,
+  defaultGpuSliderKey,
+  ProtocolList
+} from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX, SEALOS_DOMAIN } from '@/store/static';
+import { PVC_STORAGE_MAX } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
+import { resourcePropertyMap } from '@/constants/resource';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Accordion,
@@ -26,8 +33,6 @@ import {
   Grid,
   IconButton,
   Input,
-  Switch,
-  Tooltip,
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
@@ -39,15 +44,15 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import type { ConfigMapType } from './ConfigmapModal';
-import type { CustomAccessModalParams } from './CustomAccessModal';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
-import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
+import { NetworkSection } from './NetworkSection';
+import { mountPathToConfigMapKey } from '@/utils/tools';
 import { useQuery } from '@tanstack/react-query';
+import { WorkspaceQuotaItem } from '@/types/workspace';
 
-const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
@@ -63,7 +68,9 @@ const Form = ({
   countGpuInventory,
   pxVal,
   refresh,
-  isAdvancedOpen
+  isAdvancedOpen,
+  onDomainVerified,
+  exceededQuotas
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -72,6 +79,8 @@ const Form = ({
   pxVal: number;
   refresh: boolean;
   isAdvancedOpen: boolean;
+  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
+  exceededQuotas: WorkspaceQuotaItem[];
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -79,7 +88,6 @@ const Form = ({
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { toast } = useToast();
-  const { copyData } = useCopyData();
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
@@ -89,19 +97,8 @@ const Form = ({
     control,
     setValue,
     getValues,
-    watch,
     formState: { errors }
   } = formHook;
-
-  const {
-    fields: networks,
-    append: appendNetworks,
-    remove: removeNetworks,
-    update: updateNetworks
-  } = useFieldArray({
-    control,
-    name: 'networks'
-  });
 
   const { fields: envs, replace: replaceEnvs } = useFieldArray({
     control,
@@ -161,7 +158,6 @@ const Form = ({
   );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
-  const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
@@ -178,7 +174,10 @@ const Form = ({
       storeList.reduce((sum, item) => sum + item.value, 0) -
       existingStores.reduce((sum, item) => sum + item.value, 0);
 
-    return storageQuota.limit - storageQuota.used - newlyUsedStorage;
+    return (
+      (storageQuota.limit - storageQuota.used) / resourcePropertyMap.storage.scale -
+      newlyUsedStorage
+    );
   }, [userQuota, existingStores, storeList]);
 
   // listen scroll and set activeNav
@@ -295,7 +294,15 @@ const Form = ({
   // cpu, memory have different sliderValue
   const countSliderList = useCallback(() => {
     const gpuType = getValues('gpu.type');
-    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : defaultSliderKey;
+    // Use GPU-specific config if exists, otherwise use default-gpu, finally fallback to default
+    let key = defaultSliderKey;
+    if (gpuType) {
+      if (formSliderListConfig[gpuType]) {
+        key = gpuType;
+      } else if (formSliderListConfig[defaultGpuSliderKey]) {
+        key = defaultGpuSliderKey;
+      }
+    }
 
     const cpu = getValues('cpu');
     const memory = getValues('memory');
@@ -306,14 +313,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -355,6 +362,20 @@ const Form = ({
         []
       );
   }, [getValues, refresh]);
+
+  const handleOpenCostcenter = () => {
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-costcenter',
+      pathname: '/',
+      query: {
+        mode: 'upgrade'
+      },
+      messageData: {
+        type: 'InternalAppCall',
+        mode: 'upgrade'
+      }
+    });
+  };
 
   return (
     <>
@@ -790,6 +811,31 @@ const Form = ({
                   )}
                 </Box>
               )}
+              {userSourcePrice?.gpu && exceededQuotas.some(({ type }) => type === 'gpu') && (
+                <Box mb={4} pl={`${labelWidth}px`}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('gpu_exceeds_quota', {
+                      requested: getValues('gpu.amount') || 0,
+                      limit: exceededQuotas.find(({ type }) => type === 'gpu')?.limit ?? 0,
+                      used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
 
               {/* cpu && memory */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
@@ -808,6 +854,35 @@ const Form = ({
                   (Core)
                 </Box>
               </Flex>
+              {exceededQuotas.some(({ type }) => type === 'cpu') && (
+                <Box mb={4} pl={`${labelWidth}px`}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('cpu_exceeds_quota', {
+                      requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
+                        resourcePropertyMap.cpu.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'cpu')?.used ?? 0) /
+                        resourcePropertyMap.cpu.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
               <Flex mb={8} pr={3} alignItems={'center'}>
                 <Label mr={'7px'}>{t('Memory')}</Label>
                 <MySlider
@@ -821,237 +896,48 @@ const Form = ({
                   step={1}
                 />
               </Flex>
+              {exceededQuotas.some(({ type }) => type === 'memory') && (
+                <Box mb={4} pl={`${labelWidth}px`}>
+                  <Box fontSize={'md'} color={'red.500'} mb={1}>
+                    {t('memory_exceeds_quota', {
+                      requested: getValues('memory') / resourcePropertyMap.memory.scale,
+                      limit:
+                        (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
+                        resourcePropertyMap.memory.scale,
+                      used:
+                        (exceededQuotas.find(({ type }) => type === 'memory')?.used ?? 0) /
+                        resourcePropertyMap.memory.scale
+                    })}
+                  </Box>
+                  <Box fontSize={'md'} color={'red.500'}>
+                    {t('please_upgrade_plan.0')}
+                    <Box
+                      as="span"
+                      cursor="pointer"
+                      fontWeight="semibold"
+                      color="blue.600"
+                      textDecoration="underline"
+                      onClick={handleOpenCostcenter}
+                    >
+                      {t('please_upgrade_plan.1')}
+                    </Box>
+                    {t('please_upgrade_plan.2')}
+                  </Box>
+                </Box>
+              )}
             </Box>
           </Box>
 
           {/* network */}
-          <Box id={'network'} {...boxStyles}>
-            <Box {...headerStyles}>
-              <MyIcon name={'network'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
-              {t('Network Configuration')}
-            </Box>
-            <Box px={'42px'} py={'24px'} userSelect={'none'}>
-              {networks.map((network, i) => (
-                <Flex
-                  alignItems={'flex-start'}
-                  key={network.id}
-                  _notLast={{ pb: 6, borderBottom: theme.borders.base }}
-                  _notFirst={{ pt: 6 }}
-                >
-                  <Box>
-                    <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                      {t('Container Port')}
-                    </Box>
-                    <Input
-                      h={'32px'}
-                      type={'number'}
-                      w={'110px'}
-                      bg={'grayModern.50'}
-                      {...register(`networks.${i}.port`, {
-                        required:
-                          t('app.The container exposed port cannot be empty') ||
-                          'The container exposed port cannot be empty',
-                        valueAsNumber: true,
-                        min: {
-                          value: 1,
-                          message: t('app.The minimum exposed port is 1')
-                        },
-                        max: {
-                          value: 65535,
-                          message: t('app.The maximum number of exposed ports is 65535')
-                        }
-                      })}
-                    />
-                    {i === networks.length - 1 && networks.length + 1 <= 15 && (
-                      <Box mt={3}>
-                        <Button
-                          w={'100px'}
-                          variant={'outline'}
-                          leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
-                          onClick={() =>
-                            appendNetworks({
-                              networkName: '',
-                              portName: nanoid(),
-                              port: 80,
-                              protocol: 'TCP',
-                              appProtocol: 'HTTP',
-                              openPublicDomain: false,
-                              publicDomain: '',
-                              customDomain: '',
-                              domain: SEALOS_DOMAIN,
-                              openNodePort: false,
-                              nodePort: undefined
-                            })
-                          }
-                        >
-                          {t('Add Port')}
-                        </Button>
-                      </Box>
-                    )}
-                  </Box>
-                  <Box mx={7}>
-                    <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                      {t('Open Public Access')}
-                    </Box>
-                    <Flex alignItems={'center'} h={'35px'}>
-                      <Switch
-                        className="driver-deploy-network-switch"
-                        size={'lg'}
-                        isChecked={!!network.openPublicDomain || !!network.openNodePort}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            if (APPLICATION_PROTOCOLS.includes(network.appProtocol)) {
-                              updateNetworks(i, {
-                                ...getValues('networks')[i],
-                                networkName: network.networkName || `network-${nanoid()}`,
-                                protocol: 'TCP',
-                                appProtocol: network.appProtocol || 'HTTP',
-                                openPublicDomain: true,
-                                openNodePort: false,
-                                publicDomain: network.publicDomain || nanoid(),
-                                domain: network.domain || SEALOS_DOMAIN
-                              });
-                            } else {
-                              updateNetworks(i, {
-                                ...getValues('networks')[i],
-                                networkName: network.networkName || `network-${nanoid()}`,
-                                protocol: network.protocol,
-                                appProtocol: 'HTTP',
-                                openNodePort: true,
-                                openPublicDomain: false,
-                                customDomain: ''
-                              });
-                            }
-                          } else {
-                            updateNetworks(i, {
-                              ...getValues('networks')[i],
-                              openPublicDomain: false,
-                              openNodePort: false
-                            });
-                          }
-                        }}
-                      ></Switch>
-                    </Flex>
-                  </Box>
-                  {(network.openPublicDomain || network.openNodePort) && (
-                    <>
-                      <Box flex={'1 0 0'}>
-                        <Box mb={'8px'} h={'20px'}></Box>
-                        <Flex alignItems={'center'} h={'35px'}>
-                          <MySelect
-                            width={'120px'}
-                            height={'32px'}
-                            borderTopRightRadius={0}
-                            borderBottomRightRadius={0}
-                            value={
-                              network.openPublicDomain
-                                ? network.appProtocol
-                                : network.openNodePort
-                                ? network.protocol
-                                : 'HTTP'
-                            }
-                            list={ProtocolList}
-                            onchange={(val: any) => {
-                              if (APPLICATION_PROTOCOLS.includes(val)) {
-                                updateNetworks(i, {
-                                  ...getValues('networks')[i],
-                                  protocol: 'TCP',
-                                  appProtocol: val,
-                                  openNodePort: false,
-                                  openPublicDomain: true,
-                                  networkName: network.networkName || `network-${nanoid()}`,
-                                  publicDomain: network.publicDomain || nanoid()
-                                });
-                              } else {
-                                updateNetworks(i, {
-                                  ...getValues('networks')[i],
-                                  protocol: val,
-                                  appProtocol: 'HTTP',
-                                  openNodePort: true,
-                                  openPublicDomain: false,
-                                  customDomain: ''
-                                });
-                              }
-                            }}
-                          />
-                          <Flex
-                            maxW={'350px'}
-                            flex={'1 0 0'}
-                            alignItems={'center'}
-                            h={'32px'}
-                            bg={'grayModern.50'}
-                            px={4}
-                            border={theme.borders.base}
-                            borderLeft={0}
-                            borderTopRightRadius={'md'}
-                            borderBottomRightRadius={'md'}
-                          >
-                            <Tooltip label={t('click_to_copy_tooltip')}>
-                              <Box
-                                flex={1}
-                                userSelect={'all'}
-                                className="textEllipsis"
-                                onClick={() => {
-                                  copyData(`${network.publicDomain}.${network.domain}`);
-                                }}
-                              >
-                                {network.customDomain
-                                  ? network.customDomain
-                                  : network.openNodePort
-                                  ? network?.nodePort
-                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                        network.nodePort
-                                      }`
-                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                        'pending_to_allocated'
-                                      )}`
-                                  : `${network.publicDomain}.${network.domain}`}
-                              </Box>
-                            </Tooltip>
+          <NetworkSection
+            formHook={formHook}
+            exceededQuotas={exceededQuotas}
+            onDomainVerified={onDomainVerified}
+            handleOpenCostcenter={handleOpenCostcenter}
+            boxStyles={boxStyles}
+            headerStyles={headerStyles}
+          />
 
-                            {network.openPublicDomain && !network.openNodePort && (
-                              <Box
-                                fontSize={'11px'}
-                                color={'brightBlue.600'}
-                                cursor={'pointer'}
-                                onClick={() =>
-                                  setCustomAccessModalData({
-                                    publicDomain: network.publicDomain,
-                                    currentCustomDomain: network.customDomain,
-                                    domain: network.domain
-                                  })
-                                }
-                              >
-                                {t('Custom Domain')}
-                              </Box>
-                            )}
-                          </Flex>
-                        </Flex>
-                      </Box>
-                    </>
-                  )}
-                  {networks.length > 1 && (
-                    <Box ml={3}>
-                      <Box mb={'8px'} h={'20px'}></Box>
-                      <IconButton
-                        height={'32px'}
-                        width={'32px'}
-                        aria-label={'button'}
-                        variant={'outline'}
-                        bg={'#FFF'}
-                        _hover={{
-                          color: 'red.600',
-                          bg: 'rgba(17, 24, 36, 0.05)'
-                        }}
-                        icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                        onClick={() => removeNetworks(i)}
-                      />
-                    </Box>
-                  )}
-                </Flex>
-              ))}
-            </Box>
-          </Box>
           {/* settings */}
           {already && (
             <Accordion
@@ -1142,8 +1028,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1343,22 +1229,7 @@ const Form = ({
           )}
         </Box>
       </Grid>
-      {!!customAccessModalData && (
-        <CustomAccessModal
-          {...customAccessModalData}
-          onClose={() => setCustomAccessModalData(undefined)}
-          onSuccess={(e) => {
-            const i = networks.findIndex(
-              (item) => item.publicDomain === customAccessModalData.publicDomain
-            );
-            if (i === -1) return;
-            updateNetworks(i, {
-              ...networks[i],
-              customDomain: e
-            });
-          }}
-        />
-      )}
+
       {isEditEnvs && (
         <EditEnvs defaultEnv={envs} onClose={onCloseEditEnvs} successCb={(e) => replaceEnvs(e)} />
       )}

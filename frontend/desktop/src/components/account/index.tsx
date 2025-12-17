@@ -15,7 +15,6 @@ import {
   MenuList,
   Text,
   useBreakpointValue,
-  useColorMode,
   useDisclosure
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,18 +28,23 @@ import {
   ArrowLeftRight,
   Bell,
   Copy,
-  CreditCard,
+  Dock,
   FileCode,
   Gift,
   Globe,
   LogOut,
+  ReceiptText,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
-import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
+import { useSubscriptionStore } from '@/stores/subscription';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { cn } from '@sealos/shadcn-ui';
+import { getPlanBackgroundClass } from '@/utils/styling';
+import { AlertSettings } from './AlertSettings';
 
 const baseItemStyle = {
   minW: '36px',
@@ -54,38 +58,43 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, authConfig } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { delSession, session, setToken } = useSessionStore();
   const user = session?.user;
   const queryclient = useQueryClient();
   const kubeconfig = session?.kubeconfig || '';
   const showDisclosure = useDisclosure();
-  const [notificationAmount, setNotificationAmount] = useState(0);
-  const { installedApps, openApp, openDesktopApp } = useAppStore();
-  const { setBlockingPageUnload } = useAppsRunningPromptStore();
-  const { colorMode, toggleColorMode } = useColorMode();
-  const { openGuideModal, setInitGuide, initGuide } = useGuideModalStore();
+  const [, setNotificationAmount] = useState(0);
+  const { openDesktopApp, autolaunch } = useAppStore();
+  const { openGuideModal, initGuide, autoOpenBlocked, blockAutoOpen } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
+  const [alertSettingsOpen, setAlertSettingsOpen] = useState(false);
+
+  const emailAlertEnabled = layoutConfig?.common.emailAlertEnabled && authConfig?.idp.email.enabled;
+  const phoneAlertEnabled = layoutConfig?.common.phoneAlertEnabled && authConfig?.idp.sms.enabled;
+  const alertSettingsEnabled = emailAlertEnabled || phoneAlertEnabled;
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    // We clear session data before unloading the page, running apps data can not be fetched at that time.
-    setBlockingPageUnload(false);
     delSession();
     queryclient.clear();
     router.replace('/signin');
     setToken('');
   };
 
-  const openCostcenterApp = () => {
+  const openCostcenterApp = ({ page = 'plan', mode = '' }: { page?: string; mode?: string }) => {
     openDesktopApp({
       appKey: 'system-costcenter',
-      pathname: '/'
+      pathname: '/',
+      query: {
+        page: page,
+        mode: mode
+      }
     });
   };
 
@@ -104,10 +113,17 @@ export default function Account() {
 
   useEffect(() => {
     // [TODO] Guide is currently not compatible with narrow screen.
-    if (initGuide && !isNarrowScreen) {
+    // Do not show guide above auto opened windows.
+    if (Object.hasOwn(router.query, 'openapp') || autolaunch) {
+      blockAutoOpen();
+      return;
+    }
+
+    if (initGuide && !isNarrowScreen && !autoOpenBlocked) {
       openGuideModal();
     }
-  }, [initGuide, openGuideModal, isNarrowScreen]);
+  }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
+  const { subscriptionInfo } = useSubscriptionStore();
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>
@@ -254,6 +270,56 @@ export default function Account() {
                     </MenuItem>
                   </AccountCenter>
                 )}
+                <MenuItem
+                  mt="0px"
+                  py="6px"
+                  px="8px"
+                  borderRadius="8px"
+                  _hover={{ bg: '#F4F4F5' }}
+                  onClick={() => setAlertSettingsOpen(true)}
+                  display={alertSettingsEnabled ? 'block' : 'none'}
+                >
+                  <Flex alignItems="center" gap="8px">
+                    <Center w="20px" h="20px">
+                      <Bell size={16} color="#737373" />
+                    </Center>
+                    <Text fontSize="14px" fontWeight="400">
+                      {t('common:alert_settings.menu_item')}
+                    </Text>
+                  </Flex>
+                </MenuItem>
+                {layoutConfig?.common.subscriptionEnabled && (
+                  <MenuItem
+                    mt="0px"
+                    py="6px"
+                    px="8px"
+                    borderRadius="8px"
+                    _hover={{ bg: '#F4F4F5' }}
+                    onClick={() => openCostcenterApp({ page: 'plan' })}
+                  >
+                    <Flex alignItems="center" gap="8px">
+                      <Center w="20px" h="20px">
+                        <Dock size={16} color="#737373" />
+                      </Center>
+                      <Text fontSize="14px" fontWeight="400">
+                        {t('common:plan')}
+                      </Text>
+                      <Badge
+                        variant="subscription"
+                        className={cn(
+                          'px-1 text-xs',
+                          getPlanBackgroundClass(
+                            subscriptionInfo?.subscription.PlanName ?? '',
+                            !!subscriptionInfo?.subscription,
+                            subscriptionInfo?.subscription.Status === 'Debt'
+                          )
+                        )}
+                      >
+                        {subscriptionInfo?.subscription?.PlanName || 'payg'}
+                      </Badge>
+                    </Flex>
+                  </MenuItem>
+                )}
 
                 <MenuItem
                   mt="0px"
@@ -261,11 +327,11 @@ export default function Account() {
                   px="8px"
                   borderRadius="8px"
                   _hover={{ bg: '#F4F4F5' }}
-                  onClick={openCostcenterApp}
+                  onClick={() => openCostcenterApp({ page: 'billing' })}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
-                      <CreditCard size={16} color="#737373" />
+                      <ReceiptText size={16} color="#737373" />
                     </Center>
                     <Text fontSize="14px" fontWeight="400">
                       {t('common:billing')}
@@ -273,7 +339,7 @@ export default function Account() {
                   </Flex>
                 </MenuItem>
 
-                {layoutConfig?.version === 'cn' && (
+                {authConfig?.invite.enabled && (
                   <MenuItem
                     mt="0px"
                     py="6px"
@@ -391,6 +457,13 @@ export default function Account() {
             </MenuList>
           </Menu>
         </Flex>
+
+        <AlertSettings
+          open={alertSettingsOpen}
+          onOpenChange={setAlertSettingsOpen}
+          emailEnabled={emailAlertEnabled}
+          phoneEnabled={phoneAlertEnabled}
+        />
 
         {/*
         {layoutConfig?.common.workorderEnabled && (

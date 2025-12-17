@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "aiproxy.fullname" . }}
+  labels:
+    {{- include "aiproxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{.Values.replicas}}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{ include "aiproxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{ include "aiproxy.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: 600
+      containers:
+        - image: {{.Values.image}}
+          imagePullPolicy: IfNotPresent
+          name: aiproxy
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "aiproxy.fullname" . }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "aiproxy.fullname" . }}
+  labels:
+    {{- include "aiproxy.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector: {{ include "aiproxy.selectorLabels" . | nindent 4 }}

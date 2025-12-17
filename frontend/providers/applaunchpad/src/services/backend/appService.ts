@@ -2,7 +2,6 @@ import { appDeployKey, pauseKey, minReplicasKey, maxReplicasKey } from '@/consta
 import { formData2Yamls } from '@/pages/app/edit';
 import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
-import { UserQuotaItemType } from '@/types/user';
 import { json2HPA } from '@/utils/deployYaml2Json';
 import { str2Num } from '@/utils/tools';
 import { adaptAppDetail } from '@/utils/adapt';
@@ -41,7 +40,6 @@ export interface K8sContext {
   namespace: string;
   applyYamlList: (yamlList: string[], type: 'create' | 'replace') => Promise<KubernetesObject[]>;
   getDeployApp: (appName: string) => Promise<V1Deployment | V1StatefulSet>;
-  getUserQuota: () => Promise<UserQuotaItemType[]>;
   getUserBalance: () => Promise<number>;
 }
 
@@ -90,7 +88,7 @@ export async function getAppByName(appName: string, k8s: K8sContext) {
       .then((res: any) => ({
         body: res.body.items.map((item: any) => ({
           ...item,
-          apiVersion: res.body.apiVersion, // item does not contain apiversion and kind
+          apiVersion: res.body.apiVersion,
           kind: 'Ingress'
         }))
       })),
@@ -319,6 +317,29 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
 }
 
 /**
+ * Restart an application by updating the restartTime label
+ * @param appName Application name
+ * @param k8s Kubernetes context containing clients and configuration
+ */
+export async function restartApp(appName: string, k8s: K8sContext) {
+  const { apiClient, getDeployApp } = k8s;
+
+  const app = await getDeployApp(appName);
+
+  if (!app.spec?.template.metadata?.labels) {
+    throw new Error('app data error');
+  }
+
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:T]/g, '')
+    .replace(/\./g, '')
+    .replace(/-/g, '');
+  app.spec.template.metadata.labels['restartTime'] = timestamp;
+  await apiClient.replace(app);
+}
+
+/**
  * Delete application and its related resources by application name
  * @param name Application name
  * @param k8s Kubernetes context containing clients and configuration
@@ -449,25 +470,36 @@ export async function updateAppResources(
       cpu?: number;
       memory?: number;
       replicas?: number;
+      hpa?: {
+        target: 'cpu' | 'memory' | 'gpu';
+        value: number;
+        minReplicas: number;
+        maxReplicas: number;
+      };
     };
     command?: string;
     args?: string;
     image?: string;
+    imageName?: string;
+    imageRegistry?: {
+      username: string;
+      password: string;
+      serverAddress: string;
+    } | null;
     env?: { name: string; value?: string; valueFrom?: any }[];
   },
   k8s: K8sContext
 ) {
-  const { getDeployApp, k8sApp, k8sAutoscaling, apiClient, applyYamlList, namespace } = k8s;
+  const { getDeployApp, k8sApp, k8sAutoscaling, k8sCore, apiClient, applyYamlList, namespace } =
+    k8s;
 
   const app = await getDeployApp(appName);
   if (!app.metadata?.name || !app.spec) {
     throw new Error('app data error');
   }
 
-  // Handle replicas update with special pause/start logic
   if (updateData.resource?.replicas !== undefined) {
     if (updateData.resource.replicas === 0) {
-      // Pause logic: save HPA config and delete HPA
       const restartAnnotations: Record<string, string> = {
         target: '',
         value: ''
@@ -500,10 +532,24 @@ export async function updateAppResources(
       requestQueue.push(apiClient.replace(app));
       await Promise.all(requestQueue);
     } else {
-      // Start logic: set replicas and restore HPA if needed
       const requestQueue: Promise<any>[] = [];
 
+      try {
+        await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace);
+        requestQueue.push(
+          k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)
+        );
+      } catch (error: any) {
+        if (error?.statusCode !== 404) {
+          throw new Error('Failed to check existing HPA');
+        }
+      }
+
       app.spec.replicas = updateData.resource.replicas;
+
+      app.metadata.annotations = app.metadata.annotations || {};
+      app.metadata.annotations[minReplicasKey] = `${updateData.resource.replicas}`;
+      app.metadata.annotations[maxReplicasKey] = `${updateData.resource.replicas}`;
 
       if (app.metadata?.annotations?.[pauseKey]) {
         const pauseData: {
@@ -512,21 +558,6 @@ export async function updateAppResources(
         } = JSON.parse(app.metadata.annotations[pauseKey]);
 
         delete app.metadata.annotations[pauseKey];
-
-        if (pauseData.target) {
-          const hpaYaml = json2HPA({
-            appName,
-            hpa: {
-              use: true,
-              target: pauseData.target,
-              value: pauseData.value,
-              minReplicas: app.metadata.annotations[minReplicasKey] || '1',
-              maxReplicas: app.metadata.annotations[maxReplicasKey] || '2'
-            }
-          } as unknown as AppEditType);
-
-          requestQueue.push(applyYamlList([hpaYaml], 'create'));
-        }
       }
 
       requestQueue.push(apiClient.replace(app));
@@ -534,19 +565,55 @@ export async function updateAppResources(
     }
   }
 
-  // Handle CPU/Memory/Command/Args/Image updates with JSONPatch
+  if (updateData.resource?.hpa !== undefined) {
+    const hpaConfig = updateData.resource.hpa;
+
+    app.spec.replicas = hpaConfig.minReplicas;
+
+    app.metadata.annotations = app.metadata.annotations || {};
+    app.metadata.annotations[minReplicasKey] = `${hpaConfig.minReplicas}`;
+    app.metadata.annotations[maxReplicasKey] = `${hpaConfig.maxReplicas}`;
+
+    try {
+      await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace);
+      await k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error: any) {
+      if (error?.statusCode !== 404) {
+        throw new Error('Failed to check existing HPA');
+      }
+    }
+
+    await apiClient.replace(app);
+
+    const hpaYaml = json2HPA({
+      appName,
+      hpa: {
+        use: true,
+        target: hpaConfig.target,
+        value: hpaConfig.value,
+        minReplicas: hpaConfig.minReplicas,
+        maxReplicas: hpaConfig.maxReplicas
+      }
+    } as unknown as AppEditType);
+
+    await applyYamlList([hpaYaml], 'create');
+  }
+
   const resourceUpdates =
     updateData.resource?.cpu !== undefined ||
     updateData.resource?.memory !== undefined ||
     updateData.command !== undefined ||
     updateData.args !== undefined ||
     updateData.image !== undefined ||
+    updateData.imageName !== undefined ||
+    updateData.imageRegistry !== undefined ||
     updateData.env !== undefined;
   if (resourceUpdates) {
     const jsonPatch: Array<{
-      op: 'replace';
+      op: 'replace' | 'remove';
       path: string;
-      value: unknown;
+      value?: unknown;
     }> = [];
 
     if (updateData.resource?.cpu !== undefined) {
@@ -582,8 +649,8 @@ export async function updateAppResources(
     }
 
     if (updateData.command !== undefined) {
-      // Convert string to array following the same logic as deployYaml2Json
       const commandArray = (() => {
+        if (updateData.command === '') return [];
         if (!updateData.command) return undefined;
         try {
           return JSON.parse(updateData.command);
@@ -592,7 +659,7 @@ export async function updateAppResources(
         }
       })();
 
-      if (commandArray) {
+      if (commandArray !== undefined) {
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/containers/0/command',
@@ -602,8 +669,8 @@ export async function updateAppResources(
     }
 
     if (updateData.args !== undefined) {
-      // Convert string to array following the same logic as deployYaml2Json
       const argsArray = (() => {
+        if (updateData.args === '') return [];
         if (!updateData.args) return undefined;
         try {
           return JSON.parse(updateData.args) as string[];
@@ -612,7 +679,7 @@ export async function updateAppResources(
         }
       })();
 
-      if (argsArray) {
+      if (argsArray !== undefined) {
         jsonPatch.push({
           op: 'replace',
           path: '/spec/template/spec/containers/0/args',
@@ -621,18 +688,85 @@ export async function updateAppResources(
       }
     }
 
-    if (updateData.image !== undefined) {
+    // Handle image name update (either from image or imageName field)
+    const imageNameToUpdate =
+      updateData.image !== undefined ? updateData.image : updateData.imageName;
+    if (imageNameToUpdate !== undefined) {
+      // Allow empty string for image name
+      const finalImageName = imageNameToUpdate || '';
       jsonPatch.push({
         op: 'replace',
         path: '/spec/template/spec/containers/0/image',
-        value: updateData.image
+        value: finalImageName
       });
 
       jsonPatch.push({
         op: 'replace',
         path: '/metadata/annotations/originImageName',
-        value: updateData.image
+        value: finalImageName
       });
+    }
+
+    if (updateData.imageRegistry !== undefined) {
+      if (updateData.imageRegistry !== null) {
+        const { k8sCore } = k8s;
+        const auth = Buffer.from(
+          `${updateData.imageRegistry.username}:${updateData.imageRegistry.password}`
+        ).toString('base64');
+        const dockerconfigjson = Buffer.from(
+          JSON.stringify({
+            auths: {
+              [updateData.imageRegistry.serverAddress]: {
+                username: updateData.imageRegistry.username,
+                password: updateData.imageRegistry.password,
+                auth
+              }
+            }
+          })
+        ).toString('base64');
+
+        const secretData = {
+          apiVersion: 'v1',
+          kind: 'Secret',
+          metadata: { name: appName },
+          data: {
+            '.dockerconfigjson': dockerconfigjson
+          },
+          type: 'kubernetes.io/dockerconfigjson'
+        };
+
+        try {
+          await k8sCore.readNamespacedSecret(appName, namespace);
+          await k8sCore.replaceNamespacedSecret(appName, namespace, secretData);
+        } catch (error: any) {
+          if (error.response?.statusCode === 404) {
+            await k8sCore.createNamespacedSecret(namespace, secretData);
+          } else {
+            throw error;
+          }
+        }
+
+        jsonPatch.push({
+          op: 'replace',
+          path: '/spec/template/spec/imagePullSecrets',
+          value: [{ name: appName }]
+        });
+      } else {
+        if (app.spec?.template?.spec?.imagePullSecrets) {
+          jsonPatch.push({
+            op: 'remove',
+            path: '/spec/template/spec/imagePullSecrets'
+          });
+        }
+
+        try {
+          await k8sCore.deleteNamespacedSecret(appName, namespace);
+        } catch (error: any) {
+          if (error.response?.statusCode !== 404) {
+            throw error;
+          }
+        }
+      }
     }
 
     if (updateData.env !== undefined) {

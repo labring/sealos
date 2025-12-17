@@ -57,6 +57,7 @@ export function BaseTable<T extends unknown>({
                       bg={'grayModern.100'}
                       color={'grayModern.600'}
                       border={'none'}
+                      textTransform={'none'}
                       _first={{
                         borderLeftRadius: '6px'
                       }}
@@ -95,8 +96,8 @@ export function BaseTable<T extends unknown>({
                           cell.column.columnDef.meta?.isError?.(item.original)
                             ? '#FFFAEB'
                             : isPinned
-                            ? 'white'
-                            : ''
+                              ? 'white'
+                              : ''
                         }
                         borderBottom={'1px solid'}
                         borderBottomColor={

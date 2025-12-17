@@ -16,7 +16,8 @@ export const proxyError: Record<string, boolean> = {
 
 export enum ERROR_ENUM {
   unAuthorization = 'unAuthorization',
-  outstandingPayment = 'outstandingPayment'
+  outstandingPayment = 'outstandingPayment',
+  insufficientPermissions = 'insufficientPermissions'
 }
 export const ERROR_RESPONSE: Record<
   any,
@@ -36,5 +37,10 @@ export const ERROR_RESPONSE: Record<
     code: 402,
     statusText: ERROR_ENUM.outstandingPayment,
     message: 'outstanding payment'
+  },
+  [ERROR_ENUM.insufficientPermissions]: {
+    code: 403,
+    statusText: ERROR_ENUM.insufficientPermissions,
+    message: 'insufficient_permissions'
   }
 };

@@ -17,6 +17,10 @@ import { I18nCommonKey } from './i18next';
 
 export type DBType = `${DBTypeEnum}`;
 
+export type CPUResourceEnum = 0.5 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type MemoryResourceEnum = 0.5 | 1 | 2 | 4 | 6 | 8 | 12 | 16 | 32;
+export type ReplicasResourceEnum = 1 | 2 | 3;
+
 export type SupportMigrationDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
 
 export type SupportConnectDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
@@ -102,7 +106,12 @@ export interface DBEditType {
   labels: { [key: string]: string };
   terminationPolicy: KubeBlockClusterTerminationPolicy;
   autoBackup?: AutoBackupFormType;
-  dataSourceId?: number;
+  parameterConfig?: {
+    maxConnections?: string;
+    timeZone?: string;
+    lowerCaseTableNames?: string;
+    isMaxConnectionsCustomized?: boolean;
+  };
 }
 
 export type DBSourceType = 'app_store' | 'sealaf';
@@ -124,6 +133,7 @@ export interface DBDetailType extends DBEditType {
   totalCpu: number;
   totalMemory: number;
   totalStorage: number;
+  rawDbType: DBType;
 }
 
 export interface DBConditionItemType {
@@ -194,3 +204,18 @@ export interface OpsRequestItemType {
     instanceName: string;
   };
 }
+
+export type ParameterConfigField = ParameterConfigStringField | ParameterConfigEnumField;
+
+export type ParameterConfigStringField = {
+  name: string;
+  type: 'string';
+  description?: string;
+};
+
+export type ParameterConfigEnumField = {
+  name: string;
+  type: 'enum';
+  description?: string;
+  values: string[];
+};

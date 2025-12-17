@@ -34,6 +34,9 @@ const (
 	DisableService = server.DontConnect
 )
 
+type CacheStats = server.CacheStats
+type CacheOptions = server.CacheOptions
+
 // Shim is the interface we expose for controlling our CRI shim.
 type Shim interface {
 	// Setup prepares the shim to start processing CRI requests.
@@ -42,6 +45,12 @@ type Shim interface {
 	Start() error
 	// Stop stops the shim.
 	Stop()
+	// UpdateAuth refreshes registry credentials without restarting the shim.
+	UpdateAuth(*types.ShimAuthConfig)
+	// UpdateCache applies cache-related tuning knobs.
+	UpdateCache(CacheOptions)
+	// CacheStats returns current cache counters.
+	CacheStats() CacheStats
 }
 
 // shim is the implementation of Shim.
@@ -50,6 +59,7 @@ type shim struct {
 	cfg        *types.Config // shim options
 	client     server.Client // shim CRI client
 	server     server.Server // shim CRI server
+	authStore  *server.AuthStore
 }
 
 // NewShim creates a new shim instance.
@@ -68,15 +78,17 @@ func NewShim(cfg *types.Config, auth *types.ShimAuthConfig) (Shim, error) {
 	}
 	r.client = clt
 
-	srvopts := server.Options{
-		Timeout:           cfg.Timeout.Duration,
-		Socket:            cfg.ImageShimSocket,
-		User:              -1,
-		Group:             -1,
-		Mode:              0660,
-		CRIConfigs:        auth.CRIConfigs,
-		OfflineCRIConfigs: auth.OfflineCRIConfigs,
-	}
+	r.authStore = server.NewAuthStore(auth)
+
+    srvopts := server.Options{
+        Timeout:   cfg.Timeout.Duration,
+        Socket:    cfg.ImageShimSocket,
+        User:      -1,
+        Group:     -1,
+        Mode:      0660,
+        AuthStore: r.authStore,
+        Cache:     CacheOptionsFromConfig(cfg),
+    }
 	srv, err := server.NewServer(srvopts)
 	if err != nil {
 		return nil, shimError("failed to create shim server: %v", err)
@@ -116,6 +128,27 @@ func (r *shim) Stop() {
 	r.server.Stop()
 }
 
+func (r *shim) UpdateAuth(auth *types.ShimAuthConfig) {
+	if r.authStore == nil {
+		return
+	}
+	r.authStore.Update(auth)
+}
+
+func (r *shim) UpdateCache(opts CacheOptions) {
+	if r.server == nil {
+		return
+	}
+	r.server.UpdateCacheOptions(opts)
+}
+
+func (r *shim) CacheStats() CacheStats {
+	if r.server == nil {
+		return CacheStats{}
+	}
+	return r.server.CacheStats()
+}
+
 func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {
 	if err != nil {
 		logger.Error("failed to determine permissions/ownership of client socket %q: %v",
@@ -135,4 +168,15 @@ func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err
 // shimError creates a formatted shim-specific error.
 var shimError = func(format string, args ...interface{}) error {
 	return fmt.Errorf("cri/shim: "+format, args...)
+}
+
+func CacheOptionsFromConfig(cfg *types.Config) CacheOptions {
+	if cfg == nil {
+		return CacheOptions{}
+	}
+	return CacheOptions{
+		ImageCacheSize: cfg.Cache.ImageCacheSize,
+		ImageCacheTTL:  cfg.Cache.ImageCacheTTL.Duration,
+		DomainCacheTTL: cfg.Cache.DomainCacheTTL.Duration,
+	}
 }
