@@ -295,13 +295,14 @@ const Form = ({
   const countSliderList = useCallback(() => {
     const gpuType = getValues('gpu.type');
     // Use GPU-specific config if exists, otherwise use default-gpu, finally fallback to default
-    const key = gpuType
-      ? formSliderListConfig[gpuType]
-        ? gpuType
-        : formSliderListConfig[defaultGpuSliderKey]
-          ? defaultGpuSliderKey
-          : defaultSliderKey
-      : defaultSliderKey;
+    let key = defaultSliderKey;
+    if (gpuType) {
+      if (formSliderListConfig[gpuType]) {
+        key = gpuType;
+      } else if (formSliderListConfig[defaultGpuSliderKey]) {
+        key = defaultGpuSliderKey;
+      }
+    }
 
     const cpu = getValues('cpu');
     const memory = getValues('memory');
