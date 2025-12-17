@@ -75,6 +75,7 @@
   "copy_failed": "Copy failed",
   "copy_success": "Copy succeeded",
   "core": "Core",
+  "count": "Count",
   "cpu": "CPU",
   "cpu_exceeds_quota": "CPU Insufficient Resources: Your setting of {requested} cores exceeds the available {limit} cores ({used} cores used).",
   "create": "Create",
@@ -193,7 +194,7 @@
   "git_username": "Username",
   "git_username_placeholder": "Enter Git username",
   "gpu": "GPU",
-  "gpu_exceeds_quota": "Requested GPU exceeds your quota. Please contact admin.",
+  "gpu_exceeds_quota": "GPU Insufficient Resources: Your setting of {requested} cards exceeds the available {limit} cards ({used} cards used).",
   "guide": {
     "click_shadow_skip": "Click on any shadow to skip",
     "deploy_cost": "Current resource usage and estimated daily consumption",
