@@ -14,50 +14,56 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DevBoxReleaseSpec defines the desired state of DevBoxRelease
+// DevBoxReleaseSpec defines the desired state of Devboxrelease.
 type DevBoxReleaseSpec struct {
 	// +kubebuilder:validation:Required
 	DevboxName string `json:"devboxName"`
 	// +kubebuilder:validation:Required
-	NewTag string `json:"newTag"`
+	Version string `json:"version"`
 	// +kubebuilder:validation:Optional
 	Notes string `json:"notes,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	StartDevboxAfterRelease bool `json:"startDevboxAfterRelease,omitempty"`
 }
 
-type DevboxReleasePhase string
+type DevBoxReleasePhase string
 
 const (
-	// DevboxReleasePhaseSuccess means the Devbox has been tagged
-	DevboxReleasePhaseSuccess DevboxReleasePhase = "Success"
-	// DevboxReleasePhasePending means the Devbox has not been tagged
-	DevboxReleasePhasePending DevboxReleasePhase = "Pending"
-	// DevboxReleasePhaseFailed means the Devbox has not been tagged
-	DevboxReleasePhaseFailed DevboxReleasePhase = "Failed"
+	// DevBoxReleasePhaseSuccess means the Devbox has been released
+	DevBoxReleasePhaseSuccess DevBoxReleasePhase = "Success"
+	// DevBoxReleasePhasePending means the Devbox has not been released
+	DevBoxReleasePhasePending DevBoxReleasePhase = "Pending"
+	// DevBoxReleasePhaseFailed means the Devbox has not been released
+	DevBoxReleasePhaseFailed DevBoxReleasePhase = "Failed"
 )
 
-// DevBoxReleaseStatus defines the observed state of DevBoxRelease
 type DevBoxReleaseStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=Pending
-	Phase DevboxReleasePhase `json:"phase"`
-	// +kubebuilder:validation:Optional
-	OriginalImage string `json:"originalImage"`
+	// +kubebuilder:validation:Enum=Success;Pending;Failed
+	Phase               DevBoxReleasePhase `json:"phase,omitempty"`
+	OriginalDevboxState DevboxState        `json:"originalDevboxState,omitempty"`
+	SourceImage         string             `json:"sourceImage,omitempty"`
+	TargetImage         string             `json:"targetImage,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="DevboxName",type="string",JSONPath=".spec.devboxName"
-// +kubebuilder:printcolumn:name="NewTag",type="string",JSONPath=".spec.newTag"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
-// +kubebuilder:printcolumn:name="OriginalImage",type="string",JSONPath=".status.originalImage"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
+// +kubebuilder:printcolumn:name="SourceImage",type="string",JSONPath=".status.sourceImage"
+// +kubebuilder:printcolumn:name="TargetImage",type="string",JSONPath=".status.targetImage"
+// +kubebuilder:printcolumn:name="StartDevboxAfterRelease",type="boolean",JSONPath=".spec.startDevboxAfterRelease"
 
-// DevBoxRelease is the Schema for the devboxreleases API
+// DevBoxRelease is the Schema for the devboxreleases API.
 type DevBoxRelease struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -68,7 +74,7 @@ type DevBoxRelease struct {
 
 // +kubebuilder:object:root=true
 
-// DevBoxReleaseList contains a list of DevBoxRelease
+// DevBoxReleaseList contains a list of DevBoxRelease.
 type DevBoxReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

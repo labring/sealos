@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 )
 
 var _ = Describe("Devbox Controller", func() {
@@ -40,13 +40,13 @@ var _ = Describe("Devbox Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		devbox := &devboxv1alpha1.Devbox{}
+		devbox := &devboxv1alpha2.Devbox{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Devbox")
 			err := k8sClient.Get(ctx, typeNamespacedName, devbox)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &devboxv1alpha1.Devbox{
+				resource := &devboxv1alpha2.Devbox{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,7 +59,7 @@ var _ = Describe("Devbox Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &devboxv1alpha1.Devbox{}
+			resource := &devboxv1alpha2.Devbox{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

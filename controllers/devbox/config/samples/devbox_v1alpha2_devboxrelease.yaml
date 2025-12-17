@@ -1,0 +1,11 @@
+apiVersion: devbox.sealos.io/v1alpha2
+kind: Devboxrelease
+metadata:
+  labels:
+    app.kubernetes.io/name: devbox
+    app.kubernetes.io/managed-by: kustomize
+  name: devboxrelease-sample
+spec:
+  devboxName: devbox-sample-1
+  version: 1.0.0
+  notes: "This is a sample devbox release"
