@@ -1,4 +1,5 @@
-import { KubeObject, KubeObjectMetadata, KubeObjectScope } from '@/k8slens/kube-object';
+import { KubeObjectMetadata, KubeObjectScope } from '../api-types';
+import { KubeObject } from '../kube-object';
 
 export interface ClusterComponentSpec {
   componentDefRef?: string;

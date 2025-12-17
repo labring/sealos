@@ -3,31 +3,11 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import { formatDuration, isObject, isString } from '@/k8slens/utilities';
+import { isObject, isString } from '@/k8slens/utilities';
 import autoBind from 'auto-bind';
-import moment from 'moment';
-import type { Patch } from 'rfc6902';
 import type { KubeJsonApiData, KubeObjectMetadata, KubeObjectScope } from './api-types';
 import { KubeCreationError } from './api-types';
-import {
-  filterOutResourceApplierAnnotations,
-  isJsonApiData,
-  isJsonApiDataList,
-  isKubeJsonApiListMetadata,
-  isKubeJsonApiMetadata,
-  isKubeObjectNonSystem,
-  isPartialJsonApiData,
-  isPartialJsonApiMetadata,
-  stringifyLabels
-} from './utils';
-
-export function createKubeObject<
-  Metadata extends KubeObjectMetadata = KubeObjectMetadata,
-  Status = unknown,
-  Spec = unknown
->(data: KubeJsonApiData<Metadata, Status, Spec>) {
-  return new KubeObject(data);
-}
+import { filterOutResourceApplierAnnotations, stringifyLabels } from './utils';
 
 export class KubeObject<
   Metadata extends KubeObjectMetadata<KubeObjectScope> = KubeObjectMetadata<KubeObjectScope>,
@@ -49,46 +29,6 @@ export class KubeObject<
   status?: Status;
 
   spec!: Spec;
-
-  /**
-   * @deprecated Switch to using {@link createKubeObject} instead
-   */
-  static create = createKubeObject;
-
-  /**
-   * @deprecated Switch to using {@link isKubeObjectNonSystem} instead
-   */
-  static isNonSystem = isKubeObjectNonSystem;
-
-  /**
-   * @deprecated Switch to using {@link isJsonApiData} instead
-   */
-  static isJsonApiData = isJsonApiData;
-
-  /**
-   * @deprecated Switch to using {@link isKubeJsonApiListMetadata} instead
-   */
-  static isKubeJsonApiListMetadata = isKubeJsonApiListMetadata;
-
-  /**
-   * @deprecated Switch to using {@link isKubeJsonApiMetadata} instead
-   */
-  static isKubeJsonApiMetadata = isKubeJsonApiMetadata;
-
-  /**
-   * @deprecated Switch to using {@link isPartialJsonApiMetadata} instead
-   */
-  static isPartialJsonApiMetadata = isPartialJsonApiMetadata;
-
-  /**
-   * @deprecated Switch to using {@link isPartialJsonApiData} instead
-   */
-  static isPartialJsonApiData = isPartialJsonApiData;
-
-  /**
-   * @deprecated Switch to using {@link isJsonApiDataList} instead
-   */
-  static isJsonApiDataList = isJsonApiDataList;
 
   /**
    * @deprecated Switch to using {@link stringifyLabels} instead
@@ -118,20 +58,12 @@ export class KubeObject<
     autoBind(this);
   }
 
-  get selfLink(): string {
-    return this.metadata.selfLink;
-  }
-
   getId(): string {
     return this.metadata.uid ?? this.metadata.selfLink;
   }
 
   getResourceVersion(): string {
     return this.metadata.resourceVersion ?? '';
-  }
-
-  getScopedName() {
-    return [this.getNs(), this.getName()].filter(Boolean).join('/');
   }
 
   getName(): string {
@@ -141,47 +73,6 @@ export class KubeObject<
   getNs(): Metadata['namespace'] {
     // avoid "null" serialization via JSON.stringify when post data
     return this.metadata.namespace || undefined;
-  }
-
-  /**
-   * This function computes the number of milliseconds from the UNIX EPOCH to the
-   * creation timestamp of this object.
-   */
-  getCreationTimestamp() {
-    if (!this.metadata.creationTimestamp) {
-      return Date.now();
-    }
-
-    return new Date(this.metadata.creationTimestamp).getTime();
-  }
-
-  /**
-   * @deprecated This function computes a new "now". Switch to using {@link KubeObject.getCreationTimestamp} instead
-   */
-  getTimeDiffFromNow(): number {
-    if (!this.metadata.creationTimestamp) {
-      return 0;
-    }
-
-    return Date.now() - new Date(this.metadata.creationTimestamp).getTime();
-  }
-
-  /**
-   * @deprecated This function computes a new "now" on every call might cause subtle issues if called multiple times
-   *
-   * NOTE: this function also is not reactive to updates in the current time so it should not be used for rendering
-   */
-  getAge(humanize = true, compact = true, fromNow = false): string | number {
-    if (fromNow) {
-      return moment(this.metadata.creationTimestamp).fromNow(); // "string", getTimeDiffFromNow() cannot be used
-    }
-    const diff = this.getTimeDiffFromNow();
-
-    if (humanize) {
-      return formatDuration(diff, compact);
-    }
-
-    return diff;
   }
 
   getFinalizers(): string[] {
@@ -207,52 +98,5 @@ export class KubeObject<
     const namespace = this.getNs();
 
     return refs.map((ownerRef) => ({ ...ownerRef, namespace }));
-  }
-
-  getSearchFields() {
-    return [
-      this.getName(),
-      this.getNs(),
-      this.getId(),
-      ...this.getLabels(),
-      ...this.getAnnotations(true)
-    ];
-  }
-
-  toPlainObject() {
-    return JSON.parse(JSON.stringify(this)) as Record<string, unknown>;
-  }
-
-  /**
-   * @deprecated use KubeApi.patch instead
-   */
-  async patch(patch: Patch): Promise<KubeJsonApiData | null> {
-    void patch;
-
-    throw new Error(
-      'KubeObject.patch() has been deprecated since v5.3.0, please switch to using KubeApi.patch()'
-    );
-  }
-
-  /**
-   * @deprecated use KubeApi.patch instead
-   */
-  async update(data: Partial<this>): Promise<KubeJsonApiData | null> {
-    void data;
-
-    throw new Error(
-      'KubeObject.update() has been deprecated since v5.3.0, please switch to using KubeApi.patch()'
-    );
-  }
-
-  /**
-   * @deprecated use KubeApi.delete instead
-   */
-  delete(params?: object) {
-    void params;
-
-    throw new Error(
-      'KubeObject.delete() has been deprecated since v5.3.0, please switch to using KubeApi.delete()'
-    );
   }
 }

@@ -3,7 +3,7 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import { hasTypedProperty, isString, iter } from '@//k8slens/utilities';
+import { hasTypedProperty, isString, iter } from '@/k8slens/utilities';
 import type { RequireExactlyOne } from 'type-fest';
 import type { NamespaceScopedMetadata, TypedLocalObjectReference } from '../api-types';
 import { KubeObject } from '../kube-object';

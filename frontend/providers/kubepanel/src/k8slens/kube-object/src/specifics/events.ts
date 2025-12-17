@@ -3,7 +3,7 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import { formatDuration } from '@//k8slens/utilities';
+import { formatDuration } from '@/k8slens/utilities';
 import moment from 'moment';
 import type {
   KubeJsonApiData,
@@ -23,8 +23,11 @@ export interface EventSource {
   host?: string;
 }
 
-export interface KubeEventData
-  extends KubeJsonApiData<KubeObjectMetadata<KubeObjectScope.Namespace>, void, void> {
+export interface KubeEventData extends KubeJsonApiData<
+  KubeObjectMetadata<KubeObjectScope.Namespace>,
+  void,
+  void
+> {
   action?: string;
   count?: number;
   eventTime?: string;

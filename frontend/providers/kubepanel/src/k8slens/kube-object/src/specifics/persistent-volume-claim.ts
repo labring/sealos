@@ -3,7 +3,7 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import { object } from '@//k8slens/utilities';
+import { object } from '@/k8slens/utilities';
 import type {
   LabelSelector,
   NamespaceScopedMetadata,
