@@ -10,6 +10,7 @@ export enum KubeObjectKind {
   Service = 'Service',
   // CustomResource
   Devbox = 'Devbox',
+  DevboxOld = 'DevboxOld',
   Cluster = 'Cluster',
   Bucket = 'Bucket'
 }
