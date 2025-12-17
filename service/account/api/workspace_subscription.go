@@ -709,10 +709,10 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		// For now, we'll return the discount code in the response so frontend can validate it
 		// The actual discount application will happen during payment
 		c.JSON(http.StatusOK, gin.H{
-			"amount":        int64(finalAmount),
+			"amount":          int64(finalAmount),
 			"original_amount": int64(upgradeFee),
-			"discount_code": req.DiscountCode,
-			"has_discount":  true,
+			"discount_code":   req.DiscountCode,
+			"has_discount":    true,
 		})
 		return
 	}
@@ -1881,6 +1881,8 @@ func processWorkspaceSubscriptionWebhookEvent(event *stripe.Event) error {
 		return handleWorkspaceSubscriptionDeleted(event)
 	case "checkout.session.expired":
 		return handleWorkspaceSubscriptionSessionExpired(event)
+	case "setup_intent.succeeded":
+		return handleSetupIntentSucceeded(event)
 	default:
 		logrus.Infof("Unhandled workspace subscription webhook event type: %s", event.Type)
 		return nil
@@ -2796,6 +2798,51 @@ func handleWorkspaceSubscriptionSessionExpired(event *stripe.Event) error {
 	})
 }
 
+// handleSetupIntentSucceeded handles setup_intent.succeeded events to update subscription's default payment method
+func handleSetupIntentSucceeded(event *stripe.Event) error {
+	// Parse setup intent data from webhook event
+	setupIntentData, err := services.StripeServiceInstance.ParseWebhookEventData(event)
+	if err != nil {
+		return fmt.Errorf("failed to parse webhook data: %w", err)
+	}
+
+	setupIntent, ok := setupIntentData.(*stripe.SetupIntent)
+	if !ok {
+		return errors.New("invalid setup intent data type")
+	}
+
+	logrus.Infof("Processing setup intent succeeded: %s", setupIntent.ID)
+
+	// Get subscription ID from metadata
+	subscriptionID := setupIntent.Metadata["subscription_id"]
+	if subscriptionID == "" {
+		logrus.Warnf("Setup intent %s has no subscription_id in metadata", setupIntent.ID)
+		return nil // Skip if no subscription ID
+	}
+
+	// Get payment method ID from the setup intent
+	if setupIntent.PaymentMethod == nil {
+		logrus.Warnf("Setup intent %s has no payment method", setupIntent.ID)
+		return errors.New("setup intent has no payment method")
+	}
+	paymentMethodID := setupIntent.PaymentMethod.ID
+
+	logrus.Infof("Updating default payment method for subscription %s to %s", subscriptionID, paymentMethodID)
+
+	// Update the subscription to use the new payment method as default
+	updatedSubscription, err := services.StripeServiceInstance.UpdateSubscription(subscriptionID, &stripe.SubscriptionParams{
+		DefaultPaymentMethod: stripe.String(paymentMethodID),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update subscription default payment method: %w", err)
+	}
+
+	logrus.Infof("Successfully updated default payment method for subscription %s to %s",
+		updatedSubscription.ID, paymentMethodID)
+
+	return nil
+}
+
 func CreateWorkspaceSubscriptionPortalSession(c *gin.Context) {
 	req, err := helper.ParseWorkspaceSubscriptionInfoReq(c)
 	if err != nil {
@@ -2916,7 +2963,7 @@ func CreateWorkspaceSubscriptionCardManagePortal(c *gin.Context) {
 
 	// If subscription exists and has Stripe subscription ID, create a filtered portal session
 	if subscription != nil && subscription.Stripe != nil && subscription.Stripe.SubscriptionID != "" {
-		portalSession, err = services.StripeServiceInstance.CreateSubscriptionPortalSession(customer.ID, subscription.Stripe.SubscriptionID)
+		portalSession, err = services.StripeServiceInstance.CreateSubscriptionPortalSession(customer.ID, subscription.Stripe.SubscriptionID, req.RedirectUrl)
 	} else {
 		// Fallback to regular portal session if no subscription found
 		portalSession, err = services.StripeServiceInstance.CreatePortalSession(customer.ID)
@@ -2933,6 +2980,89 @@ func CreateWorkspaceSubscriptionCardManagePortal(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"url":     portalSession.URL,
+		"success": true,
+	})
+}
+
+func CreateWorkspaceSubscriptionSetupIntent(c *gin.Context) {
+	req, err := helper.ParseWorkspaceSubscriptionInfoReq(c)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+	if err := authenticateWorkspaceSubscriptionRequest(c, req, false); err != nil {
+		SetErrorResp(
+			c,
+			http.StatusUnauthorized,
+			gin.H{"error": fmt.Sprintf("authenticate error : %v", err)},
+		)
+		return
+	}
+
+	if services.StripeServiceInstance == nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": "Stripe service not configured"},
+		)
+		return
+	}
+	// Get workspace subscription to find the specific subscription ID
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(req.Workspace, req.RegionDomain)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get workspace subscription: %v", err)},
+		)
+		return
+	}
+
+	// Get or create customer
+	customer, err := services.StripeServiceInstance.GetCustomer(req.UserUID.String(), "")
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to get/create customer: %v", err)},
+		)
+		return
+	}
+
+	var ckSession *stripe.CheckoutSession
+
+	// If subscription exists and has Stripe subscription ID, create a filtered portal session
+	if subscription != nil && subscription.Stripe != nil && subscription.Stripe.SubscriptionID != "" {
+		ckSession, err = services.StripeServiceInstance.CreateSubscriptionSetupIntent(
+			customer.ID,
+			subscription.Stripe.SubscriptionID,
+			req.RedirectUrl,
+		)
+	} else {
+		// Fallback to regular portal session if no subscription found
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprint("empty subscription, please subscription first")},
+		)
+		return
+	}
+
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to create portal session: %v", err)},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"url":     ckSession.URL,
 		"success": true,
 	})
 }

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"gorm.io/gorm"
 
 	"github.com/google/uuid"
@@ -475,13 +477,23 @@ func (s *StripeService) CreatePortalSession(customerID string) (*stripe.BillingP
 }
 
 // CreateSubscriptionPortalSession creates a customer portal session for managing a specific subscription
-func (s *StripeService) CreateSubscriptionPortalSession(customerID, subscriptionID string) (*stripe.BillingPortalSession, error) {
+func (s *StripeService) CreateSubscriptionPortalSession(customerID, subscriptionID string, redirectUrl *string) (*stripe.BillingPortalSession, error) {
 	// Create a custom request to filter the portal session to specific subscriptions
 	// We'll use flow_data to restrict the portal to payment method updates only
+	if redirectUrl == nil {
+		logrus.Error("redirectUrl is required")
+		redirectUrl = stripe.String(s.Domain + "/?openapp=system-costcenter")
+	}
 	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(customerID),
-		ReturnURL: stripe.String(s.Domain),
+		Customer: stripe.String(customerID),
+		// ReturnURL: stripe.String(s.Domain + "/?openapp=system-costcenter"),
 		FlowData: &stripe.BillingPortalSessionFlowDataParams{
+			AfterCompletion: &stripe.BillingPortalSessionFlowDataAfterCompletionParams{
+				Type: stripe.String("redirect"),
+				Redirect: &stripe.BillingPortalSessionFlowDataAfterCompletionRedirectParams{
+					ReturnURL: redirectUrl,
+				},
+			},
 			Type: stripe.String("payment_method_update"),
 		},
 	}
@@ -492,6 +504,31 @@ func (s *StripeService) CreateSubscriptionPortalSession(customerID, subscription
 	}
 
 	return ps, nil
+}
+
+func (s *StripeService) CreateSubscriptionSetupIntent(customerID, subscriptionID string, redirectUrl *string) (*stripe.CheckoutSession, error) {
+	if redirectUrl == nil {
+		redirectUrl = stripe.String(s.Domain + "/?openapp=system-costcenter")
+	}
+	// Missing required param: currency.\",\"param\":\"currency\",
+	params := &stripe.CheckoutSessionParams{
+		Mode:     stripe.String("setup"),
+		Currency: stripe.String("USD"),
+		Customer: stripe.String(customerID),
+		//PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		SetupIntentData: &stripe.CheckoutSessionSetupIntentDataParams{
+			Metadata: map[string]string{
+				"subscription_id": subscriptionID, // 传给 webhook 用
+			},
+		},
+		SuccessURL: redirectUrl,
+		CancelURL:  stripe.String(s.Domain + "/cancel"),
+	}
+	cs, err := checkoutsession.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("checkoutsession.New: %v", err)
+	}
+	return cs, nil
 }
 
 // CreateCustomer creates a new Stripe customer
@@ -674,6 +711,14 @@ func (s *StripeService) ParseWebhookEventData(event *stripe.Event) (interface{},
 			return nil, fmt.Errorf("error parsing invoice: %v", err)
 		}
 		return &in, nil
+
+	case "setup_intent.succeeded":
+		var si stripe.SetupIntent
+		err := json.Unmarshal(event.Data.Raw, &si)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing setup intent: %v", err)
+		}
+		return &si, nil
 
 	default:
 		return nil, fmt.Errorf("unhandled event type: %s", event.Type)

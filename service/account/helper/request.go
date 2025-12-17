@@ -756,6 +756,10 @@ type WorkspaceSubscriptionInfoReq struct {
 	// @Description Region domain
 	// @JSONSchema required
 	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+
+	// @Summary Redirect Url
+	// @Description Redirect Url for create session
+	RedirectUrl *string `json:"redirectUrl,omitempty" bson:"redirectUrl,omitempty" example:"https://example.com"`
 }
 
 type WorkspaceSubscriptionCardInfoReq struct {
