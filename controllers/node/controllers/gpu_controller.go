@@ -58,9 +58,11 @@ const (
 	GPUCount                             = "gpu.count"
 	GPUMemory                            = "gpu.memory"
 	GPUUse                               = "gpu.used"
+	GPUDevbox                            = "gpu.devbox"
 	GPUAvailable                         = "gpu.available"
 	GPUAlias                             = "alias"
 	podNodeNameField                     = "spec.nodeName"
+	devboxLabel                          = "devbox.sealos.io/node"
 )
 
 //+kubebuilder:rbac:groups=node.k8s.io,resources=gpus,verbs=get;list;watch;create;update;patch;delete
@@ -183,6 +185,10 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		nodeMap[nodeName][GPUMemory] = gpuMemory
 		nodeMap[nodeName][GPUCount] = gpuCount.String()
 		used := r.QueryGPUAllocation(ctx, reader, node, gpuProduct)
+		nodeMap[nodeName][GPUDevbox] = "false"
+		if _, ok := node.Labels[devboxLabel]; ok {
+			nodeMap[nodeName][GPUDevbox] = "true"
+		}
 		nodeMap[nodeName][GPUUse] = strconv.FormatInt(used, 10)
 		available := gpuCount.Value() - used
 		if available < 0 {
@@ -358,24 +364,41 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return hasGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
-				oldNode, ok := event.ObjectOld.(*corev1.Node)
-				if !ok {
-					return false
-				}
-				newNode, ok := event.ObjectNew.(*corev1.Node)
-				if !ok {
-					return false
-				}
-				oldVal, oldOk := oldNode.Status.Allocatable[NvidiaGPU]
-				newVal, newOk := newNode.Status.Allocatable[NvidiaGPU]
-
-				return oldOk && newOk && oldVal != newVal
+				return gpuChanged(event.ObjectOld.(*corev1.Node), event.ObjectNew.(*corev1.Node))
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
 				return hasGPU(event.Object)
 			},
 		})).
 		Complete(r)
+}
+
+func gpuChanged(oldNode, newNode *corev1.Node) bool {
+	oldHasGPU := hasGPU(oldNode)
+	newHasGPU := hasGPU(newNode)
+	if oldHasGPU != newHasGPU {
+		return true
+	}
+
+	if !oldHasGPU {
+		return false
+	}
+
+	oldCount := oldNode.Status.Allocatable[NvidiaGPU]
+	newCount := newNode.Status.Allocatable[NvidiaGPU]
+	if oldCount.Cmp(newCount) != 0 {
+		return true
+	}
+
+	if oldNode.Labels[devboxLabel] != newNode.Labels[devboxLabel] {
+		return true
+	}
+
+	if oldNode.Labels[NvidiaGPUProduct] != newNode.Labels[NvidiaGPUProduct] {
+		return true
+	}
+
+	return oldNode.Labels[NvidiaGPUMemory] != newNode.Labels[NvidiaGPUMemory]
 }
 
 func useGPU(obj client.Object) bool {
