@@ -65,6 +65,8 @@ export default function Plan() {
   const [defaultSelectedPlan, setDefaultSelectedPlan] = useState<string>('');
   // Track if Stripe success has been tracked to prevent duplicates
   const [hasTrackedStripeSuccess, setHasTrackedStripeSuccess] = useState(false);
+  // Use ref to persist Stripe callback flag even after router.query is cleared
+  const isStripeCallbackRef = useRef(false);
 
   const handleSubscriptionModalOpenChange = useCallback(
     (open: boolean) => {
@@ -132,6 +134,7 @@ export default function Plan() {
       console.log('Setting showCongratulations to true');
       setShowCongratulations(true);
       setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
+      isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
       return;
     }
   }, [router, handleSubscriptionModalOpenChange]);
@@ -198,12 +201,14 @@ export default function Plan() {
 
   // Track subscription success for Stripe payments when data is loaded
   useEffect(() => {
+    // Use ref instead of router.query because router.query gets cleared
     if (
-      router.query.stripeState === 'success' &&
-      router.query.payId &&
+      isStripeCallbackRef.current &&
       workspaceSubscriptionData?.data?.subscription &&
       !hasTrackedStripeSuccess
     ) {
+      console.log('[GTM] Triggering subscribe_success');
+
       const subscription = workspaceSubscriptionData.data.subscription;
       const plan = plansData?.plans?.find((p) => p.Name === subscription.PlanName);
       const monthlyPrice = plan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
@@ -224,14 +229,9 @@ export default function Plan() {
       });
 
       setHasTrackedStripeSuccess(true);
+      isStripeCallbackRef.current = false; // Clear the flag after tracking
     }
-  }, [
-    router.query,
-    workspaceSubscriptionData,
-    workspaceLastTransactionData,
-    plansData,
-    hasTrackedStripeSuccess
-  ]);
+  }, [workspaceSubscriptionData, workspaceLastTransactionData, plansData, hasTrackedStripeSuccess]);
 
   // Get last transaction and sync to store
   useQuery({
