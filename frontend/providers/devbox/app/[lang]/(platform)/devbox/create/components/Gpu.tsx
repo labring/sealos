@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@sealos/shadcn-ui';
 import { Label } from '@sealos/shadcn-ui/label';
 import { usePriceStore } from '@/stores/price';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { GpuAmountMarkList } from '@/constants/devbox';
-import { listOfficialTemplateRepository } from '@/api/template';
 
 import {
   Select,
@@ -26,20 +24,6 @@ export default function Gpu({
   const t = useTranslations();
   const { sourcePrice } = usePriceStore();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
-  const templateRepositoryQuery = useQuery(
-    ['list-official-template-repository'],
-    listOfficialTemplateRepository
-  );
-
-  const templateData = useMemo(
-    () => templateRepositoryQuery.data?.templateRepositoryList || [],
-    [templateRepositoryQuery.data]
-  );
-  const templateRepositoryUid = watch('templateRepositoryUid');
-  const isGpuTemplate = useMemo(() => {
-    const template = templateData.find((item) => item.uid === templateRepositoryUid);
-    return template?.templateRepositoryTags.some((item) => item.tag.name === 'gpu');
-  }, [templateData, templateRepositoryUid]);
 
   const selectedGpuType = watch('gpu.type');
   const selectedGpuAmount = watch('gpu.amount');
@@ -53,7 +37,7 @@ export default function Gpu({
     };
   }, [sourcePrice?.gpu, selectedGpuType, countGpuInventory]);
 
-  if (!isGpuTemplate || !sourcePrice?.gpu) {
+  if (!sourcePrice?.gpu) {
     return null;
   }
 
