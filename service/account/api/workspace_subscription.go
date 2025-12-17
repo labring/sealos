@@ -1205,8 +1205,8 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 						return fmt.Errorf("failed to get last payment order: %w", err)
 					}
 				}
-				// TODO 需要调用 stripe.Api去取消交易，防止重复调用
-				if paymentOrder.Stripe != nil && paymentOrder.Stripe.SessionID != "" {
+				// Check for both SessionID (new subscription) and InvoiceID (upgrade invoice)
+				if paymentOrder.Stripe != nil && (paymentOrder.Stripe.SessionID != "" || paymentOrder.Stripe.InvoiceID != "") {
 					// 标记上次交易为已取消
 					if err := tx.Model(&lastTransaction).Updates(map[string]any{
 						"status":      types.SubscriptionTransactionStatusFailed,
@@ -1219,12 +1219,19 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 					if err := tx.Model(&types.PaymentOrder{}).Where("id = ?", lastTransaction.PayID).Update("status", types.PaymentStatusExpired).Error; err != nil {
 						logrus.Errorf("Failed to cancel previous payment order: %v", err)
 					}
-					if err := services.StripeServiceInstance.CancelWorkspaceSubscriptionSession(paymentOrder.Stripe.SessionID); err != nil {
-						return fmt.Errorf(
-							"failed to cancel workspace subscription session: %w",
-							err,
-						)
+
+					// Cancel Stripe session if exists
+					if paymentOrder.Stripe.SessionID != "" {
+						if err := services.StripeServiceInstance.CancelWorkspaceSubscriptionSession(paymentOrder.Stripe.SessionID); err != nil {
+							return fmt.Errorf(
+								"failed to cancel workspace subscription session: %w",
+								err,
+							)
+						}
 					}
+
+					// For upgrade invoices, we can't directly cancel them, but we can void the invoice if needed
+					// This would require additional Stripe API integration if needed
 				} else {
 					c.JSON(http.StatusConflict, gin.H{"error": "a different subscription operation is still pending, please wait for it to complete"})
 					return errors.New("different pending operation exists")
@@ -1474,7 +1481,7 @@ func processUpgradeSubscription(
 		return processNewSubscription(tx, c, req, price, transaction)
 	}
 
-	// Handle upgrade from paid plan (subscription modification)
+	// Handle upgrade from paid plan (subscription modification via invoice)
 	if price == nil || price.StripePrice == nil {
 		SetErrorResp(
 			c,
@@ -1513,44 +1520,75 @@ func processUpgradeSubscription(
 		return err
 	}
 
-	// No payment order for subscription update (handled via invoice webhook)
-	// Update Stripe subscription - this will trigger proration invoice
-	// Ensure metadata is set for webhook identification (assume UpdatePlan handles metadata update with pay_id, operator, etc.)
-	stripeResp, err := services.StripeServiceInstance.UpdatePlan(
+	// Create invoice for upgrade payment
+	invoiceURL, invoiceID, err := services.StripeServiceInstance.CreateUpgradeInvoice(
 		subscription.Stripe.SubscriptionID,
 		*price.StripePrice,
 		transaction.NewPlanName,
 		transaction.PayID,
+		req.DiscountCode,
 	)
 	if err != nil {
-		// If update fails, mark transaction as failed
+		// If invoice creation fails, mark transaction as failed
 		transaction.Status = types.SubscriptionTransactionStatusFailed
 		transaction.PayStatus = types.SubscriptionPayStatusFailed
-		transaction.StatusDesc = fmt.Sprintf("Failed to update Stripe subscription: %v", err)
+		transaction.StatusDesc = fmt.Sprintf("Failed to create upgrade invoice: %v", err)
 		tx.Save(&transaction)
 		SetErrorResp(
 			c,
 			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to update Stripe subscription: %v", err)},
+			gin.H{"error": fmt.Sprintf("failed to create upgrade invoice: %v", err)},
 		)
 		return err
 	}
 
-	// Update transaction to pending awaiting webhook confirmation
+	// Create PaymentOrder with invoice ID
+	paymentOrder := &types.PaymentOrder{
+		ID: transaction.PayID,
+		PaymentRaw: types.PaymentRaw{
+			UserUID:      req.UserUID,
+			Amount:       transaction.Amount,
+			Method:       req.PayMethod,
+			RegionUID:    dao.DBClient.GetLocalRegion().UID,
+			TradeNO:      transaction.PayID,
+			CodeURL:      invoiceURL,
+			Type:         types.PaymentTypeSubscription,
+			ChargeSource: types.ChargeSourceStripe,
+			Stripe: &types.StripePay{
+				SubscriptionID: subscription.Stripe.SubscriptionID,
+				CustomerID:     subscription.Stripe.CustomerID,
+				InvoiceID:      invoiceID,
+			},
+		},
+		Status: types.PaymentOrderStatusPending,
+	}
+
+	if err := tx.Create(paymentOrder).Error; err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to create payment order: %v", err)},
+		)
+		return err
+	}
+
+	// Update transaction to pending awaiting invoice payment
 	transaction.Status = types.SubscriptionTransactionStatusPending
 	tx.Save(&transaction)
 
 	logrus.Infof(
-		"workspace: %s, Stripe subscription updated: %s, status: %s, awaiting webhook confirmation",
+		"workspace: %s, Upgrade invoice created: %s, awaiting payment",
 		subscription.Workspace,
-		stripeResp.ID,
-		stripeResp.Status,
+		invoiceID,
 	)
 
-	// Return response indicating upgrade initiated
+	// Return invoice URL for user payment
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Subscription upgrade initiated, payment processing via webhook",
+		"success":     true,
+		"redirectUrl": invoiceURL,
+		"payID":       transaction.PayID,
+		"invoiceID":   invoiceID,
+		"message":     "Please complete payment to finalize subscription upgrade",
 	})
 	return nil
 }
@@ -2445,14 +2483,26 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 				}
 			case types.SubscriptionTransactionTypeUpgraded,
 				types.SubscriptionTransactionTypeDowngraded:
-				if transactionID == "" {
-					return fmt.Errorf(
-						"missing transaction_id for %s failure",
-						invoice.BillingReason,
-					)
+				// For upgrade/downgrade, try payment_id first (new invoice flow), then transaction_id (legacy flow)
+				if paymentID == "" {
+					paymentID = invoice.Metadata["payment_id"]
 				}
-				if err := tx.Where("id = ?", transactionID).First(&wsTransaction).Error; err != nil {
-					return fmt.Errorf("transaction not found: %w", err)
+				if paymentID != "" {
+					// New invoice-based flow
+					if err := tx.Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
+						return fmt.Errorf("upgrade transaction not found: %w", err)
+					}
+				} else {
+					// Legacy flow
+					if transactionID == "" {
+						return fmt.Errorf(
+							"missing transaction_id for %s failure",
+							invoice.BillingReason,
+						)
+					}
+					if err := tx.Where("id = ?", transactionID).First(&wsTransaction).Error; err != nil {
+						return fmt.Errorf("transaction not found: %w", err)
+					}
 				}
 			default:
 				return fmt.Errorf(

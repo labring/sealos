@@ -86,14 +86,14 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithDiscount(paymentRe
 		return nil, fmt.Errorf("failed to build return URLs: %v", err)
 	}
 	// Create checkout session following official example pattern
-	var anchorTime int64
+	//var anchorTime int64
 
 	// For upgrades, start new billing cycle from now. For other operations, use 30 days later.
-	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded {
-		anchorTime = time.Now().UTC().Unix()
-	} else {
-		anchorTime = time.Now().AddDate(0, 0, 30).Unix()
-	}
+	//if transaction.Operator == types.SubscriptionTransactionTypeUpgraded {
+	//	anchorTime = time.Now().UTC().Unix()
+	//} else {
+	//	anchorTime = time.Now().UTC().AddDate(0, 0, 30).Unix()
+	//}
 
 	extra := &stripe.ExtraValues{
 		Values: url.Values{},
@@ -119,8 +119,8 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithDiscount(paymentRe
 				"user_uid":              paymentReq.UserUID.String(),
 				"transaction_id":        transaction.ID.String(),
 			},
-			BillingCycleAnchor: stripe.Int64(anchorTime),
-			ProrationBehavior:  stripe.String("create_prorations"),
+			// BillingCycleAnchor: stripe.Int64(anchorTime),
+			ProrationBehavior: stripe.String("create_prorations"),
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
@@ -137,6 +137,11 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithDiscount(paymentRe
 		},
 		ExpiresAt:           stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
 		AllowPromotionCodes: stripe.Bool(true),
+	}
+	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded {
+		checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().Unix())
+	} else {
+		checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().AddDate(0, 0, 30).Unix())
 	}
 
 	// Add discount code if provided
@@ -800,6 +805,85 @@ func (s *StripeService) GetCustomerInvoices(customerID string, limit int64) ([]*
 	}
 
 	return invoices, nil
+}
+
+// CreateUpgradeInvoice creates an invoice for subscription upgrade using UpdatePlan with incomplete payment
+func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlanName, payReqID, discountCode string) (string, string, error) {
+	// Retrieve the current subscription
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return "", "", fmt.Errorf("subscription.Get: %v", err)
+	}
+	if len(sub.Items.Data) == 0 {
+		return "", "", fmt.Errorf("subscription has no items to update")
+	}
+
+	// Update the subscription with incomplete payment behavior to create invoice
+	// For upgrades, we don't set BillingCycleAnchorNow to avoid billing cycle issues
+	params := &stripe.SubscriptionParams{
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				ID:    stripe.String(sub.Items.Data[len(sub.Items.Data)-1].ID),
+				Price: stripe.String(newPriceID),
+			},
+		},
+		Metadata: map[string]string{
+			"updated_at":            time.Now().Format(time.RFC3339),
+			"old_plan_name":         sub.Metadata["plan_name"],
+			"new_plan_name":         newPlanName,
+			"plan_name":             newPlanName,
+			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
+			"payment_id":            payReqID,
+			"user_uid":              sub.Metadata["user_uid"],
+			"workspace":             sub.Metadata["workspace"],
+			"region_domain":         sub.Metadata["region_domain"],
+		},
+		BillingCycleAnchorNow: stripe.Bool(true),
+		ProrationBehavior:     stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		PaymentBehavior:       stripe.String("default_incomplete"),
+		Expand:                []*string{stripe.String("latest_invoice.payment_intent")},
+	}
+
+	// Add discount if provided
+	if discountCode != "" {
+		params.Discounts = []*stripe.SubscriptionDiscountParams{
+			{
+				Coupon: stripe.String(discountCode),
+			},
+		}
+	}
+
+	// Update the subscription
+	updatedSub, err := subscription.Update(subscriptionID, params)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to update subscription for upgrade: %v", err)
+	}
+
+	// Get the latest invoice from the updated subscription
+	if updatedSub.LatestInvoice == nil {
+		return "", "", fmt.Errorf("no invoice found after subscription update")
+	}
+
+	invoiceID := updatedSub.LatestInvoice.ID
+	invoiceURL := ""
+
+	// Get the invoice to retrieve the hosted invoice URL
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get invoice details: %v", err)
+	}
+
+	// Use the invoice's hosted URL if available, otherwise construct dashboard URL
+	if inv.HostedInvoiceURL != "" {
+		invoiceURL = inv.HostedInvoiceURL
+	} else {
+		invoiceURL = fmt.Sprintf("https://dashboard.stripe.com/invoices/%s", invoiceID)
+	}
+
+	logrus.Infof("Created upgrade invoice %s for subscription %s, amount: %d cents",
+		invoiceID, subscriptionID, inv.AmountDue)
+
+	return invoiceURL, invoiceID, nil
 }
 
 // GetPaymentMethod retrieves a specific payment method by ID

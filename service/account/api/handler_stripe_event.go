@@ -206,7 +206,32 @@ func handleSubscriptionUpdate(
 	if err != nil {
 		return err
 	}
+
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		// Check if there's a PaymentOrder to convert
+		var paymentOrder types.PaymentOrder
+		if err := tx.Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
+			// Convert PaymentOrder to Payment
+			payment.Status = types.PaymentStatusPAID
+			payment.Amount = invoice.AmountPaid * 10_000
+			payment.TradeNO = invoice.ID
+			payment.Stripe = &types.StripePay{
+				SubscriptionID: subscription.ID,
+				CustomerID:     subscription.Customer.ID,
+				InvoiceID:      invoice.ID,
+			}
+
+			// Create Payment record
+			if err := tx.Create(&payment).Error; err != nil {
+				return fmt.Errorf("failed to create payment from payment order: %w", err)
+			}
+
+			// Delete the PaymentOrder after conversion
+			if err := tx.Delete(&paymentOrder).Error; err != nil {
+				logrus.Errorf("failed to delete payment order %s: %v", paymentOrder.ID, err)
+			}
+		}
+
 		return finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment)
 	}); err != nil {
 		return fmt.Errorf("failed to finalize upgrade payment: %w", err)
@@ -226,7 +251,7 @@ func handleSubscriptionUpdate(
 
 // prepareUpdateTransaction
 func prepareUpdateTransaction(
-	_ *stripe.Invoice,
+	invoice *stripe.Invoice,
 	subscription *stripe.Subscription,
 	meta *subscriptionMetadata,
 ) (*types.WorkspaceSubscriptionTransaction, string, error) {
@@ -235,15 +260,36 @@ func prepareUpdateTransaction(
 
 	switch meta.Operator {
 	case types.SubscriptionTransactionTypeUpgraded:
+		// For upgrade operations, try to get payment_id from various sources
 		if paymentID == "" {
 			paymentID = subscription.Metadata["last_payment_id"]
 		}
 		if paymentID == "" {
-			return nil, "", errors.New("missing last_payment_id for upgrade subscription")
+			paymentID = invoice.Metadata["payment_id"]
 		}
+		if paymentID == "" {
+			return nil, "", errors.New("missing payment_id for upgrade subscription")
+		}
+
+		// First try to find the transaction
 		if err := dao.DBClient.GetGlobalDB().Model(&types.WorkspaceSubscriptionTransaction{}).Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
 			return nil, "", fmt.Errorf("failed to get upgrade transaction: %w", err)
 		}
+
+		// Check if there's a PaymentOrder for this upgrade
+		var paymentOrder types.PaymentOrder
+		if err := dao.DBClient.GetGlobalDB().Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
+			// PaymentOrder exists, this is the new invoice-based upgrade flow
+			if paymentOrder.Stripe != nil && paymentOrder.Stripe.InvoiceID != "" {
+				// Update PaymentOrder with the subscription ID if not already set
+				if paymentOrder.Stripe.SubscriptionID == "" {
+					paymentOrder.Stripe.SubscriptionID = subscription.ID
+					paymentOrder.Stripe.CustomerID = subscription.Customer.ID
+					dao.DBClient.GetGlobalDB().Save(&paymentOrder)
+				}
+			}
+		}
+
 	case types.SubscriptionTransactionTypeDowngraded:
 		if meta.TransactionID == "" {
 			return nil, "", errors.New("missing transaction_id for downgrade subscription")
