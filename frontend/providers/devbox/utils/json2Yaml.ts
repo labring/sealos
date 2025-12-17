@@ -83,6 +83,14 @@ export const json2DevboxV2 = (
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
+  const gpuMap = !!data.gpu?.type
+    ? {
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
+        }
+      }
+    : {};
+
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -99,8 +107,10 @@ export const json2DevboxV2 = (
       },
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
-        memory: `${str2Num(data.memory)}Mi`
+        memory: `${str2Num(data.memory)}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
+      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       templateID: data.templateUid,
       image: data.image,
       config: produce(parseTemplateConfig(data.templateConfig), (draft) => {
@@ -117,7 +127,8 @@ export const json2DevboxV2 = (
           draft.env = [...draft.env, ...data.env];
         }
       }),
-      state: 'Running'
+      state: 'Running',
+      ...gpuMap
     }
   };
   if (devboxAffinityEnable === 'true') {
