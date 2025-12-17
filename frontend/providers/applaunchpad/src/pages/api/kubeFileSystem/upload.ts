@@ -14,11 +14,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const kubefs = new KubeFileSystem(k8sExec);
-    const { containerName, path, podName } = req.query as {
+    const {
+      containerName,
+      path: encodedPath,
+      podName
+    } = req.query as {
       containerName: string;
       podName: string;
       path: string;
     };
+    const path = decodeURIComponent(encodedPath);
 
     let form: any;
     let task = new Promise<string>((resolve, reject) => {
