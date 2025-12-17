@@ -91,12 +91,10 @@ export function PlansDisplay({
       }
 
       if (isCreateMode) {
-        // Create mode: 根据 currentPlanInMore 设置 showMorePlans 状态
         if (currentPlanInMore) {
           setShowMorePlans(true);
         }
       } else {
-        // Upgrade mode: 直接显示 More Plans
         setShowMorePlans(true);
       }
 

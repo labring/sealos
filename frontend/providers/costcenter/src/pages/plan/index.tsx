@@ -55,7 +55,8 @@ export default function Plan() {
     modalType,
     modalContext,
     hideModal,
-    confirmPendingPlan
+    confirmPendingPlan,
+    showConfirmationModal
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
@@ -65,6 +66,9 @@ export default function Plan() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   const [defaultSelectedPlan, setDefaultSelectedPlan] = useState<string>('');
+  const [defaultShowPaymentConfirmation, setDefaultShowPaymentConfirmation] =
+    useState<boolean>(false);
+  const [defaultWorkspaceName, setDefaultWorkspaceName] = useState<string>('');
   // Track if Stripe success has been tracked to prevent duplicates
   const [hasTrackedStripeSuccess, setHasTrackedStripeSuccess] = useState(false);
   // Use ref to persist Stripe callback flag even after router.query is cleared
@@ -101,18 +105,24 @@ export default function Plan() {
     }
 
     // Handle subscription modal modes
-    if (router.query.mode === 'create') {
-      setIsCreateMode(true);
+    if (router.query.mode === 'create' || router.query.mode === 'upgrade') {
+      if (router.query.mode === 'create') setIsCreateMode(true);
+      if (router.query.mode === 'upgrade') setIsUpgradeMode(true);
+
       // Handle plan parameter for default selection
       if (router.query.plan) {
         setDefaultSelectedPlan(router.query.plan as string);
       }
-      handleSubscriptionModalOpenChange(true);
-      return;
-    }
 
-    if (router.query.mode === 'upgrade') {
-      setIsUpgradeMode(true);
+      // Handle workspaceName parameter for default workspace name
+      if (router.query.workspaceName) {
+        setDefaultWorkspaceName(router.query.workspaceName as string);
+      }
+
+      if (router.query.showPaymentConfirmation === 'true') {
+        setDefaultShowPaymentConfirmation(true);
+      }
+
       handleSubscriptionModalOpenChange(true);
       return;
     }
@@ -153,7 +163,7 @@ export default function Plan() {
   });
 
   // Fetch plans data and sync to store
-  useQuery({
+  const { isSuccess: isPlansLoaded } = useQuery({
     queryKey: ['plan-list'],
     queryFn: getPlanList,
     onSuccess: (data) => {
@@ -162,6 +172,33 @@ export default function Plan() {
     },
     refetchOnMount: true
   });
+
+  // Handle payment confirmation modal once router is ready and plans are loaded
+  useEffect(() => {
+    if (!router.isReady || !isPlansLoaded) return;
+
+    if (defaultShowPaymentConfirmation && plansData?.plans && defaultSelectedPlan) {
+      const targetPlan = plansData.plans.find((p) => p.Name === defaultSelectedPlan);
+
+      if (targetPlan) {
+        const workspaceName = isCreateMode ? defaultWorkspaceName : '';
+        showConfirmationModal(targetPlan, {
+          workspaceName,
+          isCreateMode
+        });
+      }
+    }
+  }, [
+    router.isReady,
+    router.query,
+    isPlansLoaded,
+    plansData,
+    showConfirmationModal,
+    defaultShowPaymentConfirmation,
+    defaultSelectedPlan,
+    defaultWorkspaceName,
+    isCreateMode
+  ]);
 
   // Get current workspace subscription info and sync to store
   const { isLoading, refetch: refetchSubscriptionInfo } = useQuery({
@@ -519,6 +556,7 @@ export default function Plan() {
                   isOpen={subscriptionModalOpen}
                   onOpenChange={handleSubscriptionModalOpenChange}
                   defaultSelectedPlan={defaultSelectedPlan}
+                  defaultWorkspaceName={defaultWorkspaceName}
                 >
                   {trigger}
                 </UpgradePlanDialog>
@@ -560,6 +598,7 @@ export default function Plan() {
                 isOpen={subscriptionModalOpen}
                 onOpenChange={handleSubscriptionModalOpenChange}
                 defaultSelectedPlan={defaultSelectedPlan}
+                defaultWorkspaceName={defaultWorkspaceName}
               >
                 {trigger}
               </UpgradePlanDialog>

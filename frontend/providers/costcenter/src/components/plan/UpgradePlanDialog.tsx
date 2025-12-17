@@ -15,6 +15,7 @@ interface UpgradePlanDialogProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   defaultSelectedPlan?: string;
+  defaultWorkspaceName?: string;
 }
 
 export function UpgradePlanDialog({
@@ -25,14 +26,15 @@ export function UpgradePlanDialog({
   isUpgradeMode = false,
   isOpen,
   onOpenChange,
-  defaultSelectedPlan = ''
+  defaultSelectedPlan = '',
+  defaultWorkspaceName = ''
 }: UpgradePlanDialogProps) {
   const { t } = useTranslation();
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
-  const [workspaceName, setWorkspaceName] = useState('');
+  const [workspaceName, setWorkspaceName] = useState(defaultWorkspaceName);
   const [stillChargeByVolume, setStillChargeByVolume] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [selectedAdditionalPlanId, setSelectedAdditionalPlanId] = useState<string>('');
@@ -55,6 +57,13 @@ export function UpgradePlanDialog({
     const paid = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
     return paid.filter((plan) => plan.Tags.includes('more')).sort((a, b) => a.Order - b.Order);
   }, [plans]);
+
+  // Set default workspace name when defaultWorkspaceName changes
+  useEffect(() => {
+    if (defaultWorkspaceName) {
+      setWorkspaceName(defaultWorkspaceName);
+    }
+  }, [defaultWorkspaceName]);
 
   // Set default selected plan
   useEffect(() => {

@@ -104,14 +104,18 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       return;
     }
 
+    const urlParams = new URLSearchParams({
+      mode: operator === 'created' ? 'create' : 'upgrade',
+      plan: plan?.Name ?? '',
+      showPaymentConfirmation: 'true'
+    });
+
+    if (workspaceName) {
+      urlParams.set('workspaceName', workspaceName);
+    }
+
     const desktopUrl = new URL(
-      `https://${regionDomain}/?openapp=system-costcenter?${encodeURIComponent(
-        new URLSearchParams({
-          mode: operator === 'created' ? 'create' : 'upgrade',
-          plan: plan?.Name ?? '',
-          showPaymentConfirmation: 'true'
-        }).toString()
-      )}`
+      `https://${regionDomain}/?openapp=system-costcenter?${encodeURIComponent(urlParams.toString())}`
     );
 
     manageCardMutation.mutate({

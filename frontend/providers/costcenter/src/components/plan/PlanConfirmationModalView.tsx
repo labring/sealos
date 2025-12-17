@@ -1,11 +1,12 @@
 import { CheckCircle, ArrowUpRight, HelpCircle, CreditCard } from 'lucide-react';
-import { Button } from '@sealos/shadcn-ui';
+import { Button, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethodInfo } from '@/types/plan';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
 import { BankCardIcon } from '../BankCardIcon';
 import { BankCardBrand } from '../BankCardBrand';
+import usePlanStore from '@/stores/plan';
 
 interface PlanConfirmationModalViewProps {
   plan: SubscriptionPlan;
@@ -35,8 +36,12 @@ export function PlanConfirmationModalView({
   onManageCards
 }: PlanConfirmationModalViewProps) {
   const { t } = useTranslation();
+  const isPaygType = usePlanStore((state) => state.isPaygType);
 
   const hasCard = !!paymentMethod;
+
+  // Check if should show tooltip: upgrade/downgrade mode and current plan is not PAYG
+  const shouldShowTooltip = !isCreateMode && !isPaygType();
 
   const formatExpiryDate = (month: number, year: number) => {
     return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
@@ -137,7 +142,22 @@ export function PlanConfirmationModalView({
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-900">{t('common:due_today')}</span>
-                <HelpCircle size={16} className="text-zinc-500" />
+                {shouldShowTooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="inline-flex items-center">
+                        <HelpCircle size={16} className="text-zinc-500" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">
+                        Prorated difference for the remainder of the current cycle. You will be
+                        charged <CurrencySymbol />
+                        {displayMoney(formatMoney(monthlyPrice))}/month starting next month.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
               <span className="text-sm font-medium text-gray-900">
                 {amountLoading ? (
@@ -145,7 +165,7 @@ export function PlanConfirmationModalView({
                 ) : (
                   <>
                     <CurrencySymbol />
-                    <span>{formatMoney(dueToday)}</span>
+                    <span>{displayMoney(formatMoney(dueToday))}</span>
                   </>
                 )}
               </span>
@@ -163,7 +183,7 @@ export function PlanConfirmationModalView({
 
           <div className="flex flex-col gap-3">
             {/* Card Info */}
-            <div className="bg-gradient-to-r from-zinc-100/10 to-zinc-200/10 p-2 rounded-lg">
+            <div className="bg-zinc-100 p-2 rounded-lg">
               {cardInfoLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="h-9 w-14 bg-gray-200 rounded animate-pulse" />
@@ -185,7 +205,7 @@ export function PlanConfirmationModalView({
                       {formatExpiryDate(paymentMethod.card.exp_month, paymentMethod.card.exp_year)}
                     </span>
                   </div>
-                  <div className="bg-zinc-200 px-2 py-1 rounded-full">
+                  <div className="bg-zinc-200 px-2 rounded-full">
                     <span className="text-xs font-medium text-zinc-500 leading-none">
                       {t('common:default')}
                     </span>
