@@ -32,7 +32,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
 
-  const { devboxList } = useDevboxStore();
+  const formValues = watch();
 
   useEffect(() => {
     if (searchParams.get('scrollTo') === 'network') {
@@ -67,7 +67,8 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
           components={[
             {
               cpu: watch('cpu'),
-              memory: watch('memory')
+              memory: watch('memory'),
+              gpu: formValues.gpu
             }
           ]}
         />

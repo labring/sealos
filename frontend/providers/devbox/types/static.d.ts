@@ -27,6 +27,8 @@ export interface Env {
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
   enableImportFeature: string;
   enableWebideFeature: string;
+  cpuSlideMarkList: string;
+  memorySlideMarkList: string;
 }
 
 export interface RuntimeTypeMap {

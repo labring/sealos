@@ -76,6 +76,7 @@
   "copy_failed": "复制失败",
   "copy_success": "复制成功",
   "core": "核",
+  "count": "数量",
   "cpu": "CPU",
   "cpu_exceeds_quota": "申请的 CPU 超出限制，请联系管理员",
   "create": "创建",
@@ -194,7 +195,7 @@
   "git_username": "用户名",
   "git_username_placeholder": "输入 Git 用户名",
   "gpu": "GPU",
-  "gpu_exceeds_quota": "申请的 GPU 超出配额限制，请联系管理员",
+  "gpu_exceeds_quota": "GPU 资源不足：你设置的 {requested} 卡超出工作空间可用 {limit} 卡限制（已使用 {used} 卡）。",
   "guide": {
     "click_shadow_skip": "点击任意阴影跳过",
     "deploy_cost": "当前资源，预估单日消耗",
