@@ -65,8 +65,10 @@ type DevboxReconciler struct {
 
 	PodMatchers []matcher.PodMatcher
 
-	DebugMode              bool
-	MergeBaseImageTopLayer bool
+	DebugMode                 bool
+	MergeBaseImageTopLayer    bool
+	StartupConfigMapName      string
+	StartupConfigMapNamespace string
 
 	client.Client
 	Scheme              *runtime.Scheme
@@ -224,6 +226,18 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("sync secret success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 
+	if r.StartupConfigMapName != "" {
+		// create or update startup configmap
+		logger.Info("syncing startup configmap")
+		if err := r.syncStartupConfigMap(ctx, devbox, recLabels); err != nil {
+			logger.Error(err, "sync startup configmap failed")
+			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync startup configmap failed", "%v", err)
+			return ctrl.Result{}, err
+		}
+		logger.Info("sync startup configmap success")
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync startup configmap success", "Sync startup configmap success")
+	}
+
 	if err := r.syncNetwork(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync network failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync network failed", "%v", err)
@@ -261,6 +275,60 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
+}
+
+func (r *DevboxReconciler) syncStartupConfigMap(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	objectMeta := metav1.ObjectMeta{
+		Name:      devbox.Name,
+		Namespace: devbox.Namespace,
+		Labels:    recLabels,
+	}
+	devboxConfigmap := &corev1.ConfigMap{
+		ObjectMeta: objectMeta,
+	}
+
+	startupConfigMap := &corev1.ConfigMap{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: r.StartupConfigMapNamespace, Name: r.StartupConfigMapName}, startupConfigMap)
+	if err != nil {
+		return fmt.Errorf("failed to get startup configmap: %w", err)
+	}
+	if startupConfigMap.Data == nil || startupConfigMap.Data["startup.sh"] == "" {
+		return fmt.Errorf("startup configmap %s/%s is missing the 'startup.sh' key or it is empty", r.StartupConfigMapNamespace, r.StartupConfigMapName)
+	}
+	err = r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxConfigmap)
+	if err == nil {
+		// configmap already exists, no need to create
+		if devboxConfigmap.Data == nil {
+			devboxConfigmap.Data = make(map[string]string)
+		}
+		if _, ok := devboxConfigmap.Data["startup.sh"]; !ok || devboxConfigmap.Data["startup.sh"] != startupConfigMap.Data["startup.sh"] {
+			devboxConfigmap.Data["startup.sh"] = startupConfigMap.Data["startup.sh"]
+			if err := r.Update(ctx, devboxConfigmap); err != nil {
+				return fmt.Errorf("failed to update configmap: %w", err)
+			}
+		}
+
+		return nil
+	}
+	if client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to get configmap: %w", err)
+	}
+
+	configmap := &corev1.ConfigMap{
+		ObjectMeta: objectMeta,
+		Data: map[string]string{
+			"startup.sh": startupConfigMap.Data["startup.sh"],
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(devbox, configmap, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set controller reference: %w", err)
+	}
+
+	if err := r.Create(ctx, configmap); err != nil {
+		return fmt.Errorf("failed to create configmap: %w", err)
+	}
+	return nil
 }
 
 func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
@@ -971,10 +1039,16 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha2.Devbox, opts
 	})
 	volumes := devbox.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
+	if r.StartupConfigMapName != "" {
+		volumes = append(volumes, helper.GenerateStartupVolume(devbox))
+	}
 	volumes = append(volumes, helper.GenerateEnvProfileVolume(devbox))
 
 	volumeMounts := devbox.Spec.Config.VolumeMounts
 	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
+	if r.StartupConfigMapName != "" {
+		volumeMounts = append(volumeMounts, helper.GenerateStartupVolumeMounts()...)
+	}
 	volumeMounts = append(volumeMounts, helper.GenerateEnvProfileVolumeMount()...)
 
 	containers := []corev1.Container{

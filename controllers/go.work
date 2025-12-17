@@ -5,7 +5,6 @@ toolchain go1.24.3
 use (
 	./account
 	./app
-	./db/adminer
 	./devbox
 	./job/heartbeat
 	./job/init
