@@ -1,7 +1,12 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
-import { defaultSliderKey } from '@/constants/app';
+import {
+  APPLICATION_PROTOCOLS,
+  defaultSliderKey,
+  defaultGpuSliderKey,
+  ProtocolList
+} from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
@@ -289,7 +294,14 @@ const Form = ({
   // cpu, memory have different sliderValue
   const countSliderList = useCallback(() => {
     const gpuType = getValues('gpu.type');
-    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : defaultSliderKey;
+    // Use GPU-specific config if exists, otherwise use default-gpu, finally fallback to default
+    const key = gpuType
+      ? formSliderListConfig[gpuType]
+        ? gpuType
+        : formSliderListConfig[defaultGpuSliderKey]
+          ? defaultGpuSliderKey
+          : defaultSliderKey
+      : defaultSliderKey;
 
     const cpu = getValues('cpu');
     const memory = getValues('memory');
