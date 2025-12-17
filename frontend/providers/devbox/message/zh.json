@@ -119,7 +119,7 @@
   "devbox_shutdown_notice1": "节省停机模式下，暂停对端口的计费",
   "devbox_shutdown_notice2": "由于端口资源被回收，启动后，<black>公网访问端口会重新分配，需要点击 IDE 图标 (或者重新一键配置 ssh 连接信息)</black>，更新与配置最新的连接信息。",
   "devbox_shutdown_notice3": "由于固定公网IP地址被回收, <black>重启后固定公网IP地址可能变更,</black> 但不会导致私网IP地址变更。若实例停机前绑定的是弹性公网IP地址, 则重启后IP地址保持不变。",
-  "devbox_sshgate_stopped_notice": "关机后端口将不再计费。由于端口资源被回收，再次启动后，公网访问端口会重新分配，此时需要点击IDE图标（或者重新一键配置ssh连接信息）更新与配置最新的连接信息。",
+  "devbox_sshgate_stopped_notice": "当前 DevBox 网络组件已升级至最新版本，后续 DevBox 不再收取端口独占费用。再次启动后，公网访问端口会重新分配，请点击 IDE 图标（或者重新下载一键配置 ssh 连接信息）更新与配置最新的连接信息。",
   "devbox_template": "开发模板",
   "disabled": "禁用",
   "docs": "文档",
