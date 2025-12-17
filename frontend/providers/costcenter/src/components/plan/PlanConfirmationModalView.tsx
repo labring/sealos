@@ -4,6 +4,8 @@ import { SubscriptionPlan, PaymentMethodInfo } from '@/types/plan';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { BankCardIcon } from '../BankCardIcon';
+import { BankCardBrand } from '../BankCardBrand';
 
 interface PlanConfirmationModalViewProps {
   plan: SubscriptionPlan;
@@ -35,10 +37,6 @@ export function PlanConfirmationModalView({
   const { t } = useTranslation();
 
   const hasCard = !!paymentMethod;
-
-  const formatCardBrand = (brand: string) => {
-    return brand.charAt(0).toUpperCase() + brand.slice(1).toLowerCase();
-  };
 
   const formatExpiryDate = (month: number, year: number) => {
     return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
@@ -174,14 +172,11 @@ export function PlanConfirmationModalView({
               ) : hasCard ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="h-9 w-14 bg-white border border-zinc-200 rounded flex items-center justify-center shrink-0">
-                      <span className="text-xs font-medium text-zinc-900">
-                        {formatCardBrand(paymentMethod.card.brand).slice(0, 4).toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium text-zinc-900">
-                      {formatCardBrand(paymentMethod.card.brand)}
-                    </span>
+                    <BankCardIcon brand={paymentMethod.card.brand} className="h-9 w-14 shrink-0" />
+                    <BankCardBrand
+                      brand={paymentMethod.card.brand}
+                      className="text-sm font-medium text-zinc-900"
+                    />
                     <span className="text-sm font-medium text-zinc-900">
                       •••• {paymentMethod.card.last4}
                     </span>

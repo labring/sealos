@@ -354,5 +354,14 @@
   "you_have_upgraded_to_plan_benefits_unlocked": "您已升级到 {{planName}}，这些权益已经解锁",
   "your_current_plan": "您当前的套餐",
   "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制",
-  "your_next_plan": "您下一个套餐"
+  "your_next_plan": "您下一个套餐",
+  "card_brands": {
+    "visa": "Visa",
+    "mastercard": "Mastercard",
+    "amex": "American Express",
+    "discover": "Discover",
+    "diners": "Diners Club",
+    "jcb": "JCB",
+    "unionpay": "银联"
+  }
 }
