@@ -522,7 +522,7 @@ func (s *StripeService) CreateSubscriptionSetupIntent(customerID, subscriptionID
 			},
 		},
 		SuccessURL: redirectUrl,
-		CancelURL:  stripe.String(s.Domain + "/cancel"),
+		CancelURL:  redirectUrl,
 	}
 	cs, err := checkoutsession.New(params)
 	if err != nil {

@@ -601,6 +601,12 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		)
 		return
 	}
+	if !currentPlan.CanBeUpgraded(targetPlan.Name) {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("plan %s can not be upgraded", req.PlanName)},
+		)
+	}
 
 	if currentSubscription.PayMethod == types.PaymentMethodStripe &&
 		currentSubscription.PayStatus == types.SubscriptionPayStatusPaid &&
