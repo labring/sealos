@@ -524,6 +524,7 @@ func (s *StripeService) CreateSubscriptionSetupIntent(customerID, subscriptionID
 		SetupIntentData: &stripe.CheckoutSessionSetupIntentDataParams{
 			Metadata: map[string]string{
 				"subscription_id": subscriptionID, // 传给 webhook 用
+				"customer_id":     customerID,     // 添加 customer_id 到 metadata，用于 webhook 处理
 			},
 		},
 		SuccessURL: redirectUrl,
@@ -827,17 +828,6 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 				Price: stripe.String(newPriceID),
 			},
 		},
-		Metadata: map[string]string{
-			"updated_at":            time.Now().Format(time.RFC3339),
-			"old_plan_name":         sub.Metadata["plan_name"],
-			"new_plan_name":         newPlanName,
-			"plan_name":             newPlanName,
-			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
-			"payment_id":            payReqID,
-			"user_uid":              sub.Metadata["user_uid"],
-			"workspace":             sub.Metadata["workspace"],
-			"region_domain":         sub.Metadata["region_domain"],
-		},
 		BillingCycleAnchorNow: stripe.Bool(true),
 		ProrationBehavior:     stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
 		PaymentBehavior:       stripe.String("default_incomplete"),
@@ -871,6 +861,24 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 	inv, err := invoice.Get(invoiceID, nil)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get invoice details: %v", err)
+	}
+
+	// Update invoice metadata to include all necessary metadata for upgrade subscription handling
+	_, err = invoice.Update(invoiceID, &stripe.InvoiceParams{
+		Metadata: map[string]string{
+			"payment_id":            payReqID,
+			"customer_id":           sub.Customer.ID,
+			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
+			"new_plan_name":         newPlanName,
+			"plan_name":             newPlanName,
+			"old_plan_name":         sub.Metadata["plan_name"],
+			"user_uid":              sub.Metadata["user_uid"],
+			"workspace":             sub.Metadata["workspace"],
+			"region_domain":         sub.Metadata["region_domain"],
+		},
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("failed to update subscription for upgrade: %v", err)
 	}
 
 	// Use the invoice's hosted URL if available, otherwise construct dashboard URL

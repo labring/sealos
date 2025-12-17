@@ -2160,6 +2160,10 @@ func finalizeWorkspaceSubscriptionSuccess(
 		if err := tx.Create(payment).Error; err != nil {
 			return fmt.Errorf("failed to create payment record: %w", err)
 		}
+		// Delete the PaymentOrder after conversion
+		if err := tx.Model(&types.PaymentOrder{}).Delete(&types.PaymentOrder{ID: payment.ID}).Error; err != nil {
+			logrus.Errorf("failed to delete payment order %s: %v", payment.ID, err)
+		}
 	}
 
 	// Update or create workspace subscription
@@ -3000,11 +3004,14 @@ func handleSetupIntentSucceeded(event *stripe.Event) error {
 		DefaultPaymentMethod: stripe.String(paymentMethodID),
 	})
 	if err != nil {
+		// Log detailed error information for debugging
+		logrus.Errorf("Failed to update subscription default payment method - subscription_id: %s, payment_method_id: %s, error: %v",
+			subscriptionID, paymentMethodID, err)
 		return fmt.Errorf("failed to update subscription default payment method: %w", err)
 	}
 
-	logrus.Infof("Successfully updated default payment method for subscription %s to %s",
-		updatedSubscription.ID, paymentMethodID)
+	logrus.Infof("Successfully updated default payment method for subscription %s to %s (customer: %s)",
+		updatedSubscription.ID, paymentMethodID, updatedSubscription.Customer.ID)
 
 	return nil
 }

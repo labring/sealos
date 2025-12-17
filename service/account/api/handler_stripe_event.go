@@ -16,6 +16,7 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v82"
+	stripesubscription "github.com/stripe/stripe-go/v82/subscription"
 	"gorm.io/gorm"
 )
 
@@ -134,6 +135,90 @@ func extractAndValidateMetadata(subscription *stripe.Subscription) (*subscriptio
 	return meta, nil
 }
 
+// enrichMetadataFromInvoice overwrites subscription metadata with invoice metadata
+func enrichMetadataFromInvoice(
+	meta *subscriptionMetadata,
+	invoice *stripe.Invoice,
+	subscription *stripe.Subscription,
+) *subscriptionMetadata {
+	// Create a copy to avoid modifying the original
+	enrichedMeta := *meta
+
+	// Overwrite with invoice metadata (not just enrich when empty)
+	if invoice.Metadata["payment_id"] != "" {
+		enrichedMeta.PaymentID = invoice.Metadata["payment_id"]
+	}
+	if invoice.Metadata["new_plan_name"] != "" {
+		enrichedMeta.NewPlanName = invoice.Metadata["new_plan_name"]
+	} else if invoice.Metadata["plan_name"] != "" {
+		enrichedMeta.NewPlanName = invoice.Metadata["plan_name"]
+	}
+	if invoice.Metadata["subscription_operator"] != "" {
+		enrichedMeta.Operator = types.SubscriptionOperator(invoice.Metadata["subscription_operator"])
+	}
+	if invoice.Metadata["workspace"] != "" {
+		enrichedMeta.Workspace = invoice.Metadata["workspace"]
+	}
+	if invoice.Metadata["region_domain"] != "" {
+		enrichedMeta.RegionDomain = invoice.Metadata["region_domain"]
+	}
+	if invoice.Metadata["user_uid"] != "" {
+		enrichedMeta.UserUID = invoice.Metadata["user_uid"]
+	}
+	if invoice.Metadata["subscription_operator"] != "" {
+		enrichedMeta.Operator = types.SubscriptionOperator(invoice.Metadata["subscription_operator"])
+	}
+
+	// Fallback to subscription metadata if invoice metadata doesn't have the field
+	if enrichedMeta.Workspace == "" {
+		enrichedMeta.Workspace = subscription.Metadata["workspace"]
+	}
+	if enrichedMeta.RegionDomain == "" {
+		enrichedMeta.RegionDomain = subscription.Metadata["region_domain"]
+	}
+	if enrichedMeta.UserUID == "" {
+		enrichedMeta.UserUID = subscription.Metadata["user_uid"]
+	}
+
+	return &enrichedMeta
+}
+
+// updateSubscriptionMetadata updates the subscription metadata with enriched data
+func updateSubscriptionMetadata(subscriptionID string, meta *subscriptionMetadata) error {
+	params := &stripe.SubscriptionParams{
+		Metadata: map[string]string{},
+	}
+
+	// Only set non-empty fields
+	if meta.PaymentID != "" {
+		params.Metadata["payment_id"] = meta.PaymentID
+	}
+	if meta.NewPlanName != "" {
+		params.Metadata["plan_name"] = meta.NewPlanName
+	}
+	if meta.Operator != "" {
+		params.Metadata["subscription_operator"] = string(meta.Operator)
+	}
+	if meta.Workspace != "" {
+		params.Metadata["workspace"] = meta.Workspace
+	}
+	if meta.RegionDomain != "" {
+		params.Metadata["region_domain"] = meta.RegionDomain
+	}
+	if meta.UserUID != "" {
+		params.Metadata["user_uid"] = meta.UserUID
+	}
+	if meta.TransactionID != "" {
+		params.Metadata["transaction_id"] = meta.TransactionID
+	}
+
+	// Add timestamp
+	params.Metadata["updated_at"] = time.Now().Format(time.RFC3339)
+
+	_, err := stripesubscription.Update(subscriptionID, params)
+	return err
+}
+
 // subscriptionMetadata 辅助结构体：封装元数据
 type subscriptionMetadata struct {
 	Workspace     string
@@ -193,6 +278,14 @@ func handleSubscriptionUpdate(
 	userUID uuid.UUID,
 	nr *types.NotificationRecipient,
 ) error {
+	// For upgrade operations, enrich metadata from invoice if subscription metadata is incomplete
+	isUpgrade := false
+	if invoice != nil && invoice.Metadata != nil {
+		isUpgrade = invoice.Metadata["subscription_operator"] == "upgraded"
+	}
+	if isUpgrade {
+		meta = enrichMetadataFromInvoice(meta, invoice, subscription)
+	}
 	wsTransaction, paymentID, err := prepareUpdateTransaction(invoice, subscription, meta)
 	if err != nil {
 		return err
@@ -220,16 +313,6 @@ func handleSubscriptionUpdate(
 				CustomerID:     subscription.Customer.ID,
 				InvoiceID:      invoice.ID,
 			}
-
-			// Create Payment record
-			if err := tx.Create(&payment).Error; err != nil {
-				return fmt.Errorf("failed to create payment from payment order: %w", err)
-			}
-
-			// Delete the PaymentOrder after conversion
-			if err := tx.Delete(&paymentOrder).Error; err != nil {
-				logrus.Errorf("failed to delete payment order %s: %v", paymentOrder.ID, err)
-			}
 		}
 
 		return finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment)
@@ -239,6 +322,11 @@ func handleSubscriptionUpdate(
 
 	if err := sendUpgradeNotification(nr, userUID, wsTransaction, sub, invoice); err != nil {
 		dao.Logger.Errorf("failed to send upgrade notification for user %s: %v", userUID, err)
+	}
+
+	// Update subscription metadata with enriched data after successful processing
+	if err := updateSubscriptionMetadata(subscription.ID, meta); err != nil {
+		return fmt.Errorf("failed to update subscription metadata: %w", err)
 	}
 
 	logrus.Infof(
