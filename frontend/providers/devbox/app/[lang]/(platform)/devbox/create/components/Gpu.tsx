@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
@@ -31,11 +32,8 @@ export default function Gpu({
   const selectedGpu = useMemo(() => {
     const selected = sourcePrice?.gpu?.find((item) => item.type === selectedGpuType);
     if (!selected) return undefined;
-    return {
-      ...selected,
-      inventory: countGpuInventory(selected.type)
-    };
-  }, [sourcePrice?.gpu, selectedGpuType, countGpuInventory]);
+    return selected;
+  }, [sourcePrice?.gpu, selectedGpuType]);
 
   if (!sourcePrice?.gpu) {
     return null;
@@ -49,14 +47,14 @@ export default function Gpu({
           value={selectedGpuType || 'none'}
           onValueChange={(value) => {
             const selected = sourcePrice?.gpu?.find((item) => item.type === value);
-            const inventory = value !== 'none' ? countGpuInventory(value) : 0;
+            const available = value !== 'none' ? countGpuInventory(value) : 0;
 
             if (value === 'none') {
               setValue('gpu', undefined);
-            } else if (selected && inventory > 0) {
+            } else if (selected && available > 0) {
               setValue('gpu.type', value);
               setValue('gpu.manufacturers', 'nvidia');
-              if (!selectedGpuAmount || selectedGpuAmount > inventory) {
+              if (!selectedGpuAmount || selectedGpuAmount > available) {
                 setValue('gpu.amount', 1);
               }
             }
@@ -67,7 +65,7 @@ export default function Gpu({
               {selectedGpu ? (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
-                    <img src="/images/nvidia.svg" alt="NVIDIA" className="h-4 w-4" />
+                    <Image src="/images/nvidia.svg" alt="NVIDIA" width={16} height={16} />
                     <span className="text-sm font-medium text-zinc-900">{selectedGpu.alias}</span>
                   </div>
                   <span className="text-sm text-zinc-900">
@@ -76,7 +74,9 @@ export default function Gpu({
                   <div className="h-[15px] w-px bg-zinc-200" />
                   <span className="text-sm text-zinc-900">
                     {t('Inventory')}:{' '}
-                    <span className="text-yellow-600">{selectedGpu.inventory}</span>
+                    <span className="text-yellow-600">
+                      {selectedGpu.available}/{selectedGpu.count}
+                    </span>
                   </span>
                 </div>
               ) : (
@@ -87,12 +87,12 @@ export default function Gpu({
           <SelectContent>
             <SelectItem value="none">{t('No GPU')}</SelectItem>
             {sourcePrice?.gpu.map((item) => {
-              const inventory = countGpuInventory(item.type);
+              const available = countGpuInventory(item.type);
               return (
-                <SelectItem key={item.type} value={item.type} disabled={inventory <= 0}>
+                <SelectItem key={item.type} value={item.type} disabled={available <= 0}>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
-                      <img src="/images/nvidia.svg" alt="NVIDIA" className="h-4 w-4" />
+                      <Image src="/images/nvidia.svg" alt="NVIDIA" width={16} height={16} />
                       <span className="text-sm font-medium text-zinc-900">{item.alias}</span>
                     </div>
                     <span className="text-sm text-zinc-900">
@@ -101,7 +101,9 @@ export default function Gpu({
                     <div className="h-[15px] w-px bg-zinc-200" />
                     <span className="text-sm text-zinc-900">
                       {t('Inventory')}:{' '}
-                      <span className="text-yellow-600">{inventory}</span>
+                      <span className="text-yellow-600">
+                        {item.available}/{item.count}
+                      </span>
                     </span>
                   </div>
                 </SelectItem>
@@ -115,8 +117,8 @@ export default function Gpu({
             <Label className="text-sm font-medium text-gray-900">{t('count')}</Label>
             <div className="flex gap-2">
               {GpuAmountMarkList.map((item) => {
-                const inventory = selectedGpu?.inventory || 0;
-                const hasInventory = item.value <= inventory;
+                const available = selectedGpu?.available || 0;
+                const hasInventory = item.value <= available;
                 const isSelected = selectedGpuAmount === item.value;
 
                 return (
