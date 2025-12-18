@@ -68,6 +68,8 @@ const PAGE_SIZE = 10;
 const statusFilterFn: FilterFn<DevboxListItemTypeV2> = (row, columnId, filterValue) => {
   if (!filterValue || filterValue.length === 0) return true;
   const status = row.getValue(columnId) as DevboxStatusMapType;
+  if (!status || !status.value) return false;
+
   return filterValue.some((filter: string) => {
     if (filter === DevboxStatusEnum.Stopped) {
       return (
@@ -294,11 +296,13 @@ const DevboxList = ({
           const currentData = table.getCoreRowModel().rows.map((row) => row.original);
 
           const existingStatuses = new Set(
-            currentData.map((item) =>
-              item.status.value === DevboxStatusEnum.Shutdown
-                ? DevboxStatusEnum.Stopped
-                : item.status.value
-            )
+            currentData
+              .filter((item) => item.status && item.status.value)
+              .map((item) =>
+                item.status.value === DevboxStatusEnum.Shutdown
+                  ? DevboxStatusEnum.Stopped
+                  : item.status.value
+              )
           );
 
           const statusOptions = Object.values(devboxStatusMap).filter((status) => {
@@ -356,6 +360,7 @@ const DevboxList = ({
         },
         cell: ({ row }) => {
           const item = row.original;
+          if (!item.status || !item.status.value) return null;
           return (
             <DevboxStatusTag
               status={item.status}
@@ -470,6 +475,19 @@ const DevboxList = ({
         size: 300,
         cell: ({ row }) => {
           const item = row.original;
+          if (!item.status || !item.status.value) {
+            return (
+              <div className="flex items-center justify-start gap-2">
+                <Button variant="secondary" disabled>
+                  {t('detail')}
+                </Button>
+              </div>
+            );
+          }
+          const isStopping = item.status.value === DevboxStatusEnum.Stopping;
+          const isPending = item.status.value === DevboxStatusEnum.Pending;
+          const isDisabled = isStopping || isPending;
+
           return (
             <div className="flex items-center justify-start gap-2">
               <IDEButton
@@ -501,7 +519,11 @@ const DevboxList = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem className="h-9" onClick={() => handleOpenRelease(item)}>
+                  <DropdownMenuItem
+                    className="h-9"
+                    disabled={isDisabled}
+                    onClick={() => handleOpenRelease(item)}
+                  >
                     <ArrowBigUpDash className="h-4 w-4 text-neutral-500" />
                     {t('release')}
                   </DropdownMenuItem>
@@ -516,6 +538,7 @@ const DevboxList = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                    disabled={isDisabled}
                     onClick={() => router.push(`/devbox/create?name=${item.name}&from=list`)}
                   >
                     <PencilLine className="h-4 w-4 text-neutral-500" />
@@ -524,6 +547,7 @@ const DevboxList = ({
                   {(item.status.value === 'Stopped' || item.status.value === 'Shutdown') && (
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                      disabled={isDisabled}
                       onClick={() => handleStartDevbox(item)}
                     >
                       <Play className="h-4 w-4 text-neutral-500" />
@@ -533,6 +557,7 @@ const DevboxList = ({
                   {item.status.value !== 'Stopped' && item.status.value !== 'Shutdown' && (
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                      disabled={isDisabled}
                       onClick={() => handleRestartDevbox(item)}
                     >
                       <IterationCw className="h-4 w-4 text-neutral-500" />
@@ -542,6 +567,7 @@ const DevboxList = ({
                   {item.status.value === 'Running' && (
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                      disabled={isDisabled}
                       onClick={() => {
                         setOnOpenShutdown(true);
                         setCurrentDevboxListItem(item);
@@ -555,6 +581,7 @@ const DevboxList = ({
                   <DropdownMenuItem
                     variant="destructive"
                     className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                    disabled={isDisabled}
                     onClick={() => setDelDevbox(item)}
                   >
                     <Trash2 className="h-4 w-4" />

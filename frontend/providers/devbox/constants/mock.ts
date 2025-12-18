@@ -46,8 +46,8 @@ export const MockDevboxDetail = {
       publicDomain: 'flmfczhsqgjy.sealoshzh.site',
       customDomain: ''
     }
-  ],
-  lastTerminatedReason: ''
+  ]
+  // lastTerminatedReason: ''
 };
 
 // Generate mock monitor data for CPU and Memory usage

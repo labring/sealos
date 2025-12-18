@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName

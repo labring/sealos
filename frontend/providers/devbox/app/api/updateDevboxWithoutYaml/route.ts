@@ -21,12 +21,10 @@ export async function POST(req: NextRequest) {
 
     const newYamlList = generateYamlList(newFormData, {
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
-      squashEnable: process.env.SQUASH_ENABLE!,
       ingressSecret: process.env.INGRESS_SECRET!
     });
     const oldYamlList = generateYamlList(oldFormData, {
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
-      squashEnable: process.env.SQUASH_ENABLE!,
       ingressSecret: process.env.INGRESS_SECRET!
     });
 
@@ -80,7 +78,7 @@ export async function POST(req: NextRequest) {
           const name = jsonPatch?.metadata?.name;
           return k8sCustomObjects.patchNamespacedCustomObject(
             'devbox.sealos.io',
-            'v1alpha1',
+            'v1alpha2',
             namespace,
             'devboxes',
             name,
@@ -94,7 +92,7 @@ export async function POST(req: NextRequest) {
         delete: (name) =>
           k8sCustomObjects.deleteNamespacedCustomObject(
             'devbox.sealos.io',
-            'v1alpha1',
+            'v1alpha2',
             namespace,
             'devboxes',
             name

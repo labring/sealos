@@ -22,11 +22,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (
       !Boolean(
         process.env.MINIO_ACCESS_KEY &&
-          process.env.MINIO_SECRET_KEY &&
-          process.env.MINIO_URL &&
-          process.env.MINIO_BUCKET_NAME &&
-          process.env.MIGRATE_FILE_FETCH_FILE_IMAGE &&
-          process.env.MIGRATE_FILE_IMPORT_DATA_IMAGE
+        process.env.MINIO_SECRET_KEY &&
+        process.env.MINIO_URL &&
+        process.env.MINIO_BUCKET_NAME &&
+        process.env.MIGRATE_FILE_FETCH_FILE_IMAGE &&
+        process.env.MIGRATE_FILE_IMPORT_DATA_IMAGE
       )
     ) {
       throw new Error('MinIO related environment variables are not configured!');

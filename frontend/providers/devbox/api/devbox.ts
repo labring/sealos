@@ -30,10 +30,14 @@ export const delDevbox = (devboxName: string) => DELETE('/api/delDevbox', { devb
 
 export const restartDevbox = (data: { devboxName: string }) => POST('/api/restartDevbox', data);
 
-export const startDevbox = (data: { devboxName: string }) => POST('/api/startDevbox', data);
+export const startDevbox = (data: { devboxName: string; onlyIngress?: boolean }) =>
+  POST('/api/startDevbox', data);
 
-export const shutdownDevbox = (data: { devboxName: string; shutdownMode: ShutdownModeType }) =>
-  POST('/api/shutdownDevbox', data);
+export const shutdownDevbox = (data: {
+  devboxName: string;
+  shutdownMode: ShutdownModeType;
+  onlyIngress?: boolean;
+}) => POST('/api/shutdownDevbox', data);
 
 export const getDevboxVersionList = (devboxName: string, devboxUid: string) =>
   GET<DevboxVersionListItemType[]>('/api/getDevboxVersionList', { devboxName, devboxUid });
@@ -43,6 +47,7 @@ export const releaseDevbox = (data: {
   tag: string;
   releaseDes: string;
   devboxUid: string;
+  startDevboxAfterRelease: boolean;
 }) => POST('/api/releaseDevbox', data);
 
 export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>

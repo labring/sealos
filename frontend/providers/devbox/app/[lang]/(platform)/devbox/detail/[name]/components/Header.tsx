@@ -41,6 +41,13 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
 
   if (!devboxDetail) return null;
 
+  const isStopping = devboxDetail.status.value === DevboxStatusEnum.Stopping;
+  const isPending = devboxDetail.status.value === DevboxStatusEnum.Pending;
+  const isStopped =
+    devboxDetail.status.value === DevboxStatusEnum.Stopped ||
+    devboxDetail.status.value === DevboxStatusEnum.Shutdown;
+  const isDisabled = isStopping || isPending;
+
   return (
     <div className="flex min-h-20 w-full items-center justify-between gap-5">
       {/* left */}
@@ -78,7 +85,12 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
         </Button>
         <ButtonGroup>
           {devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown' ? (
-            <Button variant="outline" size="lg" onClick={() => handleStartDevbox(devboxDetail)}>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => handleStartDevbox(devboxDetail)}
+              disabled={isDisabled}
+            >
               {t('start')}
             </Button>
           ) : (
@@ -87,6 +99,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
               size="lg"
               className="guide-close-button"
               onClick={() => setOnOpenShutdown(true)}
+              disabled={isDisabled}
             >
               {t('pause')}
             </Button>
@@ -95,10 +108,16 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             variant="outline"
             size="lg"
             onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}&from=detail`)}
+            disabled={isDisabled}
           >
             {t('update')}
           </Button>
-          <Button variant="outline" size="lg" onClick={() => handleRestartDevbox(devboxDetail)}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => handleRestartDevbox(devboxDetail)}
+            disabled={isDisabled || isStopped}
+          >
             {t('restart')}
           </Button>
         </ButtonGroup>

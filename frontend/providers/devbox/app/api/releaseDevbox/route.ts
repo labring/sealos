@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
           item.spec &&
           item.spec.devboxName === releaseForm.devboxName &&
           item.metadata.ownerReferences[0].uid === releaseForm.devboxUid &&
-          item.spec.newTag === releaseForm.tag
+          item.spec.version === releaseForm.tag
         );
       })
     ) {
