@@ -40,7 +40,7 @@ import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shar
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 export const formData2Yamls = (data: AppEditType) => [
   {

@@ -1,35 +1,28 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { withErrorHandler } from '@/services/backend/middleware';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default withErrorHandler(async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ApiResp>
+) {
   const { yamlList, type = 'create' } = req.body as {
     yamlList: string[];
     type?: 'create' | 'replace' | 'update';
   };
 
   if (!yamlList) {
-    jsonRes(res, {
-      code: 500,
-      error: 'params error'
-    });
-    return;
+    throw new Error('params error');
   }
 
-  try {
-    const { applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
+  const { applyYamlList } = await getK8s({
+    kubeconfig: await authSession(req)
+  });
 
-    await applyYamlList(yamlList, type);
+  await applyYamlList(yamlList, type);
 
-    jsonRes(res);
-  } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
-  }
-}
+  jsonRes(res);
+});

@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
 import type { AppStatusMapType, TAppSource } from '@/types/app';
 import { useRouter } from 'next/router';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
-import { useToast } from '@/hooks/useToast';
+import { useAppOperation } from '@/hooks/useAppOperation';
 import { useConfirm } from '@/hooks/useConfirm';
 import { AppStatusEnum, appStatusMap } from '@/constants/app';
 import AppStatusTag from '@/components/AppStatusTag';
@@ -13,6 +13,7 @@ import { useTranslation } from 'next-i18next';
 import UpdateModal from './UpdateModal';
 
 const DelModal = dynamic(() => import('./DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const Header = ({
   appName = 'app-name',
@@ -29,7 +30,7 @@ const Header = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { toast } = useToast();
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useAppOperation();
   const {
     isOpen: isOpenDelModal,
     onOpen: onOpenDelModal,
@@ -48,63 +49,28 @@ const Header = ({
     content: 'pause_message'
   });
 
-  const [loading, setLoading] = useState(false);
-
   const handleRestartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await restartAppByName(appName);
-      toast({
-        title: `${t('Restart Success')}`,
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '重启出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-  }, [appName, toast]);
+    await executeOperation(() => restartAppByName(appName), {
+      successMessage: t('Restart Success'),
+      errorMessage: t('Restart Failed')
+    });
+  }, [appName, executeOperation, t]);
 
   const handlePauseApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await pauseAppByName(appName);
-      toast({
-        title: '应用已暂停',
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    await executeOperation(() => pauseAppByName(appName), {
+      successMessage: t('Application paused'),
+      errorMessage: t('Application failed'),
+      onSuccess: () => refetch()
+    });
+  }, [appName, executeOperation, refetch, t]);
 
   const handleStartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await startAppByName(appName);
-      toast({
-        title: '应用已启动',
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    await executeOperation(() => startAppByName(appName), {
+      successMessage: t('Start Successful'),
+      errorMessage: t('Start Failed'),
+      onSuccess: () => refetch()
+    });
+  }, [appName, executeOperation, refetch, t]);
 
   return (
     <Flex h={'32px'} my={'14px'} alignItems={'center'}>
@@ -213,6 +179,14 @@ const Header = ({
           onCloseUpdateModal();
         }}
       />
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
     </Flex>
   );
 };

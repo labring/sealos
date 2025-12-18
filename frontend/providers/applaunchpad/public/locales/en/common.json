@@ -63,11 +63,12 @@
   "Data cannot be communicated between multiple instances": "Data cannot be shared between instances",
   "Day": "Day",
   "Delete": "Delete",
+  "Delete Failed": "Delete Failed",
   "Delete anyway": "Delete anyway",
   "Deletion warning": "Deletion warning",
   "Deploy": "Deploy",
   "Deploy Application": "Deploy",
-  "Deployment Failed": "Deployment Failed",
+  "Deployment Failed": "Creation failed",
   "Deployment Mode": "Deployment Infomation",
   "Deployment Successful": "Deployment succeeded",
   "Details": "Details",
@@ -294,7 +295,7 @@
   "filter": "Filter",
   "first_charge": "First Recharge Discount",
   "first_charge_tip": "For some specifications, you can enjoy double the gift amount when you recharge for the first time.",
-  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
+  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the Owner of the workspace to request the necessary permissions.",
   "form": {
     "add_configmap": "Add Configmaps",
     "storage_path_placeholder": "For Example: /data"

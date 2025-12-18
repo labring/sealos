@@ -24,7 +24,7 @@ const ErrorModal = ({
       <ModalOverlay />
       <ModalContent py={3}>
         <ModalHeader display={'flex'} alignItems={'center'} color={'myRed.600'}>
-          <MyIcon name="warning"></MyIcon>
+          <MyIcon color={'#CA8A04'} widths={'20px'} height={'20px'} name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
             {title}
           </Box>

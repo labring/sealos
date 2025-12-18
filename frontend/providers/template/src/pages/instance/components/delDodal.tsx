@@ -1,6 +1,7 @@
-import { deleteAllResources } from '@/api/delete';
-import { useToast } from '@/hooks/useToast';
+import { delInstanceByName, deleteAllResources } from '@/api/delete';
+import { useTemplateOperation } from '@/hooks/useTemplateOperation';
 import { useResourceStore } from '@/store/resource';
+import ErrorModal from '@/components/ErrorModal';
 import {
   Box,
   Button,
@@ -28,71 +29,83 @@ const DelModal = ({
   const { t } = useTranslation();
   const { resource } = useResourceStore();
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { loading, executeOperation, errorModalState, closeErrorModal } = useTemplateOperation();
 
   const handleDelApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await deleteAllResources(resource);
-      toast({
-        title: t('Delete successful'),
-        status: 'success'
-      });
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('Delete Failed'),
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-  }, [resource, toast, t, onSuccess, onClose]);
+    await executeOperation(
+      async () => {
+        await delInstanceByName(name);
+        await deleteAllResources(resource);
+      },
+      {
+        successMessage: t('Delete successful'),
+        errorMessage: t('Delete Failed'),
+        onSuccess: () => {
+          onSuccess();
+          onClose();
+        }
+      }
+    );
+  }, [name, resource, t, executeOperation, onSuccess, onClose]);
 
   return (
-    <Modal isOpen onClose={onClose}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>{t('Deletion warning')}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={4}>
-          <Box color={'myGray.600'}>
-            {t('delete message')}
-            <Box my={3}>
-              {t('Please Enter')}
-              <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'} px="4px">
-                {name}
+    <>
+      <Modal isOpen onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t('Deletion warning')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={4}>
+            <Box color={'myGray.600'}>
+              {t('delete message')}
+              <Box my={3}>
+                {t('Please Enter')}
+                <Box
+                  as={'span'}
+                  color={'myGray.900'}
+                  fontWeight={'bold'}
+                  userSelect={'all'}
+                  px="4px"
+                >
+                  {name}
+                </Box>
+                {t('Confirm')}
               </Box>
-              {t('Confirm')}
             </Box>
-          </Box>
 
-          <Input
-            placeholder={`${t('Please Enter')}：${name}`}
-            value={inputValue}
-            bg={'myWhite.300'}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button onClick={onClose} variant={'outline'}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            colorScheme="red"
-            ml={3}
-            variant={'solid'}
-            isDisabled={inputValue !== name}
-            isLoading={loading}
-            onClick={handleDelApp}
-          >
-            {t('Confirm deletion')}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Input
+              placeholder={`${t('Please Enter')}：${name}`}
+              value={inputValue}
+              bg={'myWhite.300'}
+              onChange={(e) => setInputValue(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={onClose} variant={'outline'}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              colorScheme="red"
+              ml={3}
+              variant={'solid'}
+              isDisabled={inputValue !== name}
+              isLoading={loading}
+              onClick={handleDelApp}
+            >
+              {t('Confirm deletion')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {errorModalState.isOpen && (
+        <ErrorModal
+          title={errorModalState.title}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
+    </>
   );
 };
 

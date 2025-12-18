@@ -8,6 +8,7 @@ import { DBStatusEnum, DBTypeList } from '@/constants/db';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useDBOperation } from '@/hooks/useDBOperation';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
@@ -69,6 +70,7 @@ import { setDBRemark } from '@/api/db';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const DBList = ({
   dbList = [],
@@ -84,6 +86,12 @@ const DBList = ({
   const { message: toast } = useMessage();
   const theme = useTheme();
   const router = useRouter();
+  const {
+    executeOperation,
+    loading: operationLoading,
+    errorModalState,
+    closeErrorModal
+  } = useDBOperation();
   const { SystemEnv } = useEnvStore();
   const {
     isOpen: isOpenUpdateModal,
@@ -131,91 +139,49 @@ const DBList = ({
 
   const handleRestartApp = useCallback(
     async (db: DBListItemType) => {
-      try {
-        setLoading(true);
-        await restartDB({ dbName: db.name, dbType: db.dbType });
-        toast({
-          title: t('restart_success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('restart_error'),
-          status: 'error'
-        });
-        console.error(error, '==restart error==');
-
-        track('error_occurred', {
-          module: 'database',
-          error_code: 'RESTART_ERROR'
-        });
-      }
-      setLoading(false);
+      await executeOperation(() => restartDB({ dbName: db.name, dbType: db.dbType }), {
+        successMessage: t('restart_success'),
+        errorMessage: t('restart_error'),
+        eventName: 'deployment_restart'
+      });
     },
-    [setLoading, t, toast]
+    [executeOperation, t]
   );
 
   const handlePauseApp = useCallback(
     async (db: DBListItemType) => {
-      try {
-        setLoading(true);
-        await pauseDBByName({ dbName: db.name, dbType: db.dbType });
-        toast({
-          title: t('pause_success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('pause_error'),
-          status: 'error'
-        });
-        console.error(error);
-
-        track('error_occurred', {
-          module: 'database',
-          error_code: 'PAUSE_ERROR'
-        });
+      const result = await executeOperation(
+        () => pauseDBByName({ dbName: db.name, dbType: db.dbType }),
+        {
+          successMessage: t('pause_success'),
+          errorMessage: t('pause_error'),
+          eventName: 'deployment_shutdown'
+        }
+      );
+      if (result !== null) {
+        setTimeout(() => {
+          refetchApps();
+        }, 3000);
       }
-      setLoading(false);
-      setTimeout(() => {
-        refetchApps();
-      }, 3000);
     },
-    [refetchApps, setLoading, t, toast]
+    [executeOperation, refetchApps, t]
   );
 
   const handleStartApp = useCallback(
     async (db: DBListItemType) => {
-      try {
-        setLoading(true);
-        await startDBByName({ dbName: db.name, dbType: db.dbType });
-
-        track({
-          event: 'deployment_start',
-          module: 'database',
-          context: 'app'
-        });
-
-        toast({
-          title: t('start_success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('start_error'),
-          status: 'error'
-        });
-        console.error(error);
-
-        track('error_occurred', {
-          module: 'database',
-          error_code: 'START_ERROR'
-        });
+      const result = await executeOperation(
+        () => startDBByName({ dbName: db.name, dbType: db.dbType }),
+        {
+          successMessage: t('start_success'),
+          errorMessage: t('start_error'),
+          eventName: 'deployment_start'
+        }
+      );
+      if (result !== null) {
+        refetchApps();
       }
-      setLoading(false);
-      refetchApps();
     },
-    [refetchApps, setLoading, t, toast]
+    [executeOperation, refetchApps, t]
   );
 
   const { getDataSourceId, setDataSourceId } = useDBStore();
@@ -883,6 +849,14 @@ const DBList = ({
           onCloseUpdateModal();
         }}
       />
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
     </Box>
   );
 };
