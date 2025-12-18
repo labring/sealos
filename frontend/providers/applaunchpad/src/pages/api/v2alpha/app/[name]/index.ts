@@ -215,7 +215,7 @@ async function processAppResponseV2Alpha(
       if (item.status === 'fulfilled') return item.value.body;
       if (item.status === 'rejected' && +item.reason?.body?.code === 404) return null;
       if (item.status === 'rejected') {
-        throw new Error(`Get APP Deployment Error: ${item.reason?.message || 'Unknown error'}`);
+        throw item.reason?.body || item.reason || new Error('Get APP Deployment Error');
       }
       return null;
     })

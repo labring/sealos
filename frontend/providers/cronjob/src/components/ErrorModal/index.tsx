@@ -42,7 +42,7 @@ const ErrorModal = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
-          <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
+          <MyIcon color={'#CA8A04'} width={'16px'} height={'16px'} name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
             {title}
           </Box>

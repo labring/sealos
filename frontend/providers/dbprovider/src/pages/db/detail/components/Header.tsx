@@ -9,11 +9,11 @@ import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
-import type { DBDetailType, DBType } from '@/types/db';
-import { Box, Button, Flex, useDisclosure, IconButton, ButtonGroup } from '@chakra-ui/react';
+import { useDBOperation } from '@/hooks/useDBOperation';
+import type { DBDetailType } from '@/types/db';
+import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
-import { i18n, useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState, useEffect } from 'react';
@@ -37,6 +37,7 @@ import { getDBSecret } from '@/api/db';
 import useEnvStore from '@/store/env';
 import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const Header = ({
   db = defaultDBDetail,
@@ -73,85 +74,33 @@ const Header = ({
     content: t('pause_hint')
   });
 
-  const [loading, setLoading] = useState(false);
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useDBOperation();
   const { getDataSourceId, setDataSourceId } = useDBStore();
   const { SystemEnv } = useEnvStore();
 
   const handleRestartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await restartDB(db);
-      toast({
-        title: t('restart_success'),
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('restart_error'),
-        status: 'error'
-      });
-      console.error(error);
-
-      track('error_occurred', {
-        module: 'database',
-        error_code: 'RESTART_ERROR'
-      });
-    }
-    setLoading(false);
-  }, [db, t, toast]);
+    await executeOperation(() => restartDB(db), {
+      successMessage: t('restart_success'),
+      errorMessage: t('restart_error'),
+      eventName: 'deployment_restart'
+    });
+  }, [db, executeOperation, t]);
 
   const handlePauseApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await pauseDBByName(db);
-      toast({
-        title: t('pause_success'),
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('pause_error'),
-        status: 'error'
-      });
-      console.error(error);
-
-      track('error_occurred', {
-        module: 'database',
-        error_code: 'PAUSE_ERROR'
-      });
-    }
-    setLoading(false);
-  }, [db, t, toast]);
+    await executeOperation(() => pauseDBByName(db), {
+      successMessage: t('pause_success'),
+      errorMessage: t('pause_error'),
+      eventName: 'deployment_shutdown'
+    });
+  }, [db, executeOperation, t]);
 
   const handleStartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await startDBByName(db);
-
-      track({
-        event: 'deployment_start',
-        module: 'database',
-        context: 'app'
-      });
-
-      toast({
-        title: t('start_success'),
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('start_error'),
-        status: 'error'
-      });
-      console.error(error);
-
-      track('error_occurred', {
-        module: 'database',
-        error_code: 'START_ERROR'
-      });
-    }
-    setLoading(false);
-  }, [db, t, toast]);
+    await executeOperation(() => startDBByName(db), {
+      successMessage: t('start_success'),
+      errorMessage: t('start_error'),
+      eventName: 'deployment_start'
+    });
+  }, [db, executeOperation, t]);
 
   const handleManageData = useCallback(async () => {
     try {
@@ -505,6 +454,14 @@ const Header = ({
           onCloseUpdateModal();
         }}
       />
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
     </Flex>
   );
 };

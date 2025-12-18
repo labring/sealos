@@ -2,8 +2,7 @@ import { applyYamlList } from '@/api/job';
 import { editModeMap } from '@/constants/editApp';
 import { DefaultJobEditValue } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
+import { useCronJobOperation } from '@/hooks/useCronJobOperation';
 import { useGlobalStore } from '@/store/global';
 import { useJobStore } from '@/store/job';
 import type { YamlItemType } from '@/types';
@@ -22,8 +21,9 @@ import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useQuotaGuarded } from '@sealos/shared';
 import useEnvStore from '@/store/env';
+import { useToast } from '@/hooks/useToast';
 
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit: CronJobEditType = {
   ...DefaultJobEditValue
@@ -40,10 +40,9 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
-  const [errorMessage, setErrorMessage] = useState('');
   const [forceUpdate, setForceUpdate] = useState(false);
   const { toast } = useToast();
-  const { Loading, setIsLoading } = useLoading();
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useCronJobOperation();
   const { loadJobDetail } = useJobStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
   const isEdit = useMemo(() => !!jobName, [jobName]);
@@ -77,22 +76,24 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   });
 
   const submitSuccess = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const yamlList = formData2Yamls(realTimeForm.current);
-      setYamlList(yamlList);
-      const data = yamlList.map((item) => item.value);
-      await applyYamlList(data, isEdit ? 'replace' : 'create');
-      toast({
-        title: t(applySuccess),
-        status: 'success'
-      });
+    const yamlList = formData2Yamls(realTimeForm.current);
+    setYamlList(yamlList);
+    const data = yamlList.map((item) => item.value);
+
+    const result = await executeOperation(
+      () => applyYamlList(data, isEdit ? 'replace' : 'create'),
+      {
+        successMessage: t(applySuccess),
+        errorMessage: t(applyError),
+        showErrorModal: true
+      }
+    );
+    console.log(result, '12312');
+
+    if (result !== null) {
       router.push('/jobs');
-    } catch (error) {
-      setErrorMessage(JSON.stringify(error));
     }
-    setIsLoading(false);
-  }, [applySuccess, isEdit, setIsLoading, t, toast, router]);
+  }, [executeOperation, t, applySuccess, applyError, isEdit, router]);
 
   const submitError = useCallback(() => {
     const deepSearch = (obj: any): string => {
@@ -140,7 +141,6 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         ]);
         return null;
       }
-      setIsLoading(true);
       return loadJobDetail(jobName);
     },
     {
@@ -153,9 +153,6 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
           title: String(err),
           status: 'error'
         });
-      },
-      onSettled() {
-        setIsLoading(false);
       }
     }
   );
@@ -194,9 +191,13 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         </Box>
       </Flex>
       <ConfirmChild />
-      <Loading />
-      {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
       )}
     </>
   );
