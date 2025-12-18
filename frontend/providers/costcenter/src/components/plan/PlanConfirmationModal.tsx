@@ -18,6 +18,7 @@ interface PlanConfirmationModalProps {
   onConfirm?: () => void;
   onCancel?: () => void;
   onPaymentSuccess?: () => void;
+  isSubmitting?: boolean;
 }
 
 const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
@@ -28,7 +29,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     isOpen,
     onConfirm,
     onCancel,
-    onPaymentSuccess
+    onPaymentSuccess,
+    isSubmitting: isSubmittingProp
   } = props;
 
   const { t } = useTranslation();
@@ -372,6 +374,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
           manageCardLoading={manageCardMutation.isLoading}
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentCancel={handlePaymentCancel}
+          isSubmitting={isSubmittingProp}
         />
       </DialogContent>
     </Dialog>

@@ -344,6 +344,8 @@ export default function Plan() {
             startPaymentWaiting(targetWorkspace, targetRegionDomain, data.data.redirectUrl);
             window.open(data.data.redirectUrl, '_blank', 'noopener,noreferrer');
           } else {
+            // For non-upgrade payments, close modal and redirect
+            hideModal();
             window.parent.location.href = data.data.redirectUrl;
           }
         }
@@ -713,6 +715,7 @@ export default function Plan() {
         workspaceName={modalContext.workspaceName}
         isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
+        isSubmitting={subscriptionMutation.isLoading}
         onConfirm={() => {
           if (pendingPlan) {
             handleSubscribe(pendingPlan, modalContext.workspaceName, false);
@@ -722,7 +725,18 @@ export default function Plan() {
         onCancel={() => {
           hideModal();
         }}
-        onPaymentSuccess={() => {
+        onPaymentSuccess={async () => {
+          // Invalidate queries to refresh subscription data
+          await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+          await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+          await refetchSubscriptionInfo();
+          setTimeout(async () => {
+            // Refresh subscription data with delay
+            await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+            await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+            await refetchSubscriptionInfo();
+          }, 5000);
+
           // Close confirmation modal
           hideModal();
           // Show congratulations modal

@@ -19,6 +19,7 @@ interface PlanConfirmationModalViewProps {
   manageCardLoading: boolean;
   onPaymentSuccess?: () => void;
   onPaymentCancel?: () => void;
+  isSubmitting?: boolean;
 }
 
 // ==================== Plan Display Component ====================
@@ -444,9 +445,9 @@ function PaymentWaitingSection({
     return (
       <div className="flex flex-col items-center justify-center space-y-4 py-4">
         <div className="relative">
-          <div className="animate-ping absolute inset-0 rounded-full bg-green-500 opacity-75"></div>
-          <div className="relative rounded-full bg-green-500 p-4">
-            <CircleCheck size={32} className="text-white" />
+          <div className="animate-ping absolute inset-0 rounded-full bg-green-500/10 opacity-75"></div>
+          <div className="relative rounded-full p-4">
+            <CircleCheck size={64} strokeWidth={1} className="text-green-500" />
           </div>
         </div>
         <h3 className="text-lg font-semibold text-gray-900 text-center">
@@ -505,39 +506,46 @@ interface ActionButtonProps {
   amountLoading: boolean;
   onConfirm: () => void;
   isPaymentWaiting?: boolean;
+  isSubmitting?: boolean;
 }
 
 function ActionButton({
   isCreateMode = false,
   amountLoading,
   onConfirm,
-  isPaymentWaiting = false
+  isPaymentWaiting = false,
+  isSubmitting: isSubmittingProp = false
 }: ActionButtonProps) {
   const { t } = useTranslation();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
+
+  // Use prop if provided, otherwise use local state
+  const isSubmitting = isSubmittingProp || isSubmittingLocal;
 
   // Reset submitting state when payment waiting starts (payment page opened)
   useEffect(() => {
     if (isPaymentWaiting) {
-      setIsSubmitting(false);
+      setIsSubmittingLocal(false);
     }
   }, [isPaymentWaiting]);
 
   // Reset submitting state if payment fails (after a delay to allow for error handling)
   // Only reset if we're still submitting but payment waiting hasn't started
   useEffect(() => {
-    if (isSubmitting && !isPaymentWaiting) {
+    if (isSubmittingLocal && !isPaymentWaiting && !isSubmittingProp) {
       const timer = setTimeout(() => {
         // Reset submitting state after delay if payment waiting hasn't started
         // This handles the case where payment fails
-        setIsSubmitting(false);
+        setIsSubmittingLocal(false);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isSubmitting, isPaymentWaiting]);
+  }, [isSubmittingLocal, isPaymentWaiting, isSubmittingProp]);
 
   const handleClick = () => {
-    setIsSubmitting(true);
+    if (!isSubmittingProp) {
+      setIsSubmittingLocal(true);
+    }
     onConfirm();
   };
 
@@ -595,7 +603,8 @@ export function PlanConfirmationModalView({
   onValidateRedeemCode,
   manageCardLoading,
   onPaymentSuccess,
-  onPaymentCancel
+  onPaymentCancel,
+  isSubmitting
 }: PlanConfirmationModalViewProps) {
   const { t } = useTranslation();
   const {
@@ -639,6 +648,7 @@ export function PlanConfirmationModalView({
       amountLoading={amountLoading ?? false}
       onConfirm={onConfirm}
       isPaymentWaiting={isPaymentWaiting}
+      isSubmitting={isSubmitting}
     />
   );
 
