@@ -604,102 +604,13 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		}
 	}
 
-	// Handle subscription creation - return the plan price with optional discount
+	// Handle subscription creation
 	if req.Operator == types.SubscriptionTransactionTypeCreated {
-		// Get the target plan
-		targetPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(req.PlanName)
-		if err != nil {
-			c.JSON(
-				http.StatusInternalServerError,
-				helper.ErrorMessage{Error: fmt.Sprintf("failed to get target plan: %v", err)},
-			)
-			return
-		}
-
-		// Find price for the specified period
-		price := getCurrentWorkspacePlanPrice(targetPlan, req.Period)
-		if price == nil || price.StripePrice == nil {
-			c.JSON(
-				http.StatusInternalServerError,
-				helper.ErrorMessage{
-					Error: fmt.Sprintf(
-						"no price found for target plan %s and period %s",
-						targetPlan.Name,
-						req.Period,
-					),
-				},
-			)
-			return
-		}
-
-		// For creation with no promotion code, return the standard plan price with consistent format
-		if req.PromotionCode == "" {
-			response := gin.H{
-				"amount":          price.Price,
-				"original_amount": price.Price,
-				"promotion_code":  "",
-				"has_discount":    false,
-			}
-			c.JSON(http.StatusOK, response)
-			return
-		}
-
-		// Create invoice preview parameters for new subscription
-		params := &stripe.InvoiceCreatePreviewParams{
-			//Customer: stripe.String(customerID),
-			SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
-				Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
-					{
-						Price: price.StripePrice,
-					},
-				},
-			},
-		}
-
-		// Add promotion code if provided (already validated above)
-		if req.PromotionCode != "" {
-			params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
-				{
-					PromotionCode: stripe.String(validatedPromotionCode.ID),
-				},
-			}
-		}
-
-		// Create the invoice preview to get the discounted amount
-		invoice, err := services.StripeServiceInstance.UpdatePreview(params)
-		if err != nil {
-			c.JSON(
-				http.StatusInternalServerError,
-				helper.ErrorMessage{Error: fmt.Sprintf("failed to create invoice preview with discount: %v", err)},
-			)
-			return
-		}
-
-		// Calculate the total amount from the invoice
-		var totalAmount int64 = 0
-		for _, line := range invoice.Lines.Data {
-			if line.Amount > 0 {
-				totalAmount += line.Amount
-			}
-		}
-		totalAmount *= 10_000
-
-		// If no positive amounts found, fall back to standard price
-		if totalAmount == 0 {
-			totalAmount = price.Price
-		}
-
-		response := gin.H{
-			"amount":          totalAmount, // Convert cents to dollars
-			"original_amount": price.Price, // Original price without discount
-			"promotion_code":  req.PromotionCode,
-			"has_discount":    totalAmount < price.Price,
-		}
-
-		c.JSON(http.StatusOK, response)
+		handleSubscriptionCreation(c, req, validatedPromotionCode)
 		return
 	}
 
+	// Handle subscription upgrade
 	currentSubscription, err := dao.DBClient.GetWorkspaceSubscription(
 		req.Workspace,
 		req.RegionDomain,
@@ -746,76 +657,181 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			http.StatusInternalServerError,
 			helper.ErrorMessage{Error: fmt.Sprintf("plan %s can not be upgraded", req.PlanName)},
 		)
+		return
 	}
 
+	// Route to appropriate upgrade handler
 	if currentSubscription.PayMethod == types.PaymentMethodStripe &&
 		currentSubscription.PayStatus == types.SubscriptionPayStatusPaid &&
 		currentSubscription.Stripe != nil {
-		price := getCurrentWorkspacePlanPrice(targetPlan, req.Period)
-		if price == nil || price.StripePrice == nil {
-			c.JSON(
-				http.StatusInternalServerError,
-				helper.ErrorMessage{
-					Error: fmt.Sprintf(
-						"no price found for target plan %s and period %s",
-						targetPlan.Name,
-						req.Period,
-					),
-				},
-			)
-			return
+		handleStripeUpgrade(c, req, currentSubscription, targetPlan)
+	} else {
+		handleCalculatedUpgrade(c, req, currentPlan, targetPlan, currentSubscription)
+	}
+}
+
+// handleSubscriptionCreation handles the creation subscription amount calculation
+func handleSubscriptionCreation(c *gin.Context, req *helper.WorkspaceSubscriptionOperatorReq, validatedPromotionCode *stripe.PromotionCode) {
+	// Get the target plan
+	targetPlan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(req.PlanName)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get target plan: %v", err)},
+		)
+		return
+	}
+
+	// Find price for the specified period
+	price := getCurrentWorkspacePlanPrice(targetPlan, req.Period)
+	if price == nil || price.StripePrice == nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf(
+					"no price found for target plan %s and period %s",
+					targetPlan.Name,
+					req.Period,
+				),
+			},
+		)
+		return
+	}
+
+	// For creation with no promotion code, return the standard plan price with consistent format
+	if req.PromotionCode == "" {
+		response := gin.H{
+			"amount":          price.Price,
+			"original_amount": price.Price,
+			"promotion_code":  "",
+			"has_discount":    false,
 		}
+		c.JSON(http.StatusOK, response)
+		return
+	}
 
-		var amount int64
-		var originalAmount int64
-		var err error
+	// Create invoice preview parameters for new subscription
+	params := &stripe.InvoiceCreatePreviewParams{
+		SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
+			Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
+				{
+					Price: price.StripePrice,
+				},
+			},
+		},
+	}
 
-		// Get original price without discount first
-		originalAmount, err = services.StripeServiceInstance.UpdatePlanPricePreview(
+	// Add promotion code if provided (already validated above)
+	if req.PromotionCode != "" {
+		params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
+			{
+				PromotionCode: stripe.String(validatedPromotionCode.ID),
+			},
+		}
+	}
+
+	// Create the invoice preview to get the discounted amount
+	invoice, err := services.StripeServiceInstance.UpdatePreview(params)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to create invoice preview with discount: %v", err)},
+		)
+		return
+	}
+
+	// Calculate the total amount from the invoice
+	var totalAmount int64 = 0
+	for _, line := range invoice.Lines.Data {
+		if line.Amount > 0 {
+			totalAmount += line.Amount
+		}
+	}
+	totalAmount *= 10_000
+
+	// If no positive amounts found, fall back to standard price
+	if totalAmount == 0 {
+		totalAmount = price.Price
+	}
+
+	response := gin.H{
+		"amount":          totalAmount, // Convert cents to dollars
+		"original_amount": price.Price, // Original price without discount
+		"promotion_code":  req.PromotionCode,
+		"has_discount":    totalAmount < price.Price,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// handleStripeUpgrade handles upgrade for Stripe subscriptions
+func handleStripeUpgrade(c *gin.Context, req *helper.WorkspaceSubscriptionOperatorReq, currentSubscription *types.WorkspaceSubscription, targetPlan *types.WorkspaceSubscriptionPlan) {
+	price := getCurrentWorkspacePlanPrice(targetPlan, req.Period)
+	if price == nil || price.StripePrice == nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf(
+					"no price found for target plan %s and period %s",
+					targetPlan.Name,
+					req.Period,
+				),
+			},
+		)
+		return
+	}
+
+	var amount int64
+	var originalAmount int64
+	var err error
+
+	// Get original price without discount first
+	originalAmount, err = services.StripeServiceInstance.UpdatePlanPricePreview(
+		currentSubscription.Stripe.SubscriptionID,
+		*price.StripePrice,
+	)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{
+				Error: fmt.Sprintf("failed to get original upgrade amount from stripe: %v", err),
+			},
+		)
+		return
+	}
+
+	// Use promotion-aware preview if promotion code is provided (already validated above)
+	if req.PromotionCode != "" {
+		amount, err = services.StripeServiceInstance.UpdatePlanPricePreviewWithPromotion(
 			currentSubscription.Stripe.SubscriptionID,
 			*price.StripePrice,
+			req.PromotionCode,
 		)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,
 				helper.ErrorMessage{
-					Error: fmt.Sprintf("failed to get original upgrade amount from stripe: %v", err),
+					Error: fmt.Sprintf("failed to get upgrade amount with promotion from stripe: %v", err),
 				},
 			)
 			return
 		}
-
-		// Use promotion-aware preview if promotion code is provided (already validated above)
-		if req.PromotionCode != "" {
-			amount, err = services.StripeServiceInstance.UpdatePlanPricePreviewWithPromotion(
-				currentSubscription.Stripe.SubscriptionID,
-				*price.StripePrice,
-				req.PromotionCode,
-			)
-			if err != nil {
-				c.JSON(
-					http.StatusInternalServerError,
-					helper.ErrorMessage{
-						Error: fmt.Sprintf("failed to get upgrade amount with promotion from stripe: %v", err),
-					},
-				)
-				return
-			}
-		} else {
-			amount = originalAmount
-		}
-
-		response := gin.H{
-			"amount":          amount * 10_000,         // Convert cents to dollars
-			"original_amount": originalAmount * 10_000, // Original price without discount
-			"promotion_code":  req.PromotionCode,
-			"has_discount":    req.PromotionCode != "" && amount < originalAmount,
-		}
-
-		c.JSON(http.StatusOK, response)
-		return
+	} else {
+		amount = originalAmount
 	}
 
+	response := gin.H{
+		"amount":          amount * 10_000,         // Convert cents to dollars
+		"original_amount": originalAmount * 10_000, // Original price without discount
+		"promotion_code":  req.PromotionCode,
+		"has_discount":    req.PromotionCode != "" && amount < originalAmount,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// handleCalculatedUpgrade handles upgrade calculations for non-Stripe subscriptions
+func handleCalculatedUpgrade(c *gin.Context, req *helper.WorkspaceSubscriptionOperatorReq, currentPlan, targetPlan *types.WorkspaceSubscriptionPlan, currentSubscription *types.WorkspaceSubscription) {
 	// Calculate upgrade amount based on period
 	var currentPrice, targetPrice int64
 	for _, price := range currentPlan.Prices {
@@ -2189,7 +2205,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 
 	if payment.Amount > 0 {
 		// Create payment
-		if err := tx.Create(payment).Error; err != nil {
+		if err := tx.Save(payment).Error; err != nil {
 			return fmt.Errorf("failed to create payment record: %w", err)
 		}
 		// Delete the PaymentOrder after conversion

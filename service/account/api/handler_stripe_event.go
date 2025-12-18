@@ -454,11 +454,11 @@ func handleSubscriptionCreateOrRenew(
 			ws.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
 		}
 
-		if isInitial {
-			if err := deletePaymentOrder(tx, payment.ID); err != nil {
-				return err
-			}
-		}
+		//if isInitial {
+		//	if err := deletePaymentOrder(tx, payment.ID); err != nil {
+		//		return err
+		//	}
+		//}
 
 		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
 			return err
