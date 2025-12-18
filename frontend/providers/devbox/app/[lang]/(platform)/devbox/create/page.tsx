@@ -137,9 +137,9 @@ const DevboxCreatePage = () => {
 
   const countGpuInventory = useCallback(
     (type?: string) => {
-      const inventory = sourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0;
+      const available = sourcePrice?.gpu?.find((item) => item.type === type)?.available || 0;
 
-      return inventory;
+      return available;
     },
     [sourcePrice?.gpu]
   );
