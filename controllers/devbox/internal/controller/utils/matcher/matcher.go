@@ -17,9 +17,8 @@ package matcher
 import (
 	"log/slog"
 
-	corev1 "k8s.io/api/core/v1"
-
 	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type PodMatcher interface {
@@ -69,7 +68,9 @@ func (e EphemeralStorageMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) b
 		slog.Info("Ephemeral-Storage limits are not equal")
 		return false
 	}
-	if container.Resources.Requests.StorageEphemeral().Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) != 0 {
+	if container.Resources.Requests.StorageEphemeral().
+		Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) !=
+		0 {
 		slog.Info("Ephemeral-Storage requests are not equal")
 		return false
 	}

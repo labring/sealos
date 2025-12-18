@@ -25,8 +25,7 @@ import (
 )
 
 // todo: refactor this struct, add opts for tls or something else
-type Opts struct {
-}
+type Opts struct{}
 
 type BasicAuth struct {
 	Username string
@@ -38,9 +37,7 @@ type Registry struct {
 	BasicAuth BasicAuth
 }
 
-var (
-	ErrorManifestNotFound = errors.New("manifest not found")
-)
+var ErrManifestNotFound = errors.New("manifest not found")
 
 // ReTag creates a new tag for an existing image by copying its manifest.
 func (c *Registry) ReTag(source, target string) error {
@@ -61,9 +58,14 @@ func (c *Registry) pullManifest(image string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to parse image: %w", err)
 	}
 
-	url := fmt.Sprintf("http://%s/v2/%s/manifests/%s", ref.Context().RegistryStr(), ref.Context().RepositoryStr(), ref.Identifier())
+	url := fmt.Sprintf(
+		"http://%s/v2/%s/manifests/%s",
+		ref.Context().RegistryStr(),
+		ref.Context().RepositoryStr(),
+		ref.Identifier(),
+	)
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GET request: %w", err)
 	}
@@ -79,7 +81,7 @@ func (c *Registry) pullManifest(image string) ([]byte, error) {
 
 	switch resp.StatusCode {
 	case http.StatusNotFound:
-		return nil, ErrorManifestNotFound
+		return nil, ErrManifestNotFound
 	case http.StatusOK:
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -97,9 +99,14 @@ func (c *Registry) pushManifest(image string, manifest []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse image: %w", err)
 	}
-	url := fmt.Sprintf("http://%s/v2/%s/manifests/%s", ref.Context().RegistryStr(), ref.Context().RepositoryStr(), ref.Identifier())
+	url := fmt.Sprintf(
+		"http://%s/v2/%s/manifests/%s",
+		ref.Context().RegistryStr(),
+		ref.Context().RepositoryStr(),
+		ref.Identifier(),
+	)
 
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(manifest))
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(manifest))
 	if err != nil {
 		return fmt.Errorf("failed to create PUT request: %w", err)
 	}
