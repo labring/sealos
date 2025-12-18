@@ -3,7 +3,7 @@ package commit
 import "time"
 
 const (
-	DefaultNamespace            = "sealos.io"
+	DefaultNamespace            = "k8s.io"
 	DefaultContainerdAddress    = "unix:///var/run/containerd/containerd.sock"
 	DefaultRuntime              = "io.containerd.runc.v2"
 	DefaultNerdctlDataRoot      = "/var/lib/containerd"
