@@ -3,7 +3,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
 import { EnvResponse } from '@/types/index';
-import { getTemplateEnvs } from '@/utils/tools';
+import { getTemplateEnvs } from '@/utils/common';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

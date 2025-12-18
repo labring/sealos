@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { devboxName, shutdownMode, onlyIngress } = validationResult.data;
+    const { devboxName, shutdownMode, onlyIngress } = validationResult.data;
     const headerList = req.headers;
 
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
@@ -91,23 +92,22 @@ export async function POST(req: NextRequest) {
         patchData.spec.network = { type: 'SSHGate' };
       }
 
-      await k8sCustomObjects.patchNamespacedCustomObject(
-        'devbox.sealos.io',
-        'v1alpha2',
-        namespace,
-        'devboxes',
-        devboxName,
-        patchData,
-        undefined,
-        undefined,
-        undefined,
-        {
-          headers: {
-            'Content-Type': 'application/merge-patch+json'
-          }
+    await k8sCustomObjects.patchNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName,
+      { spec: { state: shutdownMode } },
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/merge-patch+json'
         }
-      );
-    }
+      }
+    );
 
     return jsonRes({
       data: onlyIngress ? 'success pause ingress' : 'success shutdown devbox'

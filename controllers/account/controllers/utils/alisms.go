@@ -50,3 +50,29 @@ func SendSms(client *dysmsapi20170525.Client, req *dysmsapi20170525.SendSmsReque
 	}
 	return err
 }
+
+// SendSmsMultiple sends SMS to multiple phone numbers with the same content
+func SendSmsMultiple(client *dysmsapi20170525.Client, phoneNumbers []string, signName, templateCode, templateParam string) error {
+	if len(phoneNumbers) == 0 {
+		return fmt.Errorf("phone numbers cannot be empty")
+	}
+
+	for _, phoneNumber := range phoneNumbers {
+		if phoneNumber == "" {
+			continue
+		}
+		sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
+			PhoneNumbers:  tea.String(phoneNumber),
+			SignName:      tea.String(signName),
+			TemplateCode:  tea.String(templateCode),
+			TemplateParam: tea.String(templateParam),
+		}
+
+		err := SendSms(client, sendSmsRequest)
+		if err != nil {
+			return fmt.Errorf("failed to send SMS to %s: %w", phoneNumber, err)
+		}
+	}
+
+	return nil
+}

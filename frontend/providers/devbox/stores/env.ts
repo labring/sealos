@@ -18,7 +18,11 @@ export const defaultEnv: Env = {
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
   currencySymbol: 'shellCoin',
-  storageLimit: '1Gi'
+  storageLimit: '1Gi',
+  enableImportFeature: 'false',
+  enableWebideFeature: 'false',
+  cpuSlideMarkList: '1,2,4,8,16',
+  memorySlideMarkList: '2,4,8,16,32'
 };
 
 type State = {

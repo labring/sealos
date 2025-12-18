@@ -481,6 +481,16 @@ func AdminPaymentRefund(c *gin.Context) {
 		})
 		return
 	}
+	// compatible
+	if refundData.OrderID == "" {
+		refundData.OrderID = refundData.ID
+	}
+	if refundData.OrderID == "" {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: "missing order_id in request body",
+		})
+		return
+	}
 	postDo := func(p types.PaymentRefund) error {
 		svc, err := pay.NewPayHandler(string(p.Method))
 		if err != nil {

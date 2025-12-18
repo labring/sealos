@@ -33,7 +33,11 @@ export async function GET(req: NextRequest) {
         currencySymbol: (process.env.CURRENCY_SYMBOL || defaultEnv.currencySymbol) as
           | 'shellCoin'
           | 'cny'
-          | 'usd'
+          | 'usd',
+        enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature,
+        enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature,
+        cpuSlideMarkList: process.env.CPU_SLIDE_MARK_LIST || defaultEnv.cpuSlideMarkList,
+        memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList
       }
     });
   } catch (err: any) {

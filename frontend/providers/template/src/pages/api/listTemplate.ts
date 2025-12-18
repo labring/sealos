@@ -1,7 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
 import { findTopKeyWords } from '@/utils/template';
-import { parseGithubUrl } from '@/utils/tools';
+import { parseGithubUrl } from '@/utils/common';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';

@@ -8,7 +8,7 @@ import path from 'path';
 import util from 'util';
 import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
-import { getTemplateEnvs } from '@/utils/tools';
+import { getTemplateEnvs } from '@/utils/common';
 
 const execAsync = util.promisify(exec);
 

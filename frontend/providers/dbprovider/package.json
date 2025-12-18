@@ -48,7 +48,7 @@
     "minio": "^7.1.3",
     "multer": "1.4.5-lts.1",
     "nanoid": "^4.0.2",
-    "next": "13.5.11",
+    "next": "14.2.35",
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "papaparse": "^5.4.1",

@@ -71,6 +71,10 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  authBackgroundImage?: {
+    zh: string;
+    en: string;
+  };
   meta: MetaConfigType;
   customerServiceURL?: string;
   discordInviteLink?: string;
@@ -86,6 +90,9 @@ export type LayoutConfigType = {
     bannerEnabled: boolean;
     subscriptionEnabled: boolean;
     guestModeEnabled?: boolean;
+    emailAlertEnabled: boolean;
+    phoneAlertEnabled: boolean;
+    announcementEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -321,7 +328,10 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     aiAssistantEnabled: false,
     bannerEnabled: false,
     subscriptionEnabled: false,
-    guestModeEnabled: false
+    guestModeEnabled: false,
+    emailAlertEnabled: false,
+    phoneAlertEnabled: false,
+    announcementEnabled: false
   },
   gtmId: null
 };
