@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
 import { getUpgradeAmount, getCardInfo, createCardManageSession } from '@/api/plan';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
@@ -17,21 +17,51 @@ interface PlanConfirmationModalProps {
   isOpen?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
+  onPaymentSuccess?: () => void;
 }
 
 const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
-  const { plan, workspaceName, isCreateMode = false, isOpen = false, onConfirm, onCancel } = props;
+  const {
+    plan: planProp,
+    workspaceName: workspaceNameProp,
+    isCreateMode: isCreateModeProp,
+    isOpen,
+    onConfirm,
+    onCancel,
+    onPaymentSuccess
+  } = props;
 
   const { t } = useTranslation();
   const { toast } = useCustomToast();
+  const queryClient = useQueryClient();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
-  const isPaygType = usePlanStore((state) => state.isPaygType);
-  const redeemCode = usePlanStore((state) => state.redeemCode);
-  const setRedeemCode = usePlanStore((state) => state.setRedeemCode);
-  const setRedeemCodeDiscount = usePlanStore((state) => state.setRedeemCodeDiscount);
-  const setRedeemCodeValidated = usePlanStore((state) => state.setRedeemCodeValidated);
-  const clearRedeemCode = usePlanStore((state) => state.clearRedeemCode);
+  const {
+    isPaygType,
+    redeemCode,
+    setRedeemCode,
+    setRedeemCodeDiscount,
+    setRedeemCodeValidated,
+    clearRedeemCode,
+    pendingPlan,
+    modalContext,
+    setUpgradeAmountData,
+    setCardInfoData,
+    setMonthlyPrice,
+    setUpgradeAmount,
+    setAmountLoading,
+    setCardInfoLoading,
+    isPaymentWaiting,
+    setPromotionCodeError,
+    stopPaymentWaiting,
+    paymentUrl,
+    subscriptionData
+  } = usePlanStore();
+
+  // Get plan and context from store (props take precedence for backward compatibility)
+  const plan = planProp || pendingPlan || undefined;
+  const workspaceName = workspaceNameProp || modalContext.workspaceName;
+  const isCreateMode = isCreateModeProp ?? modalContext.isCreateMode ?? false;
 
   const region = getRegion();
   const workspace = session?.user?.nsid || '';
@@ -67,15 +97,28 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         period,
         payMethod,
         operator,
-        discountCode: redeemCode || undefined
+        promotionCode: redeemCode || undefined
       });
     },
     enabled: isOpen && !!(plan && workspace && regionDomain),
     retry: (failureCount, error: any) => {
-      if (error?.code === 404 || error?.response?.status === 404) return false;
+      const errorStatus = error?.code || error?.response?.status;
+      // Don't retry for 404, 410, 409 errors
+      if (errorStatus === 404 || errorStatus === 410 || errorStatus === 409) return false;
       return failureCount < 3;
+    },
+    onSuccess: (data) => {
+      if (data?.data) {
+        setUpgradeAmountData(data.data);
+        setUpgradeAmount(data.data.amount);
+      }
     }
   });
+
+  // Sync loading state to store
+  useEffect(() => {
+    setAmountLoading(amountLoading);
+  }, [amountLoading, setAmountLoading]);
 
   const { data: cardInfoData, isLoading: cardInfoLoading } = useQuery({
     queryKey: ['card-info', workspace, regionDomain],
@@ -85,8 +128,24 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         regionDomain
       }),
     enabled: isOpen && !!workspace && !!regionDomain,
-    refetchOnMount: true
+    refetchOnMount: true,
+    onSuccess: (data) => {
+      if (data?.data) {
+        setCardInfoData(data.data);
+      }
+    }
   });
+
+  // Sync loading state to store
+  useEffect(() => {
+    setCardInfoLoading(cardInfoLoading);
+  }, [cardInfoLoading, setCardInfoLoading]);
+
+  // Show card management only if not create mode, not PAYG, and current plan is not Free
+  // Use store data to ensure consistency with PlanConfirmationModalView
+  const currentPlanName = subscriptionData?.subscription?.PlanName;
+  const isFreePlan = !currentPlanName || currentPlanName.toLowerCase() === 'free';
+  const shouldShowCardManagement = !isCreateMode && !isPaygUser && !isFreePlan;
 
   const manageCardMutation = useMutation({
     mutationFn: createCardManageSession,
@@ -114,33 +173,54 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     if (!isOpen || !plan) {
       setRedeemCodeDiscount(null);
       setRedeemCodeValidated(false);
+      setPromotionCodeError(null);
       return;
     }
 
     if (!redeemCode) {
       setRedeemCodeDiscount(null);
       setRedeemCodeValidated(false);
+      setPromotionCodeError(null);
       return;
     }
 
     const error = upgradeAmountError as any;
     const errorCode = error?.code || error?.response?.status || error?.response?.data?.code;
+    const errorStatus = error?.response?.status || error?.code;
 
-    if (upgradeAmountError && errorCode === 404) {
+    // Handle different error status codes
+    if (upgradeAmountError && errorStatus) {
       setRedeemCodeDiscount(null);
       setRedeemCodeValidated(false);
+      setPromotionCodeError(errorStatus);
+
       if (lastErrorRedeemCodeRef.current !== redeemCode) {
         lastErrorRedeemCodeRef.current = redeemCode;
+
+        let errorMessage = t('common:invalid_promotion_code');
+        if (errorStatus === 404) {
+          errorMessage = t('common:promotion_code_not_found');
+        } else if (errorStatus === 410) {
+          errorMessage = t('common:promotion_code_expired');
+        } else if (errorStatus === 409) {
+          errorMessage = t('common:promotion_code_exhausted');
+        }
+
         toast({
           title: t('common:error'),
-          description: t('common:invalid_redeem_code'),
+          description: errorMessage,
           status: 'error'
         });
       }
       return;
     }
 
-    if (isUpgradeAmountError && upgradeAmountError && errorCode !== 404 && !amountLoading) {
+    // Clear error when validation succeeds
+    if (!upgradeAmountError) {
+      setPromotionCodeError(null);
+    }
+
+    if (isUpgradeAmountError && upgradeAmountError && !errorStatus && !amountLoading) {
       const errorKey = `${redeemCode}-${errorCode || 'unknown'}`;
       if (lastRetryFailedErrorRef.current !== errorKey) {
         lastRetryFailedErrorRef.current = errorKey;
@@ -161,6 +241,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     }
 
     if (amountLoading) return;
+    // Use data from query (which is synced to store via onSuccess)
     if (!upgradeAmountData?.data) return;
 
     const responseData = upgradeAmountData.data;
@@ -230,20 +311,42 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     onConfirm?.();
   };
 
+  const handlePaymentSuccess = () => {
+    clearRedeemCode();
+    onPaymentSuccess?.();
+    onCancel?.(); // Close the modal
+  };
+
+  const handlePaymentCancel = () => {
+    // Reset payment waiting state and allow user to retry
+    stopPaymentWaiting();
+    // Refetch upgrade amount to recalculate prices
+    queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+  };
+
   const lastErrorRedeemCodeRef = useRef<string | null>(null);
   const lastRetryFailedErrorRef = useRef<string | null>(null);
+
+  // Calculate and sync monthly price to store
+  useEffect(() => {
+    if (plan) {
+      const price = plan.Prices?.find((p) => p.BillingCycle === period)?.Price || 0;
+      setMonthlyPrice(price);
+    } else {
+      setMonthlyPrice(null);
+    }
+  }, [plan, period, setMonthlyPrice]);
 
   if (!plan) {
     return null;
   }
 
-  const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === period)?.Price || 0;
-  const upgradeAmount = upgradeAmountData?.data?.amount;
-
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
+        // Prevent closing when payment is waiting
+        if (isPaymentWaiting) return;
         if (!open) {
           clearRedeemCode();
           onCancel?.();
@@ -251,7 +354,10 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       }}
     >
       <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
-      <DialogContent className="max-w-4xl! pb-8 pt-0 px-10 gap-0">
+      <DialogContent
+        className={`${shouldShowCardManagement ? 'max-w-4xl!' : 'max-w-lg!'} pb-8 pt-0 px-10 gap-0`}
+        showCloseButton={!isPaymentWaiting}
+      >
         <div className="flex justify-center items-center px-6 py-5">
           <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
             {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
@@ -260,18 +366,12 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
 
         <PlanConfirmationModalView
           plan={plan}
-          workspaceName={workspaceName}
-          isCreateMode={isCreateMode}
-          monthlyPrice={monthlyPrice}
-          upgradeAmount={upgradeAmount}
-          amountLoading={amountLoading}
-          paymentMethod={cardInfoData?.data?.payment_method}
-          cardInfoLoading={cardInfoLoading}
-          manageCardLoading={manageCardMutation.isLoading}
           onConfirm={handleConfirm}
           onManageCards={handleManageCards}
           onValidateRedeemCode={handleValidateRedeemCode}
-          redeemCodeValidating={amountLoading}
+          manageCardLoading={manageCardMutation.isLoading}
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentCancel={handlePaymentCancel}
         />
       </DialogContent>
     </Dialog>

@@ -55,11 +55,11 @@ export default function Plan() {
     modalType,
     modalContext,
     hideModal,
-    confirmPendingPlan,
     showConfirmationModal,
     redeemCode,
     redeemCodeValidated,
-    setRedeemCode
+    setRedeemCode,
+    startPaymentWaiting
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
@@ -157,7 +157,7 @@ export default function Plan() {
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
       return;
     }
-  }, [router, handleSubscriptionModalOpenChange]);
+  }, [router, handleSubscriptionModalOpenChange, setRedeemCode]);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
@@ -323,8 +323,6 @@ export default function Plan() {
         });
       }
 
-      // Close any open modals first
-      hideModal();
       // Refresh subscription data
       await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
       await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
@@ -338,8 +336,19 @@ export default function Plan() {
 
       if (data.code === 200) {
         if (data.data?.redirectUrl) {
-          window.parent.location.href = data.data.redirectUrl;
-        } else if (data.data?.success === true) {
+          // Plan upgrade uses a page that does not have a back button
+          if (variables.operator === 'upgraded') {
+            // Open payment waiting modal before redirecting (only for upgrade)
+            const targetWorkspace = variables.workspace || session?.user?.nsid || '';
+            const targetRegionDomain = variables.regionDomain || region?.domain || '';
+            startPaymentWaiting(targetWorkspace, targetRegionDomain, data.data.redirectUrl);
+            window.open(data.data.redirectUrl, '_blank', 'noopener,noreferrer');
+          } else {
+            window.parent.location.href = data.data.redirectUrl;
+          }
+        }
+        // [TODO] upgrade mode is not needed anymore...
+        else if (data.data?.success === true) {
           // Track subscription success for balance payments
           // Note: For Stripe payments, tracking happens after redirect
           const plan = plansData?.plans?.find((p) => p.Name === variables.planName);
@@ -407,7 +416,7 @@ export default function Plan() {
     workspaceName?: string,
     isPayg?: boolean
   ) => {
-    const discountCode = redeemCodeValidated && redeemCode ? redeemCode : undefined;
+    const promotionCode = redeemCodeValidated && redeemCode ? redeemCode : undefined;
 
     if (isCreateMode) {
       // Create mode: need workspace name
@@ -434,8 +443,8 @@ export default function Plan() {
             userType: 'payg'
           }
         };
-        if (discountCode) {
-          paymentRequest.discountCode = discountCode;
+        if (promotionCode) {
+          paymentRequest.promotionCode = promotionCode;
         }
         subscriptionMutation.mutate(paymentRequest);
       } else if (plan) {
@@ -458,8 +467,8 @@ export default function Plan() {
             userType: 'subscription'
           }
         };
-        if (discountCode) {
-          paymentRequest.discountCode = discountCode;
+        if (promotionCode) {
+          paymentRequest.promotionCode = promotionCode;
         }
         subscriptionMutation.mutate(paymentRequest);
       }
@@ -516,8 +525,8 @@ export default function Plan() {
       operator: operator
     };
 
-    if (discountCode) {
-      paymentRequest.discountCode = discountCode;
+    if (promotionCode) {
+      paymentRequest.promotionCode = promotionCode;
     }
 
     subscriptionMutation.mutate(paymentRequest);
@@ -705,14 +714,24 @@ export default function Plan() {
         isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
         onConfirm={() => {
-          const plan = confirmPendingPlan();
-          if (plan) {
-            handleSubscribe(plan, modalContext.workspaceName, false);
+          if (pendingPlan) {
+            handleSubscribe(pendingPlan, modalContext.workspaceName, false);
           }
-          hideModal();
+          // Not hiding the modal as we need to query payment state.
         }}
         onCancel={() => {
           hideModal();
+        }}
+        onPaymentSuccess={() => {
+          // Close confirmation modal
+          hideModal();
+          // Show congratulations modal
+          if (pendingPlan) {
+            // Set workspace ID for congratulations modal
+            const targetWorkspace = session?.user?.nsid || '';
+            setWorkspaceId(targetWorkspace);
+            setShowCongratulations(true);
+          }
         }}
       />
 
@@ -720,9 +739,8 @@ export default function Plan() {
         targetPlan={pendingPlan || undefined}
         isOpen={modalType === 'downgrade'}
         onConfirm={() => {
-          const plan = confirmPendingPlan();
-          if (plan) {
-            handleSubscribe(plan, modalContext.workspaceName, false);
+          if (pendingPlan) {
+            handleSubscribe(pendingPlan, modalContext.workspaceName, false);
           }
           hideModal();
         }}

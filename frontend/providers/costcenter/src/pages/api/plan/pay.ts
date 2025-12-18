@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       payMethod,
       operator,
       cardId,
-      discountCode,
+      promotionCode,
       createWorkspace
     } = parseResult.data;
 
@@ -149,8 +149,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       requestBody.cardId = cardId;
     }
 
-    if (discountCode) {
-      requestBody.discountCode = discountCode;
+    if (promotionCode) {
+      requestBody.promotionCode = promotionCode;
     }
 
     console.log('requestBody', requestBody);

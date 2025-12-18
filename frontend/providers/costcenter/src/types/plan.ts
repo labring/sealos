@@ -120,7 +120,7 @@ export const UpgradeAmountRequestSchema = WorkspaceSubscriptionRequestSchema.ext
   period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
   payMethod: PaymentMethodSchema,
   operator: z.enum(['created', 'upgraded']),
-  discountCode: z.string().optional()
+  promotionCode: z.string().optional()
 });
 export type UpgradeAmountRequest = z.infer<typeof UpgradeAmountRequestSchema>;
 
@@ -130,7 +130,7 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
   payMethod: PaymentMethodSchema, // 支付方式：stripe 或 balance
   operator: OperatorSchema,
   cardId: z.string().optional(),
-  discountCode: z.string().optional(),
+  promotionCode: z.string().optional(),
   createWorkspace: z
     .object({
       teamName: z.string(),
@@ -173,7 +173,7 @@ export type LastTransactionResponse = z.infer<typeof LastTransactionResponseSche
 
 export const UpgradeAmountResponseSchema = z.object({
   amount: z.number(),
-  discount_code: z.string(),
+  promotion_code: z.string(),
   has_discount: z.boolean(),
   original_amount: z.number()
 });

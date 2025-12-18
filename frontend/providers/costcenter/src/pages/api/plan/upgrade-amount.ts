@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { workspace, regionDomain, planName, period, payMethod, operator, discountCode } =
+    const { workspace, regionDomain, planName, period, payMethod, operator, promotionCode } =
       parseResult.data;
 
     const client = await makeAPIClientByHeader(req, res);
@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         period,
         payMethod,
         operator,
-        discountCode
+        promotionCode
       }
     );
 
@@ -56,13 +56,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: any) {
     console.log({ error: error.response?.data });
-    // Handle 404 as invalid discount code
-    if (error.response?.status === 404) {
+    const status = error.response?.status;
+
+    // Handle different error status codes
+    if (status === 404) {
       return jsonRes(res, {
         code: 404,
-        message: 'Invalid discount code'
+        message: 'Promotion code not found'
       });
     }
+    if (status === 410) {
+      return jsonRes(res, {
+        code: 410,
+        message: 'Promotion code expired or disabled'
+      });
+    }
+    if (status === 409) {
+      return jsonRes(res, {
+        code: 409,
+        message: 'Promotion code exhausted'
+      });
+    }
+
     return jsonRes(res, {
       code: 500,
       message: 'Internal server error'
