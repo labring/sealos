@@ -301,10 +301,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := committer.InitializeGC(context.Background()); err != nil {
-		setupLog.Error(err, "unable to initialize GC")
-		os.Exit(1)
-	}
+	// if err := committer.InitializeGC(context.Background()); err != nil {
+	// 	setupLog.Error(err, "unable to initialize GC")
+	// 	os.Exit(1)
+	// }
 
 	stateChangeHandler := controller.EventHandler{
 		Client:              mgr.GetClient(),

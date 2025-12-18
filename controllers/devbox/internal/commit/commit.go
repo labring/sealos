@@ -105,7 +105,7 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string, merge
 
 // CreateContainer create container with labels
 func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error) {
-	fmt.Println("========>>>> create container", devboxName, contentID, baseImage)
+	log.Printf("========>>>> create container, devboxName: %s, contentID: %s, baseImage: %s", devboxName, contentID, baseImage)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -221,7 +221,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 }
 
 func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, contentID string) error {
-	fmt.Println("========>>>> set lv removable for container", contentID)
+	log.Printf("========>>>> set lv removable for container, containerID: %s, contentID: %s", containerID, contentID)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -248,7 +248,7 @@ func (c *CommitterImpl) RemoveContainers(ctx context.Context, containerNames []s
 		return fmt.Errorf("[RemoveContainers]containerNames is empty")
 	}
 
-	fmt.Println("========>>>> remove container", containerNames)
+	log.Printf("========>>>> remove container, containerNames: %v", containerNames)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -275,11 +275,11 @@ func (c *CommitterImpl) RemoveContainers(ctx context.Context, containerNames []s
 
 // Commit commit container to image
 func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) (string, error) {
-	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
+	log.Printf("========>>>> commit devbox, devboxName: %s, contentID: %s, baseImage: %s, commitImage: %s", devboxName, contentID, baseImage, commitImage)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	containerID, err := c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
-		return "", fmt.Errorf("failed to create container: %v", err)
+		return containerID, fmt.Errorf("failed to create container: %v", err)
 	}
 
 	// // mark for gc
@@ -300,7 +300,7 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 	// commit container
 	err = container.Commit(ctx, c.containerdClient, commitImage, containerID, opt)
 	if err != nil {
-		return "", fmt.Errorf("failed to commit container: %v", err)
+		return containerID, fmt.Errorf("failed to commit container: %v", err)
 	}
 
 	return containerID, nil
@@ -324,7 +324,7 @@ func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerNa
 
 // Push pushes an image to a remote repository
 func (c *CommitterImpl) Push(ctx context.Context, imageName string) error {
-	fmt.Println("========>>>> push image", imageName)
+	log.Printf("========>>>> push image, imageName: %s", imageName)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -365,7 +365,7 @@ func (c *CommitterImpl) RemoveImages(ctx context.Context, imageNames []string, f
 	if len(imageNames) == 0 {
 		return fmt.Errorf("[RemoveImages]imageNames is empty")
 	}
-	fmt.Println("========>>>> remove image", imageNames)
+	log.Printf("========>>>> remove image, imageNames: %v", imageNames)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
