@@ -11,7 +11,11 @@ import { useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
 import { Tag, TagType } from '@/prisma/generated/client';
 import { useTagSelectorStore } from '@/stores/tagSelector';
-import { listTag, listTemplateRepository as listTemplateRepositoryApi } from '@/api/template';
+import {
+  listTag,
+  listTemplateRepository as listTemplateRepositoryApi,
+  listTemplateRepositoryOverview
+} from '@/api/template';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useDevboxStore } from '@/stores/devbox';
 import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
@@ -268,48 +272,11 @@ const PublicTemplate = ({
     ['template-repository-overview', viewMode],
     async () => {
       if (viewMode !== 'overview') return {};
-
-      // Define the categories we want to show in overview
-      const categoryNames: CategoryType[] = ['language', 'framework', 'os', 'mcp'];
-      const promises = categoryNames.map(async (categoryName) => {
-        try {
-          // Find the specific tag for this category
-          const categoryTag = useCaseTags.find((tag) => tag.name === categoryName);
-          if (!categoryTag) return { categoryName, templates: [] };
-
-          // For overview, language/framework/os/mcp categories should only show official templates
-          // So we need to include both the category tag AND OFFICIAL_CONTENT tags
-          const officialTags = allTags.filter((tag) => tag.type === TagType.OFFICIAL_CONTENT);
-          const tagsToFilter = [categoryTag.uid, ...officialTags.map((tag) => tag.uid)];
-
-          // Get top 5 templates for this category by filtering with both category and official tags
-          const response = await listTemplateRepositoryApi(
-            { page: 1, pageSize: 20 }, // Get more to ensure we have enough after filtering
-            tagsToFilter, // Filter by both the specific category tag and official tags
-            ''
-          );
-
-          // Take top 5 templates
-          const filteredTemplates = (response.templateRepositoryList || []).slice(0, 5);
-
-          return { categoryName, templates: filteredTemplates };
-        } catch (error) {
-          return { categoryName, templates: [] };
-        }
-      });
-
-      const results = await Promise.all(promises);
-      return results.reduce(
-        (acc, result) => {
-          acc[result.categoryName] = result.templates;
-          return acc;
-        },
-        {} as Record<CategoryType, any[]>
-      );
+      return listTemplateRepositoryOverview();
     },
     {
-      enabled: viewMode === 'overview' && useCaseTags.length > 0,
-      staleTime: 5 * 60 * 1000 // 5 minutes
+      enabled: viewMode === 'overview',
+      staleTime: 5 * 60 * 1000
     }
   );
 
@@ -323,7 +290,8 @@ const PublicTemplate = ({
   }, [listTemplateRepository.data, viewMode]);
 
   const overviewData = useMemo(() => {
-    return overviewQueries.data || ({} as Record<CategoryType, any[]>);
+    if (!overviewQueries.data) return {} as Record<CategoryType, any[]>;
+    return overviewQueries.data;
   }, [overviewQueries.data]);
 
   const isClientSide = useClientSideValue(true);
@@ -659,6 +627,7 @@ const PublicTemplate = ({
                       templateRepositoryDescription={tr.description}
                       templateRepositoryUid={tr.uid}
                       tags={tr.templateRepositoryTags.map((t) => t.tag)}
+                      templateVersions={tr.templates}
                       isPublic
                       forceHover={idx === 0}
                     />
@@ -670,16 +639,6 @@ const PublicTemplate = ({
                 />
               )}
             </ScrollArea>
-            <Pagination
-              totalPages={pageQueryBody.totalPage}
-              currentPage={pageQueryBody.page}
-              onPageChange={(currentPage) => {
-                setPageQueryBody((page) => ({
-                  ...page,
-                  page: currentPage
-                }));
-              }}
-            />
           </>
         ) : (
           // Category view mode - paginated list with header
@@ -719,6 +678,7 @@ const PublicTemplate = ({
                       templateRepositoryDescription={tr.description}
                       templateRepositoryUid={tr.uid}
                       tags={tr.templateRepositoryTags.map((t) => t.tag)}
+                      templateVersions={tr.templates}
                       isPublic
                       forceHover={idx === 0}
                     />
@@ -730,38 +690,30 @@ const PublicTemplate = ({
                 />
               )}
             </ScrollArea>
-            <Pagination
-              totalPages={pageQueryBody.totalPage}
-              currentPage={pageQueryBody.page}
-              onPageChange={(currentPage) => {
-                setPageQueryBody((page) => ({
-                  ...page,
-                  page: currentPage
-                }));
-              }}
-            />
           </>
         )}
 
-        <div className="flex items-center justify-between gap-2.5 pt-2 pr-2 text-sm/5 text-zinc-500">
-          <span>{t('Total') + ': ' + pageQueryBody.totalItems}</span>
-          <div className="flex items-center gap-3">
-            <Pagination
-              totalPages={pageQueryBody.totalPage}
-              currentPage={pageQueryBody.page}
-              onPageChange={(currentPage) => {
-                setPageQueryBody((page) => ({
-                  ...page,
-                  page: currentPage
-                }));
-              }}
-            />
-            <div className="flex items-center gap-1">
-              <span className="text-zinc-900">{pageQueryBody.pageSize}</span>/
-              <span>{t('Page')}</span>
+        {viewMode !== 'overview' && (
+          <div className="flex items-center justify-between gap-2.5 pt-2 pr-2 text-sm/5 text-zinc-500">
+            <span>{t('Total') + ': ' + pageQueryBody.totalItems}</span>
+            <div className="flex items-center gap-3">
+              <Pagination
+                totalPages={pageQueryBody.totalPage}
+                currentPage={pageQueryBody.page}
+                onPageChange={(currentPage) => {
+                  setPageQueryBody((page) => ({
+                    ...page,
+                    page: currentPage
+                  }));
+                }}
+              />
+              <div className="flex items-center gap-1">
+                <span className="text-zinc-900">{pageQueryBody.pageSize}</span>/
+                <span>{t('Page')}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -822,6 +774,7 @@ const TemplateSection = ({
               templateRepositoryDescription={tr.description}
               templateRepositoryUid={tr.uid}
               tags={tr.templateRepositoryTags?.map((t: any) => t.tag) || []}
+              templateVersions={tr.templates}
               isPublic
             />
           ))}

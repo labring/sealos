@@ -47,6 +47,7 @@ interface TemplateCardProps {
   templateRepositoryUid: string;
   tags: TTag[];
   forceHover?: boolean;
+  templateVersions?: Array<{ uid: string; name: string }>;
 }
 
 const TemplateCard = ({
@@ -58,7 +59,8 @@ const TemplateCard = ({
   isDisabled = false,
   inPublicStore = true,
   tags,
-  forceHover = false
+  forceHover = false,
+  templateVersions: externalTemplateVersions
 }: TemplateCardProps) => {
   const router = useRouter();
   const locale = useLocale();
@@ -79,7 +81,7 @@ const TemplateCard = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const { data: templateVersions } = useQuery({
+  const { data: fetchedTemplateVersions } = useQuery({
     queryKey: ['template-versions', templateRepositoryUid],
     queryFn: async () => {
       const { templateList } = await listTemplate(templateRepositoryUid);
@@ -87,8 +89,17 @@ const TemplateCard = ({
         setSelectedVersion(templateList[0].uid);
       }
       return templateList;
-    }
+    },
+    enabled: !externalTemplateVersions
   });
+
+  const templateVersions = externalTemplateVersions || fetchedTemplateVersions;
+
+  useEffect(() => {
+    if (externalTemplateVersions && externalTemplateVersions.length > 0 && !selectedVersion) {
+      setSelectedVersion(externalTemplateVersions[0].uid);
+    }
+  }, [externalTemplateVersions, selectedVersion]);
 
   useEffect(() => {
     const preloadImage = (src: string): Promise<void> => {

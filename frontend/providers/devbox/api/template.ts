@@ -61,6 +61,66 @@ export const listTemplateRepository = (
     };
   }>(`/api/templateRepository/list?${searchParams.toString()}`);
 };
+
+export const listTemplateRepositoryOverview = () =>
+  GET<{
+    language: {
+      uid: string;
+      name: string;
+      description: string | null;
+      iconId: string | null;
+      usageCount: number;
+      templates: {
+        uid: string;
+        name: string;
+      }[];
+      templateRepositoryTags: {
+        tag: Tag;
+      }[];
+    }[];
+    framework: {
+      uid: string;
+      name: string;
+      description: string | null;
+      iconId: string | null;
+      usageCount: number;
+      templates: {
+        uid: string;
+        name: string;
+      }[];
+      templateRepositoryTags: {
+        tag: Tag;
+      }[];
+    }[];
+    os: {
+      uid: string;
+      name: string;
+      description: string | null;
+      iconId: string | null;
+      usageCount: number;
+      templates: {
+        uid: string;
+        name: string;
+      }[];
+      templateRepositoryTags: {
+        tag: Tag;
+      }[];
+    }[];
+    mcp: {
+      uid: string;
+      name: string;
+      description: string | null;
+      iconId: string | null;
+      usageCount: number;
+      templates: {
+        uid: string;
+        name: string;
+      }[];
+      templateRepositoryTags: {
+        tag: Tag;
+      }[];
+    }[];
+  }>(`/api/templateRepository/listOverview`);
 export const listPrivateTemplateRepository = ({
   search,
   page,
