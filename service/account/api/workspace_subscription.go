@@ -588,36 +588,66 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			return
 		}
 
-		// For creation with no discount code, return the standard plan price
+		// For creation with no discount code, return the standard plan price with consistent format
 		if req.DiscountCode == "" {
 			response := gin.H{
-				"amount": price.Price,
+				"amount":          price.Price,
+				"original_amount": price.Price,
+				"discount_code":   "",
+				"has_discount":    false,
 			}
 			c.JSON(http.StatusOK, response)
 			return
 		}
 
-		// For creation with discount code, use Stripe's invoice preview to get the exact discounted price
-		// Get customer ID for the invoice preview
-		customerID, err := dao.DBClient.GetUserStripeCustomerID(req.UserUID)
+		// For creation with discount code, first validate the discount code exists
+		// Create a test invoice preview to validate discount code
+		testParams := &stripe.InvoiceCreatePreviewParams{
+			//Customer: stripe.String("cus_test"), // Use test customer ID for validation
+			SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
+				Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
+					{
+						Price: price.StripePrice,
+					},
+				},
+			},
+			Discounts: []*stripe.InvoiceCreatePreviewDiscountParams{
+				{
+					Coupon: stripe.String(req.DiscountCode),
+				},
+			},
+		}
+
+		// Validate discount code by attempting to create preview
+		_, err = services.StripeServiceInstance.UpdatePreview(testParams)
 		if err != nil {
 			c.JSON(
-				http.StatusInternalServerError,
-				helper.ErrorMessage{Error: fmt.Sprintf("failed to get user stripe customer id: %v", err)},
-			)
-			return
-		}
-		if customerID == "" {
-			c.JSON(
-				http.StatusBadRequest,
-				helper.ErrorMessage{Error: "no stripe customer found for user, please create a subscription first"},
+				http.StatusNotFound,
+				helper.ErrorMessage{Error: fmt.Sprintf("discount code not found or invalid: %v", err)},
 			)
 			return
 		}
 
+		// Get customer ID for the actual invoice preview
+		//customerID, err := dao.DBClient.GetUserStripeCustomerID(req.UserUID)
+		//if err != nil {
+		//	c.JSON(
+		//		http.StatusInternalServerError,
+		//		helper.ErrorMessage{Error: fmt.Sprintf("failed to get user stripe customer id: %v", err)},
+		//	)
+		//	return
+		//}
+		//if customerID == "" {
+		//	c.JSON(
+		//		http.StatusBadRequest,
+		//		helper.ErrorMessage{Error: "no stripe customer found for user, please create a subscription first"},
+		//	)
+		//	return
+		//}
+
 		// Create invoice preview parameters for new subscription
 		params := &stripe.InvoiceCreatePreviewParams{
-			Customer: stripe.String(customerID),
+			//Customer: stripe.String(customerID),
 			SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
 				Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
 					{
@@ -653,6 +683,7 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 				totalAmount += line.Amount
 			}
 		}
+		totalAmount *= 10_000
 
 		// If no positive amounts found, fall back to standard price
 		if totalAmount == 0 {
@@ -660,8 +691,8 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		}
 
 		response := gin.H{
-			"amount":          totalAmount * 10_000, // Convert cents to dollars
-			"original_amount": price.Price * 10_000, // Original price without discount
+			"amount":          totalAmount, // Convert cents to dollars
+			"original_amount": price.Price, // Original price without discount
 			"discount_code":   req.DiscountCode,
 			"has_discount":    totalAmount < price.Price,
 		}
@@ -737,7 +768,23 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		}
 
 		var amount int64
+		var originalAmount int64
 		var err error
+
+		// Get original price without discount first
+		originalAmount, err = services.StripeServiceInstance.UpdatePlanPricePreview(
+			currentSubscription.Stripe.SubscriptionID,
+			*price.StripePrice,
+		)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{
+					Error: fmt.Sprintf("failed to get original upgrade amount from stripe: %v", err),
+				},
+			)
+			return
+		}
 
 		// Use discount-aware preview if discount code is provided
 		if req.DiscountCode != "" {
@@ -746,31 +793,24 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 				*price.StripePrice,
 				req.DiscountCode,
 			)
+			if err != nil {
+				c.JSON(
+					http.StatusNotFound,
+					helper.ErrorMessage{
+						Error: fmt.Sprintf("discount code not found or invalid: %v", err),
+					},
+				)
+				return
+			}
 		} else {
-			amount, err = services.StripeServiceInstance.UpdatePlanPricePreview(
-				currentSubscription.Stripe.SubscriptionID,
-				*price.StripePrice,
-			)
-		}
-
-		if err != nil {
-			c.JSON(
-				http.StatusInternalServerError,
-				helper.ErrorMessage{
-					Error: fmt.Sprintf("failed to get upgrade amount from stripe: %v", err),
-				},
-			)
-			return
+			amount = originalAmount
 		}
 
 		response := gin.H{
-			"amount": amount * 10_000, // Convert cents to dollars
-		}
-
-		// Include discount information if discount code was provided
-		if req.DiscountCode != "" {
-			response["discount_code"] = req.DiscountCode
-			response["has_discount"] = true
+			"amount":          amount * 10_000,         // Convert cents to dollars
+			"original_amount": originalAmount * 10_000, // Original price without discount
+			"discount_code":   req.DiscountCode,
+			"has_discount":    req.DiscountCode != "" && amount < originalAmount,
 		}
 
 		c.JSON(http.StatusOK, response)
@@ -820,22 +860,15 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 	upgradeFee := newPlanFullPrice - remainingValue
 	finalAmount := upgradeFee
 
-	// Apply discount code if provided
-	if req.DiscountCode != "" {
-		// For now, we'll return the discount code in the response so frontend can validate it
-		// The actual discount application will happen during payment
-		c.JSON(http.StatusOK, gin.H{
-			"amount":          int64(finalAmount),
-			"original_amount": int64(upgradeFee),
-			"discount_code":   req.DiscountCode,
-			"has_discount":    true,
-		})
-		return
+	// Standardized response format
+	response := gin.H{
+		"amount":          int64(finalAmount),
+		"original_amount": int64(upgradeFee),
+		"discount_code":   req.DiscountCode,
+		"has_discount":    req.DiscountCode != "",
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"amount": int64(finalAmount),
-	})
+	c.JSON(http.StatusOK, response)
 }
 
 // CreateWorkspaceSubscriptionPay
