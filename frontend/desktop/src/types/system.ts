@@ -71,6 +71,10 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  authTitle?: {
+    zh: string;
+    en: string;
+  };
   authBackgroundImage?: {
     zh: string;
     en: string;

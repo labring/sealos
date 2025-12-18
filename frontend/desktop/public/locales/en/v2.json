@@ -146,7 +146,7 @@
   "verifying": "verifying",
   "workspace_create": "Let's create your workspace",
   "workspace_deploy_failed": "Failed to deploy workspace",
-  "workspace_welcome": "Welcome to Sealos",
+  "workspace_welcome_default": "Welcome to Sealos",
   "worspace_heading_description": "Organize, collaborate, and manage apps efficiently with isolated workspaces for your team",
   "you_may_invite_memebers_later": "You may invite members later",
   "your_current_plan": "Your current plan"

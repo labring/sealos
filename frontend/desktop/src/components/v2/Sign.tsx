@@ -197,7 +197,11 @@ export default function SigninComponent({ isModal = false }: SigninComponentProp
         minW={'328px'}
       >
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
-          {t('v2:workspace_welcome')}
+          {(
+            conf.layoutConfig?.authTitle satisfies Record<string, string> | undefined as
+              | Record<string, string>
+              | undefined
+          )?.[i18n.language] ?? t('v2:workspace_welcome_default')}
         </Text>
 
         {conf.layoutConfig?.version === 'cn' ? (
