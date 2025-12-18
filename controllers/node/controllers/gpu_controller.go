@@ -364,7 +364,15 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return hasGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
-				return gpuChanged(event.ObjectOld.(*corev1.Node), event.ObjectNew.(*corev1.Node))
+				oldNode, ok := event.ObjectOld.(*corev1.Node)
+				if !ok {
+					return false
+				}
+				newNode, ok := event.ObjectNew.(*corev1.Node)
+				if !ok {
+					return false
+				}
+				return gpuChanged(oldNode, newNode)
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
 				return hasGPU(event.Object)
