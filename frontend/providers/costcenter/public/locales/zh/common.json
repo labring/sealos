@@ -52,7 +52,9 @@
   "enter_workspace_name": "输入工作空间名称",
   "enter_your_info": "输入您的信息",
   "error": "错误",
+  "error_calculating_prices": "计算价格时发生错误。",
   "exceeded_resources": "超出资源",
+  "invalid_redeem_code": "无效的兑换码",
   "expiration_time": "过期时间",
   "expires": "有效期至",
   "failed_to_create_portal_session": "创建门户会话失败",
@@ -360,6 +362,18 @@
   "your_current_plan": "您当前的套餐",
   "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制",
   "your_next_plan": "您下一个套餐",
+  "plan_features": {
+    "standard": {
+      "support": "优先支持",
+      "all_hobby": "所有 Hobby 功能",
+      "sla": "99.99% SLA"
+    },
+    "pro": {
+      "support": "24/7 专属支持",
+      "all_standard": "所有 Standard 功能",
+      "contracts": "定制合同"
+    }
+  },
   "card_brands": {
     "visa": "Visa",
     "mastercard": "Mastercard",

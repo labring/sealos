@@ -52,7 +52,9 @@
   "enter_workspace_name": "Enter Workspace Name",
   "enter_your_info": "Enter your info",
   "error": "Error",
+  "error_calculating_prices": "An error occurred while calculating prices.",
   "exceeded_resources": "Exceeded Resources",
+  "invalid_redeem_code": "Invalid redeem code",
   "expiration_time": "Expiration Date",
   "expires": "EXP",
   "failed_to_create_portal_session": "Failed to create portal session",
@@ -360,6 +362,18 @@
   "your_current_plan": "Your current plan",
   "your_current_usage_exceeds_downgraded_plan_limits": "Your current usage exceeds downgraded plan limits",
   "your_next_plan": "Your next plan",
+  "plan_features": {
+    "standard": {
+      "support": "Priority Support",
+      "all_hobby": "All Hobby Features",
+      "sla": "99.99% SLA"
+    },
+    "pro": {
+      "support": "24/7 Dedicated Support",
+      "all_standard": "All Standard Features",
+      "contracts": "Custom Contracts"
+    }
+  },
   "card_brands": {
     "visa": "Visa",
     "mastercard": "Mastercard",

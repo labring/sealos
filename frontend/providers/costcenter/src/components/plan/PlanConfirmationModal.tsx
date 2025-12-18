@@ -45,6 +45,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const {
     data: upgradeAmountData,
     isLoading: amountLoading,
+    isError: isUpgradeAmountError,
     error: upgradeAmountError
   } = useQuery({
     queryKey: [
@@ -124,24 +125,39 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
 
     const error = upgradeAmountError as any;
     const errorCode = error?.code || error?.response?.status || error?.response?.data?.code;
+
     if (upgradeAmountError && errorCode === 404) {
       setRedeemCodeDiscount(null);
       setRedeemCodeValidated(false);
       if (lastErrorRedeemCodeRef.current !== redeemCode) {
         lastErrorRedeemCodeRef.current = redeemCode;
-        const errorMessage =
-          error?.message || error?.response?.data?.message || t('common:invalid_redeem_code');
         toast({
           title: t('common:error'),
-          description: errorMessage,
+          description: t('common:invalid_redeem_code'),
           status: 'error'
         });
       }
       return;
     }
 
+    if (isUpgradeAmountError && upgradeAmountError && errorCode !== 404 && !amountLoading) {
+      const errorKey = `${redeemCode}-${errorCode || 'unknown'}`;
+      if (lastRetryFailedErrorRef.current !== errorKey) {
+        lastRetryFailedErrorRef.current = errorKey;
+        toast({
+          title: t('common:error'),
+          description: t('common:error_calculating_prices'),
+          status: 'error'
+        });
+        setRedeemCodeDiscount(null);
+        setRedeemCodeValidated(false);
+      }
+      return;
+    }
+
     if (!upgradeAmountError) {
       lastErrorRedeemCodeRef.current = null;
+      lastRetryFailedErrorRef.current = null;
     }
 
     if (amountLoading) return;
@@ -158,7 +174,15 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       setRedeemCodeValidated(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, plan, redeemCode, upgradeAmountData, upgradeAmountError, amountLoading]);
+  }, [
+    isOpen,
+    plan,
+    redeemCode,
+    upgradeAmountData,
+    upgradeAmountError,
+    amountLoading,
+    isUpgradeAmountError
+  ]);
 
   const handleValidateRedeemCode = async (code: string) => {
     if (!plan) return;
@@ -207,6 +231,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   };
 
   const lastErrorRedeemCodeRef = useRef<string | null>(null);
+  const lastRetryFailedErrorRef = useRef<string | null>(null);
 
   if (!plan) {
     return null;
@@ -227,14 +252,12 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     >
       <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
       <DialogContent className="max-w-4xl! pb-8 pt-0 px-10 gap-0">
-        {/* Header */}
         <div className="flex justify-center items-center px-6 py-5">
           <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
             {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
           </h2>
         </div>
 
-        {/* Main Content */}
         <PlanConfirmationModalView
           plan={plan}
           workspaceName={workspaceName}

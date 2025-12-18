@@ -130,6 +130,7 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
   payMethod: PaymentMethodSchema, // 支付方式：stripe 或 balance
   operator: OperatorSchema,
   cardId: z.string().optional(),
+  discountCode: z.string().optional(),
   createWorkspace: z
     .object({
       teamName: z.string(),

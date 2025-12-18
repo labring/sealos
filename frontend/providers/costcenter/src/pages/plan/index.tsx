@@ -57,6 +57,8 @@ export default function Plan() {
     hideModal,
     confirmPendingPlan,
     showConfirmationModal,
+    redeemCode,
+    redeemCodeValidated,
     setRedeemCode
   } = usePlanStore();
 
@@ -405,6 +407,8 @@ export default function Plan() {
     workspaceName?: string,
     isPayg?: boolean
   ) => {
+    const discountCode = redeemCodeValidated && redeemCode ? redeemCode : undefined;
+
     if (isCreateMode) {
       // Create mode: need workspace name
       if (!workspaceName?.trim()) {
@@ -430,6 +434,9 @@ export default function Plan() {
             userType: 'payg'
           }
         };
+        if (discountCode) {
+          paymentRequest.discountCode = discountCode;
+        }
         subscriptionMutation.mutate(paymentRequest);
       } else if (plan) {
         // Subscription mode: create workspace + subscription
@@ -451,6 +458,9 @@ export default function Plan() {
             userType: 'subscription'
           }
         };
+        if (discountCode) {
+          paymentRequest.discountCode = discountCode;
+        }
         subscriptionMutation.mutate(paymentRequest);
       }
       return;
@@ -505,6 +515,10 @@ export default function Plan() {
       payMethod: 'stripe',
       operator: operator
     };
+
+    if (discountCode) {
+      paymentRequest.discountCode = discountCode;
+    }
 
     subscriptionMutation.mutate(paymentRequest);
   };
