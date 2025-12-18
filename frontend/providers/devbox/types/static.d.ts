@@ -6,7 +6,8 @@ export interface SourcePrice {
     alias: string;
     type: string;
     price: number;
-    inventory: number;
+    available: number;
+    count: number;
     vm: number;
   }[];
 }
