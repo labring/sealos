@@ -560,6 +560,50 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		return
 	}
 
+	// Validate promotion code once at the beginning and reuse the result throughout the method
+	var validatedPromotionCode *stripe.PromotionCode
+	if req.PromotionCode != "" {
+		validatedPromotionCode, err = services.StripeServiceInstance.ValidatePromotionCode(req.PromotionCode)
+		if err != nil {
+			errorMsg := err.Error()
+			// Return appropriate HTTP status codes based on error type
+			switch {
+			case strings.Contains(errorMsg, "not found"):
+				c.JSON(
+					http.StatusNotFound,
+					helper.ErrorMessage{Error: errorMsg},
+				)
+			case strings.Contains(errorMsg, "not active"):
+				c.JSON(
+					http.StatusGone,
+					helper.ErrorMessage{Error: errorMsg},
+				)
+			case strings.Contains(errorMsg, "expired"):
+				c.JSON(
+					http.StatusGone,
+					helper.ErrorMessage{Error: errorMsg},
+				)
+			case strings.Contains(errorMsg, "maximum redemption"):
+				c.JSON(
+					http.StatusConflict,
+					helper.ErrorMessage{Error: errorMsg},
+				)
+			default:
+				c.JSON(
+					http.StatusBadRequest,
+					helper.ErrorMessage{Error: errorMsg},
+				)
+			}
+			return
+		} else if validatedPromotionCode == nil {
+			c.JSON(
+				http.StatusNotFound,
+				helper.ErrorMessage{Error: fmt.Sprintf("not found promotion code: %v", req.PromotionCode)},
+			)
+			return
+		}
+	}
+
 	// Handle subscription creation - return the plan price with optional discount
 	if req.Operator == types.SubscriptionTransactionTypeCreated {
 		// Get the target plan
@@ -588,62 +632,17 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			return
 		}
 
-		// For creation with no discount code, return the standard plan price with consistent format
-		if req.DiscountCode == "" {
+		// For creation with no promotion code, return the standard plan price with consistent format
+		if req.PromotionCode == "" {
 			response := gin.H{
 				"amount":          price.Price,
 				"original_amount": price.Price,
-				"discount_code":   "",
+				"promotion_code":  "",
 				"has_discount":    false,
 			}
 			c.JSON(http.StatusOK, response)
 			return
 		}
-
-		// For creation with discount code, first validate the discount code exists
-		// Create a test invoice preview to validate discount code
-		testParams := &stripe.InvoiceCreatePreviewParams{
-			//Customer: stripe.String("cus_test"), // Use test customer ID for validation
-			SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
-				Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
-					{
-						Price: price.StripePrice,
-					},
-				},
-			},
-			Discounts: []*stripe.InvoiceCreatePreviewDiscountParams{
-				{
-					Coupon: stripe.String(req.DiscountCode),
-				},
-			},
-		}
-
-		// Validate discount code by attempting to create preview
-		_, err = services.StripeServiceInstance.UpdatePreview(testParams)
-		if err != nil {
-			c.JSON(
-				http.StatusNotFound,
-				helper.ErrorMessage{Error: fmt.Sprintf("discount code not found or invalid: %v", err)},
-			)
-			return
-		}
-
-		// Get customer ID for the actual invoice preview
-		//customerID, err := dao.DBClient.GetUserStripeCustomerID(req.UserUID)
-		//if err != nil {
-		//	c.JSON(
-		//		http.StatusInternalServerError,
-		//		helper.ErrorMessage{Error: fmt.Sprintf("failed to get user stripe customer id: %v", err)},
-		//	)
-		//	return
-		//}
-		//if customerID == "" {
-		//	c.JSON(
-		//		http.StatusBadRequest,
-		//		helper.ErrorMessage{Error: "no stripe customer found for user, please create a subscription first"},
-		//	)
-		//	return
-		//}
 
 		// Create invoice preview parameters for new subscription
 		params := &stripe.InvoiceCreatePreviewParams{
@@ -657,11 +656,11 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			},
 		}
 
-		// Add discount code if provided
-		if req.DiscountCode != "" {
+		// Add promotion code if provided (already validated above)
+		if req.PromotionCode != "" {
 			params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
 				{
-					Coupon: stripe.String(req.DiscountCode),
+					PromotionCode: stripe.String(validatedPromotionCode.ID),
 				},
 			}
 		}
@@ -693,7 +692,7 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		response := gin.H{
 			"amount":          totalAmount, // Convert cents to dollars
 			"original_amount": price.Price, // Original price without discount
-			"discount_code":   req.DiscountCode,
+			"promotion_code":  req.PromotionCode,
 			"has_discount":    totalAmount < price.Price,
 		}
 
@@ -786,18 +785,18 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 			return
 		}
 
-		// Use discount-aware preview if discount code is provided
-		if req.DiscountCode != "" {
-			amount, err = services.StripeServiceInstance.UpdatePlanPricePreviewWithDiscount(
+		// Use promotion-aware preview if promotion code is provided (already validated above)
+		if req.PromotionCode != "" {
+			amount, err = services.StripeServiceInstance.UpdatePlanPricePreviewWithPromotion(
 				currentSubscription.Stripe.SubscriptionID,
 				*price.StripePrice,
-				req.DiscountCode,
+				req.PromotionCode,
 			)
 			if err != nil {
 				c.JSON(
-					http.StatusNotFound,
+					http.StatusInternalServerError,
 					helper.ErrorMessage{
-						Error: fmt.Sprintf("discount code not found or invalid: %v", err),
+						Error: fmt.Sprintf("failed to get upgrade amount with promotion from stripe: %v", err),
 					},
 				)
 				return
@@ -809,8 +808,8 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		response := gin.H{
 			"amount":          amount * 10_000,         // Convert cents to dollars
 			"original_amount": originalAmount * 10_000, // Original price without discount
-			"discount_code":   req.DiscountCode,
-			"has_discount":    req.DiscountCode != "" && amount < originalAmount,
+			"promotion_code":  req.PromotionCode,
+			"has_discount":    req.PromotionCode != "" && amount < originalAmount,
 		}
 
 		c.JSON(http.StatusOK, response)
@@ -864,8 +863,8 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 	response := gin.H{
 		"amount":          int64(finalAmount),
 		"original_amount": int64(upgradeFee),
-		"discount_code":   req.DiscountCode,
-		"has_discount":    req.DiscountCode != "",
+		"promotion_code":  req.PromotionCode,
+		"has_discount":    req.PromotionCode != "",
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -1072,9 +1071,9 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 				transaction.Amount = 0
 			}
 
-			// Store discount code for later use in Stripe session creation
-			if req.DiscountCode != "" {
-				transaction.StatusDesc = fmt.Sprintf("Discount code: %s", req.DiscountCode)
+			// Store promotion code for later use in Stripe session creation
+			if req.PromotionCode != "" {
+				transaction.StatusDesc = fmt.Sprintf("Promotion code: %s", req.PromotionCode)
 			}
 		}
 
@@ -1559,7 +1558,7 @@ func processUpgradeSubscription(
 		*price.StripePrice,
 		transaction.NewPlanName,
 		transaction.PayID,
-		req.DiscountCode,
+		req.PromotionCode,
 	)
 	if err != nil {
 		// If invoice creation fails, mark transaction as failed
@@ -1741,21 +1740,21 @@ func createStripeSessionAndPaymentOrder(
 		dao.Logger.Infof("get user stripe customer id empty: %v", req.UserUID)
 	}
 
-	// Extract discount code from transaction status description for upgrades
-	discountCode := ""
-	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded && strings.HasPrefix(transaction.StatusDesc, "Discount code: ") {
-		discountCode = strings.TrimPrefix(transaction.StatusDesc, "Discount code: ")
+	// Extract promotion code from transaction status description for upgrades
+	promotionCode := ""
+	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded && strings.HasPrefix(transaction.StatusDesc, "Promotion code: ") {
+		promotionCode = strings.TrimPrefix(transaction.StatusDesc, "Promotion code: ")
 	}
 
 	// Create Stripe subscription session
 	var stripeResp *services.StripeResponse
-	if discountCode != "" {
-		// For upgrades with discount code, use the new method
-		stripeResp, err = services.StripeServiceInstance.CreateWorkspaceSubscriptionSessionWithDiscount(
+	if promotionCode != "" {
+		// For upgrades with promotion code, use the new method
+		stripeResp, err = services.StripeServiceInstance.CreateWorkspaceSubscriptionSessionWithPromotion(
 			paymentReq,
 			*price.StripePrice,
 			&transaction,
-			discountCode,
+			promotionCode,
 		)
 	} else {
 		// For other operations, use the standard method

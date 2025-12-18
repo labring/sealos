@@ -27,6 +27,7 @@ import (
 	"github.com/stripe/stripe-go/v82/paymentmethod"
 	"github.com/stripe/stripe-go/v82/price"
 	"github.com/stripe/stripe-go/v82/product"
+	"github.com/stripe/stripe-go/v82/promotioncode"
 	"github.com/stripe/stripe-go/v82/subscription"
 	"github.com/stripe/stripe-go/v82/webhook"
 )
@@ -74,11 +75,11 @@ func buildURLs(s *StripeService, transaction *types.WorkspaceSubscriptionTransac
 
 // CreateWorkspaceSubscriptionSession creates a Stripe Checkout Session following official pattern
 func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction) (*StripeResponse, error) {
-	return s.CreateWorkspaceSubscriptionSessionWithDiscount(paymentReq, priceID, transaction, "")
+	return s.CreateWorkspaceSubscriptionSessionWithPromotion(paymentReq, priceID, transaction, "")
 }
 
-// CreateWorkspaceSubscriptionSessionWithDiscount creates a Stripe Checkout Session with optional discount code
-func (s *StripeService) CreateWorkspaceSubscriptionSessionWithDiscount(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction, discountCode string) (*StripeResponse, error) {
+// CreateWorkspaceSubscriptionSessionWithPromotion creates a Stripe Checkout Session with optional promotion code
+func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction, promotionCode string) (*StripeResponse, error) {
 	// 构造成功与取消回调URL，避免硬编码斜杠问题
 	// Assuming workspaceID and transaction.PayID are your custom variables
 	successURL, cancelURL, err := buildURLs(s, transaction)
@@ -144,11 +145,19 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithDiscount(paymentRe
 		checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().AddDate(0, 0, 30).Unix())
 	}
 
-	// Add discount code if provided
-	if discountCode != "" {
+	// Add promotion code if provided (assume validation already done at higher level)
+	if promotionCode != "" {
+		// Get the promotion code to retrieve its ID
+		pc, err := promotioncode.Get(promotionCode, &stripe.PromotionCodeParams{
+			Code: stripe.String(promotionCode),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("promotion code not found: %v", err)
+		}
+
 		checkoutParams.Discounts = []*stripe.CheckoutSessionDiscountParams{
 			{
-				Coupon: stripe.String(discountCode),
+				PromotionCode: stripe.String(pc.ID),
 			},
 		}
 	}
@@ -307,11 +316,11 @@ func (s *StripeService) DowngradePlan(subscriptionID, newPriceID, newPlanName st
 }
 
 func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string) (int64, error) {
-	return s.UpdatePlanPricePreviewWithDiscount(subscriptionID, newPriceID, "")
+	return s.UpdatePlanPricePreviewWithPromotion(subscriptionID, newPriceID, "")
 }
 
-// UpdatePlanPricePreviewWithDiscount previews subscription price changes with optional discount code
-func (s *StripeService) UpdatePlanPricePreviewWithDiscount(subscriptionID, newPriceID, discountCode string) (int64, error) {
+// UpdatePlanPricePreviewWithPromotion previews subscription price changes with optional promotion code
+func (s *StripeService) UpdatePlanPricePreviewWithPromotion(subscriptionID, newPriceID, promotionCode string) (int64, error) {
 	// Retrieve the current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
@@ -339,11 +348,19 @@ func (s *StripeService) UpdatePlanPricePreviewWithDiscount(subscriptionID, newPr
 		},
 	}
 
-	// Add discount code if provided
-	if discountCode != "" {
+	// Add promotion code if provided (assume validation already done at higher level)
+	if promotionCode != "" {
+		// Get the promotion code to retrieve its ID
+		pc, err := promotioncode.Get(promotionCode, &stripe.PromotionCodeParams{
+			Code: stripe.String(promotionCode),
+		})
+		if err != nil {
+			return 0, fmt.Errorf("promotion code not found: %v", err)
+		}
+
 		params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
 			{
-				Coupon: stripe.String(discountCode),
+				PromotionCode: stripe.String(pc.ID),
 			},
 		}
 	}
@@ -808,8 +825,44 @@ func (s *StripeService) GetCustomerInvoices(customerID string, limit int64) ([]*
 	return invoices, nil
 }
 
+// GetPromotionCode validates and retrieves a promotion code from Stripe
+func (s *StripeService) GetPromotionCode(code string) (*stripe.PromotionCode, error) {
+	pc, err := promotioncode.Get(code, &stripe.PromotionCodeParams{
+		Code: stripe.String(code),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pc, nil
+}
+
+// ValidatePromotionCode validates a promotion code and checks if it's active and within validity period
+func (s *StripeService) ValidatePromotionCode(code string) (*stripe.PromotionCode, error) {
+	pc, err := s.GetPromotionCode(code)
+	if err != nil {
+		return nil, fmt.Errorf("promotion code not found: %v", err)
+	}
+
+	// Check if promotion code is active
+	if pc.Active != true {
+		return nil, fmt.Errorf("promotion code is not active")
+	}
+
+	// Check if promotion code has expired (if expires_at is set)
+	if pc.ExpiresAt != 0 && pc.ExpiresAt < time.Now().Unix() {
+		return nil, fmt.Errorf("promotion code has expired")
+	}
+
+	// Check if promotion code has a maximum redemption limit and if it's reached
+	if pc.MaxRedemptions != 0 && pc.TimesRedeemed >= pc.MaxRedemptions {
+		return nil, fmt.Errorf("promotion code has reached maximum redemption limit")
+	}
+
+	return pc, nil
+}
+
 // CreateUpgradeInvoice creates an invoice for subscription upgrade using UpdatePlan with incomplete payment
-func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlanName, payReqID, discountCode string) (string, string, error) {
+func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlanName, payReqID, promotionCode string) (string, string, error) {
 	// Retrieve the current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
@@ -834,11 +887,19 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 		Expand:                []*string{stripe.String("latest_invoice.payment_intent")},
 	}
 
-	// Add discount if provided
-	if discountCode != "" {
+	// Add promotion code if provided (assume validation already done at higher level)
+	if promotionCode != "" {
+		// Get the promotion code to retrieve its ID
+		pc, err := promotioncode.Get(promotionCode, &stripe.PromotionCodeParams{
+			Code: stripe.String(promotionCode),
+		})
+		if err != nil {
+			return "", "", fmt.Errorf("promotion code not found: %v", err)
+		}
+
 		params.Discounts = []*stripe.SubscriptionDiscountParams{
 			{
-				Coupon: stripe.String(discountCode),
+				PromotionCode: stripe.String(pc.ID),
 			},
 		}
 	}
