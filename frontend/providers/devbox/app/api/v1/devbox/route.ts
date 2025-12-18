@@ -509,7 +509,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resourceConfig = convertResourceConfig(resourceSource);
-    const { DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
+    const { DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
     const devbox = json2DevboxV2(
       {
         ...devboxForm,
@@ -638,7 +638,7 @@ export async function GET(req: NextRequest) {
     //1.Kubernetes get DevBox-list
     const devboxResponse = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes'
     );

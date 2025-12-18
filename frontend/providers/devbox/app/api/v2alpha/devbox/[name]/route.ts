@@ -10,7 +10,7 @@ import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
-import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
+import { calculateUptime, parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import { UpdateDevboxRequestSchema, DeleteDevboxRequestSchema, nanoid } from './schema';
 
 //need really realtime use force-dynamic
@@ -67,7 +67,7 @@ async function waitForDevboxStatus(
   while (retries < maxRetries) {
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName
@@ -466,7 +466,7 @@ async function updateDevboxResource(
   try {
     await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName
@@ -482,7 +482,7 @@ async function updateDevboxResource(
 
   await k8sCustomObjects.patchNamespacedCustomObject(
     'devbox.sealos.io',
-    'v1alpha1',
+    'v1alpha2',
     namespace,
     'devboxes',
     devboxName,
@@ -604,7 +604,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     // Get devbox resource from Kubernetes
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName
@@ -681,6 +681,18 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const specConfig = devboxBody.spec.config as any;
     const env = specConfig?.env || [];
 
+    const createdAt = devboxBody.metadata?.creationTimestamp || '';
+    const earliestPodCreateTime = (() => {
+      const times = pods
+        .map((pod: any) => pod?.metadata?.creationTimestamp)
+        .filter(Boolean)
+        .map((ts: string) => new Date(ts))
+        .filter((d: Date) => !Number.isNaN(d.getTime()))
+        .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+      return times[0];
+    })();
+    const upTime = earliestPodCreateTime ? calculateUptime(earliestPodCreateTime) : undefined;
+
     const ingressList = ingresses.map((item: V1Ingress) => {
       const defaultDomain = item.metadata?.labels?.[publicDomainKey];
       const tlsHost = item.spec?.tls?.[0]?.hosts?.[0];
@@ -724,6 +736,8 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 
     const data = {
       name: devboxBody.metadata.name || devboxName,
+      createdAt,
+      upTime,
       uid: devboxBody.metadata?.uid || '',
       resourceType: 'devbox',
       runtime: template.templateRepository.iconId || '',
@@ -893,7 +907,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
 
     await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName

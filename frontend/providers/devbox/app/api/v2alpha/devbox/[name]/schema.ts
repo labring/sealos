@@ -288,6 +288,14 @@ export const DevboxDetailResponseSchema = z.object({
     description: 'Devbox name',
     example: 'my-devbox'
   }),
+  createdAt: z.string().openapi({
+    description: 'Creation time in ISO format',
+    example: '2023-12-07T10:00:00.000Z'
+  }),
+  upTime: z.string().optional().openapi({
+    description: 'Running duration since first pod started (human-readable)',
+    example: '2d3h'
+  }),
   uid: z.string().openapi({
     description: 'Unique identifier',
     example: 'abc123-def456'
