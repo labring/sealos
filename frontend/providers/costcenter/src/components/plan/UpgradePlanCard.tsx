@@ -6,7 +6,6 @@ import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
-import { PlanAdditionalFeaturesOverride } from '@/constants/plan';
 
 interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
@@ -206,20 +205,6 @@ export function UpgradePlanCard({
               </span>
             </li>
           )}
-          {(() => {
-            const planName = plan.Name.toLowerCase();
-            const matchedKey = Array.from(PlanAdditionalFeaturesOverride.keys()).find((key) =>
-              planName.includes(key.toLowerCase())
-            );
-            const features = matchedKey ? PlanAdditionalFeaturesOverride.get(matchedKey) || [] : [];
-
-            return features.map((featureKey, index) => (
-              <li key={index} className="flex items-center gap-3">
-                <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-                <span className="text-sm text-gray-700">{t(featureKey)}</span>
-              </li>
-            ));
-          })()}
         </ul>
       </div>
     </section>
