@@ -64,32 +64,12 @@ export enum DevboxReleaseStatusEnum {
   Pending = 'Pending',
   Failed = 'Failed'
 }
-export const CpuSlideMarkList = [
-  { label: 1, value: 1000 },
-  { label: 2, value: 2000 },
-  { label: 4, value: 4000 },
-  { label: 8, value: 8000 },
-  { label: 16, value: 16000 }
-];
-
-export const MemorySlideMarkList = [
-  // { label: '512Mi', value: 512 },
-  // { label: '1G', value: 1024 },
-  { label: '2', value: 2048 },
-  { label: '4', value: 4096 },
-  // { label: '6G', value: 6144 },
-  { label: '8', value: 8192 },
-  // { label: '12G', value: 12288 },
-  { label: '16', value: 16384 },
-  { label: '32', value: 32768 }
-];
-
 export const defaultDevboxEditValue: DevboxEditType = {
   name: 'devbox',
   runtimeType: LanguageTypeEnum.go,
   runtimeVersion: '',
-  cpu: CpuSlideMarkList[1].value,
-  memory: MemorySlideMarkList[1].value,
+  cpu: 2000,
+  memory: 4096,
   networks: []
 };
 export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
@@ -98,8 +78,8 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   templateConfig: '{}',
   templateRepositoryUid: '',
   templateUid: '',
-  cpu: CpuSlideMarkList[1].value,
-  memory: MemorySlideMarkList[1].value,
+  cpu: 2000,
+  memory: 4096,
   networks: []
 };
 

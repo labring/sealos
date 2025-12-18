@@ -36,7 +36,7 @@ on:
         required: false
         type: string
   push:
-    branches: ["main"]
+    branches: ["*"]
     paths:
       - "deploy/cloud/**"
       - ".github/workflows/cloud.yml"
@@ -56,7 +56,7 @@ permissions:
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
@@ -71,7 +71,7 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
@@ -86,31 +86,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-      - name: Check if tag
-        id: check_tag
+      - name: Set image repo
         env:
-          REF: ${{ github.ref }}
-        run: |
-          if [[ "$REF" == refs/tags/* ]]; then
-            echo "isTag=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "isTag=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Prepare
-        id: prepare
-        env:
-          PUSH_IMAGE: ${{ inputs.push_image }}
-          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
-          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
           REPO_OWNER: ${{ github.repository_owner }}
         run: |
-          bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
-          echo "repo=ghcr.io/${REPO_OWNER}/sealos-cloud" >> $GITHUB_OUTPUT
+          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "aliyun_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud" >> $GITHUB_OUTPUT
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud" >> $GITHUB_ENV
           fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REPO }}
+            ${{ env.ALIYUN_REPO }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=tag
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
+
       - name: Install sealos
         run: |
           sudo bash ./.github/scripts/install.sh
@@ -138,64 +136,36 @@ jobs:
         env:
           BUILD_FROM: ${{ inputs.build_from }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-          REPO: ${{ steps.prepare.outputs.repo }}
-          ALIYUN_REPO: ${{ steps.prepare.outputs.aliyun_repo }}
-          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
+          GHCR_REPO: ${{ env.GHCR_REPO }}
         run: |
           [ -z "${BUILD_FROM}" ] && BuildFromTag="latest" || BuildFromTag="${BUILD_FROM}"; echo "BuildFromTag=${BuildFromTag}"
           sed -i "s#labring#${REPOSITORY_OWNER}#g" init.sh
           sed -i "s#latest#${BuildFromTag}#g" init.sh
 
-          # Build for GHCR
-          sudo bash init.sh amd64 
-          sudo sealos build -t "${REPO}:${TAG_NAME}-amd64" --platform linux/amd64 -f Kubefile
-          sudo sealos build -t "${REPO}:latest-amd64" --platform linux/amd64 -f Kubefile
-
-          # delete old registry cache
-          sudo rm -rf registry
-          sudo rm -rf tars
-
-          sudo bash init.sh arm64 
-          sudo sealos build -t "${REPO}:${TAG_NAME}-arm64" --platform linux/arm64 -f Kubefile
-          sudo sealos build -t "${REPO}:latest-arm64" --platform linux/arm64 -f Kubefile
-
-          # Build for Aliyun if enabled
-          if [[ -n "${ALIYUN_REPO}" ]]; then
-            # delete old registry cache
+          # Build cluster images for each tag (amd64)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             sudo rm -rf registry
             sudo rm -rf tars
-            
-            sudo bash init.sh amd64 
-            sudo sealos build -t "${ALIYUN_REPO}:${TAG_NAME}-amd64" --platform linux/amd64 -f Kubefile
-            sudo sealos build -t "${ALIYUN_REPO}:latest-amd64" --platform linux/amd64 -f Kubefile
+            sudo bash init.sh amd64
+            echo "Building ${TAG}-amd64"
+            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
+          done
 
-            # delete old registry cache
+          # Build cluster images for each tag (arm64)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             sudo rm -rf registry
             sudo rm -rf tars
-
-            sudo bash init.sh arm64 
-            sudo sealos build -t "${ALIYUN_REPO}:${TAG_NAME}-arm64" --platform linux/arm64 -f Kubefile
-            sudo sealos build -t "${ALIYUN_REPO}:latest-arm64" --platform linux/arm64 -f Kubefile
-          fi
+            sudo bash init.sh arm64
+            echo "Building ${TAG}-arm64"
+            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
+          done
 
       - name: Manifest Cluster Images
-        # if push to master, then patch images to ghcr.io
-        env:
-          OWNER: ${{ github.repository_owner }}
-          REPO: ${{ steps.prepare.outputs.repo }}
-          ALIYUN_REPO: ${{ steps.prepare.outputs.aliyun_repo }}
-          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
         run: |
           sudo sealos images
-
-          # Create manifests for GHCR
-          bash scripts/manifest-cluster-images.sh "$REPO:$TAG_NAME"
-          bash scripts/manifest-cluster-images.sh "$REPO:latest"
-
-          # Create manifests for Aliyun if enabled
-          if [[ -n "${ALIYUN_REPO}" ]]; then
-            bash scripts/manifest-cluster-images.sh "$ALIYUN_REPO:$TAG_NAME"
-            bash scripts/manifest-cluster-images.sh "$ALIYUN_REPO:latest"
-          fi
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            echo "Creating manifest for ${TAG}"
+            bash scripts/manifest-cluster-images.sh "$TAG"
+          done
 
       # todo: build multi-arch images

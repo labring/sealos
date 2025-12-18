@@ -42,9 +42,17 @@ data:
         default:
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
           memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+        default-gpu:
+          cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000]
+          memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
       fileManger:
         uploadLimit: 50 # MB
         downloadLimit: 100 # MB
+      checkIcpReg:
+        enabled: false
+        endpoint: cdn.aliyuncs.com
+        accessKeyID: ''
+        accessKeySecret: ''
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -18,8 +18,11 @@ export function getResourceUsage(yamlList: string[]): ResourceUsage {
   let totalNodeport = 0;
 
   for (const yaml of yamlList) {
-    for (const yamlObj of JsYaml.loadAll(yaml)) {
+    const yamlObjs = JsYaml.loadAll(yaml);
+
+    for (const yamlObj of yamlObjs) {
       const resource = parseResourceUsage(yamlObj);
+
       totalCpuMin += resource.cpu.min;
       totalCpuMax += resource.cpu.max;
       totalMemoryMin += resource.memory.min;

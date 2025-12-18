@@ -19,14 +19,21 @@ package controller
 import (
 	"context"
 	"fmt"
+	"math"
+	"strconv"
 	"time"
 
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
+	"github.com/labring/sealos/controllers/devbox/internal/commit"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/events"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/rwords"
+	"github.com/labring/sealos/controllers/devbox/internal/stat"
 	"github.com/labring/sealos/controllers/devbox/label"
 
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,18 +57,27 @@ import (
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
 	CommitImageRegistry string
+	DevboxNodeLabel     string
+	NodeName            string
 
 	RequestRate      resource.RequestRate
 	EphemeralStorage resource.EphemeralStorage
 
 	PodMatchers []matcher.PodMatcher
 
-	DebugMode bool
+	DebugMode                 bool
+	MergeBaseImageTopLayer    bool
+	StartupConfigMapName      string
+	StartupConfigMapNamespace string
 
 	client.Client
-	Scheme                   *runtime.Scheme
-	Recorder                 record.EventRecorder
+	Scheme              *runtime.Scheme
+	Recorder            record.EventRecorder
+	StateChangeRecorder record.EventRecorder
+
 	RestartPredicateDuration time.Duration
+	AcceptanceThreshold      int
+	stat.NodeStatsProvider
 }
 
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes,verbs=get;list;watch;create;update;patch;delete
@@ -71,14 +87,17 @@ type DevboxReconciler struct {
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=runtimeclasses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=*
 // +kubebuilder:rbac:groups="",resources=pods/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=nodes/status,verbs=get
 // +kubebuilder:rbac:groups="",resources=services,verbs=*
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=*
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=*
 // +kubebuilder:rbac:groups="",resources=events,verbs=*
 
 func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	devbox := &devboxv1alpha1.Devbox{}
+	devbox := &devboxv1alpha2.Devbox{}
 	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -86,17 +105,21 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
-		PartOf:    devboxv1alpha1.DevBoxPartOf,
+		PartOf:    devboxv1alpha2.LabelDevBoxPartOf,
 	})
 
+	logger.Info("start reconciling devbox", "devbox", devbox.Name)
+	if r.StartupConfigMapName != "" {
+		logger.Info("startup config map set", "startupConfigMapName", r.StartupConfigMapName, "startupConfigMapNamespace", r.StartupConfigMapNamespace)
+	}
 	if devbox.ObjectMeta.DeletionTimestamp.IsZero() {
 		// retry add finalizer
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			latestDevbox := &devboxv1alpha1.Devbox{}
+			latestDevbox := &devboxv1alpha2.Devbox{}
 			if err := r.Get(ctx, req.NamespacedName, latestDevbox); err != nil {
 				return client.IgnoreNotFound(err)
 			}
-			if controllerutil.AddFinalizer(latestDevbox, devboxv1alpha1.FinalizerName) {
+			if controllerutil.AddFinalizer(latestDevbox, devboxv1alpha2.FinalizerName) {
 				return r.Update(ctx, latestDevbox)
 			}
 			return nil
@@ -106,12 +129,17 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		logger.Info("devbox deleted, remove all resources")
-		if err := r.removeAll(ctx, devbox, recLabels); err != nil {
+		if err := r.handleSubResourceDelete(ctx, devbox, recLabels); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// delete storage:
+		if err := r.handleStorageDelete(ctx, devbox); err != nil {
 			return ctrl.Result{}, err
 		}
 
 		logger.Info("devbox deleted, remove finalizer")
-		if controllerutil.RemoveFinalizer(devbox, devboxv1alpha1.FinalizerName) {
+		if controllerutil.RemoveFinalizer(devbox, devboxv1alpha2.FinalizerName) {
 			if err := r.Update(ctx, devbox); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -119,8 +147,74 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	// init devbox status network type
 	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
-	_ = r.Status().Update(ctx, devbox)
+	// init devbox status content id
+	if devbox.Status.ContentID == "" {
+		devbox.Status.ContentID = uuid.New().String()
+	}
+	// init devbox status commit record
+	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha2.CommitRecord)
+		devbox.Status.State = devbox.Spec.State
+		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha2.CommitRecord{
+			Node:         "",
+			BaseImage:    devbox.Spec.Image,
+			CommitImage:  r.generateImageName(devbox),
+			CommitStatus: devboxv1alpha2.CommitStatusPending,
+			GenerateTime: metav1.Now(),
+		}
+	}
+	// update devbox status, and do not return error to avoid infinite loop because multiple controller will reconcile this devbox
+	if err := r.Status().Update(ctx, devbox); err != nil {
+		logger.Info("failed to initialize devbox status, skip and return empty result", "error", err)
+		return ctrl.Result{Requeue: false}, nil
+	}
+
+	// re-get devbox to get the latest status
+	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// check content id and commit record is exist
+	if devbox.Status.CommitRecords == nil || devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// todo: implement the schedule logic to replace the current logic
+	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
+	// and filter out the devbox that are not in the current node
+	if devbox.Spec.State == devboxv1alpha2.DevboxStateRunning {
+		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
+			if score := r.getAcceptanceScore(ctx, devbox); score >= r.AcceptanceThreshold {
+				// if devbox is not scheduled to node, schedule it to current node
+				logger.Info("devbox not scheduled to node, try scheduling to us now",
+					"nodeName", r.NodeName,
+					"devbox", devbox.Name,
+					"score", score,
+					"acceptanceThreshold", r.AcceptanceThreshold)
+				// set up devbox node and content id, new a record for the devbox
+				devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
+				devbox.Status.Node = r.NodeName
+				if err := r.Status().Update(ctx, devbox); err != nil {
+					logger.Info("try to schedule devbox to node failed. This devbox may have already been scheduled to another node", "error", err)
+					return ctrl.Result{}, nil
+				}
+				logger.Info("devbox scheduled to node", "node", r.NodeName)
+				r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
+			} else {
+				logger.Info("devbox not scheduled to node, try scheduling to us later",
+					"nodeName", r.NodeName,
+					"devbox", devbox.Name,
+					"score", score,
+					"acceptanceThreshold", r.AcceptanceThreshold)
+				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+			}
+		} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
+			logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
+			return ctrl.Result{}, nil
+		}
+	}
 
 	// create or update secret
 	logger.Info("syncing secret")
@@ -132,19 +226,30 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("sync secret success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 
-	// create service if network type is NodePort
-	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
-		logger.Info("syncing service")
-		if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
+	if r.StartupConfigMapName != "" {
+		// create or update startup configmap
+		logger.Info("syncing startup configmap")
+		if err := r.syncStartupConfigMap(ctx, devbox, recLabels); err != nil {
+			logger.Error(err, "sync startup configmap failed")
+			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync startup configmap failed", "%v", err)
 			return ctrl.Result{}, err
 		}
-		if err := r.syncService(ctx, devbox, recLabels); err != nil {
-			logger.Error(err, "sync service failed")
-			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync service failed", "%v", err)
-			return ctrl.Result{}, err
-		}
-		logger.Info("sync service success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync service success", "Sync service success")
+		logger.Info("sync startup configmap success")
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync startup configmap success", "Sync startup configmap success")
+	}
+
+	if err := r.syncNetwork(ctx, devbox, recLabels); err != nil {
+		logger.Error(err, "sync network failed")
+		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync network failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+	logger.Info("sync network success")
+	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync network success", "Sync network success")
+
+	// sync devbox phase based on desired state and current pod status
+	if err := r.syncDevboxPhase(ctx, devbox, recLabels); err != nil {
+		logger.Error(err, "sync devbox phase failed")
+		return ctrl.Result{}, err
 	}
 
 	// create or update pod
@@ -157,11 +262,76 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("sync pod success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 
+	// sync devbox state
+	if (devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName ||
+		((devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown) && devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "")) &&
+		r.syncDevboxState(ctx, devbox) {
+		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
+		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
+
+		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, events.ReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, events.ReasonDevboxStateChanged, "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+	}
+
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
 }
 
-func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncStartupConfigMap(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	objectMeta := metav1.ObjectMeta{
+		Name:      devbox.Name,
+		Namespace: devbox.Namespace,
+		Labels:    recLabels,
+	}
+	devboxConfigmap := &corev1.ConfigMap{
+		ObjectMeta: objectMeta,
+	}
+
+	startupConfigMap := &corev1.ConfigMap{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: r.StartupConfigMapNamespace, Name: r.StartupConfigMapName}, startupConfigMap)
+	if err != nil {
+		return fmt.Errorf("failed to get startup configmap: %w", err)
+	}
+	if startupConfigMap.Data == nil || startupConfigMap.Data["startup.sh"] == "" {
+		return fmt.Errorf("startup configmap %s/%s is missing the 'startup.sh' key or it is empty", r.StartupConfigMapNamespace, r.StartupConfigMapName)
+	}
+	err = r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxConfigmap)
+	if err == nil {
+		// configmap already exists, no need to create
+		if devboxConfigmap.Data == nil {
+			devboxConfigmap.Data = make(map[string]string)
+		}
+		if _, ok := devboxConfigmap.Data["startup.sh"]; !ok || devboxConfigmap.Data["startup.sh"] != startupConfigMap.Data["startup.sh"] {
+			devboxConfigmap.Data["startup.sh"] = startupConfigMap.Data["startup.sh"]
+			if err := r.Update(ctx, devboxConfigmap); err != nil {
+				return fmt.Errorf("failed to update configmap: %w", err)
+			}
+		}
+
+		return nil
+	}
+	if client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to get configmap: %w", err)
+	}
+
+	configmap := &corev1.ConfigMap{
+		ObjectMeta: objectMeta,
+		Data: map[string]string{
+			"startup.sh": startupConfigMap.Data["startup.sh"],
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(devbox, configmap, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set controller reference: %w", err)
+	}
+
+	if err := r.Create(ctx, configmap); err != nil {
+		return fmt.Errorf("failed to create configmap: %w", err)
+	}
+	return nil
+}
+
+func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      devbox.Name,
 		Namespace: devbox.Namespace,
@@ -171,27 +341,32 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 		ObjectMeta: objectMeta,
 	}
 
-	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxSecret)
+	err := r.Get(ctx, client.ObjectKeyFromObject(devboxSecret), devboxSecret)
 	if err == nil {
-		// Secret already exists, no need to create
-
-		// TODO: delete this code after we have a way to sync secret to devbox
-		// check if SEALOS_DEVBOX_JWT_SECRET is exist, if not exist, create it
-		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"]; !ok {
-			devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"] = []byte(rand.String(32))
-			if err := r.Update(ctx, devboxSecret); err != nil {
-				return fmt.Errorf("failed to update secret: %w", err)
+		// Secret already exists, update with retry
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestSecret := &corev1.Secret{}
+			if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestSecret); err != nil {
+				return err
 			}
-		}
-
-		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
-			devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = devboxSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
-			if err := r.Update(ctx, devboxSecret); err != nil {
-				return fmt.Errorf("failed to update secret: %w", err)
+			// update controller reference
+			if err := controllerutil.SetControllerReference(devbox, latestSecret, r.Scheme); err != nil {
+				return fmt.Errorf("failed to update owner reference: %w", err)
 			}
-		}
-
-		return nil
+			// TODO: delete this code after we have a way to sync secret to devbox
+			// check if SEALOS_DEVBOX_JWT_SECRET is exist, if not exist, create it
+			if _, ok := latestSecret.Data["SEALOS_DEVBOX_JWT_SECRET"]; !ok {
+				latestSecret.Data["SEALOS_DEVBOX_JWT_SECRET"] = []byte(rand.String(32))
+			}
+			// check if SEALOS_DEVBOX_AUTHORIZED_KEYS is exist, if not exist, set it to SEALOS_DEVBOX_PUBLIC_KEY
+			if _, ok := latestSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
+				latestSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = latestSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
+			}
+			// generate SEALOS_DEVBOX_ENV_PROFILE
+			latestSecret.Data["SEALOS_DEVBOX_ENV_PROFILE"] = helper.GenerateEnvProfile(devbox, latestSecret.Data["SEALOS_DEVBOX_JWT_SECRET"])
+			return r.Update(ctx, latestSecret)
+		})
+		return err
 	}
 	if client.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
@@ -223,135 +398,169 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	return nil
 }
 
-func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
-
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+	podList := &corev1.PodList{}
+	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
 	}
-	// only one pod is allowed, if more than one pod found, return error
-	if len(podList.Items) > 1 {
-		// remove finalizer and delete them
-		for _, pod := range podList.Items {
-			if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
-				if err := r.Update(ctx, &pod); err != nil {
-					logger.Error(err, "remove finalizer failed")
-				}
-			}
-			if err := r.Delete(ctx, &pod); err != nil {
-				logger.Error(err, "delete pod failed")
-			}
-		}
-		return fmt.Errorf("more than one pod found")
-	}
-	logger.Info("pod list", "length", len(podList.Items))
-
-	// update devbox status after pod is created or updated
-	defer func() {
-		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			logger.Info("update devbox status after pod synced")
-			latestDevbox := &devboxv1alpha1.Devbox{}
-			if err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
-				logger.Error(err, "get latest devbox failed")
-				return err
-			}
-			// update devbox status with latestDevbox status
-			logger.Info("updating devbox status")
-			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
-			devbox.Status.Phase = helper.GenerateDevboxPhase(devbox, podList)
-			helper.UpdateDevboxStatus(devbox, latestDevbox)
-			return r.Status().Update(ctx, latestDevbox)
-		}); err != nil {
-			logger.Error(err, "sync pod failed")
-			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
-			return
-		}
-		logger.Info("update devbox status success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
-	}()
-
 	switch devbox.Spec.State {
-	case devboxv1alpha1.DevboxStateRunning:
-		nextCommitHistory := r.generateNextCommitHistory(devbox)
-		expectPod := r.generateDevboxPod(devbox, nextCommitHistory)
-
+	case devboxv1alpha2.DevboxStateRunning:
+		// get pod
 		switch len(podList.Items) {
 		case 0:
-			logger.Info("create pod")
-			logger.Info("next commit history", "commit", nextCommitHistory)
-			err := r.createPod(ctx, devbox, expectPod, nextCommitHistory)
-			if err != nil && helper.IsExceededQuotaError(err) {
-				logger.Info("devbox is exceeded quota, change devbox state to Stopped")
-				r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Devbox is exceeded quota", "Devbox is exceeded quota")
-				devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
-				_ = r.Update(ctx, devbox)
-				return nil
+			// check last devbox status
+			currentRecord := devbox.Status.CommitRecords[devbox.Status.ContentID]
+			if currentRecord == nil {
+				return fmt.Errorf("current record is nil")
 			}
-			if err != nil {
-				logger.Error(err, "create pod failed")
+			// create a new pod with default image, with new content id
+			podOptions := []helper.DevboxPodOptions{
+				helper.WithPodImage(currentRecord.BaseImage),
+				helper.WithPodContentID(devbox.Status.ContentID),
+				helper.WithPodNodeName(currentRecord.Node),
+				helper.WithPodRuntimeHandler(devboxv1alpha2.PodRuntimeHandler),
+			}
+			if r.MergeBaseImageTopLayer {
+				podOptions = append(podOptions, helper.WithPodInit(commit.AnnotationImageFromValue))
+			}
+			pod := r.generateDevboxPod(devbox, podOptions...)
+			if err := r.Create(ctx, pod); err != nil {
 				return err
 			}
-			return nil
 		case 1:
-			pod := &podList.Items[0]
-			// check pod container size, if it is 0, it means the pod is not running, return an error
-			if len(pod.Status.ContainerStatuses) == 0 {
-				return fmt.Errorf("pod container size is 0")
+			// skip if pod is already created
+			if !podList.Items[0].DeletionTimestamp.IsZero() {
+				return r.handlePodDeleted(ctx, devbox, &podList.Items[0])
 			}
-			devbox.Status.State = pod.Status.ContainerStatuses[0].State
-			// update commit predicated status by pod status, this should be done once find a pod
-			helper.UpdatePredicatedCommitStatus(devbox, pod)
-			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
-			if !pod.DeletionTimestamp.IsZero() {
-				logger.Info("pod has been deleted")
-				return r.handlePodDeleted(ctx, devbox, pod)
+			if podList.Items[0].Status.Phase != corev1.PodRunning && podList.Items[0].Status.Phase != corev1.PodPending {
+				return r.deletePod(ctx, devbox, &podList.Items[0])
 			}
-			switch matcher.PodMatchExpectations(expectPod, pod, r.PodMatchers...) {
-			case true:
-				// pod match expectations
-				logger.Info("pod match expectations")
-				switch pod.Status.Phase {
-				case corev1.PodPending, corev1.PodRunning:
-					// pod is running or pending, do nothing here
-					logger.Info("pod is running or pending")
-					// update commit history status by pod status
-					helper.UpdateCommitHistory(devbox, pod, false)
-					return nil
-				case corev1.PodFailed, corev1.PodSucceeded:
-					// pod failed or succeeded, we need delete pod and remove finalizer
-					logger.Info("pod failed or succeeded, recreate pod")
-					return r.deletePod(ctx, devbox, pod)
+			return nil
+		default:
+			// more than one pod found, remove finalizer and delete them
+			for _, pod := range podList.Items {
+				if err := r.deletePod(ctx, devbox, &pod); err != nil {
+					logger.Error(err, "failed to delete pod", "pod", pod.Name)
+					return err
 				}
-			case false:
-				// pod not match expectations, delete pod anyway
-				logger.Info("pod not match expectations, recreate pod")
-				return r.deletePod(ctx, devbox, pod)
+			}
+			logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
+			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
+			return fmt.Errorf("more than one pod found")
+		}
+	case devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped, devboxv1alpha2.DevboxStateShutdown:
+		if len(podList.Items) > 0 {
+			for _, pod := range podList.Items {
+				if err := r.deletePod(ctx, devbox, &pod); err != nil {
+					logger.Error(err, "failed to delete pod", "pod", pod.Name)
+					return err
+				}
 			}
 		}
-	case devboxv1alpha1.DevboxStateStopped, devboxv1alpha1.DevboxStateShutdown:
-		switch len(podList.Items) {
-		case 0:
-			return nil
-		case 1:
-			pod := &podList.Items[0]
-			// update state to empty since devbox is stopped
-			devbox.Status.State = corev1.ContainerState{}
-			// update commit predicated status by pod status, this should be done once find a pod
-			helper.UpdatePredicatedCommitStatus(devbox, pod)
-			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
-			if !pod.DeletionTimestamp.IsZero() {
-				return r.handlePodDeleted(ctx, devbox, pod)
-			}
-			// we need delete pod because devbox state is stopped
-			// we don't care about the pod status, just delete it
-			return r.deletePod(ctx, devbox, pod)
-		}
+		return nil
 	}
 	return nil
 }
 
-func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// Use a pipeline pattern to execute each sync function in order, returning early if an error occurs in any step.
+	pipeline := []func(context.Context, *devboxv1alpha2.Devbox, map[string]string) error{
+		r.syncCommon,
+		r.syncTailnet,
+		r.syncSSHGate,
+		r.syncNodeport,
+	}
+	for _, fn := range pipeline {
+		if err := fn(ctx, devbox, recLabels); err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	// succeed sync all network resources, do update devbox status network type
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
+		return r.Status().Update(ctx, latestDevbox)
+	})
+}
+
+// syncCommon syncs the common resources for the network, including headless service and unique id
+func (r *DevboxReconciler) syncCommon(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	logger := log.FromContext(ctx)
+	logger.Info("syncing network common resources: headless service and unique id")
+	_ = r.Get(ctx, client.ObjectKeyFromObject(devbox), devbox)
+	if devbox.Status.Network.UniqueID == "" {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.Network.UniqueID = rwords.GenerateRandomWords()
+			return r.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
+			return err
+		}
+		// re-update devbox to get the latest status
+		_ = r.Get(ctx, client.ObjectKeyFromObject(devbox), devbox)
+	}
+
+	// create a headless service for the devbox, use the unique id as the name
+	// todo: use label to find the service
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Status.Network.UniqueID,
+			Namespace: devbox.Namespace,
+			Labels:    recLabels,
+		},
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
+		service.Spec.Selector = recLabels
+		service.Spec.Type = corev1.ServiceTypeClusterIP
+		if service.Spec.ClusterIP == "" {
+			service.Spec.ClusterIP = corev1.ClusterIPNone
+		}
+		if len(service.Spec.ClusterIPs) == 0 {
+			service.Spec.ClusterIPs = []string{corev1.ClusterIPNone}
+		}
+		service.Spec.Ports = nil
+		return controllerutil.SetControllerReference(devbox, service, r.Scheme)
+	})
+	return err
+}
+
+func (r *DevboxReconciler) syncTailnet(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// deprecated, we don't need to sync tailnet anymore
+	logger := log.FromContext(ctx)
+	logger.Info("syncing tailnet")
+	return nil
+}
+
+func (r *DevboxReconciler) syncSSHGate(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// maybe we should do something here...
+	logger := log.FromContext(ctx)
+	logger.Info("syncing ssh gate")
+	return nil
+}
+
+func (r *DevboxReconciler) syncNodeport(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	// todo: use label to find the service
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-svc",
+			Namespace: devbox.Namespace,
+			Labels:    recLabels,
+		},
+	}
+
+	desiredNodePort := devbox.Spec.NetworkSpec.Type == devboxv1alpha2.NetworkTypeNodePort
+	if !desiredNodePort {
+		return r.deleteNodeport(ctx, devbox, service)
+	}
+
 	var servicePorts []corev1.ServicePort
 	for _, port := range devbox.Spec.Config.Ports {
 		servicePorts = append(servicePorts, corev1.ServicePort{
@@ -362,7 +571,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		})
 	}
 	if len(servicePorts) == 0 {
-		//use the default value
+		// use the default value
 		servicePorts = []corev1.ServicePort{
 			{
 				Name:       "devbox-ssh-port",
@@ -377,25 +586,11 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		Type:     corev1.ServiceTypeNodePort,
 		Ports:    servicePorts,
 	}
-	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      devbox.Name + "-svc",
-			Namespace: devbox.Namespace,
-			Labels:    recLabels,
-		},
-	}
+
 	switch devbox.Spec.State {
-	case devboxv1alpha1.DevboxStateShutdown:
-		err := r.Client.Delete(ctx, service)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		devbox.Status.Network = devboxv1alpha1.NetworkStatus{
-			Type:     devboxv1alpha1.NetworkTypeNodePort,
-			NodePort: int32(0),
-		}
-		return r.Status().Update(ctx, devbox)
-	case devboxv1alpha1.DevboxStateRunning, devboxv1alpha1.DevboxStateStopped:
+	case devboxv1alpha2.DevboxStateShutdown:
+		return r.deleteNodeport(ctx, devbox, service)
+	case devboxv1alpha2.DevboxStateRunning, devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped:
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
 			service.Spec.Selector = expectServiceSpec.Selector
@@ -435,84 +630,364 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		if nodePort == 0 {
 			return fmt.Errorf("NodePort not found for service %s", service.Name)
 		}
-		devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
-		devbox.Status.Network.NodePort = nodePort
-		return r.Status().Update(ctx, devbox)
+		// Update devbox status with retry
+		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.Network.NodePort = nodePort
+			return r.Status().Update(ctx, latestDevbox)
+		})
 	}
 	return nil
 }
 
-// create a new pod, add predicated status to nextCommitHistory
-func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, expectPod *corev1.Pod, nextCommitHistory *devboxv1alpha1.CommitHistory) error {
+func (r *DevboxReconciler) deleteNodeport(ctx context.Context, devbox *devboxv1alpha2.Devbox, service *corev1.Service) error {
 	logger := log.FromContext(ctx)
-
-	logger.Info("creating pod",
-		"podName", expectPod.Name,
-		"namespace", expectPod.Namespace,
-		"nextCommitHistory", nextCommitHistory)
-
-	nextCommitHistory.Status = devboxv1alpha1.CommitStatusPending
-	nextCommitHistory.PredicatedStatus = devboxv1alpha1.CommitStatusPending
-
-	if expectPod.Name == "" {
-		return fmt.Errorf("pod name cannot be empty")
-	}
-
-	if err := r.Create(ctx, expectPod); err != nil {
-		logger.Error(err, "failed to create pod")
+	logger.Info("deleting nodeport service for devbox", "devbox", devbox.Name)
+	if err := r.Client.Delete(ctx, service); err != nil && !errors.IsNotFound(err) {
 		return err
 	}
 
-	devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
-	return nil
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.Network.NodePort = 0
+		return r.Status().Update(ctx, latestDevbox)
+	})
 }
 
-func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
+// syncDevboxPhase updates devbox.Status.Phase derived from desired state and current pod status
+func (r *DevboxReconciler) syncDevboxPhase(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
-	// remove finalizer and delete pod
-	controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
-	if err := r.Update(ctx, pod); err != nil {
+
+	// Fetch pod list
+	podList := &corev1.PodList{}
+	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+		return err
+	}
+
+	// Refresh devbox to get latest status
+	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
+		return fmt.Errorf("failed to get devbox: %w", err)
+	}
+
+	// Analyze pod status
+	podStatus := helper.AnalyzePodStatus(podList)
+
+	// Get commit record for current contentID
+	latestCommitRecord := helper.GetLatestCommitRecord(devbox.Status.CommitRecords, devbox.Status.ContentID)
+
+	// Derive phase based on State to Phase Mapping Table
+	newPhase := helper.DerivePhase(devbox.Spec.State, podStatus, latestCommitRecord)
+
+	// Skip update if phase hasn't changed
+	if devbox.Status.Phase == newPhase {
+		return nil
+	}
+
+	// Log phase change
+	latestCommitStatus := "none"
+	if latestCommitRecord != nil {
+		latestCommitStatus = string(latestCommitRecord.CommitStatus)
+	}
+	logger.Info("updating devbox phase",
+		"from", devbox.Status.Phase,
+		"to", newPhase,
+		"latestCommitStatus", latestCommitStatus,
+	)
+
+	// Update devbox phase with retry
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestDevbox := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+			return err
+		}
+		latestDevbox.Status.Phase = newPhase
+		return r.Status().Update(ctx, latestDevbox)
+	})
+}
+
+// sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
+func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha2.Devbox) bool {
+	logger := log.FromContext(ctx)
+	logger.Info("syncDevboxState called",
+		"devbox", devbox.Name,
+		"specState", devbox.Spec.State,
+		"statusState", devbox.Status.State,
+		"nodeName", r.NodeName)
+
+	if devbox.Spec.State != devbox.Status.State {
+		logger.Info("devbox state changing",
+			"from", devbox.Status.State,
+			"to", devbox.Spec.State,
+			"devbox", devbox.Name)
+		return true
+	}
+	logger.Info("devbox state unchanged",
+		"devbox", devbox.Name,
+		"state", devbox.Spec.State)
+	return false
+}
+
+func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha2.Devbox, pod *corev1.Pod) error {
+	logger := log.FromContext(ctx)
+	originalPodUID := pod.UID
+
+	// Get latest devbox
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox)
+	if err != nil {
+		logger.Error(err, "failed to get devbox")
+		return err
+	}
+
+	// Update devbox status with container status if available
+	if len(pod.Status.ContainerStatuses) > 0 {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
+			return r.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
+			logger.Error(err, "failed to update devbox status")
+			return err
+		}
+	}
+
+	// Remove finalizer and delete pod with retry and UID check
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestPod := &corev1.Pod{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(pod), latestPod); err != nil {
+			if errors.IsNotFound(err) {
+				// Pod already deleted
+				logger.Info("pod already deleted", "pod", pod.Name)
+				return nil
+			}
+			return err
+		}
+
+		// Check if UID matches
+		if latestPod.UID != originalPodUID {
+			logger.Info("pod UID changed, skip finalizer removal",
+				"pod", pod.Name,
+				"originalUID", originalPodUID,
+				"currentUID", latestPod.UID)
+			return nil
+		}
+
+		// Remove finalizer
+		controllerutil.RemoveFinalizer(latestPod, devboxv1alpha2.FinalizerName)
+		return r.Update(ctx, latestPod)
+	})
+	if err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
 	}
+
+	// Delete pod
 	if err := r.Delete(ctx, pod, client.GracePeriodSeconds(0), client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
-		logger.Error(err, "delete pod failed")
-		return err
+		if !errors.IsNotFound(err) {
+			logger.Error(err, "delete pod failed")
+			return err
+		}
+		logger.Info("pod already deleted", "pod", pod.Name)
 	}
-	// update commit history status because pod has been deleted
-	if len(pod.Status.ContainerStatuses) != 0 {
-		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
-	}
-	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
 
-func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
+func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv1alpha2.Devbox, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
-	controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
-	if err := r.Update(ctx, pod); err != nil {
+	originalPodUID := pod.UID
+
+	// Remove finalizer with retry and UID check
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latestPod := &corev1.Pod{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(pod), latestPod); err != nil {
+			if errors.IsNotFound(err) {
+				// Pod already deleted
+				logger.Info("pod already deleted, skip finalizer removal", "pod", pod.Name)
+				return nil
+			}
+			return err
+		}
+
+		// Check if UID matches
+		if latestPod.UID != originalPodUID {
+			logger.Info("pod UID changed, skip finalizer removal",
+				"pod", pod.Name,
+				"originalUID", originalPodUID,
+				"currentUID", latestPod.UID)
+			return nil
+		}
+
+		controllerutil.RemoveFinalizer(latestPod, devboxv1alpha2.FinalizerName)
+		return r.Update(ctx, latestPod)
+	})
+	if err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
 	}
-	// update commit history status because pod has been deleted
-	if len(pod.Status.ContainerStatuses) != 0 {
-		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+
+	// Get latest devbox
+	err = r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox)
+	if err != nil {
+		logger.Error(err, "failed to get devbox")
+		return err
 	}
-	helper.UpdateCommitHistory(devbox, pod, true)
+
+	// Update devbox status with container status if available
+	if len(pod.Status.ContainerStatuses) > 0 {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestDevbox := &devboxv1alpha2.Devbox{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latestDevbox); err != nil {
+				return err
+			}
+			latestDevbox.Status.LastContainerStatus = pod.Status.ContainerStatuses[0]
+			return r.Status().Update(ctx, latestDevbox)
+		})
+		if err != nil {
+			logger.Error(err, "failed to update devbox status")
+			return err
+		}
+	}
 	return nil
 }
 
-func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) handleStorageDelete(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+	logger := log.FromContext(ctx)
+
+	// Early return if storage is already cleaned up
+	if r.isStorageAlreadyCleanedUp(devbox) {
+		logger.Info("devbox storage already cleaned up, skipping cleanup",
+			"devbox", devbox.Name,
+			"state", devbox.Spec.State)
+		return nil
+	}
+
+	// Validate and get commit record
+	commitRecord, err := r.validateAndGetCommitRecord(devbox)
+	if err != nil {
+		logger.Error(err, "failed to validate commit record", "devbox", devbox.Name)
+		return err
+	}
+	// Check if this node should handle the cleanup
+	if !r.shouldHandleStorageCleanup(devbox, commitRecord) {
+		logger.Info("skipping storage cleanup - not responsible node",
+			"devbox", devbox.Name,
+			"commitRecordNode", commitRecord.Node,
+			"currentNode", r.NodeName)
+		return nil
+	}
+
+	// Request storage cleanup
+	return r.requestStorageCleanup(ctx, devbox, commitRecord)
+}
+
+// isStorageAlreadyCleanedUp checks if storage cleanup is already done
+// shutdown or stopped devbox is already cleaned up
+func (r *DevboxReconciler) isStorageAlreadyCleanedUp(devbox *devboxv1alpha2.Devbox) bool {
+	return devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown ||
+		devbox.Spec.State == devboxv1alpha2.DevboxStateStopped
+}
+
+// validateAndGetCommitRecord validates devbox status and returns the current commit record
+func (r *DevboxReconciler) validateAndGetCommitRecord(devbox *devboxv1alpha2.Devbox) (*devboxv1alpha2.CommitRecord, error) {
+	contentID := devbox.Status.ContentID
+	if contentID == "" {
+		return nil, fmt.Errorf("contentID is empty for devbox %s", devbox.Name)
+	}
+
+	if devbox.Status.CommitRecords == nil {
+		return nil, fmt.Errorf("commit records is nil for devbox %s", devbox.Name)
+	}
+
+	commitRecord, exists := devbox.Status.CommitRecords[contentID]
+	if !exists || commitRecord == nil {
+		return nil, fmt.Errorf("commit record not found for contentID %s in devbox %s", contentID, devbox.Name)
+	}
+
+	if commitRecord.BaseImage == "" {
+		return nil, fmt.Errorf("baseImage is empty in commit record for devbox %s", devbox.Name)
+	}
+
+	return commitRecord, nil
+}
+
+// shouldHandleStorageCleanup determines if the current node should handle storage cleanup
+func (r *DevboxReconciler) shouldHandleStorageCleanup(devbox *devboxv1alpha2.Devbox, commitRecord *devboxv1alpha2.CommitRecord) bool {
+	return commitRecord.Node == r.NodeName
+}
+
+// requestStorageCleanup sends a storage cleanup request via event recorder
+func (r *DevboxReconciler) requestStorageCleanup(ctx context.Context, devbox *devboxv1alpha2.Devbox, commitRecord *devboxv1alpha2.CommitRecord) error {
+	logger := log.FromContext(ctx)
+
+	logger.Info("requesting devbox storage cleanup",
+		"devbox", devbox.Name,
+		"contentID", devbox.Status.ContentID,
+		"baseImage", commitRecord.BaseImage)
+
+	r.StateChangeRecorder.AnnotatedEventf(devbox,
+		events.BuildStorageCleanupAnnotations(devbox.Name, devbox.Status.ContentID, commitRecord.BaseImage),
+		corev1.EventTypeNormal,
+		events.ReasonStorageCleanupRequested,
+		"devbox storage cleanup requested")
+
+	return nil
+}
+
+func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha2.Devbox) string {
+	now := time.Now()
+	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
+}
+
+func (r *DevboxReconciler) handleSubResourceDelete(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
+	logger := log.FromContext(ctx)
+
 	// Delete Pod
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
 	}
-	for _, pod := range podList.Items {
-		if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
-			if err := r.Update(ctx, &pod); err != nil {
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		originalPodUID := pod.UID
+
+		// Remove finalizer with retry and UID check
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			latestPod := &corev1.Pod{}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(pod), latestPod); err != nil {
+				if errors.IsNotFound(err) {
+					// Pod already deleted
+					logger.Info("pod already deleted, skip finalizer removal", "pod", pod.Name)
+					return nil
+				}
 				return err
 			}
+
+			// Check if UID matches
+			if latestPod.UID != originalPodUID {
+				logger.Info("pod UID changed, skip finalizer removal",
+					"pod", pod.Name,
+					"originalUID", originalPodUID,
+					"currentUID", latestPod.UID)
+				return nil
+			}
+
+			if controllerutil.RemoveFinalizer(latestPod, devboxv1alpha2.FinalizerName) {
+				return r.Update(ctx, latestPod)
+			}
+			return nil
+		})
+		if err != nil {
+			logger.Error(err, "failed to remove finalizer from pod", "pod", pod.Name)
+			return err
 		}
 	}
 	if err := r.deleteResourcesByLabels(ctx, &corev1.Pod{}, devbox.Namespace, recLabels); err != nil {
@@ -520,6 +995,10 @@ func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1
 	}
 	// Delete Service
 	if err := r.deleteResourcesByLabels(ctx, &corev1.Service{}, devbox.Namespace, recLabels); err != nil {
+		return err
+	}
+	// Delete Configmap
+	if err := r.deleteResourcesByLabels(ctx, &corev1.ConfigMap{}, devbox.Namespace, recLabels); err != nil {
 		return err
 	}
 	// Delete Secret
@@ -534,41 +1013,49 @@ func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj clie
 	return client.IgnoreNotFound(err)
 }
 
-func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) *corev1.Pod {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha2.Devbox, opts ...helper.DevboxPodOptions) *corev1.Pod {
 	objectMeta := metav1.ObjectMeta{
-		Name:        nextCommitHistory.Pod,
+		Name:        devbox.Name,
 		Namespace:   devbox.Namespace,
 		Labels:      helper.GeneratePodLabels(devbox),
 		Annotations: helper.GeneratePodAnnotations(devbox),
 	}
 
-	ports := devbox.Spec.Config.Ports
+	// ports := devbox.Spec.Config.Ports
 	// TODO: add extra ports to pod, currently not support
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
 	envs := devbox.Spec.Config.Env
-	envs = append(envs, helper.GenerateDevboxEnvVars(devbox, nextCommitHistory)...)
-
-	//get image name
-	var imageName string
-	if r.DebugMode {
-		imageName = devbox.Spec.Image
-	} else {
-		imageName = helper.GetLastSuccessCommitImageName(devbox)
-	}
-
+	envs = append(envs, corev1.EnvVar{
+		Name: "DEVBOX_JWT_SECRET",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				Key: "SEALOS_DEVBOX_JWT_SECRET",
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: devbox.Name,
+				},
+			},
+		},
+	})
 	volumes := devbox.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
+	if r.StartupConfigMapName != "" {
+		volumes = append(volumes, helper.GenerateStartupVolume(devbox))
+	}
+	volumes = append(volumes, helper.GenerateEnvProfileVolume(devbox))
 
 	volumeMounts := devbox.Spec.Config.VolumeMounts
 	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
+	if r.StartupConfigMapName != "" {
+		volumeMounts = append(volumeMounts, helper.GenerateStartupVolumeMounts()...)
+	}
+	volumeMounts = append(volumeMounts, helper.GenerateEnvProfileVolumeMount()...)
 
 	containers := []corev1.Container{
 		{
-			Name:         devbox.ObjectMeta.Name,
-			Image:        imageName,
-			Env:          envs,
-			Ports:        ports,
+			Name: devbox.ObjectMeta.Name,
+			Env:  envs,
+			// Ports:        ports,
 			VolumeMounts: volumeMounts,
 
 			WorkingDir: helper.GetWorkingDir(devbox),
@@ -577,7 +1064,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage)},
 	}
 
-	terminationGracePeriodSeconds := 300
+	terminationGracePeriodSeconds := 3
 	automountServiceAccountToken := false
 
 	runtimeClassName := devbox.Spec.RuntimeClassName
@@ -608,24 +1095,269 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 	}
 	// set controller reference and finalizer
 	_ = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme)
-	controllerutil.AddFinalizer(expectPod, devboxv1alpha1.FinalizerName)
+	controllerutil.AddFinalizer(expectPod, devboxv1alpha2.FinalizerName)
+
+	for _, opt := range opts {
+		opt(expectPod)
+	}
+
 	return expectPod
 }
-
-func (r *DevboxReconciler) generateNextCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
-	now := time.Now()
-	return &devboxv1alpha1.CommitHistory{
-		Image:            r.generateImageName(devbox),
-		Time:             metav1.Time{Time: now},
-		Pod:              devbox.Name + "-" + rand.String(5),
-		Status:           devboxv1alpha1.CommitStatusPending,
-		PredicatedStatus: devboxv1alpha1.CommitStatusPending,
+func (r *DevboxReconciler) getAcceptanceConsideration(ctx context.Context) (helper.AcceptanceConsideration, error) {
+	logger := log.FromContext(ctx)
+	node := &corev1.Node{}
+	if err := r.Get(context.Background(), client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return helper.AcceptanceConsideration{}, err
 	}
+	ann := node.Annotations
+	ac := helper.AcceptanceConsideration{}
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold], 64); err != nil {
+		logger.Info("failed to parse containerfs available threshold. use default value instead", "value", ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold])
+		ac.ContainerFSAvailableThreshold = helper.DefaultContainerFSAvailableThreshold
+	} else {
+		ac.ContainerFSAvailableThreshold = v
+	}
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationCPURequestRatio], 64); err != nil {
+		logger.Info("failed to parse CPU request ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationCPURequestRatio])
+		ac.CPURequestRatio = helper.DefaultCPURequestRatio
+	} else {
+		ac.CPURequestRatio = v
+	}
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationCPULimitRatio], 64); err != nil {
+		logger.Info("failed to parse CPU limit ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationCPULimitRatio])
+		ac.CPULimitRatio = helper.DefaultCPULimitRatio
+	} else {
+		ac.CPULimitRatio = v
+	}
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryRequestRatio], 64); err != nil {
+		logger.Info("failed to parse memory request ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationMemoryRequestRatio])
+		ac.MemoryRequestRatio = helper.DefaultMemoryRequestRatio
+	} else {
+		ac.MemoryRequestRatio = v
+	}
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryLimitRatio], 64); err != nil {
+		logger.Info("failed to parse memory limit ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationMemoryLimitRatio])
+		ac.MemoryLimitRatio = helper.DefaultMemoryLimitRatio
+	} else {
+		ac.MemoryLimitRatio = v
+	}
+	return ac, nil
 }
 
-func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
-	now := time.Now()
-	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
+func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devboxv1alpha2.Devbox) int {
+	logger := log.FromContext(ctx)
+	var (
+		ac                  helper.AcceptanceConsideration
+		containerFsStats    stat.FsStats
+		err                 error
+		availableBytes      uint64
+		availablePercentage float64
+		capacityBytes       uint64
+		cpuRequestRatio     float64
+		cpuLimitRatio       float64
+		memoryRequestRatio  float64
+		memoryLimitRatio    float64
+		storageLimitBytes   int64
+
+		score int
+	)
+	ac, err = r.getAcceptanceConsideration(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get acceptance consideration")
+		goto unsuitable // If we can't get the acceptance consideration, we assume the node is not suitable
+	}
+	containerFsStats, err = r.ContainerFsStats(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get container filesystem stats")
+		goto unsuitable // If we can't get the container filesystem stats, we assume the node is not suitable
+	} else if containerFsStats.AvailableBytes == nil {
+		logger.Info("available bytes is nil, assume the node is not suitable")
+		goto unsuitable // If we can't get the available bytes, we assume the node is not suitable
+	} else if containerFsStats.CapacityBytes == nil {
+		logger.Info("capacity bytes is nil, assume the node is not suitable")
+		goto unsuitable // If we can't get the capacity bytes, we assume the node is not suitable
+	}
+	availableBytes = *containerFsStats.AvailableBytes
+	capacityBytes = *containerFsStats.CapacityBytes
+	if storageLimitBytes, err = helper.GetStorageLimitInBytes(devbox); err != nil {
+		logger.Error(err, "failed to get storage limit")
+		goto unsuitable // If we can't get the storage limit, we assume the node is not suitable
+	} else if availableBytes < uint64(storageLimitBytes) {
+		logger.Info("available bytes less than storage limit", "availableBytes", availableBytes, "storageLimitBytes", storageLimitBytes)
+		goto unsuitable // If available bytes are less than the storage limit, we assume the node is not suitable
+	}
+	availablePercentage = float64(availableBytes) / float64(capacityBytes) * 100
+	if availablePercentage > ac.ContainerFSAvailableThreshold {
+		logger.Info("container filesystem available percentage is greater than threshold",
+			"availablePercentage", availablePercentage,
+			"threshold", ac.ContainerFSAvailableThreshold)
+		score += getScoreUnit(1)
+	}
+	cpuRequestRatio, err = r.getTotalCPURequestRatio(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get total CPU request")
+		goto unsuitable // If we can't get the CPU request, we assume the node is not suitable
+	} else if cpuRequestRatio < ac.CPURequestRatio {
+		logger.Info("cpu request ratio is less than cpu overcommitment request ratio", "RequestRatio", cpuRequestRatio, "ratio", ac.CPURequestRatio)
+		score += getScoreUnit(0)
+	}
+	cpuLimitRatio, err = r.getTotalCPULimitRatio(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get total CPU limit")
+		goto unsuitable // If we can't get the CPU limit, we assume the node is not suitable
+	} else if cpuLimitRatio < ac.CPULimitRatio {
+		logger.Info("cpu limit ratio is less than cpu overcommitment limit ratio", "LimitRatio", cpuLimitRatio, "ratio", ac.CPULimitRatio)
+		score += getScoreUnit(0)
+	}
+	memoryRequestRatio, err = r.getTotalMemoryRequestRatio(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get total memory request")
+		goto unsuitable // If we can't get the memory request, we assume the node is not suitable
+	} else if memoryRequestRatio < ac.MemoryRequestRatio {
+		logger.Info("memory request ratio is less than memory overcommitment request ratio", "RequestRatio", memoryRequestRatio, "ratio", ac.MemoryRequestRatio)
+		score += getScoreUnit(0)
+	}
+	memoryLimitRatio, err = r.getTotalMemoryLimitRatio(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get total memory limit")
+		goto unsuitable // If we can't get the memory limit, we assume the node is not suitable
+	} else if memoryLimitRatio < ac.MemoryLimitRatio {
+		logger.Info("memory limit ratio is less than memory overcommitment limit ratio", "LimitRatio", memoryLimitRatio, "ratio", ac.MemoryLimitRatio)
+		score += getScoreUnit(0)
+	}
+	return score
+unsuitable:
+	return math.MinInt
+}
+
+// This function may lead to overflow if p is too large, but since p is always in the range of 0-6, it should be safe.
+// Use with caution.
+func getScoreUnit(p uint) int {
+	return 16 << (p * 4)
+}
+
+// getTotalCPURequestRatio returns the total CPU requests (in millicores) ratio for all pods in the namespace.
+func (r *DevboxReconciler) getTotalCPURequestRatio(ctx context.Context) (float64, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalCPURequest int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if cpuReq, ok := container.Resources.Requests[corev1.ResourceCPU]; ok {
+				// TODO: check if this could lead to overflow
+				totalCPURequest += cpuReq.Value()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableCPU := node.Status.Allocatable[corev1.ResourceCPU]
+	allocatableMilli := allocatableCPU.Value()
+	if allocatableMilli == 0 {
+		return 0, fmt.Errorf("node %s allocatable CPU is zero", r.NodeName)
+	}
+	ratio := float64(totalCPURequest) / float64(allocatableMilli)
+	return ratio, nil
+}
+
+// getTotalCPULimitRatio returns the total CPU limits (in millicores) ratio for all pods in the namespace.
+func (r *DevboxReconciler) getTotalCPULimitRatio(ctx context.Context) (float64, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalCPULimit int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if cpuLimit, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
+				// TODO: check if this could lead to overflow
+				totalCPULimit += cpuLimit.Value()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableCPU := node.Status.Allocatable[corev1.ResourceCPU]
+	allocatableMilli := allocatableCPU.Value()
+	if allocatableMilli == 0 {
+		return 0, fmt.Errorf("node %s allocatable CPU is zero", r.NodeName)
+	}
+	ratio := float64(totalCPULimit) / float64(allocatableMilli)
+	return ratio, nil
+}
+
+// getTotalMemoryRequestRatio returns the total memory requests ratio for all pods in the namespace.
+func (r *DevboxReconciler) getTotalMemoryRequestRatio(ctx context.Context) (float64, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalMemoryRequest int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if memReq, ok := container.Resources.Requests[corev1.ResourceMemory]; ok {
+				// TODO: check if this could lead to overflow
+				totalMemoryRequest += memReq.Value()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableMemory := node.Status.Allocatable[corev1.ResourceMemory]
+	allocatableBytes := allocatableMemory.Value()
+	if allocatableBytes == 0 {
+		return 0, fmt.Errorf("node %s allocatable memory is zero", r.NodeName)
+	}
+	ratio := float64(totalMemoryRequest) / float64(allocatableBytes)
+	return ratio, nil
+}
+
+// getTotalMemoryLimitRatio returns the total memory limits ratio for all pods in the namespace.
+func (r *DevboxReconciler) getTotalMemoryLimitRatio(ctx context.Context) (float64, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalMemoryLimit int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if memLimit, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
+				// TODO: check if this could lead to overflow
+				totalMemoryLimit += memLimit.Value()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableMemory := node.Status.Allocatable[corev1.ResourceMemory]
+	allocatableBytes := allocatableMemory.Value()
+	if allocatableBytes == 0 {
+		return 0, fmt.Errorf("node %s allocatable memory is zero", r.NodeName)
+	}
+	ratio := float64(totalMemoryLimit) / float64(allocatableBytes)
+	return ratio, nil
 }
 
 type ControllerRestartPredicate struct {
@@ -646,14 +1378,81 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 	return e.Object.GetCreationTimestamp().Time.After(p.checkTime)
 }
 
+// ContentIDChangedPredicate triggers reconcile when devbox status.contentID changes
+type ContentIDChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p ContentIDChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.ContentID != newDevbox.Status.ContentID
+	}
+
+	return false
+}
+
+// LastContainerStatusChangedPredicate triggers reconcile when devbox status.lastContainerStatus changes
+type LastContainerStatusChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p LastContainerStatusChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.LastContainerStatus.ContainerID != newDevbox.Status.LastContainerStatus.ContainerID
+	}
+	return false
+}
+
+// NetworkTypeChangedPredicate triggers reconcile when devbox status.network.type changes
+type NetworkTypeChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p NetworkTypeChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.Network.Type != newDevbox.Status.Network.Type
+	}
+	return false
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
+		pod := rawObj.(*corev1.Pod)
+		if pod.Spec.NodeName == "" {
+			return nil
+		}
+		return []string{pod.Spec.NodeName}
+	}); err != nil {
+		return fmt.Errorf("failed to index field %s: %w", devboxv1alpha2.PodNodeNameIndex, err)
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
-		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		For(&devboxv1alpha2.Devbox{}, builder.WithPredicates(predicate.Or(
+			predicate.GenerationChangedPredicate{}, // enqueue request if devbox spec is updated
+			NetworkTypeChangedPredicate{},          // enqueue request if devbox status.network.type is updated
+			ContentIDChangedPredicate{},            // enqueue request if devbox status.contentID is updated
+			LastContainerStatusChangedPredicate{},  // enqueue request if devbox status.lastContainerStatus is updated
+		))).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
-		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).  // enqueue request if service spec is updated
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).   // enqueue request if secret spec is updated
 		WithEventFilter(NewControllerRestartPredicate(r.RestartPredicateDuration)).
 		Complete(r)
 }

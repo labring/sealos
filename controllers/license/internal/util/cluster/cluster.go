@@ -31,5 +31,5 @@ func (i *Info) CompareWithClaimData(data *claims.ClaimData) bool {
 	if err != nil {
 		return false
 	}
-	return i.ClusterClaimData.Compare(cdata)
+	return i.Compare(cdata)
 }

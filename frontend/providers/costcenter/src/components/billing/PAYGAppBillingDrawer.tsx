@@ -6,10 +6,12 @@ import useAppTypeStore from '@/stores/appType';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 export interface AppBillingDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // [TODO] What is this?
   selectedApp: any | null;
   currentRegionUid: string;
   currentRegionName: string | null;
@@ -28,6 +30,8 @@ export function AppBillingDrawer({
   effectiveEndTime,
   nsListData
 }: AppBillingDrawerProps) {
+  const { t } = useTranslation();
+
   const [appBillingPage, setAppBillingPage] = useState(1);
   const [appBillingPageSize] = useState(10);
   const [appDateRange, setAppDateRange] = useState<{ from: Date; to: Date } | undefined>({
@@ -51,7 +55,7 @@ export function AppBillingDrawer({
       const workspace = nsListData.find(([id]: [string, string]) => id === selectedApp.namespace);
       return workspace?.[1];
     }
-    return selectedApp?.namespace || 'Unknown Workspace';
+    return selectedApp?.namespace ?? t('common:unknown_workspace');
   }, [selectedApp?.namespace, nsListData]);
 
   // App billing query for drawer
@@ -155,8 +159,8 @@ export function AppBillingDrawer({
     const { total_records: total, total_pages: totalPage } = appBillingData.data;
 
     return {
-      total: totalPage === 0 ? 1 : total,
-      totalPage: totalPage === 0 ? 1 : totalPage
+      total: total,
+      totalPage: totalPage
     };
   }, [appBillingData]);
 
@@ -173,12 +177,12 @@ export function AppBillingDrawer({
     <PAYGAppBillingDrawerView
       open={open}
       onOpenChange={onOpenChange}
-      appType={selectedApp.appType || ''}
+      appType={selectedApp.appType || AppType.OTHER}
       namespaceName={currentNamespaceName}
       hasSubApps={selectedApp.appType === AppType.APP_STORE}
       data={appBillingDetails}
-      appName={selectedApp.appName || 'Unknown App'}
-      regionName={currentRegionName || 'Unknown Region'}
+      appName={selectedApp.appName || t('applist:' + selectedApp.appType)}
+      regionName={currentRegionName || t('unknown_region')}
       currentPage={appBillingPage}
       totalPages={totalPage}
       pageSize={appBillingPageSize}

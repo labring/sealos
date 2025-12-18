@@ -17,81 +17,104 @@ package registry
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/google/go-containerregistry/pkg/name"
 )
 
-type Client struct {
+// todo: refactor this struct, add opts for tls or something else
+type Opts struct {
+}
+
+type BasicAuth struct {
 	Username string
 	Password string
+}
+
+type Registry struct {
+	Host      string
+	BasicAuth BasicAuth
 }
 
 var (
 	ErrorManifestNotFound = errors.New("manifest not found")
 )
 
-// TODO: refactor tag image, use go package to do this
-
-func (t *Client) TagImage(hostName string, imageName string, oldTag string, newTag string) error {
-	manifest, err := t.pullManifest(t.Username, t.Password, hostName, imageName, oldTag)
+// ReTag creates a new tag for an existing image by copying its manifest.
+func (c *Registry) ReTag(source, target string) error {
+	manifest, err := c.pullManifest(source)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to pull manifest for %s: %w", source, err)
 	}
-	return t.pushManifest(t.Username, t.Password, hostName, imageName, newTag, manifest)
+	if err := c.pushManifest(target, manifest); err != nil {
+		return fmt.Errorf("failed to push manifest for %s: %w", target, err)
+	}
+	return nil
 }
 
-func (t *Client) pullManifest(username string, password string, hostName string, imageName string, tag string) ([]byte, error) {
-	var (
-		client = http.DefaultClient
-		url    = "http://" + hostName + "/v2/" + imageName + "/manifests/" + tag
-	)
+// todo: refactor this function, add opts for tls
+func (c *Registry) pullManifest(image string) ([]byte, error) {
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse image: %w", err)
+	}
+
+	url := fmt.Sprintf("http://%s/v2/%s/manifests/%s", ref.Context().RegistryStr(), ref.Context().RepositoryStr(), ref.Identifier())
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create GET request: %w", err)
 	}
-	req.SetBasicAuth(username, password)
+
+	req.SetBasicAuth(c.BasicAuth.Username, c.BasicAuth.Password)
 	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
+	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNotFound {
+	switch resp.StatusCode {
+	case http.StatusNotFound:
 		return nil, ErrorManifestNotFound
+	case http.StatusOK:
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+		return body, nil
+	default:
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, resp.Status)
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(resp.Status)
-	}
-
-	bodyText, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return bodyText, nil
 }
 
-func (t *Client) pushManifest(username string, password string, hostName string, imageName string, tag string, manifest []byte) error {
-	var (
-		client = http.DefaultClient
-		url    = "http://" + hostName + "/v2/" + imageName + "/manifests/" + tag
-	)
+// todo: refactor this function, add opts for tls
+func (c *Registry) pushManifest(image string, manifest []byte) error {
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		return fmt.Errorf("failed to parse image: %w", err)
+	}
+	url := fmt.Sprintf("http://%s/v2/%s/manifests/%s", ref.Context().RegistryStr(), ref.Context().RepositoryStr(), ref.Identifier())
+
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(manifest))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create PUT request: %w", err)
 	}
 
-	req.SetBasicAuth(username, password)
-	req.Header.Set("Content-type", "application/vnd.docker.distribution.manifest.v2+json")
+	req.SetBasicAuth(c.BasicAuth.Username, c.BasicAuth.Password)
+	req.Header.Set("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
 
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute request: %w", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		return errors.New(resp.Status)
+		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, resp.Status)
 	}
 
 	return nil

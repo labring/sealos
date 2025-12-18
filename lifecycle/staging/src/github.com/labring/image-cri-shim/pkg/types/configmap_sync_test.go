@@ -40,6 +40,12 @@ registries:
       username: "3"
       password: "4"
 reloadInterval: 5s
+cache:
+  imageCacheSize: 2048
+  imageCacheTTL: 45m
+  domainCacheTTL: 15m
+  statsLogInterval: 120s
+  disableStats: true
 `
 
 func TestMergeShimConfig(t *testing.T) {
@@ -67,6 +73,21 @@ func TestMergeShimConfig(t *testing.T) {
 	}
 	if cfg.Timeout.Duration <= 0 {
 		t.Fatalf("expected timeout to be set, got %s", cfg.Timeout.Duration)
+	}
+	if cfg.Cache.ImageCacheSize != 2048 {
+		t.Fatalf("expected cache size 2048, got %d", cfg.Cache.ImageCacheSize)
+	}
+	if cfg.Cache.ImageCacheTTL.Duration != 45*time.Minute {
+		t.Fatalf("expected image cache ttl 45m, got %s", cfg.Cache.ImageCacheTTL.Duration)
+	}
+	if cfg.Cache.DomainCacheTTL.Duration != 15*time.Minute {
+		t.Fatalf("expected domain cache ttl 15m, got %s", cfg.Cache.DomainCacheTTL.Duration)
+	}
+	if cfg.Cache.DisableStats != true {
+		t.Fatalf("expected disableStats true")
+	}
+	if cfg.Cache.StatsLogInterval.Duration != 0 {
+		t.Fatalf("expected stats interval 0 due to disableStats, got %s", cfg.Cache.StatsLogInterval.Duration)
 	}
 }
 
@@ -126,6 +147,21 @@ func TestSyncConfigFromConfigMapWritesFile(t *testing.T) {
 	}
 	if merged.Timeout.Duration != 15*time.Minute {
 		t.Fatalf("unexpected timeout: %s", merged.Timeout.Duration)
+	}
+	if merged.Cache.ImageCacheSize != 2048 {
+		t.Fatalf("unexpected cache size: %d", merged.Cache.ImageCacheSize)
+	}
+	if merged.Cache.ImageCacheTTL.Duration != 45*time.Minute {
+		t.Fatalf("unexpected cache ttl: %s", merged.Cache.ImageCacheTTL.Duration)
+	}
+	if merged.Cache.DomainCacheTTL.Duration != 15*time.Minute {
+		t.Fatalf("unexpected domain cache ttl: %s", merged.Cache.DomainCacheTTL.Duration)
+	}
+	if !merged.Cache.DisableStats {
+		t.Fatalf("expected stats disabled")
+	}
+	if merged.Cache.StatsLogInterval.Duration != 0 {
+		t.Fatalf("expected stats interval 0, got %s", merged.Cache.StatsLogInterval.Duration)
 	}
 }
 

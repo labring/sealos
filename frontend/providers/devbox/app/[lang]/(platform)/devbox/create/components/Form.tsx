@@ -38,11 +38,13 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
 
   const formValues = watch();
   const exceededQuotas = useMemo(() => {
+    const currentGpuAmount = formValues.gpu?.amount || 0;
+    const oldGpuAmount = oldDevboxData?.gpu?.amount || 0;
+
     return userStore.checkExceededQuotas({
       cpu: isEdit ? formValues.cpu - (oldDevboxData?.cpu ?? 0) : formValues.cpu,
       memory: isEdit ? formValues.memory - (oldDevboxData?.memory ?? 0) : formValues.memory,
-      // [TODO] These two does not need to be considered currently
-      gpu: 0,
+      gpu: isEdit ? currentGpuAmount - oldGpuAmount : currentGpuAmount,
       nodeport: 0
     });
   }, [formValues, userStore, isEdit, oldDevboxData]);
@@ -94,7 +96,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
           components={[
             {
               cpu: watch('cpu'),
-              memory: watch('memory')
+              memory: watch('memory'),
+              gpu: formValues.gpu
             }
           ]}
         />
@@ -112,6 +115,27 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
 
           <div className="mt-6">
             <Gpu countGpuInventory={countGpuInventory} />
+            {exceededQuotas.some(({ type }) => type === 'gpu') && (
+              <>
+                <div className="mt-2 text-sm text-red-600">
+                  {t('gpu_exceeds_quota', {
+                    requested: watch('gpu.amount') || 0,
+                    limit: exceededQuotas.find(({ type }) => type === 'gpu')?.limit ?? 0,
+                    used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
+                  })}
+                </div>
+                <div className="text-sm text-red-600">
+                  {t('please_upgrade_plan.0')}
+                  <a
+                    className="cursor-pointer font-semibold text-blue-600 underline"
+                    onClick={handleOpenCostcenter}
+                  >
+                    {t('please_upgrade_plan.1')}
+                  </a>
+                  {t('please_upgrade_plan.2')}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="mt-10">

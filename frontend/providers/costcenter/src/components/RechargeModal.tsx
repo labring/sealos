@@ -39,6 +39,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useSt
 import useRechargeStore from '@/stores/recharge';
 import { gtmOpenTopup, gtmTopupCheckout } from '@/utils/gtm';
 import { Minus, Plus, Loader } from 'lucide-react';
+import { cn } from '@sealos/shadcn-ui';
 
 const StripeForm = (props: {
   tradeNO?: string;
@@ -177,7 +178,15 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
     </Flex>
   );
 }
-const BonusBox = (props: { onClick: () => void; selected: boolean; amount: number }) => {
+const BonusBox = (props: {
+  onClick: () => void;
+  selected: boolean;
+  amount: number;
+  bonus?: number;
+  isSpecialBonus?: boolean;
+}) => {
+  const { t } = useTranslation();
+
   return (
     <Flex
       width="100%"
@@ -204,6 +213,39 @@ const BonusBox = (props: { onClick: () => void; selected: boolean; amount: numbe
         props.onClick();
       }}
     >
+      {props.bonus && (
+        <div
+          className={cn(
+            'absolute right-0 top-0 text-xs font-medium z-10 flex items-center justify-center',
+            props.isSpecialBonus
+              ? ' text-blue-600 translate-x-4 -translate-y-4'
+              : 'bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-fit whitespace-nowrap'
+          )}
+        >
+          {/*special bouns only*/}
+          {props.isSpecialBonus ? (
+            <div className="absolute right-0 top-0 w-[50px] h-[50px] -z-10 flex items-center justify-center  bg-blue-100 rounded-sm before:absolute before:w-[50px] before:h-[50px] before:bg-blue-100 before:rounded-sm before:rotate-45 before:-z-10 before:content-['']">
+              <span className="text-center">
+                <span>{t('common:recharge_doubled')}</span>
+                <br />
+                <span className="text-nowrap">
+                  <span>+</span>
+                  <CurrencySymbol />
+                  <span>{props.bonus}</span>
+                </span>
+              </span>
+            </div>
+          ) : (
+            <>
+              <span>{t('common:recharge_bonus')}</span>
+
+              <CurrencySymbol className="w-3 shrink-0" />
+              <span>{props.bonus}</span>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-1 items-center font-medium">
         <CurrencySymbol />
         <span>{props.amount}</span>
@@ -293,6 +335,7 @@ const RechargeModal = forwardRef(
       ratios.unshift(...temp.map(() => 0));
       return [defaultSteps, ratios, steps, specialBonus];
     }, [bonuses?.data?.discount.defaultSteps, bonuses?.data?.discount.firstRechargeDiscount]);
+
     const [amount, setAmount] = useState(() => 16);
     const getBonus = (amount: number) => {
       let ratio = 0;
@@ -306,6 +349,7 @@ const RechargeModal = forwardRef(
     };
     const { isProcess, setRechargeStatus, resetProcess } = useRechargeStore();
     const { stripeEnabled, wechatEnabled, alipayEnabled } = useEnvStore();
+
     const createPaymentRes = useMutation(
       () =>
         request.post<any, ApiResp<Payment>>('/api/account/payment', {
@@ -460,25 +504,6 @@ const RechargeModal = forwardRef(
                       <section className="mt-6 mb-2">
                         <div className="flex justify-between">
                           <div className="font-medium">{t('common:select_amount')}</div>
-                          {/* {specialBonus && specialBonus.length > 0 && (
-                            <div className="text-sm flex gap-1 items-center">
-                              <Gift size={16} className="text-blue-600" />
-                              <span>{t('common:first_recharge_title')}</span>
-                              <MyTooltip
-                                px={'12px'}
-                                py={'8px'}
-                                minW={'unset'}
-                                width={'auto'}
-                                label={
-                                  <Text fontSize={'12px'} fontWeight={400}>
-                                    {t('common:first_recharge_tips')}
-                                  </Text>
-                                }
-                              >
-                                <CircleHelp size={16} className="text-zinc-400" />
-                              </MyTooltip>
-                            </div>
-                          )} */}
                         </div>
                       </section>
                     </div>
@@ -493,6 +518,11 @@ const RechargeModal = forwardRef(
                             setAmount(amount);
                           }}
                           selected={selectAmount === index}
+                          bonus={specialBonus.find(([step]) => amount.toString() === step)?.[1]}
+                          isSpecialBonus={
+                            (specialBonus.find(([step]) => amount.toString() === step)?.[1] ?? 0) >=
+                            amount
+                          }
                         />
                       ))}
                     </SimpleGrid>
@@ -538,7 +568,7 @@ const RechargeModal = forwardRef(
                         </NumberDecrementStepper>
                       </NumberInputStepper>
 
-                      <CurrencySymbol className="mx-2 size-4 aspect-square" />
+                      <CurrencySymbol className="mx-2 w-8 aspect-square" />
                       <NumberInputField bg={'transparent'} />
 
                       <NumberInputStepper

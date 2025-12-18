@@ -10,6 +10,8 @@ import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { UpdateDevboxRequestSchema, nanoid } from './schema';
+import { devboxDB } from '@/services/db/init';
+import { cpuFormatToM, memoryFormatToMi, parseTemplateConfig } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -764,6 +766,182 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
         type: 'INTERNAL_ERROR',
         details: process.env.NODE_ENV === 'development' ? err : undefined,
         suggestion: 'Please try again. If the problem persists, contact support.'
+      }
+    });
+  }
+}
+
+export async function GET(req: NextRequest, { params }: { params: { name: string } }) {
+  try {
+    const { name: devboxName } = params;
+
+    if (!devboxName) {
+      return jsonRes({
+        code: 400,
+        message: 'Devbox name is required'
+      });
+    }
+
+    const { k8sCustomObjects, namespace, k8sCore, k8sNetworkingApp } = await getK8s({
+      kubeconfig: await authSession(req.headers)
+    });
+
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName
+    )) as { body: KBDevboxTypeV2 };
+
+    const template = await devboxDB.template.findUnique({
+      where: {
+        uid: devboxBody.spec.templateID
+      },
+      select: {
+        templateRepository: {
+          select: {
+            uid: true,
+            iconId: true,
+            name: true,
+            kind: true,
+            description: true
+          }
+        },
+        uid: true,
+        image: true,
+        name: true,
+        config: true
+      }
+    });
+
+    if (!template) {
+      return jsonRes({
+        code: 500,
+        message: 'Template not found'
+      });
+    }
+
+    const label = `${devboxKey}=${devboxName}`;
+    const podLabel = `app.kubernetes.io/name=${devboxName}`;
+    const { SEALOS_DOMAIN } = process.env;
+
+    const [ingressesResponse, serviceResponse, secretResponse, podsResponse] = await Promise.all([
+      k8sNetworkingApp
+        .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
+        .catch(() => null),
+      k8sCore.readNamespacedService(devboxName, namespace).catch(() => null),
+      k8sCore.readNamespacedSecret(devboxName, namespace).catch(() => null),
+      k8sCore.listNamespacedPod(namespace, undefined, undefined, undefined, undefined, podLabel).catch(() => null)
+    ]);
+
+    const ingresses = ingressesResponse?.body.items || [];
+    const service = serviceResponse?.body;
+    const secret = secretResponse?.body;
+    const pods = podsResponse?.body.items || [];
+
+    const config = parseTemplateConfig(template.config);
+
+    const sshPort = devboxBody.status?.network?.nodePort || 0;
+    const base64PrivateKey = secret?.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string | undefined;
+
+    const ssh = {
+      host: SEALOS_DOMAIN || '',
+      port: sshPort,
+      user: config.user,
+      workingDir: config.workingDir,
+      ...(base64PrivateKey && { privateKey: base64PrivateKey })
+    };
+
+    const resources = {
+      cpu: cpuFormatToM(devboxBody.spec?.resource?.cpu || '0') / 1000,
+      memory: memoryFormatToMi(devboxBody.spec?.resource?.memory || '0') / 1024
+    };
+
+    const specConfig = (devboxBody.spec?.config as any) || {};
+    const env = specConfig?.env || [];
+
+    const ingressList = ingresses.map((item: V1Ingress) => {
+      const defaultDomain = item.metadata?.labels?.[publicDomainKey];
+      const tlsHost = item.spec?.tls?.[0]?.hosts?.[0];
+      return {
+        networkName: item.metadata?.name,
+        port: item.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number,
+        protocol: item.metadata?.annotations?.[ingressProtocolKey],
+        openPublicDomain: !!defaultDomain,
+        publicDomain: defaultDomain === tlsHost ? tlsHost : defaultDomain,
+        customDomain: defaultDomain === tlsHost ? '' : tlsHost
+      };
+    });
+
+    const ports = (service?.spec?.ports || []).map((svcPort: any) => {
+      const ingressInfo = ingressList.find((ingress) => ingress.port === svcPort.port);
+      const portNumber = svcPort.port;
+      const protocol = ingressInfo?.protocol || 'HTTP';
+      const privateHost = `${devboxName}.${namespace}`;
+
+      const portData: any = {
+        number: portNumber,
+        portName: svcPort.name,
+        protocol,
+        serviceName: service?.metadata?.name,
+        privateAddress: `http://${privateHost}:${portNumber}`,
+        privateHost
+      };
+
+      if (ingressInfo?.networkName) {
+        portData.networkName = ingressInfo.networkName;
+      }
+
+      if (ingressInfo?.publicDomain) {
+        portData.publicHost = ingressInfo.publicDomain;
+        portData.publicAddress = `https://${ingressInfo.publicDomain}`;
+      }
+
+      if (ingressInfo?.customDomain) {
+        portData.customDomain = ingressInfo.customDomain;
+      }
+
+      return portData;
+    });
+
+    const podsData = pods.map((pod: any) => ({
+      name: pod.metadata?.name || '',
+      status: pod.status?.phase || 'Unknown'
+    }));
+
+    const data = {
+      name: devboxBody.metadata?.name || devboxName,
+      uid: devboxBody.metadata?.uid || '',
+      resourceType: 'devbox' as const,
+      runtime: template.templateRepository?.iconId || '',
+      image: template.image,
+      status: devboxBody.status?.phase || 'Pending',
+      resources,
+      ssh,
+      env,
+      ports,
+      pods: podsData,
+      operationalStatus: devboxBody.status
+    };
+
+    return jsonRes({ data });
+  } catch (err: any) {
+    console.error('Get devbox detail error:', err);
+
+    if (err.statusCode === 404 || err.response?.statusCode === 404) {
+      return jsonRes({
+        code: 404,
+        message: 'Devbox not found'
+      });
+    }
+
+    return jsonRes({
+      code: 500,
+      message: err?.message || 'Internal server error occurred while retrieving devbox details',
+      error: {
+        type: 'INTERNAL_ERROR',
+        details: process.env.NODE_ENV === 'development' ? err : undefined
       }
     });
   }

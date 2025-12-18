@@ -31,7 +31,9 @@ function Terminal({ url, site }: { url: string; site: string }) {
 
   useEffect(() => {
     const event = async (e: MessageEvent) => {
-      const whitelist = [url, site];
+      const urlOrigin = new URL(url).origin;
+      const whitelist = [urlOrigin, site];
+
       if (!whitelist.includes(e.origin)) return;
       try {
         if (e.data.type === 'new terminal' && e.data.command) {
@@ -46,7 +48,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
           );
           iframeRef.current?.contentWindow?.postMessage(
             {
-              command: `echo -e "This is a temporary terminal for debugging and testing. The session will automatically end 30 minutes after you leave.\\n\\nYou are now working in: namespace ${nsid}" && history -c`
+              command: `clear && echo -e "\\033[36mThis is a temporary terminal for debugging and testing. The session will automatically end \\033[1m30 minutes\\033[22m after you leave.\\033[0m\\n\\nYou are now working in namespace: \\033[1;32m${nsid}\\033[0m" && history -c`
             },
             url
           );
@@ -59,7 +61,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
     };
     window.addEventListener('message', event);
     return () => window.removeEventListener('message', event);
-  }, [site, url]);
+  }, [site, url, nsid]);
 
   const newTerminal = (command?: string) => {
     const temp = nanoid(6);

@@ -3,6 +3,7 @@ import * as yaml from 'js-yaml';
 export type TerminalStatus = {
   availableReplicas: number;
   domain?: string;
+  secretHeader?: string;
 };
 
 export type TerminalForm = {

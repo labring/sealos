@@ -35,6 +35,12 @@ const (
 	UserUsage                     = "/user-usage"
 	GetRechargeDiscount           = "/recharge-discount"
 	GetUserRealNameInfo           = "/real-name-info"
+
+	// UserAlertNotificationAccount routes
+	UserAlertNotificationAccountCreate = "/user-alert-notification-account/create"
+	UserAlertNotificationAccountList   = "/user-alert-notification-account/list"
+	UserAlertNotificationAccountDelete = "/user-alert-notification-account/delete"
+	UserAlertNotificationAccountToggle = "/user-alert-notification-account/toggle"
 )
 
 const (
@@ -52,6 +58,8 @@ const (
 	AdminWorkspaceSubscriptionAdd            = "/workspace-subscription/add"
 	AdminWorkspaceSubscriptionList           = "/workspace-subscription/list"
 	AdminSubscriptionPlans                   = "/subscription-plans"
+	AdminSubscriptionPlanManage              = "/subscription-plan/manage"
+	AdminSubscriptionPlanDelete              = "/subscription-plan/delete"
 
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"

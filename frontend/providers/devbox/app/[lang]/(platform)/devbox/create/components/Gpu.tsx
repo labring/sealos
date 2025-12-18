@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@sealos/shadcn-ui';
+import { Label } from '@sealos/shadcn-ui/label';
 import { usePriceStore } from '@/stores/price';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { GpuAmountMarkList } from '@/constants/devbox';
-import { listOfficialTemplateRepository } from '@/api/template';
 
 import {
   Select,
@@ -16,10 +15,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@sealos/shadcn-ui/select';
-import { FormControl, FormField, FormItem, FormLabel } from '@sealos/shadcn-ui/form';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
-// NOTE: this component style is not tested yet,because we do not use it normally
 export default function Gpu({
   countGpuInventory
 }: {
@@ -27,124 +23,127 @@ export default function Gpu({
 }) {
   const t = useTranslations();
   const { sourcePrice } = usePriceStore();
-  const { control, watch, setValue, getValues } = useFormContext<DevboxEditTypeV2>();
-  const templateRepositoryQuery = useQuery(
-    ['list-official-template-repository'],
-    listOfficialTemplateRepository
-  );
+  const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
 
-  const templateData = useMemo(
-    () => templateRepositoryQuery.data?.templateRepositoryList || [],
-    [templateRepositoryQuery.data]
-  );
-  const templateRepositoryUid = getValues('templateRepositoryUid');
-  const isGpuTemplate = useMemo(() => {
-    const template = templateData.find((item) => item.uid === templateRepositoryUid);
-    return template?.templateRepositoryTags.some((item) => item.tag.name === 'gpu');
-  }, [templateData, templateRepositoryUid]);
+  const selectedGpuType = watch('gpu.type');
+  const selectedGpuAmount = watch('gpu.amount');
 
-  const selectedGpu = () => {
-    const selected = sourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'));
-    if (!selected) return;
+  const selectedGpu = useMemo(() => {
+    const selected = sourcePrice?.gpu?.find((item) => item.type === selectedGpuType);
+    if (!selected) return undefined;
     return {
       ...selected,
       inventory: countGpuInventory(selected.type)
     };
-  };
+  }, [sourcePrice?.gpu, selectedGpuType, countGpuInventory]);
 
-  if (!isGpuTemplate || !sourcePrice?.gpu) {
+  if (!sourcePrice?.gpu) {
     return null;
   }
 
   return (
-    <div className="space-y-4">
-      <FormField
-        control={control}
-        name="gpu.type"
-        render={({ field }) => (
-          <FormItem>
-            <div className="flex items-center gap-4">
-              <FormLabel className="w-20">GPU</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    const selected = sourcePrice?.gpu?.find((item) => item.type === value);
-                    const inventory = countGpuInventory(value);
-                    if (value === '' || (selected && inventory > 0)) {
-                      field.onChange(value);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-[300px]">
-                    <SelectValue placeholder={t('No GPU')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">{t('No GPU')}</SelectItem>
-                    {sourcePrice?.gpu.map((item) => {
-                      const inventory = countGpuInventory(item.type);
-                      return (
-                        <SelectItem key={item.type} value={item.type} disabled={inventory <= 0}>
-                          <div className="flex items-center gap-3">
-                            {/* <Icons name="nvidia" className="h-4 w-4" /> */}
-                            <span>{item.alias}</span>
-                            <span className="text-gray-500">|</span>
-                            <span className="text-gray-500">
-                              {t('vm')}: {Math.round(item.vm)}G
-                            </span>
-                            <span className="text-gray-500">|</span>
-                            <span className="text-gray-500">
-                              {t('Inventory')}: <span className="text-[#FB7C3C]">{inventory}</span>
-                            </span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </div>
-          </FormItem>
-        )}
-      />
+    <div className="flex items-start gap-10">
+      <Label className="w-15 font-medium text-gray-900">{t('gpu')}</Label>
+      <div className="flex flex-col gap-4">
+        <Select
+          value={selectedGpuType || 'none'}
+          onValueChange={(value) => {
+            const selected = sourcePrice?.gpu?.find((item) => item.type === value);
+            const inventory = value !== 'none' ? countGpuInventory(value) : 0;
 
-      {watch('gpu.type') && (
-        <div className="pl-20">
-          <p className="mb-2">{t('Amount')}</p>
-          <div className="flex items-center">
-            {GpuAmountMarkList.map((item) => {
-              const inventory = selectedGpu()?.inventory || 0;
-              const hasInventory = item.value <= inventory;
-
+            if (value === 'none') {
+              setValue('gpu', undefined);
+            } else if (selected && inventory > 0) {
+              setValue('gpu.type', value);
+              setValue('gpu.manufacturers', 'nvidia');
+              if (!selectedGpuAmount || selectedGpuAmount > inventory) {
+                setValue('gpu.amount', 1);
+              }
+            }
+          }}
+        >
+          <SelectTrigger className="h-10 w-[440px] border-zinc-200">
+            <SelectValue placeholder={t('No GPU')}>
+              {selectedGpu ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
+                    <img src="/images/nvidia.svg" alt="NVIDIA" className="h-4 w-4" />
+                    <span className="text-sm font-medium text-zinc-900">{selectedGpu.alias}</span>
+                  </div>
+                  <span className="text-sm text-zinc-900">
+                    Video memory: {Math.round(selectedGpu.vm)}GB
+                  </span>
+                  <div className="h-[15px] w-px bg-zinc-200" />
+                  <span className="text-sm text-zinc-900">
+                    {t('Inventory')}:{' '}
+                    <span className="text-yellow-600">{selectedGpu.inventory}</span>
+                  </span>
+                </div>
+              ) : (
+                t('No GPU')
+              )}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">{t('No GPU')}</SelectItem>
+            {sourcePrice?.gpu.map((item) => {
+              const inventory = countGpuInventory(item.type);
               return (
-                <Tooltip key={item.value}>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={cn(
-                        'mr-2 h-8 w-8 rounded-md border bg-white',
-                        getValues('gpu.amount') === item.value
-                          ? 'border-blue-500 shadow-[0px_0px_0px_2.4px_rgba(33,155,244,0.15)]'
-                          : 'border-gray-200 bg-gray-100',
-                        !hasInventory && 'cursor-not-allowed opacity-50'
-                      )}
-                      disabled={!hasInventory}
-                      onClick={() => {
-                        if (hasInventory) {
-                          setValue('gpu.amount', item.value);
-                        }
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  </TooltipTrigger>
-                  {!hasInventory && <TooltipContent>{t('Under Stock')}</TooltipContent>}
-                </Tooltip>
+                <SelectItem key={item.type} value={item.type} disabled={inventory <= 0}>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
+                      <img src="/images/nvidia.svg" alt="NVIDIA" className="h-4 w-4" />
+                      <span className="text-sm font-medium text-zinc-900">{item.alias}</span>
+                    </div>
+                    <span className="text-sm text-zinc-900">
+                      Video memory: {Math.round(item.vm)}GB
+                    </span>
+                    <div className="h-[15px] w-px bg-zinc-200" />
+                    <span className="text-sm text-zinc-900">
+                      {t('Inventory')}:{' '}
+                      <span className="text-yellow-600">{inventory}</span>
+                    </span>
+                  </div>
+                </SelectItem>
               );
             })}
-            <span className="ml-3 text-gray-500">/ {t('Card')}</span>
+          </SelectContent>
+        </Select>
+
+        {selectedGpuType && selectedGpuType !== 'none' && (
+          <div className="flex flex-col gap-2">
+            <Label className="text-sm font-medium text-gray-900">{t('count')}</Label>
+            <div className="flex gap-2">
+              {GpuAmountMarkList.map((item) => {
+                const inventory = selectedGpu?.inventory || 0;
+                const hasInventory = item.value <= inventory;
+                const isSelected = selectedGpuAmount === item.value;
+
+                return (
+                  <button
+                    key={item.value}
+                    className={cn(
+                      'flex h-10 w-10 items-center justify-center rounded-lg border bg-white text-sm transition-all',
+                      isSelected
+                        ? 'border-zinc-900 text-zinc-900'
+                        : 'border-zinc-200 text-zinc-900',
+                      !hasInventory && 'cursor-not-allowed opacity-40'
+                    )}
+                    disabled={!hasInventory}
+                    onClick={() => {
+                      if (hasInventory) {
+                        setValue('gpu.amount', item.value);
+                      }
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

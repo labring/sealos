@@ -641,31 +641,68 @@ export const json2NetworkService = ({
     pulsar: 6650,
     clickhouse: 8123
   };
-  const labelMap = {
+  const labelMap: Record<
+    // [FIXME] Remove this union after KB 0.9 upgrade!
+    DBType | 'mysql',
+    Record<string, Record<string, string>> & { default: Record<string, string> }
+  > = {
     postgresql: {
-      'kubeblocks.io/role': 'primary'
+      default: {
+        'kubeblocks.io/role': 'primary'
+      }
     },
     mongodb: {
-      'kubeblocks.io/role': 'primary'
+      default: {
+        'kubeblocks.io/role': 'primary'
+      }
     },
     'apecloud-mysql': {
-      'kubeblocks.io/role': 'leader'
+      default: {
+        'kubeblocks.io/role': 'leader'
+      }
+    },
+    mysql: {
+      default: {
+        'kubeblocks.io/role': 'primary',
+        'apps.kubeblocks.io/component-name': 'mysql'
+      }
     },
     redis: {
-      'kubeblocks.io/role': 'primary'
+      default: {
+        'kubeblocks.io/role': 'primary'
+      }
     },
     kafka: {
-      'apps.kubeblocks.io/component-name': 'kafka-broker'
+      default: {
+        'apps.kubeblocks.io/component-name': 'kafka-broker'
+      }
     },
-    qdrant: {},
-    nebula: {},
-    weaviate: {},
+    qdrant: {
+      default: {}
+    },
+    nebula: {
+      default: {}
+    },
+    weaviate: {
+      default: {}
+    },
     milvus: {
-      'apps.kubeblocks.io/component-name': 'milvus'
+      default: {
+        'apps.kubeblocks.io/component-name': 'milvus'
+      }
     },
-    pulsar: {},
-    clickhouse: {}
+    pulsar: {
+      default: {}
+    },
+    clickhouse: {
+      default: {}
+    }
   };
+
+  const labels =
+    Object.entries(labelMap[dbDetail.rawDbType]).find(
+      ([version]) => version === dbDetail.dbVersion
+    )?.[1] ?? labelMap[dbDetail.rawDbType].default;
 
   const template = {
     apiVersion: 'v1',
@@ -676,7 +713,7 @@ export const json2NetworkService = ({
         'app.kubernetes.io/instance': dbDetail.dbName,
         'app.kubernetes.io/managed-by': 'kubeblocks',
         'apps.kubeblocks.io/component-name': dbDetail.dbType,
-        ...labelMap[dbDetail.dbType]
+        ...labels
       },
       ownerReferences: [
         {
@@ -701,7 +738,7 @@ export const json2NetworkService = ({
       selector: {
         'app.kubernetes.io/instance': dbDetail.dbName,
         'app.kubernetes.io/managed-by': 'kubeblocks',
-        ...labelMap[dbDetail.dbType]
+        ...labels
       },
       type: 'NodePort'
     }
@@ -1096,7 +1133,7 @@ export const json2ParameterConfig = (
     }
     const lowerCaseTableNames = parameterConfig?.lowerCaseTableNames
       ? parameterConfig.lowerCaseTableNames
-      : '0';
+      : '1';
 
     mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
 

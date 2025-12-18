@@ -94,7 +94,7 @@ export type PropertiesCost = {
 };
 
 /**
- * `RechargeBillingItem` is *deprecated* for **INVOICE MODULE** in favor of `InvoiceBillingItem` so we should move this to API types.
+ * For `rechargeBillingList` only.
  */
 export type RechargeBillingItem = {
   ID: string;
@@ -109,6 +109,7 @@ export type RechargeBillingItem = {
   CodeURL: string;
   InvoicedAt: boolean;
   Status?: 'PAID' | 'REFUNDED';
+  ChargeSource: string;
 };
 export type RechargeBillingData = {
   payments: RechargeBillingItem[];

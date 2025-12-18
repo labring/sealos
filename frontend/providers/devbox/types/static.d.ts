@@ -25,6 +25,10 @@ export interface Env {
   ingressDomain: string;
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
   storageLimit: string;
+  enableImportFeature: string;
+  enableWebideFeature: string;
+  cpuSlideMarkList: string;
+  memorySlideMarkList: string;
 }
 
 export interface RuntimeTypeMap {

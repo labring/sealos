@@ -279,8 +279,10 @@ func (c *CaptureResponse) Raw() []byte {
 }
 
 type PaymentRefund struct {
-	TradeNo string        `json:"tradeNo"      gorm:"type:uuid;not null"`
-	ID      string        `json:"Id"           gorm:"type:string;not null"`       // 外键 跟payment关联
+	RowID   string        `json:"rowid"        gorm:"type:uuid;column:rowid;primaryKey;default:gen_random_uuid()"` // CockroachDB 主键
+	TradeNo string        `json:"tradeNo"      gorm:"type:string;not null"`
+	OrderID string        `json:"OrderId"      gorm:"type:string;not null"`       // 外键 跟payment关联，不再唯一
+	ID      string        `json:"Id"           gorm:"type:string"`                // 保持兼容性
 	Method  PaymentMethod `json:"method"       gorm:"type:varchar(255);not null"` // 退款方式
 	// OutTradeNo   string    `json:"outTradeNo" gorm:"type:uuid"`
 	RefundNo     string    `json:"refundNo"     gorm:"type:string;not null"`

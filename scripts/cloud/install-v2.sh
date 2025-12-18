@@ -271,7 +271,7 @@ install_pull_images() {
     pull_image "${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version}"
 }
 
-COMMERCIAL_PROMPT_EN="You are installing the open source version of Sealos Cloud. Some features are missing. \nFor full functionality, please purchase the commercial edition: https://sealos.io/contact"
+COMMERCIAL_PROMPT_EN="This copy of Sealos Cloud is under the community license with feature limitations. \nFor a commercial license with full functionality, please contact us: https://sealos.io/contact"
 
 show_commercial_notice() {
   echo "=========================================================================================================="
@@ -445,6 +445,7 @@ run_cloud(){
 
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["account"]}:${sealos_cloud_version} \
     --env MONGO_URI=\"${varDatabaseMongodbURI}\" \
+    --env TRAFFIC_MONGO_URI=\"${varDatabaseMongodbURI}\" \
     --env cloudDomain=\"${varCloudDomain}\" \
     --env cloudPort=\"${varCloudPort}\" \
     --env DEFAULT_NAMESPACE=\"account-system\" \

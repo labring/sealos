@@ -76,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
     const bodyRaw = {
       // kubeConfig: kc.exportConfig(),
-      billings,
+      paymentIDList: billings.map((b) => b.order_id),
       detail: JSON.stringify(invoiceDetail)
     };
     const message_id = (await retrySerially<string>(
@@ -101,6 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         payments: RechargeBillingItem[];
       };
     };
+
     if (result.status !== 200) {
       console.log(invoiceRes);
       await sendToWithdrawBot({ message_id });

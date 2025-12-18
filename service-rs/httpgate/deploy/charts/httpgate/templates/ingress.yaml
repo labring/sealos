@@ -1,0 +1,112 @@
+{{- if .Values.ingress.enabled -}}
+---
+# HTTP Ingress (devbox- prefix)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "httpgate.fullname" . }}
+  labels:
+    {{- include "httpgate.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    higress.io/prefix-match-header-host: devbox-
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    {{- $host := .host }}
+    {{- if not (hasPrefix "*." $host) }}
+    {{- $host = printf "*.%s" $host }}
+    {{- end }}
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          {{- $paths := .paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
+          {{- range $paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "httpgate.fullname" $ }}
+                port:
+                  number: {{ $.Values.httpPort }}
+          {{- end }}
+    {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        {{- $tlsHost := . }}
+        {{- if not (hasPrefix "*." $tlsHost) }}
+        {{- $tlsHost = printf "*.%s" $tlsHost }}
+        {{- end }}
+        - {{ $tlsHost | quote }}
+        {{- end }}
+      {{- if .secretName }}
+      secretName: {{ .secretName }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+---
+# gRPC Ingress (devboxgrpc- prefix)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "httpgate.fullname" . }}-grpc
+  labels:
+    {{- include "httpgate.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    higress.io/prefix-match-header-host: devboxgrpc-
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    {{- $host := .host }}
+    {{- if not (hasPrefix "*." $host) }}
+    {{- $host = printf "*.%s" $host }}
+    {{- end }}
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          {{- $paths := .paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
+          {{- range $paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "httpgate.fullname" $ }}-grpc
+                port:
+                  number: {{ $.Values.httpPort }}
+          {{- end }}
+    {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        {{- $tlsHost := . }}
+        {{- if not (hasPrefix "*." $tlsHost) }}
+        {{- $tlsHost = printf "*.%s" $tlsHost }}
+        {{- end }}
+        - {{ $tlsHost | quote }}
+        {{- end }}
+      {{- if .secretName }}
+      secretName: {{ .secretName }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

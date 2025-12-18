@@ -12,7 +12,19 @@ import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
-import { Box, Flex, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Button
+} from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
@@ -35,6 +47,7 @@ import StopBackupModal from '../detail/components/StopBackupModal';
 import { resourcePropertyMap } from '@/constants/resource';
 import { distributeResources } from '@/utils/database';
 import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import MyIcon from '@/components/Icon';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -65,6 +78,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [pendingFormData, setPendingFormData] = useState<DBEditType | null>(null);
 
   const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
+  const [isRestartConfirmOpen, setIsRestartConfirmOpen] = useState(false);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -180,6 +194,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     if (!dbName) {
       const hour = Math.floor(Math.random() * 10) + 14;
       formHook.setValue('autoBackup.hour', hour.toString().padStart(2, '0'));
+      const minute = Math.floor(Math.random() * 60);
+      formHook.setValue('autoBackup.minute', minute.toString().padStart(2, '0'));
     }
   }, []);
 
@@ -422,7 +438,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     )();
   };
 
-  const handleSubmit = () => {
+  const handleSubmitAfterConfirm = () => {
+    setIsRestartConfirmOpen(false);
     if (exceededQuotas.length <= 0) {
       confirmSubmit();
       return;
@@ -430,6 +447,22 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
     setIsInsufficientQuotaDialogOpen(true);
   };
+
+  const handleSubmit = () => {
+    // Show confirmation modal when editing.
+    if (isEdit) {
+      setIsRestartConfirmOpen(true);
+      return;
+    }
+
+    if (exceededQuotas.length <= 0) {
+      confirmSubmit();
+      return;
+    }
+
+    setIsInsufficientQuotaDialogOpen(true);
+  };
+
   return (
     <>
       <Flex
@@ -518,6 +551,35 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         onConfirm={() => {}}
         showControls={false}
       />
+
+      <Modal isOpen={isRestartConfirmOpen} onClose={() => setIsRestartConfirmOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
+            <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
+            <Box ml={3} fontSize={'xl'}>
+              {t('prompt')}
+            </Box>
+          </ModalHeader>
+          <ModalCloseButton fontSize={'16px'} />
+          <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
+            {t('confirm_config_change_restart')}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              onClick={() => {
+                setIsRestartConfirmOpen(false);
+              }}
+              variant={'outline'}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button ml={'12px'} onClick={handleSubmitAfterConfirm}>
+              {t('confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

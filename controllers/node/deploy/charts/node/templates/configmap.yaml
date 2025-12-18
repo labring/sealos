@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-alias
+  labels:
+    {{- include "node.labels" . | nindent 4 }}
+data:
+  {{- range .Values.gpuAlias }}
+  {{ .name }}: "{{ .value }}"
+  {{- end }}

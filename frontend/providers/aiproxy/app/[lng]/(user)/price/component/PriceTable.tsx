@@ -193,6 +193,40 @@ export function PriceTable({
         </Text>
       ),
       cell: (info) => {
+        if (info.row.original.config?.limited_time_free) {
+          return (
+            <Flex alignItems="center">
+              <Text
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                mr="4px"
+              >
+                {t('price.limitedTimeFree')}
+              </Text>
+            </Flex>
+          );
+        }
+        if (!info.row.original.price || Object.keys(info.row.original.price).length === 0) {
+          return (
+            <Flex alignItems="center">
+              <Text
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                mr="4px"
+              >
+                {t('price.freeLabel')}
+              </Text>
+            </Flex>
+          );
+        }
         if (info.row.original.price.per_request_price) {
           return (
             <Flex alignItems="center">

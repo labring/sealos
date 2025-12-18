@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/labring/sealos/service/account/pprof"
 	"github.com/labring/sealos/service/account/router"
 )
 
@@ -12,5 +13,8 @@ import (
 // @host localhost:2333
 // @BasePath
 func main() {
+	go func() {
+		_ = pprof.RunPprofServer(10000)
+	}()
 	router.RegisterPayRouter()
 }

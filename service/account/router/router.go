@@ -27,6 +27,14 @@ func RegisterPayRouter() {
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{"/health", "/health/"}, // 包含可能的路径变体
+		Skip: func(c *gin.Context) bool {
+			// If the returned status code is 200: /admin/v1alpha1/flush-debt-resource-status request, skip the log
+			if c.Request.URL.Path == helper.AdminGroup+helper.AdminFlushDebtResourceStatus &&
+				c.Writer.Status() == http.StatusOK {
+				return true
+			}
+			return false
+		},
 	}))
 	ctx := context.Background()
 	if err := dao.Init(ctx); err != nil {
@@ -74,6 +82,11 @@ func RegisterPayRouter() {
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo).
 		POST(helper.WorkspaceGetResourceQuota, api.GetWorkspaceResourceQuota).
+		// UserAlertNotificationAccount routes
+		POST(helper.UserAlertNotificationAccountCreate, api.CreateUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountList, api.ListUserAlertNotificationAccounts).
+		POST(helper.UserAlertNotificationAccountDelete, api.DeleteUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountToggle, api.ToggleUserAlertNotificationAccounts).
 		// WorkspaceSubscription routes
 		POST(helper.WorkspaceSubscriptionInfo, api.GetWorkspaceSubscriptionInfo).
 		POST(helper.WorkspaceSubscriptionList, api.GetWorkspaceSubscriptionList).
@@ -100,7 +113,9 @@ func RegisterPayRouter() {
 		POST(helper.AdminWorkspaceSubscriptionProcessExpired, api.AdminProcessExpiredWorkspaceSubscriptions).
 		POST(helper.AdminWorkspaceSubscriptionAdd, api.AdminAddWorkspaceSubscription).
 		POST(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionList).
-		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans)
+		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans).
+		POST(helper.AdminSubscriptionPlanManage, api.AdminManageSubscriptionPlan).
+		POST(helper.AdminSubscriptionPlanDelete, api.AdminDeleteSubscriptionPlan)
 	paymentGroup := router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
 		POST(helper.Notify, api.NewPayNotifyHandler).

@@ -1,0 +1,13 @@
+apiVersion: v2
+name: sshgate
+description: A Kubernetes-native SSH gateway that routes SSH connections to Devbox pods based on client public key
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - ssh
+  - gateway
+  - devbox
+  - sealos
+maintainers:
+  - name: sshgate

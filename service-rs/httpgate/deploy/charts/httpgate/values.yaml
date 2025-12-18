@@ -1,0 +1,109 @@
+# Default values for httpgate
+
+image:
+  repository: ghcr.io/labring/sealos-httpgate-service
+  pullPolicy: IfNotPresent
+  tag: "" # Overrides the image tag whose default is the chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# HTTP port exposed on the host (hostPort)
+# The gateway listens on this port on each node
+httpPort: 8080
+
+# Agent port (used when port is "agent" instead of a number in the host header)
+# Example: devbox-my-app-agent.devbox.sealos.io will route to this port
+agentPort: 9757
+
+# Service configuration
+service:
+  # Enable trafficDistribution: PreferSameNode (requires K8s 1.34+)
+  # Routes traffic to pods on the same node when possible
+  # https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+  preferSameNode: false
+
+# Ingress configuration
+ingress:
+  enabled: false
+  ingressClassName: nginx
+  annotations: {}
+    # Add custom annotations here (backend-protocol is set automatically)
+  hosts:
+    - host: "*.devbox.example.com"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - hosts:
+    #     - "*.devbox.example.com"
+    #   secretName: devbox-tls
+
+# Additional environment variables
+# These will be added to the ConfigMap and injected into the pods
+env: {}
+  # Example:
+  # LOG_LEVEL: "debug"
+  # KUBECONFIG: "/path/to/kubeconfig"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# RBAC settings
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 100Mi
+
+# Node selector for DaemonSet scheduling
+# Example: Only run on nodes with specific label
+# nodeSelector:
+#   role: gateway
+nodeSelector: {}
+
+# Tolerations for DaemonSet scheduling
+# Example: Run on master nodes
+# tolerations:
+# - key: node-role.kubernetes.io/master
+#   effect: NoSchedule
+tolerations: []
+
+# Affinity rules for DaemonSet scheduling
+affinity: {}
+
+# Priority class name for pod scheduling priority
+# system-node-critical ensures the pod has high priority and is less likely to be evicted
+priorityClassName: system-node-critical
+
+# Update strategy for DaemonSet
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1

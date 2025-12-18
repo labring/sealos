@@ -104,6 +104,12 @@ type Interface interface {
 	CreateCorporate(corporate types.Corporate) error
 	GetPaymentStatus(payID string) (types.PaymentStatus, error)
 
+	// UserAlertNotificationAccount methods
+	CreateUserAlertNotificationAccount(account *types.UserAlertNotificationAccount) error
+	ListUserAlertNotificationAccounts(userUID uuid.UUID) ([]*types.UserAlertNotificationAccount, error)
+	DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID uuid.UUID) (int, []string, error)
+	ToggleUserAlertNotificationAccounts(ids []uuid.UUID, isEnabled bool) (int, []string, error)
+
 	GetUserWorkspaceRole(userUID uuid.UUID, workspace string) (types.Role, error)
 	// WorkspaceSubscription methods
 	GetWorkspaceSubscription(workspace, regionDomain string) (*types.WorkspaceSubscription, error)
@@ -1185,7 +1191,7 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	}
 
 	if strings.ToUpper(req.AppType) != resources.AppStore {
-		var match bson.D
+		match := make(bson.D, len(matchConditions))
 		copy(match, matchConditions[:])
 		if req.AppType != "" {
 			match = append(
@@ -1694,7 +1700,8 @@ func (m *MongoDB) GetCostAppList(
 		}}})
 
 		var countPipeline mongo.Pipeline
-		copy(countPipeline, pipeline[:])
+		// Fix: Manual copy to avoid copy() issues with complex types
+		countPipeline = append(countPipeline, pipeline...)
 		countPipeline = append(countPipeline, bson.D{{Key: "$count", Value: "total"}})
 		countCursor, err := m.getBillingCollection().Aggregate(context.Background(), countPipeline)
 		if err != nil {
@@ -2055,7 +2062,8 @@ func (m *MongoDB) getAppStoreList(
 	pipeline := m.getAppPipeLine(req)
 	skipStage := bson.M{"$skip": skip}
 	limitStage := bson.M{"$limit": pageSize}
-	var limitPipeline []bson.M
+	// Fix: Manual copy to avoid copy() issues
+	limitPipeline := make([]bson.M, len(pipeline))
 	copy(limitPipeline, pipeline)
 	limitPipeline = append(limitPipeline, skipStage, limitStage)
 
@@ -3064,7 +3072,7 @@ func (g *Cockroach) RefundAmount(
 		// 1. 查询原 payment 并设置状态为已退款
 		var payment types.Payment
 		if err := tx.
-			Where("id = ? ", ref.ID).
+			Where("id = ? ", ref.OrderID).
 			First(&payment).Error; err != nil {
 			return fmt.Errorf("payment not found: %w", err)
 		}
@@ -3084,7 +3092,7 @@ func (g *Cockroach) RefundAmount(
 		// 2. 创建一条 payment_refund 记录
 		refund := types.PaymentRefund{
 			TradeNo:      payment.TradeNO,  // 自查询
-			ID:           payment.ID,       // 外键 与payment关联  前端传入
+			OrderID:      payment.ID,       // 外键 与payment关联  前端传入
 			Method:       payment.Method,   // 前端传入
 			RefundNo:     ref.RefundNo,     // 生成传入
 			RefundAmount: ref.RefundAmount, // 前端传入
@@ -3113,4 +3121,100 @@ func (g *Cockroach) CreateCorporate(corporate types.Corporate) error {
 		}
 		return nil
 	})
+}
+
+// UserAlertNotificationAccount implementations
+
+func (g *Cockroach) CreateUserAlertNotificationAccount(account *types.UserAlertNotificationAccount) error {
+	return g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(account).Error; err != nil {
+			return fmt.Errorf("failed to create user alert notification account: %w", err)
+		}
+		return nil
+	})
+}
+
+func (g *Cockroach) ListUserAlertNotificationAccounts(userUID uuid.UUID) ([]*types.UserAlertNotificationAccount, error) {
+	var accounts []*types.UserAlertNotificationAccount
+	err := g.ck.GetGlobalDB().Where("user_uid = ?", userUID).Find(&accounts).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to list user alert notification accounts: %w", err)
+	}
+	return accounts, nil
+}
+
+func (g *Cockroach) DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID uuid.UUID) (int, []string, error) {
+	if len(ids) == 0 {
+		return 0, nil, nil
+	}
+
+	var deletedIDs []string
+	err := g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		// Get the IDs that will be deleted before actually deleting them
+		var accountsToDelete []types.UserAlertNotificationAccount
+		if err := tx.Where("id IN ? AND user_uid = ?", ids, userUID).Find(&accountsToDelete).Error; err != nil {
+			return fmt.Errorf("failed to find accounts to delete: %w", err)
+		}
+
+		// Delete the accounts
+		result := tx.Where("id IN ? AND user_uid = ?", ids, userUID).Delete(&types.UserAlertNotificationAccount{})
+		if result.Error != nil {
+			return fmt.Errorf("failed to delete user alert notification accounts: %w", result.Error)
+		}
+
+		// Collect the IDs of deleted accounts
+		deletedIDs = make([]string, len(accountsToDelete))
+		for i, account := range accountsToDelete {
+			deletedIDs[i] = account.ID.String()
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return len(deletedIDs), deletedIDs, nil
+}
+
+func (g *Cockroach) ToggleUserAlertNotificationAccounts(ids []uuid.UUID, isEnabled bool) (int, []string, error) {
+	if len(ids) == 0 {
+		return 0, nil, nil
+	}
+
+	var updatedIDs []string
+	err := g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		// Update the IsEnabled field for the specified IDs
+		result := tx.Model(&types.UserAlertNotificationAccount{}).
+			Where("id IN ?", ids).
+			Update("is_enabled", isEnabled)
+
+		if result.Error != nil {
+			return fmt.Errorf("failed to toggle user alert notification accounts: %w", result.Error)
+		}
+
+		// Get the IDs that were actually updated
+		var updatedAccounts []struct {
+			ID string `gorm:"column:id"`
+		}
+		if err := tx.Model(&types.UserAlertNotificationAccount{}).
+			Where("id IN ?", ids).
+			Pluck("id", &updatedAccounts).Error; err != nil {
+			return fmt.Errorf("failed to get updated account IDs: %w", err)
+		}
+
+		updatedIDs = make([]string, len(updatedAccounts))
+		for i, account := range updatedAccounts {
+			updatedIDs[i] = account.ID
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return len(updatedIDs), updatedIDs, nil
 }

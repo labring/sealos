@@ -11,7 +11,10 @@ export class DeleteUserCrJob implements CronJobStatus {
   transactionType = TransactionType.DELETE_USER;
   UNIT_TIMEOUT = 3000;
   COMMIT_TIMEOUT = 30000;
-  constructor(private transactionUid: string, private infoUid: string) {}
+  constructor(
+    private transactionUid: string,
+    private infoUid: string
+  ) {}
   async init() {
     const infoUid = this.infoUid;
     const info = await globalPrisma.deleteUserTransactionInfo.findUnique({
@@ -99,6 +102,7 @@ export class DeleteUserCrJob implements CronJobStatus {
     const deleteResult = await setUserDelete(userCr.crName);
 
     if (!deleteResult) {
+      console.error('[DeleteUserCrJob] delete User not Success');
       throw new Error(`delete User not Success`);
     }
     await globalPrisma.eventLog.create({

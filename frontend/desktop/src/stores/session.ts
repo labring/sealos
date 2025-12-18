@@ -3,6 +3,7 @@ import { OauthProvider } from '@/types/user';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { nanoid } from 'nanoid';
 
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 
@@ -10,19 +11,17 @@ type SessionState = {
   session?: Session;
   token: string;
   provider?: OauthProvider;
-  oauth_state: string;
   firstUse: Date | null;
+  hasEverLoggedIn: boolean;
   setSession: (ss: Session) => void;
   setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => void;
   delSession: () => void;
   setFirstUse: (d: Date | null) => void;
+  setHasEverLoggedIn: (value: boolean) => void;
   isUserLogin: () => boolean;
-  /*
-			when proxy oauth2.0 ,the domainState need to be used
-	*/
+
   generateState: (action?: OauthAction, domainState?: string) => string;
   compareState: (state: string) => {
-    isSuccess: boolean;
     action: string;
     statePayload: string[];
   };
@@ -32,6 +31,11 @@ type SessionState = {
   setToken: (token: string, rememberMe?: boolean) => void;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
+  setGuestSession: () => void;
+  isGuest: () => boolean;
+  showGuestLoginModal: boolean;
+  openGuestLoginModal: () => void;
+  closeGuestLoginModal: () => void;
 };
 
 const useSessionStore = create<SessionState>()(
@@ -41,19 +45,25 @@ const useSessionStore = create<SessionState>()(
       provider: undefined,
       lastSigninProvier: undefined,
       firstUse: null,
-      oauth_state: '',
+      hasEverLoggedIn: false,
       token: '',
       lastWorkSpaceId: '',
+      showGuestLoginModal: false,
       setFirstUse(d) {
         set({
           firstUse: d
+        });
+      },
+      setHasEverLoggedIn(value) {
+        set({
+          hasEverLoggedIn: value
         });
       },
       setLastSigninProvider(provider?: string) {
         set({ lastSigninProvier: provider });
       },
       setSession: (ss: Session) => set({ session: ss }),
-      setSessionProp: (key: keyof Session, value: any) => {
+      setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => {
         set((state) => {
           if (state.session) {
             state.session[key] = value;
@@ -63,7 +73,11 @@ const useSessionStore = create<SessionState>()(
       delSession: () => {
         set({ session: undefined });
       },
-      isUserLogin: () => !!get().session?.user,
+      isUserLogin: () => {
+        const state = get();
+        if (state.session?.isGuest) return false;
+        return !!state.session?.user;
+      },
       // [LOGIN/UNBIND/BIND]_STATE
       // PROXY_DOMAINSTATE, DOMAINSTATE = URL_[LOGIN/UNBIND/BIND]_STATE
       generateState: (action = 'LOGIN', domainState) => {
@@ -73,16 +87,11 @@ const useSessionStore = create<SessionState>()(
         } else {
           state = state + '_' + new Date().getTime().toString();
         }
-        set({ oauth_state: state });
         return state;
       },
       compareState: (state: string) => {
-        // fix wechat
-        let isSuccess = decodeURIComponent(state) === decodeURIComponent(get().oauth_state);
         const [action, ...statePayload] = state.split('_');
-        set({ oauth_state: undefined });
         return {
-          isSuccess,
           action,
           statePayload
         };
@@ -104,10 +113,34 @@ const useSessionStore = create<SessionState>()(
       },
       setWorkSpaceId: (id) => {
         set({ lastWorkSpaceId: id });
+      },
+      setGuestSession: () => {
+        const guestId = `guest_${nanoid()}`;
+        set({
+          session: {
+            isGuest: true,
+            guestId,
+            token: '',
+            user: null,
+            kubeconfig: '',
+            subscription: null
+          }
+        });
+      },
+      isGuest: () => get().session?.isGuest || false,
+      openGuestLoginModal: () => {
+        set({ showGuestLoginModal: true });
+      },
+      closeGuestLoginModal: () => {
+        set({ showGuestLoginModal: false });
       }
     })),
     {
-      name: sessionKey
+      name: sessionKey,
+      partialize: (state) => {
+        const { showGuestLoginModal, ...rest } = state;
+        return rest;
+      }
     }
   )
 );

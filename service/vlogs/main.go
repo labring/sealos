@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/service/vlogs/config"
 	vlogsServer "github.com/labring/sealos/service/vlogs/server"
 )
 
@@ -16,7 +17,7 @@ type RestartableServer struct {
 	configFile string
 }
 
-func (rs *RestartableServer) Serve(c *vlogsServer.Config) {
+func (rs *RestartableServer) Serve(c *config.Config) {
 	vs, err := vlogsServer.NewVLogsServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)
@@ -53,7 +54,7 @@ func main() {
 		return
 	}
 
-	config, err := vlogsServer.InitConfig(cf)
+	config, err := config.InitConfig(cf)
 	if err != nil {
 		fmt.Println(err)
 		return

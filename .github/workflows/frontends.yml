@@ -26,7 +26,7 @@ on:
         required: false
         type: string
   push:
-    branches: ["main"]
+    branches: ["*"]
     paths:
       - "frontend/desktop/**"
       - "frontend/providers/**"
@@ -60,7 +60,6 @@ jobs:
             providers/license,
             providers/cronjob,
             providers/template,
-            providers/adminer,
             providers/applaunchpad,
             providers/terminal,
             providers/dbprovider,

@@ -2,16 +2,15 @@ import { useMemo, useState, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { useQuery } from '@tanstack/react-query';
 import { formatISO } from 'date-fns';
-import request from '@/service/request';
-import useBillingStore from '@/stores/billing';
+import { getRechargeBillingList } from '@/api/billing';
 import useOverviewStore from '@/stores/overview';
-import { ApiResp, RechargeBillingData, RechargeBillingItem } from '@/types';
 import RechargePanelView, { RechargeRow } from './RechargePanelView';
 
 export default function RechargePanel() {
   const { startTime, endTime, setStartTime, setEndTime } = useOverviewStore();
-  const { getRegion } = useBillingStore();
   const [orderIdFilter, setOrderIdFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
 
   // Convert store dates to DateRange format
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -36,19 +35,22 @@ export default function RechargePanel() {
     return dateRange?.to ? dateRange.to : endTime;
   }, [dateRange?.to, endTime]);
 
-  // Fetch recharge billing data
+  // Fetch recharge billing data with pagination
   const { data, isFetching } = useQuery(
-    ['billing', 'recharge', { startTime: effectiveStartTime, endTime: effectiveEndTime }],
-    () => {
-      const body = {
+    [
+      'billing',
+      'recharge',
+      { startTime: effectiveStartTime, endTime: effectiveEndTime, page, pageSize }
+    ],
+    () =>
+      getRechargeBillingList({
         startTime: formatISO(effectiveStartTime, { representation: 'complete' }),
         endTime: formatISO(effectiveEndTime, { representation: 'complete' }),
-        regionUid: getRegion()?.uid || ''
-      };
-      return request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
-        method: 'POST',
-        data: body
-      });
+        page,
+        pageSize
+      }),
+    {
+      keepPreviousData: true
     }
   );
 
@@ -63,6 +65,11 @@ export default function RechargePanel() {
       raw: payment
     }));
   }, [data?.data?.payments]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [orderIdFilter, effectiveStartTime, effectiveEndTime]);
 
   // Handle date range change
   const handleDateRangeChange = (range: DateRange | undefined) => {
@@ -85,6 +92,11 @@ export default function RechargePanel() {
       onOrderIdFilterChange={setOrderIdFilter}
       rows={rows}
       isLoading={isFetching}
+      page={page}
+      totalPages={data?.data?.totalPage || 1}
+      totalItems={data?.data?.total || 0}
+      pageSize={pageSize}
+      onPageChange={setPage}
     />
   );
 }

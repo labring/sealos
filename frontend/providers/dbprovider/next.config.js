@@ -21,6 +21,14 @@ const nextConfig = {
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/v2alpha/doc',
+        destination: '/doc/v2alpha'
+      }
+    ];
   }
 };
 

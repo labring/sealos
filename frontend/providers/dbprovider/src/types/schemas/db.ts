@@ -174,3 +174,72 @@ export const updateResourceSchema = z.object({
 });
 
 export const versionListSchema = z.record(dbTypeSchema, z.array(z.string()));
+
+const connectionEndpointSchema = z
+  .object({
+    host: z.string().nullable().optional(),
+    port: z.number().nullable().optional(),
+    connectionString: z.string().nullable().optional()
+  })
+  .strict();
+
+export const dbOperationalStatusSchema = z.object({
+  createdAt: z.string().nullable().optional()
+});
+
+export const dbComponentResourceSchema = z.object({
+  cpu: z.number(),
+  memory: z.number(),
+  storage: z.number(),
+  replicas: z.number()
+});
+
+export const dbComponentSchema = z.object({
+  name: z.string(),
+  status: z.string().nullable().optional(),
+  resource: dbComponentResourceSchema
+});
+
+export const dbPodContainerSchema = z.object({
+  name: z.string(),
+  ready: z.boolean(),
+  state: z.record(z.string(), z.unknown()).nullable().optional(),
+  restartCount: z.number()
+});
+
+export const dbPodSchema = z.object({
+  name: z.string(),
+  status: z.string().nullable(),
+  upTime: z.string().nullable(),
+  containers: z.array(dbPodContainerSchema)
+});
+
+export const dbConnectionSchema = z.object({
+  privateConnection: connectionEndpointSchema.nullable(),
+  publicConnection: connectionEndpointSchema.nullable()
+});
+
+export const dbBackupSchema = z
+  .object({
+    cronExpression: z.string().nullable(),
+    enabled: z.boolean().nullable(),
+    method: z.string().nullable(),
+    pitrEnabled: z.boolean().nullable(),
+    repoName: z.string().nullable(),
+    retentionPeriod: z.string().nullable()
+  })
+  .nullable();
+
+export const dbDetailV1Schema = z.object({
+  name: z.string(),
+  kind: z.string(),
+  type: z.string(),
+  version: z.string().nullable(),
+  operationalStatus: dbOperationalStatusSchema,
+  status: z.string().nullable(),
+  resource: dbComponentResourceSchema,
+  components: z.array(dbComponentSchema),
+  connection: dbConnectionSchema,
+  backup: dbBackupSchema,
+  pods: z.array(dbPodSchema)
+});

@@ -28,7 +28,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
-    "next": "13.5.4",
+    "next": "14.2.35",
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "prettier": "^2.8.8",

@@ -13,7 +13,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-export function EmailSigninForm() {
+interface EmailSigninFormProps {
+  isModal?: boolean;
+  onVerifyStep?: () => void;
+}
+
+export function EmailSigninForm({ isModal = false, onVerifyStep }: EmailSigninFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useCustomToast();
@@ -31,6 +36,15 @@ export function EmailSigninForm() {
   } = useSigninFormStore();
 
   const [captchaSolved, setCaptchaSolved] = useState(false);
+
+  // If captcha is disabled, automatically set captchaSolved to true
+  useEffect(() => {
+    if (!authConfig?.captcha.turnstile.enabled) {
+      setCaptchaSolved(true);
+    } else {
+      setCaptchaSolved(false);
+    }
+  }, [authConfig?.captcha.turnstile.enabled]);
 
   // Countdown
   const getRemainingTime = useCallback(
@@ -118,10 +132,16 @@ export function EmailSigninForm() {
 
     if (codeSent) {
       updateStartTime();
-      router.push('/emailCheck');
+      if (isModal && onVerifyStep) {
+        onVerifyStep();
+      } else {
+        router.push('/emailCheck');
+      }
     } else {
       clearStartTime();
-      handleCaptchaError();
+      // On send failure, only clear token and reset turnstile
+      // Keep captchaSolved=true so user can retry without re-verifying
+      clearCaptchaToken();
       turnstileRef.current?.reset();
     }
   };

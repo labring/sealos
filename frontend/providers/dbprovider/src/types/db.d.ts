@@ -133,6 +133,7 @@ export interface DBDetailType extends DBEditType {
   totalCpu: number;
   totalMemory: number;
   totalStorage: number;
+  rawDbType: DBType;
 }
 
 export interface DBConditionItemType {
@@ -203,3 +204,18 @@ export interface OpsRequestItemType {
     instanceName: string;
   };
 }
+
+export type ParameterConfigField = ParameterConfigStringField | ParameterConfigEnumField;
+
+export type ParameterConfigStringField = {
+  name: string;
+  type: 'string';
+  description?: string;
+};
+
+export type ParameterConfigEnumField = {
+  name: string;
+  type: 'enum';
+  description?: string;
+  values: string[];
+};

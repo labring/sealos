@@ -1,14 +1,17 @@
 import { getAppByName } from '@/api/app';
 import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
+import { useUserStore } from '@/store/user';
 import { AppEditSyncedFields } from '@/types/app';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const RedirectPage = () => {
   const router = useRouter();
   const { setLastRoute } = useGlobalStore();
   const { resetGuideState } = useGuideStore();
+  const { session } = useUserStore();
+  const hasHandledRef = useRef(false);
 
   useEffect(() => {
     const handleRedirect = (formData?: string) => {
@@ -54,10 +57,12 @@ const RedirectPage = () => {
       handleRedirect(formData);
     };
 
-    if (router.isReady) {
+    // wait session
+    if (router.isReady && session && !hasHandledRef.current) {
+      hasHandledRef.current = true;
       handleUrlParams();
     }
-  }, [resetGuideState, router, router.isReady, router.query, setLastRoute]);
+  }, [resetGuideState, router, router.isReady, router.query, setLastRoute, session]);
 
   return null;
 };

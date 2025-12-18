@@ -20,7 +20,6 @@ import (
 	"time"
 
 	client2 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
-	"github.com/alibabacloud-go/tea/tea"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -491,7 +490,7 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		ticker := time.NewTicker(1 * time.Hour)
+		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
 			if err := db.Model(&types.Debt{}).Where("account_debt_status = ? AND updated_at < ?", types.DebtPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
@@ -523,7 +522,7 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		ticker := time.NewTicker(1 * time.Hour)
+		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
 			if err := db.Model(&types.Debt{}).Where("account_debt_status = ? AND updated_at < ?", types.DebtDeletionPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
@@ -583,70 +582,70 @@ func (r *DebtReconciler) start() {
 	}()
 
 	// 2.2 subscription change processing
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.processWithTimeRange(
-			&types.Subscription{},
-			"update_at",
-			1*time.Minute,
-			24*time.Hour,
-			func(db *gorm.DB, start, end time.Time) error {
-				users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
-				if err != nil {
-					return fmt.Errorf("failed to get unique users: %w", err)
-				}
-				if len(users) > 0 {
-					r.processUsersInParallel(users)
-					r.Info(
-						"processed subscription changes",
-						"count",
-						len(users),
-						"users",
-						users,
-						"start",
-						start,
-						"end",
-						end,
-					)
-				}
-				return nil
-			},
-		)
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	r.processWithTimeRange(
+	// 		&types.Subscription{},
+	// 		"update_at",
+	// 		1*time.Minute,
+	// 		24*time.Hour,
+	// 		func(db *gorm.DB, start, end time.Time) error {
+	// 			users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
+	// 			if err != nil {
+	// 				return fmt.Errorf("failed to get unique users: %w", err)
+	// 			}
+	// 			if len(users) > 0 {
+	// 				r.processUsersInParallel(users)
+	// 				r.Info(
+	// 					"processed subscription changes",
+	// 					"count",
+	// 					len(users),
+	// 					"users",
+	// 					users,
+	// 					"start",
+	// 					start,
+	// 					"end",
+	// 					end,
+	// 				)
+	// 			}
+	// 			return nil
+	// 		},
+	// 	)
+	// }()
 
 	// 2.3 credits refresh processing
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.processWithTimeRange(
-			&types.Credits{},
-			"updated_at",
-			1*time.Minute,
-			24*time.Hour,
-			func(db *gorm.DB, start, end time.Time) error {
-				users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
-				if err != nil {
-					return fmt.Errorf("failed to get unique users: %w", err)
-				}
-				if len(users) > 0 {
-					r.processUsersInParallel(users)
-					r.Info(
-						"processed credits refresh",
-						"count",
-						len(users),
-						"users",
-						users,
-						"start",
-						start,
-						"end",
-						end,
-					)
-				}
-				return nil
-			},
-		)
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	r.processWithTimeRange(
+	// 		&types.Credits{},
+	// 		"updated_at",
+	// 		1*time.Minute,
+	// 		24*time.Hour,
+	// 		func(db *gorm.DB, start, end time.Time) error {
+	// 			users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
+	// 			if err != nil {
+	// 				return fmt.Errorf("failed to get unique users: %w", err)
+	// 			}
+	// 			if len(users) > 0 {
+	// 				r.processUsersInParallel(users)
+	// 				r.Info(
+	// 					"processed credits refresh",
+	// 					"count",
+	// 					len(users),
+	// 					"users",
+	// 					users,
+	// 					"start",
+	// 					start,
+	// 					"end",
+	// 					end,
+	// 				)
+	// 			}
+	// 			return nil
+	// 		},
+	// 	)
+	// }()
 
 	// 3 retry failed users
 	wg.Add(1)
@@ -669,6 +668,9 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 	}
 	if account == nil {
 		return fmt.Errorf("account %s not found", userUID)
+	}
+	if account.DeductionBalance == 0 {
+		return nil
 	}
 	debt := types.Debt{}
 	err = r.AccountV2.GetGlobalDB().
@@ -866,39 +868,43 @@ func (r *DebtReconciler) SendUserDebtMsg(
 	if err != nil {
 		return fmt.Errorf("failed to get user oauth provider: %w", err)
 	}
-	phone, email := "", ""
+
+	// Collect all phone numbers and emails from OAuth providers
+	var phones []string
+	var emails []string
 	for i := range outh {
 		switch outh[i].ProviderType {
 		case types.OauthProviderTypePhone:
-			phone = outh[i].ProviderID
+			phones = append(phones, outh[i].ProviderID)
 		case types.OauthProviderTypeEmail:
-			email = outh[i].ProviderID
+			emails = append(emails, outh[i].ProviderID)
 		}
 	}
-	fmt.Printf("user: %s, phone: %s, email: %s\n", userUID, phone, email)
-	if phone != "" {
+	fmt.Printf("user: %s, phones: %v, emails: %v\n", userUID, phones, emails)
+
+	if len(phones) > 0 {
 		if r.SmsConfig != nil && r.SmsConfig.SmsCode[string(currentStatus)] != "" {
 			oweamount := strconv.FormatInt(
 				int64(math.Abs(math.Ceil(float64(oweamount)/1_000_000))),
 				10,
 			)
-			err = utils2.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-				PhoneNumbers: tea.String(phone),
-				SignName:     tea.String(r.SmsConfig.SmsSignName),
-				TemplateCode: tea.String(r.SmsConfig.SmsCode[string(currentStatus)]),
-				// ｜ownAmount/1_000_000｜
-				TemplateParam: tea.String(
-					"{\"user_id\":\"" + userUID.String() + "\",\"oweamount\":\"" + oweamount + "\"}",
-				),
-			})
+			// Use SendSmsMultiple to send to all phone numbers
+			err = utils2.SendSmsMultiple(
+				r.SmsConfig.Client,
+				phones,
+				r.SmsConfig.SmsSignName,
+				r.SmsConfig.SmsCode[string(currentStatus)],
+				"{\"user_id\":\""+userUID.String()+"\",\"oweamount\":\""+oweamount+"\"}",
+			)
 			if err != nil {
 				return fmt.Errorf("failed to send sms notice: %w", err)
 			}
 		}
 		if r.VmsConfig != nil && types.ContainDebtStatus(types.DebtStates, currentStatus) &&
 			r.VmsConfig.TemplateCode[string(currentStatus)] != "" {
-			err = utils2.SendVms(
-				phone,
+			// Use SendVmsMultiple to send to all phone numbers
+			err = utils2.SendVmsMultiple(
+				phones,
 				r.VmsConfig.TemplateCode[string(currentStatus)],
 				r.VmsConfig.NumberPoll,
 				GetSendVmsTimeInUTCPlus8(time.Now()),
@@ -909,7 +915,7 @@ func (r *DebtReconciler) SendUserDebtMsg(
 			}
 		}
 	}
-	if r.smtpConfig != nil && email != "" {
+	if r.smtpConfig != nil && len(emails) > 0 {
 		var emailBody string
 		emailSubject := "Low Account Balance Reminder"
 		if SubscriptionEnabled {
@@ -948,7 +954,7 @@ func (r *DebtReconciler) SendUserDebtMsg(
 		} else {
 			emailBody = emailTmpl
 		}
-		if err = r.smtpConfig.SendEmailWithTitle(emailSubject, emailBody, email); err != nil {
+		if err = r.smtpConfig.SendEmailWithTitleMultiple(emailSubject, emailBody, emails); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
@@ -1055,7 +1061,7 @@ func getUniqueUsers(
 	switch table.(type) {
 	case *types.Account:
 		if err := db.Model(table).Where(timeField+" BETWEEN ? AND ?", startTime, endTime).
-			Where("deduction_balance > ?", 0).
+			// Where("deduction_balance > ?", 0).
 			Distinct(`"userUid"`).Pluck(`"userUid"`, &users).Error; err != nil {
 			return nil, fmt.Errorf("failed to query unique users: %w", err)
 		}

@@ -8,7 +8,7 @@ import path from 'path';
 import util from 'util';
 import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
-import { getTemplateEnvs } from '@/utils/tools';
+import { getTemplateEnvs } from '@/utils/common';
 
 const execAsync = util.promisify(exec);
 
@@ -85,8 +85,8 @@ export async function updateRepo() {
 
     console.log('git operation:', result);
   } catch (error) {
-    console.log('git operation timed out: \n', error);
-    throw new Error('Git operation failed: ');
+    // Note: git operation timeout should not block the process. Just log the error, do not throw.
+    console.log('git operation timed out (non-blocking): \n', error);
   }
 
   if (!fs.existsSync(targetPath)) {

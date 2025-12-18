@@ -25,16 +25,13 @@ import (
 )
 
 type Account struct {
-	UserUID       uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
-	ActivityBonus int64     `gorm:"column:activityBonus;type:bigint;not null"`
-	// Discard EncryptBalance and EncryptDeductionBalance
-	EncryptBalance          string    `gorm:"column:encryptBalance;type:text"`
-	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text"`
-	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	UpdatedAt               time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
-	CreateRegionID          string    `gorm:"type:text;not null"`
-	Balance                 int64
-	DeductionBalance        int64
+	UserUID          uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
+	ActivityBonus    int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	CreatedAt        time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt        time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
+	CreateRegionID   string    `gorm:"type:text;not null"`
+	Balance          int64
+	DeductionBalance int64
 }
 
 func (Account) TableName() string {
@@ -424,4 +421,19 @@ type NotificationRecipient struct {
 	PhoneNumber string    `json:"phone_number,omitempty" gorm:"column:phone_number"`
 	UserID      string    `json:"user_id,omitempty"      gorm:"column:user_id"`
 	UserUID     uuid.UUID `json:"user_uid,omitempty"     gorm:"column:user_uid"`
+}
+
+// UserAlertNotificationAccount 用户自定义告警通知账号
+type UserAlertNotificationAccount struct {
+	ID           uuid.UUID         `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	UserUID      uuid.UUID         `gorm:"column:user_uid;type:uuid;not null;uniqueIndex:idx_user_provider_type_id"`
+	ProviderType OauthProviderType `gorm:"column:provider_type;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	ProviderID   string            `gorm:"column:provider_id;type:text;not null;uniqueIndex:idx_user_provider_type_id"`
+	IsEnabled    bool              `gorm:"column:is_enabled;type:boolean;not null;default:true"`
+	CreatedAt    time.Time         `gorm:"column:created_at;type:timestamp(3);default:current_timestamp"`
+	UpdatedAt    time.Time         `gorm:"column:updated_at;type:timestamp(3);default:current_timestamp"`
+}
+
+func (UserAlertNotificationAccount) TableName() string {
+	return "UserAlertNotificationAccount"
 }

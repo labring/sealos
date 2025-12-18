@@ -13,7 +13,6 @@ export type Mongo = {
 
 export type Invoice = {
   enabled: boolean;
-  directDownload: boolean;
   feishApp: {
     appId: string;
     appSecret: string;
@@ -105,7 +104,6 @@ export var DefaultAppConfig: AppConfigType = {
     subscriptionEnabled: false,
     invoice: {
       enabled: false,
-      directDownload: true,
       feishApp: {
         appId: '',
         appSecret: '',
