@@ -7,6 +7,7 @@ import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import { BankCardIcon } from '../BankCardIcon';
 import { BankCardBrand } from '../BankCardBrand';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 interface CardInfoSectionProps {
   workspace?: string;
@@ -40,8 +41,7 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
     mutationFn: createCardManageSession,
     onSuccess: (data) => {
       if (data?.data?.success && data?.data?.url) {
-        // Open Stripe portal in new tab
-        window.open(data.data.url, '_blank', 'noopener,noreferrer');
+        openInNewWindow(data.data.url);
       } else {
         toast({
           title: t('common:error'),

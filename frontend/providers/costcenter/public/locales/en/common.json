@@ -47,6 +47,8 @@
   "downgrade_plan": "Downgrade Plan",
   "download_invoice": "Download Invoice",
   "due_today": "Due Today",
+  "prorated_difference_tooltip_part1": "Prorated difference for the remainder of the current cycle. You will be charged",
+  "prorated_difference_tooltip_part2": "/month starting next month.",
   "duration": "duration",
   "enter_redeem_code": "Enter Redeem Code",
   "enter_promotion_code": "Enter Promotion Code",

@@ -30,6 +30,7 @@ import { useRouter } from 'next/router';
 import { Skeleton } from '@sealos/shadcn-ui';
 import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
 import { gtmSubscribeCheckout, gtmSubscribeSuccess } from '@/utils/gtm';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 export default function Plan() {
   const router = useRouter();
@@ -336,15 +337,12 @@ export default function Plan() {
 
       if (data.code === 200) {
         if (data.data?.redirectUrl) {
-          // Plan upgrade uses a page that does not have a back button
           if (variables.operator === 'upgraded') {
-            // Open payment waiting modal before redirecting (only for upgrade)
             const targetWorkspace = variables.workspace || session?.user?.nsid || '';
             const targetRegionDomain = variables.regionDomain || region?.domain || '';
             startPaymentWaiting(targetWorkspace, targetRegionDomain, data.data.redirectUrl);
-            window.open(data.data.redirectUrl, '_blank', 'noopener,noreferrer');
+            openInNewWindow(data.data.redirectUrl);
           } else {
-            // For non-upgrade payments, close modal and redirect
             hideModal();
             window.parent.location.href = data.data.redirectUrl;
           }

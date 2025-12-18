@@ -10,6 +10,7 @@ import usePlanStore from '@/stores/plan';
 import { useState, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getLastTransaction } from '@/api/plan';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 interface PlanConfirmationModalViewProps {
   plan: SubscriptionPlan;
@@ -266,9 +267,9 @@ function PriceDisplay({
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs">
-                  Prorated difference for the remainder of the current cycle. You will be charged{' '}
-                  <CurrencySymbol />
-                  {displayMoney(formatMoney(monthlyPrice))}/month starting next month.
+                  {t('common:prorated_difference_tooltip_part1')} <CurrencySymbol />
+                  {displayMoney(formatMoney(monthlyPrice))}
+                  {t('common:prorated_difference_tooltip_part2')}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -431,7 +432,7 @@ function PaymentWaitingSection({
 
   const handleOpenPaymentPage = () => {
     if (paymentUrl) {
-      window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+      openInNewWindow(paymentUrl);
     }
   };
 

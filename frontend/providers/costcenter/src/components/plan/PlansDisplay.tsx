@@ -8,6 +8,7 @@ import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 interface PlansDisplayProps {
   isSubscribing?: boolean;
@@ -174,7 +175,7 @@ export function PlansDisplay({
             onValueChange={(value) => {
               const currentPlan = additionalPlans.find((p) => p.ID === value);
               if (currentPlan?.Name === 'Customized' && currentPlan?.Description) {
-                window.open(currentPlan?.Description, '_blank', 'noopener,noreferrer');
+                openInNewWindow(currentPlan?.Description);
               } else {
                 setSelectedPlan(value);
                 if (isCreateMode && onPlanSelect) {

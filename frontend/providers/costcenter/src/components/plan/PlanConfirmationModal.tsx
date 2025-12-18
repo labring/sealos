@@ -9,6 +9,7 @@ import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { PlanConfirmationModalView } from './PlanConfirmationModalView';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
@@ -153,7 +154,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     mutationFn: createCardManageSession,
     onSuccess: (data) => {
       if (data?.data?.success && data?.data?.url) {
-        window.open(data.data.url, '_blank', 'noopener,noreferrer');
+        openInNewWindow(data.data.url);
       } else {
         toast({
           title: t('common:error'),

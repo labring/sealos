@@ -47,6 +47,8 @@
   "downgrade_plan": "降级套餐",
   "download_invoice": "下载发票",
   "due_today": "需付款",
+  "prorated_difference_tooltip_part1": "按当前周期剩余时间按比例计算的差额。从下个月开始，您将被收取",
+  "prorated_difference_tooltip_part2": "/月。",
   "duration": "时间",
   "enter_redeem_code": "输入兑换码",
   "enter_promotion_code": "输入优惠码",
