@@ -1,0 +1,377 @@
+name: Build Controller (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        description: "Module name (e.g., user, account)"
+        required: true
+        type: string
+      module_path:
+        description: "Module path relative to controllers/ (e.g., user, job/init)"
+        required: true
+        type: string
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      module_name:
+        description: "Module name (e.g., user, account, job-init)"
+        required: true
+        type: string
+      module_path:
+        description: "Module path (e.g., user, job/init)"
+        required: true
+        type: string
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
+
+env:
+  GO_VERSION: "1.24"
+  ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
+  ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
+
+jobs:
+  golangci-lint:
+    if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
+      - name: Run Linter
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5.0
+          working-directory: controllers/${{ inputs.module_path }}
+          args: --color=always --config=${{ github.workspace }}/.golangci.yml
+
+  image-build:
+    needs: [golangci-lint]
+    if: ${{ always() && (needs.golangci-lint.result == 'success' || needs.golangci-lint.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    outputs:
+      image-name: ${{ steps.set-outputs.outputs.image-name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
+      - name: Build ${{ inputs.module_name }} ${{ matrix.arch }}
+        working-directory: controllers/${{ inputs.module_path }}
+        env:
+          MODULE_NAME: ${{ inputs.module_name }}
+        run: |
+          GOARCH=${{ matrix.arch }} TARGETARCH=${{ matrix.arch }} make build
+          mv bin/manager "bin/controller-${MODULE_NAME}-${{ matrix.arch }}"
+          chmod +x "bin/controller-${MODULE_NAME}-${{ matrix.arch }}"
+
+      - name: Set image repo
+        id: set-outputs
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ inputs.module_name }}
+        run: |
+          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "image-name=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_OUTPUT
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: ${{ inputs.push_image }}
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        uses: docker/login-action@v3
+        if: ${{ inputs.push_image && env.ALIYUN_REGISTRY }}
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REPO }}
+            ${{ env.ALIYUN_REPO }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./controllers/${{ inputs.module_path }}
+          file: ./controllers/${{ inputs.module_path }}/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.GHCR_REPO }},push-by-digest=${{ inputs.push_image }},name-canonical=true,push=${{ inputs.push_image }}
+
+      - name: Export digest
+        if: ${{ inputs.push_image }}
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: ${{ inputs.push_image }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-controller-${{ inputs.module_name }}-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-release:
+    if: ${{ inputs.push_image }}
+    needs: [image-build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-controller-${{ inputs.module_name }}-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ needs.image-build.outputs.image-name }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        uses: docker/login-action@v3
+        if: ${{ env.ALIYUN_REGISTRY }}
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        env:
+          GHCR_REPO: ${{ needs.image-build.outputs.image-name }}
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.GHCR_REPO }}@sha256:%s ' *)
+
+      - name: Create manifest list and push to Aliyun
+        if: ${{ env.ALIYUN_REPO_PREFIX }}
+        working-directory: /tmp/digests
+        env:
+          GHCR_REPO: ${{ needs.image-build.outputs.image-name }}
+          MODULE_NAME: ${{ inputs.module_name }}
+        run: |
+          ALIYUN_REPO="${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-controller"
+          # Create tags for Aliyun
+          TAGS=$(jq -cr '.tags | map(split("/")[-1] | "-t '$ALIYUN_REPO':" + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          docker buildx imagetools create $TAGS \
+            $(printf '${{ env.GHCR_REPO }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ needs.image-build.outputs.image-name }}:${{ steps.meta.outputs.version }}
+
+  cluster-image-build:
+    if: ${{ inputs.push_image }}
+    needs: [image-build, image-release]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set image repo
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ inputs.module_name }}
+          MODULE_PATH: ${{ inputs.module_path }}
+        run: |
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
+          echo "MODULE_PATH=${MODULE_PATH}" >> $GITHUB_ENV
+          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          fi
+
+      - name: Docker meta for cluster image
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_CLUSTER_REPO }}
+            ${{ env.ALIYUN_CLUSTER_REPO }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
+
+      - name: Install sealos
+        run: |
+          sudo bash ./.github/scripts/install.sh
+
+      - name: Build ${{ inputs.module_name }}-controller cluster image
+        working-directory: controllers/${{ inputs.module_path }}/deploy
+        env:
+          MODULE_NAME: ${{ env.MODULE_NAME }}
+          MODULE_PATH: ${{ env.MODULE_PATH }}
+          OLD_DOCKER_REPO: ${{ env.OLD_DOCKER_REPO }}
+          GHCR_DOCKER_REPO: ${{ env.GHCR_DOCKER_REPO }}
+        run: |
+          # Build cluster images for each tag (amd64)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            IMAGE_TAG="${TAG##*:}"
+            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
+            echo "Updating deploy files to: ${NEW_DOCKER_IMAGE}"
+            if [[ -d manifests ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
+            fi
+            if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
+            fi
+            sudo rm -rf registry
+            echo "Building ${TAG}-amd64"
+            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
+          done
+
+          # Build cluster images for each tag (arm64)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            IMAGE_TAG="${TAG##*:}"
+            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
+            if [[ -d manifests ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
+            fi
+            if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
+            fi
+            sudo rm -rf registry
+            echo "Building ${TAG}-arm64"
+            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
+          done
+
+      - name: Sealos login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
+
+      - name: Manifest Cluster Images
+        run: |
+          sudo sealos images
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            echo "Creating manifest for ${TAG}"
+            bash scripts/manifest-cluster-images.sh "$TAG"
+          done

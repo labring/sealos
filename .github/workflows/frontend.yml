@@ -17,6 +17,22 @@ on:
         default: "latest"
         required: false
         type: string
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Module (e.g., desktop, providers/dbprovider)"
+        required: true
+        type: string
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
 
 env:
   # Common versions
