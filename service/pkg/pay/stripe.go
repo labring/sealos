@@ -136,21 +136,14 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(paymentR
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
 			Enabled: stripe.Bool(false),
 		},
-		ExpiresAt:           stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
-		AllowPromotionCodes: stripe.Bool(true),
+		ExpiresAt: stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
 	}
-	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded {
-		checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().Unix())
-	} else {
-		checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().AddDate(0, 0, 30).Unix())
-	}
+	checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().AddDate(0, 0, 30).Unix())
 
 	// Add promotion code if provided (assume validation already done at higher level)
 	if promotionCode != "" {
 		// Get the promotion code to retrieve its ID
-		pc, err := promotioncode.Get(promotionCode, &stripe.PromotionCodeParams{
-			Code: stripe.String(promotionCode),
-		})
+		pc, err := s.GetPromotionCode(promotionCode)
 		if err != nil {
 			return nil, fmt.Errorf("promotion code not found: %v", err)
 		}
@@ -160,12 +153,14 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(paymentR
 				PromotionCode: stripe.String(pc.ID),
 			},
 		}
+	} else {
+		checkoutParams.AllowPromotionCodes = stripe.Bool(true)
 	}
 
 	// Create session using official SDK
 	sess, err := checkoutsession.New(checkoutParams)
 	if err != nil {
-		return nil, fmt.Errorf("stripe.NewCheckoutSession: %v", err)
+		return nil, fmt.Errorf("failed to create new checkout session: %v", err)
 	}
 
 	return &StripeResponse{
@@ -351,9 +346,7 @@ func (s *StripeService) UpdatePlanPricePreviewWithPromotion(subscriptionID, newP
 	// Add promotion code if provided (assume validation already done at higher level)
 	if promotionCode != "" {
 		// Get the promotion code to retrieve its ID
-		pc, err := promotioncode.Get(promotionCode, &stripe.PromotionCodeParams{
-			Code: stripe.String(promotionCode),
-		})
+		pc, err := s.GetPromotionCode(promotionCode)
 		if err != nil {
 			return 0, fmt.Errorf("promotion code not found: %v", err)
 		}
@@ -370,15 +363,15 @@ func (s *StripeService) UpdatePlanPricePreviewWithPromotion(subscriptionID, newP
 		return 0, fmt.Errorf("failed to get Stripe invoice preview: %v", err)
 	}
 	// Find the first positive line item amount
-	firstAmount := int64(0)
-	for _, line := range inv.Lines.Data {
-		firstAmount += line.Amount
-		if line.Amount > 0 {
-			return firstAmount, nil
-		}
-	}
+	//firstAmount := int64(0)
+	//for _, line := range inv.Lines.Data {
+	//	firstAmount += line.Amount
+	//	if line.Amount > 0 {
+	//		return firstAmount, nil
+	//	}
+	//}
 
-	return 0, fmt.Errorf("not found upgrade amount")
+	return inv.Total, nil
 }
 
 // getOrCreatePrice creates or retrieves a price using lookup key pattern
@@ -827,11 +820,18 @@ func (s *StripeService) GetCustomerInvoices(customerID string, limit int64) ([]*
 
 // GetPromotionCode validates and retrieves a promotion code from Stripe
 func (s *StripeService) GetPromotionCode(code string) (*stripe.PromotionCode, error) {
-	pc, err := promotioncode.Get(code, &stripe.PromotionCodeParams{
+	iter := promotioncode.List(&stripe.PromotionCodeListParams{
 		Code: stripe.String(code),
 	})
-	if err != nil {
-		return nil, err
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("promotioncode.List: %v", err)
+	}
+	var pc *stripe.PromotionCode
+	for iter.Next() {
+		pc = iter.PromotionCode()
+	}
+	if pc == nil {
+		return nil, fmt.Errorf("promotioncode not found for code: %s", code)
 	}
 	return pc, nil
 }
@@ -859,6 +859,56 @@ func (s *StripeService) ValidatePromotionCode(code string) (*stripe.PromotionCod
 	}
 
 	return pc, nil
+}
+
+// CancelUnpaidUpgrade voids the unpaid invoice and rolls back the subscription to its previous state
+func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceID string) error {
+	// Step 1: Retrieve the subscription to get the old item ID and other details
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return fmt.Errorf("subscription.Get: %v", err)
+	}
+	if len(sub.Items.Data) == 0 {
+		return fmt.Errorf("subscription has no items to rollback")
+	}
+	// Assume the last item is the one to rollback (based on your upgrade logic)
+	oldItemID := sub.Items.Data[len(sub.Items.Data)-1].ID
+
+	// Step 2: Void the unpaid invoice
+	voidParams := &stripe.InvoiceVoidInvoiceParams{}
+	_, err = invoice.VoidInvoice(invoiceID, voidParams)
+	if err != nil {
+		return fmt.Errorf("failed to void invoice %s: %v", invoiceID, err)
+	}
+	logrus.Infof("Voided unpaid invoice %s for subscription %s", invoiceID, subscriptionID)
+
+	// Step 3: Rollback the subscription to the old price without proration
+	rollbackParams := &stripe.SubscriptionParams{
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				ID:    stripe.String(oldItemID),
+				Price: stripe.String(oldPriceID),
+			},
+		},
+		ProrationBehavior: stripe.String("none"), // No proration invoice generated
+	}
+
+	// Optional: Restore the old default payment method if saved in metadata
+	if oldPaymentMethod, ok := sub.Metadata["old_payment_method"]; ok && oldPaymentMethod != "" {
+		rollbackParams.DefaultPaymentMethod = stripe.String(oldPaymentMethod)
+		// Clean up the metadata
+		rollbackParams.Metadata = map[string]string{
+			"old_payment_method": "", // Clear it
+		}
+	}
+
+	_, err = subscription.Update(subscriptionID, rollbackParams)
+	if err != nil {
+		return fmt.Errorf("failed to rollback subscription %s: %v", subscriptionID, err)
+	}
+	logrus.Infof("Rolled back subscription %s to old price %s", subscriptionID, oldPriceID)
+
+	return nil
 }
 
 // CreateUpgradeInvoice creates an invoice for subscription upgrade using UpdatePlan with incomplete payment
@@ -890,9 +940,7 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 	// Add promotion code if provided (assume validation already done at higher level)
 	if promotionCode != "" {
 		// Get the promotion code to retrieve its ID
-		pc, err := promotioncode.Get(promotionCode, &stripe.PromotionCodeParams{
-			Code: stripe.String(promotionCode),
-		})
+		pc, err := s.GetPromotionCode(promotionCode)
 		if err != nil {
 			return "", "", fmt.Errorf("promotion code not found: %v", err)
 		}
@@ -933,6 +981,7 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 			"new_plan_name":         newPlanName,
 			"plan_name":             newPlanName,
 			"old_plan_name":         sub.Metadata["plan_name"],
+			"old_price_id":          sub.Items.Data[len(sub.Items.Data)-1].Price.ID,
 			"user_uid":              sub.Metadata["user_uid"],
 			"workspace":             sub.Metadata["workspace"],
 			"region_domain":         sub.Metadata["region_domain"],

@@ -604,12 +604,6 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		}
 	}
 
-	// Handle subscription creation
-	if req.Operator == types.SubscriptionTransactionTypeCreated {
-		handleSubscriptionCreation(c, req, validatedPromotionCode)
-		return
-	}
-
 	// Handle subscription upgrade
 	currentSubscription, err := dao.DBClient.GetWorkspaceSubscription(
 		req.Workspace,
@@ -622,6 +616,12 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 				Error: fmt.Sprintf("failed to get current workspace subscription: %v", err),
 			},
 		)
+		return
+	}
+
+	// Handle subscription creation
+	if req.Operator == types.SubscriptionTransactionTypeCreated || currentSubscription.PlanName == types.FreeSubscriptionPlanName {
+		handleSubscriptionCreation(c, req, validatedPromotionCode)
 		return
 	}
 
@@ -741,24 +741,24 @@ func handleSubscriptionCreation(c *gin.Context, req *helper.WorkspaceSubscriptio
 	}
 
 	// Calculate the total amount from the invoice
-	var totalAmount int64 = 0
-	for _, line := range invoice.Lines.Data {
-		if line.Amount > 0 {
-			totalAmount += line.Amount
-		}
-	}
-	totalAmount *= 10_000
+	//var totalAmount int64 = 0
+	//for _, line := range invoice.Lines.Data {
+	//	if line.Amount > 0 {
+	//		totalAmount += line.Amount
+	//	}
+	//}
+	//totalAmount *= 10_000
 
 	// If no positive amounts found, fall back to standard price
-	if totalAmount == 0 {
-		totalAmount = price.Price
-	}
+	//if totalAmount == 0 {
+	//	totalAmount = price.Price
+	//}
 
 	response := gin.H{
-		"amount":          totalAmount, // Convert cents to dollars
-		"original_amount": price.Price, // Original price without discount
+		"amount":          invoice.Total * 10_000, // Convert cents to dollars
+		"original_amount": price.Price,            // Original price without discount
 		"promotion_code":  req.PromotionCode,
-		"has_discount":    totalAmount < price.Price,
+		"has_discount":    invoice.Total*10_000 < price.Price,
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -1580,7 +1580,8 @@ func processUpgradeSubscription(
 		// If invoice creation fails, mark transaction as failed
 		transaction.Status = types.SubscriptionTransactionStatusFailed
 		transaction.PayStatus = types.SubscriptionPayStatusFailed
-		transaction.StatusDesc = fmt.Sprintf("Failed to create upgrade invoice: %v", err)
+		// TODO err too long
+		//transaction.StatusDesc = fmt.Sprintf("Failed to create upgrade invoice: %v", err)
 		tx.Save(&transaction)
 		SetErrorResp(
 			c,
@@ -1757,11 +1758,7 @@ func createStripeSessionAndPaymentOrder(
 	}
 
 	// Extract promotion code from transaction status description for upgrades
-	promotionCode := ""
-	if transaction.Operator == types.SubscriptionTransactionTypeUpgraded && strings.HasPrefix(transaction.StatusDesc, "Promotion code: ") {
-		promotionCode = strings.TrimPrefix(transaction.StatusDesc, "Promotion code: ")
-	}
-
+	promotionCode := req.PromotionCode
 	// Create Stripe subscription session
 	var stripeResp *services.StripeResponse
 	if promotionCode != "" {
@@ -2034,7 +2031,7 @@ func NewWorkspaceSubscriptionNotifyHandler(c *gin.Context) {
 	if err != nil {
 		// logrus.Errorf("Failed to process workspace subscription webhook event %s: %v", event.Type, err)
 		dao.Logger.Errorf(
-			"Failed to process workspace subscription webhook %s event : %v, err: %v",
+			"Failed to process workspace subscription webhook %s event : %#+v, err: %v",
 			event.Type,
 			event,
 			err,
@@ -2459,8 +2456,7 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 		}
 		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
-	if workspaceSubscription != nil &&
-		workspaceSubscription.Status == types.SubscriptionStatusDeleted {
+	if workspaceSubscription.Status == types.SubscriptionStatusDeleted {
 		_, err := services.StripeServiceInstance.CancelSubscription(subscriptionID)
 		if err != nil {
 			return fmt.Errorf("failed to cancel subscription for deleted workspace: %w", err)
@@ -2479,9 +2475,9 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 	isRenewSubscription := invoice.BillingReason == "subscription_cycle"
 	isUpdateSubscription := invoice.BillingReason == "subscription_update"
 	failureReason := fmt.Sprintf(
-		"Stripe payment failed for invoice %s: %s",
+		"Stripe payment failed for invoice %s",
 		invoice.ID,
-		invoice.LastFinalizationError.Error(),
+		//invoice.LastFinalizationError.Error(),
 	)
 
 	notifyEventData := &usernotify.WorkspaceSubscriptionEventData{

@@ -279,13 +279,7 @@ func handleSubscriptionUpdate(
 	nr *types.NotificationRecipient,
 ) error {
 	// For upgrade operations, enrich metadata from invoice if subscription metadata is incomplete
-	isUpgrade := false
-	if invoice != nil && invoice.Metadata != nil {
-		isUpgrade = invoice.Metadata["subscription_operator"] == "upgraded"
-	}
-	if isUpgrade {
-		meta = enrichMetadataFromInvoice(meta, invoice, subscription)
-	}
+	meta = enrichMetadataFromInvoice(meta, invoice, subscription)
 	wsTransaction, paymentID, err := prepareUpdateTransaction(invoice, subscription, meta)
 	if err != nil {
 		return err
