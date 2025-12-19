@@ -49,7 +49,6 @@ declare -A SERVICE_MODULES=(
     ["vlogs"]="vlogs"
     ["hubble"]="hubble"
     ["sshgate"]="sshgate"
-    ["zombiedetector"]="zombiedetector"
     ["imagemonitor"]="imagemonitor"
 )
 
