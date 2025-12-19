@@ -471,20 +471,23 @@ export const adaptAppDetail = async (
             (port) => port.port === item.port && port.protocol === item.protocol
           )
         );
+
         const ingress = configs.find(
           (config: any) =>
             item.protocol === 'TCP' &&
             config.kind === YamlKindEnum.Ingress &&
             config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
         ) as V1Ingress;
+
         const domain = ingress?.spec?.rules?.[0].host || '';
 
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
+        // Should fallback appProtocol to HTTP for ingresses when using TCP services
         const appProtocol =
           (ingress?.metadata?.annotations?.[
             'nginx.ingress.kubernetes.io/backend-protocol'
-          ] as ApplicationProtocolType) ?? undefined;
+          ] as ApplicationProtocolType) ?? (protocol === 'TCP' ? 'HTTP' : undefined);
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&
