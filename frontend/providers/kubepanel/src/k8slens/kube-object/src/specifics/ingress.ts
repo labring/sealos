@@ -3,9 +3,9 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import { hasTypedProperty, isString, iter } from '@//k8slens/utilities';
+import { hasTypedProperty, isString, iter } from '@/k8slens/utilities';
 import type { RequireExactlyOne } from 'type-fest';
-import type { TypedLocalObjectReference, NamespaceScopedMetadata } from '../api-types';
+import type { NamespaceScopedMetadata, TypedLocalObjectReference } from '../api-types';
 import { KubeObject } from '../kube-object';
 
 export interface ILoadBalancerIngress {
@@ -83,6 +83,7 @@ export interface IngressRule {
 export interface IngressSpec {
   tls: {
     secretName: string;
+    hosts?: string[];
   }[];
   rules?: IngressRule[];
   // extensions/v1beta1
@@ -122,25 +123,6 @@ export class Ingress extends KubeObject<NamespaceScopedMetadata, IngressStatus, 
 
   getRoutes(): string[] {
     return computeRouteDeclarations(this).map(({ url, service }) => `${url} ⇢ ${service}`);
-  }
-
-  getServiceNamePort(): ExtensionsBackend | undefined {
-    const { spec: { backend, defaultBackend } = {} } = this;
-
-    const serviceName = defaultBackend?.service?.name ?? backend?.serviceName;
-    const servicePort =
-      defaultBackend?.service?.port.number ??
-      defaultBackend?.service?.port.name ??
-      backend?.servicePort;
-
-    if (!serviceName || !servicePort) {
-      return undefined;
-    }
-
-    return {
-      serviceName,
-      servicePort
-    };
   }
 
   getHosts() {

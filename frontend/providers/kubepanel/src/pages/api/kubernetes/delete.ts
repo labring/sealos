@@ -1,11 +1,11 @@
-import axios from 'axios';
 import { hasTypedProperty } from '@/k8slens/utilities';
 import { getApiUrl } from '@/services/backend/api';
 import { authKubeConfig } from '@/services/backend/auth';
 import { ErrnoCode, buildErrno } from '@/services/backend/error';
 import { handlerAxiosError, sendErrorResponse } from '@/services/backend/response';
 import { DeleteQuery, DeleteResponse } from '@/types/api/kubenertes';
-import { isString, isObject } from 'lodash';
+import axios from 'axios';
+import { isObject, isString } from 'lodash';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 function isDeleteQuery(query: unknown): query is DeleteQuery {

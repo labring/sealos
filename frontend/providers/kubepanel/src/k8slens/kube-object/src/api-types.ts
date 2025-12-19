@@ -3,8 +3,6 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import type { KubeObject } from './kube-object';
-
 /**
  * The metadata for LIST requests to the KubeApi
  */
@@ -33,8 +31,16 @@ export interface KubeJsonApiData<
   [otherKeys: string]: unknown;
 }
 
-export type KubeJsonApiDataFor<K> = K extends KubeObject<infer Metadata, infer Status, infer Spec>
-  ? KubeJsonApiData<Metadata, Status, Spec>
+export type KubeJsonApiDataFor<K> = K extends {
+  metadata: infer Metadata;
+  status?: infer Status;
+  spec?: infer Spec;
+}
+  ? KubeJsonApiData<
+      Metadata extends KubeJsonApiObjectMetadata ? Metadata : KubeJsonApiObjectMetadata,
+      Status,
+      Spec
+    >
   : never;
 
 export interface KubeObjectConstructorData {
@@ -43,8 +49,14 @@ export interface KubeObjectConstructorData {
   readonly apiBase?: string;
 }
 
-export type KubeObjectConstructor<K extends KubeObject, Data> = (new (data: Data) => K) &
-  KubeObjectConstructorData;
+export type KubeObjectConstructor<
+  K extends {
+    kind: string;
+    apiVersion: string;
+    metadata: KubeObjectMetadata<KubeObjectScope>;
+  },
+  Data
+> = (new (data: Data) => K) & KubeObjectConstructorData;
 
 export interface OwnerReference {
   apiVersion: string;
@@ -292,7 +304,10 @@ export interface KubeObjectStatus {
 export type KubeMetaField = keyof KubeJsonApiObjectMetadata;
 
 export class KubeCreationError extends Error {
-  constructor(message: string, public data: unknown) {
+  constructor(
+    message: string,
+    public data: unknown
+  ) {
     super(message);
   }
 }
@@ -383,8 +398,8 @@ export type ScopedNamespace<Namespaced extends KubeObjectScope> =
   Namespaced extends KubeObjectScope.Namespace
     ? string
     : Namespaced extends KubeObjectScope.Cluster
-    ? undefined
-    : string | undefined;
+      ? undefined
+      : string | undefined;
 
 export interface RawKubeObject<
   Metadata extends KubeObjectMetadata = KubeObjectMetadata,

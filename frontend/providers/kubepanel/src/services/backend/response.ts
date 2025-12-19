@@ -1,7 +1,7 @@
+import { KubeStatus } from '@/types/kube-resource';
+import { isAxiosError } from 'axios';
 import { NextApiResponse } from 'next';
 import { Errno, ErrnoCode, buildErrno, isErrno } from './error';
-import { isAxiosError } from 'axios';
-import { KubeStatus } from '@/types/kube-resource';
 
 /**
  * Builds an error response.

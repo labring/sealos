@@ -3,7 +3,7 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import type { LabelSelector, KubeObjectStatus, NamespaceScopedMetadata } from '../api-types';
+import type { KubeObjectStatus, LabelSelector, NamespaceScopedMetadata } from '../api-types';
 import { KubeObject } from '../kube-object';
 import type { PodSpec } from './pod';
 
@@ -33,7 +33,6 @@ export interface DeploymentStatus extends KubeObjectStatus {
   updatedReplicas: number;
   readyReplicas: number;
   availableReplicas?: number;
-  unavailableReplicas?: number;
 }
 
 export class Deployment extends KubeObject<

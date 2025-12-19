@@ -4,23 +4,22 @@
  */
 
 import {
-  isObject,
-  hasTypedProperty,
-  isString,
-  hasOptionalTypedProperty,
   bindPredicate,
-  isTypedArray,
-  isRecord
-} from '@//k8slens/utilities';
+  hasOptionalTypedProperty,
+  hasTypedProperty,
+  isObject,
+  isRecord,
+  isString,
+  isTypedArray
+} from '@/k8slens/utilities';
 import type {
   KubeJsonApiData,
-  KubeObjectMetadata,
-  KubeObjectScope,
+  KubeJsonApiDataList,
   KubeJsonApiListMetadata,
   KubeJsonApiObjectMetadata,
-  KubeJsonApiDataList
+  KubeObjectMetadata,
+  KubeObjectScope
 } from './api-types';
-import type { KubeObject } from './kube-object';
 
 const resourceApplierAnnotationsForFiltering = ['kubectl.kubernetes.io/last-applied-configuration'];
 
@@ -28,7 +27,7 @@ export const filterOutResourceApplierAnnotations = (label: string) =>
   !resourceApplierAnnotationsForFiltering.some((key) => label.startsWith(key));
 
 export function isKubeObjectNonSystem(
-  item: KubeJsonApiData | KubeObject<KubeObjectMetadata<KubeObjectScope>, unknown, unknown>
+  item: KubeJsonApiData | { metadata: KubeObjectMetadata<KubeObjectScope> }
 ) {
   return !item.metadata.name?.startsWith('system:');
 }
@@ -111,5 +110,5 @@ export function stringifyLabels(labels?: Partial<Record<string, string>>): strin
     return [];
   }
 
-  return Object.entries(labels).map(([name, value]) => `${name}=${value}`);
+  return Object.entries(labels).map(([name, value]) => `${name}: ${value}`);
 }

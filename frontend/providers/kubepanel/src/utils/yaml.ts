@@ -9,11 +9,35 @@ export function dumpKubeObject<K extends KubeObject = KubeObject>(obj: PartialDe
       objWithoutFunction[key] = value;
     }
   }
-  
+
   // Remove managedFields from metadata if it exists
-  if (objWithoutFunction.metadata && objWithoutFunction.metadata.managedFields) {
-    delete objWithoutFunction.metadata.managedFields;
+  if (objWithoutFunction.metadata) {
+    if (objWithoutFunction.metadata.managedFields) {
+      delete objWithoutFunction.metadata.managedFields;
+    }
+    // Remove last-applied-configuration annotation
+    if (
+      objWithoutFunction.metadata.annotations &&
+      objWithoutFunction.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration']
+    ) {
+      delete objWithoutFunction.metadata.annotations[
+        'kubectl.kubernetes.io/last-applied-configuration'
+      ];
+    }
   }
-  
-  return dump(objWithoutFunction);
+
+  // Reorder keys: apiVersion, kind, metadata, ...others, spec, status
+  const { apiVersion, kind, metadata, spec, status, ...others } = objWithoutFunction;
+  const orderedObj: Record<string, any> = {};
+
+  if (apiVersion) orderedObj.apiVersion = apiVersion;
+  if (kind) orderedObj.kind = kind;
+  if (metadata) orderedObj.metadata = metadata;
+
+  Object.assign(orderedObj, others);
+
+  if (spec) orderedObj.spec = spec;
+  if (status) orderedObj.status = status;
+
+  return dump(orderedObj);
 }

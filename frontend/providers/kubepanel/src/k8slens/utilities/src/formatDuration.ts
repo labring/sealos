@@ -87,7 +87,7 @@ export function formatDuration(timeValue: number, compact = true) {
 
 function getMeaningfulValues(values: number[], suffixes: string[], separator = ' ') {
   return values
-    .map((a, i): [number, string] => [a, suffixes[i]])
+    .map((a, i): [number, string] => [a, suffixes[i] ?? ''])
     .filter(([dur]) => dur > 0)
     .map(([dur, suf]) => dur + suf)
     .join(separator);

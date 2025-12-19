@@ -1,11 +1,12 @@
+import type { TextProps } from 'antd/es/typography/Text';
 import { snakeCase } from 'lodash';
 
-const conditionColorMap = {
-  available: 'color-ok',
-  progressing: 'color-info',
-  replica_failure: 'color-error'
-} as const;
+const conditionTextToneMap: Record<string, TextProps['type']> = {
+  available: 'success',
+  progressing: 'secondary',
+  replica_failure: 'danger'
+};
 
-export const getConditionColor = (condition: string): string | undefined => {
-  return conditionColorMap[snakeCase(condition) as keyof typeof conditionColorMap];
+export const getConditionTextTone = (condition: string): TextProps['type'] | undefined => {
+  return conditionTextToneMap[snakeCase(condition)];
 };

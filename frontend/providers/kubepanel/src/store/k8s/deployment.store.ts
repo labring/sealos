@@ -1,7 +1,7 @@
 import { Deployment, Pod, PodStatusPhase } from '@/k8slens/kube-object';
-import { createKubeStoreSlice, getByLabel } from './kube.store';
 import { DeploymentStore } from '@/types/state';
 import { create } from 'zustand';
+import { createKubeStoreSlice, getByLabel } from './kube.store';
 
 export function getDeploymentsStatuses(deps: Deployment[], pods: Pod[]) {
   const status = { running: 0, failed: 0, pending: 0 };
