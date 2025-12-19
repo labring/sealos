@@ -46,6 +46,7 @@ on:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
       - ".github/workflows/controller-build.yml"
+      - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
@@ -54,6 +55,7 @@ on:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
       - ".github/workflows/controller-build.yml"
+      - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
 

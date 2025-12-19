@@ -48,6 +48,7 @@ on:
       - "controllers/account/**"
       - ".github/workflows/services.yml"
       - ".github/workflows/service-build.yml"
+      - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
@@ -58,6 +59,7 @@ on:
       - "controllers/account/**"
       - ".github/workflows/services.yml"
       - ".github/workflows/service-build.yml"
+      - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
 
