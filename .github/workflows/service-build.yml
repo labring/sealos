@@ -70,8 +70,6 @@ jobs:
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
   image-build:
-    needs: [golangci-lint]
-    if: ${{ always() && (needs.golangci-lint.result == 'success' || needs.golangci-lint.result == 'skipped') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
