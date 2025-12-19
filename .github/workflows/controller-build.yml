@@ -1,4 +1,4 @@
-name: Build Controller (Reusable)
+name: Build Controller
 
 on:
   workflow_call:
