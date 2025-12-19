@@ -17,7 +17,7 @@ import { GitHubReauthPrompt } from './GitHubReauthPrompt';
 export default function SignLayout({ children }: { children: React.ReactNode }) {
   useLanguageSwitcher(); // force set language
   const { i18n } = useTranslation();
-  const { layoutConfig, isLoaded } = useConfigStore();
+  const { layoutConfig, authConfig, isLoaded } = useConfigStore();
   const { session, token } = useSessionStore();
   const { signinPageAction, setSigninPageAction, clearSigninPageAction } = useSigninPageStore();
   const router = useRouter();
@@ -92,7 +92,7 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
               isOpen={isGitHubReauthPromptOpen}
               onClose={onGitHubReauthPromptClose}
             />
-            {layoutConfig?.version === 'cn' && <InviterPop />}
+            {authConfig?.invite?.enabled && <InviterPop />}
             {layoutConfig?.version === 'cn' && <LangSelectSimple />}
           </Flex>
           {children}
