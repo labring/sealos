@@ -57,8 +57,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     isPaymentWaiting,
     setPromotionCodeError,
     stopPaymentWaiting,
-    paymentUrl,
-    subscriptionData
+    subscriptionData,
+    hideModal
   } = usePlanStore();
 
   // Get plan and context from store (props take precedence for backward compatibility)
@@ -154,6 +154,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     mutationFn: createCardManageSession,
     onSuccess: (data) => {
       if (data?.data?.success && data?.data?.url) {
+        hideModal();
+        onCancel?.();
         openInNewWindow(data.data.url);
       } else {
         toast({

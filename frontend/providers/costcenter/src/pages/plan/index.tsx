@@ -152,13 +152,13 @@ export default function Plan() {
 
     // Check for success state from Stripe callback (set by desktop)
     if (router.query.stripeState === 'success' && router.query.payId) {
-      console.log('Setting showCongratulations to true');
+      hideModal();
       setShowCongratulations(true);
       setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
       return;
     }
-  }, [router, handleSubscriptionModalOpenChange, setRedeemCode]);
+  }, [router, handleSubscriptionModalOpenChange, setRedeemCode, hideModal]);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
@@ -735,7 +735,7 @@ export default function Plan() {
             await refetchSubscriptionInfo();
           }, 5000);
 
-          // Close confirmation modal
+          // Close all modals before showing congratulations modal
           hideModal();
           // Show congratulations modal
           if (pendingPlan) {
