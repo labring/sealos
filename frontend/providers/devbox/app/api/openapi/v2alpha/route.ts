@@ -218,7 +218,7 @@ All endpoints require authentication via kubeconfig or JWT token.
         post: {
           tags: ['Mutation'],
           summary: 'Create new devbox',
-          description: 'Create a new Devbox instance with customizable runtime, resources, and ports.',
+          description: 'Create a new Devbox instance with customizable runtime, resources, and ports. CPU and memory quota must be in range [0.1, 32].',
           requestBody: {
             description: 'Devbox creation configuration including runtime, resources, ports, and environment settings',
             required: true,
@@ -238,13 +238,13 @@ All endpoints require authentication via kubeconfig or JWT token.
                     }
                   },
                   advanced: {
-                    summary: 'Advanced Devbox with ports and environment variables',
+                    summary: 'Advanced Devbox with ports and environment variables (supports flexible CPU/memory values)',
                     value: {
                       name: 'my-python-api',
                       runtime: 'python',
                       quota: {
-                        cpu: 2,
-                        memory: 4
+                        cpu: 1.5,
+                        memory: 3.5
                       },
                       ports: [
                         {
@@ -260,6 +260,34 @@ All endpoints require authentication via kubeconfig or JWT token.
                         }
                       ],
                       autostart: true
+                    }
+                  },
+                  minimal_resources: {
+                    summary: 'Minimal resources (minimum values)',
+                    value: {
+                      name: 'my-minimal-devbox',
+                      runtime: 'node.js',
+                      quota: {
+                        cpu: 0.1,
+                        memory: 0.1
+                      },
+                      ports: [],
+                      env: [],
+                      autostart: false
+                    }
+                  },
+                  maximum_resources: {
+                    summary: 'Maximum resources (maximum values)',
+                    value: {
+                      name: 'my-max-devbox',
+                      runtime: 'go',
+                      quota: {
+                        cpu: 32,
+                        memory: 32
+                      },
+                      ports: [{ number: 8080, protocol: 'http', isPublic: true }],
+                      env: [],
+                      autostart: false
                     }
                   }
                 }
@@ -497,7 +525,7 @@ All endpoints require authentication via kubeconfig or JWT token.
         patch: {
           tags: ['Mutation'],
           summary: 'Update devbox configuration',
-          description: 'Update Devbox resources and port configurations without restart.',
+          description: 'Update Devbox resources and port configurations without restart. CPU and memory quota must be in range [0.1, 32].',
           parameters: [
             {
               name: 'name',
@@ -547,11 +575,11 @@ All endpoints require authentication via kubeconfig or JWT token.
                     }
                   },
                   both: {
-                    summary: 'Update both resources and ports',
+                    summary: 'Update both resources and ports (supports flexible CPU/memory values)',
                     value: {
                       quota: {
-                        cpu: 4,
-                        memory: 8
+                        cpu: 0.5,
+                        memory: 1.0
                       },
                       ports: [
                         {
@@ -561,6 +589,15 @@ All endpoints require authentication via kubeconfig or JWT token.
                           customDomain: 'api.example.com'
                         }
                       ]
+                    }
+                  },
+                  flexible_quota: {
+                    summary: 'Update with flexible quota values (any value in range [0.1, 32])',
+                    value: {
+                      quota: {
+                        cpu: 2.5,
+                        memory: 6.5
+                      }
                     }
                   }
                 }

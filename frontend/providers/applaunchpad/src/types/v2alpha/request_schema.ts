@@ -21,6 +21,41 @@ import {
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+function parseCreateTimeToDate(createTime: string): Date | null {
+  // Common formats in this repo: 'YYYY/MM/DD HH:mm' or 'YYYY-MM-DD HH:mm' (sometimes with seconds).
+  const m = createTime.match(/^(\d{4})[/-](\d{2})[/-](\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (m) {
+    const [, y, mo, d, h, mi, s] = m;
+    return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), s ? Number(s) : 0);
+  }
+
+  const native = new Date(createTime);
+  return Number.isNaN(native.getTime()) ? null : native;
+}
+
+function formatUptimeFromCreateTime(createTime?: string): string {
+  if (!createTime) return '0s';
+  const start = parseCreateTimeToDate(createTime);
+  if (!start) return '0s';
+  let timeDiff = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+
+  const days = Math.floor(timeDiff / (24 * 60 * 60));
+  timeDiff -= days * 24 * 60 * 60;
+
+  const hours = Math.floor(timeDiff / (60 * 60));
+  timeDiff -= hours * 60 * 60;
+
+  const minutes = Math.floor(timeDiff / 60);
+  timeDiff -= minutes * 60;
+
+  const seconds = timeDiff;
+
+  if (days > 0) return `${days}d${hours}h`;
+  if (hours > 0) return `${hours}h${minutes}m`;
+  if (minutes > 0) return `${minutes}m${seconds}s`;
+  return `${seconds}s`;
+}
+
 export const GetAppByAppNameQuerySchema = z.object({
   name: z.string().min(1, { message: 'name cannot be empty' })
 });
@@ -558,10 +593,12 @@ export function transformFromLegacySchema(
         path: store.path,
         size: `${store.value || 1}Gi`
       })) || [],
-    resourceType: legacyData.kind || 'deployment',
+    resourceType: 'launchpad',
+    kind: legacyData.kind,
 
-    id: legacyData.id,
+    uid: legacyData.id,
     createdAt: legacyData.createTime,
+    upTime: formatUptimeFromCreateTime(legacyData.createTime),
     status: legacyData.status.value
   };
 }

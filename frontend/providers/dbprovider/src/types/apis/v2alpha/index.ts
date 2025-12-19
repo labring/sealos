@@ -87,13 +87,15 @@ export const document = createDocument({
         properties: {
           cpu: {
             type: 'number',
-            enum: [0.5, 1, 2, 3, 4, 5, 6, 7, 8],
-            description: 'CPU cores (minimum 1 core, will be converted to millicores in K8s)'
+            minimum: 0.1,
+            maximum: 32,
+            description: 'CPU cores - range [0.1, 32] (will be converted to millicores in K8s)'
           },
           memory: {
             type: 'number',
-            enum: [0.5, 1, 2, 4, 6, 8, 12, 16, 32],
-            description: 'Memory in GB (minimum 1 GB, will be converted to Gi in K8s)'
+            minimum: 0.1,
+            maximum: 32,
+            description: 'Memory in GB - range [0.1, 32] (will be converted to Gi in K8s)'
           },
           storage: {
             type: 'number',
@@ -159,7 +161,7 @@ export const document = createDocument({
       post: {
         summary: 'Create Database',
         description:
-          'Creates a new database instance with KubeBlocks. This mutation operation provisions database resources, configures settings, and optionally sets up automatic backups. CPU values are converted to millicores (e.g., 2 cores -> 2000m), memory to Gi (e.g., 2GB -> 2Gi), and storage to Gi.',
+          'Creates a new database instance with KubeBlocks. This mutation operation provisions database resources, configures settings, and optionally sets up automatic backups. CPU and memory must be in range [0.1, 32]. CPU values are converted to millicores (e.g., 2 cores -> 2000m), memory to Gi (e.g., 2GB -> 2Gi), and storage to Gi.',
         operationId: 'createDatabase',
         tags: ['Mutation'],
         security: [
@@ -220,16 +222,18 @@ export const document = createDocument({
                     properties: {
                       cpu: {
                         type: 'number',
-                        enum: [1, 2, 3, 4, 5, 6, 7, 8],
+                        minimum: 0.1,
+                        maximum: 32,
                         description:
-                          'CPU cores allocated to each database instance (minimum 1 core, automatically converted to millicores in Kubernetes)',
+                          'CPU cores allocated to each database instance - range [0.1, 32] (automatically converted to millicores in Kubernetes)',
                         default: 1
                       },
                       memory: {
                         type: 'number',
-                        enum: [1, 2, 4, 6, 8, 12, 16, 32],
+                        minimum: 0.1,
+                        maximum: 32,
                         description:
-                          'Memory in GB allocated to each database instance (minimum 1 GB, automatically converted to Gi in Kubernetes)',
+                          'Memory in GB allocated to each database instance - range [0.1, 32] (automatically converted to Gi in Kubernetes)',
                         default: 1
                       },
                       storage: {
@@ -319,8 +323,8 @@ export const document = createDocument({
                   type: 'postgresql',
                   version: 'postgresql-14.8.0',
                   resource: {
-                    cpu: 2,
-                    memory: 2,
+                    cpu: 1.5,
+                    memory: 3.0,
                     storage: 5,
                     replicas: 3
                   },
@@ -375,7 +379,7 @@ export const document = createDocument({
                           },
                           message: {
                             type: 'string',
-                            example: 'CPU must be one of: 1, 2, 3, 4, 5, 6, 7, 8 cores'
+                            example: 'CPU must be in range [0.1, 32]'
                           }
                         }
                       }
@@ -579,7 +583,7 @@ export const document = createDocument({
       patch: {
         summary: 'Update Database Resources',
         description:
-          "Updates a database's resource allocation (CPU, Memory, Storage, Replicas). This mutation triggers Kubernetes OpsRequests for vertical scaling (CPU/Memory), horizontal scaling (Replicas), or volume expansion (Storage). Resources are automatically converted to proper Kubernetes units (cores to millicores, GB to Gi).",
+          "Updates a database's resource allocation (CPU, Memory, Storage, Replicas). CPU and memory must be in range [0.1, 32]. This mutation triggers Kubernetes OpsRequests for vertical scaling (CPU/Memory), horizontal scaling (Replicas), or volume expansion (Storage). Resources are automatically converted to proper Kubernetes units (cores to millicores, GB to Gi).",
         operationId: 'updateDatabaseResources',
         tags: ['Mutation'],
         security: [{ KubeconfigAuth: [] }],
@@ -610,8 +614,8 @@ export const document = createDocument({
                 required: ['resource'],
                 example: {
                   resource: {
-                    cpu: 4,
-                    memory: 8,
+                    cpu: 2.5,
+                    memory: 6.0,
                     storage: 10,
                     replicas: 5
                   }

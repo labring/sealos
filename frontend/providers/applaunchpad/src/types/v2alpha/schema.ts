@@ -30,26 +30,12 @@ export const ResourceSchema = z
         description: 'Number of pod replicas (for fixed instances). Cannot be used with hpa.',
         enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
       }),
-    cpu: z
-      .number()
-      .refine((val) => [0.1, 0.2, 0.5, 1, 2, 3, 4, 8].includes(val), {
-        message: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
-      })
-      .default(0.2)
-      .openapi({
-        description: 'CPU allocation in cores',
-        enum: [0.1, 0.2, 0.5, 1, 2, 3, 4, 8]
-      }),
-    memory: z
-      .number()
-      .refine((val) => [0.1, 0.5, 1, 2, 4, 8, 16].includes(val), {
-        message: 'Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16'
-      })
-      .default(0.5)
-      .openapi({
-        description: 'Memory allocation in GB',
-        enum: [0.1, 0.5, 1, 2, 4, 8, 16]
-      }),
+    cpu: z.number().min(0.1).max(32).default(0.2).openapi({
+      description: 'CPU allocation in cores - range [0.1, 32]'
+    }),
+    memory: z.number().min(0.1).max(32).default(0.5).openapi({
+      description: 'Memory allocation in GB - range [0.1, 32]'
+    }),
     gpu: z
       .object({
         vendor: z.string().default('nvidia'),
@@ -234,10 +220,18 @@ export const LaunchpadApplicationSchema = z
     env: z.array(StandardEnvSchema).optional(),
     storage: z.array(StorageSchema).optional(),
     configMap: z.array(StandardConfigMapSchema).optional(),
-    resourceType: z.enum(['deployment', 'statefulset']).optional(),
+    resourceType: z.literal('launchpad').openapi({
+      description: 'Resource type identifier (fixed for v2alpha)',
+      example: 'launchpad'
+    }),
+    kind: z
+      .enum(['deployment', 'statefulset'])
+      .optional()
+      .openapi({ description: 'Underlying Kubernetes workload kind' }),
 
-    id: z.string().openapi({ description: 'Application ID' }),
+    uid: z.string().openapi({ description: 'Application UID' }),
     createdAt: z.string().openapi({ description: 'Creation time' }),
+    upTime: z.string().openapi({ description: 'Uptime (running duration)', example: '2h15m' }),
     status: z
       .enum(['running', 'creating', 'waiting', 'error', 'pause'])
       .openapi({ description: 'Application status' })
