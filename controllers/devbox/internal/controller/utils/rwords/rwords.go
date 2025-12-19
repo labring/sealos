@@ -10,5 +10,10 @@ const listLength = len(wordsList)
 // compare to 8 random characters, data size is 36^8 = 208,827,064,576
 // outputs looks like: "abandon-ability-abcd"
 func GenerateRandomWords() string {
-	return fmt.Sprintf("%s-%s-%s", wordsList[Intn(listLength)], wordsList[Intn(listLength)], String(4))
+	return fmt.Sprintf(
+		"%s-%s-%s",
+		wordsList[Intn(listLength)],
+		wordsList[Intn(listLength)],
+		String(4),
+	)
 }

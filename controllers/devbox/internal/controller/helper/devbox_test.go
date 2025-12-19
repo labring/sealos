@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestGenerateEnvProfile(t *testing.T) {

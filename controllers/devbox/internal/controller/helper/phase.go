@@ -35,7 +35,10 @@ import (
 //   - CommitRecord.node == "" -> Final phase (Stopped/Shutdown)
 
 // GetLatestCommitRecord returns the latest commit record for the given contentID
-func GetLatestCommitRecord(commitRecords devboxv1alpha2.CommitRecordMap, contentID string) *devboxv1alpha2.CommitRecord {
+func GetLatestCommitRecord(
+	commitRecords devboxv1alpha2.CommitRecordMap,
+	contentID string,
+) *devboxv1alpha2.CommitRecord {
 	if len(commitRecords) == 0 || contentID == "" {
 		return nil
 	}
