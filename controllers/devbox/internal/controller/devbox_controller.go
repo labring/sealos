@@ -170,6 +170,9 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			GenerateTime: metav1.Now(),
 		}
 	}
+	if devbox.Status.Network.UniqueID == "" {
+		devbox.Status.Network.UniqueID = rwords.GenerateRandomWords()
+	}
 	// update devbox status, and do not return error to avoid infinite loop because multiple controller will reconcile this devbox
 	if err := r.Status().Update(ctx, devbox); err != nil {
 		logger.Info(
@@ -607,6 +610,10 @@ func (r *DevboxReconciler) syncCommon(
 		}
 		// re-update devbox to get the latest status
 		_ = r.Get(ctx, client.ObjectKeyFromObject(devbox), devbox)
+	}
+
+	if devbox.Status.Network.UniqueID == "" {
+		return fmt.Errorf("devbox: %s network unique id is empty", devbox.Name)
 	}
 
 	// create a headless service for the devbox, use the unique id as the name
