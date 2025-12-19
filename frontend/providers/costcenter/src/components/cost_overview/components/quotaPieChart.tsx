@@ -43,7 +43,7 @@ export default function CostChart({
           }
         },
         startAngle: 45,
-        data: [data.used, data.limit - data.used],
+        data: [data.used, Math.max(0, data.limit - data.used)],
         labelLine: {
           show: false
         },
