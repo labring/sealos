@@ -8,6 +8,9 @@ export const RequestSchema = z.object({
   }),
   onlyIngress: z.boolean().optional().default(false).openapi({
     description: 'Only modify ingress without changing devbox state'
+  }),
+  networkType: z.enum(['NodePort', 'Tailnet', 'SSHGate']).optional().openapi({
+    description: 'Current network type of the devbox'
   })
 });
 

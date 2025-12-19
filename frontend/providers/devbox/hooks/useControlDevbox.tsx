@@ -8,6 +8,7 @@ import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 import { track } from '@sealos/gtm';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
+import { DevboxStatusEnum } from '@/constants/devbox';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
@@ -55,7 +56,14 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           toast.error(t('start_outstanding_tips'));
           return;
         }
-        await startDevbox({ devboxName: devbox.name });
+        const isShutdown = devbox.status.value === DevboxStatusEnum.Shutdown;
+        const shouldChangeNetwork =
+          isShutdown && devbox.networkType && devbox.networkType !== 'SSHGate';
+
+        await startDevbox({
+          devboxName: devbox.name,
+          networkType: shouldChangeNetwork ? devbox.networkType : undefined
+        });
         toast.success(t('start_success'));
         track({
           event: 'deployment_start',

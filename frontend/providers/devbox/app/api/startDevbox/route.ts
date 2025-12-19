@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { devboxName, onlyIngress } = validationResult.data;
+    const { devboxName, onlyIngress, networkType } = validationResult.data;
     const headerList = req.headers;
 
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
@@ -85,13 +85,19 @@ export async function POST(req: NextRequest) {
     });
 
     if (!onlyIngress) {
+      const patchData: any = { spec: { state: 'Running' } };
+
+      if (networkType && networkType !== 'SSHGate') {
+        patchData.spec.network = { type: 'SSHGate' };
+      }
+
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
         'v1alpha2',
         namespace,
         'devboxes',
         devboxName,
-        { spec: { state: 'Running' } },
+        patchData,
         undefined,
         undefined,
         undefined,
