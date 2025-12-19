@@ -385,7 +385,7 @@ main() {
 
     if [[ "$TYPE" != "controllers" && "$TYPE" != "service" ]]; then
         echo "Error: TYPE must be 'controllers' or 'service'" >&2
-        exit 1
+        return 1
     fi
 
     # Generate and load dependencies
