@@ -117,7 +117,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
 
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName,

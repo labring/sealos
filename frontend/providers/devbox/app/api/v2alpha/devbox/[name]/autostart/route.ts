@@ -94,7 +94,7 @@ export async function POST(
 
     const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName

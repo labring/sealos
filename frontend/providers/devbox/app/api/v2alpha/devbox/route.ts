@@ -75,7 +75,7 @@ async function waitForDevboxStatus(
   for (let retries = 0; retries < maxRetries; retries++) {
     const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName
@@ -109,7 +109,7 @@ async function waitForDevboxReady(
     try {
       const { body: devboxBody } = await k8sCustomObjects.getNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxes',
         devboxName
@@ -454,7 +454,7 @@ export async function POST(req: NextRequest) {
 
     const { body: devboxListBody } = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes'
     ) as { body: { items: KBDevboxTypeV2[] } };
@@ -525,7 +525,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resourceConfig = convertResourceConfig(devboxForm.quota);
-    const { DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
+    const { DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
     const devbox = json2DevboxV2(
       {
         ...devboxForm,
@@ -537,7 +537,7 @@ export async function POST(req: NextRequest) {
         env: devboxForm.env || []
       },
       DEVBOX_AFFINITY_ENABLE,
-      SQUASH_ENABLE
+      STORAGE_LIMIT
     );
 
     const [devboxBody, createdPorts] = await Promise.all([
@@ -629,7 +629,7 @@ export async function GET(req: NextRequest) {
     //1.Kubernetes get DevBox-list
     const devboxResponse = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes'
     );
