@@ -98,7 +98,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       return;
     }
 
-    const isSmsEnabled = authConfig.idp?.sms?.enabled && authConfig.idp?.sms?.ali?.enabled;
+    const isSmsEnabled = authConfig.idp?.sms?.enabled && authConfig.idp?.sms?.enabled;
     if (!isSmsEnabled) {
       return;
     }

@@ -162,7 +162,6 @@ export type AuthConfigType = {
     sms?: {
       enabled: boolean;
       ali?: {
-        enabled: boolean;
         endpoint: string;
         templateCode: string;
         signName: string;
@@ -200,9 +199,6 @@ export type AuthClientConfigType = {
   idp: {
     sms: {
       enabled: boolean;
-      ali: {
-        enabled: boolean;
-      };
     };
     email: {
       enabled: boolean;
@@ -366,10 +362,7 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       proxyAddress: ''
     },
     sms: {
-      enabled: false,
-      ali: {
-        enabled: false
-      }
+      enabled: false
     },
     email: {
       enabled: false

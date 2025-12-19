@@ -5,8 +5,7 @@ export const enableEnterpriseRealNameAuth = () =>
 export const enablePassword = () => global.AppConfig.desktop.auth.idp.password?.enabled || false;
 export const enableGithub = () => global.AppConfig.desktop.auth.idp.github?.enabled || false;
 export const enableSms = () => global.AppConfig.desktop.auth.idp.sms?.enabled || false;
-export const enablePhoneSms = () =>
-  enableSms() && !!global.AppConfig.desktop.auth.idp.sms?.ali?.enabled;
+export const enablePhoneSms = () => enableSms() && !!global.AppConfig.desktop.auth.idp.sms?.enabled;
 export const getVersion = () => global.AppConfig.desktop.layout.version;
 export const enableEmailSms = () => !!global.AppConfig.desktop.auth.idp.email?.enabled;
 export const enableWechat = () => global.AppConfig.desktop.auth.idp.wechat?.enabled || false;
