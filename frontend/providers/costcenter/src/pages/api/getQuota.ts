@@ -43,6 +43,9 @@ export const cpuFormatToM = (cpu: string) => {
     value = value / 1000;
   } else if (/m/gi.test(cpu)) {
     value = value;
+  } else if (/k/gi.test(cpu)) {
+    // k means 1000 cores, convert to millicores: 1k = 1000 * 1000m = 1000000m
+    value = value * 1000 * 1000;
   } else {
     value = value * 1000;
   }
@@ -102,8 +105,8 @@ export async function getUserQuota(
     },
     {
       type: 'gpu',
-      limit: Number(status?.hard?.['limits.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['limits.nvidia.com/gpu'] || 0)
+      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
+      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
     }
   ];
 }
