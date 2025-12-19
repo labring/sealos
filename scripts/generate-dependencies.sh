@@ -23,8 +23,17 @@ parse_go_mod_dependencies() {
 
     # Use go mod edit -json to get direct dependencies
     local go_mod_json
-    go_mod_json=$(cd "$module_dir" && go mod edit -json 2>/dev/null) || return
 
+    # Ensure Go is installed and available
+    if ! command -v go >/dev/null 2>&1; then
+        echo "Warning: Go is not installed or not in PATH; cannot extract dependencies for module ${type}/${module} at ${module_dir}" >&2
+        return
+    fi
+
+    if ! go_mod_json=$(cd "$module_dir" && go mod edit -json 2>/dev/null); then
+        echo "Warning: Failed to run 'go mod edit -json' for module ${type}/${module} in ${module_dir}; dependencies may be incomplete." >&2
+        return
+    fi
     # Get current module path to exclude self-reference
     local self_path="github.com/labring/sealos/${type}/${module_path}"
 
