@@ -167,6 +167,7 @@ export interface DevboxListItemTypeV2 {
   createTime: string;
   cpu: number;
   memory: number;
+  gpu?: GpuType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
   sshPort: number;

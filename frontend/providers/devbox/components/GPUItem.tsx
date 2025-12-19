@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { CircuitBoard } from 'lucide-react';
+import Image from 'next/image';
 
 import { cn } from '@sealos/shadcn-ui';
 import { GpuType } from '@/types/user';
@@ -17,7 +17,7 @@ const GPUItem = ({ gpu, className }: { gpu?: GpuType; className?: string }) => {
 
   return (
     <div className={cn('flex items-center whitespace-nowrap', className)}>
-      <CircuitBoard className="mr-2 w-4 text-muted-foreground" />
+      <Image src="/images/nvidia.svg" alt="GPU" width={16} height={16} className="mr-2" />
       {gpuAlias && (
         <>
           <div className="text-xs">{gpuAlias}</div>
