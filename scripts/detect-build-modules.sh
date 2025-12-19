@@ -207,7 +207,11 @@ find_dependent_modules() {
         done <<<"$modules"
     done
 
-    printf '%s\n' "${dependent_modules[@]}" | sort -u
+    if [[ ${#dependent_modules[@]} -gt 0 ]]; then
+        printf '%s\n' "${dependent_modules[@]}" | sort -u
+    else
+        return 0
+    fi
 }
 
 # Function to recursively find all affected modules
