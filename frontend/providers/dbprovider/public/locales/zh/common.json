@@ -369,6 +369,7 @@
   "operation": "操作",
   "overview": "概览",
   "page_faults": "页错误",
+  "param_unset": "不设置参数",
   "parse_url_failed": "内容不合法，识别失败！",
   "password_complexity": "密码必须包含数字、字母、特殊字符中的两种",
   "password_min_length": "密码长度至少为 8 个字符",
