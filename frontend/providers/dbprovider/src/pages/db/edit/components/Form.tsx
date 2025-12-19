@@ -1432,7 +1432,7 @@ const Form = ({
                       <MyTooltip label={'1~14' + t('Day')}>
                         <NumberInput
                           w={'120px'}
-                          max={100}
+                          max={14}
                           min={1}
                           step={1}
                           position={'relative'}
