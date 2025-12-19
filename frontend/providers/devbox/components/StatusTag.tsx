@@ -11,10 +11,9 @@ interface StatusTagProps {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType;
   className?: string;
   isShutdown?: boolean;
-  isSSHGateStopped?: boolean;
 }
 
-const StatusTag = ({ status, isShutdown = false, isSSHGateStopped = false, className }: StatusTagProps) => {
+const StatusTag = ({ status, isShutdown = false, className }: StatusTagProps) => {
   const label = status?.label;
   const t = useTranslations();
 
@@ -27,37 +26,15 @@ const StatusTag = ({ status, isShutdown = false, isSSHGateStopped = false, class
         />
         <div className="flex flex-col">
           <span className={cn('text-sm/5 font-medium text-zinc-900', className)}>{t(label)}</span>
-          {isShutdown && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex cursor-pointer items-center text-emerald-600">
-                  <span className="text-xs/4">{t('saving')}&nbsp;</span>
-                  <CircleHelp className="h-3 w-3" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="w-[380px] p-4" side="bottom">
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm/5 font-medium text-zinc-900">
-                    {t('devbox_shutdown_notice1')}
-                  </span>
-                  <span className="text-xs/[16px] tracking-[0.048px] text-zinc-500">
-                    {t.rich('devbox_shutdown_notice2', {
-                      black: (chunks) => <span className="text-zinc-900">{chunks}</span>
-                    })}
-                  </span>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
         </div>
-        {isSSHGateStopped && (
+        {isShutdown && (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex cursor-pointer items-center">
                 <CircleHelp className="h-3 w-3 text-emerald-600" />
               </div>
             </TooltipTrigger>
-            <TooltipContent className="w-[380px] p-4" side="bottom">
+            <TooltipContent className="w-[380px] break-words p-4" side="bottom">
               <span className="text-xs/[16px] tracking-[0.048px] text-zinc-500">
                 {t('devbox_sshgate_stopped_notice')}
               </span>

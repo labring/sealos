@@ -200,19 +200,13 @@ const DevboxList = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                    <RuntimeIcon
-                      iconId={item.template.templateRepository.iconId}
-                      alt={item.id}
-                    />
+                    <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="start" sideOffset={1}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                      <RuntimeIcon
-                        iconId={item.template.templateRepository.iconId}
-                        alt={item.id}
-                      />
+                      <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
                     </div>
                     <div className="flex flex-col">
                       <p className="text-sm/5 font-medium">
@@ -363,9 +357,6 @@ const DevboxList = ({
             <DevboxStatusTag
               status={item.status}
               isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
-              isSSHGateStopped={
-                item.networkType === 'SSHGate' && item.status.value === DevboxStatusEnum.Stopped
-              }
             />
           );
         }
