@@ -143,7 +143,7 @@
   "verifying": "验证中",
   "workspace_create": "创建您的工作空间",
   "workspace_deploy_failed": "创建工作空间失败",
-  "workspace_welcome": "欢迎来到 Sealos",
+  "workspace_welcome_default": "欢迎来到 Sealos",
   "worspace_heading_description": "计算资源、应用数据和团队权限一体化",
   "you_may_invite_memebers_later": "稍后可邀请成员共同协作",
   "your_current_plan": "当前套餐"

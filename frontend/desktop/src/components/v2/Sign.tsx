@@ -163,7 +163,11 @@ export default function SigninComponent() {
     <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
       <Stack mx="auto" maxW="lg" px={4} gap={'16px'} width="360px" minW={'352px'}>
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
-          {t('v2:workspace_welcome')}
+          {(
+            conf.layoutConfig?.authTitle satisfies Record<string, string> | undefined as
+              | Record<string, string>
+              | undefined
+          )?.[i18n.language] ?? t('v2:workspace_welcome_default')}
         </Text>
 
         {conf.layoutConfig?.version === 'cn' ? (
