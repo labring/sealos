@@ -38,7 +38,6 @@ on:
       - ".github/workflows/frontend.yml"
       - ".github/workflows/frontends.yml"
       - "!**/*.md"
-      - "!**/*.yaml"
   pull_request:
     branches: ["*"]
     paths:
@@ -52,27 +51,12 @@ on:
       - ".github/workflows/frontend.yml"
       - ".github/workflows/frontends.yml"
       - "!**/*.md"
-      - "!**/*.yaml"
 
 jobs:
-  # Detect which modules have changed
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      build-all: ${{ steps.check-build-all.outputs.result }}
-      aiproxy: ${{ steps.filter.outputs.aiproxy }}
-      license: ${{ steps.filter.outputs.license }}
-      cronjob: ${{ steps.filter.outputs.cronjob }}
-      template: ${{ steps.filter.outputs.template }}
-      applaunchpad: ${{ steps.filter.outputs.applaunchpad }}
-      terminal: ${{ steps.filter.outputs.terminal }}
-      dbprovider: ${{ steps.filter.outputs.dbprovider }}
-      costcenter: ${{ steps.filter.outputs.costcenter }}
-      objectstorage: ${{ steps.filter.outputs.objectstorage }}
-      kubepanel: ${{ steps.filter.outputs.kubepanel }}
-      workorder: ${{ steps.filter.outputs.workorder }}
-      devbox: ${{ steps.filter.outputs.devbox }}
-      desktop: ${{ steps.filter.outputs.desktop }}
+      modules: ${{ steps.set-matrix.outputs.modules }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -114,193 +98,65 @@ jobs:
               - 'frontend/providers/devbox/**'
             desktop:
               - 'frontend/desktop/**'
-      - name: Check if all modules should be built
-        id: check-build-all
+      - name: Generate build matrix
+        id: set-matrix
         run: |
-          if [[ "${{ steps.filter.outputs.packages }}" == "true" || "${{ steps.filter.outputs.root-config }}" == "true" ]]; then
-            echo "result=true" >> $GITHUB_OUTPUT
+          modules=()
+          
+          # Check if we need to build all modules
+          if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
+                "${{ steps.filter.outputs.root-config }}" == "true" || \
+                "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            modules=(
+              "providers/aiproxy"
+              "providers/license"
+              "providers/cronjob"
+              "providers/template"
+              "providers/applaunchpad"
+              "providers/terminal"
+              "providers/dbprovider"
+              "providers/costcenter"
+              "providers/objectstorage"
+              "providers/kubepanel"
+              "providers/workorder"
+              "providers/devbox"
+              "desktop"
+            )
           else
-            echo "result=false" >> $GITHUB_OUTPUT
+            # Only build changed modules
+            [[ "${{ steps.filter.outputs.aiproxy }}" == "true" ]] && modules+=("providers/aiproxy")
+            [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
+            [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
+            [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
+            [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
+            [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
+            [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
+            [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
+            [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
+            [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
+            [[ "${{ steps.filter.outputs.workorder }}" == "true" ]] && modules+=("providers/workorder")
+            [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
+            [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi
+          
+          # Convert to JSON array
+          json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s .)
+          echo "modules=$json_modules" >> $GITHUB_OUTPUT
+          echo "Building modules: $json_modules"
 
-  # Build aiproxy
-  build-aiproxy:
+  image-build:
     needs: detect-changes
-    if: needs.detect-changes.outputs.aiproxy == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.detect-changes.outputs.modules != '[]'
     uses: ./.github/workflows/frontend.yml
     permissions:
       contents: read
       packages: write
     secrets: inherit
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
     with:
-      module: providers/aiproxy
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build license
-  build-license:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.license == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/license
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build cronjob
-  build-cronjob:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.cronjob == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/cronjob
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build template
-  build-template:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.template == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/template
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build applaunchpad
-  build-applaunchpad:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.applaunchpad == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/applaunchpad
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build terminal
-  build-terminal:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.terminal == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/terminal
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build dbprovider
-  build-dbprovider:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.dbprovider == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/dbprovider
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build costcenter
-  build-costcenter:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.costcenter == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/costcenter
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build objectstorage
-  build-objectstorage:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.objectstorage == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/objectstorage
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build kubepanel
-  build-kubepanel:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.kubepanel == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/kubepanel
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build workorder
-  build-workorder:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.workorder == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/workorder
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build devbox
-  build-devbox:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.devbox == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: providers/devbox
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
-      push_image_tag: ${{ inputs.push_image_tag }}
-
-  # Build desktop
-  build-desktop:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.desktop == 'true' || needs.detect-changes.outputs.build-all == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/frontend.yml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      module: desktop
+      module: ${{ matrix.module }}
       push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
       push_image_tag: ${{ inputs.push_image_tag }}
