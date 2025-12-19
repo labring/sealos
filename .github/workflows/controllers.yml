@@ -1,4 +1,4 @@
-name: Build Controllers image
+name: Build Controllers
 
 on:
   workflow_call:
@@ -15,6 +15,11 @@ on:
         type: string
       disable_cilint:
         description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
+      force_all:
+        description: "Force build all modules (for release)"
         default: false
         required: false
         type: boolean
@@ -40,6 +45,8 @@ on:
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
+      - ".github/workflows/controller-build.yml"
+      - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
@@ -47,294 +54,35 @@ on:
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
+      - ".github/workflows/controller-build.yml"
+      - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
 
 env:
-  # Common versions
   GO_VERSION: "1.24"
   DEFAULT_OWNER: "labring"
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
-  ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
-  ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
-  resolve-modules:
-    runs-on: ubuntu-24.04
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      type: controllers
+      force_all: ${{ inputs.force_all || false }}
 
-      - name: Resolve Modules
-        id: set-matrix
-        run: bash scripts/resolve-modules.sh ./controllers
-
-  golangci-lint:
-    if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request') }}
-    needs: [resolve-modules]
-    runs-on: ubuntu-24.04
+  build-controllers:
+    if: ${{ needs.detect-changes.outputs.modules != '[]' }}
+    needs: [detect-changes]
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-      - name: Run Linter
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.5.0
-          working-directory: ${{ matrix.workdir }}
-          # args between =, not space
-          args: --color=always --config=${{ github.workspace }}/.golangci.yml
-
-  image-build:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
-    strategy:
       matrix:
-        module:
-          - { name: user, path: user }
-          - { name: terminal, path: terminal }
-          - { name: account, path: account }
-          - { name: app, path: app }
-          - { name: license, path: license }
-          - { name: job-init, path: job/init }
-          - { name: job-heartbeat, path: job/heartbeat }
-          - { name: resources, path: resources }
-          - { name: node, path: node }
-          - { name: devbox, path: devbox }
-          - { name: objectstorage, path: objectstorage }
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-
-      - name: Build ${{ matrix.module.name }} amd64
-        working-directory: controllers/${{ matrix.module.path }}
-        env:
-          MODULE_NAME: ${{ matrix.module.name }}
-          MODULE_PATH: ${{ matrix.module.path }}
-        run: |
-          GOARCH=amd64 TARGETARCH=amd64 make build
-          mv bin/manager "bin/controller-${MODULE_NAME}-amd64"
-          chmod +x "bin/controller-${MODULE_NAME}-amd64"
-
-      - name: Build ${{ matrix.module.name }} arm64
-        working-directory: controllers/${{ matrix.module.path }}
-        env:
-          MODULE_NAME: ${{ matrix.module.name }}
-          MODULE_PATH: ${{ matrix.module.path }}
-        run: |
-          GOARCH=arm64 TARGETARCH=arm64 make build
-          mv bin/manager "bin/controller-${MODULE_NAME}-arm64"
-          chmod +x "bin/controller-${MODULE_NAME}-arm64"
-
-      - name: Set image repo
-        env:
-          REPO_OWNER: ${{ github.repository_owner }}
-          MODULE_NAME: ${{ matrix.module.name }}
-        run: |
-          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          fi
-
-      - # Add support for more platforms with QEMU (optional)
-        # https://github.com/docker/setup-qemu-action
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: network=host
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-
-      - name: Login to Aliyun Registry
-        uses: docker/login-action@v3
-        if: ${{ ((github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)) && env.ALIYUN_REGISTRY }}
-        with:
-          registry: ${{ env.ALIYUN_REGISTRY }}
-          username: ${{ secrets.ALIYUN_USERNAME }}
-          password: ${{ secrets.ALIYUN_PASSWORD }}
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.GHCR_REPO }}
-            ${{ env.ALIYUN_REPO }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-        env:
-          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
-
-      - name: build (and publish) ${{ matrix.module.name }} main image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./controllers/${{ matrix.module.path }}
-          file: ./controllers/${{ matrix.module.path }}/Dockerfile
-          # Push if it's a push event or if push_image is true
-          push: ${{ (github.event_name == 'push')||(github.event_name == 'create') || (inputs.push_image == true) }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-
-  build-cluster-image:
-    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
-    needs:
-      - image-build
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        module:
-          - { name: user, path: user }
-          - { name: terminal, path: terminal }
-          - { name: account, path: account }
-          - { name: app, path: app }
-          - { name: license, path: license }
-          - { name: job-init, path: job/init }
-          - { name: job-heartbeat, path: job/heartbeat }
-          - { name: resources, path: resources }
-          - { name: node, path: node }
-          - { name: devbox, path: devbox }
-          - { name: objectstorage, path: objectstorage }
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set image repo
-        env:
-          REPO_OWNER: ${{ github.repository_owner }}
-          MODULE_NAME: ${{ matrix.module.name }}
-          MODULE_PATH: ${{ matrix.module.path }}
-        run: |
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "MODULE_PATH=${MODULE_PATH}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          # Docker image repo (always use GHCR for values.yaml to avoid Aliyun bandwidth costs)
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          # Cluster image repos
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          fi
-
-      - name: Docker meta for cluster image
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.GHCR_CLUSTER_REPO }}
-            ${{ env.ALIYUN_CLUSTER_REPO }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-        env:
-          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
-
-      - name: Install sealos
-        run: |
-          sudo bash ./.github/scripts/install.sh
-
-      - name: Build ${{ matrix.module.name }}-controller cluster image
-        working-directory: controllers/${{ matrix.module.path }}/deploy
-        env:
-          MODULE_NAME: ${{ env.MODULE_NAME }}
-          MODULE_PATH: ${{ env.MODULE_PATH }}
-          OLD_DOCKER_REPO: ${{ env.OLD_DOCKER_REPO }}
-          GHCR_DOCKER_REPO: ${{ env.GHCR_DOCKER_REPO }}
-        run: |
-          # Build cluster images for each tag (amd64)
-          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            # Always use GHCR docker image to avoid Aliyun bandwidth costs
-            IMAGE_TAG="${TAG##*:}"
-            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            echo "Updating deploy files to: ${NEW_DOCKER_IMAGE}"
-            if [[ -d manifests ]]; then
-              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
-            fi
-            if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
-              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
-            fi
-            sudo rm -rf registry
-            echo "Building ${TAG}-amd64"
-            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
-          done
-
-          # Build cluster images for each tag (arm64)
-          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            IMAGE_TAG="${TAG##*:}"
-            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            if [[ -d manifests ]]; then
-              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
-            fi
-            if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
-              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
-            fi
-            sudo rm -rf registry
-            echo "Building ${TAG}-arm64"
-            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
-          done
-
-      - name: Sealos login to ghcr.io
-        env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
-
-      - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        env:
-          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
-          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
-        run: |
-          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
-
-      - name: Manifest Cluster Images
-        run: |
-          sudo sealos images
-          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            echo "Creating manifest for ${TAG}"
-            bash scripts/manifest-cluster-images.sh "$TAG"
-          done
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
+    uses: ./.github/workflows/controller-build.yml
+    with:
+      module_name: ${{ matrix.module.name }}
+      module_path: ${{ matrix.module.path }}
+      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
+      push_image_tag: ${{ inputs.push_image_tag || 'latest' }}
+      disable_cilint: ${{ inputs.disable_cilint || false }}
+    secrets: inherit

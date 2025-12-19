@@ -13,6 +13,11 @@ on:
         default: "latest"
         required: false
         type: string
+      force_all:
+        description: "Force build all modules (for release)"
+        default: false
+        required: false
+        type: boolean
   workflow_dispatch:
     inputs:
       push_image:
@@ -102,10 +107,11 @@ jobs:
         id: set-matrix
         run: |
           modules=()
-          
+
           # Check if we need to build all modules
           if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
                 "${{ steps.filter.outputs.root-config }}" == "true" || \
+                "${{ inputs.force_all }}" == "true" || \
                 "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             modules=(
               "providers/aiproxy"
@@ -138,7 +144,7 @@ jobs:
             [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
             [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi
-          
+
           # Convert to JSON array (compact format for GitHub Actions)
           if [ ${#modules[@]} -eq 0 ]; then
             json_modules="[]"

@@ -1,10 +1,10 @@
-name: Build Frontend Image
+name: Build Service (Reusable)
 
 on:
   workflow_call:
     inputs:
       module:
-        description: "Module"
+        description: "Service module name (e.g., database, pay)"
         required: true
         type: string
       push_image:
@@ -17,10 +17,15 @@ on:
         default: "latest"
         required: false
         type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
   workflow_dispatch:
     inputs:
       module:
-        description: "Module (e.g., desktop, providers/dbprovider)"
+        description: "Service module name (e.g., database, pay, account)"
         required: true
         type: string
       push_image:
@@ -33,152 +38,121 @@ on:
         default: "latest"
         required: false
         type: string
+      disable_cilint:
+        description: "Disable golangci-lint"
+        default: false
+        required: false
+        type: boolean
 
 env:
-  # Common versions
   GO_VERSION: "1.25"
-  DEFAULT_OWNER: "labring"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
-  image-build:
-    strategy:
-      matrix:
-        include:
-          - arch: amd64
-          - arch: arm64
-            runs-on: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
-    permissions:
-      contents: read
-      packages: write
+  golangci-lint:
+    if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
         with:
-          fetch-depth: 0
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Extract module name
-        id: module_name
-        env:
-          MODULE_INPUT: ${{ inputs.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: |
-          MODULE_NAME=$(basename "$MODULE_INPUT")
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          fi
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Run Linter
+        uses: golangci/golangci-lint-action@v8
         with:
-          images: |
-            ${{ env.GHCR_REPO }}
-            ${{ env.ALIYUN_REPO }}
+          version: v2.5.0
+          working-directory: service/${{ inputs.module }}
+          args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Github Container Hub
-        if: ${{ inputs.push_image }}
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-
-      - name: Login to Aliyun Registry
-        if: ${{ inputs.push_image && env.ALIYUN_REGISTRY }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.ALIYUN_REGISTRY }}
-          username: ${{ secrets.ALIYUN_USERNAME }}
-          password: ${{ secrets.ALIYUN_PASSWORD }}
-
-      - name: Build
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          platforms: linux/${{ matrix.arch }}
-          build-args: |
-            name=${{ env.MODULE_NAME }}
-            path=${{ inputs.module }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,"name=${{ env.GHCR_REPO }}${{ env.ALIYUN_REPO && format(',{0}', env.ALIYUN_REPO) || '' }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
-
-      - name: Export digest
-        env:
-          TEMP_DIR: ${{ runner.temp }}
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          mkdir -p "${TEMP_DIR}/digests"
-          touch "${TEMP_DIR}/digests/${DIGEST#sha256:}"
-
-      - name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ env.MODULE_NAME }}-${{ matrix.arch }}
-          path: ${{ runner.temp }}/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  image-release:
-    name: Push Docker Images
-    needs: image-build
+  image-build:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
-    if: ${{ inputs.push_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Login to Github Container Hub
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
+      - name: Build ${{ inputs.module }} amd64
+        working-directory: service/${{ inputs.module }}
+        env:
+          MODULE: ${{ inputs.module }}
+        run: |
+          GOARCH=amd64 make build
+          mv bin/manager bin/service-${MODULE}-amd64
+          chmod +x bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64 | grep -q 'x86-64'
+          if [ $? -ne 0 ]; then
+            echo "amd64 platform build failed"
+            exit 1
+          fi
+
+      - name: Build ${{ inputs.module }} arm64
+        working-directory: service/${{ inputs.module }}
+        env:
+          MODULE: ${{ inputs.module }}
+        run: |
+          GOARCH=arm64 make build
+          mv bin/manager bin/service-${MODULE}-arm64
+          chmod +x bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64 | grep -q 'aarch64'
+          if [ $? -ne 0 ]; then
+            echo "arm64 platform build failed"
+            exit 1
+          fi
+
+      - name: Set image repo
+        id: set-outputs
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE: ${{ inputs.module }}
+        run: |
+          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "image-name=ghcr.io/${REPO_OWNER}/sealos-${MODULE}-service" >> $GITHUB_OUTPUT
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
+        if: ${{ inputs.push_image }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
         uses: docker/login-action@v3
+        if: ${{ inputs.push_image && env.ALIYUN_REGISTRY }}
         with:
           registry: ${{ env.ALIYUN_REGISTRY }}
           username: ${{ secrets.ALIYUN_USERNAME }}
           password: ${{ secrets.ALIYUN_PASSWORD }}
-
-      - name: Extract module name
-        id: module_name
-        env:
-          MODULE_INPUT: ${{ inputs.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: |
-          MODULE_NAME=$(basename "$MODULE_INPUT")
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          fi
-
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ runner.temp }}/digests
-          pattern: digests-${{ env.MODULE_NAME }}-*
-          merge-multiple: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Docker meta
         id: meta
@@ -196,29 +170,20 @@ jobs:
         env:
           DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
-      - name: Create manifest list and push
-        working-directory: ${{ runner.temp }}/digests
-        env:
-          TEMP_DIR: ${{ runner.temp }}
-          GHCR_REPO: ${{ env.GHCR_REPO }}
-        run: |
-          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            docker buildx imagetools create -t $TAG \
-              $(printf "${GHCR_REPO}@sha256:%s " *)
-            sleep 5
-          done
-
-      - name: Inspect image
-        env:
-          GHCR_REPO: ${{ env.GHCR_REPO }}
-          IMAGE_VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          docker buildx imagetools inspect "${GHCR_REPO}:${IMAGE_VERSION}"
+      - name: build (and publish) ${{ inputs.module }} main image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./service/${{ inputs.module }}
+          file: ./service/${{ inputs.module }}/Dockerfile
+          # Push if it's a push event or if push_image is true
+          push: ${{ inputs.push_image }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
 
   cluster-image-build:
-    needs:
-      - image-release
     if: ${{ inputs.push_image }}
+    needs: [image-build]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -231,18 +196,15 @@ jobs:
 
       - name: Set image repo
         env:
-          MODULE_INPUT: ${{ inputs.module }}
           REPO_OWNER: ${{ github.repository_owner }}
+          MODULE: ${{ inputs.module }}
         run: |
-          MODULE_NAME=$(basename "$MODULE_INPUT")
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          # Docker image repo (always use GHCR for values.yaml to avoid Aliyun bandwidth costs)
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          # Cluster image repos
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "MODULE_NAME=${MODULE}" >> $GITHUB_ENV
+          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           fi
 
       - name: Docker meta for cluster image
@@ -265,8 +227,8 @@ jobs:
         run: |
           sudo bash ./.github/scripts/install.sh
 
-      - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
-        working-directory: frontend/${{ inputs.module }}/deploy
+      - name: Build ${{ inputs.module }}-service cluster image
+        working-directory: service/${{ inputs.module }}/deploy
         env:
           MODULE_NAME: ${{ env.MODULE_NAME }}
           OLD_DOCKER_REPO: ${{ env.OLD_DOCKER_REPO }}
@@ -274,7 +236,6 @@ jobs:
         run: |
           # Build cluster images for each tag (amd64)
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            # Always use GHCR docker image to avoid Aliyun bandwidth costs
             IMAGE_TAG="${TAG##*:}"
             NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
             echo "Updating deploy files to: ${NEW_DOCKER_IMAGE}"
