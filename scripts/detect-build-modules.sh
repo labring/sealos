@@ -49,7 +49,6 @@ declare -A SERVICE_MODULES=(
     ["vlogs"]="vlogs"
     ["hubble"]="hubble"
     ["sshgate"]="sshgate"
-    ["imagemonitor"]="imagemonitor"
 )
 
 # Manual dependency definitions (for non-Go dependencies or special cases)

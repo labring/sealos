@@ -107,7 +107,7 @@ jobs:
         id: set-matrix
         run: |
           modules=()
-          
+
           # Check if we need to build all modules
           if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
                 "${{ steps.filter.outputs.root-config }}" == "true" || \
@@ -144,7 +144,7 @@ jobs:
             [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
             [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi
-          
+
           # Convert to JSON array (compact format for GitHub Actions)
           if [ ${#modules[@]} -eq 0 ]; then
             json_modules="[]"
