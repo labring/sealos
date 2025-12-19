@@ -1,0 +1,52 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/rauth
+
+# Build output
+/bin/
+/dist/
+
+# Test binary and coverage
+*.test
+*.out
+coverage.html
+coverage.txt
+
+# Go workspace
+go.work
+go.work.sum
+
+# Dependency directories
+/vendor/
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker test environment
+docker/certs/*.key
+docker/certs/*.crt
+docker/certs/*.pem
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Debug
+debug
+__debug_bin*
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/

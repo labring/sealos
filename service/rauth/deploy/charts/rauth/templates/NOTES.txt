@@ -1,0 +1,42 @@
+rauth has been deployed successfully!
+
+================================================================================
+                        Registry Auth Configuration
+================================================================================
+
+Add the following configuration to your Docker Registry config.yml:
+
+  auth:
+    token:
+      realm: http://{{ include "rauth.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local/token
+      service: {{ .Values.config.service }}
+      issuer: {{ .Values.config.issuer }}
+      rootcertbundle: /path/to/token.crt
+
+================================================================================
+                        Namespace Secret Format
+================================================================================
+
+Each namespace needs a secret named "{{ .Values.config.secretName }}" with:
+
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: {{ .Values.config.secretName }}
+    namespace: <your-namespace>
+  type: Opaque
+  stringData:
+    username: "<namespace-name>"
+    password: "<generated-password>"
+
+================================================================================
+                        Service Endpoints
+================================================================================
+
+Token endpoint:  http://{{ include "rauth.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local/token
+Health endpoint: http://{{ include "rauth.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local/health
+
+To verify the deployment:
+
+  kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "rauth.name" . }}"
+  kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "rauth.name" . }}"

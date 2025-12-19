@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "rauth.fullname" . }}
+  labels:
+    {{- include "rauth.labels" . | nindent 4 }}
+data:
+  RAUTH_PORT: {{ .Values.config.port | quote }}
+  RAUTH_ISSUER: {{ .Values.config.issuer | quote }}
+  RAUTH_SERVICE: {{ .Values.config.service | quote }}
+  RAUTH_SECRET_NAME: {{ .Values.config.secretName | quote }}
+  RAUTH_TOKEN_EXPIRY: {{ .Values.config.tokenExpiry | quote }}
+  RAUTH_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  {{- if .Values.existingPrivateKeySecret.enabled }}
+  RAUTH_PRIVATE_KEY: "/etc/rauth/keys/{{ .Values.existingPrivateKeySecret.key }}"
+  {{- else if .Values.config.privateKeyPath }}
+  RAUTH_PRIVATE_KEY: {{ .Values.config.privateKeyPath | quote }}
+  {{- end }}

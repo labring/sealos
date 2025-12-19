@@ -1,0 +1,52 @@
+services:
+  rauth:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - RAUTH_MOCK_MODE=true
+      - RAUTH_MOCK_CONFIG=/config/mock-credentials.json
+      - RAUTH_PRIVATE_KEY=/certs/token.key
+      - RAUTH_SERVICE=registry
+      - RAUTH_ISSUER=rauth
+      - RAUTH_PORT=8080
+      - RAUTH_ADMIN_USERNAME=admin
+      - RAUTH_ADMIN_PASSWORD=admin-secret
+    volumes:
+      - ./mock-credentials.json:/config/mock-credentials.json:ro
+      - ./certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - registry-net
+
+  registry:
+    image: registry:3.0.0-rc.2
+    ports:
+      - "5000:5000"
+    environment:
+      - REGISTRY_AUTH=token
+      - REGISTRY_AUTH_TOKEN_REALM=http://host.docker.internal:8080/token
+      - REGISTRY_AUTH_TOKEN_SERVICE=registry
+      - REGISTRY_AUTH_TOKEN_ISSUER=rauth
+      - REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/certs/token.crt
+    volumes:
+      - ./certs:/certs:ro
+      - registry-data:/var/lib/registry
+    depends_on:
+      rauth:
+        condition: service_healthy
+    networks:
+      - registry-net
+
+networks:
+  registry-net:
+    driver: bridge
+
+volumes:
+  registry-data:
