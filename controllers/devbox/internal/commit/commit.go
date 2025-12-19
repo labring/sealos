@@ -2,6 +2,7 @@ package commit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -14,7 +15,6 @@ import (
 	"github.com/containerd/containerd/v2/core/remotes/docker/config"
 	"github.com/containerd/containerd/v2/core/snapshots"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
-
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/image"
@@ -22,14 +22,19 @@ import (
 	"github.com/containerd/nerdctl/v2/pkg/containerutil"
 	ncdefaults "github.com/containerd/nerdctl/v2/pkg/defaults"
 	"github.com/labring/sealos/controllers/devbox/api/v1alpha2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Committer interface {
 	CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error)
-	Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) (string, error)
+	Commit(
+		ctx context.Context,
+		devboxName string,
+		contentID string,
+		baseImage string,
+		commitImage string,
+	) (string, error)
 	Push(ctx context.Context, imageName string) error
 	RemoveImages(ctx context.Context, imageNames []string, force bool, async bool) error
 	RemoveContainers(ctx context.Context, containerNames []string) error
@@ -81,7 +86,7 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string, merge
 		log.Printf("Failed to connect to containerd (attempt %d/%d): %v", i+1, DefaultMaxRetries+1, err)
 
 		if i == DefaultMaxRetries {
-			return nil, fmt.Errorf("failed to connect to containerd after %d attempts: %v", DefaultMaxRetries+1, err)
+			return nil, fmt.Errorf("failed to connect to containerd after %d attempts: %w", DefaultMaxRetries+1, err)
 		}
 	}
 
@@ -89,7 +94,7 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string, merge
 	containerdClient, err := containerd.NewWithConn(conn, containerd.WithDefaultNamespace(DefaultNamespace))
 	if err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to create containerd client: %v", err)
+		return nil, fmt.Errorf("failed to create containerd client: %w", err)
 	}
 
 	return &CommitterImpl{
@@ -104,15 +109,25 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string, merge
 }
 
 // CreateContainer create container with labels
-func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error) {
-	fmt.Println("========>>>> create container", devboxName, contentID, baseImage)
+func (c *CommitterImpl) CreateContainer(
+	ctx context.Context,
+	devboxName string,
+	contentID string,
+	baseImage string,
+) (string, error) {
+	log.Printf(
+		"========>>>> create container, devboxName: %s, contentID: %s, baseImage: %s",
+		devboxName,
+		contentID,
+		baseImage,
+	)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
 	if err := c.CheckConnection(ctx); err != nil {
 		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
 		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
-			return "", fmt.Errorf("failed to reconnect: %v", reconnectErr)
+			return "", fmt.Errorf("failed to reconnect: %w", reconnectErr)
 		}
 	}
 
@@ -162,14 +177,20 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 		}, c.containerdClient)
 	if err != nil {
 		log.Println("failed to create network manager:", err)
-		return "", fmt.Errorf("failed to create network manager: %v", err)
+		return "", fmt.Errorf("failed to create network manager: %w", err)
 	}
 
 	// create container
-	container, cleanup, err := container.Create(ctx, c.containerdClient, []string{originalAnnotations[AnnotationKeyImageName]}, networkManager, createOpt)
+	container, cleanup, err := container.Create(
+		ctx,
+		c.containerdClient,
+		[]string{originalAnnotations[AnnotationKeyImageName]},
+		networkManager,
+		createOpt,
+	)
 	if err != nil {
 		log.Println("failed to create container:", err)
-		return "", fmt.Errorf("failed to create container: %v", err)
+		return "", fmt.Errorf("failed to create container: %w", err)
 	}
 	if cleanup != nil {
 		defer cleanup()
@@ -184,7 +205,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
-		return fmt.Errorf("failed to load container: %v", err)
+		return fmt.Errorf("failed to load container: %w", err)
 	}
 
 	// try to get and stop task
@@ -213,7 +234,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 	// delete container (include snapshot)
 	err = container.Delete(ctx, containerd.WithSnapshotCleanup)
 	if err != nil {
-		return fmt.Errorf("failed to delete container: %v", err)
+		return fmt.Errorf("failed to delete container: %w", err)
 	}
 
 	log.Printf("Container deleted: %s successfully", containerName)
@@ -221,14 +242,14 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 }
 
 func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, contentID string) error {
-	fmt.Println("========>>>> set lv removable for container", contentID)
+	log.Printf("========>>>> set lv removable for container, containerID: %s, contentID: %s", containerID, contentID)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
 	if err := c.CheckConnection(ctx); err != nil {
 		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
 		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
-			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+			return fmt.Errorf("failed to reconnect: %w", reconnectErr)
 		}
 	}
 
@@ -245,17 +266,17 @@ func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, 
 // RemoveContainer remove container
 func (c *CommitterImpl) RemoveContainers(ctx context.Context, containerNames []string) error {
 	if len(containerNames) == 0 {
-		return fmt.Errorf("[RemoveContainers]containerNames is empty")
+		return errors.New("[RemoveContainers]containerNames is empty")
 	}
 
-	fmt.Println("========>>>> remove container", containerNames)
+	log.Printf("========>>>> remove container, containerNames: %v", containerNames)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
 	if err := c.CheckConnection(ctx); err != nil {
 		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
 		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
-			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+			return fmt.Errorf("failed to reconnect: %w", reconnectErr)
 		}
 	}
 
@@ -268,18 +289,30 @@ func (c *CommitterImpl) RemoveContainers(ctx context.Context, containerNames []s
 	}
 	err := container.Remove(ctx, c.containerdClient, containerNames, opt)
 	if err != nil {
-		return fmt.Errorf("failed to remove container: %v", err)
+		return fmt.Errorf("failed to remove container: %w", err)
 	}
 	return nil
 }
 
 // Commit commit container to image
-func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) (string, error) {
-	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
+func (c *CommitterImpl) Commit(
+	ctx context.Context,
+	devboxName string,
+	contentID string,
+	baseImage string,
+	commitImage string,
+) (string, error) {
+	log.Printf(
+		"========>>>> commit devbox, devboxName: %s, contentID: %s, baseImage: %s, commitImage: %s",
+		devboxName,
+		contentID,
+		baseImage,
+		commitImage,
+	)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	containerID, err := c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
-		return "", fmt.Errorf("failed to create container: %v", err)
+		return containerID, fmt.Errorf("failed to create container: %w", err)
 	}
 
 	// // mark for gc
@@ -300,7 +333,7 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 	// commit container
 	err = container.Commit(ctx, c.containerdClient, commitImage, containerID, opt)
 	if err != nil {
-		return "", fmt.Errorf("failed to commit container: %v", err)
+		return containerID, fmt.Errorf("failed to commit container: %w", err)
 	}
 
 	return containerID, nil
@@ -311,31 +344,31 @@ func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerNa
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load container: %v", err)
+		return nil, fmt.Errorf("failed to load container: %w", err)
 	}
 
 	// get container labels (annotations)
 	labels, err := container.Labels(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get container labels: %v", err)
+		return nil, fmt.Errorf("failed to get container labels: %w", err)
 	}
 	return labels, nil
 }
 
 // Push pushes an image to a remote repository
 func (c *CommitterImpl) Push(ctx context.Context, imageName string) error {
-	fmt.Println("========>>>> push image", imageName)
+	log.Printf("========>>>> push image, imageName: %s", imageName)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
 	if err := c.CheckConnection(ctx); err != nil {
 		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
 		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
-			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+			return fmt.Errorf("failed to reconnect: %w", reconnectErr)
 		}
 	}
 
-	//set resolver
+	// set resolver
 	resolver, err := GetResolver(ctx, c.registryUsername, c.registryPassword)
 	if err != nil {
 		log.Printf("failed to set resolver, Image: %s, err: %v\n", imageName, err)
@@ -363,16 +396,16 @@ func (c *CommitterImpl) Push(ctx context.Context, imageName string) error {
 // RemoveImage remove image
 func (c *CommitterImpl) RemoveImages(ctx context.Context, imageNames []string, force bool, async bool) error {
 	if len(imageNames) == 0 {
-		return fmt.Errorf("[RemoveImages]imageNames is empty")
+		return errors.New("[RemoveImages]imageNames is empty")
 	}
-	fmt.Println("========>>>> remove image", imageNames)
+	log.Printf("========>>>> remove image, imageNames: %v", imageNames)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
 	if err := c.CheckConnection(ctx); err != nil {
 		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
 		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
-			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+			return fmt.Errorf("failed to reconnect: %w", reconnectErr)
 		}
 	}
 
@@ -392,7 +425,7 @@ func (c *CommitterImpl) InitializeGC(ctx context.Context) error {
 	defer cancel()
 	if err := c.forceGC(gcCtx); err != nil {
 		log.Printf("Failed to initialize force GC, err: %v", err)
-		return fmt.Errorf("failed to initialize force GC: %v", err)
+		return fmt.Errorf("failed to initialize force GC: %w", err)
 	}
 	log.Println("Force GC initialized successfully")
 	return nil
@@ -509,7 +542,7 @@ func NewGlobalOptionConfig() *types.GlobalCommandOptions {
 // CheckConnection check if the connection is still alive
 func (c *CommitterImpl) CheckConnection(ctx context.Context) error {
 	if c.conn == nil {
-		return fmt.Errorf("connection is nil")
+		return errors.New("connection is nil")
 	}
 
 	// check connection state
@@ -521,7 +554,7 @@ func (c *CommitterImpl) CheckConnection(ctx context.Context) error {
 	// try to ping containerd
 	_, err := c.containerdClient.Version(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to ping containerd: %v", err)
+		return fmt.Errorf("failed to ping containerd: %w", err)
 	}
 
 	return nil
@@ -555,7 +588,7 @@ func (c *CommitterImpl) Reconnect(ctx context.Context) error {
 		log.Printf("Failed to connect to containerd (attempt %d/%d): %v", i+1, DefaultMaxRetries+1, err)
 
 		if i == DefaultMaxRetries {
-			return fmt.Errorf("failed to connect to containerd after %d attempts: %v", DefaultMaxRetries+1, err)
+			return fmt.Errorf("failed to connect to containerd after %d attempts: %w", DefaultMaxRetries+1, err)
 		}
 	}
 
@@ -563,7 +596,7 @@ func (c *CommitterImpl) Reconnect(ctx context.Context) error {
 	containerdClient, err := containerd.NewWithConn(conn, containerd.WithDefaultNamespace(DefaultNamespace))
 	if err != nil {
 		conn.Close()
-		return fmt.Errorf("failed to recreate containerd client: %v", err)
+		return fmt.Errorf("failed to recreate containerd client: %w", err)
 	}
 
 	// update instance

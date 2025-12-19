@@ -22,26 +22,26 @@ func Int() int {
 
 // Intn generates an integer in range [0,max).
 // By design this should panic if input is invalid, <= 0.
-func Intn(max int) int {
+func Intn(nMax int) int {
 	rng.Lock()
 	defer rng.Unlock()
-	return rng.rand.Intn(max)
+	return rng.rand.Intn(nMax)
 }
 
 // IntnRange generates an integer in range [min,max).
 // By design this should panic if input is invalid, <= 0.
-func IntnRange(min, max int) int {
+func IntnRange(nMin, nMax int) int {
 	rng.Lock()
 	defer rng.Unlock()
-	return rng.rand.Intn(max-min) + min
+	return rng.rand.Intn(nMax-nMin) + nMin
 }
 
 // IntnRange generates an int64 integer in range [min,max).
 // By design this should panic if input is invalid, <= 0.
-func Int63nRange(min, max int64) int64 {
+func Int63nRange(nMin, nMax int64) int64 {
 	rng.Lock()
 	defer rng.Unlock()
-	return rng.rand.Int63n(max-min) + min
+	return rng.rand.Int63n(nMax-nMin) + nMin
 }
 
 // Seed seeds the rng with the provided seed.

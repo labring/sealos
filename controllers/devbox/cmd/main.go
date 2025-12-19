@@ -23,19 +23,27 @@ import (
 	"os"
 	"time"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/ptr"
-
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
+	"github.com/labring/sealos/controllers/devbox/internal/commit"
+	"github.com/labring/sealos/controllers/devbox/internal/controller"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
+	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
+	"github.com/labring/sealos/controllers/devbox/internal/stat"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,16 +53,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
-	"github.com/labring/sealos/controllers/devbox/internal/commit"
-	"github.com/labring/sealos/controllers/devbox/internal/controller"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
-	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
-	"github.com/labring/sealos/controllers/devbox/internal/stat"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -104,7 +102,12 @@ func main() {
 	var mergeBaseImageTopLayer bool
 	// default base image flag for setLvRemovable's temp container
 	var defaultBaseImage string
-	flag.StringVar(&defaultBaseImage, "default-base-image", "alpine:3.19", "The default base image for setLvRemovable's temp container")
+	flag.StringVar(
+		&defaultBaseImage,
+		"default-base-image",
+		"alpine:3.19",
+		"The default base image for setLvRemovable's temp container",
+	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -121,26 +124,71 @@ func main() {
 	// resource flag
 	flag.Float64Var(&requestCPURate, "request-cpu-rate", 10, "The request rate of cpu limit in devbox.")
 	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
-	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The default request value of ephemeral storage in devbox.")
-	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The default limit value of ephemeral storage in devbox.")
-	flag.StringVar(&maximumLimitEphemeralStorage, "maximum-limit-ephemeral-storage", "50Gi", "The maximum limit value of ephemeral storage in devbox.")
+	flag.StringVar(
+		&requestEphemeralStorage,
+		"request-ephemeral-storage",
+		"500Mi",
+		"The default request value of ephemeral storage in devbox.",
+	)
+	flag.StringVar(
+		&limitEphemeralStorage,
+		"limit-ephemeral-storage",
+		"10Gi",
+		"The default limit value of ephemeral storage in devbox.",
+	)
+	flag.StringVar(
+		&maximumLimitEphemeralStorage,
+		"maximum-limit-ephemeral-storage",
+		"50Gi",
+		"The maximum limit value of ephemeral storage in devbox.",
+	)
 	// pod matcher flag, pod resource matcher, env matcher, port matcher will be enabled by default, ephemeral storage matcher will be disabled by default
-	flag.BoolVar(&enablePodResourceMatcher, "enable-pod-resource-matcher", true, "If set, pod resource matcher will be enabled")
+	flag.BoolVar(
+		&enablePodResourceMatcher,
+		"enable-pod-resource-matcher",
+		true,
+		"If set, pod resource matcher will be enabled",
+	)
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
-	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
-	flag.BoolVar(&enablePodStorageLimitMatcher, "enable-pod-storage-limit-matcher", false, "If set, pod storage limit matcher will be enabled")
+	flag.BoolVar(
+		&enablePodEphemeralStorageMatcher,
+		"enable-pod-ephemeral-storage-matcher",
+		false,
+		"If set, pod ephemeral storage matcher will be enabled",
+	)
+	flag.BoolVar(
+		&enablePodStorageLimitMatcher,
+		"enable-pod-storage-limit-matcher",
+		false,
+		"If set, pod storage limit matcher will be enabled",
+	)
 	// config qps and burst
 	flag.IntVar(&configQPS, "config-qps", 50, "The qps of the config")
 	flag.IntVar(&configBurst, "config-burst", 100, "The burst of the config")
 	// config restart predicate duration
-	flag.DurationVar(&restartPredicateDuration, "restart-predicate-duration", 10000*time.Hour, "Sets the restart predicate time duration for devbox controller restart. By default, the duration is set to 2 hours.")
+	flag.DurationVar(
+		&restartPredicateDuration,
+		"restart-predicate-duration",
+		10000*time.Hour,
+		"Sets the restart predicate time duration for devbox controller restart. By default, the duration is set to 2 hours.",
+	)
 	// devbox node label
 	flag.StringVar(&devboxNodeLabel, "devbox-node-label", "devbox.sealos.io/node", "The label of the devbox node")
 	// scheduling flags
-	flag.IntVar(&acceptanceThreshold, "acceptance-threshold", 16, "The minimum acceptance score for scheduling devbox to node. Default is 16, which means the node must have enough resources to run the devbox.")
+	flag.IntVar(
+		&acceptanceThreshold,
+		"acceptance-threshold",
+		16,
+		"The minimum acceptance score for scheduling devbox to node. Default is 16, which means the node must have enough resources to run the devbox.",
+	)
 	// merge base image layers flag
-	flag.BoolVar(&mergeBaseImageTopLayer, "merge-base-image-top-layer", false, "If set true, devbox will merge base image top layers during create and remove top layer during commit.")
+	flag.BoolVar(
+		&mergeBaseImageTopLayer,
+		"merge-base-image-top-layer",
+		false,
+		"If set true, devbox will merge base image top layers during create and remove top layer during commit.",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -301,10 +349,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := committer.InitializeGC(context.Background()); err != nil {
-		setupLog.Error(err, "unable to initialize GC")
-		os.Exit(1)
-	}
+	// if err := committer.InitializeGC(context.Background()); err != nil {
+	// 	setupLog.Error(err, "unable to initialize GC")
+	// 	os.Exit(1)
+	// }
 
 	stateChangeHandler := controller.EventHandler{
 		Client:              mgr.GetClient(),

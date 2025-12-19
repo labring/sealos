@@ -21,10 +21,9 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/labring/sealos/controllers/devbox/test/utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/labring/sealos/controllers/devbox/test/utils"
 )
 
 const namespace = "devbox-system"
@@ -60,7 +59,7 @@ var _ = Describe("controller", Ordered, func() {
 			var err error
 
 			// projectimage stores the name of the image used in the example
-			var projectimage = "example.com/devbox:v0.0.1"
+			projectimage := "example.com/devbox:v0.0.1"
 
 			By("building the manager(Operator) image")
 			cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectimage))
@@ -116,7 +115,6 @@ var _ = Describe("controller", Ordered, func() {
 				return nil
 			}
 			EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
-
 		})
 	})
 })
