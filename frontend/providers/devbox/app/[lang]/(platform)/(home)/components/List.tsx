@@ -59,6 +59,7 @@ import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import SearchEmpty from './SearchEmpty';
+import GPUItem from '@/components/GPUItem';
 
 const DeleteDevboxDialog = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
 const EditRemarkDialog = dynamic(() => import('@/components/dialogs/EditRemarkDialog'));
@@ -397,6 +398,15 @@ const DevboxList = ({
               className="h-9 w-55"
             />
           );
+        }
+      },
+      {
+        accessorKey: 'gpu',
+        header: ({ column }) => <span className="select-none">GPU</span>,
+        size: 180,
+        cell: ({ row }) => {
+          const item = row.original;
+          return <GPUItem gpu={item.gpu} />;
         }
       },
       {
