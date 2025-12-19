@@ -34,6 +34,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 
 import { useRouter } from '@/i18n';
 import { useDateTimeStore } from '@/stores/date';
+import { usePriceStore } from '@/stores/price';
 import { DevboxListItemTypeV2, DevboxStatusMapType } from '@/types/devbox';
 import { DevboxStatusEnum, devboxStatusMap } from '@/constants/devbox';
 import { generateMockMonitorData } from '@/constants/mock';
@@ -101,6 +102,7 @@ const DevboxList = ({
     useControlDevbox(refetchDevboxList);
 
   const { startDateTime: dateRangeStart } = useDateTimeStore();
+  const { sourcePrice } = usePriceStore();
 
   // Check if a specific time range is selected (not "all time")
   const isSpecificTimeRangeSelected = useMemo(() => {
@@ -576,9 +578,14 @@ const DevboxList = ({
           );
         }
       }
-    ],
+    ].filter((column) => {
+      if (column.accessorKey === 'gpu' && !sourcePrice.gpu) {
+        return false;
+      }
+      return true;
+    }),
     // NOTE: do not add devboxList dependency, it will cause infinite re-render
-    [statusFilter, isSpecificTimeRangeSelected]
+    [statusFilter, isSpecificTimeRangeSelected, sourcePrice.gpu]
   );
 
   const { startDateTime } = useDateTimeStore();
