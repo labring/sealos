@@ -316,6 +316,7 @@ const PublicTemplate = ({
   }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router, t]);
 
   // Query to get framework templates to determine which languages have frameworks
+  // Only load when user views framework category (lazy loading)
   const frameworkLanguagesQuery = useQuery(
     ['framework-languages'],
     async () => {
@@ -324,12 +325,11 @@ const PublicTemplate = ({
 
       try {
         const response = await listTemplateRepositoryApi(
-          { page: 1, pageSize: 100 }, // Get enough to cover all framework templates
-          [frameworkTag.uid], // Filter by framework tag
+          { page: 1, pageSize: 100 },
+          [frameworkTag.uid],
           ''
         );
 
-        // Extract all programming language tags from framework templates
         const frameworkLanguageUids = new Set<string>();
         response.templateRepositoryList?.forEach((template) => {
           template.templateRepositoryTags?.forEach((tagRelation) => {
@@ -347,7 +347,7 @@ const PublicTemplate = ({
     },
     {
       enabled: useCaseTags.length > 0,
-      staleTime: 5 * 60 * 1000 // 5 minutes
+      staleTime: 5 * 60 * 1000
     }
   );
 
