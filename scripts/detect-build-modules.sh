@@ -419,7 +419,9 @@ main() {
 
         # Check for cross-project dependency changes
         # If building services, check if any controllers dependencies changed
-        check_cross_project_dependencies "$TYPE" changed_modules
+        if [[ ${#changed_modules[@]} -gt 0 ]]; then
+            check_cross_project_dependencies "$TYPE" changed_modules
+        fi
 
         if [[ ${#changed_modules[@]} -eq 0 ]]; then
             echo "No module changes detected" >&2
