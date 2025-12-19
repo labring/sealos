@@ -16,7 +16,7 @@ const GPUItem = ({ gpu, className }: { gpu?: GpuType; className?: string }) => {
   }, [gpu?.type, sourcePrice?.gpu]);
 
   return (
-    <div className={cn('flex items-center whitespace-nowrap text-sm text-zinc-600', className)}>
+    <div className={cn('flex items-center text-sm whitespace-nowrap text-zinc-600', className)}>
       <Image src="/images/nvidia.svg" alt="GPU" width={16} height={16} className="mr-2" />
       {gpuAlias && (
         <>
