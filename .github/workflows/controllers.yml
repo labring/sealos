@@ -64,6 +64,10 @@ env:
   DEFAULT_OWNER: "labring"
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml

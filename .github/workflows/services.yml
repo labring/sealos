@@ -65,6 +65,10 @@ env:
   GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
