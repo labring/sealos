@@ -397,6 +397,52 @@ check_infrastructure_changes() {
     return 1
 }
 
+# Function to check for cross-project dependency changes
+# Adds affected modules to the provided array
+check_cross_project_dependencies() {
+    local type="$1"
+    local -n affected_modules="$2"  # nameref to modify the array
+
+    # Currently only check when building services
+    # (services may depend on controllers)
+    if [[ "$type" != "service" ]]; then
+        return
+    fi
+
+    echo "Checking cross-project dependencies..." >&2
+
+    for module in $(get_all_modules "$type"); do
+        local deps
+        deps=$(get_all_dependencies "$type" "$module")
+
+        if [[ -z "$deps" ]]; then
+            continue
+        fi
+
+        # Check if any dependency has changes
+        IFS=',' read -ra dep_array <<< "$deps"
+        for dep in "${dep_array[@]}"; do
+            dep=$(echo "$dep" | xargs)
+
+            # Parse dependency: "controllers/account" or "service/database"
+            if [[ "$dep" =~ ^(controllers|service)/(.+)$ ]]; then
+                local dep_type="${BASH_REMATCH[1]}"
+                local dep_module="${BASH_REMATCH[2]}"
+
+                # Check if the dependency module has changes
+                if module_has_changes "$dep_type" "$dep_module"; then
+                    echo "Cross-project dependency changed: $dep (affects $module)" >&2
+                    # Add this module to affected list if not already present
+                    if [[ ! " ${affected_modules[@]} " =~ " ${module} " ]]; then
+                        affected_modules+=("$module")
+                    fi
+                    break
+                fi
+            fi
+        done
+    done
+}
+
 # Main logic
 main() {
     local -a modules_to_build=()
@@ -426,6 +472,10 @@ main() {
                 changed_modules+=("$module")
             fi
         done
+
+        # Check for cross-project dependency changes
+        # If building services, check if any controllers dependencies changed
+        check_cross_project_dependencies "$TYPE" changed_modules
 
         if [[ ${#changed_modules[@]} -eq 0 ]]; then
             echo "No module changes detected" >&2

@@ -44,8 +44,7 @@ on:
     branches: ["*"]
     paths:
       - "service/**"
-      - "controllers/pkg/**"
-      - "controllers/account/**"
+      - "controllers/**"
       - ".github/workflows/services.yml"
       - ".github/workflows/service-build.yml"
       - "scripts/detect-build-modules.sh"
@@ -55,8 +54,7 @@ on:
     branches: ["*"]
     paths:
       - "service/**"
-      - "controllers/pkg/**"
-      - "controllers/account/**"
+      - "controllers/**"
       - ".github/workflows/services.yml"
       - ".github/workflows/service-build.yml"
       - "scripts/detect-build-modules.sh"
