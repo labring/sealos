@@ -74,11 +74,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
-    outputs:
-      image-name: ${{ steps.set-outputs.outputs.image-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,34 +88,34 @@ jobs:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
-      - name: Build ${{ inputs.module }} ${{ matrix.arch }}
+      - name: Build ${{ inputs.module }} amd64
         working-directory: service/${{ inputs.module }}
         env:
           MODULE: ${{ inputs.module }}
         run: |
-          GOARCH=${{ matrix.arch }} make build
-          mv bin/manager bin/service-${MODULE}-${{ matrix.arch }}
-          chmod +x bin/service-${MODULE}-${{ matrix.arch }}
-          file bin/service-${MODULE}-${{ matrix.arch }}
+          GOARCH=amd64 make build
+          mv bin/manager bin/service-${MODULE}-amd64
+          chmod +x bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64
+          file bin/service-${MODULE}-amd64 | grep -q 'x86-64'
+          if [ $? -ne 0 ]; then
+            echo "amd64 platform build failed"
+            exit 1
+          fi
 
-      - name: Validate binary architecture
+      - name: Build ${{ inputs.module }} arm64
         working-directory: service/${{ inputs.module }}
         env:
           MODULE: ${{ inputs.module }}
-          ARCH: ${{ matrix.arch }}
         run: |
-          if [[ "$ARCH" == "amd64" ]]; then
-            file bin/service-${MODULE}-${{ matrix.arch }} | grep -q 'x86-64'
-            if [ $? -ne 0 ]; then
-              echo "amd64 platform build failed"
-              exit 1
-            fi
-          elif [[ "$ARCH" == "arm64" ]]; then
-            file bin/service-${MODULE}-${{ matrix.arch }} | grep -q 'aarch64'
-            if [ $? -ne 0 ]; then
-              echo "arm64 platform build failed"
-              exit 1
-            fi
+          GOARCH=arm64 make build
+          mv bin/manager bin/service-${MODULE}-arm64
+          chmod +x bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64
+          file bin/service-${MODULE}-arm64 | grep -q 'aarch64'
+          if [ $? -ne 0 ]; then
+            echo "arm64 platform build failed"
+            exit 1
           fi
 
       - name: Set image repo
@@ -175,108 +170,20 @@ jobs:
         env:
           DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
-      - name: Build and push by digest
-        id: build
+      - name: build (and publish) ${{ inputs.module }} main image
         uses: docker/build-push-action@v6
         with:
           context: ./service/${{ inputs.module }}
           file: ./service/${{ inputs.module }}/Dockerfile
-          platforms: linux/${{ matrix.arch }}
+          # Push if it's a push event or if push_image is true
+          push: ${{ inputs.push_image }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.GHCR_REPO }},push-by-digest=${{ inputs.push_image }},name-canonical=true,push=${{ inputs.push_image }}
-
-      - name: Export digest
-        if: ${{ inputs.push_image }}
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
-      - name: Upload digest
-        if: ${{ inputs.push_image }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-service-${{ inputs.module }}-${{ matrix.arch }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  image-release:
-    if: ${{ inputs.push_image }}
-    needs: [image-build]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          pattern: digests-service-${{ inputs.module }}-*
-          path: /tmp/digests
-          merge-multiple: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ needs.image-build.outputs.image-name }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-        env:
-          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-
-      - name: Login to Aliyun Registry
-        uses: docker/login-action@v3
-        if: ${{ env.ALIYUN_REGISTRY }}
-        with:
-          registry: ${{ env.ALIYUN_REGISTRY }}
-          username: ${{ secrets.ALIYUN_USERNAME }}
-          password: ${{ secrets.ALIYUN_PASSWORD }}
-
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
-        env:
-          GHCR_REPO: ${{ needs.image-build.outputs.image-name }}
-        run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.GHCR_REPO }}@sha256:%s ' *)
-
-      - name: Create manifest list and push to Aliyun
-        if: ${{ env.ALIYUN_REPO_PREFIX }}
-        working-directory: /tmp/digests
-        env:
-          GHCR_REPO: ${{ needs.image-build.outputs.image-name }}
-          MODULE: ${{ inputs.module }}
-        run: |
-          ALIYUN_REPO="${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service"
-          # Create tags for Aliyun
-          TAGS=$(jq -cr '.tags | map(split("/")[-1] | "-t '$ALIYUN_REPO':" + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
-          docker buildx imagetools create $TAGS \
-            $(printf '${{ env.GHCR_REPO }}@sha256:%s ' *)
-
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ needs.image-build.outputs.image-name }}:${{ steps.meta.outputs.version }}
+          platforms: linux/amd64,linux/arm64
 
   cluster-image-build:
     if: ${{ inputs.push_image }}
-    needs: [image-build, image-release]
+    needs: [image-build]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
