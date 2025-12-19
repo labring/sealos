@@ -24,6 +24,7 @@
   "Please enter the devbox name first": "请先填写项目名称",
   "Running": "运行中",
   "Shutdown": "已停机",
+  "Shutting": "关机中",
   "Stopped": "已停机",
   "Stopping": "停止中",
   "Success": "成功",

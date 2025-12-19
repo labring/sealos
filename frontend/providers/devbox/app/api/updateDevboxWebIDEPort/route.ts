@@ -27,10 +27,9 @@ export async function POST(req: NextRequest) {
     const { devboxName, port } = validationResult.data;
     const headerList = req.headers;
 
-    const { applyYamlList, k8sCore, k8sCustomObjects, k8sNetworkingApp, namespace } =
-      await getK8s({
-        kubeconfig: await authSession(headerList)
-      });
+    const { applyYamlList, k8sCore, k8sCustomObjects, k8sNetworkingApp, namespace } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    });
 
     const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
 
@@ -66,6 +65,7 @@ export async function POST(req: NextRequest) {
       customDomain: ''
     };
 
+    // NOTE: Devbox 2.5 is after webIDE and import,so there api v1alpha1 need to adjust to v1alpha2 later(if use).
     const devboxResponse = await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -78,9 +78,7 @@ export async function POST(req: NextRequest) {
     const existingAppPorts = devbox?.spec?.config?.appPorts || [];
 
     const extraPorts = [...existingExtraPorts];
-    const existingExtraPortIndex = extraPorts.findIndex(
-      (p: any) => p.containerPort === port
-    );
+    const existingExtraPortIndex = extraPorts.findIndex((p: any) => p.containerPort === port);
     if (existingExtraPortIndex === -1) {
       extraPorts.push({ containerPort: port });
     }
@@ -134,9 +132,7 @@ export async function POST(req: NextRequest) {
     const existingServicePorts = serviceResponse.body.spec?.ports || [];
 
     const servicePorts = [...existingServicePorts];
-    const existingServicePortIndex = servicePorts.findIndex(
-      (p: any) => p.port === str2Num(port)
-    );
+    const existingServicePortIndex = servicePorts.findIndex((p: any) => p.port === str2Num(port));
     if (existingServicePortIndex === -1) {
       servicePorts.push({
         port: str2Num(port),
