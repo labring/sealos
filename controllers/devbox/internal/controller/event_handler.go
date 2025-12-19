@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -61,13 +62,19 @@ func (h *EventHandler) Handle(ctx context.Context, event *corev1.Event) error {
 		return h.handleDevboxStateChange(ctx, event)
 
 	default:
-		return fmt.Errorf("invalid event: %v", event)
+		return errors.New("invalid event")
 	}
 }
 
 // handleDevboxStateChange handle new structured state change event
 func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev1.Event) error {
-	h.Logger.Info("Devbox state change event detected", "event", event.Name, "message", event.Message)
+	h.Logger.Info(
+		"Devbox state change event detected",
+		"event",
+		event.Name,
+		"message",
+		event.Message,
+	)
 	devbox := &devboxv1alpha2.Devbox{}
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: event.Namespace, Name: event.InvolvedObject.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", event.InvolvedObject.Name)
@@ -79,10 +86,21 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 	targetState := devbox.Spec.State
 
 	// Handle invalid state transition
-	if currentState == devboxv1alpha2.DevboxStateShutdown && targetState == devboxv1alpha2.DevboxStateStopped {
-		h.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Shutdown state is not allowed to be changed to stopped state", "Shutdown state is not allowed to be changed to stopped state")
-		h.Logger.Error(fmt.Errorf("shutdown state is not allowed to be changed to stopped state"), "shutdown state is not allowed to be changed to stopped state", "devbox", devbox.Name)
-		return fmt.Errorf("shutdown state is not allowed to be changed to stopped state")
+	if currentState == devboxv1alpha2.DevboxStateShutdown &&
+		targetState == devboxv1alpha2.DevboxStateStopped {
+		h.Recorder.Eventf(
+			devbox,
+			corev1.EventTypeWarning,
+			"Shutdown state is not allowed to be changed to stopped state",
+			"Shutdown state is not allowed to be changed to stopped state",
+		)
+		h.Logger.Error(
+			errors.New("shutdown state is not allowed to be changed to stopped state"),
+			"shutdown state is not allowed to be changed to stopped state",
+			"devbox",
+			devbox.Name,
+		)
+		return errors.New("shutdown state is not allowed to be changed to stopped state")
 	}
 
 	// Handle state transitions that require commit, only running and paused devbox can be shutdown or stopped
@@ -92,11 +110,25 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 	if needsCommit {
 		// Check if commit is already in progress to prevent duplicate requests
 		if _, loaded := commitMap.LoadOrStore(devbox.Status.ContentID, true); loaded {
-			h.Logger.Info("commit already in progress, skipping duplicate request", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
+			h.Logger.Info(
+				"commit already in progress, skipping duplicate request",
+				"devbox",
+				devbox.Name,
+				"contentID",
+				devbox.Status.ContentID,
+			)
 			return nil
 		}
 		start := time.Now()
-		h.Logger.Info("start commit devbox", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", start)
+		h.Logger.Info(
+			"start commit devbox",
+			"devbox",
+			devbox.Name,
+			"contentID",
+			devbox.Status.ContentID,
+			"time",
+			start,
+		)
 
 		// retry commit devbox with retry logic
 		// backoff: 10s, 20s, 30s
@@ -121,7 +153,15 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 			return err
 		}
 
-		h.Logger.Info("commit devbox success", "devbox", devbox.Name, "contentID", devbox.Status.ContentID, "time", time.Since(start))
+		h.Logger.Info(
+			"commit devbox success",
+			"devbox",
+			devbox.Name,
+			"contentID",
+			devbox.Status.ContentID,
+			"time",
+			time.Since(start),
+		)
 	} else if currentState != targetState {
 		// Handle simple state transitions without commit with retry
 		h.Logger.Info("update devbox status", "devbox", devbox.Name, "from", currentState, "to", targetState)
@@ -163,7 +203,11 @@ func (h *EventHandler) handleStorageCleanup(ctx context.Context, event *corev1.E
 	return nil
 }
 
-func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox, targetState devboxv1alpha2.DevboxState) error {
+func (h *EventHandler) commitDevbox(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+	targetState devboxv1alpha2.DevboxState,
+) error {
 	defer commitMap.Delete(devbox.Status.ContentID)
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
@@ -183,7 +227,13 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 		h.Logger.Error(err, "failed to update commit status to committing", "devbox", devbox.Name)
 		return err
 	}
-	h.Logger.Info("set commit status to committing", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
+	h.Logger.Info(
+		"set commit status to committing",
+		"devbox",
+		devbox.Name,
+		"contentID",
+		devbox.Status.ContentID,
+	)
 
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
@@ -193,7 +243,15 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 	baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 	commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
 	oldContentID := devbox.Status.ContentID
-	h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
+	h.Logger.Info(
+		"commit devbox",
+		"devbox",
+		devbox.Name,
+		"baseImage",
+		baseImage,
+		"commitImage",
+		commitImage,
+	)
 	var containerID string
 	var commitErr error
 	var removeImageNames []string
@@ -222,7 +280,12 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if updateErr != nil {
-			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
+			h.Logger.Error(
+				updateErr,
+				"failed to update commit status to failed",
+				"devbox",
+				devbox.Name,
+			)
 		}
 		return commitErr
 	}
@@ -243,7 +306,12 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if updateErr != nil {
-			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
+			h.Logger.Error(
+				updateErr,
+				"failed to update commit status to failed",
+				"devbox",
+				devbox.Name,
+			)
 		}
 		return err
 	}
@@ -279,18 +347,38 @@ func (h *EventHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.
 	}
 	// step 5: set LV removable
 	if err := h.Committer.SetLvRemovable(ctx, containerID, oldContentID); err != nil {
-		h.Logger.Error(err, "failed to set LV removable", "containerID", containerID, "contentID", oldContentID)
+		h.Logger.Error(
+			err,
+			"failed to set LV removable",
+			"containerID",
+			containerID,
+			"contentID",
+			oldContentID,
+		)
 	}
 	return nil
 }
 
 func (h *EventHandler) generateImageName(devbox *devboxv1alpha2.Devbox) string {
 	now := time.Now()
-	return fmt.Sprintf("%s/%s/%s:%s-%s", h.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
+	return fmt.Sprintf(
+		"%s/%s/%s:%s-%s",
+		h.CommitImageRegistry,
+		devbox.Namespace,
+		devbox.Name,
+		rand.String(5),
+		now.Format("2006-01-02-150405"),
+	)
 }
 
 func (h *EventHandler) removeStorage(ctx context.Context, event *corev1.Event) error {
-	h.Logger.Info("Starting devbox deletion Storage cleanup", "devbox", event.Name, "message", event.Message)
+	h.Logger.Info(
+		"Starting devbox deletion Storage cleanup",
+		"devbox",
+		event.Name,
+		"message",
+		event.Message,
+	)
 	devboxName, contentID, baseImage := h.parseStorageCleanupAnno(event.Annotations)
 
 	// Use k8s.io/client-go/util/retry for robust retry logic
@@ -308,26 +396,64 @@ func (h *EventHandler) removeStorage(ctx context.Context, event *corev1.Event) e
 	)
 	if err != nil {
 		h.Logger.Error(err, "Failed to cleanup storage after all retries", "devbox", devboxName)
-		return fmt.Errorf("failed to cleanup storage for devbox %s after retries: %w", devboxName, err)
+		return fmt.Errorf(
+			"failed to cleanup storage for devbox %s after retries: %w",
+			devboxName,
+			err,
+		)
 	}
 	h.Logger.Info("Successfully completed storage cleanup", "devbox", devboxName)
 	return nil
 }
 
-func (h *EventHandler) cleanupStorage(ctx context.Context, devboxName, contentID, baseImage string) error {
-	h.Logger.Info("Starting Storage cleanup", "devbox", devboxName, "contentID", contentID, "baseImage", baseImage, "defaultBaseImage", h.DefaultBaseImage)
+func (h *EventHandler) cleanupStorage(
+	ctx context.Context,
+	devboxName, contentID, baseImage string,
+) error {
+	h.Logger.Info(
+		"Starting Storage cleanup",
+		"devbox",
+		devboxName,
+		"contentID",
+		contentID,
+		"baseImage",
+		baseImage,
+		"defaultBaseImage",
+		h.DefaultBaseImage,
+	)
 
 	// create temp container
-	containerID, err := h.Committer.CreateContainer(ctx, fmt.Sprintf("temp-%s-%d", devboxName, time.Now().UnixMicro()), contentID, h.DefaultBaseImage)
+	containerID, err := h.Committer.CreateContainer(
+		ctx,
+		fmt.Sprintf("temp-%s-%d", devboxName, time.Now().UnixMicro()),
+		contentID,
+		h.DefaultBaseImage,
+	)
 	if err != nil {
-		h.Logger.Error(err, "failed to create temp container", "devbox", devboxName, "contentID", contentID, "defaultBaseImage", h.DefaultBaseImage)
+		h.Logger.Error(
+			err,
+			"failed to create temp container",
+			"devbox",
+			devboxName,
+			"contentID",
+			contentID,
+			"defaultBaseImage",
+			h.DefaultBaseImage,
+		)
 		return err
 	}
 
 	// make sure remove container
 	defer func() {
 		if cleanupErr := h.Committer.RemoveContainers(ctx, []string{containerID}); cleanupErr != nil {
-			h.Logger.Error(cleanupErr, "failed to remove temporary container", "devbox", devboxName, "containerID", containerID)
+			h.Logger.Error(
+				cleanupErr,
+				"failed to remove temporary container",
+				"devbox",
+				devboxName,
+				"containerID",
+				containerID,
+			)
 		} else {
 			h.Logger.Info("Successfully removed temporary container", "devbox", devboxName, "containerID", containerID)
 		}
@@ -335,17 +461,36 @@ func (h *EventHandler) cleanupStorage(ctx context.Context, devboxName, contentID
 
 	// remove storage
 	if err := h.Committer.SetLvRemovable(ctx, containerID, contentID); err != nil {
-		h.Logger.Error(err, "failed to set Storage removable", "devbox", devboxName, "containerID", containerID, "contentID", contentID)
+		h.Logger.Error(
+			err,
+			"failed to set Storage removable",
+			"devbox",
+			devboxName,
+			"containerID",
+			containerID,
+			"contentID",
+			contentID,
+		)
 		return fmt.Errorf("failed to set Storage removable: %w", err)
 	}
 
-	h.Logger.Info("Successfully completed Storage cleanup", "devbox", devboxName, "containerID", containerID, "contentID", contentID)
+	h.Logger.Info(
+		"Successfully completed Storage cleanup",
+		"devbox",
+		devboxName,
+		"containerID",
+		containerID,
+		"contentID",
+		contentID,
+	)
 
 	return nil
 }
 
 // parseStorageCleanupAnno parses the annotations from the event and returns the devboxName, contentID, and baseImage
-func (h *EventHandler) parseStorageCleanupAnno(annotations events.Annotations) (devboxName, contentID, baseImage string) {
+func (h *EventHandler) parseStorageCleanupAnno(
+	annotations events.Annotations,
+) (devboxName, contentID, baseImage string) {
 	devboxName = annotations[events.KeyAnnotationDevboxName]
 	contentID = annotations[events.KeyAnnotationContentID]
 	baseImage = annotations[events.KeyAnnotationBaseImage]

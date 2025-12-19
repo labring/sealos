@@ -22,15 +22,14 @@ import (
 	"fmt"
 	"time"
 
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
 )
 
 // DevboxreleaseReconciler reconciles a Devboxrelease object
@@ -44,14 +43,17 @@ type DevboxreleaseReconciler struct {
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxreleases/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxreleases/finalizers,verbs=update
 
-func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *DevboxreleaseReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	devboxRelease := &devboxv1alpha2.DevBoxRelease{}
-	if err := r.Client.Get(ctx, req.NamespacedName, devboxRelease); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, devboxRelease); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if devboxRelease.ObjectMeta.DeletionTimestamp.IsZero() {
+	if devboxRelease.DeletionTimestamp.IsZero() {
 		// Add finalizer with retry
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestRelease := &devboxv1alpha2.DevBoxRelease{}
@@ -84,7 +86,15 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
-	logger.Info("Reconciling DevBoxRelease", "devbox", devboxRelease.Spec.DevboxName, "version", devboxRelease.Spec.Version, "phase", devboxRelease.Status.Phase)
+	logger.Info(
+		"Reconciling DevBoxRelease",
+		"devbox",
+		devboxRelease.Spec.DevboxName,
+		"version",
+		devboxRelease.Spec.Version,
+		"phase",
+		devboxRelease.Status.Phase,
+	)
 
 	devbox := &devboxv1alpha2.Devbox{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: devboxRelease.Namespace, Name: devboxRelease.Spec.DevboxName}, devbox); err != nil {
@@ -93,19 +103,42 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	// if devboxRelease.Status.Phase is success, skip release
 	if devboxRelease.Status.Phase == devboxv1alpha2.DevBoxReleasePhaseSuccess {
-		logger.Info("DevBoxRelease is already released, skipping release", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+		logger.Info(
+			"DevBoxRelease is already released, skipping release",
+			"devbox",
+			devboxRelease.Spec.DevboxName,
+			"devboxRelease",
+			devboxRelease.Name,
+			"version",
+			devboxRelease.Spec.Version,
+		)
 		return ctrl.Result{}, nil
 	}
 
 	// if devbox is running, skip release
-	if devbox.Status.State == devboxv1alpha2.DevboxStateRunning || devbox.Status.State == devboxv1alpha2.DevboxStatePaused {
-		logger.Info("Devbox is running or paused, skipping release", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+	if devbox.Status.State == devboxv1alpha2.DevboxStateRunning ||
+		devbox.Status.State == devboxv1alpha2.DevboxStatePaused {
+		logger.Info(
+			"Devbox is running or paused, skipping release",
+			"devbox",
+			devboxRelease.Spec.DevboxName,
+			"devboxRelease",
+			devboxRelease.Name,
+			"version",
+			devboxRelease.Spec.Version,
+		)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	if devboxRelease.Status.Phase == "" {
 		// Initialize release phase with retry
 		sourceImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
-		targetImage := fmt.Sprintf("%s/%s/%s:%s", r.Registry.Host, devboxRelease.Namespace, devboxRelease.Spec.DevboxName, devboxRelease.Spec.Version)
+		targetImage := fmt.Sprintf(
+			"%s/%s/%s:%s",
+			r.Host,
+			devboxRelease.Namespace,
+			devboxRelease.Spec.DevboxName,
+			devboxRelease.Spec.Version,
+		)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestRelease := &devboxv1alpha2.DevBoxRelease{}
 			if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
@@ -118,16 +151,41 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			return r.Status().Update(ctx, latestRelease)
 		})
 		if err != nil {
-			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+			logger.Error(
+				err,
+				"Failed to update status",
+				"devbox",
+				devboxRelease.Spec.DevboxName,
+				"devboxRelease",
+				devboxRelease.Name,
+				"version",
+				devboxRelease.Spec.Version,
+			)
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if devboxRelease.Status.Phase == devboxv1alpha2.DevBoxReleasePhasePending {
-		logger.Info("Creating release tag", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+		logger.Info(
+			"Creating release tag",
+			"devbox",
+			devboxRelease.Spec.DevboxName,
+			"devboxRelease",
+			devboxRelease.Name,
+			"version",
+			devboxRelease.Spec.Version,
+		)
 		err := r.Release(ctx, devboxRelease)
-		if err != nil && errors.Is(err, registry.ErrorManifestNotFound) {
-			logger.Info("Manifest not found, retrying", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+		if err != nil && errors.Is(err, registry.ErrManifestNotFound) {
+			logger.Info(
+				"Manifest not found, retrying",
+				"devbox",
+				devboxRelease.Spec.DevboxName,
+				"devboxRelease",
+				devboxRelease.Name,
+				"version",
+				devboxRelease.Spec.Version,
+			)
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		} else if err != nil {
 			logger.Error(err, "Failed to create release tag", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
@@ -142,7 +200,15 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			})
 			return ctrl.Result{}, err
 		}
-		logger.Info("Release tag created", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+		logger.Info(
+			"Release tag created",
+			"devbox",
+			devboxRelease.Spec.DevboxName,
+			"devboxRelease",
+			devboxRelease.Name,
+			"version",
+			devboxRelease.Spec.Version,
+		)
 		// Update status to success with retry
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestRelease := &devboxv1alpha2.DevBoxRelease{}
@@ -153,7 +219,16 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			return r.Status().Update(ctx, latestRelease)
 		})
 		if err != nil {
-			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+			logger.Error(
+				err,
+				"Failed to update status",
+				"devbox",
+				devboxRelease.Spec.DevboxName,
+				"devboxRelease",
+				devboxRelease.Name,
+				"version",
+				devboxRelease.Spec.Version,
+			)
 			return ctrl.Result{}, err
 		}
 		if devboxRelease.Spec.StartDevboxAfterRelease {
@@ -162,31 +237,85 @@ func (r *DevboxreleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				if err := r.Get(ctx, client.ObjectKey{Namespace: devboxRelease.Namespace, Name: devboxRelease.Spec.DevboxName}, devbox); err != nil {
 					return err
 				}
-				logger.Info("Starting devbox after release", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+				logger.Info(
+					"Starting devbox after release",
+					"devbox",
+					devboxRelease.Spec.DevboxName,
+					"devboxRelease",
+					devboxRelease.Name,
+					"version",
+					devboxRelease.Spec.Version,
+				)
 				devbox.Spec.State = devboxv1alpha2.DevboxStateRunning
 				if err = r.Update(ctx, devbox); err != nil {
-					logger.Error(err, "Failed to update devbox", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+					logger.Error(
+						err,
+						"Failed to update devbox",
+						"devbox",
+						devboxRelease.Spec.DevboxName,
+						"devboxRelease",
+						devboxRelease.Name,
+						"version",
+						devboxRelease.Spec.Version,
+					)
 					return err
 				}
 				return nil
 			})
 			if err != nil {
-				logger.Error(err, "Failed to update devbox", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+				logger.Error(
+					err,
+					"Failed to update devbox",
+					"devbox",
+					devboxRelease.Spec.DevboxName,
+					"devboxRelease",
+					devboxRelease.Name,
+					"version",
+					devboxRelease.Spec.Version,
+				)
 				return ctrl.Result{}, err
 			}
 		}
 	}
-	logger.Info("Reconciliation complete", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+	logger.Info(
+		"Reconciliation complete",
+		"devbox",
+		devboxRelease.Spec.DevboxName,
+		"devboxRelease",
+		devboxRelease.Name,
+		"version",
+		devboxRelease.Spec.Version,
+	)
 	return ctrl.Result{}, nil
 }
 
-func (r *DevboxreleaseReconciler) Release(ctx context.Context, devboxRelease *devboxv1alpha2.DevBoxRelease) error {
+func (r *DevboxreleaseReconciler) Release(
+	ctx context.Context,
+	devboxRelease *devboxv1alpha2.DevBoxRelease,
+) error {
 	logger := log.FromContext(ctx)
-	if err := r.Registry.ReTag(devboxRelease.Status.SourceImage, devboxRelease.Status.TargetImage); err != nil {
-		logger.Error(err, "Failed to re-tag image", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+	if err := r.ReTag(devboxRelease.Status.SourceImage, devboxRelease.Status.TargetImage); err != nil {
+		logger.Error(
+			err,
+			"Failed to re-tag image",
+			"devbox",
+			devboxRelease.Spec.DevboxName,
+			"devboxRelease",
+			devboxRelease.Name,
+			"version",
+			devboxRelease.Spec.Version,
+		)
 		return err
 	}
-	logger.Info("Image re-tagged", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+	logger.Info(
+		"Image re-tagged",
+		"devbox",
+		devboxRelease.Spec.DevboxName,
+		"devboxRelease",
+		devboxRelease.Name,
+		"version",
+		devboxRelease.Spec.Version,
+	)
 	return nil
 }
 

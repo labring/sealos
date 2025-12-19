@@ -15,7 +15,6 @@ import (
 	"github.com/containerd/containerd/v2/core/remotes/docker/config"
 	"github.com/containerd/containerd/v2/core/snapshots"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
-
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/image"
@@ -23,19 +22,21 @@ import (
 	"github.com/containerd/nerdctl/v2/pkg/containerutil"
 	ncdefaults "github.com/containerd/nerdctl/v2/pkg/defaults"
 	"github.com/labring/sealos/controllers/devbox/api/v1alpha2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Committer interface {
-	CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error)
-	Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) (string, error)
+	CreateContainer(ctx context.Context, devboxName, contentID, baseImage string) (string, error)
+	Commit(
+		ctx context.Context,
+		devboxName, contentID, baseImage, commitImage string,
+	) (string, error)
 	Push(ctx context.Context, imageName string) error
-	RemoveImages(ctx context.Context, imageNames []string, force bool, async bool) error
+	RemoveImages(ctx context.Context, imageNames []string, force, async bool) error
 	RemoveContainers(ctx context.Context, containerNames []string) error
 	InitializeGC(ctx context.Context) error
-	SetLvRemovable(ctx context.Context, containerID string, contentID string) error
+	SetLvRemovable(ctx context.Context, containerID, contentID string) error
 }
 
 type CommitterImpl struct {
@@ -50,7 +51,10 @@ type CommitterImpl struct {
 }
 
 // NewCommitter new a CommitterImpl with registry configuration
-func NewCommitter(registryAddr, registryUsername, registryPassword string, merge bool) (Committer, error) {
+func NewCommitter(
+	registryAddr, registryUsername, registryPassword string,
+	merge bool,
+) (Committer, error) {
 	var conn *grpc.ClientConn
 	var err error
 
@@ -73,21 +77,36 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string, merge
 		}
 
 		// create gRPC connection
-		conn, err = grpc.NewClient(DefaultContainerdAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err = grpc.NewClient(
+			DefaultContainerdAddress,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
 		if err == nil {
 			log.Printf("Successfully connected to containerd at %s", DefaultContainerdAddress)
 			break
 		}
 
-		log.Printf("Failed to connect to containerd (attempt %d/%d): %v", i+1, DefaultMaxRetries+1, err)
+		log.Printf(
+			"Failed to connect to containerd (attempt %d/%d): %v",
+			i+1,
+			DefaultMaxRetries+1,
+			err,
+		)
 
 		if i == DefaultMaxRetries {
-			return nil, fmt.Errorf("failed to connect to containerd after %d attempts: %w", DefaultMaxRetries+1, err)
+			return nil, fmt.Errorf(
+				"failed to connect to containerd after %d attempts: %w",
+				DefaultMaxRetries+1,
+				err,
+			)
 		}
 	}
 
 	// create Containerd client
-	containerdClient, err := containerd.NewWithConn(conn, containerd.WithDefaultNamespace(DefaultNamespace))
+	containerdClient, err := containerd.NewWithConn(
+		conn,
+		containerd.WithDefaultNamespace(DefaultNamespace),
+	)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("failed to create containerd client: %w", err)
@@ -105,8 +124,16 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string, merge
 }
 
 // CreateContainer create container with labels
-func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error) {
-	log.Printf("========>>>> create container, devboxName: %s, contentID: %s, baseImage: %s", devboxName, contentID, baseImage)
+func (c *CommitterImpl) CreateContainer(
+	ctx context.Context,
+	devboxName, contentID, baseImage string,
+) (string, error) {
+	log.Printf(
+		"========>>>> create container, devboxName: %s, contentID: %s, baseImage: %s",
+		devboxName,
+		contentID,
+		baseImage,
+	)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -167,7 +194,13 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	}
 
 	// create container
-	container, cleanup, err := container.Create(ctx, c.containerdClient, []string{originalAnnotations[AnnotationKeyImageName]}, networkManager, createOpt)
+	container, cleanup, err := container.Create(
+		ctx,
+		c.containerdClient,
+		[]string{originalAnnotations[AnnotationKeyImageName]},
+		networkManager,
+		createOpt,
+	)
 	if err != nil {
 		log.Println("failed to create container:", err)
 		return "", fmt.Errorf("failed to create container: %w", err)
@@ -221,8 +254,12 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 	return nil
 }
 
-func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, contentID string) error {
-	log.Printf("========>>>> set lv removable for container, containerID: %s, contentID: %s", containerID, contentID)
+func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID, contentID string) error {
+	log.Printf(
+		"========>>>> set lv removable for container, containerID: %s, contentID: %s",
+		containerID,
+		contentID,
+	)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -233,10 +270,11 @@ func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, 
 		}
 	}
 
-	_, err := c.containerdClient.SnapshotService(DefaultDevboxSnapshotter).Update(ctx, snapshots.Info{
-		Name:   containerID,
-		Labels: map[string]string{RemoveContentIDkey: contentID},
-	}, "labels."+RemoveContentIDkey)
+	_, err := c.containerdClient.SnapshotService(DefaultDevboxSnapshotter).
+		Update(ctx, snapshots.Info{
+			Name:   containerID,
+			Labels: map[string]string{RemoveContentIDkey: contentID},
+		}, "labels."+RemoveContentIDkey)
 	if err != nil {
 		return err
 	}
@@ -275,8 +313,17 @@ func (c *CommitterImpl) RemoveContainers(ctx context.Context, containerNames []s
 }
 
 // Commit commit container to image
-func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) (string, error) {
-	log.Printf("========>>>> commit devbox, devboxName: %s, contentID: %s, baseImage: %s, commitImage: %s", devboxName, contentID, baseImage, commitImage)
+func (c *CommitterImpl) Commit(
+	ctx context.Context,
+	devboxName, contentID, baseImage, commitImage string,
+) (string, error) {
+	log.Printf(
+		"========>>>> commit devbox, devboxName: %s, contentID: %s, baseImage: %s, commitImage: %s",
+		devboxName,
+		contentID,
+		baseImage,
+		commitImage,
+	)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	containerID, err := c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
@@ -308,7 +355,10 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 }
 
 // GetContainerAnnotations get container annotations
-func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerName string) (map[string]string, error) {
+func (c *CommitterImpl) GetContainerAnnotations(
+	ctx context.Context,
+	containerName string,
+) (map[string]string, error) {
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
@@ -362,7 +412,11 @@ func (c *CommitterImpl) Push(ctx context.Context, imageName string) error {
 }
 
 // RemoveImage remove image
-func (c *CommitterImpl) RemoveImages(ctx context.Context, imageNames []string, force bool, async bool) error {
+func (c *CommitterImpl) RemoveImages(
+	ctx context.Context,
+	imageNames []string,
+	force, async bool,
+) error {
 	if len(imageNames) == 0 {
 		return errors.New("[RemoveImages]imageNames is empty")
 	}
@@ -441,7 +495,7 @@ func (c *CommitterImpl) forceGC(ctx context.Context) error {
 }
 
 // GetResolver get resolver
-func GetResolver(ctx context.Context, username string, secret string) (remotes.Resolver, error) {
+func GetResolver(ctx context.Context, username, secret string) (remotes.Resolver, error) {
 	resolverOptions := docker.ResolverOptions{
 		Tracker: docker.NewInMemoryTracker(),
 	}
@@ -547,21 +601,36 @@ func (c *CommitterImpl) Reconnect(ctx context.Context) error {
 		}
 
 		// create gRPC connection
-		conn, err = grpc.NewClient(DefaultContainerdAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err = grpc.NewClient(
+			DefaultContainerdAddress,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
 		if err == nil {
 			log.Printf("Successfully connected to containerd at %s", DefaultContainerdAddress)
 			break
 		}
 
-		log.Printf("Failed to connect to containerd (attempt %d/%d): %v", i+1, DefaultMaxRetries+1, err)
+		log.Printf(
+			"Failed to connect to containerd (attempt %d/%d): %v",
+			i+1,
+			DefaultMaxRetries+1,
+			err,
+		)
 
 		if i == DefaultMaxRetries {
-			return fmt.Errorf("failed to connect to containerd after %d attempts: %w", DefaultMaxRetries+1, err)
+			return fmt.Errorf(
+				"failed to connect to containerd after %d attempts: %w",
+				DefaultMaxRetries+1,
+				err,
+			)
 		}
 	}
 
 	// recreate containerd client
-	containerdClient, err := containerd.NewWithConn(conn, containerd.WithDefaultNamespace(DefaultNamespace))
+	containerdClient, err := containerd.NewWithConn(
+		conn,
+		containerd.WithDefaultNamespace(DefaultNamespace),
+	)
 	if err != nil {
 		conn.Close()
 		return fmt.Errorf("failed to recreate containerd client: %w", err)

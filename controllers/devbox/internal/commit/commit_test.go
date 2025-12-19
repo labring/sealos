@@ -218,7 +218,7 @@ func TestConcurrentOperations(t *testing.T) {
 	var mu sync.Mutex
 	containers := make([]string, containerCount)
 
-	for i := 0; i < containerCount; i++ {
+	for i := range containerCount {
 		go func(index int) {
 			defer wg.Done()
 			devboxName := fmt.Sprintf("test-devbox-concurrent-%d-%d", time.Now().Unix(), index)
@@ -394,7 +394,13 @@ func TestPushToDockerHub(t *testing.T) {
 	devboxName := fmt.Sprintf("test-dockerhub-%d", time.Now().Unix())
 	contentID := fmt.Sprintf("test-dockerhub-content-id-%d", time.Now().Unix())
 
-	containerID, err := committer.Commit(ctx, devboxName, contentID, baseImageBusyBox, testImageName)
+	containerID, err := committer.Commit(
+		ctx,
+		devboxName,
+		contentID,
+		baseImageBusyBox,
+		testImageName,
+	)
 	if err != nil {
 		t.Errorf("Skip Docker Hub push test: failed to create test image: %v", err)
 	}
@@ -552,7 +558,7 @@ func TestAtomicLabels(t *testing.T) {
 	wg.Add(concurrentUpdates)
 
 	// 4. concurrent update same label
-	for i := 0; i < concurrentUpdates; i++ {
+	for i := range concurrentUpdates {
 		go func(index int) {
 			defer wg.Done()
 
@@ -588,7 +594,12 @@ func TestAtomicLabels(t *testing.T) {
 
 			// update success count
 			atomic.AddInt32(&successCount, 1)
-			fmt.Printf("Successfully updated labels for index %d, val1: %s, val2: %s\n", index, val1, val2)
+			fmt.Printf(
+				"Successfully updated labels for index %d, val1: %s, val2: %s\n",
+				index,
+				val1,
+				val2,
+			)
 		}(i)
 	}
 
@@ -687,7 +698,13 @@ func TestRemoveImagePerformance(t *testing.T) {
 		sizeMB := float64(size) / 1024 / 1024
 
 		if err != nil {
-			fmt.Printf("[%d/%d] remove image: %s (size unknown, failed to get size: %v)\n", i+1, len(images), imageName, err)
+			fmt.Printf(
+				"[%d/%d] remove image: %s (size unknown, failed to get size: %v)\n",
+				i+1,
+				len(images),
+				imageName,
+				err,
+			)
 		} else {
 			fmt.Printf("[%d/%d] remove image: %s (%.2f MB)\n", i+1, len(images), imageName, sizeMB)
 		}
