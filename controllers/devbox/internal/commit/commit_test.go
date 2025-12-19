@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"sync/atomic"
-
+	containerd "github.com/containerd/containerd/v2/client"
+	"github.com/containerd/containerd/v2/core/containers"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/containerd/errdefs"
 	"github.com/stretchr/testify/assert"
-	// "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -24,7 +25,9 @@ const (
 // init Committer
 func TestNewCommitter(t *testing.T) {
 	committer, err := NewCommitter("", "", "", true)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("NewCommitter failed: %v", err)
+	}
 	assert.NotNil(t, committer)
 }
 
@@ -50,19 +53,25 @@ func TestCommitFlow(t *testing.T) {
 func TestCreateContainer(t *testing.T) {
 	ctx := context.Background()
 	committer, err := NewCommitter("", "", "", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// create container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
 	contentID := fmt.Sprintf("test-content-id-%d", time.Now().Unix())
-	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImageNginx)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, containerID)
+	containerID, err := committer.
+		CreateContainer(ctx, devboxName, contentID, baseImageNginx)
+	require.NoError(t, err)
 
 	// verify container labels
-	annotations, err := committer.(*CommitterImpl).GetContainerAnnotations(ctx, containerID)
-	fmt.Printf("annotations: %+v\n", annotations)
-	assert.NoError(t, err)
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+	var annotations map[string]string
+	if annotations, err = committerImpl.GetContainerAnnotations(ctx, containerID); err != nil {
+		t.Fatalf("GetContainerAnnotations failed: %v", err)
+	}
+	t.Logf("annotations: %+v", annotations)
 }
 
 // test delete container
@@ -71,15 +80,24 @@ func TestDeleteContainer(t *testing.T) {
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	// create a container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
-	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, "test-content-id-789", baseImageAlpine)
-	assert.NoError(t, err)
+	var containerID string
+	if containerID, err = committer.CreateContainer(ctx, devboxName, "test-content-id-789", baseImageAlpine); err != nil {
+		t.Fatalf("CreateContainer failed: %v", err)
+	}
 
 	// show all containers in current namespace
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
+	var containers []containerd.Container
+	if containers, err = committerImpl.containerdClient.Containers(ctx); err != nil {
+		t.Fatalf("Containers failed: %v", err)
+	}
 
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range containers {
@@ -88,11 +106,13 @@ func TestDeleteContainer(t *testing.T) {
 	fmt.Printf("=== Total %d containers ===\n", len(containers))
 
 	// delete container
-	err = committer.(*CommitterImpl).DeleteContainer(ctx, containerID)
-	assert.NoError(t, err)
+	if err = committerImpl.DeleteContainer(ctx, containerID); err != nil {
+		t.Fatalf("DeleteContainer failed: %v", err)
+	}
 
-	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
+	if containers, err = committerImpl.containerdClient.Containers(ctx); err != nil {
+		t.Fatalf("Containers failed: %v", err)
+	}
 
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range containers {
@@ -101,8 +121,9 @@ func TestDeleteContainer(t *testing.T) {
 	fmt.Printf("=== Total %d containers ===\n", len(containers))
 
 	// verify container is deleted (try to get labels should return error)
-	_, err = committer.(*CommitterImpl).GetContainerAnnotations(ctx, containerID)
-	assert.Error(t, err)
+	if _, err = committerImpl.GetContainerAnnotations(ctx, containerID); err == nil {
+		t.Fatalf("expected error when getting annotations for deleted container")
+	}
 }
 
 // test remove container
@@ -110,15 +131,25 @@ func TestRemoveContainer(t *testing.T) {
 	ctx := context.Background()
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
+
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	// create a container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
-	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, "test-content-id-789", baseImageAlpine)
-	assert.NoError(t, err)
+	var containerID string
+	if containerID, err = committer.CreateContainer(ctx, devboxName, "test-content-id-789", baseImageAlpine); err != nil {
+		t.Fatalf("CreateContainer failed: %v", err)
+	}
 
 	// show all containers in current namespace
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
+	var containers []containerd.Container
+	if containers, err = committerImpl.containerdClient.Containers(ctx); err != nil {
+		t.Fatalf("Containers failed: %v", err)
+	}
 
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range containers {
@@ -127,11 +158,13 @@ func TestRemoveContainer(t *testing.T) {
 	fmt.Printf("=== Total %d containers ===\n", len(containers))
 
 	// delete container
-	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
-	assert.NoError(t, err)
+	if err = committer.RemoveContainers(ctx, []string{containerID}); err != nil {
+		t.Fatalf("RemoveContainers failed: %v", err)
+	}
 
-	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
-	assert.NoError(t, err)
+	if containers, err = committerImpl.containerdClient.Containers(ctx); err != nil {
+		t.Fatalf("Containers failed: %v", err)
+	}
 
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range containers {
@@ -140,8 +173,9 @@ func TestRemoveContainer(t *testing.T) {
 	fmt.Printf("=== Total %d containers ===\n", len(containers))
 
 	// verify container is deleted (try to get labels should return error)
-	_, err = committer.(*CommitterImpl).GetContainerAnnotations(ctx, containerID)
-	assert.Error(t, err)
+	if _, err = committerImpl.GetContainerAnnotations(ctx, containerID); err == nil {
+		t.Fatalf("expected error when getting annotations for removed container")
+	}
 }
 
 // test error cases
@@ -150,17 +184,25 @@ func TestErrorCases(t *testing.T) {
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	// test use not exist image to create container
-	_, err = committer.(*CommitterImpl).CreateContainer(ctx, "test-devbox", "test-content-id", "not-exist-image:latest")
-	assert.Error(t, err)
+	if _, err = committer.CreateContainer(ctx, "test-devbox", "test-content-id", "not-exist-image:latest"); err == nil {
+		t.Fatalf("expected error when creating container with non-exist image")
+	}
 
 	// test use not exist container to delete
-	err = committer.(*CommitterImpl).DeleteContainer(ctx, "not-exist-container")
-	assert.Error(t, err)
+	if err = committerImpl.DeleteContainer(ctx, "not-exist-container"); err == nil {
+		t.Fatalf("expected error when deleting non-exist container")
+	}
 
 	// test get not exist container label
-	_, err = committer.(*CommitterImpl).GetContainerAnnotations(ctx, "not-exist-container")
-	assert.Error(t, err)
+	if _, err = committerImpl.GetContainerAnnotations(ctx, "not-exist-container"); err == nil {
+		t.Fatalf("expected error when getting annotations of non-exist container")
+	}
 }
 
 // test concurrent operations
@@ -180,10 +222,11 @@ func TestConcurrentOperations(t *testing.T) {
 		go func(index int) {
 			defer wg.Done()
 			devboxName := fmt.Sprintf("test-devbox-concurrent-%d-%d", time.Now().Unix(), index)
-			containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName,
+			var containerID string
+			var err error
+			if containerID, err = committer.CreateContainer(ctx, devboxName,
 				fmt.Sprintf("test-content-id-%d", index),
-				baseImageBusyBox)
-			if err != nil {
+				baseImageBusyBox); err != nil {
 				t.Errorf("Failed to create container: %v", err)
 				return
 			}
@@ -196,15 +239,22 @@ func TestConcurrentOperations(t *testing.T) {
 
 	// delete containers
 	for _, containerID := range containers {
-		err := committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
+		err := committer.RemoveContainers(ctx, []string{containerID})
 		if err != nil {
 			t.Logf("Warning: failed to delete container %s: %v", containerID, err)
 		}
 	}
 
 	// get current containers list
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
+	var currentContainers []containerd.Container
+	if currentContainers, err = committerImpl.containerdClient.Containers(ctx); err != nil {
+		t.Fatalf("Containers failed: %v", err)
+	}
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range currentContainers {
 		fmt.Printf("Container ID: %s\n", container.ID())
@@ -218,21 +268,32 @@ func TestRuntimeSelection(t *testing.T) {
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	// create container with specific runtime
 	devboxName := fmt.Sprintf("test-runtime-%d", time.Now().Unix())
 	contentID := "test-runtime-content-id"
 
-	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImageBusyBox)
-	assert.NoError(t, err)
+	var containerID string
+	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, baseImageBusyBox); err != nil {
+		t.Fatalf("CreateContainer failed: %v", err)
+	}
 	assert.NotEmpty(t, containerID)
 
 	// get container info to verify runtime
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	container, err := committer.(*CommitterImpl).containerdClient.LoadContainer(ctx, containerID)
-	assert.NoError(t, err)
+	var container containerd.Container
+	if container, err = committerImpl.containerdClient.LoadContainer(ctx, containerID); err != nil {
+		t.Fatalf("LoadContainer failed: %v", err)
+	}
 
-	info, err := container.Info(ctx)
-	assert.NoError(t, err)
+	var info containers.Container
+	if info, err = container.Info(ctx); err != nil {
+		t.Fatalf("container.Info failed: %v", err)
+	}
 
 	fmt.Printf("=== Container Runtime Information ===\n")
 	fmt.Printf("Container ID: %s\n", containerID)
@@ -242,8 +303,9 @@ func TestRuntimeSelection(t *testing.T) {
 	fmt.Printf("Runtime Match: %v\n", info.Runtime.Name == DefaultRuntime)
 
 	// cleanup
-	err = committer.(*CommitterImpl).DeleteContainer(ctx, containerID)
-	assert.NoError(t, err)
+	if err = committerImpl.DeleteContainer(ctx, containerID); err != nil {
+		t.Fatalf("DeleteContainer failed: %v", err)
+	}
 }
 
 // test connection management
@@ -251,43 +313,62 @@ func TestConnectionManagement(t *testing.T) {
 	ctx := context.Background()
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
-	defer committer.(*CommitterImpl).Close()
+
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
+	defer func() {
+		if cerr := committerImpl.Close(); cerr != nil {
+			t.Fatalf("Close failed: %v", cerr)
+		}
+	}()
 
 	// test connection check
-	err = committer.(*CommitterImpl).CheckConnection(ctx)
-	assert.NoError(t, err)
+	if err = committerImpl.CheckConnection(ctx); err != nil {
+		t.Fatalf("CheckConnection failed: %v", err)
+	}
 
 	// create container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
 	contentID := "903b3c87-1458-4dd8-b0f4-9da7184cf8ca"
 	testImage := "ghcr.io/labring-actions/devbox/go-1.23.0:13aacd8"
-	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, testImage)
-	assert.NoError(t, err)
+	var containerID string
+	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, testImage); err != nil {
+		t.Fatalf("CreateContainer failed: %v", err)
+	}
 	assert.NotEmpty(t, containerID)
 
 	// delete container
-	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
-	assert.NoError(t, err)
+	if err = committer.RemoveContainers(ctx, []string{containerID}); err != nil {
+		t.Fatalf("RemoveContainers failed: %v", err)
+	}
 
 	// test reconnect
-	err = committer.(*CommitterImpl).Reconnect(ctx)
-	assert.NoError(t, err)
+	if err = committerImpl.Reconnect(ctx); err != nil {
+		t.Fatalf("Reconnect failed: %v", err)
+	}
 
 	// create container again
-	containerID, err = committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, testImage)
-	assert.NoError(t, err)
+	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, testImage); err != nil {
+		t.Fatalf("CreateContainer failed: %v", err)
+	}
 	assert.NotEmpty(t, containerID)
 
 	// test connection check again
-	err = committer.(*CommitterImpl).CheckConnection(ctx)
-	assert.NoError(t, err)
+	if err = committerImpl.CheckConnection(ctx); err != nil {
+		t.Fatalf("CheckConnection failed: %v", err)
+	}
 
-	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
-	assert.NoError(t, err)
+	if err = committer.RemoveContainers(ctx, []string{containerID}); err != nil {
+		t.Fatalf("RemoveContainers failed: %v", err)
+	}
 
 	// test connection check again
-	err = committer.(*CommitterImpl).CheckConnection(ctx)
-	assert.NoError(t, err)
+	if err = committerImpl.CheckConnection(ctx); err != nil {
+		t.Fatalf("CheckConnection failed: %v", err)
+	}
 
 	fmt.Printf("Connection management test passed\n")
 }
@@ -339,17 +420,24 @@ func TestPushToDockerHub(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify image is deleted
-	_, err = committer.(*CommitterImpl).containerdClient.GetImage(ctx, testImageName)
-	assert.Error(t, err)
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+	if _, err = committerImpl.containerdClient.GetImage(ctx, testImageName); err == nil {
+		t.Fatalf("expected error when getting deleted image")
+	}
 	fmt.Println("can not find image:", testImageName)
 
 	// remove container
-	err = committer.(*CommitterImpl).RemoveContainers(ctx, []string{containerID})
-	assert.NoError(t, err)
+	if err = committerImpl.RemoveContainers(ctx, []string{containerID}); err != nil {
+		t.Fatalf("RemoveContainers failed: %v", err)
+	}
 
 	// verify container is deleted
-	_, err = committer.(*CommitterImpl).containerdClient.LoadContainer(ctx, containerID)
-	assert.Error(t, err)
+	if _, err = committerImpl.containerdClient.LoadContainer(ctx, containerID); err == nil {
+		t.Fatalf("expected error when loading deleted container")
+	}
 	fmt.Println("can not find container:", containerID)
 }
 
@@ -396,6 +484,11 @@ func TestRemoveImage(t *testing.T) {
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	// create a test devbox name and content id
 	devboxName := fmt.Sprintf("test-remove-devbox-%d", time.Now().Unix())
 	contentID := fmt.Sprintf("test-remove-content-id-%d", time.Now().Unix())
@@ -410,12 +503,14 @@ func TestRemoveImage(t *testing.T) {
 	// assert.NoError(t, err)
 
 	// remove image
-	err = committer.(*CommitterImpl).RemoveImages(ctx, []string{imageName}, false, false)
-	assert.NoError(t, err)
+	if err = committer.RemoveImages(ctx, []string{imageName}, false, false); err != nil {
+		t.Fatalf("RemoveImages failed: %v", err)
+	}
 
 	// verify image is deleted
-	_, err = committer.(*CommitterImpl).containerdClient.GetImage(ctx, imageName)
-	assert.Error(t, err)
+	if _, err = committerImpl.containerdClient.GetImage(ctx, imageName); err == nil {
+		t.Fatalf("expected error when getting deleted image")
+	}
 }
 
 // TestAtomicLabels test containerd's atomic label update
@@ -428,20 +523,27 @@ func TestAtomicLabels(t *testing.T) {
 	// 1. create a test container
 	devboxName := fmt.Sprintf("test-atomic-%d", time.Now().Unix())
 	contentID := fmt.Sprintf("test-atomic-content-%d", time.Now().Unix())
-	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImageBusyBox)
-	assert.NoError(t, err)
+	var containerID string
+	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, baseImageBusyBox); err != nil {
+		t.Fatalf("CreateContainer failed: %v", err)
+	}
 
 	// ensure cleanup container after test
 	defer func() {
-		err := committer.RemoveContainers(ctx, []string{containerID})
-		if err != nil {
-			fmt.Printf("Failed to cleanup container: %v", err)
+		if cleanupErr := committer.RemoveContainers(ctx, []string{containerID}); cleanupErr != nil {
+			fmt.Printf("Failed to cleanup container: %v", cleanupErr)
 		}
 	}()
 
 	// 2. get container object
-	container, err := committer.(*CommitterImpl).containerdClient.LoadContainer(ctx, containerID)
-	assert.NoError(t, err)
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+	var container containerd.Container
+	if container, err = committerImpl.containerdClient.LoadContainer(ctx, containerID); err != nil {
+		t.Fatalf("LoadContainer failed: %v", err)
+	}
 
 	// 3. concurrent update label count
 	concurrentUpdates := 10
@@ -507,9 +609,17 @@ func TestGetImage(t *testing.T) {
 	ctx := context.Background()
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
+
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	images, err := committer.(*CommitterImpl).containerdClient.ListImages(ctx)
-	assert.NoError(t, err)
+	var images []containerd.Image
+	if images, err = committerImpl.containerdClient.ListImages(ctx); err != nil {
+		t.Fatalf("ListImages failed: %v", err)
+	}
 	for _, image := range images {
 		fmt.Printf("Image ID: %s\n", image.Target().Digest.String())
 	}
@@ -521,6 +631,11 @@ func TestRemoveImagePerformance(t *testing.T) {
 	committer, err := NewCommitter("", "", "", true)
 	assert.NoError(t, err)
 
+	committerImpl, ok := committer.(*CommitterImpl)
+	if !ok {
+		t.Fatalf("failed to assert committer to CommitterImpl")
+	}
+
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	fmt.Printf("\n====================================\n")
@@ -529,8 +644,10 @@ func TestRemoveImagePerformance(t *testing.T) {
 	fmt.Printf("====================================\n\n")
 
 	// list all images
-	images, err := committer.(*CommitterImpl).containerdClient.ListImages(ctx)
-	assert.NoError(t, err)
+	var images []containerd.Image
+	if images, err = committerImpl.containerdClient.ListImages(ctx); err != nil {
+		t.Fatalf("ListImages failed: %v", err)
+	}
 
 	fmt.Printf("current image count: %d\n", len(images))
 	if len(images) > 0 {
@@ -566,13 +683,17 @@ func TestRemoveImagePerformance(t *testing.T) {
 	// remove all images
 	for i, image := range images {
 		imageName := image.Name()
-		size, _ := image.Size(ctx)
+		size, err := image.Size(ctx)
 		sizeMB := float64(size) / 1024 / 1024
 
-		fmt.Printf("[%d/%d] remove image: %s (%.2f MB)\n", i+1, len(images), imageName, sizeMB)
+		if err != nil {
+			fmt.Printf("[%d/%d] remove image: %s (size unknown, failed to get size: %v)\n", i+1, len(images), imageName, err)
+		} else {
+			fmt.Printf("[%d/%d] remove image: %s (%.2f MB)\n", i+1, len(images), imageName, sizeMB)
+		}
 
 		start := time.Now()
-		err := committer.RemoveImages(ctx, []string{imageName}, true, false)
+		err = committer.RemoveImages(ctx, []string{imageName}, true, false)
 		duration := time.Since(start)
 
 		result := RemoveResult{
@@ -634,8 +755,10 @@ func TestRemoveImagePerformance(t *testing.T) {
 	fmt.Printf("\n====================================\n")
 	fmt.Printf("verify remove result\n")
 	fmt.Printf("====================================\n")
-	finalImages, err := committer.(*CommitterImpl).containerdClient.ListImages(ctx)
-	assert.NoError(t, err)
+	var finalImages []containerd.Image
+	if finalImages, err = committerImpl.containerdClient.ListImages(ctx); err != nil {
+		t.Fatalf("ListImages failed: %v", err)
+	}
 	fmt.Printf("remaining image count after remove: %d\n", len(finalImages))
 
 	if len(finalImages) > 0 {
