@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
     "experimentalDecorators": true,
     "useDefineForClassFields": true,
     "target": "ESNext",

@@ -122,7 +122,9 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
   const addPath = (ruleIndex: number) => {
     setRules((prev) => {
       const newRules = [...prev];
-      newRules[ruleIndex].paths.push({
+      const rule = newRules[ruleIndex];
+      if (!rule) return newRules;
+      rule.paths.push({
         path: '',
         pathType: 'Prefix',
         serviceName: '',
@@ -135,7 +137,9 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
   const removePath = (ruleIndex: number, pathIndex: number) => {
     setRules((prev) => {
       const newRules = [...prev];
-      newRules[ruleIndex].paths.splice(pathIndex, 1);
+      const rule = newRules[ruleIndex];
+      if (!rule) return newRules;
+      rule.paths.splice(pathIndex, 1);
       return newRules;
     });
   };
@@ -143,9 +147,15 @@ const IngressPathEditor = ({ ingress, isEditing = false, onChange }: IngressPath
   const updatePath = (ruleIndex: number, pathIndex: number, field: keyof PathForm, value: any) => {
     setRules((prev) => {
       const newRules = [...prev];
-      newRules[ruleIndex].paths[pathIndex] = {
-        ...newRules[ruleIndex].paths[pathIndex],
-        [field]: value
+      const rule = newRules[ruleIndex];
+      if (!rule) return newRules;
+      const path = rule.paths[pathIndex];
+      if (!path) return newRules;
+      rule.paths[pathIndex] = {
+        ...path,
+        [field]: value,
+        // Ensure pathType is always defined
+        pathType: field === 'pathType' ? (value as 'Exact' | 'Prefix') : path.pathType
       };
       return newRules;
     });

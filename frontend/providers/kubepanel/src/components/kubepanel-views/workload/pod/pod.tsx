@@ -19,7 +19,8 @@ const columns: ColumnsType<Pod> = [
     render: (_, pod) => {
       const containers = pod.getContainers().map((container) => {
         const status = pod.getContainerStatuses().find((status) => status.name === container.name);
-        const state = status ? keys(status?.state ?? {})[0] : '';
+        const stateKeys = status ? keys(status?.state ?? {}) : [];
+        const state = stateKeys[0] ?? '';
         return {
           name: container.name,
           state,
@@ -29,9 +30,9 @@ const columns: ColumnsType<Pod> = [
       return (
         <div className="flex flex-wrap gap-1.5">
           {containers.map(({ name, state, status }) => (
-            <Tooltip key={name} title={renderContainerStateTooltipTitle(name, state, status)}>
+            <Tooltip key={name} title={renderContainerStateTooltipTitle(name, state || '', status)}>
               <span className="inline-block">
-                <ContainerStatusBrick state={state} status={status} />
+                <ContainerStatusBrick state={state || ''} status={status} />
               </span>
             </Tooltip>
           ))}

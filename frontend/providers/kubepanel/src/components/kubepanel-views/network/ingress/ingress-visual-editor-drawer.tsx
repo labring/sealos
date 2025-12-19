@@ -90,24 +90,34 @@ export const IngressVisualEditorDrawer = ({ ingress, open, onCancel, onOk }: Pro
       const newRules = (ingress.spec.rules || []).map((origRule, idx) => ({
         host: origRule.host,
         http: {
-          paths: (values.rules[idx]?.paths || origRule.http?.paths || []).map((p) => ({
-            pathType: p.pathType,
-            path: p.path,
-            backend: {
-              service: {
-                name: p.serviceName,
-                port:
-                  typeof p.servicePort === 'number'
-                    ? { number: p.servicePort }
-                    : (() => {
-                        const asNum = Number(p.servicePort);
-                        return Number.isFinite(asNum)
-                          ? { number: asNum }
-                          : { name: String(p.servicePort || '') };
-                      })()
-              }
+          paths: (values.rules[idx]?.paths || origRule.http?.paths || []).map((p) => {
+            // Type guard: check if p is PathForm (has serviceName/servicePort) or HTTPIngressPath
+            const isPathForm = 'serviceName' in p && 'servicePort' in p;
+            if (isPathForm) {
+              const pathForm = p as PathForm;
+              return {
+                pathType: pathForm.pathType,
+                path: pathForm.path,
+                backend: {
+                  service: {
+                    name: pathForm.serviceName,
+                    port:
+                      typeof pathForm.servicePort === 'number'
+                        ? { number: pathForm.servicePort }
+                        : (() => {
+                            const asNum = Number(pathForm.servicePort);
+                            return Number.isFinite(asNum)
+                              ? { number: asNum }
+                              : { name: String(pathForm.servicePort || '') };
+                          })()
+                  }
+                }
+              };
+            } else {
+              // It's HTTPIngressPath, use it as-is
+              return p;
             }
-          }))
+          })
         }
       }));
 

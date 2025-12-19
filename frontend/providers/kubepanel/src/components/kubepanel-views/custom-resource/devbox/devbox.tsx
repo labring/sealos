@@ -7,8 +7,10 @@ import DevboxDetail from './devbox-detail';
 import type { ColumnsType } from 'antd/es/table';
 import { StatusTag } from '@/components/common/status-tag';
 
-const getStateColor = (state: string) => {
-  switch (state.toLowerCase()) {
+const getStateColor = (state: string | undefined | null) => {
+  // Ensure state is a string before calling toLowerCase
+  const stateStr = typeof state === 'string' ? state : String(state || '');
+  switch (stateStr.toLowerCase()) {
     case 'running':
       return 'green';
     case 'stopped':

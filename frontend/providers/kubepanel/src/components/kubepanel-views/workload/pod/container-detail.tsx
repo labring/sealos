@@ -69,7 +69,8 @@ const ContainerDetail = ({
 
     if (pod) {
       status = pod.getContainerStatuses().find((status) => status.name === container.name);
-      state = status ? keys(status?.state ?? {})[0] : '';
+      const stateKeys = status ? keys(status?.state ?? {}) : [];
+      state = stateKeys[0] ?? '';
     }
 
     return (

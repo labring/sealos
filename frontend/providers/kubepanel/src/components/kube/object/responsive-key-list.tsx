@@ -27,7 +27,9 @@ export const ResponsiveKeyList = ({ keys }: { keys: string[] }) => {
     const CHAR_WIDTH = 7.5; // Approx width for standard font
 
     for (let i = 0; i < keys.length; i++) {
-      const keyWidth = keys[i].length * CHAR_WIDTH + TAG_PADDING;
+      const key = keys[i];
+      if (!key) continue;
+      const keyWidth = key.length * CHAR_WIDTH + TAG_PADDING;
 
       // If this is the last item and it fits, good.
       // If not last, we need to check if it fits ALONG with the overflow tag space

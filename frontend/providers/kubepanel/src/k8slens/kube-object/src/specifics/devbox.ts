@@ -68,7 +68,27 @@ export class Devbox extends KubeObject<
   }
 
   getState(): string {
-    return this.status?.state || this.spec?.state || 'Unknown';
+    const statusState = this.status?.state;
+    const specState = this.spec?.state;
+
+    // If status.state is a string, use it
+    if (typeof statusState === 'string') {
+      return statusState;
+    }
+
+    // If status.state is an object (container state), extract the state key
+    if (statusState && typeof statusState === 'object') {
+      if ('running' in statusState) return 'Running';
+      if ('waiting' in statusState) return 'Waiting';
+      if ('terminated' in statusState) return 'Terminated';
+    }
+
+    // Fallback to spec.state or default
+    if (typeof specState === 'string') {
+      return specState;
+    }
+
+    return 'Unknown';
   }
 
   getImage(): string {

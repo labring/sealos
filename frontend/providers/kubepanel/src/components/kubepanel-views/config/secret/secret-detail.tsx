@@ -187,7 +187,7 @@ const SecretDataForm = ({ secret }: { secret: Secret }) => {
                 <SecretDataInput
                   name={key}
                   // Use formValues implicitly via map
-                  value={formValues[key]}
+                  value={formValues[key] ?? ''}
                   revealed={isRevealed}
                   onChange={(newValue) => {
                     setFormValues((prev) => ({ ...prev, [key]: newValue }));
@@ -207,7 +207,7 @@ const SecretDataForm = ({ secret }: { secret: Secret }) => {
               <SecretDataInput
                 key={key}
                 name={key}
-                value={formValues[key]}
+                value={formValues[key] ?? ''}
                 isComplex
                 revealed={isRevealed}
                 onChange={(newValue) => {

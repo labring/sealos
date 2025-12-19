@@ -34,7 +34,7 @@ const parseHttpUrl = (
     if (match) {
       const [, scheme, host, port, pathAndQuery] = match;
       return {
-        scheme: scheme.toUpperCase(),
+        scheme: (scheme || 'HTTP').toUpperCase(),
         host: host || undefined,
         port: port ? parseInt(port) : undefined,
         path: pathAndQuery || '/'
