@@ -1,4 +1,12 @@
-import { CheckCircle, ArrowUpRight, HelpCircle, CreditCard, CircleCheck, Info } from 'lucide-react';
+import {
+  CheckCircle,
+  ArrowUpRight,
+  HelpCircle,
+  CreditCard,
+  CircleCheck,
+  Info,
+  LoaderCircle
+} from 'lucide-react';
 import { Button, Tooltip, TooltipTrigger, TooltipContent, Input } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethodInfo } from '@/types/plan';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
@@ -7,7 +15,7 @@ import CurrencySymbol from '../CurrencySymbol';
 import { BankCardIcon } from '../BankCardIcon';
 import { BankCardBrand } from '../BankCardBrand';
 import usePlanStore from '@/stores/plan';
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getLastTransaction } from '@/api/plan';
 import { openInNewWindow } from '@/utils/windowUtils';
@@ -384,37 +392,76 @@ function PaymentWaitingSection({
   onSuccess
 }: PaymentWaitingSectionProps) {
   const { t } = useTranslation();
-  const { setLastTransactionData, stopPaymentWaiting } = usePlanStore();
+  const {
+    setLastTransactionData,
+    stopPaymentWaiting,
+    paymentWaitingTimeout,
+    paymentWaitingShouldStopPolling,
+    paymentWaitingFirstDataTime,
+    setPaymentWaitingTimeout,
+    setPaymentWaitingShouldStopPolling,
+    setPaymentWaitingFirstDataTime
+  } = usePlanStore();
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [shouldStopPolling, setShouldStopPolling] = useState(false);
 
   // Poll for last transaction
-  const { data: transactionData } = useQuery({
+  const { data: transactionData, dataUpdatedAt } = useQuery({
     queryKey: ['payment-waiting-transaction', workspace, regionDomain],
     queryFn: () =>
       getLastTransaction({
         workspace: workspace || '',
         regionDomain: regionDomain || ''
       }),
-    enabled: !!(workspace && regionDomain) && !shouldStopPolling,
-    refetchInterval: shouldStopPolling ? false : 3000, // Poll every 3 seconds
+    enabled:
+      !!(workspace && regionDomain) && !paymentWaitingShouldStopPolling && !paymentWaitingTimeout,
+    refetchInterval: paymentWaitingShouldStopPolling || paymentWaitingTimeout ? false : 3000, // Poll every 3 seconds
     refetchOnMount: true
   });
 
   // Sync to store and log when data is received
   useEffect(() => {
     if (transactionData?.data) {
-      console.log('Payment waiting - Transaction data:', transactionData.data);
       setLastTransactionData(transactionData.data);
+      // Record the time when we first receive transaction data
+      if (paymentWaitingFirstDataTime === null) {
+        setPaymentWaitingFirstDataTime(Date.now());
+      }
     }
-  }, [transactionData, setLastTransactionData]);
+  }, [
+    transactionData,
+    setLastTransactionData,
+    paymentWaitingFirstDataTime,
+    setPaymentWaitingFirstDataTime
+  ]);
+
+  // Check for payment timeout on every poll
+  useEffect(() => {
+    if (paymentWaitingFirstDataTime && !paymentWaitingTimeout && dataUpdatedAt > 0) {
+      const firstDataTime = paymentWaitingFirstDataTime;
+      const currentTime = Date.now();
+      const timeDiff = currentTime - firstDataTime;
+
+      const tenMinutesInMs = 10 * 60 * 1000; // 10 minutes in milliseconds
+
+      if (timeDiff > tenMinutesInMs) {
+        setPaymentWaitingTimeout(true);
+        setPaymentWaitingShouldStopPolling(true);
+      }
+    }
+  }, [
+    dataUpdatedAt,
+    paymentWaitingTimeout,
+    paymentWaitingFirstDataTime,
+    setPaymentWaitingTimeout,
+    setPaymentWaitingShouldStopPolling
+  ]);
 
   // Handle transaction status changes
   useEffect(() => {
     const status = transactionData?.data?.transaction?.Status;
     if (status === 'completed') {
       // Stop polling
-      setShouldStopPolling(true);
+      setPaymentWaitingShouldStopPolling(true);
       // Show success animation
       setShowSuccessAnimation(true);
       // Call onSuccess callback after animation
@@ -423,7 +470,12 @@ function PaymentWaitingSection({
         onSuccess?.();
       }, 2000);
     }
-  }, [transactionData?.data?.transaction?.Status, onSuccess, stopPaymentWaiting]);
+  }, [
+    transactionData?.data?.transaction?.Status,
+    onSuccess,
+    stopPaymentWaiting,
+    setPaymentWaitingShouldStopPolling
+  ]);
 
   const transactionStatus = transactionData?.data?.transaction?.Status;
   const isPending = transactionStatus === 'pending';
@@ -440,6 +492,34 @@ function PaymentWaitingSection({
     stopPaymentWaiting();
     onCancel?.();
   };
+
+  const handleTimeoutCancel = () => {
+    handleCancel();
+  };
+
+  // Timeout state
+  if (paymentWaitingTimeout) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-4">
+        <div className="relative">
+          <div className="relative rounded-full p-4">
+            <HelpCircle size={64} strokeWidth={1} className="text-orange-500" />
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 text-center">
+          {t('common:payment_timeout')}
+        </h3>
+        <p className="text-sm text-gray-600 text-center px-4">
+          {t('common:payment_timeout_message')}
+        </p>
+        <div className="flex items-center justify-center gap-2 w-full flex-col pt-2">
+          <Button type="button" variant="default" onClick={handleTimeoutCancel}>
+            {t('common:retry_payment')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Success animation
   if (showSuccessAnimation || isCompleted) {
@@ -465,13 +545,13 @@ function PaymentWaitingSection({
     <div className="flex flex-col items-center justify-center space-y-4 py-4">
       {/* Loading spinner */}
       {(isPending || !transactionStatus) && (
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <LoaderCircle className="animate-spin  text-blue-600" size={64} strokeWidth={1} />
       )}
 
       {/* Failed state - still show spinner but with error message */}
       {isFailed && (
         <>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <LoaderCircle className="animate-spin text-blue-600" size={64} strokeWidth={1} />
           <div className="text-sm text-red-600 text-center px-4">
             {t('common:payment_error_retry')}
           </div>

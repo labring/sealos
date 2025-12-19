@@ -59,7 +59,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         })
         .replace(/\//g, '/')
         .replace(',', '')
-    : 'N/A';
+    : '-';
   const expTime = subscription?.ExpireAt
     ? new Date(subscription.CurrentPeriodEndAt)
         .toLocaleString('zh-CN', {
@@ -71,7 +71,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         })
         .replace(/\//g, '/')
         .replace(',', '')
-    : 'N/A';
+    : '-';
   const isPaygType = subscription?.type === 'PAYG';
   const planDisplayName = isPaygType ? 'PAYG' : planName;
   const backgroundClass = getPlanBackgroundClass(planName, isPaygType);

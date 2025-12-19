@@ -58,7 +58,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     setPromotionCodeError,
     stopPaymentWaiting,
     subscriptionData,
-    hideModal
+    hideModal,
+    resetConfirmationModal
   } = usePlanStore();
 
   // Get plan and context from store (props take precedence for backward compatibility)
@@ -329,6 +330,21 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
   };
 
+  // Handle modal close - reset state and invalidate queries
+  const handleModalClose = () => {
+    // Reset confirmation modal state
+    resetConfirmationModal();
+    clearRedeemCode();
+    stopPaymentWaiting();
+
+    // Invalidate queries to refresh data (same as plan page)
+    queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+    queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+    queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+    queryClient.invalidateQueries({ queryKey: ['card-info'] });
+    queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
+  };
+
   const lastErrorRedeemCodeRef = useRef<string | null>(null);
   const lastRetryFailedErrorRef = useRef<string | null>(null);
 
@@ -353,7 +369,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         // Prevent closing when payment is waiting
         if (isPaymentWaiting) return;
         if (!open) {
-          clearRedeemCode();
+          handleModalClose();
           onCancel?.();
         }
       }}

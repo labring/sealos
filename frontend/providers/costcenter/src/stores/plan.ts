@@ -34,6 +34,10 @@ export interface PlanStoreState {
   paymentWaitingWorkspace: string;
   paymentWaitingRegionDomain: string;
   paymentUrl: string | null;
+  // Payment waiting timeout state
+  paymentWaitingTimeout: boolean;
+  paymentWaitingShouldStopPolling: boolean;
+  paymentWaitingFirstDataTime: number | null;
 
   // Confirmation modal data
   upgradeAmountData: UpgradeAmountResponse | null;
@@ -69,6 +73,11 @@ export interface PlanStoreState {
   // Payment waiting actions
   startPaymentWaiting: (workspace: string, regionDomain: string, paymentUrl?: string) => void;
   stopPaymentWaiting: () => void;
+  // Payment waiting timeout actions
+  setPaymentWaitingTimeout: (timeout: boolean) => void;
+  setPaymentWaitingShouldStopPolling: (shouldStop: boolean) => void;
+  setPaymentWaitingFirstDataTime: (time: number | null) => void;
+  resetPaymentWaitingTimeout: () => void;
 
   // Confirmation modal data actions
   setUpgradeAmountData: (data: UpgradeAmountResponse | null) => void;
@@ -86,6 +95,7 @@ export interface PlanStoreState {
 
   // Reset functions
   resetAll: () => void;
+  resetConfirmationModal: () => void;
 }
 
 const usePlanStore = create<PlanStoreState>()(
@@ -111,6 +121,10 @@ const usePlanStore = create<PlanStoreState>()(
     paymentWaitingWorkspace: '',
     paymentWaitingRegionDomain: '',
     paymentUrl: null,
+    // Payment waiting timeout initial state
+    paymentWaitingTimeout: false,
+    paymentWaitingShouldStopPolling: false,
+    paymentWaitingFirstDataTime: null,
 
     // Confirmation modal data initial state
     upgradeAmountData: null,
@@ -172,19 +186,39 @@ const usePlanStore = create<PlanStoreState>()(
 
     // Payment waiting actions
     startPaymentWaiting: (workspace, regionDomain, paymentUrl) =>
-      set({
-        isPaymentWaiting: true,
-        paymentWaitingWorkspace: workspace,
-        paymentWaitingRegionDomain: regionDomain,
-        paymentUrl: paymentUrl || null
+      set((state) => {
+        state.isPaymentWaiting = true;
+        state.paymentWaitingWorkspace = workspace;
+        state.paymentWaitingRegionDomain = regionDomain;
+        state.paymentUrl = paymentUrl || null;
+        // Reset timeout state when starting payment waiting
+        state.paymentWaitingTimeout = false;
+        state.paymentWaitingShouldStopPolling = false;
+        state.paymentWaitingFirstDataTime = null;
       }),
 
     stopPaymentWaiting: () =>
+      set((state) => {
+        state.isPaymentWaiting = false;
+        state.paymentWaitingWorkspace = '';
+        state.paymentWaitingRegionDomain = '';
+        state.paymentUrl = null;
+        // Reset timeout state when stopping payment waiting
+        state.paymentWaitingTimeout = false;
+        state.paymentWaitingShouldStopPolling = false;
+        state.paymentWaitingFirstDataTime = null;
+      }),
+
+    // Payment waiting timeout actions
+    setPaymentWaitingTimeout: (timeout) => set({ paymentWaitingTimeout: timeout }),
+    setPaymentWaitingShouldStopPolling: (shouldStop) =>
+      set({ paymentWaitingShouldStopPolling: shouldStop }),
+    setPaymentWaitingFirstDataTime: (time) => set({ paymentWaitingFirstDataTime: time }),
+    resetPaymentWaitingTimeout: () =>
       set({
-        isPaymentWaiting: false,
-        paymentWaitingWorkspace: '',
-        paymentWaitingRegionDomain: '',
-        paymentUrl: null
+        paymentWaitingTimeout: false,
+        paymentWaitingShouldStopPolling: false,
+        paymentWaitingFirstDataTime: null
       }),
 
     // Confirmation modal data actions
@@ -244,12 +278,31 @@ const usePlanStore = create<PlanStoreState>()(
         paymentWaitingWorkspace: '',
         paymentWaitingRegionDomain: '',
         paymentUrl: null,
+        paymentWaitingTimeout: false,
+        paymentWaitingShouldStopPolling: false,
+        paymentWaitingFirstDataTime: null,
         upgradeAmountData: null,
         cardInfoData: null,
         monthlyPrice: null,
         upgradeAmount: null,
         amountLoading: false,
         cardInfoLoading: false
+      }),
+
+    resetConfirmationModal: () =>
+      set((state) => {
+        // Reset confirmation modal related state
+        state.redeemCode = null;
+        state.redeemCodeDiscount = null;
+        state.redeemCodeValidated = false;
+        state.promotionCodeError = null;
+        state.upgradeAmountData = null;
+        state.cardInfoData = null;
+        state.monthlyPrice = null;
+        state.upgradeAmount = null;
+        state.amountLoading = false;
+        state.cardInfoLoading = false;
+        // Don't reset payment waiting state here as it might be needed for retry
       })
   }))
 );
