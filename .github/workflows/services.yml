@@ -1,4 +1,4 @@
-name: Build Services (Optimized)
+name: Build Services
 
 on:
   workflow_call:
