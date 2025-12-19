@@ -441,7 +441,6 @@
   "submit_error": "提交错误",
   "successfully_closed_external_network_access": "已关闭外网访问",
   "successfully_edit_password": "成功修改密码。数据库将重启，请等待",
-  "switch_to_M": "切换为主节点",
   "table": "表",
   "table_locks": "表锁",
   "table_name": "表名",
