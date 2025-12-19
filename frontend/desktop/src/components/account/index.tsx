@@ -58,7 +58,7 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig, authConfig } = useConfigStore();
+  const { layoutConfig, authConfig, isLoaded: configLoaded } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -144,7 +144,18 @@ export default function Account() {
               '0px -1px 3px 0px rgba(191, 202, 219, 0.05), 0px 4.5px 4px 0px rgba(191, 202, 219, 0.35)'
             }
           >
-            <Image draggable={false} src={'/logo.svg'} alt="Logo" width="28px" height="28px" />
+            <Image
+              draggable={false}
+              src={layoutConfig?.logo}
+              fallbackSrc={'/logo.svg'}
+              alt="Logo"
+              width="28px"
+              height="28px"
+              opacity={configLoaded ? '1' : '0'}
+              transitionProperty={'opacity'}
+              transitionDuration={'0.3s'}
+              transitionTimingFunction={'cubic-bezier(0.4, 0, 0.2, 1)'}
+            />
           </Center>
           <RegionToggle />
           <Center mx={'3px'}>
