@@ -139,8 +139,12 @@ jobs:
             [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi
           
-          # Convert to JSON array
-          json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s .)
+          # Convert to JSON array (compact format for GitHub Actions)
+          if [ ${#modules[@]} -eq 0 ]; then
+            json_modules="[]"
+          else
+            json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s -c .)
+          fi
           echo "modules=$json_modules" >> $GITHUB_OUTPUT
           echo "Building modules: $json_modules"
 
