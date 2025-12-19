@@ -1,7 +1,6 @@
 name: CI
 
 env:
-  # Common versions
   GO_VERSION: "1.25"
 
 on:
@@ -35,6 +34,10 @@ on:
       - "service/**"
       - "webhooks/**"
       - "frontend/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   resolve-modules:

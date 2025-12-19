@@ -18,6 +18,10 @@ on:
       - "**/*.yaml"
       - "CHANGELOG/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   semgrep:
     # User-definable name of this GitHub Actions job:
