@@ -57,6 +57,10 @@ on:
       - ".github/workflows/frontends.yml"
       - "!**/*.md"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest

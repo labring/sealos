@@ -40,6 +40,10 @@ on:
       - ".github/workflows/service-rs-build.yml"
       - "!**/*.md"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   image-build:
     uses: ./.github/workflows/service-rs-build.yml

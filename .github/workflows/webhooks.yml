@@ -50,6 +50,11 @@ on:
       - ".github/workflows/webhooks.yml"
       - "!**/*.md"
       - "!**/*.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   # Common versions
   GO_VERSION: "1.25"
