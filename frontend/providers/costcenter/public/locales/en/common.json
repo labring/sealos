@@ -272,6 +272,7 @@
   "processing": "Processing...",
   "quantity": "quantity",
   "quota_resets_on": "Quota Resets On",
+  "quota_resets_on_tooltip": "Quota resets and charges apply at this time",
   "recharge_amount": "Recharge Amount",
   "recharge_bonus": "Bonus!",
   "recharge_doubled": "Doubled!",

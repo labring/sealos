@@ -1,5 +1,5 @@
-import { Button, Separator } from '@sealos/shadcn-ui';
-import { CircleCheck, Sparkles } from 'lucide-react';
+import { Button, Separator, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
+import { CircleCheck, Sparkles, HelpCircle } from 'lucide-react';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
@@ -174,7 +174,17 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         </div>
 
         <div className="flex gap-2 flex-col">
-          <span className="text-sm text-muted-foreground">{t('common:quota_resets_on')}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-sm text-muted-foreground">{t('common:quota_resets_on')}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle size={14} className="text-slate-400 hover:text-slate-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('common:quota_resets_on_tooltip')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
             {renewalTime}
           </span>
