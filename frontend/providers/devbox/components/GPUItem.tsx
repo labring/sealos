@@ -16,18 +16,18 @@ const GPUItem = ({ gpu, className }: { gpu?: GpuType; className?: string }) => {
   }, [gpu?.type, sourcePrice?.gpu]);
 
   return (
-    <div className={cn('flex items-center whitespace-nowrap', className)}>
+    <div className={cn('flex items-center whitespace-nowrap text-sm text-zinc-600', className)}>
       <Image src="/images/nvidia.svg" alt="GPU" width={16} height={16} className="mr-2" />
       {gpuAlias && (
         <>
-          <div className="text-xs">{gpuAlias}</div>
-          <div className="mx-1 text-muted-foreground">/</div>
+          <span>{gpuAlias}</span>
+          <span className="mx-1">/</span>
         </>
       )}
-      <div className={cn('text-xs', !!gpu?.amount ? 'text-foreground' : 'text-muted-foreground')}>
+      <span>
         {!!gpuAlias ? gpu?.amount : 0}
         {t('Card')}
-      </div>
+      </span>
     </div>
   );
 };
