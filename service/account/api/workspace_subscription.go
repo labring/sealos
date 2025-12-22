@@ -3242,23 +3242,24 @@ func CreateWorkspaceSubscriptionSetupIntent(c *gin.Context) {
 		return
 	}
 
-	// Get or create customer
-	customer, err := services.StripeServiceInstance.GetCustomer(req.UserUID.String(), "")
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to get/create customer: %v", err)},
-		)
-		return
-	}
-
 	var ckSession *stripe.CheckoutSession
 
-	// If subscription exists and has Stripe subscription ID, create a filtered portal session
+	// If subscription exists and has Stripe subscription ID, get the customer from the subscription
 	if subscription != nil && subscription.Stripe != nil && subscription.Stripe.SubscriptionID != "" {
+		// Get the subscription from Stripe to find the correct customer ID
+		stripeSubscription, err := services.StripeServiceInstance.GetSubscription(subscription.Stripe.SubscriptionID)
+		if err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to get stripe subscription: %v", err)},
+			)
+			return
+		}
+
+		// Use the customer ID from the Stripe subscription (this is the correct customer)
 		ckSession, err = services.StripeServiceInstance.CreateSubscriptionSetupIntent(
-			customer.ID,
+			stripeSubscription.Customer.ID,
 			subscription.Stripe.SubscriptionID,
 			req.RedirectUrl,
 		)
