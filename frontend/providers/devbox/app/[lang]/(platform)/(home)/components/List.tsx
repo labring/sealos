@@ -25,7 +25,9 @@ import {
   type FilterFn,
   getSortedRowModel,
   getFilteredRowModel,
-  type SortingState
+  type SortingState,
+  type HeaderContext,
+  type CellContext
 } from '@tanstack/react-table';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -134,7 +136,7 @@ const DevboxList = ({
     () => [
       {
         accessorKey: 'name',
-        header: ({ column }) => (
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex cursor-pointer items-center gap-2 select-none hover:text-zinc-800">
@@ -192,7 +194,7 @@ const DevboxList = ({
           </DropdownMenu>
         ),
         size: 250,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <div className="flex w-full cursor-pointer items-center gap-2 pr-4">
@@ -293,7 +295,7 @@ const DevboxList = ({
         accessorKey: 'status',
         enableColumnFilter: true,
         filterFn: statusFilterFn,
-        header: ({ column, table }) => {
+        header: ({ column, table }: HeaderContext<DevboxListItemTypeV2, unknown>) => {
           const currentData = table.getCoreRowModel().rows.map((row) => row.original);
 
           const existingStatuses = new Set(
@@ -357,7 +359,7 @@ const DevboxList = ({
             </DropdownMenu>
           );
         },
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <DevboxStatusTag
@@ -369,9 +371,9 @@ const DevboxList = ({
       },
       {
         accessorKey: 'cpu',
-        header: ({ column }) => <span className="select-none">{t('cpu')}</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">{t('cpu')}</span>,
         size: 256,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <MonitorChart
@@ -384,9 +386,9 @@ const DevboxList = ({
       },
       {
         accessorKey: 'memory',
-        header: ({ column }) => <span className="select-none">{t('memory')}</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">{t('memory')}</span>,
         size: 256,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <MonitorChart
@@ -399,9 +401,9 @@ const DevboxList = ({
       },
       {
         accessorKey: 'gpu',
-        header: ({ column }) => <span className="select-none">GPU</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">GPU</span>,
         size: 180,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return <GPUItem gpu={item.gpu} />;
         }
@@ -410,7 +412,7 @@ const DevboxList = ({
         accessorKey: 'createTime',
         enableColumnFilter: true,
         filterFn: dateFilterFn,
-        header: ({ column }) => (
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex cursor-pointer items-center gap-2 hover:text-zinc-800">
@@ -467,7 +469,7 @@ const DevboxList = ({
           </DropdownMenu>
         ),
         size: 150,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <span className="text-sm text-zinc-600">
@@ -478,9 +480,9 @@ const DevboxList = ({
       },
       {
         id: 'actions',
-        header: ({ column }) => <span className="select-none">{t('action')}</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">{t('action')}</span>,
         size: 300,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <div className="flex items-center justify-start gap-2">
