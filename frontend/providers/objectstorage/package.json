@@ -12,8 +12,11 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.435.0",
     "@aws-sdk/s3-request-presigner": "^3.440.0",
+    "@chakra-ui/anatomy": "^2.2.1",
+    "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/next-js": "^2.1.5",
     "@chakra-ui/react": "^2.8.1",
+    "@chakra-ui/system": "^2.6.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.19.0",
