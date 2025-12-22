@@ -3,20 +3,23 @@ name: E2E Sealos Core Test
 on:
   workflow_dispatch:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
     paths:
       - ".github/workflows/e2e_test_core.yml"
       - "lifecycle/cmd/**"
       - "lifecycle/pkg/**"
       - "lifecycle/test/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths:
       - ".github/workflows/e2e_test_core.yml"
       - "lifecycle/cmd/**"
       - "lifecycle/pkg/**"
       - "lifecycle/test/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   call_ci_workflow:
@@ -26,12 +29,11 @@ jobs:
       e2e: true
       image: false
   e2e-core-test:
-    needs: [ call_ci_workflow ]
+    needs: [call_ci_workflow]
     strategy:
       fail-fast: false
       matrix:
-        unit:
-          [
+        unit: [
             E2E_sealos_images_test,
             E2E_sealos_images_buildrun_test,
             E2E_sealos_images_buildrun_feature_test,
