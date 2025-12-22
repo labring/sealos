@@ -1,25 +1,29 @@
 name: Check-Coverage
 
-
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 env:
   # Common versions
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.25"
   PROJECT_PATH: "./lifecycle"
 
 jobs:
