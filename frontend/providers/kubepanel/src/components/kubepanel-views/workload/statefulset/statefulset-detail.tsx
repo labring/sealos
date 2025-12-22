@@ -9,6 +9,7 @@ import { useStatefulSetStore } from '@/store/kube';
 import { Divider } from 'antd';
 import ContainerDetail from '../pod/container-detail';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
+import PodDetailSecurityContext from '../pod/pod-detail-security-context';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 
 const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<StatefulSet>) => {
@@ -54,6 +55,11 @@ const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<State
         )}
         <PodDetailTolerations workload={stat} />
         <PodDetailAffinities workload={stat} />
+        <PodDetailSecurityContext
+          securityContext={spec?.template?.spec?.securityContext}
+          workload={stat}
+          onUpdate={() => initialize(() => {}, true)}
+        />
         <Divider />
         <ContainerDetail
           containers={spec?.template?.spec?.containers}

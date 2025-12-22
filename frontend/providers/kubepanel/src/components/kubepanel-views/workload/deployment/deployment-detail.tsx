@@ -9,6 +9,7 @@ import { getConditionTextTone } from '@/utils/condtion-color';
 import { Divider, Tooltip, Typography } from 'antd';
 import ContainerDetail from '../pod/container-detail';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
+import PodDetailSecurityContext from '../pod/pod-detail-security-context';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 
 const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deployment>) => {
@@ -90,6 +91,11 @@ const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deploym
         />
         <PodDetailTolerations workload={dep} />
         <PodDetailAffinities workload={dep} />
+        <PodDetailSecurityContext
+          securityContext={spec.template.spec.securityContext}
+          workload={dep}
+          onUpdate={() => initialize(() => {}, true)}
+        />
         <Divider />
 
         <ContainerDetail

@@ -4,7 +4,7 @@ import { ReactiveDuration } from '@/components/kube/reactive-duration';
 import { useWatcher } from '@/hooks/useWatcher';
 import { KubeEvent, ObjectReference } from '@/k8slens/kube-object';
 import { useEventStore } from '@/store/k8s/event.store';
-import { Table, Tooltip, Typography } from 'antd';
+import { Table, Typography } from 'antd';
 import { ColumnsType } from 'antd/lib/table';
 
 const columns: ColumnsType<KubeEvent> = [
@@ -12,6 +12,9 @@ const columns: ColumnsType<KubeEvent> = [
     title: <Title type="table">Type</Title>,
     key: 'type',
     dataIndex: 'type',
+    fixed: 'start',
+    width: 80,
+    align: 'center',
     render: (type: string | undefined) => {
       if (!type) return 'Unknown';
       return type;
@@ -20,25 +23,17 @@ const columns: ColumnsType<KubeEvent> = [
   {
     title: <Title type="table">Message</Title>,
     key: 'message',
-    ellipsis: true,
     dataIndex: 'message',
     render: (message: string | undefined, event: KubeEvent) => {
       if (!message) return '<unknown>';
 
-      let renderedMessage: React.ReactNode;
       switch (event.type) {
         case 'Warning':
-          renderedMessage = <Typography.Text type="danger">{message}</Typography.Text>;
-          break;
+          return <Typography.Text type="danger">{message}</Typography.Text>;
         case 'Normal':
         default:
-          renderedMessage = message;
+          return message;
       }
-      return (
-        <Tooltip title={message} className="inline-block overflow-hidden w-full text-ellipsis">
-          {renderedMessage}
-        </Tooltip>
-      );
     }
   },
   {
@@ -53,12 +48,16 @@ const columns: ColumnsType<KubeEvent> = [
   {
     title: <Title type="table">Source</Title>,
     key: 'source',
+    width: 200,
     render: (_, event: KubeEvent) => event.getSource()
   },
   {
     title: <Title type="table">Count</Title>,
     dataIndex: 'count',
     key: 'count',
+    width: 70,
+    fixed: 'end',
+    align: 'center',
     render: (count: number | undefined) => {
       if (!count) return '<unknown>';
       return count;
@@ -67,6 +66,9 @@ const columns: ColumnsType<KubeEvent> = [
   {
     title: <Title type="table">Age</Title>,
     key: 'age',
+    width: 80,
+    fixed: 'end',
+    align: 'center',
     render: (_, event: KubeEvent) => {
       return <KubeObjectAge obj={event} />;
     }
@@ -74,6 +76,9 @@ const columns: ColumnsType<KubeEvent> = [
   {
     title: <Title type="table">Last Seen</Title>,
     key: 'last-seen',
+    width: 80,
+    fixed: 'end',
+    align: 'center',
     render: (_, event: KubeEvent) => {
       return <ReactiveDuration timestamp={event.lastTimestamp} />;
     }
@@ -94,6 +99,7 @@ const EventOverview = () => {
         rowKey={(event) => event.getId()}
         dataSource={items.slice(0, 10)}
         pagination={false}
+        scroll={{ x: 'max-content' }}
       />
     </>
   );
