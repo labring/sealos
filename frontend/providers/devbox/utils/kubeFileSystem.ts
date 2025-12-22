@@ -56,7 +56,11 @@ export class KubeFileSystem {
         const stderrText = chunk.toString();
         console.log('stderr output:', stderrText);
 
-        if (stderrText.includes('Error:') || stderrText.includes('error:') || stderrText.includes('failed')) {
+        if (
+          stderrText.includes('Error:') ||
+          stderrText.includes('error:') ||
+          stderrText.includes('failed')
+        ) {
           hasError = true;
         }
       });
@@ -141,7 +145,7 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      ['sh', '-c', `dd of=${path} status=none bs=32767; :`],
       file
     );
     return result;
