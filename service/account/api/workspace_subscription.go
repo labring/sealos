@@ -1539,6 +1539,70 @@ func processUpgradeSubscription(
 		return errors.New("new plan has no valid Stripe price")
 	}
 
+	// Check for existing unpaid upgrade invoice for this subscription
+	existingInvoice, err := services.StripeServiceInstance.GetUnpaidUpgradeInvoice(subscription.Stripe.SubscriptionID)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to check existing upgrade invoices: %v", err)},
+		)
+		return err
+	}
+
+	// Handle existing unpaid upgrade invoice
+	if existingInvoice != nil {
+		// Check if this is the same upgrade request
+		isSameRequest := services.StripeServiceInstance.IsSameUpgradeRequest(existingInvoice, transaction.NewPlanName, req.PromotionCode)
+
+		if isSameRequest {
+			// Same request - return existing invoice URL
+			invoiceURL := existingInvoice.HostedInvoiceURL
+			if invoiceURL == "" {
+				invoiceURL = fmt.Sprintf("https://dashboard.stripe.com/invoices/%s", existingInvoice.ID)
+			}
+
+			logrus.Infof(
+				"Returning existing upgrade invoice for same request: workspace=%s, invoice=%s, plan=%s",
+				subscription.Workspace, existingInvoice.ID, transaction.NewPlanName,
+			)
+
+			c.JSON(http.StatusOK, gin.H{
+				"success":     true,
+				"redirectUrl": invoiceURL,
+				"payID":       existingInvoice.Metadata["payment_id"],
+				"invoiceID":   existingInvoice.ID,
+				"message":     "Existing upgrade invoice found, please complete payment",
+			})
+			return ErrSamePendingOperation
+		} else {
+			// Different request - cancel existing upgrade and continue
+			oldPriceID := existingInvoice.Metadata["old_price_id"]
+			if oldPriceID == "" {
+				// Fallback: get current price from subscription
+				sub, err := services.StripeServiceInstance.GetSubscription(subscription.Stripe.SubscriptionID)
+				if err == nil && len(sub.Items.Data) > 0 {
+					oldPriceID = sub.Items.Data[len(sub.Items.Data)-1].Price.ID
+				}
+			}
+
+			logrus.Infof(
+				"Canceling different upgrade request for workspace=%s: old_plan=%s, new_plan=%s",
+				subscription.Workspace, existingInvoice.Metadata["new_plan_name"], transaction.NewPlanName,
+			)
+
+			// Cancel the existing upgrade
+			if err := services.StripeServiceInstance.CancelUnpaidUpgrade(
+				subscription.Stripe.SubscriptionID,
+				existingInvoice.ID,
+				oldPriceID,
+			); err != nil {
+				dao.Logger.Errorf("Failed to cancel existing upgrade invoice %s: %v", existingInvoice.ID, err)
+				// Continue with new upgrade even if cancellation fails
+			}
+		}
+	}
+
 	// Create transaction record first
 	transaction.Status = types.SubscriptionTransactionStatusProcessing
 	transaction.PayStatus = types.SubscriptionPayStatusPending
@@ -2091,14 +2155,14 @@ func processWorkspaceSubscriptionWebhookEvent(event *stripe.Event) error {
 
 func checkIsLocalEvent(event any) (bool, error) {
 	switch e := event.(type) {
-	// case *stripe.Invoice:
-	//	if e.Metadata == nil || e.Metadata["region_domain"] == "" {
-	//		return false, fmt.Errorf("invoice has no associated region domain")
-	//	}
-	//	if e.Metadata["region_domain"] != dao.DBClient.GetLocalRegion().Domain {
-	//		return false, nil
-	//	}
-	//	return true, nil
+	case *stripe.Invoice:
+		if e.Metadata == nil || e.Metadata["region_domain"] == "" {
+			return false, fmt.Errorf("invoice has no associated region domain")
+		}
+		if e.Metadata["region_domain"] != dao.DBClient.GetLocalRegion().Domain {
+			return false, nil
+		}
+		return true, nil
 	case *stripe.Subscription:
 		if e.Metadata == nil || e.Metadata["region_domain"] == "" {
 			// TODO 兼容老数据

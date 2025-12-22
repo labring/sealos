@@ -863,7 +863,31 @@ func (s *StripeService) ValidatePromotionCode(code string) (*stripe.PromotionCod
 
 // CancelUnpaidUpgrade voids the unpaid invoice and rolls back the subscription to its previous state
 func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceID string) error {
-	// Step 1: Retrieve the subscription to get the old item ID and other details
+	logrus.Infof("Starting CancelUnpaidUpgrade for subscription %s, invoice %s", subscriptionID, invoiceID)
+
+	// Step 1: Retrieve the invoice to get metadata
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get invoice %s: %v", invoiceID, err)
+	}
+
+	// Step 2: Check invoice status before proceeding
+	if inv.Status != "open" && inv.Status != "draft" {
+		logrus.Warnf("Invoice %s is not in open/draft status (current: %s), skipping cancellation", invoiceID, inv.Status)
+		return nil
+	}
+
+	// Extract metadata from invoice
+	oldPlanName := inv.Metadata["old_plan_name"]
+	oldPriceIDFromMetadata := inv.Metadata["old_price_id"]
+	upgradePaymentID := inv.Metadata["upgrade_payment_id"]
+
+	// Use oldPriceIDFromMetadata if available, otherwise use the parameter
+	if oldPriceIDFromMetadata != "" {
+		oldPriceID = oldPriceIDFromMetadata
+	}
+
+	// Step 3: Retrieve the subscription to get the old item ID and other details
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
 		return fmt.Errorf("subscription.Get: %v", err)
@@ -871,18 +895,24 @@ func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceI
 	if len(sub.Items.Data) == 0 {
 		return fmt.Errorf("subscription has no items to rollback")
 	}
+
 	// Assume the last item is the one to rollback (based on your upgrade logic)
 	oldItemID := sub.Items.Data[len(sub.Items.Data)-1].ID
 
-	// Step 2: Void the unpaid invoice
+	// Step 4: Void the unpaid invoice
 	voidParams := &stripe.InvoiceVoidInvoiceParams{}
 	_, err = invoice.VoidInvoice(invoiceID, voidParams)
 	if err != nil {
-		return fmt.Errorf("failed to void invoice %s: %v", invoiceID, err)
+		// If invoice is already voided or paid, log and continue
+		if strings.Contains(err.Error(), "already") || strings.Contains(err.Error(), "paid") {
+			logrus.Warnf("Invoice %s may already been processed: %v", invoiceID, err)
+		} else {
+			return fmt.Errorf("failed to void invoice %s: %v", invoiceID, err)
+		}
 	}
 	logrus.Infof("Voided unpaid invoice %s for subscription %s", invoiceID, subscriptionID)
 
-	// Step 3: Rollback the subscription to the old price without proration
+	// Step 5: Roll back the subscription to the old price without proration
 	rollbackParams := &stripe.SubscriptionParams{
 		Items: []*stripe.SubscriptionItemsParams{
 			{
@@ -891,23 +921,142 @@ func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceI
 			},
 		},
 		ProrationBehavior: stripe.String("none"), // No proration invoice generated
+		Metadata: map[string]string{
+			"upgrade_in_progress": "false",            // Clear upgrade flag
+			"upgrade_payment_id":  "",                 // Clear upgrade payment ID
+			"cancellation_reason": "upgrade_canceled", // Track cancellation reason
+			"canceled_at":         fmt.Sprintf("%d", time.Now().Unix()),
+		},
 	}
 
 	// Optional: Restore the old default payment method if saved in metadata
 	if oldPaymentMethod, ok := sub.Metadata["old_payment_method"]; ok && oldPaymentMethod != "" {
 		rollbackParams.DefaultPaymentMethod = stripe.String(oldPaymentMethod)
-		// Clean up the metadata
-		rollbackParams.Metadata = map[string]string{
-			"old_payment_method": "", // Clear it
+		rollbackParams.Metadata["old_payment_method"] = "" // Clear it
+	}
+
+	updatedSub, err := subscription.Update(subscriptionID, rollbackParams)
+	if err != nil {
+		// If subscription update fails because it's already in the desired state, log and continue
+		if strings.Contains(err.Error(), "no changes") || strings.Contains(err.Error(), "already") {
+			logrus.Warnf("Subscription %s may already in correct state: %v", subscriptionID, err)
+		} else {
+			return fmt.Errorf("failed to rollback subscription %s: %v", subscriptionID, err)
+		}
+	} else {
+		logrus.Infof("Successfully rolled back subscription %s to old price %s, plan %s", subscriptionID, oldPriceID, oldPlanName)
+	}
+
+	// Step 6: Clear any pending payment intents related to this upgrade
+	if upgradePaymentID != "" {
+		logrus.Infof("Clearing upgrade payment markers for payment_id: %s", upgradePaymentID)
+	}
+
+	// Step 7: Log successful completion
+	if updatedSub != nil {
+		logrus.Infof("CancelUnpaidUpgrade completed successfully for subscription %s, current plan: %s",
+			subscriptionID, updatedSub.Metadata["plan_name"])
+	}
+
+	return nil
+}
+
+// GetUnpaidUpgradeInvoice checks if there's an existing unpaid upgrade invoice for the subscription
+func (s *StripeService) GetUnpaidUpgradeInvoice(subscriptionID string) (*stripe.Invoice, error) {
+	// List invoices for the subscription
+	params := &stripe.InvoiceListParams{
+		Subscription: stripe.String(subscriptionID),
+		Status:       stripe.String("open"), // Only look for open invoices
+	}
+	params.Limit = stripe.Int64(10) // Limit to recent invoices
+
+	iter := invoice.List(params)
+	for iter.Next() {
+		inv := iter.Invoice()
+
+		// Check if this is an upgrade invoice
+		if inv.Metadata["upgrade_in_progress"] == "true" &&
+			inv.Metadata["subscription_operator"] == string(types.SubscriptionTransactionTypeUpgraded) {
+			return inv, nil
 		}
 	}
 
-	_, err = subscription.Update(subscriptionID, rollbackParams)
-	if err != nil {
-		return fmt.Errorf("failed to rollback subscription %s: %v", subscriptionID, err)
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("failed to list invoices: %v", err)
 	}
-	logrus.Infof("Rolled back subscription %s to old price %s", subscriptionID, oldPriceID)
 
+	return nil, nil
+}
+
+// IsSameUpgradeRequest checks if the new upgrade request is the same as an existing unpaid upgrade
+func (s *StripeService) IsSameUpgradeRequest(existingInvoice *stripe.Invoice, newPlanName, promotionCode string) bool {
+	if existingInvoice == nil {
+		return false
+	}
+
+	// Check if the target plan is the same
+	existingPlanName := existingInvoice.Metadata["new_plan_name"]
+	if existingPlanName != newPlanName {
+		return false
+	}
+
+	// Check promotion codes (both empty or both same)
+	existingPromotionCode := existingInvoice.Metadata["promotion_code"]
+	if existingPromotionCode == "" && len(existingInvoice.Discounts) > 0 && existingInvoice.Discounts[0].PromotionCode != nil {
+		existingPromotionCode = existingInvoice.Discounts[0].PromotionCode.Code
+	}
+
+	// Normalize empty strings for comparison
+	if existingPromotionCode == "" {
+		existingPromotionCode = "none"
+	}
+	if promotionCode == "" {
+		promotionCode = "none"
+	}
+
+	return existingPromotionCode == promotionCode
+}
+
+// FinalizeUpgradeInvoice updates metadata after successful upgrade payment
+func (s *StripeService) FinalizeUpgradeInvoice(invoiceID string) error {
+	// Get the invoice
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get invoice %s: %v", invoiceID, err)
+	}
+
+	// Update invoice metadata to mark upgrade as completed
+	_, err = invoice.Update(invoiceID, &stripe.InvoiceParams{
+		Metadata: map[string]string{
+			"upgrade_in_progress":  "false", // Mark upgrade as completed
+			"upgrade_completed_at": fmt.Sprintf("%d", time.Now().Unix()),
+			"finalization_reason":  "payment_successful",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update invoice metadata after payment: %v", err)
+	}
+
+	// Get subscription ID from invoice metadata
+	subscriptionID := inv.Metadata["subscription_id"]
+
+	// Also update subscription metadata if subscription ID is available
+	if subscriptionID != "" {
+		_, err = subscription.Update(subscriptionID, &stripe.SubscriptionParams{
+			Metadata: map[string]string{
+				"upgrade_in_progress":    "false",
+				"upgrade_payment_id":     "",
+				"last_upgrade_completed": fmt.Sprintf("%d", time.Now().Unix()),
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update invoice subscription metadata after payment: %v", err)
+		} else {
+			logrus.Infof("Successfully finalized upgrade invoice %s for subscription %s", invoiceID, subscriptionID)
+		}
+	} else {
+		logrus.Infof("Successfully finalized upgrade invoice %s (could not determine subscription ID)", invoiceID)
+	}
 	return nil
 }
 
@@ -922,6 +1071,10 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 		return "", "", fmt.Errorf("subscription has no items to update")
 	}
 
+	// Store old price ID for potential rollback
+	oldPriceID := sub.Items.Data[len(sub.Items.Data)-1].Price.ID
+	oldPlanName := sub.Metadata["plan_name"]
+
 	// Update the subscription with incomplete payment behavior to create invoice
 	// For upgrades, we don't set BillingCycleAnchorNow to avoid billing cycle issues
 	params := &stripe.SubscriptionParams{
@@ -935,6 +1088,12 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 		ProrationBehavior:     stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
 		PaymentBehavior:       stripe.String("default_incomplete"),
 		Expand:                []*string{stripe.String("latest_invoice.payment_intent")},
+		Metadata: map[string]string{
+			"upgrade_payment_id":  payReqID, // Track this specific upgrade payment
+			"old_plan_name":       oldPlanName,
+			"old_price_id":        oldPriceID,
+			"upgrade_in_progress": "true", // Flag to indicate upgrade in progress
+		},
 	}
 
 	// Add promotion code if provided (assume validation already done at higher level)
@@ -977,18 +1136,21 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 		Metadata: map[string]string{
 			"payment_id":            payReqID,
 			"customer_id":           sub.Customer.ID,
+			"subscription_id":       subscriptionID, // Add subscription ID for easier retrieval
 			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
 			"new_plan_name":         newPlanName,
 			"plan_name":             newPlanName,
-			"old_plan_name":         sub.Metadata["plan_name"],
-			"old_price_id":          sub.Items.Data[len(sub.Items.Data)-1].Price.ID,
+			"old_plan_name":         oldPlanName,
+			"old_price_id":          oldPriceID,
 			"user_uid":              sub.Metadata["user_uid"],
 			"workspace":             sub.Metadata["workspace"],
 			"region_domain":         sub.Metadata["region_domain"],
+			"upgrade_payment_id":    payReqID, // Track this specific upgrade payment
+			"upgrade_in_progress":   "true",   // Flag to indicate upgrade in progress
 		},
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("failed to update subscription for upgrade: %v", err)
+		return "", "", fmt.Errorf("failed to update invoice metadata for upgrade: %v", err)
 	}
 
 	// Use the invoice's hosted URL if available, otherwise construct dashboard URL
@@ -998,8 +1160,8 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 		invoiceURL = fmt.Sprintf("https://dashboard.stripe.com/invoices/%s", invoiceID)
 	}
 
-	logrus.Infof("Created upgrade invoice %s for subscription %s, amount: %d cents",
-		invoiceID, subscriptionID, inv.AmountDue)
+	logrus.Infof("Created upgrade invoice %s for subscription %s, amount: %d cents, old_plan: %s, new_plan: %s",
+		invoiceID, subscriptionID, inv.AmountDue, oldPlanName, newPlanName)
 
 	return invoiceURL, invoiceID, nil
 }
