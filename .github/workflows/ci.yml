@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       push_mage:
-        description: 'Push images'
+        description: "Push images"
         required: false
         type: boolean
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -23,7 +23,7 @@ on:
       - "webhooks/**"
       - "frontend/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "CHANGELOG/**"
@@ -36,8 +36,8 @@ on:
       - "frontend/**"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   resolve-modules:
@@ -53,7 +53,7 @@ jobs:
         run: bash ./scripts/resolve-modules.sh ./lifecycle
 
   golangci-lint:
-    needs: [ resolve-modules ]
+    needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
