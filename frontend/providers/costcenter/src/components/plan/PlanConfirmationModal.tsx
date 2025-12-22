@@ -76,6 +76,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const isPaygUser = isPaygType();
   const operator = isCreateMode || isPaygUser ? 'created' : 'upgraded';
 
+  const queryEnabled = isOpen && !!(plan && workspace && regionDomain);
+
   const {
     data: upgradeAmountData,
     isLoading: amountLoading,
@@ -104,7 +106,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         promotionCode: redeemCode || undefined
       });
     },
-    enabled: isOpen && !!(plan && workspace && regionDomain),
+    enabled: queryEnabled,
     retry: (failureCount, error: any) => {
       const errorStatus = error?.code || error?.response?.status;
       // Don't retry for 404, 410, 409 errors
@@ -121,8 +123,12 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
 
   // Sync loading state to store
   useEffect(() => {
-    setAmountLoading(amountLoading);
-  }, [amountLoading, setAmountLoading]);
+    const shouldShowLoading =
+      !queryEnabled ||
+      amountLoading ||
+      (queryEnabled && !amountLoading && !upgradeAmountData && !isUpgradeAmountError);
+    setAmountLoading(shouldShowLoading);
+  }, [amountLoading, queryEnabled, upgradeAmountData, isUpgradeAmountError, setAmountLoading]);
 
   const { data: cardInfoData, isLoading: cardInfoLoading } = useQuery({
     queryKey: ['card-info', workspace, regionDomain],

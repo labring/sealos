@@ -93,6 +93,16 @@ export function UpgradePlanDialog({
     }
   }, [isCreateMode, isUpgradeMode, plans, defaultSelectedPlan]);
 
+  // Reset internal state when dialog closes to prevent duplicate opening
+  useEffect(() => {
+    if (!isOpen) {
+      setWorkspaceName(defaultWorkspaceName || '');
+      setSelectedPlanId('');
+      setSelectedAdditionalPlanId('');
+      setStillChargeByVolume(false);
+    }
+  }, [isOpen, defaultWorkspaceName]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>

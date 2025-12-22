@@ -252,7 +252,10 @@ function PriceDisplay({
   const { t } = useTranslation();
   const isPaygType = usePlanStore((state) => state.isPaygType);
   const shouldShowTooltip = !isCreateMode && !isPaygType();
-  const dueToday = upgradeAmount !== undefined ? upgradeAmount : monthlyPrice;
+
+  const hasUpgradeAmount = upgradeAmount !== undefined && upgradeAmount !== null;
+  const dueToday = hasUpgradeAmount ? upgradeAmount : monthlyPrice;
+  const shouldShowCalculating = amountLoading || !hasUpgradeAmount;
 
   return (
     <div className="flex flex-col gap-3">
@@ -284,7 +287,7 @@ function PriceDisplay({
           )}
         </div>
         <span className="text-sm font-medium text-gray-900">
-          {amountLoading ? (
+          {shouldShowCalculating ? (
             t('common:calculating')
           ) : (
             <>
@@ -315,10 +318,6 @@ function CardManagement({
   const { t } = useTranslation();
   const hasCard = !!paymentMethod;
 
-  const formatExpiryDate = (month: number, year: number) => {
-    return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
-  };
-
   return (
     <div className="flex flex-col gap-3">
       {/* Card Info */}
@@ -329,26 +328,15 @@ function CardManagement({
             <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
         ) : hasCard ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BankCardIcon brand={paymentMethod.card.brand} className="h-9 w-14 shrink-0" />
-              <BankCardBrand
-                brand={paymentMethod.card.brand}
-                className="text-sm font-medium text-zinc-900"
-              />
-              <span className="text-sm font-medium text-zinc-900">
-                •••• {paymentMethod.card.last4}
-              </span>
-              <span className="text-xs text-zinc-500">
-                {t('common:expires')}:{' '}
-                {formatExpiryDate(paymentMethod.card.exp_month, paymentMethod.card.exp_year)}
-              </span>
-            </div>
-            <div className="bg-zinc-200 px-2 rounded-full">
-              <span className="text-xs font-medium text-zinc-500 leading-none">
-                {t('common:default')}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <BankCardIcon brand={paymentMethod.card.brand} className="h-9 w-14 shrink-0" />
+            <BankCardBrand
+              brand={paymentMethod.card.brand}
+              className="text-sm font-medium text-zinc-900"
+            />
+            <span className="text-sm font-medium text-zinc-900">
+              •••• {paymentMethod.card.last4}
+            </span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -624,6 +612,10 @@ function ActionButton({
   }, [isSubmittingLocal, isPaymentWaiting, isSubmittingProp]);
 
   const handleClick = () => {
+    // Prevent click if loading or submitting
+    if (amountLoading || isSubmitting) {
+      return;
+    }
     if (!isSubmittingProp) {
       setIsSubmittingLocal(true);
     }

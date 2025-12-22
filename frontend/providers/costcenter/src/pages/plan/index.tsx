@@ -60,7 +60,15 @@ export default function Plan() {
     redeemCode,
     redeemCodeValidated,
     setRedeemCode,
-    startPaymentWaiting
+    startPaymentWaiting,
+    defaultSelectedPlan,
+    defaultShowPaymentConfirmation,
+    defaultWorkspaceName,
+    setDefaultSelectedPlan,
+    setDefaultShowPaymentConfirmation,
+    setDefaultWorkspaceName,
+    clearModalDefaults,
+    clearRedeemCode
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
@@ -69,10 +77,6 @@ export default function Plan() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
-  const [defaultSelectedPlan, setDefaultSelectedPlan] = useState<string>('');
-  const [defaultShowPaymentConfirmation, setDefaultShowPaymentConfirmation] =
-    useState<boolean>(false);
-  const [defaultWorkspaceName, setDefaultWorkspaceName] = useState<string>('');
   // Track if Stripe success has been tracked to prevent duplicates
   const [hasTrackedStripeSuccess, setHasTrackedStripeSuccess] = useState(false);
   // Use ref to persist Stripe callback flag even after router.query is cleared
@@ -84,16 +88,22 @@ export default function Plan() {
       if (!open) {
         setIsCreateMode(false);
         setIsUpgradeMode(false);
+        // Clear all default values when closing the modal to prevent duplicate opening
+        clearModalDefaults();
+        clearRedeemCode();
       }
       // Clean up URL parameters after opening or closing the modal
       const url = new URL(window.location.href);
       url.searchParams.delete('mode');
       url.searchParams.delete('plan');
+      url.searchParams.delete('showPaymentConfirmation');
+      url.searchParams.delete('workspaceName');
+      url.searchParams.delete('redeem');
       router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
         shallow: true
       });
     },
-    [router]
+    [router, clearModalDefaults, clearRedeemCode]
   );
 
   // useEffect to handle the router query
@@ -133,6 +143,18 @@ export default function Plan() {
       }
 
       handleSubscriptionModalOpenChange(true);
+
+      // Clean up URL parameters after processing to prevent duplicate opening
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      url.searchParams.delete('plan');
+      url.searchParams.delete('showPaymentConfirmation');
+      url.searchParams.delete('workspaceName');
+      url.searchParams.delete('redeem');
+      router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
+        shallow: true
+      });
+
       return;
     }
 
@@ -142,6 +164,12 @@ export default function Plan() {
         console.log('Trying to open recharge modal', rechargeRef.current);
         rechargeRef.current?.onOpen();
       }, 1000);
+      // Clean up URL parameters after processing
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
+        shallow: true
+      });
       return;
     }
 
@@ -158,7 +186,15 @@ export default function Plan() {
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
       return;
     }
-  }, [router, handleSubscriptionModalOpenChange, setRedeemCode, hideModal]);
+  }, [
+    router,
+    handleSubscriptionModalOpenChange,
+    setRedeemCode,
+    hideModal,
+    setDefaultSelectedPlan,
+    setDefaultShowPaymentConfirmation,
+    setDefaultWorkspaceName
+  ]);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
@@ -722,6 +758,9 @@ export default function Plan() {
         }}
         onCancel={() => {
           hideModal();
+          // Clear all default values when closing the modal to prevent duplicate opening
+          clearModalDefaults();
+          clearRedeemCode();
         }}
         onPaymentSuccess={async () => {
           // Invalidate queries to refresh subscription data
@@ -758,6 +797,9 @@ export default function Plan() {
         }}
         onCancel={() => {
           hideModal();
+          // Clear all default values when closing the modal to prevent duplicate opening
+          clearModalDefaults();
+          clearRedeemCode();
         }}
       />
     </div>

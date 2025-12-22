@@ -23,6 +23,11 @@ export interface PlanStoreState {
     isCreateMode?: boolean;
   };
 
+  // Default values for modal opening (from URL params)
+  defaultSelectedPlan: string;
+  defaultShowPaymentConfirmation: boolean;
+  defaultWorkspaceName: string;
+
   // Redeem code state
   redeemCode: string | null;
   redeemCodeDiscount: number | null;
@@ -93,6 +98,12 @@ export interface PlanStoreState {
   isPaygType: () => boolean;
   hasDowngradeTransaction: () => boolean;
 
+  // Default values actions
+  setDefaultSelectedPlan: (plan: string) => void;
+  setDefaultShowPaymentConfirmation: (show: boolean) => void;
+  setDefaultWorkspaceName: (name: string) => void;
+  clearModalDefaults: () => void;
+
   // Reset functions
   resetAll: () => void;
   resetConfirmationModal: () => void;
@@ -109,6 +120,11 @@ const usePlanStore = create<PlanStoreState>()(
     pendingPlan: null,
     modalType: null,
     modalContext: {},
+
+    // Default values initial state
+    defaultSelectedPlan: '',
+    defaultShowPaymentConfirmation: false,
+    defaultWorkspaceName: '',
 
     // Redeem code initial state
     redeemCode: null,
@@ -131,7 +147,7 @@ const usePlanStore = create<PlanStoreState>()(
     cardInfoData: null,
     monthlyPrice: null,
     upgradeAmount: null,
-    amountLoading: false,
+    amountLoading: true,
     cardInfoLoading: false,
 
     // Data actions
@@ -150,8 +166,9 @@ const usePlanStore = create<PlanStoreState>()(
         state.paymentWaitingWorkspace = '';
         state.paymentWaitingRegionDomain = '';
         state.paymentUrl = null;
-        // Reset amountLoading to true when opening modal to show loading state
+        // Reset amountLoading to true and clear upgradeAmount when opening modal to show loading state
         state.amountLoading = true;
+        state.upgradeAmount = null;
       }),
 
     showDowngradeModal: (plan, context = {}) =>
@@ -164,8 +181,9 @@ const usePlanStore = create<PlanStoreState>()(
         state.paymentWaitingWorkspace = '';
         state.paymentWaitingRegionDomain = '';
         state.paymentUrl = null;
-        // Reset amountLoading to true when opening modal to show loading state
+        // Reset amountLoading to true and clear upgradeAmount when opening modal to show loading state
         state.amountLoading = true;
+        state.upgradeAmount = null;
       }),
 
     hideModal: () =>
@@ -289,8 +307,22 @@ const usePlanStore = create<PlanStoreState>()(
         cardInfoData: null,
         monthlyPrice: null,
         upgradeAmount: null,
-        amountLoading: false,
-        cardInfoLoading: false
+        amountLoading: true,
+        cardInfoLoading: false,
+        defaultSelectedPlan: '',
+        defaultShowPaymentConfirmation: false,
+        defaultWorkspaceName: ''
+      }),
+
+    // Default values actions
+    setDefaultSelectedPlan: (plan) => set({ defaultSelectedPlan: plan }),
+    setDefaultShowPaymentConfirmation: (show) => set({ defaultShowPaymentConfirmation: show }),
+    setDefaultWorkspaceName: (name) => set({ defaultWorkspaceName: name }),
+    clearModalDefaults: () =>
+      set({
+        defaultSelectedPlan: '',
+        defaultShowPaymentConfirmation: false,
+        defaultWorkspaceName: ''
       }),
 
     resetConfirmationModal: () =>
@@ -304,7 +336,7 @@ const usePlanStore = create<PlanStoreState>()(
         state.cardInfoData = null;
         state.monthlyPrice = null;
         state.upgradeAmount = null;
-        state.amountLoading = false;
+        state.amountLoading = true;
         state.cardInfoLoading = false;
         // Don't reset payment waiting state here as it might be needed for retry
       })

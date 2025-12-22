@@ -117,11 +117,6 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
                 {formatExpiryDate(paymentMethod.card.exp_month, paymentMethod.card.exp_year)}
               </span>
               <div className="h-3 w-px bg-zinc-200" />
-              <div className="bg-zinc-200 px-2 rounded-full">
-                <span className="text-sm font-medium text-zinc-500 leading-none">
-                  {t('common:default')}
-                </span>
-              </div>
             </>
           ) : null}
         </div>
