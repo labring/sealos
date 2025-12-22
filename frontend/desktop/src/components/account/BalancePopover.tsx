@@ -42,6 +42,7 @@ export function getPlanBackground(subscription?: WorkspaceSubscription) {
   if (name.includes('starter')) return 'var(--background-image-plan-starter)';
   if (name.includes('pro')) return 'var(--background-image-plan-pro)';
   if (name.includes('team')) return 'var(--background-image-plan-team)';
+  if (name.includes('standard')) return 'var(--background-image-plan-hobby-plus)';
   if (name.includes('enterprise')) return 'var(--background-image-plan-enterprise)';
   return 'var(--background-image-plan-payg)';
 }
