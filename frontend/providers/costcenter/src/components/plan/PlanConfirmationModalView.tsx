@@ -391,6 +391,15 @@ function PaymentWaitingSection({
     setPaymentWaitingFirstDataTime
   } = usePlanStore();
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const hasHandledSuccessRef = useRef(false);
+  const onSuccessRef = useRef(onSuccess);
+  const lastTransactionDataRef = useRef<any>(null);
+  const lastDataUpdatedAtRef = useRef<number>(0);
+
+  // Keep onSuccess ref up to date
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
 
   // Poll for last transaction
   const { data: transactionData, dataUpdatedAt } = useQuery({
@@ -406,25 +415,46 @@ function PaymentWaitingSection({
     refetchOnMount: true
   });
 
-  // Sync to store and log when data is received
+  // Sync to store and log when data is received (only when data actually changes)
   useEffect(() => {
-    if (transactionData?.data) {
-      setLastTransactionData(transactionData.data);
+    const currentData = transactionData?.data;
+    const currentTransaction = currentData?.transaction;
+    const lastTransaction = lastTransactionDataRef.current?.transaction;
+
+    // Compare by transaction ID and Status to detect actual changes
+    const currentKey = currentTransaction
+      ? `${currentTransaction.ID}-${currentTransaction.Status}`
+      : null;
+    const lastKey = lastTransaction ? `${lastTransaction.ID}-${lastTransaction.Status}` : null;
+
+    // Only update if transaction changed (ID or Status) or if this is the first time
+    if (currentData && currentKey !== lastKey) {
+      lastTransactionDataRef.current = currentData;
+      setLastTransactionData(currentData);
       // Record the time when we first receive transaction data
       if (paymentWaitingFirstDataTime === null) {
         setPaymentWaitingFirstDataTime(Date.now());
       }
     }
   }, [
-    transactionData,
-    setLastTransactionData,
+    transactionData?.data?.transaction?.ID,
+    transactionData?.data?.transaction?.Status,
+    transactionData?.data,
     paymentWaitingFirstDataTime,
+    setLastTransactionData,
     setPaymentWaitingFirstDataTime
   ]);
 
-  // Check for payment timeout on every poll
+  // Check for payment timeout on every poll (only when dataUpdatedAt actually changes)
   useEffect(() => {
-    if (paymentWaitingFirstDataTime && !paymentWaitingTimeout && dataUpdatedAt > 0) {
+    // Only check timeout when dataUpdatedAt actually changes (new poll result)
+    if (
+      paymentWaitingFirstDataTime &&
+      !paymentWaitingTimeout &&
+      dataUpdatedAt > 0 &&
+      dataUpdatedAt !== lastDataUpdatedAtRef.current
+    ) {
+      lastDataUpdatedAtRef.current = dataUpdatedAt;
       const firstDataTime = paymentWaitingFirstDataTime;
       const currentTime = Date.now();
       const timeDiff = currentTime - firstDataTime;
@@ -447,7 +477,9 @@ function PaymentWaitingSection({
   // Handle transaction status changes
   useEffect(() => {
     const status = transactionData?.data?.transaction?.Status;
-    if (status === 'completed') {
+    if (status === 'completed' && !hasHandledSuccessRef.current) {
+      // Mark as handled to prevent multiple executions
+      hasHandledSuccessRef.current = true;
       // Stop polling
       setPaymentWaitingShouldStopPolling(true);
       // Show success animation
@@ -455,15 +487,25 @@ function PaymentWaitingSection({
       // Call onSuccess callback after animation
       setTimeout(() => {
         stopPaymentWaiting();
-        onSuccess?.();
+        onSuccessRef.current?.();
       }, 2000);
     }
   }, [
     transactionData?.data?.transaction?.Status,
-    onSuccess,
     stopPaymentWaiting,
     setPaymentWaitingShouldStopPolling
   ]);
+
+  // Reset refs when payment waiting starts or when polling is restarted
+  useEffect(() => {
+    if (workspace && regionDomain && !paymentWaitingShouldStopPolling) {
+      // Reset when starting a new payment waiting session
+      hasHandledSuccessRef.current = false;
+      setShowSuccessAnimation(false);
+      lastTransactionDataRef.current = null;
+      lastDataUpdatedAtRef.current = 0;
+    }
+  }, [workspace, regionDomain, paymentWaitingShouldStopPolling]);
 
   const transactionStatus = transactionData?.data?.transaction?.Status;
   const isPending = transactionStatus === 'pending';

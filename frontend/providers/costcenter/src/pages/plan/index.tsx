@@ -360,16 +360,9 @@ export default function Plan() {
         });
       }
 
-      // Refresh subscription data
-      await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      // Note: invalidate will be handled in handleModalClose when modal is closed
+      // Only refetch immediately if needed for UI updates
       await refetchSubscriptionInfo();
-      setTimeout(async () => {
-        // Refresh subscription data with delay
-        await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-        await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-        await refetchSubscriptionInfo();
-      }, 5000);
 
       if (data.code === 200) {
         if (data.data?.redirectUrl) {
@@ -427,9 +420,7 @@ export default function Plan() {
       setSubscriptionModalOpen(false);
     },
     onError: (error: any) => {
-      // Refresh subscription data on error as well
-      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      // Note: invalidate will be handled in handleModalClose when modal is closed
       if (error.code === 409) {
         toast({
           title: 'Workspace creation failed',
@@ -690,9 +681,9 @@ export default function Plan() {
           stripePromise={stripePromise}
           request={request}
           onPaySuccess={async () => {
+            // Note: invalidate will be handled when modal closes
+            // Wait a bit for payment to be processed
             await new Promise((s) => setTimeout(s, 2000));
-            await queryClient.invalidateQueries({ queryKey: ['billing'] });
-            await queryClient.invalidateQueries({ queryKey: ['getAccount'] });
           }}
         />
       )}
@@ -702,9 +693,9 @@ export default function Plan() {
           ref={transferRef}
           balance={balance}
           onTransferSuccess={async () => {
+            // Note: invalidate will be handled when modal closes
+            // Wait a bit for transfer to be processed
             await new Promise((s) => setTimeout(s, 2000));
-            await queryClient.invalidateQueries({ queryKey: ['billing'] });
-            await queryClient.invalidateQueries({ queryKey: ['getAccount'] });
           }}
           k8s_username={k8s_username}
         />
@@ -763,17 +754,7 @@ export default function Plan() {
           clearRedeemCode();
         }}
         onPaymentSuccess={async () => {
-          // Invalidate queries to refresh subscription data
-          await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-          await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-          await refetchSubscriptionInfo();
-          setTimeout(async () => {
-            // Refresh subscription data with delay
-            await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-            await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-            await refetchSubscriptionInfo();
-          }, 5000);
-
+          // Note: invalidate will be handled in handleModalClose when modal is closed
           // Close all modals before showing congratulations modal
           hideModal();
           // Show congratulations modal

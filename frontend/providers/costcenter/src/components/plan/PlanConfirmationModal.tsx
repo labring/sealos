@@ -332,8 +332,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const handlePaymentCancel = () => {
     // Reset payment waiting state and allow user to retry
     stopPaymentWaiting();
-    // Refetch upgrade amount to recalculate prices
-    queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+    // Note: invalidate will be handled in handleModalClose when modal is closed
   };
 
   // Handle modal close - reset state and invalidate queries
