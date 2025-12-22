@@ -33,6 +33,9 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     name: string;
   }
 ]): DevboxListItemTypeV2 => {
+  const gpuType = devbox.spec.nodeSelector?.[gpuNodeSelectorKey];
+  const gpuAmount = devbox.spec.resource[gpuResourceKey];
+
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
@@ -43,6 +46,11 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
+    gpu: gpuType || gpuAmount ? {
+      type: gpuType || '',
+      amount: Number(gpuAmount || 0),
+      manufacturers: 'nvidia'
+    } : undefined,
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),

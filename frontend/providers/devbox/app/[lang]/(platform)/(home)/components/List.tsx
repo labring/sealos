@@ -25,7 +25,9 @@ import {
   type FilterFn,
   getSortedRowModel,
   getFilteredRowModel,
-  type SortingState
+  type SortingState,
+  type HeaderContext,
+  type CellContext
 } from '@tanstack/react-table';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -34,6 +36,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 
 import { useRouter } from '@/i18n';
 import { useDateTimeStore } from '@/stores/date';
+import { usePriceStore } from '@/stores/price';
 import { DevboxListItemTypeV2, DevboxStatusMapType } from '@/types/devbox';
 import { DevboxStatusEnum, devboxStatusMap } from '@/constants/devbox';
 import { generateMockMonitorData } from '@/constants/mock';
@@ -59,6 +62,7 @@ import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import SearchEmpty from './SearchEmpty';
+import GPUItem from '@/components/GPUItem';
 
 const DeleteDevboxDialog = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
 const EditRemarkDialog = dynamic(() => import('@/components/dialogs/EditRemarkDialog'));
@@ -102,6 +106,7 @@ const DevboxList = ({
     useControlDevbox(refetchDevboxList);
 
   const { startDateTime: dateRangeStart } = useDateTimeStore();
+  const { sourcePrice } = usePriceStore();
 
   // Check if a specific time range is selected (not "all time")
   const isSpecificTimeRangeSelected = useMemo(() => {
@@ -133,7 +138,7 @@ const DevboxList = ({
     () => [
       {
         accessorKey: 'name',
-        header: ({ column }) => (
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex cursor-pointer items-center gap-2 select-none hover:text-zinc-800">
@@ -191,7 +196,7 @@ const DevboxList = ({
           </DropdownMenu>
         ),
         size: 250,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <div className="flex w-full cursor-pointer items-center gap-2 pr-4">
@@ -292,7 +297,7 @@ const DevboxList = ({
         accessorKey: 'status',
         enableColumnFilter: true,
         filterFn: statusFilterFn,
-        header: ({ column, table }) => {
+        header: ({ column, table }: HeaderContext<DevboxListItemTypeV2, unknown>) => {
           const currentData = table.getCoreRowModel().rows.map((row) => row.original);
 
           const existingStatuses = new Set(
@@ -358,7 +363,7 @@ const DevboxList = ({
             </DropdownMenu>
           );
         },
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           if (!item.status || !item.status.value) return null;
           return (
@@ -371,9 +376,9 @@ const DevboxList = ({
       },
       {
         accessorKey: 'cpu',
-        header: ({ column }) => <span className="select-none">{t('cpu')}</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">{t('cpu')}</span>,
         size: 256,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <MonitorChart
@@ -386,9 +391,9 @@ const DevboxList = ({
       },
       {
         accessorKey: 'memory',
-        header: ({ column }) => <span className="select-none">{t('memory')}</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">{t('memory')}</span>,
         size: 256,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <MonitorChart
@@ -400,10 +405,19 @@ const DevboxList = ({
         }
       },
       {
+        accessorKey: 'gpu',
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">GPU</span>,
+        size: 180,
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
+          const item = row.original;
+          return <GPUItem gpu={item.gpu} />;
+        }
+      },
+      {
         accessorKey: 'createTime',
         enableColumnFilter: true,
         filterFn: dateFilterFn,
-        header: ({ column }) => (
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex cursor-pointer items-center gap-2 hover:text-zinc-800">
@@ -460,7 +474,7 @@ const DevboxList = ({
           </DropdownMenu>
         ),
         size: 150,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return (
             <span className="text-sm text-zinc-600">
@@ -471,9 +485,9 @@ const DevboxList = ({
       },
       {
         id: 'actions',
-        header: ({ column }) => <span className="select-none">{t('action')}</span>,
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">{t('action')}</span>,
         size: 300,
-        cell: ({ row }) => {
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           if (!item.status || !item.status.value) {
             return (
@@ -593,9 +607,14 @@ const DevboxList = ({
           );
         }
       }
-    ],
+    ].filter((column) => {
+      if (column.accessorKey === 'gpu' && !sourcePrice.gpu) {
+        return false;
+      }
+      return true;
+    }),
     // NOTE: do not add devboxList dependency, it will cause infinite re-render
-    [statusFilter, isSpecificTimeRangeSelected]
+    [statusFilter, isSpecificTimeRangeSelected, sourcePrice.gpu]
   );
 
   const { startDateTime } = useDateTimeStore();

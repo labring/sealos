@@ -2,7 +2,7 @@ export interface SourcePrice {
   cpu: number;
   memory: number;
   nodeports: number;
-  gpu: {
+  gpu?: {
     alias: string;
     type: string;
     price: number;
