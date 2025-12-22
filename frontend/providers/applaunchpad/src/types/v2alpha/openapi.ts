@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
-import { LaunchpadApplicationSchema } from '@/types/schema';
+import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
 import { CreateLaunchpadRequestSchema, UpdateAppResourcesSchema } from './request_schema';
 
 export const ErrorResponseSchema = z.object({
@@ -75,7 +75,7 @@ export const document = createDocument({
         description:
           'Creates a new containerized application with specified quota, networking, storage, and environment configurations.\n\n' +
           'Key points:\n' +
-          '- Quota: Use quota.replicas (1-20) for fixed replicas, or quota.hpa for auto-scaling (cannot use both)\n' +
+          '- Quota: Use quota.replicas (1-20) for fixed replicas, or quota.hpa for auto-scaling (cannot use both). CPU and memory must be in range [0.1, 32]\n' +
           '- Image: Set image.imageRegistry to null for public images, or provide credentials for private images\n' +
           '- Ports: http/grpc/ws protocols support public domain, tcp/udp/sctp use NodePort\n' +
           '- Storage: Providing storage creates a StatefulSet instead of Deployment',
@@ -102,7 +102,7 @@ export const document = createDocument({
                     value: {
                       code: 400,
                       message: 'Validation failed',
-                      error: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
+                      error: 'CPU must be in range [0.1, 32]'
                     }
                   },
                   duplicateName: {
@@ -198,7 +198,7 @@ export const document = createDocument({
         summary: 'Get application details by name',
         description:
           'Retrieves complete application configuration and status including quota, networking, environment, storage, and runtime status.\n\n' +
-          'Returns: metadata (name, id, createdAt, resourceType), image config, quota (CPU/memory/replicas/HPA), ports (with privateAddress/publicAddress), env vars, ConfigMap, storage, and status enum (running/creating/waiting/error/pause).',
+          "Returns: metadata (name, uid, createdAt, upTime, resourceType='launchpad', kind), image config, quota (CPU/memory/replicas/HPA), ports (with privateAddress/publicAddress), env vars, ConfigMap, storage, and status enum (running/creating/waiting/error/pause).",
         parameters: [
           {
             name: 'name',
@@ -221,14 +221,15 @@ export const document = createDocument({
                     summary: 'Deployment with fixed replicas',
                     value: {
                       name: 'web-api',
-                      resourceType: 'deployment',
+                      resourceType: 'launchpad',
+                      kind: 'deployment',
                       image: {
                         imageName: 'nginx:1.21',
                         imageRegistry: null
                       },
                       quota: {
-                        cpu: 1,
-                        memory: 2,
+                        cpu: 1.5,
+                        memory: 3.0,
                         replicas: 3
                       },
                       ports: [
@@ -241,8 +242,9 @@ export const document = createDocument({
                           customDomain: ''
                         }
                       ],
-                      id: 'app-12345',
+                      uid: 'app-12345',
                       createdAt: '2024-01-01T00:00:00Z',
+                      upTime: '2h15m',
                       status: 'running'
                     }
                   }
@@ -328,7 +330,7 @@ export const document = createDocument({
         description:
           'Partially updates application configuration. Supports quota, image, ports, env, storage, and ConfigMap.\n\n' +
           'Key points:\n' +
-          '- Quota: Switch between fixed replicas and HPA by providing one and omitting the other\n' +
+          '- Quota: Switch between fixed replicas and HPA by providing one and omitting the other. CPU and memory must be in range [0.1, 32]\n' +
           '- Image: Change image or switch public/private (set imageRegistry to null for public)\n' +
           '- Ports: Complete replacement - include portName to update, omit to create, missing ports are deleted, use [] to remove all\n' +
           '- ConfigMap: Complete replacement - provide all entries to keep, use [] to remove all, omit to keep unchanged. ConfigMap updates are handled through this unified endpoint (no separate /configmap endpoint)\n' +
@@ -370,7 +372,7 @@ export const document = createDocument({
                     value: {
                       code: 400,
                       message: 'Invalid request body',
-                      error: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
+                      error: 'CPU must be in range [0.1, 32]'
                     }
                   },
                   unsupportedOperation: {

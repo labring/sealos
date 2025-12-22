@@ -3,19 +3,13 @@ import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-const CpuOptions = z.union([
-  z.literal(0.5), 
-  z.literal(1), z.literal(2), z.literal(4), z.literal(8), z.literal(16)
-]).openapi({
-  description: 'CPU cores - minimum 0.5 cores (e.g., 0.5 -> 500m)',
+const CpuOptions = z.number().min(0.1).max(32).openapi({
+  description: 'CPU cores - range [0.1, 32] (e.g., 0.5 -> 500m)',
   example: 1
 });
 
-const MemoryOptions = z.union([
-  z.literal(0.5), z.literal(1), z.literal(2), 
-  z.literal(4), z.literal(8), z.literal(16), z.literal(32)
-]).openapi({
-  description: 'Memory in GB - minimum 0.5 GB (e.g., 1 -> 1Gi)',
+const MemoryOptions = z.number().min(0.1).max(32).openapi({
+  description: 'Memory in GB - range [0.1, 32] (e.g., 1 -> 1Gi)',
   example: 2
 });
 

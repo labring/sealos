@@ -72,18 +72,8 @@ export const dbTypeSchema = z.enum([
 export const kubeBlockClusterTerminationPolicySchema = z.enum(['delete', 'wipeout']);
 
 export const baseResourceSchema = z.object({
-  cpu: z
-    .number()
-    .refine((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val), {
-      message: 'CPU must be one of: 0.5, 1, 2, 3, 4, 5, 6, 7, 8 cores (minimum 0.5 core)'
-    })
-    .default(0.5),
-  memory: z
-    .number()
-    .refine((val) => [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val), {
-      message: 'Memory must be one of: 0.5, 1, 2, 4, 6, 8, 12, 16, 32 GB (minimum 0.5 GB)'
-    })
-    .default(0.5),
+  cpu: z.number().min(0.1).max(32).default(0.5),
+  memory: z.number().min(0.1).max(32).default(0.5),
   storage: z.number().min(1).max(300).default(3)
 });
 
@@ -198,18 +188,8 @@ export const dblistItemSchema = dbEditSchema.and(
 );
 
 export const updateResourceSchema = z.object({
-  cpu: z
-    .number()
-    .refine((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val), {
-      message: 'CPU must be one of: 0.5, 1, 2, 3, 4, 5, 6, 7, 8 cores (minimum 0.5 core)'
-    })
-    .optional(),
-  memory: z
-    .number()
-    .refine((val) => [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val), {
-      message: 'Memory must be one of: 0.5, 1, 2, 4, 6, 8, 12, 16, 32 GB (minimum 0.5 GB)'
-    })
-    .optional(),
+  cpu: z.number().min(0.1).max(32).optional(),
+  memory: z.number().min(0.1).max(32).optional(),
   storage: z.number().min(1).max(300).optional(),
   replicas: z.number().min(1).max(20).optional()
 });
