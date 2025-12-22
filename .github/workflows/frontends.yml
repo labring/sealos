@@ -13,6 +13,11 @@ on:
         default: "latest"
         required: false
         type: string
+      force_all:
+        description: "Force build all modules (for release)"
+        default: false
+        required: false
+        type: boolean
   workflow_dispatch:
     inputs:
       push_image:
@@ -31,21 +36,131 @@ on:
       - "frontend/desktop/**"
       - "frontend/providers/**"
       - "frontend/packages/**"
+      - "frontend/package.json"
+      - "frontend/pnpm-lock.yaml"
+      - "frontend/pnpm-workspace.yaml"
+      - "frontend/tsconfig*.json"
       - ".github/workflows/frontend.yml"
+      - ".github/workflows/frontends.yml"
       - "!**/*.md"
-      - "!**/*.yaml"
   pull_request:
     branches: ["*"]
     paths:
       - "frontend/desktop/**"
       - "frontend/providers/**"
       - "frontend/packages/**"
+      - "frontend/package.json"
+      - "frontend/pnpm-lock.yaml"
+      - "frontend/pnpm-workspace.yaml"
+      - "frontend/tsconfig*.json"
       - ".github/workflows/frontend.yml"
+      - ".github/workflows/frontends.yml"
       - "!**/*.md"
-      - "!**/*.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-matrix.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            packages:
+              - 'frontend/packages/**'
+            root-config:
+              - 'frontend/package.json'
+              - 'frontend/pnpm-lock.yaml'
+              - 'frontend/pnpm-workspace.yaml'
+              - 'frontend/tsconfig*.json'
+              - '.github/workflows/frontend.yml'
+              - '.github/workflows/frontends.yml'
+            aiproxy:
+              - 'frontend/providers/aiproxy/**'
+            license:
+              - 'frontend/providers/license/**'
+            cronjob:
+              - 'frontend/providers/cronjob/**'
+            template:
+              - 'frontend/providers/template/**'
+            applaunchpad:
+              - 'frontend/providers/applaunchpad/**'
+            terminal:
+              - 'frontend/providers/terminal/**'
+            dbprovider:
+              - 'frontend/providers/dbprovider/**'
+            costcenter:
+              - 'frontend/providers/costcenter/**'
+            objectstorage:
+              - 'frontend/providers/objectstorage/**'
+            kubepanel:
+              - 'frontend/providers/kubepanel/**'
+            workorder:
+              - 'frontend/providers/workorder/**'
+            devbox:
+              - 'frontend/providers/devbox/**'
+            desktop:
+              - 'frontend/desktop/**'
+      - name: Generate build matrix
+        id: set-matrix
+        run: |
+          modules=()
+
+          # Check if we need to build all modules
+          if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
+                "${{ steps.filter.outputs.root-config }}" == "true" || \
+                "${{ inputs.force_all }}" == "true" || \
+                "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            modules=(
+              "providers/aiproxy"
+              "providers/license"
+              "providers/cronjob"
+              "providers/template"
+              "providers/applaunchpad"
+              "providers/terminal"
+              "providers/dbprovider"
+              "providers/costcenter"
+              "providers/objectstorage"
+              "providers/kubepanel"
+              "providers/workorder"
+              "providers/devbox"
+              "desktop"
+            )
+          else
+            # Only build changed modules
+            [[ "${{ steps.filter.outputs.aiproxy }}" == "true" ]] && modules+=("providers/aiproxy")
+            [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
+            [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
+            [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
+            [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
+            [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
+            [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
+            [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
+            [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
+            [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
+            [[ "${{ steps.filter.outputs.workorder }}" == "true" ]] && modules+=("providers/workorder")
+            [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
+            [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
+          fi
+
+          # Convert to JSON array (compact format for GitHub Actions)
+          if [ ${#modules[@]} -eq 0 ]; then
+            json_modules="[]"
+          else
+            json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s -c .)
+          fi
+          echo "modules=$json_modules" >> $GITHUB_OUTPUT
+          echo "Building modules: $json_modules"
+
   image-build:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.modules != '[]'
     uses: ./.github/workflows/frontend.yml
     permissions:
       contents: read
@@ -54,22 +169,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module:
-          [
-            providers/aiproxy,
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
     with:
       module: ${{ matrix.module }}
       push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}

@@ -3,19 +3,23 @@ name: E2E Test sealos image-cri-shim service
 on:
   workflow_dispatch:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
     paths:
       - ".github/workflows/e2e_test_image_cri_shim.yml"
       - "lifecycle/cmd/**"
       - "lifecycle/staging/src/github.com/image-cri-shim/**"
       - "lifecycle/test/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths:
       - ".github/workflows/e2e_test_image_cri_shim.yml"
       - "lifecycle/cmd/**"
       - "lifecycle/staging/src/github.com/image-cri-shim/**"
       - "lifecycle/test/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   call_ci_workflow:
@@ -25,7 +29,7 @@ jobs:
       e2e: true
       image: false
   verify-image_cri_shim:
-    needs: [ call_ci_workflow ]
+    needs: [call_ci_workflow]
     runs-on: ubuntu-24.04
     steps:
       - name: Install Dependencies

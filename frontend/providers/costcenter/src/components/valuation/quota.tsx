@@ -25,14 +25,17 @@ export default function Quota(props: StackProps) {
       if (!entity) {
         return [];
       }
-      const _limit = Number.parseInt(d.limit * 1000 + '');
-      const _used = Number.parseInt(d.used * 1000 + '');
+      // GPU is already in integer units, no need to multiply/divide by 1000
+      const isGpu = d.type === 'gpu';
+      const _limit = isGpu ? d.limit : Number.parseInt(d.limit * 1000 + '');
+      const _used = isGpu ? d.used : Number.parseInt(d.used * 1000 + '');
+      const remain = isGpu ? Math.max(0, d.limit - d.used) : Math.max(0, (_limit - _used) / 1000);
       return [
         {
           ...d,
-          limit: _limit / 1000,
-          used: _used / 1000,
-          remain: (_limit - _used) / 1000,
+          limit: isGpu ? d.limit : _limit / 1000,
+          used: isGpu ? d.used : _used / 1000,
+          remain: remain,
           title: t(d.type),
           unit: t(entity.unit),
           bg: entity.bg

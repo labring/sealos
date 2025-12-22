@@ -28,7 +28,7 @@ on:
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
 
 permissions:
@@ -44,6 +44,7 @@ jobs:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
+      force_all: true
     secrets: inherit
 
   release-frontends:
@@ -52,6 +53,7 @@ jobs:
     with:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
+      force_all: true
     secrets: inherit
 
   release-service:
@@ -61,6 +63,7 @@ jobs:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
+      force_all: true
     secrets: inherit
 
   release-webhook:

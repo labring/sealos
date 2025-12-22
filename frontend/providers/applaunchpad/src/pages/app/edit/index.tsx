@@ -371,7 +371,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           portName: network.portName || nanoid(),
           port: network.port || 80,
           protocol: network.protocol || 'TCP',
-          appProtocol: network.appProtocol || 'HTTP',
+          appProtocol: network.appProtocol || undefined,
           openPublicDomain: network.openPublicDomain || false,
           openNodePort: network.openNodePort || false,
           publicDomain: network.publicDomain || nanoid(),
