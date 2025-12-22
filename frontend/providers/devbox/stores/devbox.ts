@@ -84,15 +84,16 @@ export const useDevboxStore = create<State>()(
           })
         ]);
         set((state) => {
-          state.devboxList = state.devboxList.map((item) => ({
-            ...item,
-            usedCpu:
-              item.name === devboxName && averageCpuData[0] ? averageCpuData[0] : item.usedCpu,
-            usedMemory:
-              item.name === devboxName && averageMemoryData[0]
-                ? averageMemoryData[0]
-                : item.usedMemory
-          }));
+          const targetIndex = state.devboxList.findIndex((item) => item.name === devboxName);
+          if (targetIndex !== -1) {
+            const item = state.devboxList[targetIndex];
+            if (averageCpuData[0]) {
+              item.usedCpu = averageCpuData[0];
+            }
+            if (averageMemoryData[0]) {
+              item.usedMemory = averageMemoryData[0];
+            }
+          }
         });
       },
       devboxVersionList: [],
@@ -176,10 +177,10 @@ export const useDevboxStore = create<State>()(
               state.devboxDetail.sshConfig.sshPort = sshPort;
             }
           }
-          state.devboxList = state.devboxList.map((item) => ({
-            ...item,
-            status: item.name === devboxName ? status : item.status
-          }));
+          const targetIndex = state.devboxList.findIndex((item) => item.name === devboxName);
+          if (targetIndex !== -1) {
+            state.devboxList[targetIndex].status = status;
+          }
         });
         return 'success';
       },
