@@ -783,6 +783,28 @@ type WorkspaceSubscriptionUpgradeAmountReq struct {
 	WorkspaceSubscriptionOperatorReq `json:",inline" bson:",inline"`
 }
 
+type WorkspaceSubscriptionInvoiceCancelReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Invoice ID
+	// @Description The Stripe invoice ID to cancel
+	// @JSONSchema required
+	InvoiceID string `json:"invoiceID" bson:"invoiceID" binding:"required" example:"in_1234567890"`
+
+	// @Summary Workspace name
+	// @Description Workspace name (for authorization)
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain (for authorization)
+	// @JSONSchema required
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+}
+
 func ParseWorkspaceSubscriptionOperatorReq(
 	c *gin.Context,
 ) (*WorkspaceSubscriptionOperatorReq, error) {
@@ -849,6 +871,23 @@ func ParseWorkspaceSubscriptionCardInfoReq(c *gin.Context) (*WorkspaceSubscripti
 		return nil, errors.New("workspace cannot be empty")
 	}
 	// regionDomain is optional, so we don't validate it here
+	return req, nil
+}
+
+func ParseWorkspaceSubscriptionInvoiceCancelReq(c *gin.Context) (*WorkspaceSubscriptionInvoiceCancelReq, error) {
+	req := &WorkspaceSubscriptionInvoiceCancelReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+	if req.InvoiceID == "" {
+		return nil, errors.New("invoiceID cannot be empty")
+	}
+	if req.Workspace == "" {
+		return nil, errors.New("workspace cannot be empty")
+	}
+	if req.RegionDomain == "" {
+		return nil, errors.New("regionDomain cannot be empty")
+	}
 	return req, nil
 }
 

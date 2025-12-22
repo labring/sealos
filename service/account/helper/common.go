@@ -98,6 +98,7 @@ const (
 	WorkspaceSubscriptionPlans           = "/workspace-subscription/plans"
 	WorkspaceSubscriptionCardManage      = "/workspace-subscription/card-manage"
 	WorkspaceSubscriptionCardInfo        = "/workspace-subscription/card-info"
+	WorkspaceSubscriptionInvoiceCancel   = "/workspace-subscription/invoice-cancel"
 )
 
 const PayNotificationPath = PaymentGroup + Notify

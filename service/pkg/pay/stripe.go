@@ -657,6 +657,15 @@ func (s *StripeService) GetPrice(priceID string) (*stripe.Price, error) {
 	return p, nil
 }
 
+// GetInvoice retrieves a Stripe invoice by ID
+func (s *StripeService) GetInvoice(invoiceID string) (*stripe.Invoice, error) {
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("invoice.Get: %v", err)
+	}
+	return inv, nil
+}
+
 // ListPrices lists Stripe prices with optional filters
 func (s *StripeService) ListPrices(activeOnly bool) ([]*stripe.Price, error) {
 	params := &stripe.PriceListParams{}
@@ -1095,6 +1104,24 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 			"upgrade_in_progress": "true", // Flag to indicate upgrade in progress
 		},
 	}
+	invParams := &stripe.InvoiceParams{
+		Metadata: map[string]string{
+			"payment_id":            payReqID,
+			"customer_id":           sub.Customer.ID,
+			"subscription_id":       subscriptionID, // Add subscription ID for easier retrieval
+			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
+			"new_plan_name":         newPlanName,
+			"plan_name":             newPlanName,
+			"old_plan_name":         oldPlanName,
+			"old_price_id":          oldPriceID,
+			"new_price_id":          newPriceID,
+			"user_uid":              sub.Metadata["user_uid"],
+			"workspace":             sub.Metadata["workspace"],
+			"region_domain":         sub.Metadata["region_domain"],
+			"upgrade_payment_id":    payReqID, // Track this specific upgrade payment
+			"upgrade_in_progress":   "true",   // Flag to indicate upgrade in progress
+		},
+	}
 
 	// Add promotion code if provided (assume validation already done at higher level)
 	if promotionCode != "" {
@@ -1109,6 +1136,7 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 				PromotionCode: stripe.String(pc.ID),
 			},
 		}
+		invParams.AddMetadata("promotion_code", promotionCode)
 	}
 
 	// Update the subscription
@@ -1132,23 +1160,7 @@ func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlan
 	}
 
 	// Update invoice metadata to include all necessary metadata for upgrade subscription handling
-	_, err = invoice.Update(invoiceID, &stripe.InvoiceParams{
-		Metadata: map[string]string{
-			"payment_id":            payReqID,
-			"customer_id":           sub.Customer.ID,
-			"subscription_id":       subscriptionID, // Add subscription ID for easier retrieval
-			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
-			"new_plan_name":         newPlanName,
-			"plan_name":             newPlanName,
-			"old_plan_name":         oldPlanName,
-			"old_price_id":          oldPriceID,
-			"user_uid":              sub.Metadata["user_uid"],
-			"workspace":             sub.Metadata["workspace"],
-			"region_domain":         sub.Metadata["region_domain"],
-			"upgrade_payment_id":    payReqID, // Track this specific upgrade payment
-			"upgrade_in_progress":   "true",   // Flag to indicate upgrade in progress
-		},
-	})
+	_, err = invoice.Update(invoiceID, invParams)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to update invoice metadata for upgrade: %v", err)
 	}
