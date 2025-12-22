@@ -150,6 +150,8 @@ const usePlanStore = create<PlanStoreState>()(
         state.paymentWaitingWorkspace = '';
         state.paymentWaitingRegionDomain = '';
         state.paymentUrl = null;
+        // Reset amountLoading to true when opening modal to show loading state
+        state.amountLoading = true;
       }),
 
     showDowngradeModal: (plan, context = {}) =>
@@ -162,6 +164,8 @@ const usePlanStore = create<PlanStoreState>()(
         state.paymentWaitingWorkspace = '';
         state.paymentWaitingRegionDomain = '';
         state.paymentUrl = null;
+        // Reset amountLoading to true when opening modal to show loading state
+        state.amountLoading = true;
       }),
 
     hideModal: () =>

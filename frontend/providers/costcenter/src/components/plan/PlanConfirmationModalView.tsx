@@ -700,12 +700,10 @@ export function PlanConfirmationModalView({
     paymentWaitingWorkspace,
     paymentWaitingRegionDomain,
     paymentUrl,
-    redeemCode,
     subscriptionData
   } = usePlanStore();
 
   const isCreateMode = modalContext.isCreateMode ?? false;
-  const workspaceName = modalContext.workspaceName;
   const paymentMethod = cardInfoData?.payment_method;
   const redeemCodeValidating = amountLoading;
 
@@ -726,7 +724,7 @@ export function PlanConfirmationModalView({
   ) : (
     <ActionButton
       isCreateMode={isCreateMode}
-      amountLoading={amountLoading ?? false}
+      amountLoading={amountLoading ?? true}
       onConfirm={onConfirm}
       isPaymentWaiting={isPaymentWaiting}
       isSubmitting={isSubmitting}
@@ -746,7 +744,7 @@ export function PlanConfirmationModalView({
       <PriceDisplay
         monthlyPrice={monthlyPrice ?? 0}
         upgradeAmount={upgradeAmount ?? undefined}
-        amountLoading={amountLoading ?? false}
+        amountLoading={amountLoading ?? true}
         isCreateMode={isCreateMode}
       />
     </>
