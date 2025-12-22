@@ -291,7 +291,6 @@
   "region_workspace_cost": "{{region}} / {{workspace}} 费用",
   "remain": "剩余",
   "remaining_balance": "余额",
-  "renewal_time": "续费时间",
   "renews_at_full_price": "续费时将按原价收费。",
   "resource": "资源",
   "resource_name": "资源名",

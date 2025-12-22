@@ -68,7 +68,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: responseParseResult.data
     });
   } catch (error: any) {
-    console.log({ error: error.response?.data });
     const status = error.response?.status;
     const errorData = error.response?.data;
 
@@ -87,24 +86,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (status === 409) {
       // Check if this is a pending upgrade conflict (has pending_upgrade field)
-      if (errorData?.pending_upgrade) {
+      // The pending_upgrade might be at the top level or nested
+      const pendingUpgradeData = errorData?.pending_upgrade || errorData?.data?.pending_upgrade;
+
+      if (pendingUpgradeData) {
         // Validate pending_upgrade structure
-        const pendingUpgradeParseResult = PendingUpgradeSchema.safeParse(errorData.pending_upgrade);
+        const pendingUpgradeParseResult = PendingUpgradeSchema.safeParse(pendingUpgradeData);
+
         if (pendingUpgradeParseResult.success) {
           // Return 409 error using jsonRes with pending_upgrade in data field
           return jsonRes(res, {
             code: 409,
-            message: errorData?.error || 'Previous payment not complete',
+            message: errorData?.error || errorData?.message || 'Previous payment not completed',
             data: {
               pending_upgrade: pendingUpgradeParseResult.data
             }
           });
         }
       }
+
       // Fallback to promotion code exhausted for other 409 errors
       return jsonRes(res, {
         code: 409,
-        message: errorData?.error || 'Promotion code exhausted'
+        message: errorData?.error || errorData?.message || 'Promotion code exhausted'
       });
     }
 

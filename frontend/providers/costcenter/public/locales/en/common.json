@@ -291,7 +291,6 @@
   "region_workspace_cost": "{{region}} / {{workspace}} Cost",
   "remain": "Remaining",
   "remaining_balance": "Balance",
-  "renewal_time": "Renewal Time",
   "renews_at_full_price": "Renews at full price.",
   "resource": "resource",
   "resource_name": "Resource Name",

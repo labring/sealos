@@ -171,6 +171,14 @@ export const LastTransactionResponseSchema = z.object({
 });
 export type LastTransactionResponse = z.infer<typeof LastTransactionResponseSchema>;
 
+// Original plan information (nested in pending upgrade)
+export const OriginalPlanSchema = z.object({
+  plan_name: z.string(),
+  price: z.number(),
+  period: z.string()
+});
+export type OriginalPlan = z.infer<typeof OriginalPlanSchema>;
+
 // Pending upgrade information (returned in 409 conflict response)
 export const PendingUpgradeSchema = z.object({
   plan_name: z.string(),
@@ -178,9 +186,15 @@ export const PendingUpgradeSchema = z.object({
   invoice_id: z.string(),
   payment_url: z.string(),
   amount_due: z.number(),
+  total_amount: z.number().optional(), // Optional: if not provided, use amount_due
   currency: z.string(),
   created_at: z.number(),
-  status: z.string()
+  status: z.string(),
+  promotion_code: z.string().optional(),
+  has_discount: z.boolean().optional(),
+  discount_amount: z.number().optional(),
+  original_plan: OriginalPlanSchema.optional(),
+  original_amount: z.number().optional()
 });
 export type PendingUpgrade = z.infer<typeof PendingUpgradeSchema>;
 
@@ -198,7 +212,8 @@ export const PaymentResponseSchema = z.object({
   redirectUrl: z.string().optional(),
   message: z.string().optional(),
   error: z.string().optional(),
-  payID: z.string().optional()
+  payID: z.string().optional(),
+  invoiceID: z.string().optional()
 });
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;
 

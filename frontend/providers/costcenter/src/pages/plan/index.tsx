@@ -369,7 +369,14 @@ export default function Plan() {
           if (variables.operator === 'upgraded') {
             const targetWorkspace = variables.workspace || session?.user?.nsid || '';
             const targetRegionDomain = variables.regionDomain || region?.domain || '';
-            startPaymentWaiting(targetWorkspace, targetRegionDomain, data.data.redirectUrl);
+            // Set invoice ID from response if available, otherwise don't set it
+            const invoiceId = data.data?.invoiceID;
+            startPaymentWaiting(
+              targetWorkspace,
+              targetRegionDomain,
+              data.data.redirectUrl,
+              invoiceId
+            );
             openInNewWindow(data.data.redirectUrl);
           } else {
             hideModal();

@@ -371,9 +371,14 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   // Handle cancel payment waiting invoice mutation
   const cancelPaymentWaitingMutation = useMutation({
     mutationFn: cancelInvoice,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Show success toast
+      toast({
+        title: t('common:success'),
+        description: t('common:cancel_invoice_success'),
+        status: 'success'
+      });
       // Reset payment waiting state and close modal after successful cancellation
-      // No toast notification on success
       stopPaymentWaiting();
       handleModalClose(true); // Force close after successful cancellation
       onCancel?.();
@@ -395,8 +400,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   });
 
   const handlePaymentCancel = () => {
-    // Try to get invoice ID from paymentWaitingInvoiceId or from transaction PayID
-    const invoiceId = paymentWaitingInvoiceId || lastTransactionData?.transaction?.PayID;
+    const invoiceId = paymentWaitingInvoiceId;
 
     // If there's an invoice ID, try to cancel it first
     if (invoiceId && workspace && regionDomain) {
@@ -431,15 +435,40 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     // Update modal to show pending plan
     showConfirmationModal(pendingPlanObj, modalContext);
 
+    // Calculate original amount
+    // If original_amount is provided and > 0, use it
+    // Otherwise, use total_amount if available, or fallback to amount_due
+    const originalAmount =
+      pendingUpgrade.original_amount !== undefined && pendingUpgrade.original_amount > 0
+        ? pendingUpgrade.original_amount
+        : pendingUpgrade.total_amount !== undefined && pendingUpgrade.total_amount > 0
+          ? pendingUpgrade.total_amount
+          : pendingUpgrade.amount_due;
+
+    // Set discount information if available
+    const hasDiscount = pendingUpgrade.has_discount ?? false;
+    const discountAmount = pendingUpgrade.discount_amount ?? 0;
+    const promotionCode = pendingUpgrade.promotion_code || '';
+
+    // Set redeem code if promotion code exists
+    if (promotionCode) {
+      setRedeemCode(promotionCode);
+      if (hasDiscount && discountAmount > 0) {
+        setRedeemCodeDiscount(discountAmount);
+        setRedeemCodeValidated(true);
+      }
+    }
+
     // Set the plan and amount from pending upgrade
     setUpgradeAmountData({
       amount: pendingUpgrade.amount_due,
-      promotion_code: '',
-      has_discount: false,
-      original_amount: pendingUpgrade.amount_due
+      promotion_code: promotionCode,
+      has_discount: hasDiscount,
+      original_amount: originalAmount
     });
     setUpgradeAmount(pendingUpgrade.amount_due);
-    setMonthlyPrice(pendingUpgrade.amount_due);
+    // Set monthly price to original amount (before discount)
+    setMonthlyPrice(originalAmount);
     setAmountLoading(false);
 
     // Start payment waiting mode with invoice ID
