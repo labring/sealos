@@ -86,7 +86,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const isPaygUser = isPaygType();
   const operator = isCreateMode || isPaygUser ? 'created' : 'upgraded';
 
-  const queryEnabled = isOpen && !!(plan && workspace && regionDomain);
+  // Don't query upgrade-amount when payment is waiting
+  const queryEnabled = isOpen && !!(plan && workspace && regionDomain) && !isPaymentWaiting;
 
   const {
     data: upgradeAmountData,

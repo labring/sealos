@@ -180,7 +180,15 @@ export default function Plan() {
 
     // Check for success state from Stripe callback (set by desktop)
     if (router.query.stripeState === 'success' && router.query.payId) {
+      // Invalidate queries to refresh subscription data after payment success
+      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+      queryClient.invalidateQueries({ queryKey: ['card-info'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
       hideModal();
+      // Close UpgradePlanDialog to prevent focus fighting
+      setSubscriptionModalOpen(false);
       setShowCongratulations(true);
       setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
@@ -761,9 +769,16 @@ export default function Plan() {
           clearRedeemCode();
         }}
         onPaymentSuccess={async () => {
-          // Note: invalidate will be handled in handleModalClose when modal is closed
+          // Invalidate queries to refresh subscription data after payment success
+          queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+          queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+          queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+          queryClient.invalidateQueries({ queryKey: ['card-info'] });
+          queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
           // Close all modals before showing congratulations modal
           hideModal();
+          // Close UpgradePlanDialog to prevent focus fighting
+          setSubscriptionModalOpen(false);
           // Show congratulations modal
           if (pendingPlan) {
             // Set workspace ID for congratulations modal
