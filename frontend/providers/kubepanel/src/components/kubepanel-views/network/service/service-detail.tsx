@@ -79,12 +79,13 @@ const ServiceDetail = ({ obj: service, open, onClose }: DetailDrawerProps<Servic
           </div>
           <div>
             <span className="text-[#8C8C8C] font-medium text-sm block mb-1">Ports</span>
-            <span className="text-[#262626] text-xs">
-              {service
-                .getPorts()
-                .map((port) => port.toString())
-                .join(', ')}
-            </span>
+            <div className="flex flex-col gap-0.5">
+              {service.getPorts().map((port) => (
+                <span key={port.toString()} className="text-[#262626] text-xs leading-snug">
+                  {port.toString()}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </DrawerPanel>
