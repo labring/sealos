@@ -171,11 +171,25 @@ export const LastTransactionResponseSchema = z.object({
 });
 export type LastTransactionResponse = z.infer<typeof LastTransactionResponseSchema>;
 
+// Pending upgrade information (returned in 409 conflict response)
+export const PendingUpgradeSchema = z.object({
+  plan_name: z.string(),
+  payment_id: z.string(),
+  invoice_id: z.string(),
+  payment_url: z.string(),
+  amount_due: z.number(),
+  currency: z.string(),
+  created_at: z.number(),
+  status: z.string()
+});
+export type PendingUpgrade = z.infer<typeof PendingUpgradeSchema>;
+
 export const UpgradeAmountResponseSchema = z.object({
   amount: z.number(),
   promotion_code: z.string(),
   has_discount: z.boolean(),
-  original_amount: z.number()
+  original_amount: z.number(),
+  pending_upgrade: PendingUpgradeSchema.optional()
 });
 export type UpgradeAmountResponse = z.infer<typeof UpgradeAmountResponseSchema>;
 
@@ -265,3 +279,21 @@ export const PortalSessionResponseSchema = z.object({
   url: z.string()
 });
 export type PortalSessionResponse = z.infer<typeof PortalSessionResponseSchema>;
+
+/**
+ * Invoice cancel request schema
+ */
+export const InvoiceCancelRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
+  invoiceID: z.string()
+});
+export type InvoiceCancelRequest = z.infer<typeof InvoiceCancelRequestSchema>;
+
+/**
+ * Invoice cancel response schema
+ */
+export const InvoiceCancelResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  invoice_id: z.string()
+});
+export type InvoiceCancelResponse = z.infer<typeof InvoiceCancelResponseSchema>;

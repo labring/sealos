@@ -29,6 +29,7 @@ interface PlanConfirmationModalViewProps {
   onPaymentSuccess?: () => void;
   onPaymentCancel?: () => void;
   isSubmitting?: boolean;
+  isCancelingInvoice?: boolean;
 }
 
 // ==================== Plan Display Component ====================
@@ -370,6 +371,7 @@ interface PaymentWaitingSectionProps {
   paymentUrl?: string | null;
   onCancel?: () => void;
   onSuccess?: () => void;
+  isCancelingInvoice?: boolean;
 }
 
 function PaymentWaitingSection({
@@ -377,7 +379,8 @@ function PaymentWaitingSection({
   regionDomain,
   paymentUrl,
   onCancel,
-  onSuccess
+  onSuccess,
+  isCancelingInvoice = false
 }: PaymentWaitingSectionProps) {
   const { t } = useTranslation();
   const {
@@ -519,12 +522,14 @@ function PaymentWaitingSection({
   };
 
   const handleCancel = () => {
-    stopPaymentWaiting();
+    // Call the onCancel callback which handles invoice cancellation if needed
+    // Don't call stopPaymentWaiting here - let the parent component handle it
     onCancel?.();
   };
 
   const handleTimeoutCancel = () => {
-    handleCancel();
+    // For timeout, also call onCancel to handle invoice cancellation if needed
+    onCancel?.();
   };
 
   // Timeout state
@@ -599,12 +604,24 @@ function PaymentWaitingSection({
       {/* Action buttons */}
       <div className="flex items-center justify-center gap-2 w-full flex-col">
         {paymentUrl && (
-          <Button type="button" variant="default" onClick={handleOpenPaymentPage}>
+          <Button
+            type="button"
+            variant="default"
+            onClick={handleOpenPaymentPage}
+            disabled={isCancelingInvoice}
+          >
             {t('common:open_payment_page_again')}
           </Button>
         )}
-        <Button type="button" variant="link" onClick={handleCancel}>
-          {t('common:cancel')}
+        <Button type="button" variant="link" onClick={handleCancel} disabled={isCancelingInvoice}>
+          {isCancelingInvoice ? (
+            <>
+              <LoaderCircle className="mr-2 h-4 w-4 animate-spin inline" />
+              {t('common:canceling_invoice')}
+            </>
+          ) : (
+            t('common:cancel')
+          )}
         </Button>
       </div>
     </div>
@@ -629,9 +646,14 @@ function ActionButton({
 }: ActionButtonProps) {
   const { t } = useTranslation();
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
+  const { upgradeAmount, amountLoading: storeAmountLoading } = usePlanStore();
 
   // Use prop if provided, otherwise use local state
   const isSubmitting = isSubmittingProp || isSubmittingLocal;
+
+  // Only enable button when amount is successfully loaded (not loading and has valid amount)
+  const isAmountReady =
+    !storeAmountLoading && upgradeAmount !== null && upgradeAmount !== undefined;
 
   // Reset submitting state when payment waiting starts (payment page opened)
   useEffect(() => {
@@ -654,8 +676,8 @@ function ActionButton({
   }, [isSubmittingLocal, isPaymentWaiting, isSubmittingProp]);
 
   const handleClick = () => {
-    // Prevent click if loading or submitting
-    if (amountLoading || isSubmitting) {
+    // Prevent click if loading, submitting, or amount not ready
+    if (amountLoading || isSubmitting || !isAmountReady) {
       return;
     }
     if (!isSubmittingProp) {
@@ -665,7 +687,11 @@ function ActionButton({
   };
 
   return (
-    <Button className="w-full h-10" onClick={handleClick} disabled={amountLoading || isSubmitting}>
+    <Button
+      className="w-full h-10"
+      onClick={handleClick}
+      disabled={amountLoading || isSubmitting || !isAmountReady}
+    >
       {amountLoading || isSubmitting
         ? t('common:calculating')
         : isCreateMode
@@ -719,7 +745,8 @@ export function PlanConfirmationModalView({
   manageCardLoading,
   onPaymentSuccess,
   onPaymentCancel,
-  isSubmitting
+  isSubmitting,
+  isCancelingInvoice = false
 }: PlanConfirmationModalViewProps) {
   const { t } = useTranslation();
   const {
@@ -754,6 +781,7 @@ export function PlanConfirmationModalView({
       paymentUrl={paymentUrl}
       onCancel={onPaymentCancel}
       onSuccess={onPaymentSuccess}
+      isCancelingInvoice={isCancelingInvoice}
     />
   ) : (
     <ActionButton

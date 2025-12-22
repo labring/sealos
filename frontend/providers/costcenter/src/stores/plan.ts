@@ -6,7 +6,8 @@ import {
   SubscriptionInfoResponse,
   LastTransactionResponse,
   UpgradeAmountResponse,
-  CardInfoResponse
+  CardInfoResponse,
+  PendingUpgrade
 } from '@/types/plan';
 
 export interface PlanStoreState {
@@ -39,6 +40,7 @@ export interface PlanStoreState {
   paymentWaitingWorkspace: string;
   paymentWaitingRegionDomain: string;
   paymentUrl: string | null;
+  paymentWaitingInvoiceId: string | null; // Invoice ID for current payment waiting
   // Payment waiting timeout state
   paymentWaitingTimeout: boolean;
   paymentWaitingShouldStopPolling: boolean;
@@ -51,6 +53,10 @@ export interface PlanStoreState {
   upgradeAmount: number | null;
   amountLoading: boolean;
   cardInfoLoading: boolean;
+
+  // Pending upgrade state
+  pendingUpgrade: PendingUpgrade | null;
+  showPendingUpgradeDialog: boolean;
 
   // Data actions
   setPlansData: (data: PlanListResponse | null) => void;
@@ -76,7 +82,12 @@ export interface PlanStoreState {
   clearRedeemCode: () => void;
 
   // Payment waiting actions
-  startPaymentWaiting: (workspace: string, regionDomain: string, paymentUrl?: string) => void;
+  startPaymentWaiting: (
+    workspace: string,
+    regionDomain: string,
+    paymentUrl?: string,
+    invoiceId?: string
+  ) => void;
   stopPaymentWaiting: () => void;
   // Payment waiting timeout actions
   setPaymentWaitingTimeout: (timeout: boolean) => void;
@@ -91,6 +102,10 @@ export interface PlanStoreState {
   setUpgradeAmount: (amount: number | null) => void;
   setAmountLoading: (loading: boolean) => void;
   setCardInfoLoading: (loading: boolean) => void;
+
+  // Pending upgrade actions
+  setPendingUpgrade: (upgrade: PendingUpgrade | null) => void;
+  setShowPendingUpgradeDialog: (show: boolean) => void;
 
   // Computed getters
   getCurrentPlan: () => SubscriptionPlan | null;
@@ -137,6 +152,7 @@ const usePlanStore = create<PlanStoreState>()(
     paymentWaitingWorkspace: '',
     paymentWaitingRegionDomain: '',
     paymentUrl: null,
+    paymentWaitingInvoiceId: null,
     // Payment waiting timeout initial state
     paymentWaitingTimeout: false,
     paymentWaitingShouldStopPolling: false,
@@ -149,6 +165,10 @@ const usePlanStore = create<PlanStoreState>()(
     upgradeAmount: null,
     amountLoading: true,
     cardInfoLoading: false,
+
+    // Pending upgrade initial state
+    pendingUpgrade: null,
+    showPendingUpgradeDialog: false,
 
     // Data actions
     setPlansData: (data) => set({ plansData: data }),
@@ -207,12 +227,13 @@ const usePlanStore = create<PlanStoreState>()(
       }),
 
     // Payment waiting actions
-    startPaymentWaiting: (workspace, regionDomain, paymentUrl) =>
+    startPaymentWaiting: (workspace, regionDomain, paymentUrl, invoiceId) =>
       set((state) => {
         state.isPaymentWaiting = true;
         state.paymentWaitingWorkspace = workspace;
         state.paymentWaitingRegionDomain = regionDomain;
         state.paymentUrl = paymentUrl || null;
+        state.paymentWaitingInvoiceId = invoiceId || null;
         // Reset timeout state when starting payment waiting
         state.paymentWaitingTimeout = false;
         state.paymentWaitingShouldStopPolling = false;
@@ -225,6 +246,7 @@ const usePlanStore = create<PlanStoreState>()(
         state.paymentWaitingWorkspace = '';
         state.paymentWaitingRegionDomain = '';
         state.paymentUrl = null;
+        state.paymentWaitingInvoiceId = null;
         // Reset timeout state when stopping payment waiting
         state.paymentWaitingTimeout = false;
         state.paymentWaitingShouldStopPolling = false;
@@ -250,6 +272,10 @@ const usePlanStore = create<PlanStoreState>()(
     setUpgradeAmount: (amount) => set({ upgradeAmount: amount }),
     setAmountLoading: (loading) => set({ amountLoading: loading }),
     setCardInfoLoading: (loading) => set({ cardInfoLoading: loading }),
+
+    // Pending upgrade actions
+    setPendingUpgrade: (upgrade) => set({ pendingUpgrade: upgrade }),
+    setShowPendingUpgradeDialog: (show) => set({ showPendingUpgradeDialog: show }),
 
     // Computed getters
     getCurrentPlan: () => {
@@ -300,6 +326,7 @@ const usePlanStore = create<PlanStoreState>()(
         paymentWaitingWorkspace: '',
         paymentWaitingRegionDomain: '',
         paymentUrl: null,
+        paymentWaitingInvoiceId: null,
         paymentWaitingTimeout: false,
         paymentWaitingShouldStopPolling: false,
         paymentWaitingFirstDataTime: null,
@@ -309,6 +336,8 @@ const usePlanStore = create<PlanStoreState>()(
         upgradeAmount: null,
         amountLoading: true,
         cardInfoLoading: false,
+        pendingUpgrade: null,
+        showPendingUpgradeDialog: false,
         defaultSelectedPlan: '',
         defaultShowPaymentConfirmation: false,
         defaultWorkspaceName: ''
@@ -338,6 +367,8 @@ const usePlanStore = create<PlanStoreState>()(
         state.upgradeAmount = null;
         state.amountLoading = true;
         state.cardInfoLoading = false;
+        state.pendingUpgrade = null;
+        state.showPendingUpgradeDialog = false;
         // Don't reset payment waiting state here as it might be needed for retry
       })
   }))

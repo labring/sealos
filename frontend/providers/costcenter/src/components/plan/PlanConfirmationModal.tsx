@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
-import { getUpgradeAmount, getCardInfo, createCardManageSession } from '@/api/plan';
+import { getUpgradeAmount, getCardInfo, createCardManageSession, cancelInvoice } from '@/api/plan';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
@@ -9,6 +9,7 @@ import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { PlanConfirmationModalView } from './PlanConfirmationModalView';
+import { PendingUpgradeDialog } from './PendingUpgradeDialog';
 import { openInNewWindow } from '@/utils/windowUtils';
 
 interface PlanConfirmationModalProps {
@@ -58,8 +59,17 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     setPromotionCodeError,
     stopPaymentWaiting,
     subscriptionData,
+    lastTransactionData,
     hideModal,
-    resetConfirmationModal
+    resetConfirmationModal,
+    pendingUpgrade,
+    setPendingUpgrade,
+    showPendingUpgradeDialog,
+    setShowPendingUpgradeDialog,
+    plansData,
+    paymentWaitingInvoiceId,
+    startPaymentWaiting,
+    showConfirmationModal
   } = usePlanStore();
 
   // Get plan and context from store (props take precedence for backward compatibility)
@@ -108,15 +118,37 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     },
     enabled: queryEnabled,
     retry: (failureCount, error: any) => {
-      const errorStatus = error?.code || error?.response?.status;
+      // Extract code from error object
+      // When API uses jsonRes, response interceptor rejects response.data which contains { code, message, data }
+      // So error is the response.data itself with code field
+      const errorCode = error?.code;
+
       // Don't retry for 404, 410, 409 errors
-      if (errorStatus === 404 || errorStatus === 410 || errorStatus === 409) return false;
+      if (errorCode === 404 || errorCode === 410 || errorCode === 409) {
+        return false;
+      }
+
       return failureCount < 3;
     },
     onSuccess: (data) => {
       if (data?.data) {
         setUpgradeAmountData(data.data);
         setUpgradeAmount(data.data.amount);
+      }
+    },
+    onError: (error: any) => {
+      // Extract code and pending_upgrade from error object
+      // When API uses jsonRes, response interceptor rejects response.data which contains { code, message, data }
+      // So error is the response.data itself: { code: 409, message: "...", data: { pending_upgrade: {...} } }
+      const errorCode = error?.code;
+      const pendingUpgrade = error?.data?.pending_upgrade;
+
+      // Handle 409 error with pending_upgrade
+      if (errorCode === 409 && pendingUpgrade) {
+        setPendingUpgrade(pendingUpgrade);
+        setShowPendingUpgradeDialog(true);
+        // Stop retrying (already handled in retry function, but ensure we don't process further)
+        return;
       }
     }
   });
@@ -199,6 +231,13 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     const error = upgradeAmountError as any;
     const errorCode = error?.code || error?.response?.status || error?.response?.data?.code;
     const errorStatus = error?.response?.status || error?.code;
+    const errorData = error?.response?.data || error?.data;
+
+    // Skip promotion code error handling if it's a pending upgrade conflict
+    if (errorStatus === 409 && errorData?.pending_upgrade) {
+      // This is handled in onError callback, don't show promotion code error
+      return;
+    }
 
     // Handle different error status codes
     if (upgradeAmountError && errorStatus) {
@@ -329,14 +368,140 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     onCancel?.(); // Close the modal
   };
 
+  // Handle cancel payment waiting invoice mutation
+  const cancelPaymentWaitingMutation = useMutation({
+    mutationFn: cancelInvoice,
+    onSuccess: () => {
+      // Reset payment waiting state and close modal after successful cancellation
+      // No toast notification on success
+      stopPaymentWaiting();
+      handleModalClose(true); // Force close after successful cancellation
+      onCancel?.();
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description:
+          error?.response?.data?.message ||
+          error?.data?.message ||
+          t('common:cancel_invoice_error'),
+        status: 'error'
+      });
+      // Close modal even if cancel fails - always close after request completes
+      stopPaymentWaiting();
+      handleModalClose(true); // Force close after failed cancellation
+      onCancel?.(); // Trigger Dialog close
+    }
+  });
+
   const handlePaymentCancel = () => {
-    // Reset payment waiting state and allow user to retry
-    stopPaymentWaiting();
-    // Note: invalidate will be handled in handleModalClose when modal is closed
+    // Try to get invoice ID from paymentWaitingInvoiceId or from transaction PayID
+    const invoiceId = paymentWaitingInvoiceId || lastTransactionData?.transaction?.PayID;
+
+    // If there's an invoice ID, try to cancel it first
+    if (invoiceId && workspace && regionDomain) {
+      cancelPaymentWaitingMutation.mutate({
+        workspace,
+        regionDomain,
+        invoiceID: invoiceId
+      });
+    } else {
+      // No invoice ID, just close the modal
+      stopPaymentWaiting();
+      handleModalClose();
+      onCancel?.();
+    }
+  };
+
+  // Handle continue payment for pending upgrade
+  const handleContinuePendingPayment = () => {
+    if (!pendingUpgrade || !workspace || !regionDomain) return;
+
+    // Find the plan by name
+    const pendingPlanObj = plansData?.plans?.find((p) => p.Name === pendingUpgrade.plan_name);
+    if (!pendingPlanObj) {
+      toast({
+        title: t('common:error'),
+        description: `Plan ${pendingUpgrade.plan_name} not found`,
+        status: 'error'
+      });
+      return;
+    }
+
+    // Update modal to show pending plan
+    showConfirmationModal(pendingPlanObj, modalContext);
+
+    // Set the plan and amount from pending upgrade
+    setUpgradeAmountData({
+      amount: pendingUpgrade.amount_due,
+      promotion_code: '',
+      has_discount: false,
+      original_amount: pendingUpgrade.amount_due
+    });
+    setUpgradeAmount(pendingUpgrade.amount_due);
+    setMonthlyPrice(pendingUpgrade.amount_due);
+    setAmountLoading(false);
+
+    // Start payment waiting mode with invoice ID
+    startPaymentWaiting(
+      workspace,
+      regionDomain,
+      pendingUpgrade.payment_url,
+      pendingUpgrade.invoice_id
+    );
+    openInNewWindow(pendingUpgrade.payment_url);
+
+    // Clear pending upgrade state
+    setPendingUpgrade(null);
+  };
+
+  // Handle cancel invoice mutation
+  const cancelInvoiceMutation = useMutation({
+    mutationFn: cancelInvoice,
+    onSuccess: () => {
+      // Close dialog and refresh upgrade amount
+      toast({
+        title: t('common:success'),
+        description: t('common:cancel_invoice_success'),
+        status: 'success'
+      });
+
+      setPendingUpgrade(null);
+      setShowPendingUpgradeDialog(false);
+      // Refetch upgrade amount
+      queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description:
+          error?.response?.data?.message ||
+          error?.data?.message ||
+          t('common:cancel_invoice_error'),
+        status: 'error'
+      });
+    }
+  });
+
+  // Handle cancel and pay new order
+  const handleCancelAndPayNew = () => {
+    if (!pendingUpgrade || !workspace || !regionDomain) return;
+
+    cancelInvoiceMutation.mutate({
+      workspace,
+      regionDomain,
+      invoiceID: pendingUpgrade.invoice_id
+    });
   };
 
   // Handle modal close - reset state and invalidate queries
-  const handleModalClose = () => {
+  // allowForceClose: if true, close even when canceling invoice (used in mutation callbacks)
+  const handleModalClose = (allowForceClose = false) => {
+    // Prevent closing when canceling invoice (unless force close is allowed)
+    if (!allowForceClose && cancelPaymentWaitingMutation.isLoading) {
+      return;
+    }
+
     // Reset confirmation modal state
     resetConfirmationModal();
     clearRedeemCode();
@@ -368,40 +533,55 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   }
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        // Prevent closing when payment is waiting
-        if (isPaymentWaiting) return;
-        if (!open) {
-          handleModalClose();
-          onCancel?.();
-        }
-      }}
-    >
-      <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
-      <DialogContent
-        className={`${shouldShowCardManagement ? 'max-w-4xl!' : 'max-w-lg!'} pb-8 pt-0 px-10 gap-0`}
-        showCloseButton={!isPaymentWaiting}
-      >
-        <div className="flex justify-center items-center px-6 py-5">
-          <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
-            {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
-          </h2>
-        </div>
-
-        <PlanConfirmationModalView
-          plan={plan}
-          onConfirm={handleConfirm}
-          onManageCards={handleManageCards}
-          onValidateRedeemCode={handleValidateRedeemCode}
-          manageCardLoading={manageCardMutation.isLoading}
-          onPaymentSuccess={handlePaymentSuccess}
-          onPaymentCancel={handlePaymentCancel}
-          isSubmitting={isSubmittingProp}
+    <>
+      {/* Pending Upgrade Dialog */}
+      {pendingUpgrade && (
+        <PendingUpgradeDialog
+          pendingUpgrade={pendingUpgrade}
+          onContinuePayment={handleContinuePendingPayment}
+          onCancelAndPayNew={handleCancelAndPayNew}
+          isCanceling={cancelInvoiceMutation.isLoading}
         />
-      </DialogContent>
-    </Dialog>
+      )}
+
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          // Prevent closing when payment is waiting or canceling invoice
+          if (isPaymentWaiting || cancelPaymentWaitingMutation.isLoading) return;
+          if (!open) {
+            handleModalClose();
+            onCancel?.();
+          }
+        }}
+      >
+        <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
+        <DialogContent
+          className={`${
+            shouldShowCardManagement ? 'max-w-4xl!' : 'max-w-lg!'
+          } pb-8 pt-0 px-10 gap-0`}
+          showCloseButton={!isPaymentWaiting && !cancelPaymentWaitingMutation.isLoading}
+        >
+          <div className="flex justify-center items-center px-6 py-5">
+            <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
+              {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
+            </h2>
+          </div>
+
+          <PlanConfirmationModalView
+            plan={plan}
+            onConfirm={handleConfirm}
+            onManageCards={handleManageCards}
+            onValidateRedeemCode={handleValidateRedeemCode}
+            manageCardLoading={manageCardMutation.isLoading}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentCancel={handlePaymentCancel}
+            isSubmitting={isSubmittingProp}
+            isCancelingInvoice={cancelPaymentWaitingMutation.isLoading}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 });
 
