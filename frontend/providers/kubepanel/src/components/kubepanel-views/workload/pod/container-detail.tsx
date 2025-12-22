@@ -12,8 +12,8 @@ import {
 } from '@/k8slens/kube-object';
 import { buildErrorResponse } from '@/services/backend/response';
 import { dumpKubeObject } from '@/utils/yaml';
-import { CloseOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Select, Tooltip } from 'antd';
+import { CheckOutlined, CloseOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
+import { Button, InputNumber, Select, Tooltip } from 'antd';
 import useMessage from 'antd/lib/message/useMessage';
 import { cloneDeep, isEqual, keys } from 'lodash';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -357,8 +357,149 @@ const ContainerInfo = ({
 
   const { prefix, suffix } = splitImage(image || '');
 
+  // Get Pod-level securityContext for comparison
+  const podSecurityContext = podSpec?.securityContext;
+  const containerSecurityContext = container.securityContext;
+
+  // Security context editing state
+  const [securityContext, setSecurityContext] = useState(containerSecurityContext);
+  const [draftSecurityContext, setDraftSecurityContext] = useState(containerSecurityContext);
+  const [isEditingSecurity, setIsEditingSecurity] = useState(false);
+  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+  const securityMsgKey = 'security-context-save';
+
+  useEffect(() => {
+    setSecurityContext(containerSecurityContext);
+    setDraftSecurityContext(containerSecurityContext);
+    setIsEditingSecurity(false);
+  }, [containerSecurityContext]);
+
+  useEffect(() => {
+    setIsEditingSecurity(false);
+  }, [container?.name]);
+
+  const isSecurityModified = useMemo(
+    () => !isEqual(securityContext, draftSecurityContext),
+    [securityContext, draftSecurityContext]
+  );
+
+  const handleSecurityChange = (field: string, value: any) => {
+    setDraftSecurityContext((prev) => ({
+      ...(prev || {}),
+      [field]: value
+    }));
+  };
+
+  const handleSaveSecurity = async () => {
+    if (!isSecurityModified || !workload) return;
+
+    const ownerSpec = workload.spec as any;
+    const hasTemplateSpec = Boolean(ownerSpec?.template?.spec);
+    const currentPodSpec = hasTemplateSpec
+      ? cloneDeep(ownerSpec.template.spec)
+      : cloneDeep(ownerSpec);
+
+    if (!currentPodSpec) {
+      msgApi.error('Cannot locate pod spec for this resource.');
+      return;
+    }
+
+    const containerField = isInitial ? 'initContainers' : 'containers';
+    const sourceContainers = currentPodSpec[containerField] || [];
+    const updatedContainers = sourceContainers.map((c: any) => {
+      if (c?.name !== container.name) return c;
+
+      const updated = { ...c };
+
+      // Clean up undefined fields from draftSecurityContext
+      const cleanedSecurityContext: any = {};
+      if (draftSecurityContext) {
+        Object.entries(draftSecurityContext).forEach(([key, value]) => {
+          if (value !== undefined) {
+            cleanedSecurityContext[key] = value;
+          }
+        });
+      }
+
+      if (Object.keys(cleanedSecurityContext).length === 0) {
+        delete updated.securityContext;
+      } else {
+        updated.securityContext = cleanedSecurityContext;
+      }
+
+      return updated;
+    });
+
+    const updatedPodSpec = {
+      ...currentPodSpec,
+      [containerField]: updatedContainers
+    };
+
+    const updatedSpec = hasTemplateSpec
+      ? {
+          ...cloneDeep(ownerSpec),
+          template: {
+            ...cloneDeep(ownerSpec.template),
+            spec: updatedPodSpec
+          }
+        }
+      : {
+          ...cloneDeep(ownerSpec),
+          ...updatedPodSpec
+        };
+
+    const updatedResource = {
+      apiVersion: workload.apiVersion,
+      kind: workload.kind,
+      metadata: {
+        name: workload.metadata.name,
+        namespace: workload.metadata.namespace,
+        resourceVersion: workload.metadata.resourceVersion,
+        ...(workload.metadata.labels && { labels: workload.metadata.labels }),
+        ...(workload.metadata.annotations && { annotations: workload.metadata.annotations })
+      },
+      spec: updatedSpec
+    } as any;
+
+    try {
+      setIsSavingSecurity(true);
+      msgApi.loading({ content: 'Saving security context...', key: securityMsgKey }, 0);
+      const yaml = dumpKubeObject(updatedResource);
+      await updateResource(workload.kind, workload.getName(), yaml);
+
+      setSecurityContext(draftSecurityContext);
+      setIsEditingSecurity(false);
+      msgApi.success({ content: 'Security context saved', key: securityMsgKey });
+      onUpdate?.();
+    } catch (err) {
+      const resp = buildErrorResponse(err);
+      msgApi.error({
+        content: resp.error.message || 'Failed to save security context',
+        key: securityMsgKey
+      });
+    } finally {
+      setIsSavingSecurity(false);
+    }
+  };
+
+  const handleCancelSecurity = () => {
+    setDraftSecurityContext(securityContext);
+    setIsEditingSecurity(false);
+  };
+
+  const displaySecurityContext = isEditingSecurity ? draftSecurityContext : securityContext;
+
+  const securityFieldCount = useMemo(() => {
+    let count = 0;
+    if (isEditingSecurity || displaySecurityContext?.runAsUser !== undefined) count++;
+    if (isEditingSecurity || displaySecurityContext?.runAsGroup !== undefined) count++;
+    if (isEditingSecurity || displaySecurityContext?.privileged !== undefined) count++;
+    return count;
+  }, [isEditingSecurity, displaySecurityContext]);
+
   return (
     <>
+      {contextHolder}
       {pod && (
         <DrawerItem
           name="Phase"
@@ -394,6 +535,132 @@ const ContainerInfo = ({
         }
       />
 
+      {(displaySecurityContext &&
+        (displaySecurityContext.runAsUser !== undefined ||
+          displaySecurityContext.runAsGroup !== undefined ||
+          displaySecurityContext.privileged !== undefined)) ||
+      isEditingSecurity ? (
+        <DrawerItem
+          name="Security"
+          className={securityFieldCount > 1 ? 'items-start!' : 'items-center!'}
+          value={
+            <div
+              className={`flex justify-between w-full gap-4 ${
+                securityFieldCount > 1 ? 'items-start' : 'items-center'
+              }`}
+            >
+              <div
+                className={`flex gap-2 text-xs flex-1 ${
+                  securityFieldCount > 1 ? 'flex-col' : 'flex-row items-center'
+                }`}
+              >
+                {(isEditingSecurity || displaySecurityContext?.runAsUser !== undefined) && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500 whitespace-nowrap w-16">User:</span>
+                    {isEditingSecurity ? (
+                      <InputNumber
+                        size="small"
+                        style={{ width: '120px' }}
+                        value={draftSecurityContext?.runAsUser}
+                        onChange={(val) => handleSecurityChange('runAsUser', val ?? undefined)}
+                        placeholder="UID"
+                        min={0}
+                      />
+                    ) : (
+                      <span
+                        className={`font-medium ${
+                          podSecurityContext?.runAsUser !== undefined &&
+                          podSecurityContext.runAsUser !== displaySecurityContext?.runAsUser
+                            ? 'text-orange-600'
+                            : 'text-gray-900'
+                        }`}
+                      >
+                        {displaySecurityContext?.runAsUser}
+                        {podSecurityContext?.runAsUser !== undefined &&
+                          podSecurityContext.runAsUser !== displaySecurityContext?.runAsUser &&
+                          ` (override: ${podSecurityContext.runAsUser})`}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {(isEditingSecurity || displaySecurityContext?.runAsGroup !== undefined) && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500 whitespace-nowrap w-16">Group:</span>
+                    {isEditingSecurity ? (
+                      <InputNumber
+                        size="small"
+                        style={{ width: '120px' }}
+                        value={draftSecurityContext?.runAsGroup}
+                        onChange={(val) => handleSecurityChange('runAsGroup', val ?? undefined)}
+                        placeholder="GID"
+                        min={0}
+                      />
+                    ) : (
+                      <span
+                        className={`font-medium ${
+                          podSecurityContext?.runAsGroup !== undefined &&
+                          podSecurityContext.runAsGroup !== displaySecurityContext?.runAsGroup
+                            ? 'text-orange-600'
+                            : 'text-gray-900'
+                        }`}
+                      >
+                        {displaySecurityContext?.runAsGroup}
+                        {podSecurityContext?.runAsGroup !== undefined &&
+                          podSecurityContext.runAsGroup !== displaySecurityContext?.runAsGroup &&
+                          ` (override: ${podSecurityContext.runAsGroup})`}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {(isEditingSecurity || displaySecurityContext?.privileged !== undefined) && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500 whitespace-nowrap w-16">Privileged:</span>
+                    <span
+                      className={`font-medium ${
+                        displaySecurityContext?.privileged ? 'text-red-600' : 'text-gray-900'
+                      }`}
+                    >
+                      {displaySecurityContext?.privileged ? 'true ⚠️' : 'false'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {editable && workload && (
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isEditingSecurity && (
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => setIsEditingSecurity(true)}
+                    />
+                  )}
+                  {isEditingSecurity && (
+                    <>
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<CloseOutlined />}
+                        onClick={handleCancelSecurity}
+                      />
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<CheckOutlined style={{ color: '#16a34a' }} />}
+                        disabled={!isSecurityModified}
+                        loading={isSavingSecurity}
+                        onClick={handleSaveSecurity}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          }
+        />
+      ) : null}
+
       {ports && ports.length > 0 && (
         <DrawerItem
           name="Ports"
@@ -411,6 +678,7 @@ const ContainerInfo = ({
       {container.resources?.limits && (
         <DrawerItem
           name="Resources"
+          className="items-center!"
           value={
             <div className="flex flex-wrap gap-4 text-xs">
               {container.resources.limits.cpu && (
