@@ -16,7 +16,6 @@ import type {
   DevboxListItemTypeV2,
   DevboxVersionListItemType
 } from '@/types/devbox';
-import dayjs from 'dayjs';
 
 type State = {
   devboxList: DevboxListItemTypeV2[];
