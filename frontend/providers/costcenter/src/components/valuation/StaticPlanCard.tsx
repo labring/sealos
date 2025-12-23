@@ -35,7 +35,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
 
   return (
     <section
-      className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-sm relative"
+      className="flex flex-col border border-gray-200 rounded-xl flex-1 bg-white shadow-sm relative"
       style={{ width: '258px' }}
     >
       <div className="p-6 pb-4">

@@ -34,7 +34,7 @@ export function BalanceSection({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="max-w-xs">{t('common:balance_subscription_tooltip')}</p>
+                  <p className="max-w-sm">{t('common:balance_subscription_tooltip')}</p>
                 </TooltipContent>
               </Tooltip>
             )}
