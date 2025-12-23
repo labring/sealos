@@ -12,13 +12,17 @@ export const useDevboxList = () => {
   const [refresh, setFresh] = useState(false);
   const setDevboxList = useDevboxStore((state) => state.setDevboxList);
   const loadAvgMonitorData = useDevboxStore((state) => state.loadAvgMonitorData);
-  const intervalLoadPods = useDevboxStore((state) => state.intervalLoadPods);
   const isInitialized = useGlobalStore((state) => state.isInitialized);
   const isImporting = useGlobalStore((state) => state.isImporting);
   const list = useRef<DevboxListItemTypeV2[]>([]);
 
   const { isLoading, refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
     enabled: isInitialized,
+    refetchInterval: () => {
+      const devboxList = useDevboxStore.getState().devboxList;
+      const hasRunningDevbox = devboxList.some((devbox) => devbox.status.value === 'Running');
+      return hasRunningDevbox ? 3000 : false;
+    },
     onSettled(res) {
       if (!res) return;
       refreshList(res);
@@ -66,24 +70,6 @@ export const useDevboxList = () => {
       ? devboxList
       : devboxList.filter((devbox) => viewportDomIds.includes(devbox.id));
   };
-
-  useQuery(
-    ['intervalLoadPods'],
-    () => {
-      const viewportDevboxList = getViewportDevboxes();
-      return viewportDevboxList
-        .filter((devbox) => devbox.status.value !== 'Stopped')
-        .map((devbox) => intervalLoadPods(devbox.name, false));
-    },
-    {
-      refetchOnMount: true,
-      refetchInterval: 3000,
-      enabled: !isLoading && !isImporting,
-      onSettled() {
-        refreshList();
-      }
-    }
-  );
 
   const { refetch: refetchAvgMonitorData } = useQuery(
     ['loadAvgMonitorData'],
