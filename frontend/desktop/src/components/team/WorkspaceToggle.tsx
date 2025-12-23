@@ -39,6 +39,33 @@ export default function WorkspaceToggle() {
   const ns_uid = user?.ns_uid || '';
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'session' && e.newValue && e.oldValue) {
+        try {
+          const oldSession = JSON.parse(e.oldValue);
+          const newSession = JSON.parse(e.newValue);
+
+          const oldNsUid = oldSession?.state?.session?.user?.ns_uid;
+          const newNsUid = newSession?.state?.session?.user?.ns_uid;
+
+          if (oldNsUid && newNsUid && oldNsUid !== newNsUid) {
+            queryClient.clear();
+            router.reload();
+          }
+        } catch (error) {
+          console.error('Failed to parse session storage:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [queryClient, router]);
+
   const mutation = useMutation({
     mutationFn: switchRequest,
     async onSuccess(data) {
@@ -64,7 +91,8 @@ export default function WorkspaceToggle() {
   };
   const { data } = useQuery({
     queryKey: ['teamList', 'teamGroup'],
-    queryFn: nsListRequest
+    queryFn: nsListRequest,
+    refetchOnWindowFocus: true
   });
   const namespaces = data?.data?.namespaces || [];
   const namespace = namespaces.find((x) => x.uid === ns_uid);
