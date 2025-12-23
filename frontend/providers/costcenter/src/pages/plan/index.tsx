@@ -385,7 +385,7 @@ export default function Plan() {
               data.data.redirectUrl,
               invoiceId
             );
-            openInNewWindow(data.data.redirectUrl);
+            // Note: openInNewWindow is now called synchronously in handleSubscribe
           } else {
             hideModal();
             window.parent.location.href = data.data.redirectUrl;
@@ -571,7 +571,21 @@ export default function Plan() {
       paymentRequest.promotionCode = promotionCode;
     }
 
-    subscriptionMutation.mutate(paymentRequest);
+    // For upgrade mode, open window synchronously in user interaction, then navigate asynchronously
+    if (operator === 'upgraded') {
+      const paymentPromise = subscriptionMutation.mutateAsync(paymentRequest);
+      openInNewWindow(
+        paymentPromise.then((data) => {
+          if (data?.code === 200 && data?.data?.redirectUrl) {
+            return data.data.redirectUrl;
+          }
+          throw new Error('No redirect URL in response');
+        }),
+        true // show loading indicator
+      );
+    } else {
+      subscriptionMutation.mutate(paymentRequest);
+    }
   };
 
   const isPaygTypeValue = isPaygType();

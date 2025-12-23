@@ -196,7 +196,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       if (data?.data?.success && data?.data?.url) {
         hideModal();
         onCancel?.();
-        openInNewWindow(data.data.url);
+        // Note: openInNewWindow is now called synchronously in handleManageCards
       } else {
         toast({
           title: t('common:error'),
@@ -352,11 +352,24 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       )}`
     );
 
-    manageCardMutation.mutate({
+    // Open window synchronously in user interaction, then navigate asynchronously
+    const cardSessionPromise = manageCardMutation.mutateAsync({
       workspace,
       regionDomain,
       redirectUrl: desktopUrl.toString()
     });
+
+    openInNewWindow(
+      cardSessionPromise.then((data) => {
+        if (data?.data?.success && data?.data?.url) {
+          hideModal();
+          onCancel?.();
+          return data.data.url;
+        }
+        throw new Error('Failed to create portal session');
+      }),
+      true // show loading indicator
+    );
   };
 
   const handleConfirm = () => {

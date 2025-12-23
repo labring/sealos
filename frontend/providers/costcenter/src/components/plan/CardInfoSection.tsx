@@ -41,7 +41,7 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
     mutationFn: createCardManageSession,
     onSuccess: (data) => {
       if (data?.data?.success && data?.data?.url) {
-        openInNewWindow(data.data.url);
+        // Note: openInNewWindow is now called synchronously in handleManageCards
       } else {
         toast({
           title: t('common:error'),
@@ -69,12 +69,23 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
       return;
     }
 
-    manageCardMutation.mutate({
+    // Open window synchronously in user interaction, then navigate asynchronously
+    const cardSessionPromise = manageCardMutation.mutateAsync({
       workspace: effectiveWorkspace,
       regionDomain: effectiveRegionDomain,
       // Return to cost center is enough
       redirectUrl: 'https://' + effectiveRegionDomain + '/?openapp=system-costcenter'
     });
+
+    openInNewWindow(
+      cardSessionPromise.then((data) => {
+        if (data?.data?.success && data?.data?.url) {
+          return data.data.url;
+        }
+        throw new Error('Failed to create portal session');
+      }),
+      true // show loading indicator
+    );
   };
 
   const paymentMethod = cardInfoData?.data?.payment_method;
