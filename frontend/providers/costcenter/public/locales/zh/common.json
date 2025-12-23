@@ -6,7 +6,7 @@
   "annual_income_and_expenditure": "年度收支",
   "balance": "余额",
   "balance_subscription_tooltip": "订阅套餐后，此余额将不会被消耗。但是，如果您的套餐 AI 额度用尽，可以使用此余额来支付 AI Proxy 服务。",
-  "before_the_next_billing_date": "在下一个计费日期",
+  "before_the_next_billing_date": "在下一个账单日期 (",
   "bill_to": "账单地址",
   "billing_and_usage": "账单与用量",
   "billing_page": {
@@ -265,7 +265,7 @@
   "open_payment_page_again": "重新打开支付页面",
   "pick_date_range": "选择时间范围",
   "plan": "套餐",
-  "please_ensure_your_resource_usage_stays_within_plan_limits": "请确保您的资源使用量保持在套餐限制内",
+  "please_ensure_your_resource_usage_stays_within_plan_limits": "请确保您的资源使用量",
   "please_select_a_specific_workspace": "请选择具体的工作空间",
   "port": "端口",
   "port_unit": "个",
@@ -326,8 +326,8 @@
     "Week": "周",
     "Year": "年"
   },
-  "to_avoid_charges": "之前，以避免费用",
-  "to_continue_service_free_up_excess_resources_by": "要继续服务，请在",
+  "to_avoid_charges": ") 之前保持在套餐限制内，以避免产生费用。",
+  "to_continue_service_free_up_excess_resources_by": ["要继续服务，请在", "之前清理使用的资源。"],
   "top_up": "充值",
   "total": "总数",
   "total_amount": "总金额",
@@ -382,7 +382,7 @@
   "workspace_name": "工作空间名称",
   "you_have_upgraded_to_plan_benefits_unlocked": "您已升级到 {{planName}}，这些权益已经解锁",
   "your_current_plan": "您当前的套餐",
-  "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制",
+  "your_current_usage_exceeds_downgraded_plan_limits": "您当前的使用量超出了降级套餐的限制。",
   "your_next_plan": "您下一个套餐",
   "plan_features": {
     "standard": {

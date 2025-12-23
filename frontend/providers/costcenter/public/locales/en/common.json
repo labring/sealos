@@ -327,7 +327,10 @@
     "Year": "Year"
   },
   "to_avoid_charges": "to avoid charges",
-  "to_continue_service_free_up_excess_resources_by": "To continue service, free up excess resources by",
+  "to_continue_service_free_up_excess_resources_by": [
+    " To continue service, free up excess resources by",
+    ""
+  ],
   "top_up": "Top Up",
   "total": "Total",
   "total_amount": "Total Amount",
@@ -382,7 +385,7 @@
   "workspace_name": "Workspace Name",
   "you_have_upgraded_to_plan_benefits_unlocked": "You have upgraded to {{planName}}, these benefits are already unlocked",
   "your_current_plan": "Your current plan",
-  "your_current_usage_exceeds_downgraded_plan_limits": "Your current usage exceeds downgraded plan limits",
+  "your_current_usage_exceeds_downgraded_plan_limits": "Your current usage exceeds downgraded plan limits.",
   "your_next_plan": "Your next plan",
   "plan_features": {
     "standard": {

@@ -206,37 +206,34 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
           {!isLoading && (
             <div className="bg-orange-50 rounded-lg p-4 mb-6">
               <div className="flex items-start gap-3">
-                {!hasExceededResources ? (
-                  <div>
+                {hasExceededResources ? (
+                  <div className="text-sm text-orange-600">
                     <h3 className="text-sm font-medium text-zinc-900 mb-1">
                       {t('common:exceeded_resources')}
                     </h3>
-                    <p className="text-sm text-orange-600">
-                      {t('common:your_current_usage_exceeds_downgraded_plan_limits')}
-                    </p>
-                    <p className="text-sm">
-                      {t('common:to_continue_service_free_up_excess_resources_by')}
+                    {t('common:your_current_usage_exceeds_downgraded_plan_limits')}
+                    <span className="text-zinc-900">
+                      {t('common:to_continue_service_free_up_excess_resources_by.0')}
                       {subscription?.CurrentPeriodEndAt && (
                         <span className="font-bold px-1">
                           {formatTime(subscription?.CurrentPeriodEndAt, 'yyyy-MM-dd')}
                         </span>
                       )}
-                    </p>
+                      {t('common:to_continue_service_free_up_excess_resources_by.1')}
+                    </span>
                   </div>
                 ) : (
-                  <div>
-                    <span className="text-sm text-orange-600">
-                      {t('common:please_ensure_your_resource_usage_stays_within_plan_limits')}
-                    </span>
-                    <p className="text-sm text-zinc-900">
-                      {t('common:before_the_next_billing_date')}
+                  <div className="text-sm text-orange-600">
+                    {t('common:please_ensure_your_resource_usage_stays_within_plan_limits')}
+                    {t('common:before_the_next_billing_date')}
+                    <span className="text-sm text-zinc-900">
                       {subscription?.CurrentPeriodEndAt && (
                         <span className="font-bold px-1">
                           {formatTime(subscription?.CurrentPeriodEndAt, 'yyyy-MM-dd')}
                         </span>
                       )}
-                      {t('common:to_avoid_charges')}
-                    </p>
+                    </span>
+                    {t('common:to_avoid_charges')}
                   </div>
                 )}
               </div>
