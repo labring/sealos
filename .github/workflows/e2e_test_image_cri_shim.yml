@@ -17,8 +17,9 @@ on:
       - "lifecycle/staging/src/github.com/image-cri-shim/**"
       - "lifecycle/test/**"
 
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: e2e-test-image-cri-shim-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:

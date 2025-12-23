@@ -40,8 +40,9 @@ on:
       - ".github/workflows/service-rs-build.yml"
       - "!**/*.md"
 
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: service-rs-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
