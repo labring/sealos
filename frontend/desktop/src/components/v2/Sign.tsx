@@ -139,6 +139,25 @@ export default function SigninComponent() {
           }
           break;
         }
+        case 'OAUTH2': {
+          const oauth2Conf = authConfig.idp.oauth2;
+          if (!oauth2Conf) {
+            throw new Error('OAuth2 configuration not found');
+          }
+          if (oauth2Conf.proxyAddress) {
+            await oauthProxyLogin({
+              state,
+              provider,
+              proxyAddress: oauth2Conf.proxyAddress,
+              id: oauth2Conf.clientID
+            });
+          } else {
+            await oauthLogin({
+              url: `${oauth2Conf.authURL}?client_id=${oauth2Conf.clientID}&redirect_uri=${oauth2Conf.callbackURL}&response_type=code&state=${state}`
+            });
+          }
+          break;
+        }
       }
     } catch (error) {
       // console.error(`${provider} login error:`, error);
@@ -251,6 +270,22 @@ export default function SigninComponent() {
               // background="#0A0A0A"
             >
               Google
+            </Button>
+          )}
+          {authConfig?.idp?.oauth2?.enabled && (
+            <Button
+              borderRadius={'8px'}
+              variant="outline"
+              onClick={() => handleSocialLogin('OAUTH2' as OauthProvider)}
+              w={'100%'}
+              display="flex"
+              flexDirection="row"
+              justifyContent="center"
+              alignItems="center"
+              padding="12px 16px"
+              height="40px"
+            >
+              {authConfig.idp.oauth2.displayName || 'SSO'}
             </Button>
           )}
         </Stack>

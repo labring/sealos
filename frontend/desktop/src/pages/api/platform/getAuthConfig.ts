@@ -61,7 +61,8 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         authURL: conf.idp.oauth2?.authURL || '',
         tokenURL: conf.idp.oauth2?.tokenURL || '',
         userInfoURL: conf.idp.oauth2?.userInfoURL || '',
-        proxyAddress: conf.idp.oauth2?.proxyAddress || ''
+        proxyAddress: conf.idp.oauth2?.proxyAddress || '',
+        displayName: conf.idp.oauth2?.displayName || ''
       }
     },
     captcha: {
