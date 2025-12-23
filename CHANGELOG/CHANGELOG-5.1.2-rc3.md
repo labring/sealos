@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 
+* workflow mutli call concurrency ([#6418](https://github.com/labring/sealos/issues/6418))
 * **devbox:** list show bug ([#6414](https://github.com/labring/sealos/issues/6414))
 * **providers:** ensure dd command returns success status in file upload ([#6409](https://github.com/labring/sealos/issues/6409))
 * **devbox:** gpu lint bug ([#6406](https://github.com/labring/sealos/issues/6406))
