@@ -384,7 +384,8 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return isGPUInfoConfigMap(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
-				return isGPUInfoConfigMap(event.ObjectNew) && configMapChanged(event.ObjectOld, event.ObjectNew)
+				return isGPUInfoConfigMap(event.ObjectNew) &&
+					configMapChanged(event.ObjectOld, event.ObjectNew)
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
 				return isGPUInfoConfigMap(event.Object)
