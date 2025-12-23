@@ -154,6 +154,7 @@ export type AuthConfigType = {
       authURL: string;
       tokenURL: string;
       userInfoURL: string;
+      displayName?: string;
     };
     sms?: {
       enabled: boolean;
@@ -373,7 +374,8 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       authURL: '',
       tokenURL: '',
       userInfoURL: '',
-      proxyAddress: ''
+      proxyAddress: '',
+      displayName: ''
     }
   },
   billingToken: '',

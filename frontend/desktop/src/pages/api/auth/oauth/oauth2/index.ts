@@ -14,10 +14,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   const clientSecret = global.AppConfig?.desktop.auth.idp.oauth2?.clientSecret!;
   const tokenUrl = global.AppConfig?.desktop.auth.idp.oauth2?.tokenURL;
   const userInfoUrl = global.AppConfig?.desktop.auth.idp.oauth2?.userInfoURL;
-  const redirectUrl = global.AppConfig?.desktop.auth.callbackURL;
-  if (!enableOAuth2() || !redirectUrl) {
-    throw new Error('District related env');
+  const oauth2CallbackUrl = global.AppConfig?.desktop.auth.idp.oauth2?.callbackURL;
+
+  if (!enableOAuth2() || !oauth2CallbackUrl) {
+    throw new Error('OAuth2 configuration missing');
   }
+
   const { code, inviterId, semData, adClickData } = req.body;
   const url = `${tokenUrl}`;
   const oauth2Data = (await (
@@ -31,7 +33,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         client_id: clientId,
         client_secret: clientSecret,
         grant_type: 'authorization_code',
-        redirect_uri: redirectUrl
+        redirect_uri: oauth2CallbackUrl
       })
     })
   ).json()) as OAuth2Type;
@@ -58,7 +60,8 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     });
   const result = (await response.json()) as OAuth2UserInfoType;
 
-  const id = result.sub;
+  // Support both standard OAuth2 (sub) and SSO360 (id) formats
+  const id = result.sub || (result as any).id;
   const name = result?.nickname || result?.name || nanoid(8);
   const avatar_url = result?.picture || '';
 
