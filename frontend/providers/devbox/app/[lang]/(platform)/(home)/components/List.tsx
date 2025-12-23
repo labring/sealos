@@ -128,13 +128,14 @@ const DevboxList = ({
       {
         accessorKey: 'name',
         header: NameHeader,
-        size: 250,
+        size: 220,
         cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <NameColumn {...props} onEditRemark={handleEditRemark} />
       },
       {
         accessorKey: 'status',
         enableColumnFilter: true,
         filterFn: statusFilterFn,
+        size: 120,
         header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <StatusFilter
             {...props}
@@ -147,19 +148,19 @@ const DevboxList = ({
       {
         accessorKey: 'cpu',
         header: () => <span className="select-none">{t('cpu')}</span>,
-        size: 256,
+        size: 200,
         cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <MonitorColumn {...props} type="cpu" />
       },
       {
         accessorKey: 'memory',
         header: () => <span className="select-none">{t('memory')}</span>,
-        size: 256,
+        size: 200,
         cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <MonitorColumn {...props} type="memory" />
       },
       {
         accessorKey: 'gpu',
         header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">GPU</span>,
-        size: 180,
+        size: 150,
         cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
           return <GPUItem gpu={item.gpu} />;
@@ -178,7 +179,7 @@ const DevboxList = ({
       {
         id: 'actions',
         header: () => <span className="select-none">{t('action')}</span>,
-        size: 300,
+        size: 280,
         cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
           <ActionsColumn
             {...props}
@@ -263,9 +264,9 @@ const DevboxList = ({
     <>
       {/* table */}
       <div className="flex h-full w-full flex-col justify-between">
-        <div className="flex h-full flex-col gap-3">
+        <div className="flex h-full flex-col gap-3 overflow-x-auto">
           {/* table header */}
-          <div className="flex h-10 items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
+          <div className="flex h-10 min-w-[1350px] items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
             {table.getFlatHeaders().map((header) => (
               <div
                 key={header.id}
@@ -283,7 +284,7 @@ const DevboxList = ({
             table.getRowModel().rows.map((row) => (
               <div
                 key={row.id}
-                className="flex h-16 items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors"
+                className="devboxListItem flex h-16 min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors"
                 data-id={row.original.id}
               >
                 {row.getVisibleCells().map((cell) => (
