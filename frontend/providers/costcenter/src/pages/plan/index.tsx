@@ -1,5 +1,6 @@
 import { Info } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
 import useSessionStore from '@/stores/session';
@@ -34,6 +35,7 @@ import { openInNewWindow } from '@/utils/windowUtils';
 
 export default function Plan() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
@@ -665,10 +667,12 @@ export default function Plan() {
                 <Info className="text-orange-600" />
               </div>
               <div className="text-orange-600 text-sm leading-5">
-                Please ensure resources remain within
-                {lastTransactionData?.transaction?.NewPlanName} plan limits by
-                {new Date(lastTransactionData?.transaction?.StartAt || '').toLocaleDateString()}
-                to avoid charges.
+                {t('common:downgrade_warning_message', {
+                  planName: lastTransactionData?.transaction?.NewPlanName,
+                  date: new Date(
+                    lastTransactionData?.transaction?.StartAt || ''
+                  ).toLocaleDateString()
+                })}
               </div>
             </div>
           )}

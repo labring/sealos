@@ -64,8 +64,8 @@
   "promotion_code_applied": "Promotion code \"{{code}}\" applied",
   "pending_upgrade_title": "Unpaid Order Exists",
   "pending_upgrade_message": "There is an unpaid upgrade order to {{planName}}. Please choose to continue paying the original order or cancel it and pay for the new order.",
-  "continue_payment": "Continue Paying Original Order",
-  "cancel_and_pay_new": "Cancel Original Order and Pay New Order",
+  "continue_payment": "Continue Paying",
+  "cancel_and_pay_new": "Cancel & Pay New",
   "canceling_invoice": "Canceling order...",
   "cancel_invoice_success": "Order canceled successfully",
   "cancel_invoice_error": "Failed to cancel order",
@@ -264,7 +264,7 @@
   "open_payment_page_again": "Reopen Payment Page",
   "pick_date_range": "Pick Date Range",
   "plan": "Plan",
-  "please_ensure_your_resource_usage_stays_within_plan_limits": "Please ensure your resource usage stays within the plan limits",
+  "please_ensure_your_resource_usage_stays_within_plan_limits": "Please ensure your resource usage stays within the plan limits ",
   "please_select_a_specific_workspace": "Please select a specific workspace",
   "port": "Port",
   "port_unit": "port",
@@ -407,5 +407,6 @@
     "diners": "Diners Club",
     "jcb": "JCB",
     "unionpay": "UnionPay"
-  }
+  },
+  "downgrade_warning_message": "Please ensure resources remain within {{planName}} plan limits by {{date}} to avoid charges."
 }

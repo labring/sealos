@@ -404,5 +404,6 @@
     "diners": "Diners Club",
     "jcb": "JCB",
     "unionpay": "银联"
-  }
+  },
+  "downgrade_warning_message": "请确保资源在 {{date}} 之前保持在 {{planName}} 套餐限制内，以避免产生费用。"
 }
