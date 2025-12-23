@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 import type { ExceededWorkspaceQuotaItem, WorkspaceQuotaItemType } from '../../../types/workspace';
 import { resourcePropertyMap } from '../../../constants/resource';
@@ -15,6 +15,7 @@ export interface InsufficientQuotaDialogViewProps {
   showControls: boolean;
   showRequirements: WorkspaceQuotaItemType[];
   lang: SupportedLang;
+  disallowClosing?: boolean;
 }
 
 export function InsufficientQuotaDialogView({
@@ -25,15 +26,37 @@ export function InsufficientQuotaDialogView({
   showControls,
   onOpenCostCenter,
   showRequirements,
-  lang
+  lang,
+  disallowClosing = false
 }: InsufficientQuotaDialogViewProps) {
   const i18n = getQuotaDialogI18n(lang);
+
+  // Handle ESC key press
+  useEffect(() => {
+    if (!open || !disallowClosing) return;
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [open, disallowClosing]);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
+      <div
+        className="fixed inset-0 bg-black/50"
+        onClick={() => !disallowClosing && onOpenChange(false)}
+      />
 
       {/* Dialog */}
       <div className="relative z-50 w-full max-w-[800px] rounded-2xl border bg-white p-6 shadow-lg">
@@ -44,27 +67,29 @@ export function InsufficientQuotaDialogView({
         </div>
 
         {/* Close button */}
-        <button
-          className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          onClick={() => onOpenChange(false)}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-4 w-4"
+        {!disallowClosing && (
+          <button
+            className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={() => onOpenChange(false)}
           >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
-          <span className="sr-only">Close</span>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+            <span className="sr-only">Close</span>
+          </button>
+        )}
 
         {/* Body */}
         <div className="space-y-4">
@@ -136,12 +161,14 @@ export function InsufficientQuotaDialogView({
         {/* Footer */}
         {showControls && (
           <div className="mt-6 flex justify-end gap-3">
-            <button
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-              onClick={() => onOpenChange(false)}
-            >
-              {i18n.cancel}
-            </button>
+            {!disallowClosing && (
+              <button
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                onClick={() => onOpenChange(false)}
+              >
+                {i18n.cancel}
+              </button>
+            )}
             <button
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
               onClick={onConfirm}

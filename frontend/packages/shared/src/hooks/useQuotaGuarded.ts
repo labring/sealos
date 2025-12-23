@@ -13,6 +13,8 @@ export type QuotaGuardedOptions = {
   allowContinue: boolean;
   /** Types to show in requirements dialog */
   showRequirements?: WorkspaceQuotaItemType[];
+  /** Disallow closing the dialog (hard intercept scenario) */
+  disallowClosing?: boolean;
 };
 
 export type UseQuotaGuardedConfig = {
@@ -88,6 +90,7 @@ export function useQuotaGuarded(options: QuotaGuardedOptions, callback: () => vo
           quotaStore.setExceededQuotas(exceededQuotas);
           quotaStore.setExceededPromptControls(options.allowContinue);
           quotaStore.setShowRequirements(options.showRequirements || []);
+          quotaStore.setDisallowClosing(options.disallowClosing || false);
           if (options.allowContinue) {
             quotaStore.setExceededPromptCallback(callback);
           } else {

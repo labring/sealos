@@ -56,7 +56,12 @@ const DelModal = ({
   const handleDelApp = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Wait for 2-4s before closing the modal, avoiding pvc quota not up to date.
+      const delay = Math.random() * 2000 + 2000; // 2000-4000ms
+      await new Promise((resolve) => setTimeout(resolve, delay));
       await delAppByName(appName);
+
       toast({
         title: `${t('success')}`,
         status: 'success'

@@ -38,6 +38,8 @@ type State = {
   setExceededPromptCallback: (callback: (() => void) | null) => void;
   showRequirements: WorkspaceQuotaItemType[];
   setShowRequirements: (types: WorkspaceQuotaItemType[]) => void;
+  disallowClosing: boolean;
+  setDisallowClosing: (disallow: boolean) => void;
   quotaGuardedConfig: QuotaGuardedConfig | null;
   setQuotaGuardedConfig: (config: QuotaGuardedConfig) => void;
 };
@@ -116,6 +118,12 @@ export const useQuotaStore = create<State>()(
       setShowRequirements: (types) => {
         set({
           showRequirements: types
+        });
+      },
+      disallowClosing: false,
+      setDisallowClosing: (disallow) => {
+        set({
+          disallowClosing: disallow
         });
       },
       quotaGuardedConfig: null,

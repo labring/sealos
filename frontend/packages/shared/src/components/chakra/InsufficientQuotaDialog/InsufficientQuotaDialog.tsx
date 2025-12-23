@@ -39,6 +39,7 @@ export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) 
       showControls={quotaStore.showExceededPromptControls}
       showRequirements={quotaStore.showRequirements}
       lang={lang}
+      disallowClosing={quotaStore.disallowClosing}
       onConfirm={
         quotaStore.exceededPromptCallback
           ? () => {

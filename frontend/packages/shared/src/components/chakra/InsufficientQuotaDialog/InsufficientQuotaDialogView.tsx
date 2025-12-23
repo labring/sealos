@@ -29,6 +29,7 @@ export interface InsufficientQuotaDialogViewProps {
   showControls: boolean;
   showRequirements: WorkspaceQuotaItemType[];
   lang: SupportedLang;
+  disallowClosing?: boolean;
 }
 
 export function InsufficientQuotaDialogView({
@@ -39,12 +40,19 @@ export function InsufficientQuotaDialogView({
   showControls,
   onOpenCostCenter,
   showRequirements,
-  lang
+  lang,
+  disallowClosing = false
 }: InsufficientQuotaDialogViewProps) {
   const i18n = getQuotaDialogI18n(lang);
 
   return (
-    <Modal isOpen={open} onClose={() => onOpenChange(false)} isCentered>
+    <Modal
+      isOpen={open}
+      onClose={disallowClosing ? () => {} : () => onOpenChange(false)}
+      isCentered
+      closeOnOverlayClick={!disallowClosing}
+      closeOnEsc={!disallowClosing}
+    >
       <ModalOverlay />
       <ModalContent maxW="800px">
         <ModalHeader>
@@ -53,7 +61,7 @@ export function InsufficientQuotaDialogView({
             <Text>{i18n.title}</Text>
           </Flex>
         </ModalHeader>
-        <ModalCloseButton />
+        {!disallowClosing && <ModalCloseButton />}
         <ModalBody>
           <VStack spacing={4} align="stretch">
             <Box bg="#FFF7ED" p={4} borderRadius="md">
@@ -132,9 +140,11 @@ export function InsufficientQuotaDialogView({
         </ModalBody>
         {showControls && (
           <ModalFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)} mr={3}>
-              {i18n.cancel}
-            </Button>
+            {!disallowClosing && (
+              <Button variant="outline" onClick={() => onOpenChange(false)} mr={3}>
+                {i18n.cancel}
+              </Button>
+            )}
             <Button variant="outline" onClick={onConfirm}>
               {i18n.confirm}
             </Button>

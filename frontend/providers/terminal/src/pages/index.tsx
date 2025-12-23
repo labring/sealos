@@ -52,7 +52,8 @@ export default function Index(props: ServiceEnv) {
         traffic: true
       },
       immediate: false,
-      allowContinue: false
+      allowContinue: false,
+      disallowClosing: true
     },
     () => {
       setQuotaCheckPassed(true);
