@@ -909,7 +909,7 @@ func handleStripeUpgrade(c *gin.Context, req *helper.WorkspaceSubscriptionOperat
 	} else {
 		amount = originalAmount
 	}
-	if amount <= 0 {
+	if amount < 0 {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
@@ -2131,6 +2131,15 @@ func NewWorkspaceSubscriptionNotifyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
+/*
+checkout.session.completed
+checkout.session.expired
+customer.subscription.created
+customer.subscription.deleted
+invoice.paid
+invoice.payment_failed
+setup_intent.succeeded
+*/
 // processWorkspaceSubscriptionWebhookEvent processes webhook events with database operations
 // Following the pattern of subscription.go's processSubscriptionPayResult
 func processWorkspaceSubscriptionWebhookEvent(event *stripe.Event) error {
@@ -2859,6 +2868,8 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 	workspace := subscription.Metadata["workspace"]
 	regionDomain := subscription.Metadata["region_domain"]
 	userUIDStr := subscription.Metadata["user_uid"]
+	// deleteImmediately
+	deleteImmediately := subscription.Metadata["delete_status"] == "immediately"
 
 	if workspace == "" || regionDomain == "" || userUIDStr == "" {
 		return errors.New("missing required metadata in subscription")
@@ -2900,11 +2911,13 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 		if workspaceSubscription.Status != types.SubscriptionStatusNormal {
 			return nil
 		}
-		if workspaceSubscription.CurrentPeriodEndAt.After(time.Now().UTC()) {
+		if workspaceSubscription.CurrentPeriodEndAt.After(time.Now().UTC()) && !deleteImmediately {
 			// set pay method to balance
 			workspaceSubscription.PayMethod = helper.BALANCE
 			return tx.Save(&workspaceSubscription).Error
 		}
+
+		// Handle immediate deletion or period expiry with balance fallback
 		notifyEventData := &usernotify.WorkspaceSubscriptionEventData{
 			WorkspaceName: workspace,
 			Domain:        regionDomain,
@@ -2924,7 +2937,7 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 
 		// Renewal failure - try balance
 		var account types.Account
-		if err := tx.Where("user_uid = ?", userUID).First(&account).Error; err != nil {
+		if err := tx.Where(`"userUid" = ?`, userUID).First(&account).Error; err != nil {
 			return fmt.Errorf("failed to get account: %w", err)
 		}
 		price, err := dao.DBClient.GetWorkspaceSubscriptionPlanPrice(
@@ -2936,8 +2949,8 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 		}
 		notifyEventData.Amount = float64(price.Price)
 
-		if account.Balance-account.DeductionBalance >= price.Price {
-			// Balance payment success
+		if account.Balance-account.DeductionBalance >= price.Price && !deleteImmediately {
+			// Balance payment success - process renewal
 			_payID, err := gonanoid.New(12)
 			if err != nil {
 				return fmt.Errorf("failed to create payment id: %w", err)
@@ -2998,7 +3011,7 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 			workspaceSubscription.PayMethod = types.PaymentMethodErrAndUseBalance
 			logrus.Infof("Renewal succeeded with balance for %s/%s", workspace, regionDomain)
 		} else {
-			// Both payments failed
+			// Both payments failed - set to debt status
 			workspaceSubscription.PayStatus = types.SubscriptionPayStatusCanceled
 			workspaceSubscription.Status = types.SubscriptionStatusDebt
 			// Mark workspace as debt (e.g., add label )
@@ -3009,6 +3022,7 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 			logrus.Warnf("Renewal failed for %s/%s, set to debt status", workspace, regionDomain)
 		}
 
+		// Send notification
 		if _, err = dao.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, notifyEventData, types.SubscriptionTransactionTypeRenewed, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
 			logrus.Errorf(
 				"failed to send subscription failure notification to user %s: %v",
@@ -3018,8 +3032,9 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 			// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
 		}
 
+		// Save subscription status
 		if err := tx.Save(workspaceSubscription).Error; err != nil {
-			return fmt.Errorf("failed to update subscription to debt status: %w", err)
+			return fmt.Errorf("failed to update subscription status: %w", err)
 		}
 		return nil
 	})
