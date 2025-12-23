@@ -32,13 +32,15 @@
   "author": "",
   "license": "ISC",
   "peerDependencies": {
-    "@chakra-ui/icons": "^2.1.1",
-    "@chakra-ui/react": "^2.8.1",
+    "@chakra-ui/icons": "^2",
+    "@chakra-ui/react": "^2",
+    "immer": "^10",
     "lucide-react": ">=0.460.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^18.0 || ^19.0 || ^19.0.0-rc",
     "sealos-desktop-sdk": "workspace:*",
-    "zustand": "^4.4.1"
+    "zustand": "^4 || ^5",
+    "zod": "^3 || ^4"
   },
   "peerDependenciesMeta": {
     "@chakra-ui/icons": {
@@ -47,10 +49,6 @@
     "@chakra-ui/react": {
       "optional": true
     }
-  },
-  "dependencies": {
-    "immer": "^10.0.3",
-    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@chakra-ui/icons": "^2.1.1",
@@ -65,7 +63,9 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sealos-desktop-sdk": "workspace:*",
-    "typescript": "^5.2.2",
-    "zustand": "^4.4.1"
+    "typescript": "^5.9.3",
+    "zustand": "^4.5.6",
+    "immer": "^10.2.0",
+    "zod": "^3.22.4"
   }
 }
