@@ -108,17 +108,27 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 		(currentState == devboxv1alpha2.DevboxStateRunning || currentState == devboxv1alpha2.DevboxStatePaused)
 
 	if needsCommit {
+		// Keep the lock held across the whole retry loop to prevent concurrent commits during backoff windows.
+		commitKey := devbox.Status.ContentID
+		if commitKey == "" {
+			err := errors.New("empty contentID, cannot start commit")
+			h.Logger.Error(err, "invalid devbox for commit", "devbox", devbox.Name)
+			return err
+		}
+
 		// Check if commit is already in progress to prevent duplicate requests
-		if _, loaded := commitMap.LoadOrStore(devbox.Status.ContentID, true); loaded {
+		if _, loaded := commitMap.LoadOrStore(commitKey, true); loaded {
 			h.Logger.Info(
 				"commit already in progress, skipping duplicate request",
 				"devbox",
 				devbox.Name,
 				"contentID",
-				devbox.Status.ContentID,
+				commitKey,
 			)
 			return nil
 		}
+		defer commitMap.Delete(commitKey)
+
 		start := time.Now()
 		h.Logger.Info(
 			"start commit devbox",
@@ -131,18 +141,18 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 		)
 
 		// retry commit devbox with retry logic
-		// backoff: 10s, 20s, 30s
+		// backoff: fixed 10s, up to 30 steps (~5min)
 		err := retry.OnError(wait.Backoff{
 			Duration: 10 * time.Second,
 			Factor:   1.0,
 			Jitter:   0.1,
 			Steps:    30,
 		}, func(err error) bool {
-			return true
+			// Don't retry if the context is cancelled/timed out.
+			return !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
 		}, func() error {
 			err := h.commitDevbox(ctx, devbox, targetState)
 			if err != nil {
-				commitMap.Delete(devbox.Status.ContentID)
 				h.Logger.Error(err, "failed to commit devbox in retry", "devbox", devbox.Name)
 				return err
 			}
@@ -208,7 +218,6 @@ func (h *EventHandler) commitDevbox(
 	devbox *devboxv1alpha2.Devbox,
 	targetState devboxv1alpha2.DevboxState,
 ) error {
-	defer commitMap.Delete(devbox.Status.ContentID)
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
 		return err
