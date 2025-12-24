@@ -8,6 +8,8 @@ import {
   Box,
   Button,
   Flex,
+  FormControl,
+  FormErrorMessage,
   Input,
   Modal,
   ModalBody,
@@ -42,9 +44,22 @@ const RestoreModal = ({
   const { message: toast } = useMessage();
   const [forceUpdate, setForceUpdate] = useState(false);
 
-  const { register, handleSubmit, getValues, setValue } = useForm({
+  // Limit name length.
+  const generateDefaultDatabaseName = () => {
+    const baseName = `${db.dbName}-${nanoid()}`;
+    return baseName.length > 50 ? baseName.substring(0, 50) : baseName;
+  };
+
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    setValue,
+    formState: { errors }
+  } = useForm({
+    mode: 'onBlur',
     defaultValues: {
-      databaseName: `${db.dbName}-${nanoid()}`,
+      databaseName: generateDefaultDatabaseName(),
       replicas: 1
     }
   });
@@ -97,13 +112,24 @@ const RestoreModal = ({
                 borderRadius={'md'}
               />
               <Box>
-                <Flex mt={8} alignItems={'center'}>
-                  <Box flex={'0 0 120px'}>{t('database_name')}</Box>
-                  <Input
-                    {...register('databaseName', {
-                      required: t('database_name_cannot_empty')
-                    })}
-                  />
+                <Flex mt={8} alignItems={'flex-start'}>
+                  <Box flex={'0 0 120px'} pt={2}>
+                    {t('database_name')}
+                  </Box>
+                  <FormControl isInvalid={Boolean(errors.databaseName)} flex={1}>
+                    <Input
+                      {...register('databaseName', {
+                        required: t('database_name_cannot_empty'),
+                        maxLength: {
+                          value: 50,
+                          message: t('database_name_max_length', { length: 50 })
+                        }
+                      })}
+                    />
+                    <FormErrorMessage mt={1}>
+                      {errors.databaseName && String(errors.databaseName.message)}
+                    </FormErrorMessage>
+                  </FormControl>
                 </Flex>
               </Box>
               <Box>
@@ -145,8 +171,9 @@ const RestoreModal = ({
                 <Button
                   isLoading={isLoading}
                   variant={'solid'}
-                  // @ts-ignore
-                  onClick={() => handleSubmit(onclickRestore)()}
+                  onClick={handleSubmit((data) =>
+                    onclickRestore({ databaseName: data.databaseName, replicas: data.replicas })
+                  )}
                 >
                   {t('Start')}
                 </Button>
