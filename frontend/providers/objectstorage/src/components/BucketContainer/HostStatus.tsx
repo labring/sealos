@@ -131,10 +131,12 @@ export function HostStatus() {
                 minW={'100px'}
                 onClick={() => {
                   const name = `static-host-${currentBucket?.name}`;
+                  const temp = { appName: name };
+                  const tempFormDataStr = encodeURIComponent(JSON.stringify(temp));
                   sealosApp.runEvents('openDesktopApp', {
                     appKey: 'system-applaunchpad',
-                    pathname: '/app/edit',
-                    query: { name },
+                    pathname: '/redirect',
+                    query: { formData: tempFormDataStr },
                     messageData: { type: 'InternalAppCall', name }
                   });
                 }}
