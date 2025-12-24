@@ -8,7 +8,7 @@ import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
-import { json2DevboxV2, json2Service, json2Ingress } from '@/utils/json2Yaml';
+import { json2Devbox, json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
@@ -510,7 +510,7 @@ export async function POST(req: NextRequest) {
 
     const resourceConfig = convertResourceConfig(resourceSource);
     const { DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
-    const devbox = json2DevboxV2(
+    const devbox = json2Devbox(
       {
         ...devboxForm,
         ...resourceConfig,
