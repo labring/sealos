@@ -15,6 +15,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import DevboxStatusTag from '@/components/StatusTag';
 import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
+import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
 import DeleteDevboxModal from '@/components/dialogs/DeleteDevboxDialog';
 
 interface HeaderProps {
@@ -149,19 +150,32 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           refetchDevboxList={refetchDevboxList}
         />
       )}
-      {!!devboxDetail && (
-        <ShutdownModal
-          open={!!onOpenShutdown}
-          onSuccess={() => {
-            refetchDevboxDetail();
-            setOnOpenShutdown(false);
-          }}
-          onClose={() => {
-            setOnOpenShutdown(false);
-          }}
-          devbox={devboxDetail}
-        />
-      )}
+      {!!devboxDetail &&
+        (devboxDetail.networkType === 'SSHGate' ? (
+          <SimpleShutdownDialog
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxDetail();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={devboxDetail}
+          />
+        ) : (
+          <ShutdownModal
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxDetail();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={devboxDetail}
+          />
+        ))}
     </div>
   );
 };

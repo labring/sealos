@@ -30,8 +30,11 @@ export const delDevbox = (devboxName: string) => DELETE('/api/delDevbox', { devb
 
 export const restartDevbox = (data: { devboxName: string }) => POST('/api/restartDevbox', data);
 
-export const startDevbox = (data: { devboxName: string; onlyIngress?: boolean }) =>
-  POST('/api/startDevbox', data);
+export const startDevbox = (data: {
+  devboxName: string;
+  onlyIngress?: boolean;
+  networkType?: 'NodePort' | 'Tailnet' | 'SSHGate';
+}) => POST('/api/startDevbox', data);
 
 export const shutdownDevbox = (data: {
   devboxName: string;

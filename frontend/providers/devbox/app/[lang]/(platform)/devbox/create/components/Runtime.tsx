@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { toast } from 'sonner';
-import Image from 'next/image';
 import { PencilLine } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +14,7 @@ import { useEnvStore } from '@/stores/env';
 import { listOfficialTemplateRepository, listTemplate } from '@/api/template';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 import {
   Select,
@@ -205,8 +205,8 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
         <div className="flex w-[500px] items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-              <Image
-                src={`/images/runtime/${displayTemplate.iconId}.svg`}
+              <RuntimeIcon
+                iconId={displayTemplate.iconId}
                 alt={displayTemplate.name}
                 width={40}
                 height={40}

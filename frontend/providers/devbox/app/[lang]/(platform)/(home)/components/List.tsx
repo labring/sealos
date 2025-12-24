@@ -56,11 +56,13 @@ import DevboxStatusTag from '@/components/StatusTag';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
+import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { track } from '@sealos/gtm';
 import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
 import { Separator } from '@sealos/shadcn-ui/separator';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 import SearchEmpty from './SearchEmpty';
 import GPUItem from '@/components/GPUItem';
 
@@ -203,23 +205,13 @@ const DevboxList = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                    <Image
-                      width={21}
-                      height={21}
-                      alt={item.id}
-                      src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
-                    />
+                    <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="start" sideOffset={1}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                      <Image
-                        width={21}
-                        height={21}
-                        alt={item.id}
-                        src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
-                      />
+                      <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
                     </div>
                     <div className="flex flex-col">
                       <p className="text-sm/5 font-medium">
@@ -748,19 +740,32 @@ const DevboxList = ({
           devbox={currentDevboxListItem}
         />
       )}
-      {!!currentDevboxListItem && (
-        <ShutdownModal
-          open={!!onOpenShutdown}
-          onSuccess={() => {
-            refetchDevboxList();
-            setOnOpenShutdown(false);
-          }}
-          onClose={() => {
-            setOnOpenShutdown(false);
-          }}
-          devbox={currentDevboxListItem}
-        />
-      )}
+      {!!currentDevboxListItem &&
+        (currentDevboxListItem.networkType === 'SSHGate' ? (
+          <SimpleShutdownDialog
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxList();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={currentDevboxListItem}
+          />
+        ) : (
+          <ShutdownModal
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxList();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={currentDevboxListItem}
+          />
+        ))}
       {!!editRemarkItem && (
         <EditRemarkDialog
           open={!!onOpenEditRemark}

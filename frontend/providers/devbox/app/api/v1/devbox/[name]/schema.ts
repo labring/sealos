@@ -189,6 +189,19 @@ const PodSchema = z.object({
   description: 'Pod information'
 });
 
+const AgentServerSchema = z.object({
+  url: z.string().openapi({
+    description: 'Agent server URL from network uniqueID',
+    example: 'https://agent.example.com'
+  }),
+  token: z.string().openapi({
+    description: 'JWT token for agent server authentication (base64 encoded)',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  })
+}).openapi({
+  description: 'Agent server connection information'
+});
+
 // Combined request schema
 export const UpdateDevboxRequestSchema = z.object({
   resource: ResourceConfig.optional().openapi({
@@ -343,6 +356,9 @@ export const DevboxDetailResponseSchema = z.object({
     }),
     operationalStatus: z.any().optional().openapi({
       description: 'Operational status details (optional)'
+    }),
+    agentServer: AgentServerSchema.openapi({
+      description: 'Agent server connection information'
     })
   })
 }).openapi({
