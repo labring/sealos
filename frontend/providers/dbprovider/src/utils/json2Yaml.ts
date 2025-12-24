@@ -768,6 +768,7 @@ export const json2Reconfigure = (
         ...configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.newValue }), {})
       },
       annotations: {
+        // For displaying previous value.
         [DBPreviousConfigKey]: JSON.stringify(
           configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.oldValue }), {})
         )
