@@ -38,17 +38,6 @@ spec:
       labels:
         app: template-frontend
     spec:
-      initContainers:
-        - command:
-          - sh
-          - -c
-          - chmod -R 777 /data/templates/.git && cp -r -a /data/templates/. /template-data/
-          image: ghcr.io/labring-actions/sealos-template-init:latest
-          imagePullPolicy: Always
-          name: template-frontend-init
-          volumeMounts:
-            - mountPath: /template-data
-              name: template-data
       containers:
         - name: template-frontend
           resources:
@@ -99,8 +88,6 @@ spec:
             - name: template-frontend-volume
               mountPath: /app/data/config.json
               subPath: config.json
-            - name: template-data
-              mountPath: /app/providers/template/templates
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -117,8 +104,6 @@ spec:
         - name: template-frontend-volume
           configMap:
             name: template-frontend-config
-        - name: template-data
-          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
