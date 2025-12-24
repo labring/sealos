@@ -12,7 +12,13 @@ import {
   PaymentListResponse,
   PaymentListRequest,
   PaymentStatusRequest,
-  PaymentStatusResponse
+  PaymentStatusResponse,
+  WorkspaceSubscriptionCardInfoRequest,
+  CardInfoResponse,
+  WorkspaceSubscriptionManageCardRequest,
+  PortalSessionResponse,
+  InvoiceCancelRequest,
+  InvoiceCancelResponse
 } from '@/types/plan';
 
 // Get all subscription plans
@@ -68,6 +74,39 @@ export const getWorkspaceSubscriptionList = () =>
 // Get payment status by payId
 export const getPaymentStatus = (data: PaymentStatusRequest) =>
   request<any, ApiResp<PaymentStatusResponse>>('/api/plan/status', {
+    method: 'POST',
+    data
+  });
+
+/**
+ * Get workspace subscription card info
+ * @param data - Card info request data
+ * @returns Card info response
+ */
+export const getCardInfo = (data: WorkspaceSubscriptionCardInfoRequest) =>
+  request<any, ApiResp<CardInfoResponse>>('/api/plan/card-info', {
+    method: 'POST',
+    data
+  });
+
+/**
+ * Create card management portal session
+ * @param data - Card management request data
+ * @returns Portal session response with URL
+ */
+export const createCardManageSession = (data: WorkspaceSubscriptionManageCardRequest) =>
+  request<any, ApiResp<PortalSessionResponse>>('/api/plan/manage-card', {
+    method: 'POST',
+    data
+  });
+
+/**
+ * Cancel unpaid workspace subscription upgrade invoice
+ * @param data - Invoice cancel request data
+ * @returns Invoice cancel response
+ */
+export const cancelInvoice = (data: InvoiceCancelRequest) =>
+  request<any, ApiResp<InvoiceCancelResponse>>('/api/plan/invoice-cancel', {
     method: 'POST',
     data
   });

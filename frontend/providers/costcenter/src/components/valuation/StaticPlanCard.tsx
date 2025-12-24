@@ -4,6 +4,7 @@ import { Badge } from '@sealos/shadcn-ui/badge';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { PlanAdditionalFeaturesOverride } from '@/constants/plan';
 
 interface StaticPlanCardProps {
   plan: SubscriptionPlan;
@@ -34,7 +35,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
 
   return (
     <section
-      className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-sm relative"
+      className="flex flex-col border border-gray-200 rounded-xl flex-1 bg-white shadow-sm relative"
       style={{ width: '258px' }}
     >
       <div className="p-6 pb-4">
@@ -114,6 +115,20 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
               </span>
             </li>
           )}
+          {(() => {
+            const planName = plan.Name.toLowerCase();
+            const matchedKey = Array.from(PlanAdditionalFeaturesOverride.keys()).find((key) =>
+              planName.includes(key.toLowerCase())
+            );
+            const features = matchedKey ? PlanAdditionalFeaturesOverride.get(matchedKey) || [] : [];
+
+            return features.map((featureKey, index) => (
+              <li key={index} className="flex items-center gap-3">
+                <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
+                <span className="text-sm text-gray-700">{t(featureKey)}</span>
+              </li>
+            ));
+          })()}
         </ul>
       </div>
     </section>

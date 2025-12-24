@@ -1,4 +1,4 @@
-import chart7 from '@/assert/Chart7.svg';
+import placeholderImage from '@/assets/chart_placeholder.svg';
 import Notfound from '@/components/notFound';
 import request from '@/service/request';
 import { Img } from '@chakra-ui/react';
@@ -75,7 +75,7 @@ export const TrendBar = memo(function Trend() {
       <div className="px-8 py-4 flex flex-col items-center justify-center gap-4 h-[calc(300px+2rem)]">
         {isInitialLoading || !data ? (
           <>
-            <Img src={chart7.src}></Img>
+            <Img src={placeholderImage.src}></Img>
             <Notfound></Notfound>
           </>
         ) : (

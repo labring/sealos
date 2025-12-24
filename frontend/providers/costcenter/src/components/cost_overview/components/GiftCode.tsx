@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
-import { useMessage } from '@sealos/ui';
+import { toast } from 'sonner';
 import { Button } from '@sealos/shadcn-ui/button';
 import {
   Dialog,
@@ -44,19 +44,9 @@ function GiftCode() {
 
 function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
   const { t } = useTranslation();
-  const initialRef = React.useRef(null);
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
-  const { message } = useMessage({
-    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
-    warningIconBg: 'var(--Yellow-500, #F79009)',
-    warningIconFill: 'white',
-
-    successBoxBg: 'var(--Green-50, #EDFBF3)',
-    successIconBg: 'var(--Green-600, #039855)',
-    successIconFill: 'white'
-  });
 
   const useGiftCodeMutation = useMutation(
     (code: string) =>
@@ -68,22 +58,14 @@ function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
         useGiftCodeMutation.reset();
         setCode('');
         queryClient.invalidateQueries(['getAccount']); // Invalidate the cache
-        message({
-          status: 'success',
-          title: t('common:gift_code_redeemed_successfully'),
-          isClosable: true,
-          duration: 2000,
-          position: 'top'
+        toast.success(t('common:gift_code_redeemed_successfully'), {
+          duration: 2000
         });
         onToggle(false);
       },
       onError(err: any) {
-        message({
-          status: 'warning',
-          title: t('common:failed_to_redeem_gift_code'),
-          description: err?.message || t('common:failed_to_redeem_gift_code'),
-          isClosable: true,
-          position: 'top'
+        toast.warning(t('common:failed_to_redeem_gift_code'), {
+          description: err?.message || t('common:failed_to_redeem_gift_code')
         });
       }
     }

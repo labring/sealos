@@ -320,7 +320,7 @@ export default function Account() {
                         className={cn(
                           'px-1 text-xs',
                           getPlanBackgroundClass(
-                            subscriptionInfo?.subscription.PlanName ?? '',
+                            subscriptionInfo?.subscription?.PlanName ?? '',
                             !!subscriptionInfo?.subscription,
                             subscriptionInfo?.subscription.Status === 'Debt'
                           )
