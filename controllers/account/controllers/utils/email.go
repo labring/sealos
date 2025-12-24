@@ -15,7 +15,7 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/go-gomail/gomail"
 )
@@ -50,9 +50,12 @@ func (c *SMTPConfig) SendEmailWithTitle(subject, emailBody, to string) error {
 }
 
 // SendEmailWithTitleMultiple sends email with title to multiple email addresses with the same content
-func (c *SMTPConfig) SendEmailWithTitleMultiple(subject, emailBody string, toEmails []string) error {
+func (c *SMTPConfig) SendEmailWithTitleMultiple(
+	subject, emailBody string,
+	toEmails []string,
+) error {
 	if len(toEmails) == 0 {
-		return fmt.Errorf("email addresses cannot be empty")
+		return errors.New("email addresses cannot be empty")
 	}
 
 	m := gomail.NewMessage()
@@ -65,7 +68,7 @@ func (c *SMTPConfig) SendEmailWithTitleMultiple(subject, emailBody string, toEma
 		}
 	}
 	if len(validEmails) == 0 {
-		return fmt.Errorf("no valid email addresses")
+		return errors.New("no valid email addresses")
 	}
 	m.SetHeader("To", validEmails...)
 	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)

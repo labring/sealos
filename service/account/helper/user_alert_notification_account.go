@@ -90,7 +90,7 @@ type DeleteUserAlertNotificationAccountReq struct {
 	// @Summary Account IDs
 	// @Description List of account IDs to delete
 	// @JSONSchema required
-	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required" example:"["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440001"]"`
+	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required" example:"[550e8400-e29b-41d4-a716-446655440000, 550e8400-e29b-41d4-a716-446655440001]"`
 
 	// @Summary User UUID
 	// @Description User UUID
@@ -126,7 +126,7 @@ type ToggleUserAlertNotificationAccountsReq struct {
 	// @Summary Account IDs
 	// @Description List of account IDs to toggle
 	// @JSONSchema required
-	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required" example:"["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440001"]"`
+	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required" example:"[550e8400-e29b-41d4-a716-446655440000, 550e8400-e29b-41d4-a716-446655440001]"`
 
 	// @Summary Enable flag
 	// @Description Set to true to enable, false to disable

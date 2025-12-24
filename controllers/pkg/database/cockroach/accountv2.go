@@ -843,7 +843,8 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 	// Convert UserAlertNotificationAccount to OauthProvider and append non-duplicates
 	for _, account := range alertNotificationAccounts {
 		// Only include EMAIL and PHONE provider types
-		if account.ProviderType != types.OauthProviderTypeEmail && account.ProviderType != types.OauthProviderTypePhone {
+		if account.ProviderType != types.OauthProviderTypeEmail &&
+			account.ProviderType != types.OauthProviderTypePhone {
 			continue
 		}
 

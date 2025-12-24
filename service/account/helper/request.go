@@ -759,7 +759,7 @@ type WorkspaceSubscriptionInfoReq struct {
 
 	// @Summary Redirect Url
 	// @Description Redirect Url for create session
-	RedirectUrl *string `json:"redirectUrl,omitempty" bson:"redirectUrl,omitempty" example:"https://example.com"`
+	RedirectURL *string `json:"redirectUrl,omitempty" bson:"redirectUrl,omitempty" example:"https://example.com"`
 }
 
 type WorkspaceSubscriptionCardInfoReq struct {

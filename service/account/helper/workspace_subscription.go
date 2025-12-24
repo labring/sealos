@@ -100,7 +100,7 @@ func AddTrafficPackageWithUpgrade(
 }
 
 // expireOldTrafficPackages expires existing traffic packages from old subscription plan
-func expireOldTrafficPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFromID string) error {
+func expireOldTrafficPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, _ string) error {
 	now := time.Now()
 
 	// Update all existing active traffic packages to expired status

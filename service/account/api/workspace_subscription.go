@@ -750,16 +750,16 @@ func handleSubscriptionCreation(
 	}
 
 	// Calculate the total amount from the invoice
-	//var totalAmount int64 = 0
-	//for _, line := range invoice.Lines.Data {
+	// var totalAmount int64 = 0
+	// for _, line := range invoice.Lines.Data {
 	//	if line.Amount > 0 {
 	//		totalAmount += line.Amount
 	//	}
-	//}
-	//totalAmount *= 10_000
+	// }
+	// totalAmount *= 10_000
 
 	// If no positive amounts found, fall back to standard price
-	//if totalAmount == 0 {
+	// if totalAmount == 0 {
 	//	totalAmount = price.Price
 	//}
 
@@ -2544,29 +2544,326 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 	})
 }
 
-// Reimplemented handleWorkspaceSubscriptionRenewalFailure
-func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
-	// Parse invoice data
+// renewalFailureMetadata holds parsed metadata from invoice/subscription
+type renewalFailureMetadata struct {
+	workspace     string
+	regionDomain  string
+	userUID       uuid.UUID
+	newPlanName   string
+	paymentID     string
+	transactionID string
+	operator      string
+	isInitial     bool
+	isRenewal     bool
+	isUpdate      bool
+	failureReason string
+	billingReason string
+}
+
+// parseAndValidateRenewalFailureEventData parses and validates the event data
+func parseAndValidateRenewalFailureEventData(
+	event *stripe.Event,
+) (*stripe.Invoice, *stripe.Subscription, error) {
 	sessionData, err := services.StripeServiceInstance.ParseWebhookEventData(event)
 	if err != nil {
-		return fmt.Errorf("failed to parse webhook data: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse webhook data: %w", err)
 	}
 
 	invoice, ok := sessionData.(*stripe.Invoice)
 	if !ok {
-		return errors.New("invalid invoice data type")
+		return nil, nil, errors.New("invalid invoice data type")
 	}
+
 	if invoice.Parent == nil || invoice.Parent.SubscriptionDetails == nil ||
 		invoice.Parent.SubscriptionDetails.Subscription == nil {
-		return errors.New("invoice has no associated subscription")
+		return nil, nil, errors.New("invoice has no associated subscription")
 	}
 
 	subscriptionID := invoice.Parent.SubscriptionDetails.Subscription.ID
 	subscription, err := services.StripeServiceInstance.GetSubscription(subscriptionID)
 	if err != nil {
-		return fmt.Errorf("failed to get Stripe subscription: %w", err)
+		return nil, nil, fmt.Errorf("failed to get Stripe subscription: %w", err)
 	}
 
+	return invoice, subscription, nil
+}
+
+// parseInvoiceMetadata extracts and validates metadata from invoice and subscription
+func parseInvoiceMetadata(
+	invoice *stripe.Invoice,
+	subscription *stripe.Subscription,
+) (*renewalFailureMetadata, error) {
+	metadata := &renewalFailureMetadata{
+		workspace:     subscription.Metadata["workspace"],
+		regionDomain:  subscription.Metadata["region_domain"],
+		newPlanName:   subscription.Metadata["plan_name"],
+		paymentID:     subscription.Metadata["payment_id"],
+		transactionID: subscription.Metadata["transaction_id"],
+		operator:      subscription.Metadata["subscription_operator"],
+		failureReason: "Stripe payment failed for invoice " + invoice.ID,
+		billingReason: string(invoice.BillingReason),
+	}
+
+	userUIDStr := subscription.Metadata["user_uid"]
+	if metadata.workspace == "" || metadata.regionDomain == "" || userUIDStr == "" ||
+		metadata.newPlanName == "" {
+		return nil, errors.New("missing required metadata in session")
+	}
+
+	var err error
+	metadata.userUID, err = uuid.Parse(userUIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user UID in metadata: %w", err)
+	}
+
+	// Determine billing type
+	metadata.isInitial = invoice.BillingReason == "subscription_create"
+	metadata.isRenewal = invoice.BillingReason == "subscription_cycle"
+	metadata.isUpdate = invoice.BillingReason == "subscription_update"
+
+	return metadata, nil
+}
+
+// handleInitialOrUpdateSubscriptionFailure handles initial subscription or upgrade payment failure
+func handleInitialOrUpdateSubscriptionFailure(
+	tx *gorm.DB,
+	metadata *renewalFailureMetadata,
+	workspaceSubscription *types.WorkspaceSubscription,
+	invoice *stripe.Invoice,
+) (*usernotify.WorkspaceSubscriptionEventData, error) {
+	var wsTransaction types.WorkspaceSubscriptionTransaction
+
+	// Find the appropriate transaction based on operator
+	switch types.SubscriptionOperator(metadata.operator) {
+	case types.SubscriptionTransactionTypeCreated:
+		if metadata.paymentID == "" {
+			return nil, fmt.Errorf("missing payment_id for %s failure", invoice.BillingReason)
+		}
+		if err := tx.Where("pay_id = ?", metadata.paymentID).First(&wsTransaction).Error; err != nil {
+			return nil, fmt.Errorf("transaction not found: %w", err)
+		}
+
+	case types.SubscriptionTransactionTypeUpgraded, types.SubscriptionTransactionTypeDowngraded:
+		// For upgrade/downgrade, try payment_id first (new invoice flow), then transaction_id (legacy flow)
+		if metadata.paymentID == "" {
+			metadata.paymentID = invoice.Metadata["payment_id"]
+		}
+		if metadata.paymentID != "" {
+			if err := tx.Where("pay_id = ?", metadata.paymentID).First(&wsTransaction).Error; err != nil {
+				return nil, fmt.Errorf("upgrade transaction not found: %w", err)
+			}
+		} else {
+			if metadata.transactionID == "" {
+				return nil, fmt.Errorf("missing transaction_id for %s failure", invoice.BillingReason)
+			}
+			if err := tx.Where("id = ?", metadata.transactionID).First(&wsTransaction).Error; err != nil {
+				return nil, fmt.Errorf("transaction not found: %w", err)
+			}
+		}
+
+	default:
+		return nil, fmt.Errorf(
+			"unsupported operator for %s failure: %s",
+			invoice.BillingReason,
+			metadata.operator,
+		)
+	}
+
+	// Update transaction status
+	wsTransaction.PayStatus = types.SubscriptionPayStatusFailed
+	wsTransaction.Status = types.SubscriptionTransactionStatusFailed
+	wsTransaction.StatusDesc = metadata.failureReason
+	if err := tx.Save(&wsTransaction).Error; err != nil {
+		return nil, fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	// Update payment order status if exists
+	var paymentOrder types.PaymentOrder
+	if err := tx.Where("id = ?", metadata.paymentID).First(&paymentOrder).Error; err == nil {
+		paymentOrder.Status = types.PaymentOrderStatusFailed
+		if err := tx.Save(&paymentOrder).Error; err != nil {
+			return nil, fmt.Errorf("failed to update payment order: %w", err)
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("failed to query payment order: %w", err)
+	}
+
+	// For upgrade failure, revert plan changes if applied prematurely
+	if metadata.isUpdate && workspaceSubscription.PlanName == metadata.newPlanName {
+		logrus.Infof(
+			"Reverting plan change due to upgrade payment failure for %s/%s, old plan: %s",
+			metadata.workspace,
+			metadata.regionDomain,
+			wsTransaction.OldPlanName,
+		)
+		oldPlanName := wsTransaction.OldPlanName
+		workspaceSubscription.PlanName = oldPlanName
+		workspaceSubscription.PayStatus = types.SubscriptionPayStatusFailed
+		if err := tx.Save(&workspaceSubscription).Error; err != nil {
+			return nil, fmt.Errorf("failed to revert upgrade plan: %w", err)
+		}
+		// Revert quota
+		if err := revertWorkspaceSubscriptionQuota(oldPlanName, metadata.workspace); err != nil {
+			logrus.Errorf("failed to revert quota for upgrade failure: %v", err)
+		}
+	}
+
+	logrus.Warnf(
+		"%s payment failed for %s/%s",
+		invoice.BillingReason,
+		metadata.workspace,
+		metadata.regionDomain,
+	)
+
+	// Prepare notification data
+	notifyData := &usernotify.WorkspaceSubscriptionEventData{
+		WorkspaceName: metadata.workspace,
+		Domain:        metadata.regionDomain,
+		PayStatus:     types.SubscriptionPayStatusFailed,
+		ExpirationDate: fmt.Sprintf("%s - %s",
+			workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
+			workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2")),
+		Amount:      math.Ceil(float64(invoice.AmountDue) / float64(100)),
+		ErrorReason: invoice.LastFinalizationError.Error(),
+		OldPlanName: wsTransaction.OldPlanName,
+		NewPlanName: wsTransaction.NewPlanName,
+	}
+
+	switch {
+	case metadata.isInitial:
+		notifyData.Operator = types.SubscriptionTransactionTypeCreated
+	case metadata.isUpdate:
+		notifyData.Operator = types.SubscriptionOperator(metadata.operator)
+	}
+
+	return notifyData, nil
+}
+
+// handleRenewalBalancePayment handles renewal payment with balance fallback
+func handleRenewalBalancePayment(
+	tx *gorm.DB,
+	metadata *renewalFailureMetadata,
+	workspaceSubscription *types.WorkspaceSubscription,
+	invoice *stripe.Invoice,
+) (*usernotify.WorkspaceSubscriptionEventData, error) {
+	// Generate payment ID
+	_payID, err := gonanoid.New(12)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create payment id: %w", err)
+	}
+
+	// Prepare payment
+	payment := types.Payment{
+		ID: _payID,
+		PaymentRaw: types.PaymentRaw{
+			UserUID:                 metadata.userUID,
+			RegionUID:               dao.DBClient.GetLocalRegion().UID,
+			CreatedAt:               time.Now().UTC(),
+			Method:                  helper.BALANCE,
+			Amount:                  invoice.AmountDue * 10_000,
+			TradeNO:                 _payID,
+			Type:                    types.PaymentTypeSubscription,
+			ChargeSource:            types.ChargeSourceBalance,
+			Status:                  types.PaymentStatusPAID,
+			WorkspaceSubscriptionID: &workspaceSubscription.ID,
+			Message: fmt.Sprintf(
+				"Balance fallback for failed Stripe renewal on workspace %s/%s",
+				metadata.workspace,
+				metadata.regionDomain,
+			),
+		},
+	}
+
+	// Deduct balance
+	if err := cockroach.AddDeductionAccount(tx, metadata.userUID, invoice.AmountDue*10_000); err != nil {
+		return nil, fmt.Errorf("failed to deduct balance: %w", err)
+	}
+
+	// Prepare transaction
+	wsTransaction := types.WorkspaceSubscriptionTransaction{
+		ID:            uuid.New(),
+		From:          types.TransactionFromUser,
+		Workspace:     metadata.workspace,
+		RegionDomain:  metadata.regionDomain,
+		UserUID:       metadata.userUID,
+		OldPlanName:   workspaceSubscription.PlanName,
+		NewPlanName:   metadata.newPlanName,
+		OldPlanStatus: workspaceSubscription.Status,
+		Operator:      types.SubscriptionTransactionTypeRenewed,
+		StartAt:       time.Now().UTC(),
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
+		PayStatus:     types.SubscriptionPayStatusPaid,
+		PayID:         _payID,
+		Period:        types.SubscriptionPeriodMonthly,
+		Amount:        invoice.AmountDue * 10_000,
+	}
+
+	// Finalize using helper
+	if err := finalizeWorkspaceSubscriptionSuccess(tx, workspaceSubscription, &wsTransaction, &payment); err != nil {
+		return nil, err
+	}
+
+	logrus.Infof(
+		"Renewal succeeded with balance for %s/%s",
+		metadata.workspace,
+		metadata.regionDomain,
+	)
+
+	// Prepare notification data
+	notifyData := &usernotify.WorkspaceSubscriptionEventData{
+		WorkspaceName: metadata.workspace,
+		Domain:        metadata.regionDomain,
+		Operator:      types.SubscriptionTransactionTypeRenewed,
+		OldPlanName:   metadata.newPlanName,
+		NewPlanName:   metadata.newPlanName,
+		PayStatus:     types.SubscriptionPayStatusFailedAndUseBalance,
+		ExpirationDate: fmt.Sprintf("%s - %s",
+			workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
+			workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2")),
+		Amount: math.Ceil(float64(invoice.AmountDue) / float64(100)),
+	}
+
+	return notifyData, nil
+}
+
+// handleRenewalBothPaymentsFailed handles when both Stripe and balance payments fail
+func handleRenewalBothPaymentsFailed(
+	tx *gorm.DB,
+	metadata *renewalFailureMetadata,
+	workspaceSubscription *types.WorkspaceSubscription,
+) error {
+	// Set subscription to debt status
+	workspaceSubscription.PayStatus = types.SubscriptionPayStatusFailed
+	workspaceSubscription.Status = types.SubscriptionStatusDebt
+	if err := tx.Save(workspaceSubscription).Error; err != nil {
+		return fmt.Errorf("failed to update subscription to debt status: %w", err)
+	}
+
+	// Mark workspace as debt
+	if err := updateDebtNamespaceStatus(context.Background(), dao.K8sManager.GetClient(), SuspendDebtNamespaceAnnoStatus, []string{metadata.workspace}); err != nil {
+		return fmt.Errorf("update namespace status error: %w", err)
+	}
+
+	logrus.Warnf(
+		"Renewal failed for %s/%s, set to debt status",
+		metadata.workspace,
+		metadata.regionDomain,
+	)
+	return nil
+}
+
+// Reimplemented handleWorkspaceSubscriptionRenewalFailure (refactored)
+func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
+	// Step 1: Parse and validate event data
+	invoice, subscription, err := parseAndValidateRenewalFailureEventData(event)
+	if err != nil {
+		return err
+	}
+
+	subscriptionID := subscription.ID
+
+	// Step 2: Check if this is a local event
 	isLocal, err := checkIsLocalEvent(subscription)
 	if err != nil {
 		return fmt.Errorf("failed to check event region: %w", err)
@@ -2574,29 +2871,26 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 	if !isLocal {
 		return nil
 	}
-	logrus.Infof("Processing invoice payment failure for subscription: %s", subscription.ID)
+	logrus.Infof("Processing invoice payment failure for subscription: %s", subscriptionID)
 
-	// Get metadata
-	workspace := subscription.Metadata["workspace"]
-	regionDomain := subscription.Metadata["region_domain"]
-	userUIDStr := subscription.Metadata["user_uid"]
-	newPlanName := subscription.Metadata["plan_name"]
-	paymentID := subscription.Metadata["payment_id"]
-	transactionID := subscription.Metadata["transaction_id"]
-	operator := subscription.Metadata["subscription_operator"]
-
-	if workspace == "" || regionDomain == "" || userUIDStr == "" || newPlanName == "" {
-		return errors.New("missing required metadata in session")
+	// Step 3: Parse metadata
+	metadata, err := parseInvoiceMetadata(invoice, subscription)
+	if err != nil {
+		return err
 	}
 
-	// Get workspace subscription
-	workspaceSubscription, err := dao.DBClient.GetWorkspaceSubscription(workspace, regionDomain)
+	// Step 4: Get workspace subscription and check status
+	workspaceSubscription, err := dao.DBClient.GetWorkspaceSubscription(
+		metadata.workspace,
+		metadata.regionDomain,
+	)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("workspace subscription not found for renewal failure")
 		}
 		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
+
 	if workspaceSubscription.Status == types.SubscriptionStatusDeleted {
 		_, err := services.StripeServiceInstance.CancelSubscription(subscriptionID)
 		if err != nil {
@@ -2604,48 +2898,16 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 		}
 		dao.Logger.Infof(
 			"renewalFailure: subscription paid for deleted workspace %s/%s, subscription %s canceled",
-			workspace,
-			regionDomain,
+			metadata.workspace,
+			metadata.regionDomain,
 			subscriptionID,
 		)
 		return nil
 	}
+
 	userUID := workspaceSubscription.UserUID
 
-	isInitialSubscription := invoice.BillingReason == "subscription_create"
-	isRenewSubscription := invoice.BillingReason == "subscription_cycle"
-	isUpdateSubscription := invoice.BillingReason == "subscription_update"
-	failureReason := "Stripe payment failed for invoice " + invoice.ID
-
-	notifyEventData := &usernotify.WorkspaceSubscriptionEventData{
-		WorkspaceName: workspace,
-		Domain:        regionDomain,
-		// Operator:       types.SubscriptionOperator(operator),
-		PayStatus: types.SubscriptionPayStatusFailed,
-		// ExpirationDate: fmt.Sprintf("%s-%s", workspaceSubscription.CurrentPeriodStartAt.Format("2006-01-02"), workspaceSubscription.CurrentPeriodEndAt.Format("2006-01-02")),
-		ExpirationDate: fmt.Sprintf("%s - %s",
-			workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
-			workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2")),
-		Amount:      math.Ceil(float64(invoice.AmountDue) / float64(100)),
-		ErrorReason: invoice.LastFinalizationError.Error(),
-	}
-	switch {
-	case isInitialSubscription:
-		notifyEventData.Operator = types.SubscriptionTransactionTypeCreated
-	case isRenewSubscription:
-		notifyEventData.Operator = types.SubscriptionTransactionTypeRenewed
-	case isUpdateSubscription:
-		paymentID = subscription.Metadata["last_payment_id"]
-		// operator = subscription.Metadata["last_operator"]
-		newPlanName = subscription.Metadata["new_plan_name"]
-		notifyEventData.Operator = types.SubscriptionOperator(operator)
-	default:
-		logrus.Errorf(
-			"handleWorkspaceSubscriptionRenewalFailure unsupported billing reason for payment failure: %s",
-			invoice.BillingReason,
-		)
-		return fmt.Errorf("unsupported billing reason: %s", invoice.BillingReason)
-	}
+	// Step 5: Setup notification recipient
 	nr, err := dao.DBClient.GetNotificationRecipient(userUID)
 	if err != nil {
 		return fmt.Errorf("failed to get notification recipient for user %s: %w", userUID, err)
@@ -2653,202 +2915,114 @@ func handleWorkspaceSubscriptionRenewalFailure(event *stripe.Event) error {
 	dao.UserContactProvider.SetUserContact(userUID, nr)
 	defer dao.UserContactProvider.RemoveUserContact(userUID)
 
-	// Database operations
+	// Step 6: Handle different billing scenarios
+	// For update subscription, update metadata fields
+	if metadata.isUpdate {
+		if metadata.paymentID == "" {
+			metadata.paymentID = subscription.Metadata["last_payment_id"]
+		}
+		if metadata.newPlanName == "" {
+			metadata.newPlanName = subscription.Metadata["new_plan_name"]
+		}
+	}
+
+	// Step 7: Database operations
 	return dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-		if isInitialSubscription || isUpdateSubscription {
-			// Update transaction to failed
-			var wsTransaction types.WorkspaceSubscriptionTransaction
-			switch types.SubscriptionOperator(operator) {
-			case types.SubscriptionTransactionTypeCreated:
-				if paymentID == "" {
-					return fmt.Errorf("missing payment_id for %s failure", invoice.BillingReason)
-				}
-				if err := tx.Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
-					return fmt.Errorf("transaction not found: %w", err)
-				}
-			case types.SubscriptionTransactionTypeUpgraded,
-				types.SubscriptionTransactionTypeDowngraded:
-				// For upgrade/downgrade, try payment_id first (new invoice flow), then transaction_id (legacy flow)
-				if paymentID == "" {
-					paymentID = invoice.Metadata["payment_id"]
-				}
-				if paymentID != "" {
-					// New invoice-based flow
-					if err := tx.Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
-						return fmt.Errorf("upgrade transaction not found: %w", err)
-					}
-				} else {
-					// Legacy flow
-					if transactionID == "" {
-						return fmt.Errorf(
-							"missing transaction_id for %s failure",
-							invoice.BillingReason,
-						)
-					}
-					if err := tx.Where("id = ?", transactionID).First(&wsTransaction).Error; err != nil {
-						return fmt.Errorf("transaction not found: %w", err)
-					}
-				}
-			default:
-				return fmt.Errorf(
-					"unsupported operator for %s failure: %s",
-					invoice.BillingReason,
-					operator,
-				)
-			}
-			wsTransaction.PayStatus = types.SubscriptionPayStatusFailed
-			wsTransaction.Status = types.SubscriptionTransactionStatusFailed
-			wsTransaction.StatusDesc = failureReason
-			if err := tx.Save(&wsTransaction).Error; err != nil {
-				return fmt.Errorf("failed to update transaction: %w", err)
-			}
+		var notifyEventData *usernotify.WorkspaceSubscriptionEventData
+		var err error
 
-			// Update payment order to failed if exists (for initial/upgrade)
-			var paymentOrder types.PaymentOrder
-			if err := tx.Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
-				paymentOrder.Status = types.PaymentOrderStatusFailed
-				if err := tx.Save(&paymentOrder).Error; err != nil {
-					return fmt.Errorf("failed to update payment order: %w", err)
-				}
-			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("failed to query payment order: %w", err)
-			}
-			// For upgrade failure, also revert plan changes if applied prematurely
-			if isUpdateSubscription && workspaceSubscription.PlanName == newPlanName {
-				logrus.Infof(
-					"Reverting plan change due to upgrade payment failure for %s/%s, old plan: %s",
-					workspace,
-					regionDomain,
-					wsTransaction.OldPlanName,
-				)
-				oldPlanName := wsTransaction.OldPlanName
-				workspaceSubscription.PlanName = oldPlanName
-				workspaceSubscription.PayStatus = types.SubscriptionPayStatusFailed
-				if err := tx.Save(&workspaceSubscription).Error; err != nil {
-					return fmt.Errorf("failed to revert upgrade plan: %w", err)
-				}
-				// Revert quota and traffic if needed (call revert functions)
-				if err := revertWorkspaceSubscriptionQuota(oldPlanName, workspace); err != nil {
-					logrus.Errorf("failed to revert quota for upgrade failure: %v", err)
-				}
-				// TODO: Revert traffic package if added
-			}
-
-			notifyEventData.OldPlanName = wsTransaction.OldPlanName
-			notifyEventData.NewPlanName = wsTransaction.NewPlanName
-			logrus.Warnf(
-				"%s payment failed for %s/%s",
-				invoice.BillingReason,
-				workspace,
-				regionDomain,
+		// Route to appropriate handler based on billing reason
+		switch {
+		case metadata.isInitial || metadata.isUpdate:
+			// Handle initial subscription or upgrade failure
+			notifyEventData, err = handleInitialOrUpdateSubscriptionFailure(
+				tx,
+				metadata,
+				workspaceSubscription,
+				invoice,
 			)
-		} else if isRenewSubscription {
-			// TODO 续费失败的情况 先判断当前状态是否已经续费，如果已经续费成功则不处理
-			if workspaceSubscription.PayStatus == types.SubscriptionPayStatusPaid && workspaceSubscription.CurrentPeriodEndAt.After(time.Now().UTC()) {
-				logrus.Infof("Subscription already active for %s/%s, skipping renewal failure handling", workspace, regionDomain)
+
+		case metadata.isRenewal:
+			// Check if already renewed successfully
+			if workspaceSubscription.PayStatus == types.SubscriptionPayStatusPaid &&
+				workspaceSubscription.CurrentPeriodEndAt.After(time.Now().UTC()) {
+				logrus.Infof(
+					"Subscription already active for %s/%s, skipping renewal failure handling",
+					metadata.workspace,
+					metadata.regionDomain,
+				)
 				return nil
 			}
 
-			// Renewal failure - try balance
+			// Try balance payment
 			var account types.Account
 			if err := tx.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).First(&account).Error; err != nil {
 				return fmt.Errorf("failed to get account: %w", err)
 			}
 
-			if account.Balance-account.DeductionBalance >= invoice.AmountDue*10_000 { // Assuming AmountDue is in cents, convert to dollars
+			if account.Balance-account.DeductionBalance >= invoice.AmountDue*10_000 {
 				// Balance payment success
-				_payID, err := gonanoid.New(12)
+				notifyEventData, err = handleRenewalBalancePayment(
+					tx,
+					metadata,
+					workspaceSubscription,
+					invoice,
+				)
+			} else {
+				// Both payments failed
+				err = handleRenewalBothPaymentsFailed(
+					tx,
+					metadata,
+					workspaceSubscription,
+				)
 				if err != nil {
-					return fmt.Errorf("failed to create payment id: %w", err)
-				}
-
-				// Prepare payment
-				payment := types.Payment{
-					ID: _payID,
-					PaymentRaw: types.PaymentRaw{
-						UserUID:                 userUID,
-						RegionUID:               dao.DBClient.GetLocalRegion().UID,
-						CreatedAt:               time.Now().UTC(),
-						Method:                  helper.BALANCE,
-						Amount:                  invoice.AmountDue * 10_000,
-						TradeNO:                 _payID,
-						Type:                    types.PaymentTypeSubscription,
-						ChargeSource:            types.ChargeSourceBalance,
-						Status:                  types.PaymentStatusPAID,
-						WorkspaceSubscriptionID: &workspaceSubscription.ID,
-						Message:                 fmt.Sprintf("Balance fallback for failed Stripe renewal on workspace %s/%s", workspace, regionDomain),
-					},
-				}
-
-				// Deduct balance
-				if err := cockroach.AddDeductionAccount(tx, userUID, invoice.AmountDue*10_000); err != nil {
-					return fmt.Errorf("failed to deduct balance: %w", err)
-				}
-
-				// Prepare transaction
-				wsTransaction := types.WorkspaceSubscriptionTransaction{
-					ID:            uuid.New(),
-					From:          types.TransactionFromUser,
-					Workspace:     workspace,
-					RegionDomain:  regionDomain,
-					UserUID:       userUID,
-					OldPlanName:   workspaceSubscription.PlanName,
-					NewPlanName:   newPlanName,
-					OldPlanStatus: workspaceSubscription.Status,
-					Operator:      types.SubscriptionTransactionTypeRenewed,
-					StartAt:       time.Now().UTC(),
-					CreatedAt:     time.Now().UTC(),
-					UpdatedAt:     time.Now().UTC(),
-					PayStatus:     types.SubscriptionPayStatusPaid,
-					PayID:         _payID,
-					Period:        types.SubscriptionPeriodMonthly,
-					Amount:        invoice.AmountDue * 10_000,
-				}
-
-				// Finalize using helper (not initial)
-				if err := finalizeWorkspaceSubscriptionSuccess(tx, workspaceSubscription, &wsTransaction, &payment); err != nil {
 					return err
 				}
 
-				notifyEventData.Operator = types.SubscriptionTransactionTypeRenewed
-				notifyEventData.OldPlanName = newPlanName
-				notifyEventData.NewPlanName = newPlanName
-				notifyEventData.PayStatus = types.SubscriptionPayStatusFailedAndUseBalance
-				// TODO 需要考虑用户stripe支付失败最终关闭后的状态，将用户的支付状态修改为Balance支付
-				// TODO: Send notification - renewal failed on Stripe, but succeeded with balance deduction
-				logrus.Infof("Renewal succeeded with balance for %s/%s", workspace, regionDomain)
-			} else {
-				// Both payments failed
-				workspaceSubscription.PayStatus = types.SubscriptionPayStatusFailed
-				workspaceSubscription.Status = types.SubscriptionStatusDebt
-				if err := tx.Save(workspaceSubscription).Error; err != nil {
-					return fmt.Errorf("failed to update subscription to debt status: %w", err)
+				// Prepare notification data for debt status
+				notifyEventData = &usernotify.WorkspaceSubscriptionEventData{
+					WorkspaceName: metadata.workspace,
+					Domain:        metadata.regionDomain,
+					Operator:      types.SubscriptionTransactionTypeRenewed,
+					OldPlanName:   metadata.newPlanName,
+					NewPlanName:   metadata.newPlanName,
+					PayStatus:     types.SubscriptionPayStatusFailed,
+					ExpirationDate: fmt.Sprintf("%s - %s",
+						workspaceSubscription.CurrentPeriodStartAt.Format("2006.1.2"),
+						workspaceSubscription.CurrentPeriodEndAt.Format("2006.1.2")),
+					Amount: math.Ceil(float64(invoice.AmountDue) / float64(100)),
 				}
-
-				// //TODO: Mark workspace as debt (e.g., add label or update field)
-				if err := updateDebtNamespaceStatus(context.Background(), dao.K8sManager.GetClient(), SuspendDebtNamespaceAnnoStatus, []string{workspace}); err != nil {
-					return fmt.Errorf("update namespace status error: %w", err)
-				}
-
-				notifyEventData.Operator = types.SubscriptionTransactionTypeRenewed
-				notifyEventData.OldPlanName = newPlanName
-				notifyEventData.NewPlanName = newPlanName
-				notifyEventData.PayStatus = types.SubscriptionPayStatusFailed
-				// TODO: Send notification - renewal failed, please renew manually
-				logrus.Warnf("Renewal failed for %s/%s, set to debt status", workspace, regionDomain)
 			}
+
+		default:
+			logrus.Errorf(
+				"handleWorkspaceSubscriptionRenewalFailure unsupported billing reason for payment failure: %s, invoice: %s",
+				metadata.billingReason,
+				invoice.ID,
+			)
+			return fmt.Errorf("unsupported billing reason: %s", metadata.billingReason)
 		}
 
-		// send notifycation
-		if _, err = dao.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, notifyEventData, types.SubscriptionOperator(operator), []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-			// logrus.Errorf("failed to send subscription failure notification to user %s: %v", userUID, err)
+		if err != nil {
+			return err
+		}
+
+		// Step 8: Send notification
+		if _, err = dao.UserNotificationService.HandleWorkspaceSubscriptionEvent(
+			context.Background(),
+			userUID,
+			notifyEventData,
+			types.SubscriptionOperator(metadata.operator),
+			[]usernotify.NotificationMethod{usernotify.NotificationMethodEmail},
+		); err != nil {
 			dao.Logger.Errorf(
 				"failed to send subscription failure notification for user %s: %v",
 				userUID,
 				err,
 			)
-			// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
+			// Don't return error for notification failure to avoid transaction rollback
 		}
+
 		return nil
 	})
 }
@@ -3313,6 +3487,7 @@ func CreateWorkspaceSubscriptionSetupIntent(c *gin.Context) {
 	}
 
 	var ckSession *stripe.CheckoutSession
+	var sErr error
 
 	// If subscription exists and has Stripe subscription ID, get the customer from the subscription
 	if subscription != nil && subscription.Stripe != nil &&
@@ -3331,10 +3506,10 @@ func CreateWorkspaceSubscriptionSetupIntent(c *gin.Context) {
 		}
 
 		// Use the customer ID from the Stripe subscription (this is the correct customer)
-		ckSession, err = services.StripeServiceInstance.CreateSubscriptionSetupIntent(
+		ckSession, sErr = services.StripeServiceInstance.CreateSubscriptionSetupIntent(
 			stripeSubscription.Customer.ID,
 			subscription.Stripe.SubscriptionID,
-			req.RedirectUrl,
+			req.RedirectURL,
 		)
 	} else {
 		// Fallback to regular portal session if no subscription found
@@ -3346,7 +3521,7 @@ func CreateWorkspaceSubscriptionSetupIntent(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
+	if sErr != nil {
 		SetErrorResp(
 			c,
 			http.StatusInternalServerError,

@@ -193,7 +193,16 @@ func AddWorkspaceSubscriptionAIQuotaPackage(
 	from types.PackageFrom,
 	fromID string,
 ) error {
-	return AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(globalDB, subscriptionID, aiQuota, expireAt, from, fromID, false, 0)
+	return AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
+		globalDB,
+		subscriptionID,
+		aiQuota,
+		expireAt,
+		from,
+		fromID,
+		false,
+		0,
+	)
 }
 
 // AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade adds AI quota package with upgrade support
@@ -250,7 +259,7 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 }
 
 // expireOldAIQuotaPackages expires existing AI quota packages from old subscription plan
-func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFromID string) error {
+func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, _ string) error {
 	now := time.Now()
 
 	// Update all existing active AI quota packages to expired status
@@ -259,12 +268,11 @@ func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFr
 	err := globalDB.Model(&types.WorkspaceAIQuotaPackage{}).
 		Where("workspace_subscription_id = ? AND status = ?",
 			subscriptionID, types.PackageStatusActive).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"status":     types.PackageStatusExpired,
 			"expired_at": now,
 			"updated_at": now,
 		}).Error
-
 	if err != nil {
 		return fmt.Errorf("failed to expire old AI quota packages: %w", err)
 	}

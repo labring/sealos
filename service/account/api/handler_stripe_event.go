@@ -513,12 +513,6 @@ func handleSubscriptionCreateOrRenew(
 			ws.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
 		}
 
-		// if isInitial {
-		//	if err := deletePaymentOrder(tx, payment.ID); err != nil {
-		//		return err
-		//	}
-		//}
-
 		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
 			return err
 		}
@@ -631,15 +625,6 @@ func getWorkspaceSubscription(
 		return nil, fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
 	return ws, nil
-}
-
-// deletePaymentOrder
-func deletePaymentOrder(tx *gorm.DB, paymentID string) error {
-	var paymentOrder types.PaymentOrder
-	if err := tx.Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
-		return tx.Delete(&paymentOrder).Error
-	}
-	return nil
 }
 
 // preparePayment
