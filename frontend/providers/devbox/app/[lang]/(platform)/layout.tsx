@@ -1,7 +1,7 @@
 'use client';
 
 import throttle from 'lodash/throttle';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { usePathname, useRouter } from '@/i18n';
 import { useSearchParams } from 'next/navigation';
@@ -21,12 +21,7 @@ import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 import { Toaster } from '@sealos/shadcn-ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
-import { createQuotaGuarded } from '@sealos/shared';
-
-// Initialize quota guarded hook with session getter
-createQuotaGuarded({
-  getSession: () => useUserStore.getState().session
-});
+import { QuotaGuardProvider } from '@sealos/shared';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -46,6 +41,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const [init, setInit] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const locale = useLocale();
+
+  const getSession = useCallback(() => {
+    return useUserStore.getState().session ?? null;
+  }, []);
+
   // init session
   useEffect(() => {
     const response = createSealosApp();
@@ -149,11 +149,13 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [router, searchParams]);
 
   return (
-    <RouteHandlerProvider>
-      <ConfirmChild />
-      <Toaster />
-      <InsufficientQuotaDialog lang={(locale || 'en') as SupportedLang} />
-      {children}
-    </RouteHandlerProvider>
+    <QuotaGuardProvider getSession={getSession}>
+      <RouteHandlerProvider>
+        <ConfirmChild />
+        <Toaster />
+        <InsufficientQuotaDialog lang={(locale || 'en') as SupportedLang} />
+        {children}
+      </RouteHandlerProvider>
+    </QuotaGuardProvider>
   );
 }

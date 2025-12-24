@@ -9,7 +9,7 @@ import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import { useSystemConfigStore } from '@/store/config';
@@ -23,12 +23,7 @@ import { useGuideStore } from '@/store/guide';
 import App from 'next/app';
 import Script from 'next/script';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
-import { createQuotaGuarded } from '@sealos/shared';
-
-// Initialize quota guarded hook with session getter
-createQuotaGuarded({
-  getSession: () => useSessionStore.getState().session ?? null
-});
+import { QuotaGuardProvider } from '@sealos/shared';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -59,6 +54,10 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
+
+  const getSession = useCallback(() => {
+    return useSessionStore.getState().session ?? null;
+  }, []);
 
   useEffect(() => {
     initSystemConfig(i18n.language);
@@ -170,10 +169,12 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+          <QuotaGuardProvider getSession={getSession}>
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+          </QuotaGuardProvider>
         </ChakraProvider>
       </QueryClientProvider>
       {customScripts.map((script, i) => (

@@ -4,7 +4,6 @@ import useSessionStore from '@/store/session';
 import { Box, Flex, Spinner, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
 import { getEnv } from '@/api/terminal';
 import { useQuotaGuarded } from '@sealos/shared';
@@ -15,29 +14,13 @@ type ServiceEnv = {
 };
 
 export default function Index(props: ServiceEnv) {
-  const { setSession, isUserLogin, session } = useSessionStore();
+  const { isUserLogin, session } = useSessionStore();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [quotaCheckPassed, setQuotaCheckPassed] = useState(false);
   const quotaCheckTriggered = useRef(false);
 
   const toast = useToast();
-
-  useEffect(() => {
-    return createSealosApp();
-  }, []);
-
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        const result = await sealosApp.getSession();
-        setSession(result);
-      } catch (error) {
-        console.log('App is not running in desktop');
-      }
-    };
-    initApp();
-  }, [setSession]);
 
   const { data: envData, isSuccess: envQuerySuccess } = useQuery({
     queryFn: () => getEnv(),
