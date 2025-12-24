@@ -34,9 +34,9 @@ const TemplatePage = () => {
   const defaultTab = searchParams.get('tab') === 'private' ? 'private' : 'public';
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <Header />
-      <div className="flex h-full w-full flex-col gap-5 px-10 pt-6">
+      <div className="flex h-full w-full min-w-0 flex-col gap-5 px-10 pt-6">
         <Tabs defaultValue={defaultTab} className="flex flex-col">
           <div className="flex items-center justify-between gap-4">
             <TabsList variant="ghost" className="w-fit">

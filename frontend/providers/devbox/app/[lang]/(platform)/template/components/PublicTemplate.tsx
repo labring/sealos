@@ -568,7 +568,7 @@ const PublicTemplate = ({
       </div>
 
       {/* right content */}
-      <div className="flex flex-1 flex-col !overflow-visible">
+      <div className="flex min-w-0 flex-1 flex-col !overflow-visible">
         {viewMode === 'overview' ? (
           // Overview mode - section display
           <ScrollArea className="select-runtime-container h-[calc(100vh-200px)] pr-2">
