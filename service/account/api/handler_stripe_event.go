@@ -112,10 +112,10 @@ func parseAndValidateEvent(event *stripe.Event) (*stripe.Invoice, *stripe.Subscr
 // arrives before CreateUpgradeInvoice updates the invoice metadata
 func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 	const (
-		maxAttempts   = 10                       // Maximum number of polling attempts
-		initialDelay  = 100 * time.Millisecond   // Initial delay between polls
-		maxDelay      = 500 * time.Millisecond   // Maximum delay between polls
-		timeout       = 5 * time.Second          // Overall timeout
+		maxAttempts  = 10                     // Maximum number of polling attempts
+		initialDelay = 100 * time.Millisecond // Initial delay between polls
+		maxDelay     = 500 * time.Millisecond // Maximum delay between polls
+		timeout      = 5 * time.Second        // Overall timeout
 	)
 
 	startTime := time.Now()
@@ -123,7 +123,7 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 
 	logrus.Infof("Waiting for invoice metadata (100%% discount case): invoice=%s", invoiceID)
 
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for attempt := range maxAttempts {
 		// Check timeout
 		if time.Since(startTime) > timeout {
 			return nil, fmt.Errorf("timeout waiting for invoice metadata after %v", timeout)
@@ -141,16 +141,24 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 			inv.Metadata["payment_id"] != ""
 
 		if hasMetadata {
-			logrus.Infof("Invoice metadata found after %d attempts (invoice=%s)", attempt+1, invoiceID)
+			logrus.Infof(
+				"Invoice metadata found after %d attempts (invoice=%s)",
+				attempt+1,
+				invoiceID,
+			)
 			return inv, nil
 		}
 
 		// Log waiting status
-		logrus.Debugf("Waiting for invoice metadata, attempt %d/%d (invoice=%s, has_operator=%v, has_plan=%v, has_payment=%v)",
-			attempt+1, maxAttempts, invoiceID,
+		logrus.Debugf(
+			"Waiting for invoice metadata, attempt %d/%d (invoice=%s, has_operator=%v, has_plan=%v, has_payment=%v)",
+			attempt+1,
+			maxAttempts,
+			invoiceID,
 			inv.Metadata["subscription_operator"] != "",
 			inv.Metadata["new_plan_name"] != "",
-			inv.Metadata["payment_id"] != "")
+			inv.Metadata["payment_id"] != "",
+		)
 
 		// Wait before next poll with exponential backoff
 		time.Sleep(delay)
@@ -162,7 +170,11 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("invoice metadata not set after %d attempts (invoice=%s)", maxAttempts, invoiceID)
+	return nil, fmt.Errorf(
+		"invoice metadata not set after %d attempts (invoice=%s)",
+		maxAttempts,
+		invoiceID,
+	)
 }
 
 // isLocalEvent
@@ -175,7 +187,10 @@ func isLocalEvent(subscription *stripe.Subscription) (bool, error) {
 }
 
 // extractAndValidateMetadata 从 invoice 和 subscription 获取元数据
-func extractAndValidateMetadata(invoice *stripe.Invoice, subscription *stripe.Subscription) (*subscriptionMetadata, error) {
+func extractAndValidateMetadata(
+	invoice *stripe.Invoice,
+	subscription *stripe.Subscription,
+) (*subscriptionMetadata, error) {
 	meta := &subscriptionMetadata{}
 
 	// 先从 subscription 获取基本 metadata
@@ -498,7 +513,7 @@ func handleSubscriptionCreateOrRenew(
 			ws.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
 		}
 
-		//if isInitial {
+		// if isInitial {
 		//	if err := deletePaymentOrder(tx, payment.ID); err != nil {
 		//		return err
 		//	}

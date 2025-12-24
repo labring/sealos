@@ -106,7 +106,9 @@ type Interface interface {
 
 	// UserAlertNotificationAccount methods
 	CreateUserAlertNotificationAccount(account *types.UserAlertNotificationAccount) error
-	ListUserAlertNotificationAccounts(userUID uuid.UUID) ([]*types.UserAlertNotificationAccount, error)
+	ListUserAlertNotificationAccounts(
+		userUID uuid.UUID,
+	) ([]*types.UserAlertNotificationAccount, error)
 	DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID uuid.UUID) (int, []string, error)
 	ToggleUserAlertNotificationAccounts(ids []uuid.UUID, isEnabled bool) (int, []string, error)
 
@@ -3125,7 +3127,9 @@ func (g *Cockroach) CreateCorporate(corporate types.Corporate) error {
 
 // UserAlertNotificationAccount implementations
 
-func (g *Cockroach) CreateUserAlertNotificationAccount(account *types.UserAlertNotificationAccount) error {
+func (g *Cockroach) CreateUserAlertNotificationAccount(
+	account *types.UserAlertNotificationAccount,
+) error {
 	return g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(account).Error; err != nil {
 			return fmt.Errorf("failed to create user alert notification account: %w", err)
@@ -3134,7 +3138,9 @@ func (g *Cockroach) CreateUserAlertNotificationAccount(account *types.UserAlertN
 	})
 }
 
-func (g *Cockroach) ListUserAlertNotificationAccounts(userUID uuid.UUID) ([]*types.UserAlertNotificationAccount, error) {
+func (g *Cockroach) ListUserAlertNotificationAccounts(
+	userUID uuid.UUID,
+) ([]*types.UserAlertNotificationAccount, error) {
 	var accounts []*types.UserAlertNotificationAccount
 	err := g.ck.GetGlobalDB().Where("user_uid = ?", userUID).Find(&accounts).Error
 	if err != nil {
@@ -3143,7 +3149,10 @@ func (g *Cockroach) ListUserAlertNotificationAccounts(userUID uuid.UUID) ([]*typ
 	return accounts, nil
 }
 
-func (g *Cockroach) DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID uuid.UUID) (int, []string, error) {
+func (g *Cockroach) DeleteUserAlertNotificationAccounts(
+	ids []uuid.UUID,
+	userUID uuid.UUID,
+) (int, []string, error) {
 	if len(ids) == 0 {
 		return 0, nil, nil
 	}
@@ -3157,7 +3166,8 @@ func (g *Cockroach) DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID
 		}
 
 		// Delete the accounts
-		result := tx.Where("id IN ? AND user_uid = ?", ids, userUID).Delete(&types.UserAlertNotificationAccount{})
+		result := tx.Where("id IN ? AND user_uid = ?", ids, userUID).
+			Delete(&types.UserAlertNotificationAccount{})
 		if result.Error != nil {
 			return fmt.Errorf("failed to delete user alert notification accounts: %w", result.Error)
 		}
@@ -3170,7 +3180,6 @@ func (g *Cockroach) DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID
 
 		return nil
 	})
-
 	if err != nil {
 		return 0, nil, err
 	}
@@ -3178,7 +3187,10 @@ func (g *Cockroach) DeleteUserAlertNotificationAccounts(ids []uuid.UUID, userUID
 	return len(deletedIDs), deletedIDs, nil
 }
 
-func (g *Cockroach) ToggleUserAlertNotificationAccounts(ids []uuid.UUID, isEnabled bool) (int, []string, error) {
+func (g *Cockroach) ToggleUserAlertNotificationAccounts(
+	ids []uuid.UUID,
+	isEnabled bool,
+) (int, []string, error) {
 	if len(ids) == 0 {
 		return 0, nil, nil
 	}
@@ -3211,7 +3223,6 @@ func (g *Cockroach) ToggleUserAlertNotificationAccounts(ids []uuid.UUID, isEnabl
 
 		return nil
 	})
-
 	if err != nil {
 		return 0, nil, err
 	}

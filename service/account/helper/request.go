@@ -721,11 +721,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period" bson:"period" binding:"required" example:"1m"`
+	Period types.SubscriptionPeriod `json:"period"        bson:"period"        binding:"required" example:"1m"`
 	// @Summary Promotion code
 	// @Description Promotion code for applying discount to the upgrade payment
 	// @JSONSchema optional
-	PromotionCode string `json:"promotionCode" bson:"promotionCode" example:"SAVE20"`
+	PromotionCode string `json:"promotionCode" bson:"promotionCode"                    example:"SAVE20"`
 
 	// @Summary Payment method
 	// @Description Payment method (STRIPE, BALANCE)
@@ -862,7 +862,9 @@ func ParseWorkspaceSubscriptionInfoReq(c *gin.Context) (*WorkspaceSubscriptionIn
 	return req, nil
 }
 
-func ParseWorkspaceSubscriptionCardInfoReq(c *gin.Context) (*WorkspaceSubscriptionCardInfoReq, error) {
+func ParseWorkspaceSubscriptionCardInfoReq(
+	c *gin.Context,
+) (*WorkspaceSubscriptionCardInfoReq, error) {
 	req := &WorkspaceSubscriptionCardInfoReq{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
@@ -874,7 +876,9 @@ func ParseWorkspaceSubscriptionCardInfoReq(c *gin.Context) (*WorkspaceSubscripti
 	return req, nil
 }
 
-func ParseWorkspaceSubscriptionInvoiceCancelReq(c *gin.Context) (*WorkspaceSubscriptionInvoiceCancelReq, error) {
+func ParseWorkspaceSubscriptionInvoiceCancelReq(
+	c *gin.Context,
+) (*WorkspaceSubscriptionInvoiceCancelReq, error) {
 	req := &WorkspaceSubscriptionInvoiceCancelReq{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
