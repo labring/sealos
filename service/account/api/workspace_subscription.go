@@ -913,7 +913,7 @@ func handleStripeUpgrade(c *gin.Context, req *helper.WorkspaceSubscriptionOperat
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: "calculated upgrade amount is zero or negative",
+				Error: fmt.Sprintf("calculated upgrade amount is zero or negative: amount: %d", amount),
 			},
 		)
 		return

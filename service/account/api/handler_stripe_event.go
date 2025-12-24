@@ -36,7 +36,17 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 	}
 	logrus.Infof("Processing invoice payment for subscription: %s", subscription.ID)
 
-	// 3. extract and verify the metadata
+	// 3. For 100% discount case, wait for invoice metadata to be set
+	// This handles the race condition where invoice.paid webhook arrives
+	// before CreateUpgradeInvoice has a chance to update invoice metadata
+	if invoice.AmountPaid == 0 && invoice.BillingReason == "subscription_update" {
+		invoice, err = waitForInvoiceMetadata(invoice.ID)
+		if err != nil {
+			return fmt.Errorf("failed to wait for invoice metadata: %w", err)
+		}
+	}
+
+	// 4. extract and verify the metadata
 	meta, err := extractAndValidateMetadata(invoice, subscription)
 	if err != nil {
 		return err
@@ -46,14 +56,14 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 		return fmt.Errorf("invalid user UID in metadata: %w", err)
 	}
 
-	// 4. obtain the notification recipient
+	// 5. obtain the notification recipient
 	nr, err := getNotificationRecipient(userUID)
 	if err != nil {
 		dao.Logger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
 	}
 	defer dao.UserContactProvider.RemoveUserContact(userUID)
 
-	// 5. handle it according to the billing reason branch
+	// 6. handle it according to the billing reason branch
 	switch {
 	case invoice.BillingReason == "subscription_update" && meta.Operator != types.SubscriptionTransactionTypeCreated:
 		meta.PaymentID = "" // 清空 PaymentID，避免混淆
@@ -95,6 +105,64 @@ func parseAndValidateEvent(event *stripe.Event) (*stripe.Invoice, *stripe.Subscr
 	}
 
 	return invoice, subscription, nil
+}
+
+// waitForInvoiceMetadata polls the invoice until metadata is set or timeout occurs
+// This handles the race condition in 100% discount cases where invoice.paid webhook
+// arrives before CreateUpgradeInvoice updates the invoice metadata
+func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
+	const (
+		maxAttempts   = 10                       // Maximum number of polling attempts
+		initialDelay  = 100 * time.Millisecond   // Initial delay between polls
+		maxDelay      = 500 * time.Millisecond   // Maximum delay between polls
+		timeout       = 5 * time.Second          // Overall timeout
+	)
+
+	startTime := time.Now()
+	delay := initialDelay
+
+	logrus.Infof("Waiting for invoice metadata (100%% discount case): invoice=%s", invoiceID)
+
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Check timeout
+		if time.Since(startTime) > timeout {
+			return nil, fmt.Errorf("timeout waiting for invoice metadata after %v", timeout)
+		}
+
+		// Fetch fresh invoice from Stripe
+		inv, err := services.StripeServiceInstance.GetInvoice(invoiceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get invoice: %w", err)
+		}
+
+		// Check if critical metadata fields are present
+		hasMetadata := inv.Metadata["subscription_operator"] != "" &&
+			inv.Metadata["new_plan_name"] != "" &&
+			inv.Metadata["payment_id"] != ""
+
+		if hasMetadata {
+			logrus.Infof("Invoice metadata found after %d attempts (invoice=%s)", attempt+1, invoiceID)
+			return inv, nil
+		}
+
+		// Log waiting status
+		logrus.Debugf("Waiting for invoice metadata, attempt %d/%d (invoice=%s, has_operator=%v, has_plan=%v, has_payment=%v)",
+			attempt+1, maxAttempts, invoiceID,
+			inv.Metadata["subscription_operator"] != "",
+			inv.Metadata["new_plan_name"] != "",
+			inv.Metadata["payment_id"] != "")
+
+		// Wait before next poll with exponential backoff
+		time.Sleep(delay)
+
+		// Increase delay for next attempt (exponential backoff)
+		delay = time.Duration(float64(delay) * 1.5)
+		if delay > maxDelay {
+			delay = maxDelay
+		}
+	}
+
+	return nil, fmt.Errorf("invoice metadata not set after %d attempts (invoice=%s)", maxAttempts, invoiceID)
 }
 
 // isLocalEvent
