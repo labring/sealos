@@ -20,8 +20,10 @@ export const useDevboxList = () => {
     enabled: isInitialized,
     refetchInterval: () => {
       const devboxList = useDevboxStore.getState().devboxList;
-      const hasRunningDevbox = devboxList.some((devbox) => devbox.status.value === 'Running');
-      return hasRunningDevbox ? 3000 : false;
+      const allStoppedOrShutdown = devboxList.every(
+        (devbox) => devbox.status.value === 'Stopped' || devbox.status.value === 'Shutdown'
+      );
+      return allStoppedOrShutdown ? false : 3000;
     },
     onSettled(res) {
       if (!res) return;
