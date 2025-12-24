@@ -170,7 +170,7 @@ export function AllPlansSection() {
               <TableLayoutHeadRow>
                 <TableHead className="bg-transparent">{t('common:workspace')}</TableHead>
                 <TableHead className="bg-transparent">{t('common:plan')}</TableHead>
-                <TableHead className="bg-transparent">{t('common:renewal_time')}</TableHead>
+                <TableHead className="bg-transparent">{t('common:quota_resets_on')}</TableHead>
                 <TableHead className="bg-transparent">{t('common:price')}</TableHead>
               </TableLayoutHeadRow>
 

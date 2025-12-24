@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
         registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
         devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || defaultEnv.devboxAffinityEnable,
-        squashEnable: process.env.SQUASH_ENABLE || defaultEnv.squashEnable,
+        storageLimit: process.env.STORAGE_LIMIT || defaultEnv.storageLimit,
         namespace: namespace || defaultEnv.namespace,
         rootRuntimeNamespace: process.env.ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
         ingressDomain: process.env.INGRESS_DOMAIN || defaultEnv.ingressDomain,
@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
           | 'cny'
           | 'usd',
         enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature,
-        enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature
+        enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature,
+        cpuSlideMarkList: process.env.CPU_SLIDE_MARK_LIST || defaultEnv.cpuSlideMarkList,
+        memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList
       }
     });
   } catch (err: any) {

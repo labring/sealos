@@ -1190,8 +1190,8 @@ const Form = ({
                                     width={'140px'}
                                     value={lowerCaseTableNames}
                                     list={[
-                                      { value: '1', label: '1 (' + t('case_insensitive') + ')' },
-                                      { value: '0', label: '0 (' + t('case_sensitive') + ')' }
+                                      { value: '0', label: '0 (' + t('case_sensitive') + ')' },
+                                      { value: '1', label: '1 (' + t('case_insensitive') + ')' }
                                     ]}
                                     onchange={(val: string) => {
                                       setValue('parameterConfig', {
@@ -1203,11 +1203,11 @@ const Form = ({
                                   />
                                 ) : (
                                   <Text fontSize={'12px'} color={'grayModern.600'}>
-                                    {lowerCaseTableNames} (
                                     {lowerCaseTableNames === '0'
-                                      ? t('case_sensitive')
-                                      : t('case_insensitive')}
-                                    )
+                                      ? `0 (${t('case_sensitive')})`
+                                      : lowerCaseTableNames === '1'
+                                        ? `1 (${t('case_insensitive')})`
+                                        : t('param_unset')}
                                   </Text>
                                 )}
                                 <MyIcon

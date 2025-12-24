@@ -71,6 +71,14 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  authTitle?: {
+    zh: string;
+    en: string;
+  };
+  authBackgroundImage?: {
+    zh: string;
+    en: string;
+  };
   meta: MetaConfigType;
   customerServiceURL?: string;
   discordInviteLink?: string;
@@ -88,6 +96,7 @@ export type LayoutConfigType = {
     guestModeEnabled?: boolean;
     emailAlertEnabled: boolean;
     phoneAlertEnabled: boolean;
+    announcementEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -149,11 +158,11 @@ export type AuthConfigType = {
       authURL: string;
       tokenURL: string;
       userInfoURL: string;
+      displayName?: string;
     };
     sms?: {
       enabled: boolean;
       ali?: {
-        enabled: boolean;
         endpoint: string;
         templateCode: string;
         signName: string;
@@ -191,9 +200,6 @@ export type AuthClientConfigType = {
   idp: {
     sms: {
       enabled: boolean;
-      ali: {
-        enabled: boolean;
-      };
     };
     email: {
       enabled: boolean;
@@ -325,7 +331,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     subscriptionEnabled: false,
     guestModeEnabled: false,
     emailAlertEnabled: false,
-    phoneAlertEnabled: false
+    phoneAlertEnabled: false,
+    announcementEnabled: false
   },
   gtmId: null
 };
@@ -356,10 +363,7 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       proxyAddress: ''
     },
     sms: {
-      enabled: false,
-      ali: {
-        enabled: false
-      }
+      enabled: false
     },
     email: {
       enabled: false
@@ -371,7 +375,8 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       authURL: '',
       tokenURL: '',
       userInfoURL: '',
-      proxyAddress: ''
+      proxyAddress: '',
+      displayName: ''
     }
   },
   billingToken: '',

@@ -2,11 +2,12 @@ export interface SourcePrice {
   cpu: number;
   memory: number;
   nodeports: number;
-  gpu: {
+  gpu?: {
     alias: string;
     type: string;
     price: number;
-    inventory: number;
+    available: number;
+    count: number;
     vm: number;
   }[];
 }
@@ -20,13 +21,15 @@ export interface Env {
   ingressSecret: string;
   registryAddr: string;
   devboxAffinityEnable: string;
-  squashEnable: string;
   namespace: string;
   rootRuntimeNamespace: string;
   ingressDomain: string;
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
+  storageLimit: string;
   enableImportFeature: string;
   enableWebideFeature: string;
+  cpuSlideMarkList: string;
+  memorySlideMarkList: string;
 }
 
 export interface RuntimeTypeMap {

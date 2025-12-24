@@ -1,14 +1,14 @@
-import axios from 'axios';
-import yaml from 'js-yaml';
-import { authKubeConfig } from '@/services/backend/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
-import { mustGetTypedProperty } from '@/utils/api';
-import { isString, merge } from 'lodash';
 import { hasTypedProperty, isObject } from '@/k8slens/utilities';
-import { ErrnoCode, buildErrno } from '@/services/backend/error';
 import { getApiUrl } from '@/services/backend/api';
+import { authKubeConfig } from '@/services/backend/auth';
+import { ErrnoCode, buildErrno } from '@/services/backend/error';
 import { handlerAxiosError, sendErrorResponse } from '@/services/backend/response';
 import { UpdateQuery, UpdateResponse } from '@/types/api/kubenertes';
+import { mustGetTypedProperty } from '@/utils/api';
+import axios from 'axios';
+import yaml from 'js-yaml';
+import { isString, merge } from 'lodash';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 function isUpdateQuery(query: unknown): query is UpdateQuery {
   return (

@@ -1,11 +1,11 @@
+import { isSuccessResponse } from '@/utils/types';
+import { getUserKubeConfig } from '@/utils/user';
 import axios, {
-  InternalAxiosRequestConfig,
   AxiosHeaders,
   AxiosRequestConfig,
-  AxiosResponse
+  AxiosResponse,
+  InternalAxiosRequestConfig
 } from 'axios';
-import { getUserKubeConfig } from '@/utils/user';
-import { isSuccessResponse } from '@/utils/types';
 import { ErrnoCode, buildErrno } from './backend/error';
 
 const request = axios.create({

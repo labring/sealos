@@ -8,6 +8,13 @@ export const RequestSchema = z.object({
   }),
   releaseDes: z.string().optional().default('').openapi({
     description: 'Release description'
+  }),
+  execCommand: z.string().optional().openapi({
+    description: 'Command to execute in the devbox after release restart (autostart)',
+    example: 'nohup /home/devbox/project/entrypoint.sh > /dev/null 2>&1 &'
+  }),
+  startDevboxAfterRelease: z.boolean().optional().default(false).openapi({
+    description: 'Start devbox automatically after release'
   })
 });
 

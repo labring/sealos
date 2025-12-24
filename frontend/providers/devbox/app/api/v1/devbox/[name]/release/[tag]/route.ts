@@ -37,13 +37,13 @@ export async function DELETE(
 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const targetRelease = releaseBody.items.find((item: any) => {
-      return item.spec && item.spec.devboxName === devboxName && item.spec.newTag === tag;
+      return item.spec && item.spec.devboxName === devboxName && item.spec.version === tag;
     });
 
     if (!targetRelease) {
@@ -55,7 +55,7 @@ export async function DELETE(
 
     await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases',
       targetRelease.metadata.name

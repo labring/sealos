@@ -10,11 +10,11 @@ on:
   workflow_dispatch:
     inputs:
       push_mage:
-        description: 'Push images'
+        description: "Push images"
         required: false
         type: boolean
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -25,7 +25,7 @@ on:
       - "webhooks/**"
       - "frontend/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "CHANGELOG/**"
@@ -37,6 +37,11 @@ on:
       - "webhooks/**"
       - "frontend/**"
 
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
+concurrency:
+  group: ci-patch-image-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   call_ci_workflow:
     uses: ./.github/workflows/import-patch-image.yml
@@ -44,7 +49,7 @@ jobs:
       arch: amd64,arm64
 
   container-sealos:
-    needs: [ call_ci_workflow ]
+    needs: [call_ci_workflow]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

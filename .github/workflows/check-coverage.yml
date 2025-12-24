@@ -16,6 +16,12 @@ on:
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
+
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
+concurrency:
+  group: check-coverage-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 env:
   # Common versions
   GO_VERSION: "1.25"

@@ -49,6 +49,31 @@ const App = ({ Component, pageProps }: AppProps) => {
     initAppConfig();
   }, []);
 
+  // Clean up old Service Workers (PWA has been removed)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      // Unregister all Service Workers
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister().then((success) => {
+            if (success) {
+              console.log('Service Worker unregistered');
+            }
+          });
+        });
+      });
+
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            caches.delete(name);
+          });
+        });
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const lang = getCookie('NEXT_LOCALE');
     i18n?.changeLanguage?.(lang);

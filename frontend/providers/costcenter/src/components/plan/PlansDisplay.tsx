@@ -8,6 +8,7 @@ import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 interface PlansDisplayProps {
   isSubscribing?: boolean;
@@ -16,6 +17,8 @@ interface PlansDisplayProps {
   selectedPlanId?: string;
   onPlanSelect?: (planId: string) => void;
   workspaceName?: string;
+  onAdditionalPlanSelect?: (planId: string) => void;
+  upgradeButton?: React.ReactNode;
 }
 
 export function PlansDisplay({
@@ -24,14 +27,14 @@ export function PlansDisplay({
   stillChargeByVolume = false,
   selectedPlanId,
   onPlanSelect,
-  workspaceName
+  workspaceName,
+  onAdditionalPlanSelect,
+  upgradeButton
 }: PlansDisplayProps) {
   const { t } = useTranslation();
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
-  const showConfirmationModal = usePlanStore((state) => state.showConfirmationModal);
-  const showDowngradeModal = usePlanStore((state) => state.showDowngradeModal);
 
   const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const subscription = subscriptionData?.subscription;
@@ -39,7 +42,7 @@ export function PlansDisplay({
   const currentPlan = subscription?.PlanName;
 
   const [showMorePlans, setShowMorePlans] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string>(''); // plan id
+  const [selectedPlan, setSelectedPlan] = useState<string>(''); // plan id for additional plans
 
   const { mainPlans, additionalPlans } = useMemo(() => {
     const paid = plans.filter((plan) => plan.Prices && plan.Prices.length > 0);
@@ -74,25 +77,38 @@ export function PlansDisplay({
 
   useEffect(() => {
     if (!hasInitialized && additionalPlans.length > 0) {
+      let initialPlanId = '';
       if (currentPlanInMore) {
-        setSelectedPlan(currentPlanObj?.ID || '');
+        initialPlanId = currentPlanObj?.ID || '';
+        setSelectedPlan(initialPlanId);
       } else {
-        setSelectedPlan(additionalPlans[0].ID);
+        initialPlanId = additionalPlans[0].ID;
+        setSelectedPlan(initialPlanId);
+      }
+
+      // Notify parent component about initial selection (only in upgrade mode)
+      if (!isCreateMode && initialPlanId) {
+        onAdditionalPlanSelect?.(initialPlanId);
       }
 
       if (isCreateMode) {
-        // Create mode: 根据 currentPlanInMore 设置 showMorePlans 状态
         if (currentPlanInMore) {
           setShowMorePlans(true);
         }
       } else {
-        // Upgrade mode: 直接显示 More Plans
         setShowMorePlans(true);
       }
 
       setHasInitialized(true);
     }
-  }, [additionalPlans, currentPlanInMore, currentPlanObj, hasInitialized, isCreateMode]);
+  }, [
+    additionalPlans,
+    currentPlanInMore,
+    currentPlanObj,
+    hasInitialized,
+    isCreateMode,
+    onAdditionalPlanSelect
+  ]);
 
   // When user selects "charge by volume", uncheck More Plans (only in create mode)
   useEffect(() => {
@@ -159,12 +175,14 @@ export function PlansDisplay({
             onValueChange={(value) => {
               const currentPlan = additionalPlans.find((p) => p.ID === value);
               if (currentPlan?.Name === 'Customized' && currentPlan?.Description) {
-                window.open(currentPlan?.Description, '_blank', 'noopener,noreferrer');
+                openInNewWindow(currentPlan?.Description);
               } else {
                 setSelectedPlan(value);
                 if (isCreateMode && onPlanSelect) {
                   onPlanSelect(value);
                 }
+                // Notify parent component about additional plan selection
+                onAdditionalPlanSelect?.(value);
               }
             }}
           >
@@ -246,53 +264,7 @@ export function PlansDisplay({
             </SelectContent>
           </Select>
 
-          {!isCreateMode && (
-            <Button
-              disabled={
-                !selectedPlan ||
-                isSubscribing ||
-                additionalPlans.find((p) => p.ID === selectedPlan)?.Name === currentPlan ||
-                additionalPlans.find((p) => p.ID === selectedPlan)?.Name === nextPlanName
-              }
-              onClick={() => {
-                const plan = additionalPlans.find((p) => p.ID === selectedPlan);
-
-                if (plan) {
-                  // Determine operator type using the same logic as UpgradePlanCard
-                  const getOperator = () => {
-                    if (!currentPlanObj || isCreateMode) return 'created';
-                    if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
-                    if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
-                    return 'upgraded';
-                  };
-                  const operator = getOperator();
-                  if (operator === 'downgraded') {
-                    showDowngradeModal(plan, { workspaceName, isCreateMode });
-                  } else {
-                    showConfirmationModal(plan, { workspaceName, isCreateMode });
-                  }
-                }
-              }}
-            >
-              {(() => {
-                if (isSubscribing) return t('common:processing');
-
-                const selectedPlanName = additionalPlans.find((p) => p.ID === selectedPlan)?.Name;
-                if (selectedPlanName === currentPlan) return t('common:your_current_plan');
-                if (selectedPlanName === nextPlanName) return t('common:your_next_plan');
-
-                // Determine if it's upgrade or downgrade based on plan relationships
-                if (currentPlanObj && selectedPlanName) {
-                  if (currentPlanObj.UpgradePlanList?.includes(selectedPlanName))
-                    return t('common:upgrade');
-                  if (currentPlanObj.DowngradePlanList?.includes(selectedPlanName))
-                    return t('common:downgrade');
-                }
-
-                return t('common:upgrade');
-              })()}
-            </Button>
-          )}
+          {!isCreateMode && upgradeButton}
         </div>
       )}
     </div>

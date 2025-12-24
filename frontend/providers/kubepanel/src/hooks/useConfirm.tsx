@@ -1,15 +1,14 @@
-import { useCallback, useRef } from 'react';
 import {
   AlertDialog,
   AlertDialogBody,
+  AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogContent,
   AlertDialogOverlay,
-  useDisclosure,
-  Button
+  Button,
+  useDisclosure
 } from '@chakra-ui/react';
-// import { useTranslation } from 'next-i18next';
+import { useCallback, useRef } from 'react';
 
 export const useConfirm = ({
   title = 'Prompt',

@@ -1,5 +1,6 @@
 import { Info } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
 import useSessionStore from '@/stores/session';
@@ -15,6 +16,7 @@ import {
 import { AllPlansSection } from '@/components/plan/AllPlansSection';
 import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
+import { CardInfoSection } from '@/components/plan/CardInfoSection';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -28,13 +30,17 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
 import { Skeleton } from '@sealos/shadcn-ui';
 import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
+import { gtmSubscribeCheckout, gtmSubscribeSuccess } from '@/utils/gtm';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 export default function Plan() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
   const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
+  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
   const stripePromise = useEnvStore((s) => s.stripePromise);
   const region = getRegion();
   const { toast } = useCustomToast();
@@ -52,7 +58,19 @@ export default function Plan() {
     modalType,
     modalContext,
     hideModal,
-    confirmPendingPlan
+    showConfirmationModal,
+    redeemCode,
+    redeemCodeValidated,
+    setRedeemCode,
+    startPaymentWaiting,
+    defaultSelectedPlan,
+    defaultShowPaymentConfirmation,
+    defaultWorkspaceName,
+    setDefaultSelectedPlan,
+    setDefaultShowPaymentConfirmation,
+    setDefaultWorkspaceName,
+    clearModalDefaults,
+    clearRedeemCode
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
@@ -61,7 +79,10 @@ export default function Plan() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
-  const [defaultSelectedPlan, setDefaultSelectedPlan] = useState<string>('');
+  // Track if Stripe success has been tracked to prevent duplicates
+  const [hasTrackedStripeSuccess, setHasTrackedStripeSuccess] = useState(false);
+  // Use ref to persist Stripe callback flag even after router.query is cleared
+  const isStripeCallbackRef = useRef(false);
 
   const handleSubscriptionModalOpenChange = useCallback(
     (open: boolean) => {
@@ -69,16 +90,22 @@ export default function Plan() {
       if (!open) {
         setIsCreateMode(false);
         setIsUpgradeMode(false);
+        // Clear all default values when closing the modal to prevent duplicate opening
+        clearModalDefaults();
+        clearRedeemCode();
       }
       // Clean up URL parameters after opening or closing the modal
       const url = new URL(window.location.href);
       url.searchParams.delete('mode');
       url.searchParams.delete('plan');
+      url.searchParams.delete('showPaymentConfirmation');
+      url.searchParams.delete('workspaceName');
+      url.searchParams.delete('redeem');
       router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
         shallow: true
       });
     },
-    [router]
+    [router, clearModalDefaults, clearRedeemCode]
   );
 
   // useEffect to handle the router query
@@ -94,19 +121,42 @@ export default function Plan() {
     }
 
     // Handle subscription modal modes
-    if (router.query.mode === 'create') {
-      setIsCreateMode(true);
+    if (router.query.mode === 'create' || router.query.mode === 'upgrade') {
+      if (router.query.mode === 'create') setIsCreateMode(true);
+      if (router.query.mode === 'upgrade') setIsUpgradeMode(true);
+
       // Handle plan parameter for default selection
       if (router.query.plan) {
         setDefaultSelectedPlan(router.query.plan as string);
       }
-      handleSubscriptionModalOpenChange(true);
-      return;
-    }
 
-    if (router.query.mode === 'upgrade') {
-      setIsUpgradeMode(true);
+      // Handle workspaceName parameter for default workspace name
+      if (router.query.workspaceName) {
+        setDefaultWorkspaceName(router.query.workspaceName as string);
+      }
+
+      // Handle redeem code parameter
+      if (router.query.redeem) {
+        setRedeemCode(router.query.redeem as string);
+      }
+
+      if (router.query.showPaymentConfirmation === 'true') {
+        setDefaultShowPaymentConfirmation(true);
+      }
+
       handleSubscriptionModalOpenChange(true);
+
+      // Clean up URL parameters after processing to prevent duplicate opening
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      url.searchParams.delete('plan');
+      url.searchParams.delete('showPaymentConfirmation');
+      url.searchParams.delete('workspaceName');
+      url.searchParams.delete('redeem');
+      router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
+        shallow: true
+      });
+
       return;
     }
 
@@ -116,6 +166,12 @@ export default function Plan() {
         console.log('Trying to open recharge modal', rechargeRef.current);
         rechargeRef.current?.onOpen();
       }, 1000);
+      // Clean up URL parameters after processing
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      router.replace(url.pathname + (url.search ? url.search : ''), undefined, {
+        shallow: true
+      });
       return;
     }
 
@@ -126,11 +182,29 @@ export default function Plan() {
 
     // Check for success state from Stripe callback (set by desktop)
     if (router.query.stripeState === 'success' && router.query.payId) {
-      console.log('Setting showCongratulations to true');
+      // Invalidate queries to refresh subscription data after payment success
+      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+      queryClient.invalidateQueries({ queryKey: ['card-info'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
+      hideModal();
+      // Close UpgradePlanDialog to prevent focus fighting
+      setSubscriptionModalOpen(false);
       setShowCongratulations(true);
+      setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
+      isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
       return;
     }
-  }, [router, handleSubscriptionModalOpenChange]);
+  }, [
+    router,
+    handleSubscriptionModalOpenChange,
+    setRedeemCode,
+    hideModal,
+    setDefaultSelectedPlan,
+    setDefaultShowPaymentConfirmation,
+    setDefaultWorkspaceName
+  ]);
 
   const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
@@ -144,7 +218,7 @@ export default function Plan() {
   });
 
   // Fetch plans data and sync to store
-  useQuery({
+  const { isSuccess: isPlansLoaded } = useQuery({
     queryKey: ['plan-list'],
     queryFn: getPlanList,
     onSuccess: (data) => {
@@ -153,6 +227,33 @@ export default function Plan() {
     },
     refetchOnMount: true
   });
+
+  // Handle payment confirmation modal once router is ready and plans are loaded
+  useEffect(() => {
+    if (!router.isReady || !isPlansLoaded) return;
+
+    if (defaultShowPaymentConfirmation && plansData?.plans && defaultSelectedPlan) {
+      const targetPlan = plansData.plans.find((p) => p.Name === defaultSelectedPlan);
+
+      if (targetPlan) {
+        const workspaceName = isCreateMode ? defaultWorkspaceName : '';
+        showConfirmationModal(targetPlan, {
+          workspaceName,
+          isCreateMode
+        });
+      }
+    }
+  }, [
+    router.isReady,
+    router.query,
+    isPlansLoaded,
+    plansData,
+    showConfirmationModal,
+    defaultShowPaymentConfirmation,
+    defaultSelectedPlan,
+    defaultWorkspaceName,
+    isCreateMode
+  ]);
 
   // Get current workspace subscription info and sync to store
   const { isLoading, refetch: refetchSubscriptionInfo } = useQuery({
@@ -180,8 +281,54 @@ export default function Plan() {
     refetchOnMount: true
   });
 
+  // Get last transaction for the workspace (for Stripe callback)
+  const { data: workspaceLastTransactionData } = useQuery({
+    queryKey: ['workspace-last-transaction', workspaceId, region?.uid],
+    queryFn: () =>
+      getLastTransaction({
+        workspace: workspaceId || '',
+        regionDomain: region?.domain || ''
+      }),
+    enabled: !!(workspaceId && region?.uid && router.query.stripeState === 'success'),
+    refetchOnMount: true
+  });
+
+  // Track subscription success for Stripe payments when data is loaded
+  useEffect(() => {
+    // Use ref instead of router.query because router.query gets cleared
+    if (
+      isStripeCallbackRef.current &&
+      workspaceSubscriptionData?.data?.subscription &&
+      !hasTrackedStripeSuccess
+    ) {
+      console.log('[GTM] Triggering subscribe_success');
+
+      const subscription = workspaceSubscriptionData.data.subscription;
+      const plan = plansData?.plans?.find((p) => p.Name === subscription.PlanName);
+      const monthlyPrice = plan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+
+      // Determine subscription type from transaction
+      let subscriptionType: 'new' | 'upgrade' | 'downgrade' = 'new';
+      if (workspaceLastTransactionData?.data?.transaction?.Operator) {
+        const operator = workspaceLastTransactionData.data.transaction.Operator;
+        subscriptionType =
+          operator === 'created' ? 'new' : operator === 'downgraded' ? 'downgrade' : 'upgrade';
+      }
+
+      gtmSubscribeSuccess({
+        amount: monthlyPrice,
+        paid: monthlyPrice, // For Stripe payments, user pays full amount
+        plan: subscription.PlanName,
+        type: subscriptionType
+      });
+
+      setHasTrackedStripeSuccess(true);
+      isStripeCallbackRef.current = false; // Clear the flag after tracking
+    }
+  }, [workspaceSubscriptionData, workspaceLastTransactionData, plansData, hasTrackedStripeSuccess]);
+
   // Get last transaction and sync to store
-  const { data: userLastTransactionData } = useQuery({
+  useQuery({
     queryKey: ['last-transaction', session?.user?.nsid, region?.uid],
     queryFn: () =>
       getLastTransaction({
@@ -213,7 +360,7 @@ export default function Plan() {
   // Subscription mutation
   const subscriptionMutation = useMutation({
     mutationFn: createSubscriptionPayment,
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
       if (data?.message && String(data?.message) === '10004') {
         return toast({
           title: 'Quota Reached',
@@ -223,23 +370,51 @@ export default function Plan() {
         });
       }
 
-      // Close any open modals first
-      hideModal();
-      // Refresh subscription data
-      await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      // Note: invalidate will be handled in handleModalClose when modal is closed
+      // Only refetch immediately if needed for UI updates
       await refetchSubscriptionInfo();
-      setTimeout(async () => {
-        // Refresh subscription data with delay
-        await queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-        await queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-        await refetchSubscriptionInfo();
-      }, 5000);
 
       if (data.code === 200) {
         if (data.data?.redirectUrl) {
-          window.parent.location.href = data.data.redirectUrl;
-        } else if (data.data?.success === true) {
+          if (variables.operator === 'upgraded') {
+            const targetWorkspace = variables.workspace || session?.user?.nsid || '';
+            const targetRegionDomain = variables.regionDomain || region?.domain || '';
+            // Set invoice ID from response if available, otherwise don't set it
+            const invoiceId = data.data?.invoiceID;
+            startPaymentWaiting(
+              targetWorkspace,
+              targetRegionDomain,
+              data.data.redirectUrl,
+              invoiceId
+            );
+            // Note: openInNewWindow is now called synchronously in handleSubscribe
+          } else {
+            hideModal();
+            window.parent.location.href = data.data.redirectUrl;
+          }
+        }
+        // [TODO] upgrade mode is not needed anymore...
+        else if (data.data?.success === true) {
+          // Track subscription success for balance payments
+          // Note: For Stripe payments, tracking happens after redirect
+          const plan = plansData?.plans?.find((p) => p.Name === variables.planName);
+          if (plan) {
+            const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+            const subscriptionType: 'new' | 'upgrade' | 'downgrade' =
+              variables.operator === 'created'
+                ? 'new'
+                : variables.operator === 'downgraded'
+                  ? 'downgrade'
+                  : 'upgrade';
+
+            gtmSubscribeSuccess({
+              amount: monthlyPrice,
+              paid: monthlyPrice,
+              plan: plan.Name,
+              type: subscriptionType
+            });
+          }
+
           if (isCreateMode) {
             toast({
               title: 'Workspace creation successful',
@@ -262,9 +437,7 @@ export default function Plan() {
       setSubscriptionModalOpen(false);
     },
     onError: (error: any) => {
-      // Refresh subscription data on error as well
-      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+      // Note: invalidate will be handled in handleModalClose when modal is closed
       if (error.code === 409) {
         toast({
           title: 'Workspace creation failed',
@@ -287,6 +460,8 @@ export default function Plan() {
     workspaceName?: string,
     isPayg?: boolean
   ) => {
+    const promotionCode = redeemCodeValidated && redeemCode ? redeemCode : undefined;
+
     if (isCreateMode) {
       // Create mode: need workspace name
       if (!workspaceName?.trim()) {
@@ -312,9 +487,18 @@ export default function Plan() {
             userType: 'payg'
           }
         };
+        if (promotionCode) {
+          paymentRequest.promotionCode = promotionCode;
+        }
         subscriptionMutation.mutate(paymentRequest);
       } else if (plan) {
         // Subscription mode: create workspace + subscription
+        const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+        gtmSubscribeCheckout({
+          amount: monthlyPrice,
+          plan: plan.Name,
+          type: 'new'
+        });
         const paymentRequest: SubscriptionPayRequest = {
           workspace: '', // Will be filled by API after workspace creation
           regionDomain: region?.domain || '',
@@ -327,6 +511,9 @@ export default function Plan() {
             userType: 'subscription'
           }
         };
+        if (promotionCode) {
+          paymentRequest.promotionCode = promotionCode;
+        }
         subscriptionMutation.mutate(paymentRequest);
       }
       return;
@@ -362,16 +549,45 @@ export default function Plan() {
       return 'upgraded';
     };
 
+    const operator = getOperator();
+    const subscriptionType: 'new' | 'upgrade' | 'downgrade' =
+      operator === 'created' ? 'new' : operator === 'downgraded' ? 'downgrade' : 'upgrade';
+
+    const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
+    gtmSubscribeCheckout({
+      amount: monthlyPrice,
+      plan: plan.Name,
+      type: subscriptionType
+    });
+
     const paymentRequest: SubscriptionPayRequest = {
       workspace: session.user.nsid,
       regionDomain: region.domain,
       planName: plan.Name,
       period: '1m',
       payMethod: 'stripe',
-      operator: getOperator()
+      operator: operator
     };
 
-    subscriptionMutation.mutate(paymentRequest);
+    if (promotionCode) {
+      paymentRequest.promotionCode = promotionCode;
+    }
+
+    // For upgrade mode, open window synchronously in user interaction, then navigate asynchronously
+    if (operator === 'upgraded') {
+      const paymentPromise = subscriptionMutation.mutateAsync(paymentRequest);
+      openInNewWindow(
+        paymentPromise.then((data) => {
+          if (data?.code === 200 && data?.data?.redirectUrl) {
+            return data.data.redirectUrl;
+          }
+          throw new Error('No redirect URL in response');
+        }),
+        true // show loading indicator
+      );
+    } else {
+      subscriptionMutation.mutate(paymentRequest);
+    }
   };
 
   const isPaygTypeValue = isPaygType();
@@ -427,6 +643,7 @@ export default function Plan() {
                   isOpen={subscriptionModalOpen}
                   onOpenChange={handleSubscriptionModalOpenChange}
                   defaultSelectedPlan={defaultSelectedPlan}
+                  defaultWorkspaceName={defaultWorkspaceName}
                 >
                   {trigger}
                 </UpgradePlanDialog>
@@ -437,6 +654,7 @@ export default function Plan() {
             <BalanceSection
               balance={balance}
               rechargeEnabled={rechargeEnabled}
+              subscriptionEnabled={subscriptionEnabled}
               onTopUpClick={() => rechargeRef?.current?.onOpen()}
             />
           </div>
@@ -449,10 +667,12 @@ export default function Plan() {
                 <Info className="text-orange-600" />
               </div>
               <div className="text-orange-600 text-sm leading-5">
-                Please ensure resources remain within
-                {lastTransactionData?.transaction?.NewPlanName} plan limits by
-                {new Date(lastTransactionData?.transaction?.StartAt || '').toLocaleDateString()}
-                to avoid charges.
+                {t('common:downgrade_warning_message', {
+                  planName: lastTransactionData?.transaction?.NewPlanName,
+                  date: new Date(
+                    lastTransactionData?.transaction?.StartAt || ''
+                  ).toLocaleDateString()
+                })}
               </div>
             </div>
           )}
@@ -467,6 +687,7 @@ export default function Plan() {
                 isOpen={subscriptionModalOpen}
                 onOpenChange={handleSubscriptionModalOpenChange}
                 defaultSelectedPlan={defaultSelectedPlan}
+                defaultWorkspaceName={defaultWorkspaceName}
               >
                 {trigger}
               </UpgradePlanDialog>
@@ -476,10 +697,13 @@ export default function Plan() {
           <BalanceSection
             balance={balance}
             rechargeEnabled={rechargeEnabled}
+            subscriptionEnabled={subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current!.onOpen()}
           />
         </>
       )}
+
+      <CardInfoSection workspace={session?.user?.nsid} regionDomain={region?.domain} />
 
       <AllPlansSection />
       {/* Modals */}
@@ -490,9 +714,9 @@ export default function Plan() {
           stripePromise={stripePromise}
           request={request}
           onPaySuccess={async () => {
+            // Note: invalidate will be handled when modal closes
+            // Wait a bit for payment to be processed
             await new Promise((s) => setTimeout(s, 2000));
-            await queryClient.invalidateQueries({ queryKey: ['billing'] });
-            await queryClient.invalidateQueries({ queryKey: ['getAccount'] });
           }}
         />
       )}
@@ -502,9 +726,9 @@ export default function Plan() {
           ref={transferRef}
           balance={balance}
           onTransferSuccess={async () => {
+            // Note: invalidate will be handled when modal closes
+            // Wait a bit for transfer to be processed
             await new Promise((s) => setTimeout(s, 2000));
-            await queryClient.invalidateQueries({ queryKey: ['billing'] });
-            await queryClient.invalidateQueries({ queryKey: ['getAccount'] });
           }}
           k8s_username={k8s_username}
         />
@@ -549,15 +773,37 @@ export default function Plan() {
         workspaceName={modalContext.workspaceName}
         isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
+        isSubmitting={subscriptionMutation.isLoading}
         onConfirm={() => {
-          const plan = confirmPendingPlan();
-          if (plan) {
-            handleSubscribe(plan, modalContext.workspaceName, false);
+          if (pendingPlan) {
+            handleSubscribe(pendingPlan, modalContext.workspaceName, false);
           }
-          hideModal();
+          // Not hiding the modal as we need to query payment state.
         }}
         onCancel={() => {
           hideModal();
+          // Clear all default values when closing the modal to prevent duplicate opening
+          clearModalDefaults();
+          clearRedeemCode();
+        }}
+        onPaymentSuccess={async () => {
+          // Invalidate queries to refresh subscription data after payment success
+          queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+          queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+          queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+          queryClient.invalidateQueries({ queryKey: ['card-info'] });
+          queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
+          // Close all modals before showing congratulations modal
+          hideModal();
+          // Close UpgradePlanDialog to prevent focus fighting
+          setSubscriptionModalOpen(false);
+          // Show congratulations modal
+          if (pendingPlan) {
+            // Set workspace ID for congratulations modal
+            const targetWorkspace = session?.user?.nsid || '';
+            setWorkspaceId(targetWorkspace);
+            setShowCongratulations(true);
+          }
         }}
       />
 
@@ -565,14 +811,16 @@ export default function Plan() {
         targetPlan={pendingPlan || undefined}
         isOpen={modalType === 'downgrade'}
         onConfirm={() => {
-          const plan = confirmPendingPlan();
-          if (plan) {
-            handleSubscribe(plan, modalContext.workspaceName, false);
+          if (pendingPlan) {
+            handleSubscribe(pendingPlan, modalContext.workspaceName, false);
           }
           hideModal();
         }}
         onCancel={() => {
           hideModal();
+          // Clear all default values when closing the modal to prevent duplicate opening
+          clearModalDefaults();
+          clearRedeemCode();
         }}
       />
     </div>

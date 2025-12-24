@@ -1131,11 +1131,11 @@ export const json2ParameterConfig = (
     if (parameterConfig?.timeZone) {
       mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
     }
-    const lowerCaseTableNames = parameterConfig?.lowerCaseTableNames
-      ? parameterConfig.lowerCaseTableNames
-      : '1';
 
-    mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
+    // Do not automatically set a value for (existing) databases.
+    if (parameterConfig?.lowerCaseTableNames) {
+      mysqlParams['lower_case_table_names'] = String(parameterConfig.lowerCaseTableNames);
+    }
 
     // Check if this is MySQL 5.7.42 version
     if (dbVersion === 'mysql-5.7.42') {

@@ -1,22 +1,27 @@
 name: Check-License
 
-
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
+
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
+concurrency:
+  group: check-license-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 env:
   # Common versions
   GO_VERSION: "1.25"

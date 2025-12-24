@@ -1,9 +1,9 @@
-import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, ChevronDown } from 'lucide-react';
 
 import { tagColorMap, defaultTagColor } from '@/constants/tag';
 import { Tag, type Tag as TTag } from '@/prisma/generated/client';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
@@ -116,7 +116,7 @@ const TemplateButton = ({
         <div className="flex items-center justify-center gap-2">
           {/* logo */}
           <div className="flex items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-            <Image src={`/images/runtime/${iconId || ''}.svg`} width={32} height={32} alt={title} />
+            <RuntimeIcon iconId={iconId} width={32} height={32} alt={title} />
           </div>
           <div className="flex w-full min-w-0 flex-col items-start">
             {/* name */}

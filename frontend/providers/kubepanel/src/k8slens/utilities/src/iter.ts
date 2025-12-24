@@ -298,7 +298,10 @@ function nFircate<T>(from: Iterable<T>, field: keyof T, parts: T[typeof field][]
       continue;
     }
 
-    res[index].push(item);
+    const targetArray = res[index];
+    if (targetArray) {
+      targetArray.push(item);
+    }
   }
 
   return res;

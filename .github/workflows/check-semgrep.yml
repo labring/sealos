@@ -4,19 +4,24 @@ name: Check-Semgrep
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
       - "CHANGELOG/**"
+
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
+concurrency:
+  group: check-semgrep-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   semgrep:
@@ -39,18 +44,18 @@ jobs:
       # Fetch project source with GitHub Actions Checkout.
       - uses: actions/checkout@v4
       # Run the "semgrep ci" command on the command line of the docker image.
-      -
-        run: |
+      - run: |
           semgrep ci \
           --exclude-rule go.lang.security.audit.xss.import-text-template.import-text-template \
           --exclude-rule yaml.kubernetes.security.run-as-non-root.run-as-non-root \
           --exclude-rule yaml.github-actions.security.pull-request-target-code-checkout.pull-request-target-code-checkout \
           --exclude-rule yaml.github-actions.security.third-party-action-not-pinned-to-commit-sha.third-party-action-not-pinned-to-commit-sha
         env:
-           # Add the rules that Semgrep uses by setting the SEMGREP_RULES environment variable.
-           SEMGREP_RULES: p/default # more at semgrep.dev/explore
+          # Add the rules that Semgrep uses by setting the SEMGREP_RULES environment variable.
+          SEMGREP_RULES: p/default # more at semgrep.dev/explore
 
-           # Uncomment SEMGREP_TIMEOUT to set this job's timeout (in seconds):
-           # Default timeout is 1800 seconds (30 minutes).
-           # Set to 0 to disable the timeout.
-           # SEMGREP_TIMEOUT: 300
+
+          # Uncomment SEMGREP_TIMEOUT to set this job's timeout (in seconds):
+          # Default timeout is 1800 seconds (30 minutes).
+          # Set to 0 to disable the timeout.
+          # SEMGREP_TIMEOUT: 300

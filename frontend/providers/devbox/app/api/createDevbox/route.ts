@@ -5,7 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { KBDevboxTypeV2 } from '@/types/k8s';
-import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml';
+import { json2DevboxV2, json2Ingress, json2Service } from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const { body: devboxListBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes'
     )) as {
@@ -73,8 +73,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
-    const devbox = json2Devbox(devboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE);
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
+    // TODO: this function can remove env params,because it is only backend
+    const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT);
     const service = json2Service(devboxForm);
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
     await applyYamlList([devbox, service, ingress], 'create');

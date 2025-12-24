@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxes',
       devboxName,
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     // 3. create devbox release
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
-      'v1alpha1',
+      'v1alpha2',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
           item.spec &&
           item.spec.devboxName === devboxName &&
           item.metadata.ownerReferences[0].uid === devboxUid &&
-          item.spec.newTag === tag
+          item.spec.version === tag
         );
       })
     ) {
@@ -124,8 +124,14 @@ export async function POST(req: NextRequest) {
         error: 'devbox release already exists'
       });
     }
-
-    const devbox = json2DevboxRelease({ devboxName, tag, releaseDes, devboxUid });
+    const startDevboxAfterRelease = false;
+    const devbox = json2DevboxRelease({
+      devboxName,
+      tag,
+      releaseDes,
+      devboxUid,
+      startDevboxAfterRelease
+    });
     await applyYamlList([devbox], 'create');
 
     // 4. wait for release success
@@ -137,7 +143,7 @@ export async function POST(req: NextRequest) {
     while (!isReleaseSuccess && retryCount < maxRetries) {
       const { body: currentReleaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
         'devbox.sealos.io',
-        'v1alpha1',
+        'v1alpha2',
         namespace,
         'devboxreleases'
       )) as { body: { items: KBDevboxReleaseType[] } };
@@ -147,7 +153,7 @@ export async function POST(req: NextRequest) {
           item.spec &&
           item.spec.devboxName === devboxName &&
           item.metadata.ownerReferences[0].uid === devboxUid &&
-          item.spec.newTag === tag
+          item.spec.version === tag
       );
 
       if (currentRelease?.status?.phase === DevboxReleaseStatusEnum.Success) {

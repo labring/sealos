@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       customDomain: ''
     };
 
+    // NOTE: Devbox 2.5 is after webIDE and import,so there api v1alpha1 need to adjust to v1alpha2 later(if use).
     const devboxResponse = await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',

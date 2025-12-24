@@ -1,7 +1,6 @@
-import vector from '@/assert/Vector.svg';
-import stripe_icon from '@/assert/bi_stripe.svg';
-import wechat_icon from '@/assert/ic_baseline-wechat.svg';
-import alipay_icon from '@/assert/ic_baseline-alipay.svg';
+import stripe_icon from '@/assets/payment-methods/stripe.svg';
+import wechat_icon from '@/assets/payment-methods/wechat.svg';
+import alipay_icon from '@/assets/payment-methods/alipay.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import useEnvStore from '@/stores/env';
@@ -38,7 +37,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import useRechargeStore from '@/stores/recharge';
 import { gtmOpenTopup, gtmTopupCheckout } from '@/utils/gtm';
-import { Minus, Plus, Loader } from 'lucide-react';
+import { Minus, Plus, Loader, ChevronLeft } from 'lucide-react';
 import { cn } from '@sealos/shadcn-ui';
 
 const StripeForm = (props: {
@@ -651,19 +650,14 @@ const RechargeModal = forwardRef(
                   borderColor={'grayModern.100'}
                   borderBottom={'1px solid var(--color-border)'}
                 >
-                  <Img
-                    src={vector.src}
-                    w={'20px'}
-                    transform={'rotate(-90deg)'}
-                    h={'20px'}
-                    mr={'16px'}
-                    display={'inline-block'}
-                    verticalAlign={'middle'}
-                    cursor={'pointer'}
+                  <Button
+                    variant="white-bg-icon"
                     onClick={() => {
                       cancalPay();
                     }}
-                  ></Img>
+                  >
+                    <ChevronLeft />
+                  </Button>
                   {t('common:recharge_amount')}
                 </ModalHeader>
                 <ModalCloseButton top={'8px'} right={'18px'} />

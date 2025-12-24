@@ -31,10 +31,7 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         enabled: !!conf.idp.password?.enabled
       },
       sms: {
-        enabled: !!conf.idp.sms?.enabled,
-        ali: {
-          enabled: !!conf.idp.sms?.ali?.enabled
-        }
+        enabled: !!conf.idp.sms?.enabled
       },
       email: {
         enabled: !!conf.idp.email?.enabled
@@ -61,7 +58,8 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         authURL: conf.idp.oauth2?.authURL || '',
         tokenURL: conf.idp.oauth2?.tokenURL || '',
         userInfoURL: conf.idp.oauth2?.userInfoURL || '',
-        proxyAddress: conf.idp.oauth2?.proxyAddress || ''
+        proxyAddress: conf.idp.oauth2?.proxyAddress || '',
+        displayName: conf.idp.oauth2?.displayName || ''
       }
     },
     captcha: {

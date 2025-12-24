@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { PlanAdditionalFeaturesOverride } from '@/constants/plan';
 
 interface SubscriptionPlansPanelProps {
   plansData?: SubscriptionPlan[];
@@ -59,6 +60,23 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                 resources = {};
               }
               const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
+              const planName = plan.Name.toLowerCase();
+              const matchedKey = Array.from(PlanAdditionalFeaturesOverride.keys()).find((key) =>
+                planName.includes(key.toLowerCase())
+              );
+              const features = matchedKey
+                ? PlanAdditionalFeaturesOverride.get(matchedKey) || []
+                : [];
+              const featuresText = features.map((key) => t(key)).join(' + ');
+
+              const parts: string[] = [];
+              if (resources.cpu) parts.push(`${resources.cpu} vCPU`);
+              if (resources.memory) parts.push(`${resources.memory} RAM`);
+              if (resources.storage) parts.push(`${resources.storage} Disk`);
+              parts.push(formatTrafficAuto(plan.Traffic));
+              if (resources.nodeports) parts.push(`${resources.nodeports} Nodeport`);
+              if (plan.AIQuota) parts.push(`${formatMoney(plan.AIQuota * 100)} AI Credits`);
+              if (featuresText) parts.push(featuresText);
 
               return (
                 <div
@@ -68,10 +86,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
                   <div className="flex w-full flex-col justify-between">
                     <span className="font-medium text-zinc-900 text-sm">{plan.Name}</span>
                     <div className="text-xs text-gray-500 mt-1">
-                      {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +{' '}
-                      {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport +{' '}
-                      {formatMoney(plan.AIQuota * 100)} AI Credits -
-                      <CurrencySymbol />
+                      {parts.join(' + ')} - <CurrencySymbol />
                       {monthlyPrice.toFixed(0)}
                     </div>
                   </div>

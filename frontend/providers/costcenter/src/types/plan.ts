@@ -119,7 +119,8 @@ export const UpgradeAmountRequestSchema = WorkspaceSubscriptionRequestSchema.ext
   planName: z.string(),
   period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
   payMethod: PaymentMethodSchema,
-  operator: z.literal('upgraded')
+  operator: z.enum(['created', 'upgraded']),
+  promotionCode: z.string().optional()
 });
 export type UpgradeAmountRequest = z.infer<typeof UpgradeAmountRequestSchema>;
 
@@ -129,6 +130,7 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
   payMethod: PaymentMethodSchema, // 支付方式：stripe 或 balance
   operator: OperatorSchema,
   cardId: z.string().optional(),
+  promotionCode: z.string().optional(),
   createWorkspace: z
     .object({
       teamName: z.string(),
@@ -169,8 +171,39 @@ export const LastTransactionResponseSchema = z.object({
 });
 export type LastTransactionResponse = z.infer<typeof LastTransactionResponseSchema>;
 
+// Original plan information (nested in pending upgrade)
+export const OriginalPlanSchema = z.object({
+  plan_name: z.string(),
+  price: z.number(),
+  period: z.string()
+});
+export type OriginalPlan = z.infer<typeof OriginalPlanSchema>;
+
+// Pending upgrade information (returned in 409 conflict response)
+export const PendingUpgradeSchema = z.object({
+  plan_name: z.string(),
+  payment_id: z.string(),
+  invoice_id: z.string(),
+  payment_url: z.string(),
+  amount_due: z.number(),
+  total_amount: z.number().optional(), // Optional: if not provided, use amount_due
+  currency: z.string(),
+  created_at: z.number(),
+  status: z.string(),
+  promotion_code: z.string().optional(),
+  has_discount: z.boolean().optional(),
+  discount_amount: z.number().optional(),
+  original_plan: OriginalPlanSchema.optional(),
+  original_amount: z.number().optional()
+});
+export type PendingUpgrade = z.infer<typeof PendingUpgradeSchema>;
+
 export const UpgradeAmountResponseSchema = z.object({
-  amount: z.number()
+  amount: z.number(),
+  promotion_code: z.string(),
+  has_discount: z.boolean(),
+  original_amount: z.number(),
+  pending_upgrade: PendingUpgradeSchema.optional()
 });
 export type UpgradeAmountResponse = z.infer<typeof UpgradeAmountResponseSchema>;
 
@@ -179,7 +212,8 @@ export const PaymentResponseSchema = z.object({
   redirectUrl: z.string().optional(),
   message: z.string().optional(),
   error: z.string().optional(),
-  payID: z.string().optional()
+  payID: z.string().optional(),
+  invoiceID: z.string().optional()
 });
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;
 
@@ -200,3 +234,81 @@ export const WorkspaceSubscriptionListResponseSchema = z.object({
 export type WorkspaceSubscriptionListResponse = z.infer<
   typeof WorkspaceSubscriptionListResponseSchema
 >;
+
+/**
+ * Card list request schema
+ */
+export const WorkspaceSubscriptionCardInfoRequestSchema = z.object({
+  workspace: z.string(),
+  regionDomain: z.string().optional()
+});
+export type WorkspaceSubscriptionCardInfoRequest = z.infer<
+  typeof WorkspaceSubscriptionCardInfoRequestSchema
+>;
+
+/**
+ * Payment method (card) info
+ */
+export const PaymentMethodInfoSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  created: z.number(),
+  card: z.object({
+    brand: z.string(),
+    last4: z.string(),
+    exp_month: z.number(),
+    exp_year: z.number(),
+    funding: z.string(),
+    country: z.string()
+  }),
+  metadata: z.record(z.string(), z.string())
+});
+export type PaymentMethodInfo = z.infer<typeof PaymentMethodInfoSchema>;
+
+/**
+ * Card info response
+ */
+export const CardInfoResponseSchema = z.object({
+  success: z.boolean(),
+  payment_method: PaymentMethodInfoSchema.nullable()
+});
+export type CardInfoResponse = z.infer<typeof CardInfoResponseSchema>;
+
+/**
+ * Card management request
+ */
+export const WorkspaceSubscriptionManageCardRequestSchema = z.object({
+  workspace: z.string(),
+  regionDomain: z.string(),
+  redirectUrl: z.string()
+});
+export type WorkspaceSubscriptionManageCardRequest = z.infer<
+  typeof WorkspaceSubscriptionManageCardRequestSchema
+>;
+
+/**
+ * Card management session response
+ */
+export const PortalSessionResponseSchema = z.object({
+  success: z.boolean(),
+  url: z.string()
+});
+export type PortalSessionResponse = z.infer<typeof PortalSessionResponseSchema>;
+
+/**
+ * Invoice cancel request schema
+ */
+export const InvoiceCancelRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
+  invoiceID: z.string()
+});
+export type InvoiceCancelRequest = z.infer<typeof InvoiceCancelRequestSchema>;
+
+/**
+ * Invoice cancel response schema
+ */
+export const InvoiceCancelResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  invoice_id: z.string()
+});
+export type InvoiceCancelResponse = z.infer<typeof InvoiceCancelResponseSchema>;

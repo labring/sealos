@@ -74,6 +74,7 @@ export interface DevboxEditTypeV2 {
   memory: number;
   gpu?: GpuType;
   networks: PortInfos;
+  networkType?: 'NodePort' | 'Tailnet' | 'SSHGate';
   env?: DevboxEnvType[];
 }
 
@@ -117,7 +118,7 @@ export interface DevboxDetailType extends DevboxEditType {
     token: string;
   };
   sshPort?: number;
-  lastTerminatedReason?: string;
+  // lastTerminatedReason?: string;
 }
 export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
   id: string;
@@ -139,7 +140,7 @@ export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
     token: string;
   };
   sshPort?: number;
-  lastTerminatedReason?: string;
+  // lastTerminatedReason?: string;
 }
 export interface NetworkType {
   networkName: string;
@@ -151,21 +152,6 @@ export interface NetworkType {
   customDomain: string; // custom domain
 }
 
-export interface DevboxListItemType {
-  id: string;
-  name: string;
-  remark?: string;
-  runtimeType: string;
-  runtimeVersion: string;
-  status: DevboxStatusMapType;
-  createTime: string;
-  cpu: number;
-  memory: number;
-  usedCpu: MonitorDataResult;
-  usedMemory: MonitorDataResult;
-  sshPort: number;
-  lastTerminatedReason?: string;
-}
 export interface DevboxListItemTypeV2 {
   id: string;
   name: string;
@@ -182,10 +168,12 @@ export interface DevboxListItemTypeV2 {
   createTime: string;
   cpu: number;
   memory: number;
+  gpu?: GpuType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
   sshPort: number;
-  lastTerminatedReason?: string;
+  networkType?: 'NodePort' | 'Tailnet' | 'SSHGate';
+  // lastTerminatedReason?: string;
 }
 export interface DevboxVersionListItemType {
   id: string;
@@ -194,6 +182,7 @@ export interface DevboxVersionListItemType {
   tag: string;
   createTime: string;
   description: string;
+  startDevboxAfterRelease: boolean;
   status: DevboxReleaseStatusMapType;
 }
 

@@ -26,7 +26,7 @@ type SuccessResponse<T> = Merge<BasicResponse, { data: T }>;
 
 type ApiPrefix = 'api' | 'apis';
 type ApiGroup = string;
-type ApiVersion = 'v1';
+type ApiVersion = 'v1' | 'v1alpha1' | 'v1alpha2' | 'v1beta1';
 
 /**
  * Kubernetes API URL Params

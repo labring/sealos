@@ -74,7 +74,8 @@ const RuntimeName = z
     'node.js',
     'echo',
     'rust',
-    'claude-code'
+    'claude-code',
+    'node-expt-agent'
   ])
   .openapi({
     description: 'Runtime environment name (lowercase)'

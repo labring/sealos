@@ -6,11 +6,22 @@ import { produce } from 'immer';
 import { nanoid, parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
 
+// deprecated
 export const json2Devbox = (
-  data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
-  devboxAffinityEnable: string = 'true',
-  squashEnable: string = 'false'
+  data: DevboxEditType,
+  runtimeNamespaceMap: RuntimeNamespaceMap,
+  devboxAffinityEnable: string = 'true'
 ) => {
+  // runtimeNamespace inject
+  const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
+  // gpu node selector
+  const gpuMap = !!data.gpu?.type
+    ? {
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
+        }
+      }
+    : {};
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -18,7 +29,6 @@ export const json2Devbox = (
       name: data.name
     },
     spec: {
-      squash: squashEnable === 'true',
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
@@ -27,25 +37,16 @@ export const json2Devbox = (
       },
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
-        memory: `${str2Num(data.memory)}Mi`
+        memory: `${str2Num(data.memory)}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
-      templateID: data.templateUid,
-      image: data.image,
-      config: produce(parseTemplateConfig(data.templateConfig), (draft) => {
-        draft.appPorts = data.networks.map((item) => ({
-          port: str2Num(item.port),
-          name: item.portName,
-          protocol: 'TCP',
-          targetPort: str2Num(item.port)
-        }));
-        if (data.env && data.env.length > 0) {
-          if (!draft.env) {
-            draft.env = [];
-          }
-          draft.env = [...draft.env, ...data.env];
-        }
-      }),
-      state: 'Running'
+      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
+      runtimeRef: {
+        name: data.runtimeVersion,
+        namespace: runtimeNamespace
+      },
+      state: 'Running',
+      ...gpuMap
     }
   };
   if (devboxAffinityEnable === 'true') {
@@ -76,25 +77,89 @@ export const json2Devbox = (
   return yaml.dump(json);
 };
 
-export const json2StartOrStop = ({
-  devboxName,
-  type
-}: {
-  devboxName: string;
-  type: 'Paused' | 'Running';
-}) => {
-  const json = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
+// TODO: forget gpu support
+export const json2DevboxV2 = (
+  data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
+  devboxAffinityEnable: string = 'true',
+  storageLimit: string = '1Gi'
+) => {
+  const gpuMap = !!data.gpu?.type
+    ? {
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
+        }
+      }
+    : {};
+
+  let json: any = {
+    apiVersion: 'devbox.sealos.io/v1alpha2',
     kind: 'Devbox',
     metadata: {
-      name: devboxName
+      name: data.name
     },
     spec: {
-      state: type
+      network: {
+        type: 'SSHGate', // TODO: github import and local import maybe should adjust this too.
+        extraPorts: data.networks.map((item) => ({
+          containerPort: item.port
+        }))
+      },
+      resource: {
+        cpu: `${str2Num(Math.floor(data.cpu))}m`,
+        memory: `${str2Num(data.memory)}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+      },
+      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
+      templateID: data.templateUid,
+      image: data.image,
+      config: produce(parseTemplateConfig(data.templateConfig), (draft) => {
+        draft.appPorts = data.networks.map((item) => ({
+          port: str2Num(item.port),
+          name: item.portName,
+          protocol: 'TCP',
+          targetPort: str2Num(item.port)
+        }));
+        if (data.env && data.env.length > 0) {
+          if (!draft.env) {
+            draft.env = [];
+          }
+          draft.env = [...draft.env, ...data.env];
+        }
+      }),
+      state: 'Running',
+      ...gpuMap,
+      runtimeClassName: 'devbox-runtime',
+      storageLimit: storageLimit // 1Gi default
     }
   };
+  if (devboxAffinityEnable === 'true') {
+    json.spec.tolerations = [
+      {
+        key: 'devbox.sealos.io/node',
+        operator: 'Exists',
+        effect: 'NoSchedule'
+      }
+    ];
+    json.spec.affinity = {
+      nodeAffinity: {
+        requiredDuringSchedulingIgnoredDuringExecution: {
+          nodeSelectorTerms: [
+            {
+              matchExpressions: [
+                {
+                  key: 'devbox.sealos.io/node',
+                  operator: 'Exists'
+                }
+              ]
+            }
+          ]
+        }
+      }
+    };
+  }
   return yaml.dump(json);
 };
+
 export const getDevboxReleaseName = (devboxName: string, tag: string) => {
   return `${devboxName}-${tag}`;
 };
@@ -103,15 +168,16 @@ export const json2DevboxRelease = (data: {
   tag: string;
   releaseDes: string;
   devboxUid: string;
+  startDevboxAfterRelease: boolean;
 }) => {
   const json = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
+    apiVersion: 'devbox.sealos.io/v1alpha2',
     kind: 'DevBoxRelease',
     metadata: {
       name: getDevboxReleaseName(data.devboxName, data.tag),
       ownerReferences: [
         {
-          apiVersion: 'devbox.sealos.io/v1alpha1',
+          apiVersion: 'devbox.sealos.io/v1alpha2',
           kind: 'Devbox',
           name: data.devboxName,
           blockOwnerDeletion: false,
@@ -122,8 +188,9 @@ export const json2DevboxRelease = (data: {
     },
     spec: {
       devboxName: data.devboxName,
-      newTag: data.tag,
-      notes: data.releaseDes
+      version: data.tag,
+      notes: data.releaseDes,
+      startDevboxAfterRelease: data.startDevboxAfterRelease
     }
   };
   return yaml.dump(json);
@@ -309,14 +376,14 @@ export const generateYamlList = (
   data: json2DevboxV2Data,
   env: {
     devboxAffinityEnable?: string;
-    squashEnable?: string;
+    storageLimit?: string;
     ingressSecret: string;
   }
 ) => {
   return [
     {
       filename: 'devbox.yaml',
-      value: json2Devbox(data, env.devboxAffinityEnable, env.squashEnable)
+      value: json2DevboxV2(data, env.devboxAffinityEnable, env.storageLimit)
     },
     ...(data.networks.length > 0
       ? [

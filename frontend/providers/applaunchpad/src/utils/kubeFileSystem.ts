@@ -306,11 +306,13 @@ export class KubeFileSystem {
     path: string;
     stdout: Writable;
   }) {
+    // Escape single quotes in path to handle special characters
+    const escapedPath = path.replace(/'/g, "'\"'\"'");
     return await this.execCommand(
       namespace,
       podName,
       containerName,
-      ['dd', `if=${path}`, 'status=none'],
+      ['sh', '-c', `dd if='${escapedPath}' status=none`],
       null,
       stdout
     );
@@ -357,11 +359,15 @@ export class KubeFileSystem {
     path: string;
     file: PassThrough;
   }): Promise<string> {
+    // Escape single quotes in path to handle special characters
+    const escapedPath = path.replace(/'/g, "'\"'\"'");
+    // Use '; :' to ensure command always returns success (exit code 0)
+    // ':' is a shell no-op command that always succeeds, preventing dd errors from failing the exec
     const result = await this.execCommand(
       namespace,
       podName,
       containerName,
-      ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      ['sh', '-c', `dd of='${escapedPath}' status=none bs=32767; :`],
       file
     );
     return result;

@@ -1,0 +1,61 @@
+name: Detect Changes
+
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: "Module type to detect (controllers or service)"
+        required: true
+        type: string
+      force_all:
+        description: "Force build all modules"
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      modules:
+        description: "JSON array of modules to build"
+        value: ${{ jobs.detect.outputs.modules }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-24.04
+    outputs:
+      modules: ${{ steps.detect.outputs.modules }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed modules
+        id: detect
+        run: |
+          set -x
+
+          # Determine base ref and force_all flag
+          FORCE_ALL="false"
+          BASE_REF=""
+
+          if [[ "${{ inputs.force_all }}" == "true" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Force all for release builds or manual dispatch
+            FORCE_ALL="true"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # PR: compare with PR base commit
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          elif git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            # Push: compare with previous commit if it exists
+            BASE_REF="${{ github.event.before }}"
+          else
+            # New branch or force push: build all
+            FORCE_ALL="true"
+          fi
+
+          echo "Base ref: $BASE_REF"
+          echo "Force all: $FORCE_ALL"
+
+          # Run detection script
+          MODULES=$(bash scripts/detect-build-modules.sh "${{ inputs.type }}" "$BASE_REF" "$FORCE_ALL")
+
+          echo "Detected modules: $MODULES"
+          echo "modules=$MODULES" >> $GITHUB_OUTPUT

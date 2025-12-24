@@ -2,15 +2,15 @@
  * Copyright (c) OpenLens Authors. All rights reserved.
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
-import type { Lifecycle } from './lifecycle';
-import type { ResourceRequirements } from './resource-requirements';
-import type { SecurityContext } from './security-context';
-import type { Probe } from './probe';
-import type { VolumeDevice } from './volume-device';
-import type { VolumeMount } from './volume-mount';
 import type { ContainerPort } from './container-port';
 import type { EnvFromSource } from './env-from-source';
 import type { EnvVar } from './env-var';
+import type { Lifecycle } from './lifecycle';
+import type { Probe } from './probe';
+import type { ResourceRequirements } from './resource-requirements';
+import type { SecurityContext } from './security-context';
+import type { VolumeDevice } from './volume-device';
+import type { VolumeMount } from './volume-mount';
 
 /**
  * A single application container that you want to run within a pod.

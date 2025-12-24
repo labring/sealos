@@ -31,6 +31,8 @@ type ResourceType =
 
 type GpuNodeType = {
   'gpu.count': number;
+  'gpu.available': number;
+  'gpu.used': number;
   'gpu.memory': number;
   'gpu.product': string;
   'gpu.alias': string;
@@ -102,12 +104,16 @@ async function getGpuNode() {
       string,
       {
         'gpu.count': string;
+        'gpu.available': string;
+        'gpu.used': string;
         'gpu.memory': string;
         'gpu.product': string;
+        'gpu.devbox': string;
       }
     >;
-
-    const gpuValues = Object.values(parseGpuMap).filter((item) => item['gpu.product']);
+    const gpuValues = Object.values(parseGpuMap).filter(
+      (item) => item['gpu.product'] && item['gpu.devbox'] === 'true'
+    );
 
     const gpuList: GpuNodeType[] = [];
 
@@ -116,9 +122,13 @@ async function getGpuNode() {
       const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
       if (index > -1) {
         gpuList[index]['gpu.count'] += Number(item['gpu.count']);
+        gpuList[index]['gpu.available'] += Number(item['gpu.available']);
+        gpuList[index]['gpu.used'] += Number(item['gpu.used']);
       } else {
         gpuList.push({
           ['gpu.count']: +item['gpu.count'],
+          ['gpu.available']: +item['gpu.available'],
+          ['gpu.used']: +item['gpu.used'],
           ['gpu.memory']: +item['gpu.memory'],
           ['gpu.product']: item['gpu.product'],
           ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product']
@@ -147,7 +157,8 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
       alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
-      inventory: +gpuNode['gpu.count'],
+      available: +gpuNode['gpu.available'],
+      count: +gpuNode['gpu.count'],
       vm: +gpuNode['gpu.memory'] / 1024
     });
   });

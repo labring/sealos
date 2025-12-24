@@ -1,15 +1,16 @@
-import { CheckCircle } from 'lucide-react';
-import { forwardRef } from 'react';
-import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
+import { forwardRef, useEffect, useRef } from 'react';
+import { Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
-import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
-import { getUpgradeAmount } from '@/api/plan';
-import { useQuery } from '@tanstack/react-query';
+import { getUpgradeAmount, getCardInfo, createCardManageSession, cancelInvoice } from '@/api/plan';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
-import CurrencySymbol from '../CurrencySymbol';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { PlanConfirmationModalView } from './PlanConfirmationModalView';
+import { PendingUpgradeDialog } from './PendingUpgradeDialog';
+import { openInNewWindow } from '@/utils/windowUtils';
 
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
@@ -18,15 +19,63 @@ interface PlanConfirmationModalProps {
   isOpen?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
+  onPaymentSuccess?: () => void;
+  isSubmitting?: boolean;
 }
 
 const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
-  const { plan, workspaceName, isCreateMode = false, isOpen = false, onConfirm, onCancel } = props;
+  const {
+    plan: planProp,
+    workspaceName: workspaceNameProp,
+    isCreateMode: isCreateModeProp,
+    isOpen,
+    onConfirm,
+    onCancel,
+    onPaymentSuccess,
+    isSubmitting: isSubmittingProp
+  } = props;
 
   const { t } = useTranslation();
+  const { toast } = useCustomToast();
+  const queryClient = useQueryClient();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
-  const isPaygType = usePlanStore((state) => state.isPaygType);
+  const {
+    isPaygType,
+    redeemCode,
+    setRedeemCode,
+    setRedeemCodeDiscount,
+    setRedeemCodeValidated,
+    clearRedeemCode,
+    pendingPlan,
+    modalContext,
+    setUpgradeAmountData,
+    setCardInfoData,
+    setMonthlyPrice,
+    setUpgradeAmount,
+    setAmountLoading,
+    setCardInfoLoading,
+    isPaymentWaiting,
+    setPromotionCodeError,
+    stopPaymentWaiting,
+    subscriptionData,
+    lastTransactionData,
+    hideModal,
+    resetConfirmationModal,
+    pendingUpgrade,
+    setPendingUpgrade,
+    showPendingUpgradeDialog,
+    setShowPendingUpgradeDialog,
+    plansData,
+    paymentWaitingInvoiceId,
+    startPaymentWaiting,
+    showConfirmationModal
+  } = usePlanStore();
+
+  // Get plan and context from store (props take precedence for backward compatibility)
+  const plan = planProp || pendingPlan || undefined;
+  const workspaceName = workspaceNameProp || modalContext.workspaceName;
+  const isCreateMode = isCreateModeProp ?? modalContext.isCreateMode ?? false;
 
   const region = getRegion();
   const workspace = session?.user?.nsid || '';
@@ -34,201 +83,548 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const period = '1m';
   const payMethod: PaymentMethod = 'stripe';
 
-  // For payg users, operator should always be 'created'
   const isPaygUser = isPaygType();
   const operator = isCreateMode || isPaygUser ? 'created' : 'upgraded';
 
-  // Get upgrade amount (only for upgrade mode, not create mode, and not for payg users)
-  const { data: upgradeAmountData, isLoading: amountLoading } = useQuery({
-    queryKey: ['upgrade-amount', plan?.Name, workspace, regionDomain, period, payMethod, operator],
+  // Don't query upgrade-amount when payment is waiting
+  const queryEnabled = isOpen && !!(plan && workspace && regionDomain) && !isPaymentWaiting;
+
+  const {
+    data: upgradeAmountData,
+    isLoading: amountLoading,
+    isError: isUpgradeAmountError,
+    error: upgradeAmountError
+  } = useQuery({
+    queryKey: [
+      'upgrade-amount',
+      plan?.Name,
+      workspace,
+      regionDomain,
+      period,
+      payMethod,
+      operator,
+      redeemCode
+    ],
     queryFn: () => {
-      if (!plan || !workspace || !regionDomain || operator !== 'upgraded' || isPaygUser)
-        return null;
+      if (!plan || !workspace || !regionDomain) return null;
       return getUpgradeAmount({
         workspace,
         regionDomain,
         planName: plan.Name,
         period,
         payMethod,
-        operator: 'upgraded'
+        operator,
+        promotionCode: redeemCode || undefined
       });
     },
-    enabled:
-      isOpen && !!(plan && workspace && regionDomain && operator === 'upgraded' && !isPaygUser)
+    enabled: queryEnabled,
+    retry: (failureCount, error: any) => {
+      // Extract code from error object
+      // When API uses jsonRes, response interceptor rejects response.data which contains { code, message, data }
+      // So error is the response.data itself with code field
+      const errorCode = error?.code;
+
+      // Don't retry for 404, 410, 409 errors
+      if (errorCode === 404 || errorCode === 410 || errorCode === 409) {
+        return false;
+      }
+
+      return failureCount < 3;
+    },
+    onSuccess: (data) => {
+      if (data?.data) {
+        setUpgradeAmountData(data.data);
+        setUpgradeAmount(data.data.amount);
+      }
+    },
+    onError: (error: any) => {
+      // Extract code and pending_upgrade from error object
+      // When API uses jsonRes, response interceptor rejects response.data which contains { code, message, data }
+      // So error is the response.data itself: { code: 409, message: "...", data: { pending_upgrade: {...} } }
+      const errorCode = error?.code;
+      const pendingUpgrade = error?.data?.pending_upgrade;
+
+      // Handle 409 error with pending_upgrade
+      if (errorCode === 409 && pendingUpgrade) {
+        setPendingUpgrade(pendingUpgrade);
+        setShowPendingUpgradeDialog(true);
+        // Stop retrying (already handled in retry function, but ensure we don't process further)
+        return;
+      }
+    }
   });
+
+  // Sync loading state to store
+  useEffect(() => {
+    const shouldShowLoading =
+      !queryEnabled ||
+      amountLoading ||
+      (queryEnabled && !amountLoading && !upgradeAmountData && !isUpgradeAmountError);
+    setAmountLoading(shouldShowLoading);
+  }, [amountLoading, queryEnabled, upgradeAmountData, isUpgradeAmountError, setAmountLoading]);
+
+  const { data: cardInfoData, isLoading: cardInfoLoading } = useQuery({
+    queryKey: ['card-info', workspace, regionDomain],
+    queryFn: () =>
+      getCardInfo({
+        workspace,
+        regionDomain
+      }),
+    enabled: isOpen && !!workspace && !!regionDomain,
+    refetchOnMount: true,
+    onSuccess: (data) => {
+      if (data?.data) {
+        setCardInfoData(data.data);
+      }
+    }
+  });
+
+  // Sync loading state to store
+  useEffect(() => {
+    setCardInfoLoading(cardInfoLoading);
+  }, [cardInfoLoading, setCardInfoLoading]);
+
+  // Show card management only if not create mode, not PAYG, and current plan is not Free
+  // Use store data to ensure consistency with PlanConfirmationModalView
+  const currentPlanName = subscriptionData?.subscription?.PlanName;
+  const isFreePlan = !currentPlanName || currentPlanName.toLowerCase() === 'free';
+  const shouldShowCardManagement = !isCreateMode && !isPaygUser && !isFreePlan;
+
+  const manageCardMutation = useMutation({
+    mutationFn: createCardManageSession,
+    onSuccess: (data) => {
+      if (data?.data?.success && data?.data?.url) {
+        hideModal();
+        onCancel?.();
+        // Note: openInNewWindow is now called synchronously in handleManageCards
+      } else {
+        toast({
+          title: t('common:error'),
+          description: t('common:failed_to_create_portal_session'),
+          status: 'error'
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description: error?.response?.data?.message || t('common:failed_to_create_portal_session'),
+        status: 'error'
+      });
+    }
+  });
+
+  useEffect(() => {
+    if (!isOpen || !plan) {
+      setRedeemCodeDiscount(null);
+      setRedeemCodeValidated(false);
+      setPromotionCodeError(null);
+      return;
+    }
+
+    if (!redeemCode) {
+      setRedeemCodeDiscount(null);
+      setRedeemCodeValidated(false);
+      setPromotionCodeError(null);
+      return;
+    }
+
+    const error = upgradeAmountError as any;
+    const errorCode = error?.code || error?.response?.status || error?.response?.data?.code;
+    const errorStatus = error?.response?.status || error?.code;
+    const errorData = error?.response?.data || error?.data;
+
+    // Skip promotion code error handling if it's a pending upgrade conflict
+    if (errorStatus === 409 && errorData?.pending_upgrade) {
+      // This is handled in onError callback, don't show promotion code error
+      return;
+    }
+
+    // Handle different error status codes
+    if (upgradeAmountError && errorStatus) {
+      setRedeemCodeDiscount(null);
+      setRedeemCodeValidated(false);
+      setPromotionCodeError(errorStatus);
+
+      if (lastErrorRedeemCodeRef.current !== redeemCode) {
+        lastErrorRedeemCodeRef.current = redeemCode;
+
+        let errorMessage = t('common:invalid_promotion_code');
+        if (errorStatus === 404) {
+          errorMessage = t('common:promotion_code_not_found');
+        } else if (errorStatus === 410) {
+          errorMessage = t('common:promotion_code_expired');
+        } else if (errorStatus === 409) {
+          errorMessage = t('common:promotion_code_exhausted');
+        }
+
+        toast({
+          title: t('common:error'),
+          description: errorMessage,
+          status: 'error'
+        });
+      }
+      return;
+    }
+
+    // Clear error when validation succeeds
+    if (!upgradeAmountError) {
+      setPromotionCodeError(null);
+    }
+
+    if (isUpgradeAmountError && upgradeAmountError && !errorStatus && !amountLoading) {
+      const errorKey = `${redeemCode}-${errorCode || 'unknown'}`;
+      if (lastRetryFailedErrorRef.current !== errorKey) {
+        lastRetryFailedErrorRef.current = errorKey;
+        toast({
+          title: t('common:error'),
+          description: t('common:error_calculating_prices'),
+          status: 'error'
+        });
+        setRedeemCodeDiscount(null);
+        setRedeemCodeValidated(false);
+      }
+      return;
+    }
+
+    if (!upgradeAmountError) {
+      lastErrorRedeemCodeRef.current = null;
+      lastRetryFailedErrorRef.current = null;
+    }
+
+    if (amountLoading) return;
+    // Use data from query (which is synced to store via onSuccess)
+    if (!upgradeAmountData?.data) return;
+
+    const responseData = upgradeAmountData.data;
+
+    if (responseData.has_discount) {
+      const discountRaw = responseData.original_amount - responseData.amount;
+      setRedeemCodeDiscount(discountRaw);
+      setRedeemCodeValidated(true);
+    } else {
+      setRedeemCodeDiscount(null);
+      setRedeemCodeValidated(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isOpen,
+    plan,
+    redeemCode,
+    upgradeAmountData,
+    upgradeAmountError,
+    amountLoading,
+    isUpgradeAmountError
+  ]);
+
+  const handleValidateRedeemCode = async (code: string) => {
+    if (!plan) return;
+    setRedeemCode(code);
+  };
+
+  const handleManageCards = () => {
+    if (!workspace || !regionDomain) {
+      toast({
+        title: t('common:error'),
+        description: t('common:missing_workspace_or_region'),
+        status: 'error'
+      });
+      return;
+    }
+
+    const urlParams = new URLSearchParams({
+      mode: operator === 'created' ? 'create' : 'upgrade',
+      plan: plan?.Name ?? '',
+      showPaymentConfirmation: 'true'
+    });
+
+    if (workspaceName) {
+      urlParams.set('workspaceName', workspaceName);
+    }
+
+    if (redeemCode) {
+      urlParams.set('redeem', redeemCode);
+    }
+
+    const desktopUrl = new URL(
+      `https://${regionDomain}/?openapp=system-costcenter?${encodeURIComponent(
+        urlParams.toString()
+      )}`
+    );
+
+    // Open window synchronously in user interaction, then navigate asynchronously
+    const cardSessionPromise = manageCardMutation.mutateAsync({
+      workspace,
+      regionDomain,
+      redirectUrl: desktopUrl.toString()
+    });
+
+    openInNewWindow(
+      cardSessionPromise.then((data) => {
+        if (data?.data?.success && data?.data?.url) {
+          hideModal();
+          onCancel?.();
+          return data.data.url;
+        }
+        throw new Error('Failed to create portal session');
+      }),
+      true // show loading indicator
+    );
+  };
 
   const handleConfirm = () => {
     onConfirm?.();
   };
 
-  if (!plan) return null;
-
-  // Format plan resources
-  const formatCpu = (cpu: string) => {
-    const cpuNum = parseFloat(cpu);
-    return `${cpuNum} vCPU`;
+  const handlePaymentSuccess = () => {
+    clearRedeemCode();
+    onPaymentSuccess?.();
+    onCancel?.(); // Close the modal
   };
 
-  const formatMemory = (memory: string) => {
-    return memory.replace('Gi', 'GB RAM');
+  // Handle cancel payment waiting invoice mutation
+  const cancelPaymentWaitingMutation = useMutation({
+    mutationFn: cancelInvoice,
+    onSuccess: (data) => {
+      // Show success toast
+      toast({
+        title: t('common:success'),
+        description: t('common:cancel_invoice_success'),
+        status: 'success'
+      });
+      // Reset payment waiting state and close modal after successful cancellation
+      stopPaymentWaiting();
+      handleModalClose(true); // Force close after successful cancellation
+      onCancel?.();
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description:
+          error?.response?.data?.message ||
+          error?.data?.message ||
+          t('common:cancel_invoice_error'),
+        status: 'error'
+      });
+      // Close modal even if cancel fails - always close after request completes
+      stopPaymentWaiting();
+      handleModalClose(true); // Force close after failed cancellation
+      onCancel?.(); // Trigger Dialog close
+    }
+  });
+
+  const handlePaymentCancel = () => {
+    const invoiceId = paymentWaitingInvoiceId;
+
+    // If there's an invoice ID, try to cancel it first
+    if (invoiceId && workspace && regionDomain) {
+      cancelPaymentWaitingMutation.mutate({
+        workspace,
+        regionDomain,
+        invoiceID: invoiceId
+      });
+    } else {
+      // No invoice ID, just close the modal
+      stopPaymentWaiting();
+      handleModalClose();
+      onCancel?.();
+    }
   };
 
-  const formatStorage = (storage: string) => {
-    return storage.replace('Gi', 'GB Disk');
+  // Handle continue payment for pending upgrade
+  const handleContinuePendingPayment = () => {
+    if (!pendingUpgrade || !workspace || !regionDomain) return;
+
+    // Find the plan by name
+    const pendingPlanObj = plansData?.plans?.find((p) => p.Name === pendingUpgrade.plan_name);
+    if (!pendingPlanObj) {
+      toast({
+        title: t('common:error'),
+        description: `Plan ${pendingUpgrade.plan_name} not found`,
+        status: 'error'
+      });
+      return;
+    }
+
+    // Update modal to show pending plan
+    showConfirmationModal(pendingPlanObj, modalContext);
+
+    // Calculate original amount
+    // If original_amount is provided and > 0, use it
+    // Otherwise, use total_amount if available, or fallback to amount_due
+    const originalAmount =
+      pendingUpgrade.original_amount !== undefined && pendingUpgrade.original_amount > 0
+        ? pendingUpgrade.original_amount
+        : pendingUpgrade.total_amount !== undefined && pendingUpgrade.total_amount > 0
+          ? pendingUpgrade.total_amount
+          : pendingUpgrade.amount_due;
+
+    // Set discount information if available
+    const hasDiscount = pendingUpgrade.has_discount ?? false;
+    const discountAmount = pendingUpgrade.discount_amount ?? 0;
+    const promotionCode = pendingUpgrade.promotion_code || '';
+
+    // Set redeem code if promotion code exists
+    if (promotionCode) {
+      setRedeemCode(promotionCode);
+      if (hasDiscount && discountAmount > 0) {
+        setRedeemCodeDiscount(discountAmount);
+        setRedeemCodeValidated(true);
+      }
+    }
+
+    // Set the plan and amount from pending upgrade
+    setUpgradeAmountData({
+      amount: pendingUpgrade.amount_due,
+      promotion_code: promotionCode,
+      has_discount: hasDiscount,
+      original_amount: originalAmount
+    });
+    setUpgradeAmount(pendingUpgrade.amount_due);
+    // Set monthly price to original amount (before discount)
+    setMonthlyPrice(originalAmount);
+    setAmountLoading(false);
+
+    // Start payment waiting mode with invoice ID
+    startPaymentWaiting(
+      workspace,
+      regionDomain,
+      pendingUpgrade.payment_url,
+      pendingUpgrade.invoice_id
+    );
+    openInNewWindow(pendingUpgrade.payment_url);
+
+    // Clear pending upgrade state
+    setPendingUpgrade(null);
   };
 
-  // Parse plan resources
-  let planResources: any = {};
-  try {
-    planResources = JSON.parse(plan.MaxResources || '{}');
-  } catch (e) {
-    planResources = {};
+  // Handle cancel invoice mutation
+  const cancelInvoiceMutation = useMutation({
+    mutationFn: cancelInvoice,
+    onSuccess: () => {
+      // Close dialog and refresh upgrade amount
+      toast({
+        title: t('common:success'),
+        description: t('common:cancel_invoice_success'),
+        status: 'success'
+      });
+
+      setPendingUpgrade(null);
+      setShowPendingUpgradeDialog(false);
+      // Refetch upgrade amount
+      queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description:
+          error?.response?.data?.message ||
+          error?.data?.message ||
+          t('common:cancel_invoice_error'),
+        status: 'error'
+      });
+    }
+  });
+
+  // Handle cancel and pay new order
+  const handleCancelAndPayNew = () => {
+    if (!pendingUpgrade || !workspace || !regionDomain) return;
+
+    cancelInvoiceMutation.mutate({
+      workspace,
+      regionDomain,
+      invoiceID: pendingUpgrade.invoice_id
+    });
+  };
+
+  // Handle modal close - reset state and invalidate queries
+  // allowForceClose: if true, close even when canceling invoice (used in mutation callbacks)
+  const handleModalClose = (allowForceClose = false) => {
+    // Prevent closing when canceling invoice (unless force close is allowed)
+    if (!allowForceClose && cancelPaymentWaitingMutation.isLoading) {
+      return;
+    }
+
+    // Reset confirmation modal state
+    resetConfirmationModal();
+    clearRedeemCode();
+    stopPaymentWaiting();
+
+    // Invalidate queries to refresh data (same as plan page)
+    queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
+    queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
+    queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
+    queryClient.invalidateQueries({ queryKey: ['card-info'] });
+    queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
+  };
+
+  const lastErrorRedeemCodeRef = useRef<string | null>(null);
+  const lastRetryFailedErrorRef = useRef<string | null>(null);
+
+  // Calculate and sync monthly price to store
+  useEffect(() => {
+    if (plan) {
+      const price = plan.Prices?.find((p) => p.BillingCycle === period)?.Price || 0;
+      setMonthlyPrice(price);
+    } else {
+      setMonthlyPrice(null);
+    }
+  }, [plan, period, setMonthlyPrice]);
+
+  if (!plan) {
+    return null;
   }
 
-  const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === period)?.Price || 0;
-  const upgradeAmount = upgradeAmountData?.data?.amount || 0;
-
-  // For create mode or payg users, use full monthly price; otherwise use upgrade amount
-  const dueToday = isCreateMode || isPaygUser ? monthlyPrice : upgradeAmount;
-
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          onCancel?.();
-        }
-      }}
-    >
-      <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
-      <DialogContent className="max-w-[400px] pb-8 pt-0 px-10 gap-0">
-        {/* Header */}
-        <div className="flex justify-center items-center px-6 py-5">
-          <h2 className="text-lg font-semibold text-gray-900 text-center">
-            {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
-          </h2>
-        </div>
+    <>
+      {/* Pending Upgrade Dialog */}
+      {pendingUpgrade && (
+        <PendingUpgradeDialog
+          pendingUpgrade={pendingUpgrade}
+          onContinuePayment={handleContinuePendingPayment}
+          onCancelAndPayNew={handleCancelAndPayNew}
+          isCanceling={cancelInvoiceMutation.isLoading}
+        />
+      )}
 
-        <div className="p-6 border border-zinc-200 rounded-xl">
-          {/* Order Summary */}
-          <h3 className="text-base font-semibold text-gray-900 mb-6 leading-4">
-            {t('common:order_summary')}
-          </h3>
-
-          {/* Plan Info */}
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-base font-medium text-gray-900">
-              {plan.Name} {t('common:plan')}
-            </span>
-            <span className="text-base font-medium text-gray-900">
-              <CurrencySymbol />
-              <span>
-                {displayMoney(formatMoney(monthlyPrice))}/{t('common:month')}
-              </span>
-            </span>
-          </div>
-
-          {/* Plan Resources */}
-          <div className="flex flex-col gap-2 mb-6">
-            {planResources.cpu && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatCpu(planResources.cpu)}</span>
-              </div>
-            )}
-            {planResources.memory && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatMemory(planResources.memory)}</span>
-              </div>
-            )}
-            {planResources.storage && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">
-                  {formatStorage(planResources.storage)}
-                </span>
-              </div>
-            )}
-            {plan.Traffic && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{formatTrafficAuto(plan.Traffic)}</span>
-              </div>
-            )}
-            {planResources.nodeports && (
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} color="#3B82F6" />
-                <span className="text-sm text-gray-600">{planResources.nodeports} Nodeport</span>
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-gray-100 mb-5" />
-
-          {/* Billing Summary */}
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">
-                {t('common:total_billed_monthly')}
-              </span>
-              <span className="text-sm font-medium text-gray-900">
-                <CurrencySymbol />
-                <span>{displayMoney(formatMoney(monthlyPrice))}</span>
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">{t('common:due_today')}</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {isCreateMode || isPaygUser || amountLoading ? (
-                  isCreateMode || isPaygUser ? (
-                    <>
-                      <CurrencySymbol />
-                      <span>{formatMoney(dueToday)}</span>
-                    </>
-                  ) : (
-                    t('common:calculating')
-                  )
-                ) : (
-                  <>
-                    <CurrencySymbol />
-                    <span>{formatMoney(dueToday)}</span>
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Workspace Name Display for Create Mode */}
-          {isCreateMode && workspaceName && (
-            <>
-              <div className="border-t border-gray-100 mb-5" />
-              <div className="mb-6">
-                <div className="text-sm font-medium text-gray-900 mb-2">
-                  {t('common:workspace_name')}
-                </div>
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <span className="text-sm text-gray-700">{workspaceName}</span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-        {/* Checkout Button */}
-        <Button
-          className="w-full mt-5"
-          size="lg"
-          onClick={handleConfirm}
-          disabled={!(isCreateMode || isPaygUser) && amountLoading}
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          // Prevent closing when payment is waiting or canceling invoice
+          if (isPaymentWaiting || cancelPaymentWaitingMutation.isLoading) return;
+          if (!open) {
+            handleModalClose();
+            onCancel?.();
+          }
+        }}
+      >
+        <DialogOverlay className="bg-[rgba(0,0,0,0.12)] backdrop-blur-15px" />
+        <DialogContent
+          className={`${
+            shouldShowCardManagement ? 'max-w-4xl!' : 'max-w-lg!'
+          } pb-8 pt-0 px-10 gap-0`}
+          showCloseButton={!isPaymentWaiting && !cancelPaymentWaitingMutation.isLoading}
         >
-          {!(isCreateMode || isPaygUser) && amountLoading
-            ? t('common:calculating')
-            : isCreateMode
-              ? t('common:create_workspace')
-              : t('common:checkout')}
-        </Button>
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-center items-center px-6 py-5">
+            <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
+              {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
+            </h2>
+          </div>
+
+          <PlanConfirmationModalView
+            plan={plan}
+            onConfirm={handleConfirm}
+            onManageCards={handleManageCards}
+            onValidateRedeemCode={handleValidateRedeemCode}
+            manageCardLoading={manageCardMutation.isLoading}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentCancel={handlePaymentCancel}
+            isSubmitting={isSubmittingProp}
+            isCancelingInvoice={cancelPaymentWaitingMutation.isLoading}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 });
 

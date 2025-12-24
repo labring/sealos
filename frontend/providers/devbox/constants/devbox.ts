@@ -56,39 +56,20 @@ export enum DevboxStatusEnum {
   Pending = 'Pending',
   Error = 'Error',
   Delete = 'Delete',
-  Unknown = 'Unknown'
+  Unknown = 'Unknown',
+  Shutting = 'Shutting'
 }
 export enum DevboxReleaseStatusEnum {
   Success = 'Success',
   Pending = 'Pending',
   Failed = 'Failed'
 }
-export const CpuSlideMarkList = [
-  { label: 1, value: 1000 },
-  { label: 2, value: 2000 },
-  { label: 4, value: 4000 },
-  { label: 8, value: 8000 },
-  { label: 16, value: 16000 }
-];
-
-export const MemorySlideMarkList = [
-  // { label: '512Mi', value: 512 },
-  // { label: '1G', value: 1024 },
-  { label: '2', value: 2048 },
-  { label: '4', value: 4096 },
-  // { label: '6G', value: 6144 },
-  { label: '8', value: 8192 },
-  // { label: '12G', value: 12288 },
-  { label: '16', value: 16384 },
-  { label: '32', value: 32768 }
-];
-
 export const defaultDevboxEditValue: DevboxEditType = {
   name: 'devbox',
   runtimeType: LanguageTypeEnum.go,
   runtimeVersion: '',
-  cpu: CpuSlideMarkList[1].value,
-  memory: MemorySlideMarkList[1].value,
+  cpu: 2000,
+  memory: 4096,
   networks: []
 };
 export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
@@ -97,8 +78,8 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   templateConfig: '{}',
   templateRepositoryUid: '',
   templateUid: '',
-  cpu: CpuSlideMarkList[1].value,
-  memory: MemorySlideMarkList[1].value,
+  cpu: 2000,
+  memory: 4096,
   networks: []
 };
 
@@ -139,12 +120,20 @@ export const devboxStatusMap = {
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
+  [DevboxStatusEnum.Shutting]: {
+    label: 'Shutting',
+    value: DevboxStatusEnum.Shutting,
+    color: '#787A90',
+    backgroundColor: '#F5F5F8',
+    dotColor: '#787A90'
+  },
   [DevboxStatusEnum.Error]: {
-    label: 'Error',
-    value: DevboxStatusEnum.Error,
-    color: '#F04438',
-    backgroundColor: '#FEF3F2',
-    dotColor: '#F04438'
+    // NOTE: there is to solve restart will show error,so we change it to pending
+    label: 'Pending',
+    value: DevboxStatusEnum.Pending,
+    color: '#787A90',
+    backgroundColor: '#F5F5F8',
+    dotColor: '#787A90'
   },
   [DevboxStatusEnum.Delete]: {
     label: 'Delete',

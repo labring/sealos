@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { PencilLine } from 'lucide-react';
 import { type CellContext } from '@tanstack/react-table';
@@ -7,6 +6,7 @@ import { type CellContext } from '@tanstack/react-table';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { Separator } from '@sealos/shadcn-ui/separator';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 interface NameProps extends CellContext<DevboxListItemTypeV2, unknown> {
   onEditRemark: (item: DevboxListItemTypeV2) => void;
@@ -22,23 +22,13 @@ export const Name = memo<NameProps>(
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-              <Image
-                width={21}
-                height={21}
-                alt={item.id}
-                src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
-              />
+              <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" align="start" sideOffset={1}>
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                <Image
-                  width={21}
-                  height={21}
-                  alt={item.id}
-                  src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
-                />
+                <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
               </div>
               <div className="flex flex-col">
                 <p className="text-sm/5 font-medium">

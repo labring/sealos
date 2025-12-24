@@ -1,9 +1,7 @@
-import { ErrorResponse } from './api/base';
-
 /**
  * Kubernetes basic object data
  */
-type KubeBasicData<Meta> = {
+export type KubeBasicData<Meta> = {
   apiVersion: string;
   kind: string;
   metadata: Meta;
@@ -14,7 +12,7 @@ type KubeBasicData<Meta> = {
  *
  * @link https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statusdetails-v1-meta
  */
-type KubeStatusDetails = {
+export type KubeStatusDetails = {
   causes?: Array<{
     field: string;
     message: string;
@@ -32,7 +30,7 @@ type KubeStatusDetails = {
  *
  * @link https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#status-v1-meta
  */
-type KubeStatus = Merge<
+export type KubeStatus = Merge<
   KubeBasicData<KubeListMeta>,
   {
     code: number;
@@ -47,7 +45,7 @@ type KubeStatus = Merge<
  * Kubernetes ListMeta
  * @link https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#listmeta-v1-meta
  */
-type KubeListMeta = {
+export type KubeListMeta = {
   continue?: string;
   remainingItemCount?: number;
   resourceVersion: string;
@@ -59,7 +57,7 @@ type KubeListMeta = {
  * @typeParam Type of a specific `KubeBasicData`
  * @link https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#listmeta-v1-meta
  */
-type KubeList<T> = Merge<
+export type KubeList<T> = Merge<
   KubeBasicData<KubeListMeta>,
   {
     items: T[];
@@ -71,7 +69,7 @@ type KubeList<T> = Merge<
  * @typeParam Type of a specific `KubeBasicData`
  * @link https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#watchevent-v1-meta
  */
-type WatchEvent<T> =
+export type WatchEvent<T> =
   | {
       object: T;
       type: 'ADDED' | 'MODIFIED' | 'DELETED';
@@ -84,3 +82,5 @@ type WatchEvent<T> =
       object: KubeBasicData<{ resourceVersion: string }>;
       type: 'BOOKMARK';
     };
+
+export type KubeObject = KubeBasicData<any>;

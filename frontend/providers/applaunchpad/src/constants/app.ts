@@ -86,6 +86,7 @@ export const APPLICATION_PROTOCOLS: ApplicationProtocolType[] = ['HTTP', 'GRPC',
 export const TRANSPORT_PROTOCOLS: TransportProtocolType[] = ['TCP', 'UDP', 'SCTP'];
 
 export const defaultSliderKey = 'default';
+export const defaultGpuSliderKey = 'default-gpu';
 export const pauseKey = 'deploy.cloud.sealos.io/pause';
 export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';

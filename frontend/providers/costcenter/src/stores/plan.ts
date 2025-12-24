@@ -4,7 +4,10 @@ import {
   SubscriptionPlan,
   PlanListResponse,
   SubscriptionInfoResponse,
-  LastTransactionResponse
+  LastTransactionResponse,
+  UpgradeAmountResponse,
+  CardInfoResponse,
+  PendingUpgrade
 } from '@/types/plan';
 
 export interface PlanStoreState {
@@ -21,6 +24,40 @@ export interface PlanStoreState {
     isCreateMode?: boolean;
   };
 
+  // Default values for modal opening (from URL params)
+  defaultSelectedPlan: string;
+  defaultShowPaymentConfirmation: boolean;
+  defaultWorkspaceName: string;
+
+  // Redeem code state
+  redeemCode: string | null;
+  redeemCodeDiscount: number | null;
+  redeemCodeValidated: boolean;
+  promotionCodeError: number | null;
+
+  // Payment waiting state (integrated in PlanConfirmationModal)
+  isPaymentWaiting: boolean;
+  paymentWaitingWorkspace: string;
+  paymentWaitingRegionDomain: string;
+  paymentUrl: string | null;
+  paymentWaitingInvoiceId: string | null; // Invoice ID for current payment waiting
+  // Payment waiting timeout state
+  paymentWaitingTimeout: boolean;
+  paymentWaitingShouldStopPolling: boolean;
+  paymentWaitingFirstDataTime: number | null;
+
+  // Confirmation modal data
+  upgradeAmountData: UpgradeAmountResponse | null;
+  cardInfoData: CardInfoResponse | null;
+  monthlyPrice: number | null;
+  upgradeAmount: number | null;
+  amountLoading: boolean;
+  cardInfoLoading: boolean;
+
+  // Pending upgrade state
+  pendingUpgrade: PendingUpgrade | null;
+  showPendingUpgradeDialog: boolean;
+
   // Data actions
   setPlansData: (data: PlanListResponse | null) => void;
   setSubscriptionData: (data: SubscriptionInfoResponse | null) => void;
@@ -36,7 +73,39 @@ export interface PlanStoreState {
     context?: { workspaceName?: string; isCreateMode?: boolean }
   ) => void;
   hideModal: () => void;
-  confirmPendingPlan: () => SubscriptionPlan | null;
+
+  // Redeem code actions
+  setRedeemCode: (code: string | null) => void;
+  setRedeemCodeDiscount: (discount: number | null) => void;
+  setRedeemCodeValidated: (validated: boolean) => void;
+  setPromotionCodeError: (error: number | null) => void;
+  clearRedeemCode: () => void;
+
+  // Payment waiting actions
+  startPaymentWaiting: (
+    workspace: string,
+    regionDomain: string,
+    paymentUrl?: string,
+    invoiceId?: string
+  ) => void;
+  stopPaymentWaiting: () => void;
+  // Payment waiting timeout actions
+  setPaymentWaitingTimeout: (timeout: boolean) => void;
+  setPaymentWaitingShouldStopPolling: (shouldStop: boolean) => void;
+  setPaymentWaitingFirstDataTime: (time: number | null) => void;
+  resetPaymentWaitingTimeout: () => void;
+
+  // Confirmation modal data actions
+  setUpgradeAmountData: (data: UpgradeAmountResponse | null) => void;
+  setCardInfoData: (data: CardInfoResponse | null) => void;
+  setMonthlyPrice: (price: number | null) => void;
+  setUpgradeAmount: (amount: number | null) => void;
+  setAmountLoading: (loading: boolean) => void;
+  setCardInfoLoading: (loading: boolean) => void;
+
+  // Pending upgrade actions
+  setPendingUpgrade: (upgrade: PendingUpgrade | null) => void;
+  setShowPendingUpgradeDialog: (show: boolean) => void;
 
   // Computed getters
   getCurrentPlan: () => SubscriptionPlan | null;
@@ -44,8 +113,15 @@ export interface PlanStoreState {
   isPaygType: () => boolean;
   hasDowngradeTransaction: () => boolean;
 
+  // Default values actions
+  setDefaultSelectedPlan: (plan: string) => void;
+  setDefaultShowPaymentConfirmation: (show: boolean) => void;
+  setDefaultWorkspaceName: (name: string) => void;
+  clearModalDefaults: () => void;
+
   // Reset functions
   resetAll: () => void;
+  resetConfirmationModal: () => void;
 }
 
 const usePlanStore = create<PlanStoreState>()(
@@ -60,6 +136,40 @@ const usePlanStore = create<PlanStoreState>()(
     modalType: null,
     modalContext: {},
 
+    // Default values initial state
+    defaultSelectedPlan: '',
+    defaultShowPaymentConfirmation: false,
+    defaultWorkspaceName: '',
+
+    // Redeem code initial state
+    redeemCode: null,
+    redeemCodeDiscount: null,
+    redeemCodeValidated: false,
+    promotionCodeError: null,
+
+    // Payment waiting initial state
+    isPaymentWaiting: false,
+    paymentWaitingWorkspace: '',
+    paymentWaitingRegionDomain: '',
+    paymentUrl: null,
+    paymentWaitingInvoiceId: null,
+    // Payment waiting timeout initial state
+    paymentWaitingTimeout: false,
+    paymentWaitingShouldStopPolling: false,
+    paymentWaitingFirstDataTime: null,
+
+    // Confirmation modal data initial state
+    upgradeAmountData: null,
+    cardInfoData: null,
+    monthlyPrice: null,
+    upgradeAmount: null,
+    amountLoading: true,
+    cardInfoLoading: false,
+
+    // Pending upgrade initial state
+    pendingUpgrade: null,
+    showPendingUpgradeDialog: false,
+
     // Data actions
     setPlansData: (data) => set({ plansData: data }),
     setSubscriptionData: (data) => set({ subscriptionData: data }),
@@ -67,17 +177,33 @@ const usePlanStore = create<PlanStoreState>()(
 
     // Modal actions
     showConfirmationModal: (plan, context = {}) =>
-      set({
-        pendingPlan: plan,
-        modalType: 'confirmation',
-        modalContext: context
+      set((state) => {
+        state.pendingPlan = plan;
+        state.modalType = 'confirmation';
+        state.modalContext = context;
+        // Clear payment waiting state when opening modal
+        state.isPaymentWaiting = false;
+        state.paymentWaitingWorkspace = '';
+        state.paymentWaitingRegionDomain = '';
+        state.paymentUrl = null;
+        // Reset amountLoading to true and clear upgradeAmount when opening modal to show loading state
+        state.amountLoading = true;
+        state.upgradeAmount = null;
       }),
 
     showDowngradeModal: (plan, context = {}) =>
-      set({
-        pendingPlan: plan,
-        modalType: 'downgrade',
-        modalContext: context
+      set((state) => {
+        state.pendingPlan = plan;
+        state.modalType = 'downgrade';
+        state.modalContext = context;
+        // Clear payment waiting state when opening modal
+        state.isPaymentWaiting = false;
+        state.paymentWaitingWorkspace = '';
+        state.paymentWaitingRegionDomain = '';
+        state.paymentUrl = null;
+        // Reset amountLoading to true and clear upgradeAmount when opening modal to show loading state
+        state.amountLoading = true;
+        state.upgradeAmount = null;
       }),
 
     hideModal: () =>
@@ -87,15 +213,69 @@ const usePlanStore = create<PlanStoreState>()(
         modalContext: {}
       }),
 
-    confirmPendingPlan: () => {
-      const plan = get().pendingPlan;
+    // Redeem code actions
+    setRedeemCode: (code) => set({ redeemCode: code }),
+    setRedeemCodeDiscount: (discount) => set({ redeemCodeDiscount: discount }),
+    setRedeemCodeValidated: (validated) => set({ redeemCodeValidated: validated }),
+    setPromotionCodeError: (error) => set({ promotionCodeError: error }),
+    clearRedeemCode: () =>
       set({
-        pendingPlan: null,
-        modalType: null,
-        modalContext: {}
-      });
-      return plan;
-    },
+        redeemCode: null,
+        redeemCodeDiscount: null,
+        redeemCodeValidated: false,
+        promotionCodeError: null
+      }),
+
+    // Payment waiting actions
+    startPaymentWaiting: (workspace, regionDomain, paymentUrl, invoiceId) =>
+      set((state) => {
+        state.isPaymentWaiting = true;
+        state.paymentWaitingWorkspace = workspace;
+        state.paymentWaitingRegionDomain = regionDomain;
+        state.paymentUrl = paymentUrl || null;
+        state.paymentWaitingInvoiceId = invoiceId || null;
+        // Reset timeout state when starting payment waiting
+        state.paymentWaitingTimeout = false;
+        state.paymentWaitingShouldStopPolling = false;
+        state.paymentWaitingFirstDataTime = null;
+      }),
+
+    stopPaymentWaiting: () =>
+      set((state) => {
+        state.isPaymentWaiting = false;
+        state.paymentWaitingWorkspace = '';
+        state.paymentWaitingRegionDomain = '';
+        state.paymentUrl = null;
+        state.paymentWaitingInvoiceId = null;
+        // Reset timeout state when stopping payment waiting
+        state.paymentWaitingTimeout = false;
+        state.paymentWaitingShouldStopPolling = false;
+        state.paymentWaitingFirstDataTime = null;
+      }),
+
+    // Payment waiting timeout actions
+    setPaymentWaitingTimeout: (timeout) => set({ paymentWaitingTimeout: timeout }),
+    setPaymentWaitingShouldStopPolling: (shouldStop) =>
+      set({ paymentWaitingShouldStopPolling: shouldStop }),
+    setPaymentWaitingFirstDataTime: (time) => set({ paymentWaitingFirstDataTime: time }),
+    resetPaymentWaitingTimeout: () =>
+      set({
+        paymentWaitingTimeout: false,
+        paymentWaitingShouldStopPolling: false,
+        paymentWaitingFirstDataTime: null
+      }),
+
+    // Confirmation modal data actions
+    setUpgradeAmountData: (data) => set({ upgradeAmountData: data }),
+    setCardInfoData: (data) => set({ cardInfoData: data }),
+    setMonthlyPrice: (price) => set({ monthlyPrice: price }),
+    setUpgradeAmount: (amount) => set({ upgradeAmount: amount }),
+    setAmountLoading: (loading) => set({ amountLoading: loading }),
+    setCardInfoLoading: (loading) => set({ cardInfoLoading: loading }),
+
+    // Pending upgrade actions
+    setPendingUpgrade: (upgrade) => set({ pendingUpgrade: upgrade }),
+    setShowPendingUpgradeDialog: (show) => set({ showPendingUpgradeDialog: show }),
 
     // Computed getters
     getCurrentPlan: () => {
@@ -137,7 +317,59 @@ const usePlanStore = create<PlanStoreState>()(
         lastTransactionData: null,
         pendingPlan: null,
         modalType: null,
-        modalContext: {}
+        modalContext: {},
+        redeemCode: null,
+        redeemCodeDiscount: null,
+        redeemCodeValidated: false,
+        promotionCodeError: null,
+        isPaymentWaiting: false,
+        paymentWaitingWorkspace: '',
+        paymentWaitingRegionDomain: '',
+        paymentUrl: null,
+        paymentWaitingInvoiceId: null,
+        paymentWaitingTimeout: false,
+        paymentWaitingShouldStopPolling: false,
+        paymentWaitingFirstDataTime: null,
+        upgradeAmountData: null,
+        cardInfoData: null,
+        monthlyPrice: null,
+        upgradeAmount: null,
+        amountLoading: true,
+        cardInfoLoading: false,
+        pendingUpgrade: null,
+        showPendingUpgradeDialog: false,
+        defaultSelectedPlan: '',
+        defaultShowPaymentConfirmation: false,
+        defaultWorkspaceName: ''
+      }),
+
+    // Default values actions
+    setDefaultSelectedPlan: (plan) => set({ defaultSelectedPlan: plan }),
+    setDefaultShowPaymentConfirmation: (show) => set({ defaultShowPaymentConfirmation: show }),
+    setDefaultWorkspaceName: (name) => set({ defaultWorkspaceName: name }),
+    clearModalDefaults: () =>
+      set({
+        defaultSelectedPlan: '',
+        defaultShowPaymentConfirmation: false,
+        defaultWorkspaceName: ''
+      }),
+
+    resetConfirmationModal: () =>
+      set((state) => {
+        // Reset confirmation modal related state
+        state.redeemCode = null;
+        state.redeemCodeDiscount = null;
+        state.redeemCodeValidated = false;
+        state.promotionCodeError = null;
+        state.upgradeAmountData = null;
+        state.cardInfoData = null;
+        state.monthlyPrice = null;
+        state.upgradeAmount = null;
+        state.amountLoading = true;
+        state.cardInfoLoading = false;
+        state.pendingUpgrade = null;
+        state.showPendingUpgradeDialog = false;
+        // Don't reset payment waiting state here as it might be needed for retry
       })
   }))
 );

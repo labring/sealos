@@ -1,10 +1,10 @@
-import appIcon from '@/assert/app.svg';
-import cvmIcon from '@/assert/cvm.svg';
-import dbIcon from '@/assert/db.svg';
-import jobIcon from '@/assert/job.svg';
-import osIcon from '@/assert/objectstorage.svg';
-import sealosIcon from '@/assert/sealos.svg';
-import terminalIcon from '@/assert/terminal.svg';
+import appIcon from '@/assets/app-icons/app.svg';
+import cvmIcon from '@/assets/app-icons/cvm.svg';
+import dbIcon from '@/assets/app-icons/db.svg';
+import jobIcon from '@/assets/app-icons/job.svg';
+import osIcon from '@/assets/app-icons/objectstorage.svg';
+import sealosIcon from '@/assets/sealos.svg';
+import terminalIcon from '@/assets/app-icons/terminal.svg';
 import { Avatar, AvatarFallback, AvatarImage } from '@sealos/shadcn-ui/avatar';
 import { cn } from '@sealos/shadcn-ui';
 import { AppType } from '@/types/app';

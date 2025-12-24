@@ -4,9 +4,9 @@
  */
 
 import type { KubeObjectScope, KubeTemplateObjectMetadata } from '../api-types';
-import type { PersistentVolumeSpec } from '../specifics/persistent-volume';
+import type { PersistentVolumeClaimSpec } from '../specifics/persistent-volume-claim';
 
 export interface PersistentVolumeClaimTemplateSpec {
   metadata?: KubeTemplateObjectMetadata<KubeObjectScope.Cluster>;
-  spec?: PersistentVolumeSpec;
+  spec?: PersistentVolumeClaimSpec;
 }

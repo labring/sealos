@@ -20,6 +20,8 @@ export async function getGpuNode() {
         'gpu.count': string;
         'gpu.memory': string;
         'gpu.product': string;
+        'gpu.available': string;
+        'gpu.used': string;
       }
     >;
 
@@ -32,12 +34,16 @@ export async function getGpuNode() {
       const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
       if (index > -1) {
         gpuList[index]['gpu.count'] += Number(item['gpu.count']);
+        gpuList[index]['gpu.available'] += Number(item['gpu.available']);
+        gpuList[index]['gpu.used'] += Number(item['gpu.used']);
       } else {
         gpuList.push({
           ['gpu.count']: +item['gpu.count'],
           ['gpu.memory']: +item['gpu.memory'],
           ['gpu.product']: item['gpu.product'],
-          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product']
+          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product'],
+          ['gpu.available']: +item['gpu.available'],
+          ['gpu.used']: +item['gpu.used']
         });
       }
     });

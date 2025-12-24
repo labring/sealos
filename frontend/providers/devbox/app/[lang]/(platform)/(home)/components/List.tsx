@@ -9,7 +9,9 @@ import {
   type FilterFn,
   getSortedRowModel,
   getFilteredRowModel,
-  type SortingState
+  type SortingState,
+  type HeaderContext,
+  type CellContext
 } from '@tanstack/react-table';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
@@ -17,6 +19,7 @@ import { useCallback, useMemo, useState, memo } from 'react';
 
 import { useRouter } from '@/i18n';
 import { useDateTimeStore } from '@/stores/date';
+import { usePriceStore } from '@/stores/price';
 import { DevboxListItemTypeV2, DevboxStatusMapType } from '@/types/devbox';
 import { DevboxStatusEnum, devboxStatusMap } from '@/constants/devbox';
 import { useControlDevbox } from '@/hooks/useControlDevbox';
@@ -24,6 +27,7 @@ import { useControlDevbox } from '@/hooks/useControlDevbox';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
+import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
 import SearchEmpty from './SearchEmpty';
 import { Name as NameColumn } from './list/columns/Name';
 import { Status as StatusColumn } from './list/columns/Status';
@@ -33,6 +37,7 @@ import { Actions as ActionsColumn } from './list/columns/Actions';
 import { Name as NameHeader } from './list/headers/Name';
 import { StatusFilter } from './list/headers/StatusFilter';
 import { CreateTimeFilter } from './list/headers/CreateTimeFilter';
+import GPUItem from '@/components/GPUItem';
 
 const DeleteDevboxDialog = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
 const EditRemarkDialog = dynamic(() => import('@/components/dialogs/EditRemarkDialog'));
@@ -42,6 +47,8 @@ const PAGE_SIZE = 10;
 const statusFilterFn: FilterFn<DevboxListItemTypeV2> = (row, columnId, filterValue) => {
   if (!filterValue || filterValue.length === 0) return true;
   const status = row.getValue(columnId) as DevboxStatusMapType;
+  if (!status || !status.value) return false;
+
   return filterValue.some((filter: string) => {
     if (filter === DevboxStatusEnum.Stopped) {
       return (
@@ -74,6 +81,7 @@ const DevboxList = ({
     useControlDevbox(refetchDevboxList);
 
   const { startDateTime: dateRangeStart } = useDateTimeStore();
+  const { sourcePrice } = usePriceStore();
 
   // Check if a specific time range is selected (not "all time")
   const isSpecificTimeRangeSelected = useMemo(() => {
@@ -149,6 +157,15 @@ const DevboxList = ({
         cell: (props) => <MonitorColumn {...props} type="memory" />
       },
       {
+        accessorKey: 'gpu',
+        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">GPU</span>,
+        size: 180,
+        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
+          const item = row.original;
+          return <GPUItem gpu={item.gpu} />;
+        }
+      },
+      {
         accessorKey: 'createTime',
         enableColumnFilter: true,
         filterFn: dateFilterFn,
@@ -174,7 +191,12 @@ const DevboxList = ({
           />
         )
       }
-    ],
+    ].filter((column) => {
+      if (column.accessorKey === 'gpu' && !sourcePrice.gpu) {
+        return false;
+      }
+      return true;
+    }),
     [
       t,
       statusFilter,
@@ -186,7 +208,8 @@ const DevboxList = ({
       handleStartDevbox,
       handleRestartDevbox,
       handleOpenShutdownModal,
-      handleDeleteDevbox
+      handleDeleteDevbox,
+      sourcePrice.gpu
     ]
   );
 
@@ -318,19 +341,32 @@ const DevboxList = ({
           devbox={currentDevboxListItem}
         />
       )}
-      {!!currentDevboxListItem && (
-        <ShutdownModal
-          open={!!onOpenShutdown}
-          onSuccess={() => {
-            refetchDevboxList();
-            setOnOpenShutdown(false);
-          }}
-          onClose={() => {
-            setOnOpenShutdown(false);
-          }}
-          devbox={currentDevboxListItem}
-        />
-      )}
+      {!!currentDevboxListItem &&
+        (currentDevboxListItem.networkType === 'SSHGate' ? (
+          <SimpleShutdownDialog
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxList();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={currentDevboxListItem}
+          />
+        ) : (
+          <ShutdownModal
+            open={!!onOpenShutdown}
+            onSuccess={() => {
+              refetchDevboxList();
+              setOnOpenShutdown(false);
+            }}
+            onClose={() => {
+              setOnOpenShutdown(false);
+            }}
+            devbox={currentDevboxListItem}
+          />
+        ))}
       {!!editRemarkItem && (
         <EditRemarkDialog
           open={!!onOpenEditRemark}

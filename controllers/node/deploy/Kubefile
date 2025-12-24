@@ -3,8 +3,7 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
-
-ENV DEFAULT_NAMESPACE node-system
-
-CMD ["kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]
+COPY charts charts
+COPY drop drop
+COPY entrypoint.sh entrypoint.sh
+CMD ["bash entrypoint.sh"]

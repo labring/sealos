@@ -145,7 +145,7 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      ['sh', '-c', `dd of=${path} status=none bs=32767; :`],
       file
     );
     return result;

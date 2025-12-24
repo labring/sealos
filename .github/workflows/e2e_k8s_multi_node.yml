@@ -3,7 +3,7 @@ name: E2E k8s Multi Node Test
 on:
   workflow_dispatch:
   pull_request:
-    types: [ labeled ]
+    types: [labeled]
 
 env:
   TERRAFORM_VERSION: "1.5.7"
@@ -19,14 +19,14 @@ jobs:
       target_pull: true
   e2e_apply_test:
     if: github.repository_owner == 'labring'
-    needs: [ call_ci_workflow ]
+    needs: [call_ci_workflow]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
     strategy:
       fail-fast: false
       matrix:
-        arch: [ arm64, amd64 ]
+        arch: [arm64, amd64]
     outputs:
       test_arm64_result: ${{ steps.apply_test.outputs.test_arm64_result }}
       test_amd64_result: ${{ steps.apply_test.outputs.test_amd64_result }}
@@ -80,7 +80,7 @@ jobs:
           /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_multi_node_test"
           echo "test_${SEALOS_TEST_ARCH}_result=success" >> "$GITHUB_OUTPUT"
   issue_commit:
-    needs: [ e2e_apply_test ]
+    needs: [e2e_apply_test]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
@@ -93,7 +93,7 @@ jobs:
           AMD_TEST_RESULT: ${{ needs.e2e_apply_test.outputs.test_amd64_result == 'success' && 'Success 🎉🎉!' || '‼️ Failure' }}
         with:
           issue-number: ${{ github.event.number }}
-          comment-author: 'github-actions[bot]'
+          comment-author: "github-actions[bot]"
           repository: ${{ github.repository }}
           body: |
             🤖 says: E2E k8s multi node `ARM64` Test Result: ${{ env.ARM_TEST_RESULT }} , E2E k8s multi node `AMD64` Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -119,7 +119,6 @@ export default function Valuation() {
       display={'flex'}
       flexDir={'column'}
       w={'full'}
-      minW={'max-content'}
       variant={'primary'}
       tabIndex={tabIdx}
       onChange={(idx) => {
@@ -145,7 +144,7 @@ export default function Valuation() {
           )}
         </Flex>
       </TabList>
-      <TabPanels minW={'max-content'}>
+      <TabPanels>
         {subscriptionEnabled && (
           <TabPanel>
             <div className="border rounded-2xl bg-zinc-50 overflow-hidden">
