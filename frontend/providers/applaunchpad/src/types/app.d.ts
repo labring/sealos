@@ -137,6 +137,7 @@ export type AppEditSyncedFields = Pick<
   | 'runCMD'
   | 'appName'
   | 'labels'
+  | 'gpu'
 >;
 
 export type TAppSourceType = 'app_store' | 'sealaf';
