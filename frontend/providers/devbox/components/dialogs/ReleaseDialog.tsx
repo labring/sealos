@@ -252,13 +252,19 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
           {/* description */}
           <div className="flex w-full flex-col items-start gap-2">
             <Label htmlFor="description">{t('version_description')}</Label>
-            <Textarea
-              id="description"
-              value={releaseDes}
-              onChange={(e) => setReleaseDes(e.target.value)}
-              placeholder={t('enter_version_description')}
-              className="w-[462px]"
-            />
+            <div className="w-full">
+              <Textarea
+                id="description"
+                value={releaseDes}
+                onChange={(e) => setReleaseDes(e.target.value)}
+                placeholder={t('enter_version_description')}
+                className="w-[462px]"
+                maxLength={500}
+              />
+              <div className="mt-1 text-right text-sm text-gray-500">
+                {releaseDes.length}/500
+              </div>
+            </div>
           </div>
         </div>
 

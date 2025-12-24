@@ -61,14 +61,20 @@ const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersion
 
         <div className="flex w-full flex-col items-start gap-2">
           <Label htmlFor="description">{t('version_description')}</Label>
-          {/* NOTE: must set specific width value,else the textarea will be too wide when single line text is too long */}
-          <Textarea
-            value={inputValue}
-            id="description"
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={t('enter_version_description')}
-            className="w-[462px]"
-          />
+          <div className="w-full">
+            {/* NOTE: must set specific width value,else the textarea will be too wide when single line text is too long */}
+            <Textarea
+              value={inputValue}
+              id="description"
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={t('enter_version_description')}
+              className="w-[462px]"
+              maxLength={500}
+            />
+            <div className="mt-1 text-right text-sm text-gray-500">
+              {inputValue.length}/500
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
