@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"reflect"
 	"strconv"
 
 	"github.com/go-logr/logr"
@@ -378,6 +379,18 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return hasGPU(event.Object)
 			},
 		})).
+		Watches(&corev1.ConfigMap{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return isGPUInfoConfigMap(event.Object)
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				return isGPUInfoConfigMap(event.ObjectNew) &&
+					configMapChanged(event.ObjectOld, event.ObjectNew)
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return isGPUInfoConfigMap(event.Object)
+			},
+		})).
 		Complete(r)
 }
 
@@ -441,4 +454,25 @@ func podRequestsGPUContainers(containers []corev1.Container) bool {
 		}
 	}
 	return false
+}
+
+func isGPUInfoConfigMap(obj client.Object) bool {
+	cm, ok := obj.(*corev1.ConfigMap)
+	if !ok || cm == nil {
+		return false
+	}
+	return cm.Name == GPUInfo && cm.Namespace == GPUInfoNameSpace
+}
+
+func configMapChanged(oldObj, newObj client.Object) bool {
+	oldCM, ok1 := oldObj.(*corev1.ConfigMap)
+	newCM, ok2 := newObj.(*corev1.ConfigMap)
+	if !ok1 || !ok2 || oldCM == nil || newCM == nil {
+		return false
+	}
+	if !isGPUInfoConfigMap(newCM) {
+		return false
+	}
+	return !reflect.DeepEqual(oldCM.Data, newCM.Data) ||
+		!reflect.DeepEqual(oldCM.BinaryData, newCM.BinaryData)
 }
