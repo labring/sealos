@@ -43,14 +43,8 @@
     "@types/js-yaml": "^4.0.6",
     "@types/lodash": "^4.14.199",
     "@types/node": "18.15.5",
-    "@types/react": "18.2.37",
-    "@types/react-dom": "18.0.11",
+    "@types/react": "18.3.27",
+    "@types/react-dom": "18.3.7",
     "sass": "^1.68.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "react": "18.2.0",
-      "react-dom": "18.2.0"
-    }
   }
 }

@@ -95,11 +95,5 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.12",
     "webpack-bundle-analyzer": "^4.9.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "react": "18.3.1",
-      "react-dom": "18.3.1"
-    }
   }
 }
