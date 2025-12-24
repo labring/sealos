@@ -380,6 +380,15 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }));
         formHook.setValue('networks', completeNetworks);
       }
+
+      // Handle GPU configuration
+      if (parsedData.gpu && parsedData.gpu.type) {
+        formHook.setValue('gpu', {
+          type: parsedData.gpu.type,
+          amount: parsedData.gpu.amount || 0,
+          manufacturers: parsedData.gpu.manufacturers || 'nvidia'
+        });
+      }
     } catch (error) {}
   }, [router.query, already]);
 

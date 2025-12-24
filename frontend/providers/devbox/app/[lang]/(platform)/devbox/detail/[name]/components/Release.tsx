@@ -123,7 +123,7 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, networks, name } = devbox;
+      const { cpu, memory, networks, name, gpu } = devbox;
       const newNetworks = networks.map((network) => {
         return {
           port: network.port,
@@ -140,6 +140,7 @@ const Release = () => {
         cpu: cpu,
         memory: memory,
         imageName: imageName,
+        gpu: gpu,
         networks:
           newNetworks.length > 0
             ? newNetworks
