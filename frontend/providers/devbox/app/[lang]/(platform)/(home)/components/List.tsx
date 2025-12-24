@@ -129,13 +129,13 @@ const DevboxList = ({
         accessorKey: 'name',
         header: NameHeader,
         size: 250,
-        cell: (props) => <NameColumn {...props} onEditRemark={handleEditRemark} />
+        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <NameColumn {...props} onEditRemark={handleEditRemark} />
       },
       {
         accessorKey: 'status',
         enableColumnFilter: true,
         filterFn: statusFilterFn,
-        header: (props) => (
+        header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <StatusFilter
             {...props}
             statusFilter={statusFilter}
@@ -148,13 +148,13 @@ const DevboxList = ({
         accessorKey: 'cpu',
         header: () => <span className="select-none">{t('cpu')}</span>,
         size: 256,
-        cell: (props) => <MonitorColumn {...props} type="cpu" />
+        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <MonitorColumn {...props} type="cpu" />
       },
       {
         accessorKey: 'memory',
         header: () => <span className="select-none">{t('memory')}</span>,
         size: 256,
-        cell: (props) => <MonitorColumn {...props} type="memory" />
+        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <MonitorColumn {...props} type="memory" />
       },
       {
         accessorKey: 'gpu',
@@ -169,7 +169,7 @@ const DevboxList = ({
         accessorKey: 'createTime',
         enableColumnFilter: true,
         filterFn: dateFilterFn,
-        header: (props) => (
+        header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
           <CreateTimeFilter {...props} isSpecificTimeRangeSelected={isSpecificTimeRangeSelected} />
         ),
         size: 150,
@@ -179,7 +179,7 @@ const DevboxList = ({
         id: 'actions',
         header: () => <span className="select-none">{t('action')}</span>,
         size: 300,
-        cell: (props) => (
+        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
           <ActionsColumn
             {...props}
             onOpenRelease={handleOpenRelease}
