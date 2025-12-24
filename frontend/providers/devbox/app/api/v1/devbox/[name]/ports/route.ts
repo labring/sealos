@@ -12,9 +12,12 @@ import { UpdatePortsRequestSchema, nanoid } from './schema';
 
 export const dynamic = 'force-dynamic';
 
-
 class PortError extends Error {
-  constructor(message: string, public code: number = 500, public details?: any) {
+  constructor(
+    message: string,
+    public code: number = 500,
+    public details?: any
+  ) {
     super(message);
     this.name = 'PortError';
   }
@@ -34,7 +37,6 @@ class PortNotFoundError extends PortError {
   }
 }
 
-
 async function getExistingPorts(
   k8sCore: any,
   k8sNetworkingApp: any,
@@ -42,47 +44,49 @@ async function getExistingPorts(
   namespace: string
 ) {
   const existingPorts = [];
-  
-  try {
 
+  try {
     const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
     const service = serviceResponse.body;
-    
 
     const label = `${devboxKey}=${devboxName}`;
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
-      namespace, undefined, undefined, undefined, undefined, label
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      label
     );
     const existingIngresses = ingressesResponse.body.items || [];
-    
 
     for (const port of service.spec?.ports || []) {
       const portNumber = port.port;
       const portName = port.name;
-      
 
       const correspondingIngress = existingIngresses.find((ingress: V1Ingress) => {
-        const ingressPort = ingress.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number;
+        const ingressPort =
+          ingress.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number;
         return ingressPort === portNumber;
       });
-      
+
       let publicDomain = '';
       let customDomain = '';
       let networkName = '';
       let exposesPublicDomain = false;
       let protocol = 'HTTP';
-      
+
       if (correspondingIngress) {
         networkName = correspondingIngress.metadata?.name || '';
         const defaultDomain = correspondingIngress.metadata?.labels?.[publicDomainKey];
         const tlsHost = correspondingIngress.spec?.tls?.[0]?.hosts?.[0];
         protocol = correspondingIngress.metadata?.annotations?.[ingressProtocolKey] || 'HTTP';
-        
+
         exposesPublicDomain = !!defaultDomain;
         publicDomain = defaultDomain === tlsHost ? tlsHost : defaultDomain || '';
         customDomain = defaultDomain === tlsHost ? '' : tlsHost || '';
       }
-      
+
       existingPorts.push({
         portName,
         number: portNumber,
@@ -102,10 +106,9 @@ async function getExistingPorts(
       throw new PortError(`Failed to fetch existing ports: ${error.message}`, 500, error);
     }
   }
-  
+
   return existingPorts;
 }
-
 
 async function createNewPort(
   portConfig: any,
@@ -115,16 +118,14 @@ async function createNewPort(
   applyYamlList: any
 ) {
   const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
-  
+
   const { number: port, protocol = 'HTTP', exposesPublicDomain = true, customDomain } = portConfig;
-  
 
   const networkName = `${devboxName}-${nanoid()}`;
   const generatedPublicDomain = `${nanoid()}.${INGRESS_DOMAIN}`;
-  const portName = `port-${nanoid()}`; 
-  
-  try {
+  const portName = `port-${nanoid()}`;
 
+  try {
     let existingService: V1Service | null = null;
     try {
       const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
@@ -133,21 +134,21 @@ async function createNewPort(
       if (error.response?.statusCode !== 404) {
         throw new PortError(`Failed to check existing service: ${error.message}`, 500, error);
       }
-
     }
 
     if (existingService) {
       const existingServicePorts = existingService.spec?.ports || [];
-      
 
       const portExistsInService = existingServicePorts.some((p: any) => p.port === port);
       if (portExistsInService) {
         throw new PortConflictError(`Port ${port} already exists in service`, {
           portNumber: port,
-          conflictingPorts: existingServicePorts.filter((p: any) => p.port === port).map((p: any) => p.name)
+          conflictingPorts: existingServicePorts
+            .filter((p: any) => p.port === port)
+            .map((p: any) => p.name)
         });
       }
-      
+
       const updatedPorts = [
         ...existingServicePorts,
         {
@@ -156,7 +157,7 @@ async function createNewPort(
           name: portName
         }
       ];
-      
+
       await k8sCore.patchNamespacedService(
         devboxName,
         namespace,
@@ -173,7 +174,6 @@ async function createNewPort(
         { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
       );
     } else {
-
       const networkConfig = {
         name: devboxName,
         networks: [
@@ -190,7 +190,6 @@ async function createNewPort(
       };
       await applyYamlList([json2Service(networkConfig)], 'create');
     }
-    
 
     if (exposesPublicDomain && INGRESS_SECRET) {
       const networkConfig = {
@@ -210,7 +209,7 @@ async function createNewPort(
       const ingressYaml = json2Ingress(networkConfig, INGRESS_SECRET);
       await applyYamlList([ingressYaml], 'create');
     }
-    
+
     const result = {
       portName,
       number: port,
@@ -222,7 +221,7 @@ async function createNewPort(
       serviceName: devboxName,
       privateAddress: `http://${devboxName}.${namespace}:${port}`
     };
-    
+
     return result;
   } catch (error: any) {
     if (error instanceof PortError) {
@@ -231,7 +230,6 @@ async function createNewPort(
     throw new PortError(`Failed to create port ${port}: ${error.message}`, 500, error);
   }
 }
-
 
 async function updateExistingPort(
   portConfig: any,
@@ -243,24 +241,18 @@ async function updateExistingPort(
   existingPorts: any[]
 ) {
   const { portName, ...updateFields } = portConfig;
-  
 
-  const existingPort = existingPorts.find(p => p.portName === portName);
+  const existingPort = existingPorts.find((p) => p.portName === portName);
   if (!existingPort) {
-    throw new PortNotFoundError(
-      `Port with name '${portName}' not found`,
-      {
-        requestedPortName: portName,
-        availablePortNames: existingPorts.map(p => p.portName)
-      }
-    );
+    throw new PortNotFoundError(`Port with name '${portName}' not found`, {
+      requestedPortName: portName,
+      availablePortNames: existingPorts.map((p) => p.portName)
+    });
   }
-  
 
   if (updateFields.number && updateFields.number !== existingPort.number) {
-
-    const conflictingPort = existingPorts.find(p => 
-      p.number === updateFields.number && p.portName !== portName
+    const conflictingPort = existingPorts.find(
+      (p) => p.number === updateFields.number && p.portName !== portName
     );
     if (conflictingPort) {
       throw new PortConflictError(
@@ -272,21 +264,19 @@ async function updateExistingPort(
       );
     }
   }
-  
 
   const updatedPort = { ...existingPort, ...updateFields };
-  
-  try {
 
+  try {
     if (updateFields.number && updateFields.number !== existingPort.number) {
       const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
       const existingService = serviceResponse.body;
-      const updatedPorts = existingService.spec.ports.map((p: any) => 
-        p.name === portName 
+      const updatedPorts = existingService.spec.ports.map((p: any) =>
+        p.name === portName
           ? { ...p, port: updateFields.number, targetPort: updateFields.number }
           : p
       );
-      
+
       await k8sCore.patchNamespacedService(
         devboxName,
         namespace,
@@ -302,31 +292,29 @@ async function updateExistingPort(
         undefined,
         { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
       );
-      
 
       updatedPort.privateAddress = `http://${devboxName}.${namespace}:${updateFields.number}`;
     }
-    
 
-    if (updateFields.hasOwnProperty('exposesPublicDomain') || updateFields.customDomain !== undefined) {
+    if (
+      updateFields.hasOwnProperty('exposesPublicDomain') ||
+      updateFields.customDomain !== undefined
+    ) {
       const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
-      
 
       if (existingPort.networkName) {
         try {
           await k8sNetworkingApp.deleteNamespacedIngress(existingPort.networkName, namespace);
         } catch (error: any) {
           if (error.response?.statusCode !== 404) {
-
           }
         }
       }
-      
 
       if (updatedPort.exposesPublicDomain && INGRESS_SECRET) {
         const generatedPublicDomain = `${nanoid()}.${INGRESS_DOMAIN}`;
         const newNetworkName = `${devboxName}-${nanoid()}`;
-        
+
         const networkConfig = {
           name: devboxName,
           networks: [
@@ -341,10 +329,10 @@ async function updateExistingPort(
             }
           ]
         };
-        
+
         const ingressYaml = json2Ingress(networkConfig, INGRESS_SECRET);
         await applyYamlList([ingressYaml], 'create');
-        
+
         updatedPort.networkName = newNetworkName;
         updatedPort.publicDomain = generatedPublicDomain;
       } else {
@@ -353,22 +341,21 @@ async function updateExistingPort(
       }
     }
 
-
-    if (updateFields.protocol && updateFields.protocol !== existingPort.protocol && existingPort.networkName) {
+    if (
+      updateFields.protocol &&
+      updateFields.protocol !== existingPort.protocol &&
+      existingPort.networkName
+    ) {
       const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
-      
-      if (INGRESS_SECRET) {
-        
 
+      if (INGRESS_SECRET) {
         try {
           await k8sNetworkingApp.deleteNamespacedIngress(existingPort.networkName, namespace);
         } catch (error: any) {
           if (error.response?.statusCode !== 404) {
-
           }
         }
-        
-    
+
         const networkConfig = {
           name: devboxName,
           networks: [
@@ -383,13 +370,12 @@ async function updateExistingPort(
             }
           ]
         };
-        
+
         const ingressYaml = json2Ingress(networkConfig, INGRESS_SECRET);
         await applyYamlList([ingressYaml], 'create');
-        
       }
     }
-    
+
     return updatedPort;
   } catch (error: any) {
     if (error instanceof PortError) {
@@ -399,7 +385,6 @@ async function updateExistingPort(
   }
 }
 
-
 async function deletePort(
   portName: string,
   devboxName: string,
@@ -408,22 +393,19 @@ async function deletePort(
   k8sNetworkingApp: any,
   existingPorts: any[]
 ) {
-  const portToDelete = existingPorts.find(p => p.portName === portName);
+  const portToDelete = existingPorts.find((p) => p.portName === portName);
   if (!portToDelete) {
     return;
   }
-  
-  try {
 
+  try {
     const serviceResponse = await k8sCore.readNamespacedService(devboxName, namespace);
     const existingService = serviceResponse.body;
     const updatedPorts = existingService.spec.ports.filter((p: any) => p.name !== portName);
-    
-    if (updatedPorts.length === 0) {
 
+    if (updatedPorts.length === 0) {
       await k8sCore.deleteNamespacedService(devboxName, namespace);
     } else {
- 
       await k8sCore.patchNamespacedService(
         devboxName,
         namespace,
@@ -440,7 +422,6 @@ async function deletePort(
         { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
       );
     }
-    
 
     if (portToDelete.networkName) {
       try {
@@ -450,7 +431,6 @@ async function deletePort(
         }
       }
     }
-    
   } catch (error: any) {
     throw new PortError(`Failed to delete port '${portName}': ${error.message}`, 500, error);
   }
@@ -460,7 +440,7 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
   try {
     const body = await req.json();
     const validationResult = UpdatePortsRequestSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return jsonRes({
         code: 400,
@@ -471,27 +451,23 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
         }
       });
     }
-    
+
     const { ports: requestPorts } = validationResult.data;
     const devboxName = params.name;
     const headerList = req.headers;
-    
-    
+
     const { applyYamlList, k8sCore, k8sNetworkingApp, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
-    
 
     const existingPorts = await getExistingPorts(k8sCore, k8sNetworkingApp, devboxName, namespace);
-    
+
     const resultPorts = [];
     const requestPortNames = new Set<string>();
-    
 
     for (const portConfig of requestPorts) {
       try {
         if ('portName' in portConfig && portConfig.portName) {
-
           requestPortNames.add(portConfig.portName);
           const updatedPort = await updateExistingPort(
             portConfig,
@@ -504,31 +480,27 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
           );
           resultPorts.push(updatedPort);
         } else {
-
           const createdPort = await createNewPort(
             portConfig,
             devboxName,
             namespace,
             k8sCore,
-            applyYamlList,
+            applyYamlList
           );
           resultPorts.push(createdPort);
         }
       } catch (error: any) {
-
         if (error instanceof PortError) {
           throw error;
         }
         throw new PortError(`Failed to process port configuration: ${error.message}`, 500, error);
       }
     }
-    
 
     const portsToDelete = existingPorts.filter(
-      existingPort => !requestPortNames.has(existingPort.portName)
+      (existingPort) => !requestPortNames.has(existingPort.portName)
     );
-    
-    
+
     for (const portToDelete of portsToDelete) {
       await deletePort(
         portToDelete.portName,
@@ -539,8 +511,7 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
         existingPorts
       );
     }
-    
-    
+
     return jsonRes({
       data: {
         ports: resultPorts
@@ -548,7 +519,6 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
     });
   } catch (err: any) {
     console.error('Port update error:', err);
-    
 
     if (err instanceof PortConflictError) {
       return jsonRes({
@@ -561,7 +531,7 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
         }
       });
     }
-    
+
     if (err instanceof PortNotFoundError) {
       return jsonRes({
         code: err.code,
@@ -573,7 +543,7 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
         }
       });
     }
-    
+
     if (err instanceof PortError) {
       return jsonRes({
         code: err.code,
@@ -584,7 +554,6 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
         }
       });
     }
-    
 
     return jsonRes({
       code: 500,

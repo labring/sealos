@@ -2,7 +2,6 @@ import 'zod-openapi/extend';
 
 import { z } from 'zod';
 
-
 export const RequestSchema = z.object({
   tag: z.string().min(1).openapi({
     description: 'Release tag'

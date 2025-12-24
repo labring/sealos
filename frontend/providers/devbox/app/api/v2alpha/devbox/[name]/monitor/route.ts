@@ -90,10 +90,7 @@ function mergeMonitorSeries(
   const cpuSeries = collectAveragedSeries(cpuData);
   const memorySeries = collectAveragedSeries(memoryData);
 
-  const timestamps = new Set<number>([
-    ...cpuSeries.keys(),
-    ...memorySeries.keys()
-  ]);
+  const timestamps = new Set<number>([...cpuSeries.keys(), ...memorySeries.keys()]);
 
   return Array.from(timestamps)
     .sort((a, b) => a - b)
@@ -104,8 +101,8 @@ function mergeMonitorSeries(
       return {
         timestamp,
         readableTime: formatTimestamp(timestamp),
-        cpu: Number((cpuValue ).toFixed(2)),
-        memory: Number((memoryValue ).toFixed(2))
+        cpu: Number(cpuValue.toFixed(2)),
+        memory: Number(memoryValue.toFixed(2))
       };
     });
 }

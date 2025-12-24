@@ -832,7 +832,9 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
         .catch(() => null),
       k8sCore.readNamespacedService(devboxName, namespace).catch(() => null),
       k8sCore.readNamespacedSecret(devboxName, namespace).catch(() => null),
-      k8sCore.listNamespacedPod(namespace, undefined, undefined, undefined, undefined, podLabel).catch(() => null)
+      k8sCore
+        .listNamespacedPod(namespace, undefined, undefined, undefined, undefined, podLabel)
+        .catch(() => null)
     ]);
 
     const ingresses = ingressesResponse?.body.items || [];

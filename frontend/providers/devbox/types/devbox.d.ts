@@ -120,7 +120,7 @@ export interface DevboxDetailType extends DevboxEditType {
   sshPort?: number;
   // lastTerminatedReason?: string;
 }
-export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
+export interface DevboxDetailTypeV2 extends json2DevboxData {
   id: string;
   upTime?: string;
   createTime: string;
@@ -243,7 +243,7 @@ export interface PodDetailType extends V1Pod {
   containerStatus: PodStatusMapType;
 }
 
-export interface json2DevboxV2Data extends DevboxEditTypeV2 {
+export interface json2DevboxData extends DevboxEditTypeV2 {
   templateConfig: string;
   image: string;
 }

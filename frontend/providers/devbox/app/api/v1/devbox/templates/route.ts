@@ -60,7 +60,6 @@ export async function GET(req: NextRequest) {
     return jsonRes({
       data: uniqueConfigArray
     });
-
   } catch (err: any) {
     console.error('Error in getconfig:', err);
     return jsonRes({

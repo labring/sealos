@@ -37,15 +37,11 @@ export const GetPrivateKeyErrorResponseSchema = z
       description: 'Error message',
       example: 'Devbox or secret not found'
     }),
-    error: z
-      .any()
-      .optional()
-      .openapi({
-        description: 'Detailed error information (optional)'
-      })
+    error: z.any().optional().openapi({
+      description: 'Detailed error information (optional)'
+    })
   })
   .openapi({
     title: 'Error Response',
     description: 'Error response schema for private key endpoint'
   });
-

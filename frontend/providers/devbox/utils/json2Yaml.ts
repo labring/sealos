@@ -1,86 +1,13 @@
 import yaml from 'js-yaml';
 
 import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
-import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
+import { DevboxEditTypeV2, json2DevboxData, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
 import { nanoid, parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
-import { RuntimeNamespaceMap } from '@/types/static';
 
-// deprecated
 export const json2Devbox = (
-  data: DevboxEditType,
-  runtimeNamespaceMap: RuntimeNamespaceMap,
-  devboxAffinityEnable: string = 'true'
-) => {
-  // runtimeNamespace inject
-  const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
-  // gpu node selector
-  const gpuMap = !!data.gpu?.type
-    ? {
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
-        }
-      }
-    : {};
-  let json: any = {
-    apiVersion: 'devbox.sealos.io/v1alpha1',
-    kind: 'Devbox',
-    metadata: {
-      name: data.name
-    },
-    spec: {
-      network: {
-        type: 'NodePort',
-        extraPorts: data.networks.map((item) => ({
-          containerPort: item.port
-        }))
-      },
-      resource: {
-        cpu: `${str2Num(Math.floor(data.cpu))}m`,
-        memory: `${str2Num(data.memory)}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
-      },
-      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
-      runtimeRef: {
-        name: data.runtimeVersion,
-        namespace: runtimeNamespace
-      },
-      state: 'Running',
-      ...gpuMap
-    }
-  };
-  if (devboxAffinityEnable === 'true') {
-    json.spec.tolerations = [
-      {
-        key: 'devbox.sealos.io/node',
-        operator: 'Exists',
-        effect: 'NoSchedule'
-      }
-    ];
-    json.spec.affinity = {
-      nodeAffinity: {
-        requiredDuringSchedulingIgnoredDuringExecution: {
-          nodeSelectorTerms: [
-            {
-              matchExpressions: [
-                {
-                  key: 'devbox.sealos.io/node',
-                  operator: 'Exists'
-                }
-              ]
-            }
-          ]
-        }
-      }
-    };
-  }
-  return yaml.dump(json);
-};
-
-// TODO: forget gpu support
-export const json2DevboxV2 = (
-  data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
+  data: Omit<json2DevboxData, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
   storageLimit: string = '1Gi'
 ) => {
@@ -374,7 +301,7 @@ spec:
       type: Container
 `;
 export const generateYamlList = (
-  data: json2DevboxV2Data,
+  data: json2DevboxData,
   env: {
     devboxAffinityEnable?: string;
     storageLimit?: string;
@@ -384,7 +311,7 @@ export const generateYamlList = (
   return [
     {
       filename: 'devbox.yaml',
-      value: json2DevboxV2(data, env.devboxAffinityEnable, env.storageLimit)
+      value: json2Devbox(data, env.devboxAffinityEnable, env.storageLimit)
     },
     ...(data.networks.length > 0
       ? [

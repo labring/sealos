@@ -321,8 +321,6 @@ const Release = () => {
     }
   }, [guideRelease, handleOpenRelease, isClientSide, t, guideIDE]);
 
-  if (!initialized || isLoading) return <Loading />;
-
   return (
     <div className="flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
@@ -333,7 +331,11 @@ const Release = () => {
         </Button>
       </div>
 
-      {devboxVersionList.length === 0 && initialized ? (
+      {!initialized || isLoading ? (
+        <div className="flex h-full w-full items-center justify-center">
+          <Loading />
+        </div>
+      ) : devboxVersionList.length === 0 ? (
         <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
           <div className="rounded-lg border border-dashed border-zinc-200 p-2">
             <ArrowBigUpDash className="h-6 w-6 text-zinc-400" />

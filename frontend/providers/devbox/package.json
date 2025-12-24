@@ -12,7 +12,8 @@
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
     "gen-client": "prisma generate --schema ./prisma/schema.prisma",
     "postinstall": "pnpm gen-client",
-    "ui": "pnpm dlx shadcn@latest add"
+    "ui": "pnpm dlx shadcn@latest add",
+    "prettier": "prettier --write ."
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",

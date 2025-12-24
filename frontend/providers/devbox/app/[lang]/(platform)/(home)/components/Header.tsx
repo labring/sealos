@@ -187,7 +187,9 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
                   className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
                 >
                   <FolderArchive className="mr-2 h-4 w-4 text-zinc-500" />
-                  <span className="text-sm font-normal text-zinc-900">{t('import_from_local')}</span>
+                  <span className="text-sm font-normal text-zinc-900">
+                    {t('import_from_local')}
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

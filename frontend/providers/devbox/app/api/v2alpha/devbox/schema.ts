@@ -13,45 +13,47 @@ const MemoryOptions = z.number().min(0.1).max(32).openapi({
   example: 2
 });
 
-const RuntimeName = z.enum([
-'nuxt3',
-'angular',
-'quarkus',
-'ubuntu',
-'flask',
-'java',
-'chi',
-'net',
-'iris',
-'hexo',
-'python',
-'docusaurus',
-'vitepress',
-'cpp',
-'vue',
-'nginx',
-'rocket',
-'debian-ssh',
-'vert.x',
-'express.js',
-'django',
-'next.js',
-'sealaf',
-'go',
-'react',
-'php',
-'svelte',
-'c',
-'astro',
-'umi',
-'gin',
-'node.js',
-'echo',
-'claude-code',
-'rust'
-]).openapi({
-  description: 'Runtime environment name (lowercase)'
-});
+const RuntimeName = z
+  .enum([
+    'nuxt3',
+    'angular',
+    'quarkus',
+    'ubuntu',
+    'flask',
+    'java',
+    'chi',
+    'net',
+    'iris',
+    'hexo',
+    'python',
+    'docusaurus',
+    'vitepress',
+    'cpp',
+    'vue',
+    'nginx',
+    'rocket',
+    'debian-ssh',
+    'vert.x',
+    'express.js',
+    'django',
+    'next.js',
+    'sealaf',
+    'go',
+    'react',
+    'php',
+    'svelte',
+    'c',
+    'astro',
+    'umi',
+    'gin',
+    'node.js',
+    'echo',
+    'claude-code',
+    'rust'
+  ])
+  .openapi({
+    description: 'Runtime environment name (lowercase)'
+  });
 
 const ProtocolType = z.enum(['http', 'grpc', 'ws']).openapi({
   description: 'Protocol type'
@@ -81,37 +83,44 @@ const ResourceConfig = z.object({
   })
 });
 
-const EnvConfig = z.object({
-  name: z.string().min(1).openapi({
-    description: 'Environment variable name'
-  }),
-  value: z.string().optional().openapi({
-    description: 'Environment variable value'
-  }),
-  valueFrom: z.object({
-    secretKeyRef: z.object({
-      key: z.string().openapi({
-        description: 'Secret key'
-      }),
-      name: z.string().openapi({
-        description: 'Secret name'
+const EnvConfig = z
+  .object({
+    name: z.string().min(1).openapi({
+      description: 'Environment variable name'
+    }),
+    value: z.string().optional().openapi({
+      description: 'Environment variable value'
+    }),
+    valueFrom: z
+      .object({
+        secretKeyRef: z.object({
+          key: z.string().openapi({
+            description: 'Secret key'
+          }),
+          name: z.string().openapi({
+            description: 'Secret name'
+          })
+        })
       })
-    })
-  }).optional().openapi({
-    description: 'Source for the environment variable value'
+      .optional()
+      .openapi({
+        description: 'Source for the environment variable value'
+      })
   })
-}).refine(
-  (data) => data.value || data.valueFrom,
-  {
+  .refine((data) => data.value || data.valueFrom, {
     message: "Either 'value' or 'valueFrom' must be provided",
-    path: ["value", "valueFrom"]
-  }
-);
+    path: ['value', 'valueFrom']
+  });
 
 export const RequestSchema = z.object({
-  name: z.string().min(1).max(63).regex(/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/).openapi({
-    description: 'Devbox name (must be DNS compliant: lowercase, numbers, hyphens, 1-63 chars)'
-  }),
+  name: z
+    .string()
+    .min(1)
+    .max(63)
+    .regex(/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/)
+    .openapi({
+      description: 'Devbox name (must be DNS compliant: lowercase, numbers, hyphens, 1-63 chars)'
+    }),
   runtime: RuntimeName.openapi({
     description: 'Runtime environment name'
   }),
@@ -250,16 +259,18 @@ export const DevboxListItemSchemaV1 = z.object({
   status: DevboxStatus.openapi({
     description: 'Devbox status (pending, running, stopped, error)'
   }),
-  quota: z.object({
-    cpu: z.number().openapi({
-      description: 'CPU in cores (e.g., 1.0 = 1 core)'
-    }),
-    memory: z.number().openapi({
-      description: 'Memory in GB (e.g., 2.0 = 2GB)'
+  quota: z
+    .object({
+      cpu: z.number().openapi({
+        description: 'CPU in cores (e.g., 1.0 = 1 core)'
+      }),
+      memory: z.number().openapi({
+        description: 'Memory in GB (e.g., 2.0 = 2GB)'
+      })
     })
-  }).openapi({
-    description: 'Resource quota allocation'
-  })
+    .openapi({
+      description: 'Resource quota allocation'
+    })
 });
 
 export const DevboxListResponseSchemaV1 = z.array(DevboxListItemSchemaV1);

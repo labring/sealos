@@ -6,18 +6,41 @@ import {
   UpdateTemplateType
 } from '@/utils/validate';
 
+type TemplateItem = {
+  uid: string;
+  name: string;
+};
+
+type TemplateRepositoryTagItem = {
+  tag: Tag;
+};
+
+type BaseTemplateRepository = {
+  uid: string;
+  name: string;
+  description: string | null;
+  iconId: string | null;
+  templateRepositoryTags: TemplateRepositoryTagItem[];
+};
+
+type TemplateRepositoryWithTemplates = BaseTemplateRepository & {
+  usageCount: number;
+  templates: TemplateItem[];
+};
+
+type PageInfo = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPage: number;
+};
+
 export const listOfficialTemplateRepository = () =>
   GET<{
-    templateRepositoryList: {
-      uid: string;
-      name: string;
+    templateRepositoryList: (BaseTemplateRepository & {
       kind: TemplateRepositoryKind;
       iconId: string;
-      description: string | null;
-      templateRepositoryTags: {
-        tag: Tag;
-      }[];
-    }[];
+    })[];
   }>(`/api/templateRepository/listOfficial`);
 export const listTemplateRepository = (
   page: {
@@ -39,28 +62,18 @@ export const listTemplateRepository = (
   if (search) searchParams.append('search', search);
   if (excludeOfficial) searchParams.append('excludeOfficial', 'true');
   return GET<{
-    templateRepositoryList: {
-      uid: string;
-      name: string;
-      description: string | null;
-      iconId: string | null;
-      usageCount: number;
-      templates: {
-        uid: string;
-        name: string;
-      }[];
-      templateRepositoryTags: {
-        tag: Tag;
-      }[];
-    }[];
-    page: {
-      page: number;
-      pageSize: number;
-      totalItems: number;
-      totalPage: number;
-    };
+    templateRepositoryList: TemplateRepositoryWithTemplates[];
+    page: PageInfo;
   }>(`/api/templateRepository/list?${searchParams.toString()}`);
 };
+
+export const listTemplateRepositoryOverview = () =>
+  GET<{
+    language: TemplateRepositoryWithTemplates[];
+    framework: TemplateRepositoryWithTemplates[];
+    os: TemplateRepositoryWithTemplates[];
+    mcp: TemplateRepositoryWithTemplates[];
+  }>(`/api/templateRepository/listOverview`);
 export const listPrivateTemplateRepository = ({
   search,
   page,
@@ -76,44 +89,19 @@ export const listPrivateTemplateRepository = ({
   if (page) searchParams.append('page', page.toString());
   if (pageSize) searchParams.append('pageSize', pageSize.toString());
   return GET<{
-    templateRepositoryList: {
-      uid: string;
-      name: string;
-      description: string | null;
-      iconId: string | null;
-      templates: {
-        uid: string;
-        name: string;
-      }[];
+    templateRepositoryList: (BaseTemplateRepository & {
+      templates: TemplateItem[];
       isPublic: boolean;
-      templateRepositoryTags: {
-        tag: Tag;
-      }[];
-    }[];
-    page: {
-      page: number;
-      pageSize: number;
-      totalItems: number;
-      totalPage: number;
-    };
+    })[];
+    page: PageInfo;
   }>(`/api/templateRepository/listPrivate?${searchParams.toString()}`);
 };
 
 export const getTemplateRepository = (uid: string) =>
   GET<{
-    templateRepository: {
-      templates: {
-        name: string;
-        uid: string;
-      }[];
-      uid: string;
+    templateRepository: BaseTemplateRepository & {
+      templates: TemplateItem[];
       isPublic: true;
-      name: string;
-      description: string | null;
-      iconId: string | null;
-      templateRepositoryTags: {
-        tag: Tag;
-      }[];
     };
   }>(`/api/templateRepository/get?uid=${uid}`);
 export const getTemplateConfig = (uid: string) =>

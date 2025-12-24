@@ -25,7 +25,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       kubeconfig: await authSession(headerList)
     });
 
-
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha2',
@@ -42,7 +41,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
         }
       }
     );
-
 
     let pods;
     const maxRetries = 10;
@@ -68,7 +66,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     if (retries === maxRetries) {
       throw new Error('Max retries reached while waiting for devbox pod to be deleted');
     }
-
 
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
@@ -124,7 +121,6 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
         }
       }
     }
-
 
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
