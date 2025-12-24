@@ -218,6 +218,8 @@ const Form = ({
   const lowerCaseTableNames = watch('parameterConfig')?.lowerCaseTableNames;
   const maxConnections = watch('parameterConfig')?.maxConnections;
   const isMaxConnectionsCustomized = watch('parameterConfig')?.isMaxConnectionsCustomized;
+  const maxmemory = watch('parameterConfig')?.maxmemory;
+  const memory = watch('memory');
 
   const Label = ({
     children,
@@ -359,6 +361,26 @@ const Form = ({
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
   }, [getValues, allocatedStorage, isEdit, minCPU, minMemory, setValue, minStorage]);
 
+  useEffect(() => {
+    const currentDbType = getValues('dbType');
+    const currentMemory = getValues('memory');
+
+    if (editingParam === 'maxmemory') {
+      return;
+    }
+
+    if (currentDbType === DBTypeEnum.redis && currentMemory) {
+      const calculatedMaxmemory = calculateMaxmemory(currentMemory);
+      const currentParameterConfig = getValues('parameterConfig') || {};
+
+      setValue('parameterConfig', {
+        ...currentParameterConfig,
+        maxmemory: calculatedMaxmemory
+      });
+    }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memory, dbType, editingParam]);
+
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
   const parameterConfigRef = useRef<HTMLDivElement | null>(null);
 
@@ -439,6 +461,13 @@ const Form = ({
       return 'maxclients';
     }
     return '';
+  };
+
+  const calculateMaxmemory = (memoryMi: number): string => {
+    const memoryBytes = memoryMi * 1024 * 1024;
+    const percentage = memoryMi > 512 ? 0.7 : 0.5;
+    const maxmemoryBytes = Math.floor(memoryBytes * percentage);
+    return maxmemoryBytes.toString();
   };
 
   const availableDBTypes = useMemo(() => {
@@ -1124,6 +1153,85 @@ const Form = ({
                             </Flex>
                           </Td>
                         </Tr>
+
+                        {/* maxmemory parameter for Redis only */}
+                        {getValues('dbType') === DBTypeEnum.redis && (
+                          <Tr>
+                            <Td w="350px">
+                              <Text fontSize={'14px'} color={'grayModern.900'}>
+                                maxmemory
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Flex alignItems={'center'} gap={'8px'}>
+                                {editingParam === 'maxmemory' ? (
+                                  <Input
+                                    value={maxmemory || calculateMaxmemory(getValues('memory'))}
+                                    size="sm"
+                                    type="number"
+                                    borderRadius={'md'}
+                                    borderColor={'#E8EBF0'}
+                                    bg={'#F7F8FA'}
+                                    width={'180px'}
+                                    _focusVisible={{
+                                      borderColor: 'brightBlue.500',
+                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                      bg: '#FFF',
+                                      color: '#111824'
+                                    }}
+                                    _hover={{
+                                      borderColor: 'brightBlue.300'
+                                    }}
+                                    onBlur={() => setEditingParam(null)}
+                                    onChange={(e) => {
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
+                                        maxmemory: e.target.value
+                                      });
+                                    }}
+                                  />
+                                ) : (
+                                  <Text fontSize={'12px'} color={'grayModern.600'}>
+                                    {maxmemory || calculateMaxmemory(getValues('memory'))}
+                                  </Text>
+                                )}
+                                <MyIcon
+                                  name="edit"
+                                  w={'16px'}
+                                  h={'16px'}
+                                  color={'grayModern.500'}
+                                  cursor={'pointer'}
+                                  _hover={{
+                                    color: 'brightBlue.500'
+                                  }}
+                                  onClick={() =>
+                                    setEditingParam(
+                                      editingParam === 'maxmemory' ? null : 'maxmemory'
+                                    )
+                                  }
+                                />
+                                {maxmemory && (
+                                  <MyIcon
+                                    name="delete"
+                                    w={'14px'}
+                                    h={'14px'}
+                                    color={'grayModern.400'}
+                                    cursor={'pointer'}
+                                    _hover={{
+                                      color: 'brightBlue.500'
+                                    }}
+                                    onClick={() => {
+                                      const currentParameterConfig =
+                                        getValues('parameterConfig') || {};
+                                      const { maxmemory: _, ...rest } = currentParameterConfig;
+                                      setValue('parameterConfig', rest);
+                                    }}
+                                  />
+                                )}
+                              </Flex>
+                            </Td>
+                          </Tr>
+                        )}
 
                         {/* Timezone parameter for MySQL and PostgreSQL */}
                         {(getValues('dbType') === DBTypeEnum.mysql ||

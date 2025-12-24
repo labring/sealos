@@ -963,6 +963,7 @@ export const json2ParameterConfig = (
     timeZone?: string;
     lowerCaseTableNames?: string;
     isMaxConnectionsCustomized?: boolean;
+    maxmemory?: string;
   },
   dynamicMaxConnections?: number
 ) => {
@@ -1339,6 +1340,10 @@ export const json2ParameterConfig = (
 
     if (maxConnections) {
       redisParams['maxclients'] = String(maxConnections);
+    }
+
+    if (parameterConfig?.maxmemory) {
+      redisParams['maxmemory'] = String(parameterConfig.maxmemory);
     }
 
     const replicationItem: any = {

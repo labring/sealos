@@ -94,7 +94,8 @@ export const dbEditSchema = z.object({
     .object({
       maxConnections: z.string().optional(),
       timeZone: z.string().optional(),
-      lowerCaseTableNames: z.string().optional()
+      lowerCaseTableNames: z.string().optional(),
+      maxmemory: z.string().optional()
     })
     .optional()
 });

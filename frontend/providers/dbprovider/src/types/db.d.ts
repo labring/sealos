@@ -111,6 +111,7 @@ export interface DBEditType {
     timeZone?: string;
     lowerCaseTableNames?: string;
     isMaxConnectionsCustomized?: boolean;
+    maxmemory?: string;
   };
 }
 
