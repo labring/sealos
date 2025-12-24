@@ -1,6 +1,6 @@
 import yaml from 'js-yaml';
 
-import { devboxKey, publicDomainKey } from '@/constants/devbox';
+import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
 import { DevboxEditTypeV2, json2DevboxData, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
 import { nanoid, parseTemplateConfig, str2Num } from './tools';
