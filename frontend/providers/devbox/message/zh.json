@@ -522,6 +522,7 @@
   "use_case": "用例",
   "use_jetbrains": "使用 JetBrains IDE 开发",
   "use_jetbrains_toolbox": "使用 Jetbrains Toolbox 开发",
+  "use_zed": "使用 Zed 开发",
   "used": "已用",
   "username": "用户名",
   "verify_connection": "验证连接",
@@ -542,5 +543,10 @@
   "waiting_devbox_ready": "等待 DevBox 就绪...",
   "webide_fee_warning": "启动在线 IDE 将同时监听 9999 端口并开启该端口的公网访问，可能会产生相应的费用。是否继续？",
   "will_get_ready_soon": "即将准备就绪...",
-  "yaml_file": "YAML 文件"
+  "yaml_file": "YAML 文件",
+  "zed_guide_click_to_config": "点击下方按钮，<blue>配置 SSH 连接信息</blue>。",
+  "zed_guide_config_ssh": "配置 SSH 连接信息",
+  "zed_guide_prepare": "前置准备",
+  "zed_guide_prepare_install": "需要提前下载好 <blue>Zed</blue> 编辑器。",
+  "zed_guide_start_to_connect": "开始连接"
 }

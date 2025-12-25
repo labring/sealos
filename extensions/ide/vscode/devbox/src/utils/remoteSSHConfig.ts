@@ -24,13 +24,15 @@ export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
   newSSHHostPlatforms[sshHostLabel] = 'linux'
 
   const appName = vscode.env.appName
+  console.log('appName', appName)
   // NOTE: these ide use their own remote-ssh extension,without this config
   if (
     appName !== 'Windsurf' &&
     appName !== 'Trae' &&
     appName !== 'Trae-CN' &&
     appName !== 'CodeBuddy' &&
-    appName !== 'CodeBuddy CN'
+    appName !== 'CodeBuddy CN' &&
+    appName !== 'Antigravity'
   ) {
     await vscode.workspace
       .getConfiguration('remote.SSH')

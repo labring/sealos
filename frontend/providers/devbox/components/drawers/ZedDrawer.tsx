@@ -8,22 +8,23 @@ import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
 
-interface ToolboxModalProps {
+interface ZedDrawerProps {
   open: boolean;
   onClose: () => void;
   sshConnectionData: SSHConnectionData;
 }
 
-const ToolboxDrawer = ({ open, onClose, sshConnectionData }: ToolboxModalProps) => {
+const ZedDrawer = ({ open, onClose, sshConnectionData }: ZedDrawerProps) => {
   const t = useTranslations();
 
   const [onConnecting, setOnConnecting] = useState(false);
   const [onOpenSSHConnectDrawer, setOnOpenSSHConnectDrawer] = useState(false);
 
-  const connectToolbox = useCallback(async () => {
+  const connectZed = useCallback(async () => {
     setOnConnecting(true);
 
-    window.open(`jetbrains://gateway/ssh/environment?h=${sshConnectionData.configHost}`, '_blank');
+    const zedUri = `zed://ssh/${sshConnectionData.configHost}${sshConnectionData.workingDir}`;
+    window.open(zedUri, '_blank');
 
     setOnConnecting(false);
   }, [sshConnectionData]);
@@ -32,52 +33,47 @@ const ToolboxDrawer = ({ open, onClose, sshConnectionData }: ToolboxModalProps) 
     <Drawer open={open} onOpenChange={(open) => !open && onClose()} direction="right">
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{t('use_jetbrains_toolbox')}</DrawerTitle>
+          <DrawerTitle>{t('use_zed')}</DrawerTitle>
         </DrawerHeader>
         <div className="flex flex-shrink-0 flex-col gap-5 p-6">
-          {/* title*/}
-          <p className="text-sm/5 font-semibold">{t('jetbrains_guide_prepare')}</p>
-          {/* stepper */}
+          <p className="text-sm/5 font-semibold">{t('zed_guide_prepare')}</p>
           <Stepper orientation="vertical" activeStep={-1}>
-            {/* 1 */}
             <Step>
               <StepIndicator>1</StepIndicator>
               <div className="flex flex-col items-start gap-3">
                 <span className="text-sm/5 text-zinc-900">
-                  {t.rich('jetbrains_guide_prepare_install_toolbox', {
+                  {t.rich('zed_guide_prepare_install', {
                     blue: (chunks) => <span className="font-medium text-blue-600">{chunks}</span>
                   })}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => {
-                    window.open('https://www.jetbrains.com/toolbox-app', '_blank');
+                    window.open('https://zed.dev', '_blank');
                   }}
                 >
                   <ArrowUpRight className="h-4 w-4" />
-                  JetBrains Toolbox
+                  Zed
                 </Button>
               </div>
             </Step>
-            {/* 2 */}
             <Step>
               <StepIndicator>2</StepIndicator>
               <div className="flex flex-col items-start gap-3">
                 <span className="text-sm/5 text-zinc-900">
-                  {t.rich('jetbrains_guide_click_to_config', {
+                  {t.rich('zed_guide_click_to_config', {
                     blue: (chunks) => <span className="font-medium text-blue-600">{chunks}</span>
                   })}
                 </span>
                 <Button variant="outline" onClick={() => setOnOpenSSHConnectDrawer(true)}>
                   <Settings className="h-4 w-4" />
-                  {t('jetbrains_guide_config_ssh')}
+                  {t('zed_guide_config_ssh')}
                 </Button>
               </div>
             </Step>
           </Stepper>
-          {/* connect button*/}
-          <Button variant="outline" onClick={connectToolbox} disabled={onConnecting}>
-            {t('jetbrains_guide_start_to_connect')}
+          <Button variant="outline" onClick={connectZed} disabled={onConnecting}>
+            {t('zed_guide_start_to_connect')}
           </Button>
           {onOpenSSHConnectDrawer && (
             <SshConnectDrawer
@@ -93,4 +89,4 @@ const ToolboxDrawer = ({ open, onClose, sshConnectionData }: ToolboxModalProps) 
   );
 };
 
-export default ToolboxDrawer;
+export default ZedDrawer;

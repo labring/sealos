@@ -13,7 +13,7 @@ import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
 import GPUItem from '@/components/GPUItem';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Separator } from '@sealos/shadcn-ui/separator';
-import { JetBrainsGuideData } from '@/components/IDEButton';
+import { SSHConnectionData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
@@ -26,7 +26,7 @@ const Basic = () => {
   const { devboxDetail } = useDevboxStore();
 
   const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false);
-  const [sshConfigData, setSshConfigData] = useState<JetBrainsGuideData | null>(null);
+  const [sshConfigData, setSshConfigData] = useState<SSHConnectionData | null>(null);
 
   const handleOneClickConfig = useCallback(async () => {
     const result = await getTemplateConfig(devboxDetail?.templateUid as string);
@@ -202,7 +202,7 @@ const Basic = () => {
 
       {!!sshConfigData && (
         <SshConnectDrawer
-          jetbrainsGuideData={sshConfigData}
+          sshConnectionData={sshConfigData}
           open={onOpenSsHConnect}
           onSuccess={() => {
             setOnOpenSsHConnect(false);
