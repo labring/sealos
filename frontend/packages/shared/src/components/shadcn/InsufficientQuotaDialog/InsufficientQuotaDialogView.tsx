@@ -12,6 +12,8 @@ export interface InsufficientQuotaDialogViewProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   onOpenCostCenter: () => void;
+  onOpenTickets: () => void;
+  subscriptionEnabled: boolean;
   showControls: boolean;
   showRequirements: WorkspaceQuotaItemType[];
   lang: SupportedLang;
@@ -25,6 +27,8 @@ export function InsufficientQuotaDialogView({
   onConfirm,
   showControls,
   onOpenCostCenter,
+  onOpenTickets,
+  subscriptionEnabled,
   showRequirements,
   lang,
   disallowClosing = false
@@ -146,16 +150,29 @@ export function InsufficientQuotaDialogView({
             </div>
           </div>
 
-          <p className="text-sm">
-            <span>{i18n.pleaseUpgradePlan.prefix}</span>
-            <span
-              className="cursor-pointer font-semibold text-blue-600 underline"
-              onClick={onOpenCostCenter}
-            >
-              {i18n.pleaseUpgradePlan.link}
-            </span>
-            <span>{i18n.pleaseUpgradePlan.suffix}</span>
-          </p>
+          {subscriptionEnabled ? (
+            <p className="text-sm">
+              <span>{i18n.pleaseUpgradePlan.prefix}</span>
+              <span
+                className="cursor-pointer font-semibold text-blue-600 underline"
+                onClick={onOpenCostCenter}
+              >
+                {i18n.pleaseUpgradePlan.link}
+              </span>
+              <span>{i18n.pleaseUpgradePlan.suffix}</span>
+            </p>
+          ) : (
+            <p className="text-sm">
+              <span>{i18n.pleaseSubmitTicket.prefix}</span>
+              <span
+                className="cursor-pointer font-semibold text-blue-600 underline"
+                onClick={onOpenTickets}
+              >
+                {i18n.pleaseSubmitTicket.link}
+              </span>
+              <span>{i18n.pleaseSubmitTicket.suffix}</span>
+            </p>
+          )}
         </div>
 
         {/* Footer */}

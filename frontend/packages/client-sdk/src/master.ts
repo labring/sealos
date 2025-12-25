@@ -15,6 +15,16 @@ class MasterSDK {
   private readonly eventBus = new Map<string, (e?: any) => any>();
   private readonly allowedOrigins: string[] = [];
   private readonly getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
+  private readonly getHostConfigApi?: () => Promise<{
+    cloud: {
+      domain: string;
+      port: string;
+      regionUid: string;
+    };
+    features: {
+      subscription: boolean;
+    };
+  }>;
 
   private readonly apiFun: {
     [key: string]: (data: AppSendMessageType, source: MessageEventSource, origin: string) => void;
@@ -23,12 +33,14 @@ class MasterSDK {
     [API_NAME.EVENT_BUS]: (data, source, origin) => this.runEventBus(data, source, origin),
     [API_NAME.GET_LANGUAGE]: (data, source, origin) => this.getLanguage(data, source, origin),
     [API_NAME.GET_WORKSPACE_QUOTA]: (data, source, origin) =>
-      this.getWorkspaceQuota(data, source, origin)
+      this.getWorkspaceQuota(data, source, origin),
+    [API_NAME.GET_HOST_CONFIG]: (data, source, origin) => this.getHostConfig(data, source, origin)
   };
 
   constructor(options: MasterOptions) {
     this.allowedOrigins = options.allowedOrigins;
     this.getWorkspaceQuotaApi = options.getWorkspaceQuotaApi;
+    this.getHostConfigApi = options.getHostConfigApi;
   }
 
   /**
@@ -315,6 +327,55 @@ class MasterSDK {
       });
     }
   }
+
+  private async getHostConfig(
+    data: AppSendMessageType,
+    source: MessageEventSource,
+    origin: string
+  ) {
+    // Verify origin is allowed
+    if (!this.isOriginAllowed(origin)) {
+      console.error('Unauthorized origin trying to access host config:', origin);
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'unauthorized origin'
+      });
+      return;
+    }
+
+    if (this.getHostConfigApi) {
+      try {
+        const config = await this.getHostConfigApi();
+        this.replyAppMessage({
+          source,
+          origin,
+          messageId: data.messageId,
+          success: true,
+          data: config
+        });
+      } catch (error) {
+        this.replyAppMessage({
+          source,
+          origin,
+          messageId: data.messageId,
+          success: false,
+          message: error instanceof Error ? error.message : 'failed to get host config'
+        });
+      }
+    } else {
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'getHostConfigApi is not configured'
+      });
+    }
+  }
+
   /**
    * Send message to all apps
    */

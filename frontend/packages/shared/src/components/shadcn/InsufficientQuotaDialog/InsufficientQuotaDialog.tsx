@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InsufficientQuotaDialogView } from './InsufficientQuotaDialogView';
 import { useQuotaStore } from '../../../store/quota';
@@ -17,6 +18,19 @@ export interface InsufficientQuotaDialogProps {
  */
 export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) {
   const quotaStore = useQuotaStore();
+  const [subscriptionEnabled, setSubscriptionEnabled] = useState(true);
+
+  useEffect(() => {
+    sealosApp
+      .getHostConfig()
+      .then((config) => {
+        setSubscriptionEnabled(config.features.subscription);
+      })
+      .catch(() => {
+        // Default to true if failed to get config
+        setSubscriptionEnabled(true);
+      });
+  }, []);
 
   const handleOpenCostcenter = () => {
     sealosApp.runEvents('openDesktopApp', {
@@ -32,9 +46,18 @@ export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) 
     });
   };
 
+  const openTicketsApp = () => {
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-workorder',
+      pathname: '/'
+    });
+  };
+
   return (
     <InsufficientQuotaDialogView
       onOpenCostCenter={handleOpenCostcenter}
+      onOpenTickets={openTicketsApp}
+      subscriptionEnabled={subscriptionEnabled}
       items={quotaStore.exceededQuotas}
       open={quotaStore.exceededPromptOpen}
       onOpenChange={quotaStore.setExceededPromptOpen}

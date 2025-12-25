@@ -26,6 +26,8 @@ export interface InsufficientQuotaDialogViewProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   onOpenCostCenter: () => void;
+  onOpenTickets: () => void;
+  subscriptionEnabled: boolean;
   showControls: boolean;
   showRequirements: WorkspaceQuotaItemType[];
   lang: SupportedLang;
@@ -39,6 +41,8 @@ export function InsufficientQuotaDialogView({
   onConfirm,
   showControls,
   onOpenCostCenter,
+  onOpenTickets,
+  subscriptionEnabled,
   showRequirements,
   lang,
   disallowClosing = false
@@ -122,20 +126,37 @@ export function InsufficientQuotaDialogView({
               </VStack>
             </Box>
 
-            <Text>
-              <Text as="span">{i18n.pleaseUpgradePlan.prefix}</Text>
-              <Text
-                as="span"
-                color="blue.600"
-                textDecoration="underline"
-                cursor="pointer"
-                fontWeight="semibold"
-                onClick={onOpenCostCenter}
-              >
-                {i18n.pleaseUpgradePlan.link}
+            {subscriptionEnabled ? (
+              <Text>
+                <Text as="span">{i18n.pleaseUpgradePlan.prefix}</Text>
+                <Text
+                  as="span"
+                  color="blue.600"
+                  textDecoration="underline"
+                  cursor="pointer"
+                  fontWeight="semibold"
+                  onClick={onOpenCostCenter}
+                >
+                  {i18n.pleaseUpgradePlan.link}
+                </Text>
+                <Text as="span">{i18n.pleaseUpgradePlan.suffix}</Text>
               </Text>
-              <Text as="span">{i18n.pleaseUpgradePlan.suffix}</Text>
-            </Text>
+            ) : (
+              <Text>
+                <Text as="span">{i18n.pleaseSubmitTicket.prefix}</Text>
+                <Text
+                  as="span"
+                  color="blue.600"
+                  textDecoration="underline"
+                  cursor="pointer"
+                  fontWeight="semibold"
+                  onClick={onOpenTickets}
+                >
+                  {i18n.pleaseSubmitTicket.link}
+                </Text>
+                <Text as="span">{i18n.pleaseSubmitTicket.suffix}</Text>
+              </Text>
+            )}
           </VStack>
         </ModalBody>
         {showControls && (

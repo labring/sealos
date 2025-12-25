@@ -114,6 +114,19 @@ class ClientSDK {
     return this.sendMessageToMaster(API_NAME.GET_WORKSPACE_QUOTA);
   }
 
+  getHostConfig(): Promise<{
+    cloud: {
+      domain: string;
+      port: string;
+      regionUid: string;
+    };
+    features: {
+      subscription: boolean;
+    };
+  }> {
+    return this.sendMessageToMaster(API_NAME.GET_HOST_CONFIG);
+  }
+
   /**
    * run master EventBus
    */

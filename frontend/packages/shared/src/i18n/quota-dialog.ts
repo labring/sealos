@@ -10,6 +10,11 @@ export type QuotaDialogI18nConfig = {
     link: string;
     suffix: string;
   };
+  pleaseSubmitTicket: {
+    prefix: string;
+    link: string;
+    suffix: string;
+  };
   quotaTotal: string;
   quotaInUse: string;
   quotaAvailable: string;
@@ -29,6 +34,11 @@ export const quotaDialogI18n: Record<SupportedLang, QuotaDialogI18nConfig> = {
       prefix: '请 ',
       link: '升级您的计划',
       suffix: ' 或删除使用上述资源的应用。'
+    },
+    pleaseSubmitTicket: {
+      prefix: '请',
+      link: '点击此处',
+      suffix: '提交工单以申请更多资源。'
     },
     quotaTotal: '总计: ',
     quotaInUse: '使用中: ',
@@ -52,6 +62,11 @@ export const quotaDialogI18n: Record<SupportedLang, QuotaDialogI18nConfig> = {
       prefix: 'Please ',
       link: 'upgrade your plan',
       suffix: ' or delete unused apps occupying resources.'
+    },
+    pleaseSubmitTicket: {
+      prefix: 'Please ',
+      link: 'click here',
+      suffix: ' to submit a ticket to request more resources.'
     },
     quotaTotal: 'Total: ',
     quotaInUse: 'In use: ',
