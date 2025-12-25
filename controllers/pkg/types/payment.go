@@ -37,6 +37,7 @@ type PaymentRaw struct {
 type StripePay struct {
 	SubscriptionID string `json:"subscriptionId"`
 	CustomerID     string `json:"customerId"`
+	InvoiceID      string `json:"invoiceId"`
 	SessionID      string `json:"sessionId"`
 }
 

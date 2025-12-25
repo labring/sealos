@@ -15,6 +15,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -59,12 +60,17 @@ func SendVms(phone, template, numberPollNo string, sendTime time.Time, forbidTim
 }
 
 // SendVmsMultiple sends VMS to multiple phone numbers with the same template and settings
-func SendVmsMultiple(phones []string, template, numberPollNo string, sendTime time.Time, forbidTimes []string) error {
+func SendVmsMultiple(
+	phones []string,
+	template, numberPollNo string,
+	sendTime time.Time,
+	forbidTimes []string,
+) error {
 	if len(phones) == 0 {
-		return fmt.Errorf("phone numbers cannot be empty")
+		return errors.New("phone numbers cannot be empty")
 	}
 
-	var paramList []*vms.SingleParam
+	paramList := make([]*vms.SingleParam, 0, len(phones))
 	for _, phone := range phones {
 		if phone == "" {
 			continue
@@ -92,7 +98,7 @@ func SendVmsMultiple(phones []string, template, numberPollNo string, sendTime ti
 	}
 
 	if len(paramList) == 0 {
-		return fmt.Errorf("no valid phone numbers provided")
+		return errors.New("no valid phone numbers provided")
 	}
 
 	req := &vms.SingleAppendRequest{

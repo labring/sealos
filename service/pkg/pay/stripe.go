@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"gorm.io/gorm"
 
 	"github.com/google/uuid"
@@ -22,8 +24,10 @@ import (
 	portalsession "github.com/stripe/stripe-go/v82/billingportal/session"
 	checkoutsession "github.com/stripe/stripe-go/v82/checkout/session"
 	"github.com/stripe/stripe-go/v82/customer"
+	"github.com/stripe/stripe-go/v82/paymentmethod"
 	"github.com/stripe/stripe-go/v82/price"
 	"github.com/stripe/stripe-go/v82/product"
+	"github.com/stripe/stripe-go/v82/promotioncode"
 	"github.com/stripe/stripe-go/v82/subscription"
 	"github.com/stripe/stripe-go/v82/webhook"
 )
@@ -71,6 +75,11 @@ func buildURLs(s *StripeService, transaction *types.WorkspaceSubscriptionTransac
 
 // CreateWorkspaceSubscriptionSession creates a Stripe Checkout Session following official pattern
 func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction) (*StripeResponse, error) {
+	return s.CreateWorkspaceSubscriptionSessionWithPromotion(paymentReq, priceID, transaction, "")
+}
+
+// CreateWorkspaceSubscriptionSessionWithPromotion creates a Stripe Checkout Session with optional promotion code
+func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(paymentReq PaymentRequest, priceID string, transaction *types.WorkspaceSubscriptionTransaction, promotionCode string) (*StripeResponse, error) {
 	// 构造成功与取消回调URL，避免硬编码斜杠问题
 	// Assuming workspaceID and transaction.PayID are your custom variables
 	successURL, cancelURL, err := buildURLs(s, transaction)
@@ -78,7 +87,14 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		return nil, fmt.Errorf("failed to build return URLs: %v", err)
 	}
 	// Create checkout session following official example pattern
-	anchorTime := time.Now().AddDate(0, 0, 30).Unix()
+	//var anchorTime int64
+
+	// For upgrades, start new billing cycle from now. For other operations, use 30 days later.
+	//if transaction.Operator == types.SubscriptionTransactionTypeUpgraded {
+	//	anchorTime = time.Now().UTC().Unix()
+	//} else {
+	//	anchorTime = time.Now().UTC().AddDate(0, 0, 30).Unix()
+	//}
 
 	extra := &stripe.ExtraValues{
 		Values: url.Values{},
@@ -104,8 +120,8 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 				"user_uid":              paymentReq.UserUID.String(),
 				"transaction_id":        transaction.ID.String(),
 			},
-			BillingCycleAnchor: stripe.Int64(anchorTime),
-			ProrationBehavior:  stripe.String("create_prorations"),
+			// BillingCycleAnchor: stripe.Int64(anchorTime),
+			ProrationBehavior: stripe.String("create_prorations"),
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
@@ -120,14 +136,31 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(paymentReq PaymentReq
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
 			Enabled: stripe.Bool(false),
 		},
-		ExpiresAt:           stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
-		AllowPromotionCodes: stripe.Bool(true),
+		ExpiresAt: stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
+	}
+	checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(time.Now().UTC().AddDate(0, 0, 30).Unix())
+
+	// Add promotion code if provided (assume validation already done at higher level)
+	if promotionCode != "" {
+		// Get the promotion code to retrieve its ID
+		pc, err := s.GetPromotionCode(promotionCode)
+		if err != nil {
+			return nil, fmt.Errorf("promotion code not found: %v", err)
+		}
+
+		checkoutParams.Discounts = []*stripe.CheckoutSessionDiscountParams{
+			{
+				PromotionCode: stripe.String(pc.ID),
+			},
+		}
+	} else {
+		checkoutParams.AllowPromotionCodes = stripe.Bool(true)
 	}
 
 	// Create session using official SDK
 	sess, err := checkoutsession.New(checkoutParams)
 	if err != nil {
-		return nil, fmt.Errorf("stripe.NewCheckoutSession: %v", err)
+		return nil, fmt.Errorf("failed to create new checkout session: %v", err)
 	}
 
 	return &StripeResponse{
@@ -155,7 +188,7 @@ func (s *StripeService) CancelWorkspaceSubscriptionSession(sessionID string) err
 	if err != nil {
 		return fmt.Errorf("checkoutsession.Get: %v", err)
 	}
-	if sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusUnpaid {
+	if sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusUnpaid && sess.Status == stripe.CheckoutSessionStatusOpen {
 		_, err := checkoutsession.Expire(sessionID, nil)
 		if err != nil {
 			return fmt.Errorf("checkoutsession.Cancel: %v", err)
@@ -223,7 +256,8 @@ func (s *StripeService) UpdatePlan(subscriptionID, newPriceID, newPlanName strin
 			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
 			"last_payment_id":       payReqID,
 		},
-		ProrationBehavior: stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		BillingCycleAnchorNow: stripe.Bool(true),
+		ProrationBehavior:     stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
 		//PaymentBehavior:   stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
 	}
 
@@ -277,6 +311,11 @@ func (s *StripeService) DowngradePlan(subscriptionID, newPriceID, newPlanName st
 }
 
 func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string) (int64, error) {
+	return s.UpdatePlanPricePreviewWithPromotion(subscriptionID, newPriceID, "")
+}
+
+// UpdatePlanPricePreviewWithPromotion previews subscription price changes with optional promotion code
+func (s *StripeService) UpdatePlanPricePreviewWithPromotion(subscriptionID, newPriceID, promotionCode string) (int64, error) {
 	// Retrieve the current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
@@ -287,7 +326,7 @@ func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string
 		return 0, fmt.Errorf("subscription has no items to update")
 	}
 
-	inv, err := s.UpdatePreview(&stripe.InvoiceCreatePreviewParams{
+	params := &stripe.InvoiceCreatePreviewParams{
 		Subscription: &subscriptionID,
 		SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
 			Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{
@@ -296,24 +335,43 @@ func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string
 					Price: stripe.String(newPriceID),
 				},
 			},
-			ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
+			//ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
 			ProrationBehavior:     stripe.String("create_prorations"),
 			BillingCycleAnchorNow: stripe.Bool(true),
+			// Ensure billing cycle anchors to now for upgrade
+			//BillingCycleAnchor: stripe.Int64(time.Now().UTC().Unix()),
 		},
-	})
+	}
+
+	// Add promotion code if provided (assume validation already done at higher level)
+	if promotionCode != "" {
+		// Get the promotion code to retrieve its ID
+		pc, err := s.GetPromotionCode(promotionCode)
+		if err != nil {
+			return 0, fmt.Errorf("promotion code not found: %v", err)
+		}
+
+		params.Discounts = []*stripe.InvoiceCreatePreviewDiscountParams{
+			{
+				PromotionCode: stripe.String(pc.ID),
+			},
+		}
+	}
+
+	inv, err := s.UpdatePreview(params)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get Stripe invoice preview: %v", err)
 	}
 	// Find the first positive line item amount
-	firstAmount := int64(0)
-	for _, line := range inv.Lines.Data {
-		firstAmount += line.Amount
-		if line.Amount > 0 {
-			return firstAmount, nil
-		}
-	}
+	//firstAmount := int64(0)
+	//for _, line := range inv.Lines.Data {
+	//	firstAmount += line.Amount
+	//	if line.Amount > 0 {
+	//		return firstAmount, nil
+	//	}
+	//}
 
-	return 0, fmt.Errorf("not found upgrade amount")
+	return inv.Total, nil
 }
 
 // getOrCreatePrice creates or retrieves a price using lookup key pattern
@@ -433,6 +491,62 @@ func (s *StripeService) CreatePortalSession(customerID string) (*stripe.BillingP
 	return ps, nil
 }
 
+// CreateSubscriptionPortalSession creates a customer portal session for managing a specific subscription
+func (s *StripeService) CreateSubscriptionPortalSession(customerID, subscriptionID string, redirectUrl *string) (*stripe.BillingPortalSession, error) {
+	// Create a custom request to filter the portal session to specific subscriptions
+	// We'll use flow_data to restrict the portal to payment method updates only
+	if redirectUrl == nil {
+		logrus.Error("redirectUrl is required")
+		redirectUrl = stripe.String(s.Domain + "/?openapp=system-costcenter")
+	}
+	params := &stripe.BillingPortalSessionParams{
+		Customer: stripe.String(customerID),
+		// ReturnURL: stripe.String(s.Domain + "/?openapp=system-costcenter"),
+		FlowData: &stripe.BillingPortalSessionFlowDataParams{
+			AfterCompletion: &stripe.BillingPortalSessionFlowDataAfterCompletionParams{
+				Type: stripe.String("redirect"),
+				Redirect: &stripe.BillingPortalSessionFlowDataAfterCompletionRedirectParams{
+					ReturnURL: redirectUrl,
+				},
+			},
+			Type: stripe.String("payment_method_update"),
+		},
+	}
+
+	ps, err := portalsession.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("portalsession.New: %v", err)
+	}
+
+	return ps, nil
+}
+
+func (s *StripeService) CreateSubscriptionSetupIntent(customerID, subscriptionID string, redirectUrl *string) (*stripe.CheckoutSession, error) {
+	if redirectUrl == nil {
+		redirectUrl = stripe.String(s.Domain + "/?openapp=system-costcenter")
+	}
+	// Missing required param: currency.\",\"param\":\"currency\",
+	params := &stripe.CheckoutSessionParams{
+		Mode:     stripe.String("setup"),
+		Currency: stripe.String("USD"),
+		Customer: stripe.String(customerID),
+		//PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		SetupIntentData: &stripe.CheckoutSessionSetupIntentDataParams{
+			Metadata: map[string]string{
+				"subscription_id": subscriptionID, // 传给 webhook 用
+				"customer_id":     customerID,     // 添加 customer_id 到 metadata，用于 webhook 处理
+			},
+		},
+		SuccessURL: redirectUrl,
+		CancelURL:  redirectUrl,
+	}
+	cs, err := checkoutsession.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("checkoutsession.New: %v", err)
+	}
+	return cs, nil
+}
+
 // CreateCustomer creates a new Stripe customer
 //func (s *StripeService) CreateCustomer(userUID, email string) (*stripe.Customer, error) {
 //	params := &stripe.CustomerParams{
@@ -543,6 +657,15 @@ func (s *StripeService) GetPrice(priceID string) (*stripe.Price, error) {
 	return p, nil
 }
 
+// GetInvoice retrieves a Stripe invoice by ID
+func (s *StripeService) GetInvoice(invoiceID string) (*stripe.Invoice, error) {
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("invoice.Get: %v", err)
+	}
+	return inv, nil
+}
+
 // ListPrices lists Stripe prices with optional filters
 func (s *StripeService) ListPrices(activeOnly bool) ([]*stripe.Price, error) {
 	params := &stripe.PriceListParams{}
@@ -614,6 +737,14 @@ func (s *StripeService) ParseWebhookEventData(event *stripe.Event) (interface{},
 		}
 		return &in, nil
 
+	case "setup_intent.succeeded":
+		var si stripe.SetupIntent
+		err := json.Unmarshal(event.Data.Raw, &si)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing setup intent: %v", err)
+		}
+		return &si, nil
+
 	default:
 		return nil, fmt.Errorf("unhandled event type: %s", event.Type)
 	}
@@ -655,6 +786,406 @@ func (s *StripeService) GetCustomer(userUID, email string) (*stripe.Customer, er
 
 // Global StripeService instance
 var StripeServiceInstance *StripeService
+
+// GetCustomerPaymentMethods retrieves all payment methods for a customer
+func (s *StripeService) GetCustomerPaymentMethods(customerID string) ([]*stripe.PaymentMethod, error) {
+	params := &stripe.PaymentMethodListParams{
+		Customer: stripe.String(customerID),
+		Type:     stripe.String("card"),
+	}
+
+	var paymentMethods []*stripe.PaymentMethod
+	iter := paymentmethod.List(params)
+	for iter.Next() {
+		paymentMethods = append(paymentMethods, iter.PaymentMethod())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("paymentmethod.List: %v", err)
+	}
+
+	return paymentMethods, nil
+}
+
+// GetCustomerInvoices retrieves all invoices for a customer
+func (s *StripeService) GetCustomerInvoices(customerID string, limit int64) ([]*stripe.Invoice, error) {
+	params := &stripe.InvoiceListParams{
+		Customer: stripe.String(customerID),
+	}
+	if limit > 0 {
+		params.Limit = stripe.Int64(limit)
+	}
+
+	var invoices []*stripe.Invoice
+	iter := invoice.List(params)
+	for iter.Next() {
+		invoices = append(invoices, iter.Invoice())
+	}
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("invoice.List: %v", err)
+	}
+
+	return invoices, nil
+}
+
+// GetPromotionCode validates and retrieves a promotion code from Stripe
+func (s *StripeService) GetPromotionCode(code string) (*stripe.PromotionCode, error) {
+	iter := promotioncode.List(&stripe.PromotionCodeListParams{
+		Code: stripe.String(code),
+	})
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("promotioncode.List: %v", err)
+	}
+	var pc *stripe.PromotionCode
+	for iter.Next() {
+		pc = iter.PromotionCode()
+	}
+	if pc == nil {
+		return nil, fmt.Errorf("promotioncode not found for code: %s", code)
+	}
+	return pc, nil
+}
+
+// ValidatePromotionCode validates a promotion code and checks if it's active and within validity period
+func (s *StripeService) ValidatePromotionCode(code string) (*stripe.PromotionCode, error) {
+	pc, err := s.GetPromotionCode(code)
+	if err != nil {
+		return nil, fmt.Errorf("promotion code not found: %v", err)
+	}
+
+	// Check if promotion code is active
+	if pc.Active != true {
+		return nil, fmt.Errorf("promotion code is not active")
+	}
+
+	// Check if promotion code has expired (if expires_at is set)
+	if pc.ExpiresAt != 0 && pc.ExpiresAt < time.Now().Unix() {
+		return nil, fmt.Errorf("promotion code has expired")
+	}
+
+	// Check if promotion code has a maximum redemption limit and if it's reached
+	if pc.MaxRedemptions != 0 && pc.TimesRedeemed >= pc.MaxRedemptions {
+		return nil, fmt.Errorf("promotion code has reached maximum redemption limit")
+	}
+
+	return pc, nil
+}
+
+// CancelUnpaidUpgrade voids the unpaid invoice and rolls back the subscription to its previous state
+func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceID string) error {
+	logrus.Infof("Starting CancelUnpaidUpgrade for subscription %s, invoice %s", subscriptionID, invoiceID)
+
+	// Step 1: Retrieve the invoice to get metadata
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get invoice %s: %v", invoiceID, err)
+	}
+
+	// Step 2: Check invoice status before proceeding
+	if inv.Status != "open" && inv.Status != "draft" {
+		logrus.Warnf("Invoice %s is not in open/draft status (current: %s), skipping cancellation", invoiceID, inv.Status)
+		return nil
+	}
+
+	// Extract metadata from invoice
+	oldPlanName := inv.Metadata["old_plan_name"]
+	oldPriceIDFromMetadata := inv.Metadata["old_price_id"]
+	upgradePaymentID := inv.Metadata["upgrade_payment_id"]
+
+	// Use oldPriceIDFromMetadata if available, otherwise use the parameter
+	if oldPriceIDFromMetadata != "" {
+		oldPriceID = oldPriceIDFromMetadata
+	}
+
+	// Step 3: Retrieve the subscription to get the old item ID and other details
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return fmt.Errorf("subscription.Get: %v", err)
+	}
+	if len(sub.Items.Data) == 0 {
+		return fmt.Errorf("subscription has no items to rollback")
+	}
+
+	// Assume the last item is the one to rollback (based on your upgrade logic)
+	oldItemID := sub.Items.Data[len(sub.Items.Data)-1].ID
+
+	// Step 4: Void the unpaid invoice
+	voidParams := &stripe.InvoiceVoidInvoiceParams{}
+	_, err = invoice.VoidInvoice(invoiceID, voidParams)
+	if err != nil {
+		// If invoice is already voided or paid, log and continue
+		if strings.Contains(err.Error(), "already") || strings.Contains(err.Error(), "paid") {
+			logrus.Warnf("Invoice %s may already been processed: %v", invoiceID, err)
+		} else {
+			return fmt.Errorf("failed to void invoice %s: %v", invoiceID, err)
+		}
+	}
+	logrus.Infof("Voided unpaid invoice %s for subscription %s", invoiceID, subscriptionID)
+
+	// Step 5: Roll back the subscription to the old price without proration
+	rollbackParams := &stripe.SubscriptionParams{
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				ID:    stripe.String(oldItemID),
+				Price: stripe.String(oldPriceID),
+			},
+		},
+		ProrationBehavior: stripe.String("none"), // No proration invoice generated
+		Metadata: map[string]string{
+			"upgrade_in_progress": "false",            // Clear upgrade flag
+			"upgrade_payment_id":  "",                 // Clear upgrade payment ID
+			"cancellation_reason": "upgrade_canceled", // Track cancellation reason
+			"canceled_at":         fmt.Sprintf("%d", time.Now().Unix()),
+		},
+	}
+
+	// Optional: Restore the old default payment method if saved in metadata
+	if oldPaymentMethod, ok := sub.Metadata["old_payment_method"]; ok && oldPaymentMethod != "" {
+		rollbackParams.DefaultPaymentMethod = stripe.String(oldPaymentMethod)
+		rollbackParams.Metadata["old_payment_method"] = "" // Clear it
+	}
+
+	updatedSub, err := subscription.Update(subscriptionID, rollbackParams)
+	if err != nil {
+		// If subscription update fails because it's already in the desired state, log and continue
+		if strings.Contains(err.Error(), "no changes") || strings.Contains(err.Error(), "already") {
+			logrus.Warnf("Subscription %s may already in correct state: %v", subscriptionID, err)
+		} else {
+			return fmt.Errorf("failed to rollback subscription %s: %v", subscriptionID, err)
+		}
+	} else {
+		logrus.Infof("Successfully rolled back subscription %s to old price %s, plan %s", subscriptionID, oldPriceID, oldPlanName)
+	}
+
+	// Step 6: Clear any pending payment intents related to this upgrade
+	if upgradePaymentID != "" {
+		logrus.Infof("Clearing upgrade payment markers for payment_id: %s", upgradePaymentID)
+	}
+
+	// Step 7: Log successful completion
+	if updatedSub != nil {
+		logrus.Infof("CancelUnpaidUpgrade completed successfully for subscription %s, current plan: %s",
+			subscriptionID, updatedSub.Metadata["plan_name"])
+	}
+
+	return nil
+}
+
+// GetUnpaidUpgradeInvoice checks if there's an existing unpaid upgrade invoice for the subscription
+func (s *StripeService) GetUnpaidUpgradeInvoice(subscriptionID string) (*stripe.Invoice, error) {
+	// List invoices for the subscription
+	params := &stripe.InvoiceListParams{
+		Subscription: stripe.String(subscriptionID),
+		Status:       stripe.String("open"), // Only look for open invoices
+	}
+	params.Limit = stripe.Int64(10) // Limit to recent invoices
+
+	iter := invoice.List(params)
+	for iter.Next() {
+		inv := iter.Invoice()
+
+		// Check if this is an upgrade invoice
+		if inv.Metadata["upgrade_in_progress"] == "true" &&
+			inv.Metadata["subscription_operator"] == string(types.SubscriptionTransactionTypeUpgraded) {
+			return inv, nil
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("failed to list invoices: %v", err)
+	}
+
+	return nil, nil
+}
+
+// IsSameUpgradeRequest checks if the new upgrade request is the same as an existing unpaid upgrade
+func (s *StripeService) IsSameUpgradeRequest(existingInvoice *stripe.Invoice, newPlanName, promotionCode string) bool {
+	if existingInvoice == nil {
+		return false
+	}
+
+	// Check if the target plan is the same
+	existingPlanName := existingInvoice.Metadata["new_plan_name"]
+	if existingPlanName != newPlanName {
+		return false
+	}
+
+	// Check promotion codes (both empty or both same)
+	existingPromotionCode := existingInvoice.Metadata["promotion_code"]
+	if existingPromotionCode == "" && len(existingInvoice.Discounts) > 0 && existingInvoice.Discounts[0].PromotionCode != nil {
+		existingPromotionCode = existingInvoice.Discounts[0].PromotionCode.Code
+	}
+
+	// Normalize empty strings for comparison
+	if existingPromotionCode == "" {
+		existingPromotionCode = "none"
+	}
+	if promotionCode == "" {
+		promotionCode = "none"
+	}
+
+	return existingPromotionCode == promotionCode
+}
+
+// FinalizeUpgradeInvoice updates metadata after successful upgrade payment
+func (s *StripeService) FinalizeUpgradeInvoice(invoiceID string) error {
+	// Get the invoice
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get invoice %s: %v", invoiceID, err)
+	}
+
+	// Update invoice metadata to mark upgrade as completed
+	_, err = invoice.Update(invoiceID, &stripe.InvoiceParams{
+		Metadata: map[string]string{
+			"upgrade_in_progress":  "false", // Mark upgrade as completed
+			"upgrade_completed_at": fmt.Sprintf("%d", time.Now().Unix()),
+			"finalization_reason":  "payment_successful",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update invoice metadata after payment: %v", err)
+	}
+
+	// Get subscription ID from invoice metadata
+	subscriptionID := inv.Metadata["subscription_id"]
+
+	// Also update subscription metadata if subscription ID is available
+	if subscriptionID != "" {
+		_, err = subscription.Update(subscriptionID, &stripe.SubscriptionParams{
+			Metadata: map[string]string{
+				"upgrade_in_progress":    "false",
+				"upgrade_payment_id":     "",
+				"last_upgrade_completed": fmt.Sprintf("%d", time.Now().Unix()),
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update invoice subscription metadata after payment: %v", err)
+		} else {
+			logrus.Infof("Successfully finalized upgrade invoice %s for subscription %s", invoiceID, subscriptionID)
+		}
+	} else {
+		logrus.Infof("Successfully finalized upgrade invoice %s (could not determine subscription ID)", invoiceID)
+	}
+	return nil
+}
+
+// CreateUpgradeInvoice creates an invoice for subscription upgrade using UpdatePlan with incomplete payment
+func (s *StripeService) CreateUpgradeInvoice(subscriptionID, newPriceID, newPlanName, payReqID, promotionCode string) (string, string, error) {
+	// Retrieve the current subscription
+	sub, err := subscription.Get(subscriptionID, nil)
+	if err != nil {
+		return "", "", fmt.Errorf("subscription.Get: %v", err)
+	}
+	if len(sub.Items.Data) == 0 {
+		return "", "", fmt.Errorf("subscription has no items to update")
+	}
+
+	// Store old price ID for potential rollback
+	oldPriceID := sub.Items.Data[len(sub.Items.Data)-1].Price.ID
+	oldPlanName := sub.Metadata["plan_name"]
+
+	// Update the subscription with incomplete payment behavior to create invoice
+	// For upgrades, we don't set BillingCycleAnchorNow to avoid billing cycle issues
+	params := &stripe.SubscriptionParams{
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				ID:    stripe.String(sub.Items.Data[len(sub.Items.Data)-1].ID),
+				Price: stripe.String(newPriceID),
+			},
+		},
+		BillingCycleAnchorNow: stripe.Bool(true),
+		ProrationBehavior:     stripe.String(stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice),
+		PaymentBehavior:       stripe.String("default_incomplete"),
+		Expand:                []*string{stripe.String("latest_invoice.payment_intent")},
+		Metadata: map[string]string{
+			"upgrade_payment_id":  payReqID, // Track this specific upgrade payment
+			"old_plan_name":       oldPlanName,
+			"old_price_id":        oldPriceID,
+			"upgrade_in_progress": "true", // Flag to indicate upgrade in progress
+		},
+	}
+	invParams := &stripe.InvoiceParams{
+		Metadata: map[string]string{
+			"payment_id":            payReqID,
+			"customer_id":           sub.Customer.ID,
+			"subscription_id":       subscriptionID, // Add subscription ID for easier retrieval
+			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
+			"new_plan_name":         newPlanName,
+			"plan_name":             newPlanName,
+			"old_plan_name":         oldPlanName,
+			"old_price_id":          oldPriceID,
+			"new_price_id":          newPriceID,
+			"user_uid":              sub.Metadata["user_uid"],
+			"workspace":             sub.Metadata["workspace"],
+			"region_domain":         sub.Metadata["region_domain"],
+			"upgrade_payment_id":    payReqID, // Track this specific upgrade payment
+			"upgrade_in_progress":   "true",   // Flag to indicate upgrade in progress
+		},
+	}
+
+	// Add promotion code if provided (assume validation already done at higher level)
+	if promotionCode != "" {
+		// Get the promotion code to retrieve its ID
+		pc, err := s.GetPromotionCode(promotionCode)
+		if err != nil {
+			return "", "", fmt.Errorf("promotion code not found: %v", err)
+		}
+
+		params.Discounts = []*stripe.SubscriptionDiscountParams{
+			{
+				PromotionCode: stripe.String(pc.ID),
+			},
+		}
+		invParams.AddMetadata("promotion_code", promotionCode)
+	}
+
+	// Update the subscription
+	updatedSub, err := subscription.Update(subscriptionID, params)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to update subscription for upgrade: %v", err)
+	}
+
+	// Get the latest invoice from the updated subscription
+	if updatedSub.LatestInvoice == nil {
+		return "", "", fmt.Errorf("no invoice found after subscription update")
+	}
+
+	invoiceID := updatedSub.LatestInvoice.ID
+	invoiceURL := ""
+
+	// Get the invoice to retrieve the hosted invoice URL
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get invoice details: %v", err)
+	}
+
+	// Update invoice metadata to include all necessary metadata for upgrade subscription handling
+	_, err = invoice.Update(invoiceID, invParams)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to update invoice metadata for upgrade: %v", err)
+	}
+
+	// Use the invoice's hosted URL if available, otherwise construct dashboard URL
+	if inv.HostedInvoiceURL != "" {
+		invoiceURL = inv.HostedInvoiceURL
+	} else {
+		invoiceURL = fmt.Sprintf("https://dashboard.stripe.com/invoices/%s", invoiceID)
+	}
+
+	logrus.Infof("Created upgrade invoice %s for subscription %s, amount: %d cents, old_plan: %s, new_plan: %s",
+		invoiceID, subscriptionID, inv.AmountDue, oldPlanName, newPlanName)
+
+	return invoiceURL, invoiceID, nil
+}
+
+// GetPaymentMethod retrieves a specific payment method by ID
+func (s *StripeService) GetPaymentMethod(paymentMethodID string) (*stripe.PaymentMethod, error) {
+	pm, err := paymentmethod.Get(paymentMethodID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("paymentmethod.Get: %v", err)
+	}
+	return pm, nil
+}
 
 // InitStripeService initializes the global Stripe service
 func InitStripeService() {

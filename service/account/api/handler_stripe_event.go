@@ -16,6 +16,7 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v82"
+	stripesubscription "github.com/stripe/stripe-go/v82/subscription"
 	"gorm.io/gorm"
 )
 
@@ -35,8 +36,18 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 	}
 	logrus.Infof("Processing invoice payment for subscription: %s", subscription.ID)
 
-	// 3. extract and verify the metadata
-	meta, err := extractAndValidateMetadata(subscription)
+	// 3. For 100% discount case, wait for invoice metadata to be set
+	// This handles the race condition where invoice.paid webhook arrives
+	// before CreateUpgradeInvoice has a chance to update invoice metadata
+	if invoice.AmountPaid == 0 && invoice.BillingReason == "subscription_update" {
+		invoice, err = waitForInvoiceMetadata(invoice.ID)
+		if err != nil {
+			return fmt.Errorf("failed to wait for invoice metadata: %w", err)
+		}
+	}
+
+	// 4. extract and verify the metadata
+	meta, err := extractAndValidateMetadata(invoice, subscription)
 	if err != nil {
 		return err
 	}
@@ -45,19 +56,19 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 		return fmt.Errorf("invalid user UID in metadata: %w", err)
 	}
 
-	// 4. obtain the notification recipient
+	// 5. obtain the notification recipient
 	nr, err := getNotificationRecipient(userUID)
 	if err != nil {
 		dao.Logger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
 	}
 	defer dao.UserContactProvider.RemoveUserContact(userUID)
 
-	// 5. handle it according to the billing reason branch
-	switch invoice.BillingReason {
-	case "subscription_update":
+	// 6. handle it according to the billing reason branch
+	switch {
+	case invoice.BillingReason == "subscription_update" && meta.Operator != types.SubscriptionTransactionTypeCreated:
 		meta.PaymentID = "" // 清空 PaymentID，避免混淆
 		return handleSubscriptionUpdate(invoice, subscription, meta, userUID, nr)
-	case "subscription_create", "subscription_cycle":
+	case invoice.BillingReason == "subscription_create" || invoice.BillingReason == "subscription_cycle" || meta.Operator == types.SubscriptionTransactionTypeCreated:
 		return handleSubscriptionCreateOrRenew(
 			invoice,
 			subscription,
@@ -67,7 +78,7 @@ func handleWorkspaceSubscriptionInvoicePaid(event *stripe.Event) error {
 			invoice.BillingReason == "subscription_create",
 		)
 	default:
-		return fmt.Errorf("unsupported billing reason: %s", invoice.BillingReason)
+		return fmt.Errorf("unsupported billing reason: %s, meta: %#+v", invoice.BillingReason, meta)
 	}
 }
 
@@ -96,6 +107,76 @@ func parseAndValidateEvent(event *stripe.Event) (*stripe.Invoice, *stripe.Subscr
 	return invoice, subscription, nil
 }
 
+// waitForInvoiceMetadata polls the invoice until metadata is set or timeout occurs
+// This handles the race condition in 100% discount cases where invoice.paid webhook
+// arrives before CreateUpgradeInvoice updates the invoice metadata
+func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
+	const (
+		maxAttempts  = 10                     // Maximum number of polling attempts
+		initialDelay = 100 * time.Millisecond // Initial delay between polls
+		maxDelay     = 500 * time.Millisecond // Maximum delay between polls
+		timeout      = 5 * time.Second        // Overall timeout
+	)
+
+	startTime := time.Now()
+	delay := initialDelay
+
+	logrus.Infof("Waiting for invoice metadata (100%% discount case): invoice=%s", invoiceID)
+
+	for attempt := range maxAttempts {
+		// Check timeout
+		if time.Since(startTime) > timeout {
+			return nil, fmt.Errorf("timeout waiting for invoice metadata after %v", timeout)
+		}
+
+		// Fetch fresh invoice from Stripe
+		inv, err := services.StripeServiceInstance.GetInvoice(invoiceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get invoice: %w", err)
+		}
+
+		// Check if critical metadata fields are present
+		hasMetadata := inv.Metadata["subscription_operator"] != "" &&
+			inv.Metadata["new_plan_name"] != "" &&
+			inv.Metadata["payment_id"] != ""
+
+		if hasMetadata {
+			logrus.Infof(
+				"Invoice metadata found after %d attempts (invoice=%s)",
+				attempt+1,
+				invoiceID,
+			)
+			return inv, nil
+		}
+
+		// Log waiting status
+		logrus.Debugf(
+			"Waiting for invoice metadata, attempt %d/%d (invoice=%s, has_operator=%v, has_plan=%v, has_payment=%v)",
+			attempt+1,
+			maxAttempts,
+			invoiceID,
+			inv.Metadata["subscription_operator"] != "",
+			inv.Metadata["new_plan_name"] != "",
+			inv.Metadata["payment_id"] != "",
+		)
+
+		// Wait before next poll with exponential backoff
+		time.Sleep(delay)
+
+		// Increase delay for next attempt (exponential backoff)
+		delay = time.Duration(float64(delay) * 1.5)
+		if delay > maxDelay {
+			delay = maxDelay
+		}
+	}
+
+	return nil, fmt.Errorf(
+		"invoice metadata not set after %d attempts (invoice=%s)",
+		maxAttempts,
+		invoiceID,
+	)
+}
+
 // isLocalEvent
 func isLocalEvent(subscription *stripe.Subscription) (bool, error) {
 	isLocal, err := checkIsLocalEvent(subscription) // 原函数
@@ -105,16 +186,46 @@ func isLocalEvent(subscription *stripe.Subscription) (bool, error) {
 	return isLocal, nil
 }
 
-// extractAndValidateMetadata
-func extractAndValidateMetadata(subscription *stripe.Subscription) (*subscriptionMetadata, error) {
-	meta := &subscriptionMetadata{
-		Workspace:     subscription.Metadata["workspace"],
-		RegionDomain:  subscription.Metadata["region_domain"],
-		UserUID:       subscription.Metadata["user_uid"],
-		NewPlanName:   subscription.Metadata["plan_name"],
-		PaymentID:     subscription.Metadata["payment_id"],
-		Operator:      types.SubscriptionOperator(subscription.Metadata["subscription_operator"]),
-		TransactionID: subscription.Metadata["transaction_id"],
+// extractAndValidateMetadata 从 invoice 和 subscription 获取元数据
+func extractAndValidateMetadata(
+	invoice *stripe.Invoice,
+	subscription *stripe.Subscription,
+) (*subscriptionMetadata, error) {
+	meta := &subscriptionMetadata{}
+
+	// 先从 subscription 获取基本 metadata
+	meta.Workspace = subscription.Metadata["workspace"]
+	meta.RegionDomain = subscription.Metadata["region_domain"]
+	meta.UserUID = subscription.Metadata["user_uid"]
+	meta.NewPlanName = subscription.Metadata["plan_name"]
+	meta.PaymentID = subscription.Metadata["payment_id"]
+	meta.Operator = types.SubscriptionOperator(subscription.Metadata["subscription_operator"])
+	meta.TransactionID = subscription.Metadata["transaction_id"]
+
+	// 1. When creating a subscription, the metadata is on the Subscription
+	// 2. when upgrading the metadata is on the invoice
+	if invoice.Metadata["workspace"] != "" {
+		meta.Workspace = invoice.Metadata["workspace"]
+	}
+	if invoice.Metadata["region_domain"] != "" {
+		meta.RegionDomain = invoice.Metadata["region_domain"]
+	}
+	if invoice.Metadata["user_uid"] != "" {
+		meta.UserUID = invoice.Metadata["user_uid"]
+	}
+	if invoice.Metadata["new_plan_name"] != "" {
+		meta.NewPlanName = invoice.Metadata["new_plan_name"]
+	} else if invoice.Metadata["plan_name"] != "" {
+		meta.NewPlanName = invoice.Metadata["plan_name"]
+	}
+	if invoice.Metadata["payment_id"] != "" {
+		meta.PaymentID = invoice.Metadata["payment_id"]
+	}
+	if invoice.Metadata["subscription_operator"] != "" {
+		meta.Operator = types.SubscriptionOperator(invoice.Metadata["subscription_operator"])
+	}
+	if invoice.Metadata["transaction_id"] != "" {
+		meta.TransactionID = invoice.Metadata["transaction_id"]
 	}
 
 	customer, err := ensureCustomerMetadata(subscription, meta.UserUID)
@@ -126,12 +237,48 @@ func extractAndValidateMetadata(subscription *stripe.Subscription) (*subscriptio
 	if meta.Workspace == "" || meta.RegionDomain == "" || meta.UserUID == "" ||
 		meta.NewPlanName == "" {
 		return nil, fmt.Errorf(
-			"missing required metadata in subscription: %v",
-			subscription.Metadata,
+			"missing required metadata in invoice=%v or subscription=%v",
+			invoice.Metadata, subscription.Metadata,
 		)
 	}
 
 	return meta, nil
+}
+
+// updateSubscriptionMetadata updates the subscription metadata with enriched data
+func updateSubscriptionMetadata(subscriptionID string, meta *subscriptionMetadata) error {
+	params := &stripe.SubscriptionParams{
+		Metadata: map[string]string{},
+	}
+
+	// Only set non-empty fields
+	if meta.PaymentID != "" {
+		params.Metadata["payment_id"] = meta.PaymentID
+	}
+	if meta.NewPlanName != "" {
+		params.Metadata["plan_name"] = meta.NewPlanName
+	}
+	if meta.Operator != "" {
+		params.Metadata["subscription_operator"] = string(meta.Operator)
+	}
+	if meta.Workspace != "" {
+		params.Metadata["workspace"] = meta.Workspace
+	}
+	if meta.RegionDomain != "" {
+		params.Metadata["region_domain"] = meta.RegionDomain
+	}
+	if meta.UserUID != "" {
+		params.Metadata["user_uid"] = meta.UserUID
+	}
+	if meta.TransactionID != "" {
+		params.Metadata["transaction_id"] = meta.TransactionID
+	}
+
+	// Add timestamp
+	params.Metadata["updated_at"] = time.Now().Format(time.RFC3339)
+
+	_, err := stripesubscription.Update(subscriptionID, params)
+	return err
 }
 
 // subscriptionMetadata 辅助结构体：封装元数据
@@ -206,7 +353,22 @@ func handleSubscriptionUpdate(
 	if err != nil {
 		return err
 	}
+
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		// Check if there's a PaymentOrder to convert
+		var paymentOrder types.PaymentOrder
+		if err := tx.Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
+			// Convert PaymentOrder to Payment
+			payment.Status = types.PaymentStatusPAID
+			payment.Amount = invoice.AmountPaid * 10_000
+			payment.TradeNO = invoice.ID
+			payment.Stripe = &types.StripePay{
+				SubscriptionID: subscription.ID,
+				CustomerID:     subscription.Customer.ID,
+				InvoiceID:      invoice.ID,
+			}
+		}
+
 		return finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment)
 	}); err != nil {
 		return fmt.Errorf("failed to finalize upgrade payment: %w", err)
@@ -214,6 +376,16 @@ func handleSubscriptionUpdate(
 
 	if err := sendUpgradeNotification(nr, userUID, wsTransaction, sub, invoice); err != nil {
 		dao.Logger.Errorf("failed to send upgrade notification for user %s: %v", userUID, err)
+	}
+	// Finalize upgrade invoice - this must be done before processing the payment
+	// This ensures the subscription is properly updated with the new plan
+	logrus.Infof("Finalizing upgrade invoice: %s", invoice.ID)
+	if err := services.StripeServiceInstance.FinalizeUpgradeInvoice(invoice.ID); err != nil {
+		return fmt.Errorf("failed to finalize upgrade invoice: %w", err)
+	}
+	// Update subscription metadata with enriched data after successful processing
+	if err := updateSubscriptionMetadata(subscription.ID, meta); err != nil {
+		return fmt.Errorf("failed to update subscription metadata: %w", err)
 	}
 
 	logrus.Infof(
@@ -226,7 +398,7 @@ func handleSubscriptionUpdate(
 
 // prepareUpdateTransaction
 func prepareUpdateTransaction(
-	_ *stripe.Invoice,
+	invoice *stripe.Invoice,
 	subscription *stripe.Subscription,
 	meta *subscriptionMetadata,
 ) (*types.WorkspaceSubscriptionTransaction, string, error) {
@@ -235,15 +407,36 @@ func prepareUpdateTransaction(
 
 	switch meta.Operator {
 	case types.SubscriptionTransactionTypeUpgraded:
+		// For upgrade operations, try to get payment_id from various sources
 		if paymentID == "" {
 			paymentID = subscription.Metadata["last_payment_id"]
 		}
 		if paymentID == "" {
-			return nil, "", errors.New("missing last_payment_id for upgrade subscription")
+			paymentID = invoice.Metadata["payment_id"]
 		}
+		if paymentID == "" {
+			return nil, "", errors.New("missing payment_id for upgrade subscription")
+		}
+
+		// First try to find the transaction
 		if err := dao.DBClient.GetGlobalDB().Model(&types.WorkspaceSubscriptionTransaction{}).Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
 			return nil, "", fmt.Errorf("failed to get upgrade transaction: %w", err)
 		}
+
+		// Check if there's a PaymentOrder for this upgrade
+		var paymentOrder types.PaymentOrder
+		if err := dao.DBClient.GetGlobalDB().Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
+			// PaymentOrder exists, this is the new invoice-based upgrade flow
+			if paymentOrder.Stripe != nil && paymentOrder.Stripe.InvoiceID != "" {
+				// Update PaymentOrder with the subscription ID if not already set
+				if paymentOrder.Stripe.SubscriptionID == "" {
+					paymentOrder.Stripe.SubscriptionID = subscription.ID
+					paymentOrder.Stripe.CustomerID = subscription.Customer.ID
+					dao.DBClient.GetGlobalDB().Save(&paymentOrder)
+				}
+			}
+		}
+
 	case types.SubscriptionTransactionTypeDowngraded:
 		if meta.TransactionID == "" {
 			return nil, "", errors.New("missing transaction_id for downgrade subscription")
@@ -318,12 +511,6 @@ func handleSubscriptionCreateOrRenew(
 			}
 			ws.CurrentPeriodStartAt = time.Now().UTC()
 			ws.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
-		}
-
-		if isInitial {
-			if err := deletePaymentOrder(tx, payment.ID); err != nil {
-				return err
-			}
 		}
 
 		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
@@ -405,6 +592,7 @@ func prepareCreateOrRenewTransactionAndPayment(
 		PaymentRaw: types.PaymentRaw{
 			Stripe: &types.StripePay{
 				SubscriptionID: subscription.ID,
+				InvoiceID:      invoice.ID,
 				CustomerID:     subscription.Customer.ID,
 			},
 			UserUID:      userUID,
@@ -437,15 +625,6 @@ func getWorkspaceSubscription(
 		return nil, fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
 	return ws, nil
-}
-
-// deletePaymentOrder
-func deletePaymentOrder(tx *gorm.DB, paymentID string) error {
-	var paymentOrder types.PaymentOrder
-	if err := tx.Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
-		return tx.Delete(&paymentOrder).Error
-	}
-	return nil
 }
 
 // preparePayment

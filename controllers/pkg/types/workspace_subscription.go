@@ -81,6 +81,15 @@ func (p WorkspaceSubscriptionPlan) GetMaxResources() string {
 	return p.MaxResources
 }
 
+func (p WorkspaceSubscriptionPlan) CanBeUpgraded(planName string) bool {
+	for _, plan := range p.UpgradePlanList {
+		if plan == planName {
+			return true
+		}
+	}
+	return false
+}
+
 func (WorkspaceSubscription) TableName() string {
 	return "WorkspaceSubscription"
 }

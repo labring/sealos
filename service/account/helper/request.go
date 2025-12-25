@@ -721,7 +721,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period" bson:"period" binding:"required" example:"1m"`
+	Period types.SubscriptionPeriod `json:"period"        bson:"period"        binding:"required" example:"1m"`
+	// @Summary Promotion code
+	// @Description Promotion code for applying discount to the upgrade payment
+	// @JSONSchema optional
+	PromotionCode string `json:"promotionCode" bson:"promotionCode"                    example:"SAVE20"`
 
 	// @Summary Payment method
 	// @Description Payment method (STRIPE, BALANCE)
@@ -752,10 +756,53 @@ type WorkspaceSubscriptionInfoReq struct {
 	// @Description Region domain
 	// @JSONSchema required
 	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
+
+	// @Summary Redirect Url
+	// @Description Redirect Url for create session
+	RedirectURL *string `json:"redirectUrl,omitempty" bson:"redirectUrl,omitempty" example:"https://example.com"`
+}
+
+type WorkspaceSubscriptionCardInfoReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Workspace name
+	// @Description Workspace name
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain (optional, defaults to current region)
+	// @JSONSchema optional
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" example:"example.com"`
 }
 
 type WorkspaceSubscriptionUpgradeAmountReq struct {
 	WorkspaceSubscriptionOperatorReq `json:",inline" bson:",inline"`
+}
+
+type WorkspaceSubscriptionInvoiceCancelReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Invoice ID
+	// @Description The Stripe invoice ID to cancel
+	// @JSONSchema required
+	InvoiceID string `json:"invoiceID" bson:"invoiceID" binding:"required" example:"in_1234567890"`
+
+	// @Summary Workspace name
+	// @Description Workspace name (for authorization)
+	// @JSONSchema required
+	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+
+	// @Summary Region domain
+	// @Description Region domain (for authorization)
+	// @JSONSchema required
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" binding:"required" example:"example.com"`
 }
 
 func ParseWorkspaceSubscriptionOperatorReq(
@@ -805,6 +852,39 @@ func ParseWorkspaceSubscriptionInfoReq(c *gin.Context) (*WorkspaceSubscriptionIn
 	req := &WorkspaceSubscriptionInfoReq{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+	if req.Workspace == "" {
+		return nil, errors.New("workspace cannot be empty")
+	}
+	if req.RegionDomain == "" {
+		return nil, errors.New("regionDomain cannot be empty")
+	}
+	return req, nil
+}
+
+func ParseWorkspaceSubscriptionCardInfoReq(
+	c *gin.Context,
+) (*WorkspaceSubscriptionCardInfoReq, error) {
+	req := &WorkspaceSubscriptionCardInfoReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+	if req.Workspace == "" {
+		return nil, errors.New("workspace cannot be empty")
+	}
+	// regionDomain is optional, so we don't validate it here
+	return req, nil
+}
+
+func ParseWorkspaceSubscriptionInvoiceCancelReq(
+	c *gin.Context,
+) (*WorkspaceSubscriptionInvoiceCancelReq, error) {
+	req := &WorkspaceSubscriptionInvoiceCancelReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, fmt.Errorf("bind json error: %w", err)
+	}
+	if req.InvoiceID == "" {
+		return nil, errors.New("invoiceID cannot be empty")
 	}
 	if req.Workspace == "" {
 		return nil, errors.New("workspace cannot be empty")
