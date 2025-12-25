@@ -43,9 +43,20 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
   const [importDrawerType, setImportDrawerType] = useState<ImportType | null>(null);
   const [importDrawerTypeToSet, setImportDrawerTypeToSet] = useState<ImportType | null>(null);
 
-  const handleGotoTemplate = useCallback(() => {
-    router.push('/template?tab=public');
-  }, [router]);
+  const handleGotoTemplate = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: 1,
+        memory: 1,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: true
+    },
+    () => {
+      router.push('/template?tab=public');
+    }
+  );
 
   const handleGotoDocs: any = () => {
     if (locale === 'zh') {

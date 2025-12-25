@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./chakra": "./src/components/chakra/index.ts",
-    "./shadcn": "./src/components/shadcn/index.ts"
+    "./shadcn": "./src/components/shadcn/index.ts",
+    "./components/shadcn/styles.css": "./src/components/shadcn/styles.css"
   },
   "typesVersions": {
     "*": {
