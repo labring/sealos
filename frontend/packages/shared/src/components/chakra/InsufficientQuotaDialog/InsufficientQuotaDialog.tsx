@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { InsufficientQuotaDialogView } from './InsufficientQuotaDialogView';
 import { useQuotaStore } from '../../../store/quota';
 import { useQuotaGuardConfig } from '../../../hooks/QuotaGuardProvider';
@@ -18,23 +18,42 @@ export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) 
   const quotaStore = useQuotaStore();
   const { sealosApp } = useQuotaGuardConfig();
   const [subscriptionEnabled, setSubscriptionEnabled] = useState(true);
+  const isMountedRef = useRef(true);
+  const currentSealosAppRef = useRef(sealosApp);
 
   useEffect(() => {
+    currentSealosAppRef.current = sealosApp;
+
     if (!sealosApp) {
-      // Default to true if sealosApp is not initialized
       setSubscriptionEnabled(true);
       return;
     }
 
+    isMountedRef.current = true;
+    const currentSealosApp = sealosApp;
+
+    // [TODO]: Temporary workaround - ignore stale responses when sealosApp instance changes.
+    // [FIXME]: SDK should always use the same instance. When re-initializing, the old instance
+    //          gets destroyed but pending requests still wait for responses, causing timeouts.
+    //          Should be fixed in init code (providers/*/src/pages/_app.tsx) to reuse the same instance.
     sealosApp
       .getHostConfig()
       .then((config) => {
+        if (!isMountedRef.current || currentSealosAppRef.current !== currentSealosApp) {
+          return;
+        }
         setSubscriptionEnabled(config.features.subscription);
       })
       .catch(() => {
-        // Default to true if failed to get config
+        if (!isMountedRef.current || currentSealosAppRef.current !== currentSealosApp) {
+          return;
+        }
         setSubscriptionEnabled(true);
       });
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [sealosApp]);
 
   const handleOpenCostcenter = () => {
