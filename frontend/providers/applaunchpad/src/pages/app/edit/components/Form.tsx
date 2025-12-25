@@ -302,14 +302,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -809,7 +809,8 @@ const Form = ({
                       used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -822,7 +823,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
 
@@ -856,7 +857,8 @@ const Form = ({
                         resourcePropertyMap.cpu.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -869,7 +871,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <Flex mb={8} pr={3} alignItems={'center'}>
@@ -898,7 +900,8 @@ const Form = ({
                         resourcePropertyMap.memory.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -911,7 +914,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
             </Box>
@@ -1017,8 +1020,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

@@ -124,7 +124,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
                   })}
                 </div>
-                <div className="text-sm text-red-600">
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <div className="text-sm text-red-600">
                   {t('please_upgrade_plan.0')}
                   <a
                     className="cursor-pointer font-semibold text-blue-600 underline"
@@ -133,7 +134,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     {t('please_upgrade_plan.1')}
                   </a>
                   {t('please_upgrade_plan.2')}
-                </div>
+                </div> */}
               </>
             )}
           </div>
@@ -153,7 +154,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                       resourcePropertyMap.cpu.scale
                   })}
                 </div>
-                <div className="text-sm text-red-600">
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <div className="text-sm text-red-600">
                   {t('please_upgrade_plan.0')}
                   <a
                     className="cursor-pointer font-semibold text-blue-600 underline"
@@ -162,7 +164,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     {t('please_upgrade_plan.1')}
                   </a>
                   {t('please_upgrade_plan.2')}
-                </div>
+                </div> */}
               </>
             )}
           </div>
@@ -183,7 +185,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                   })}
                 </div>
 
-                <div className="text-sm text-red-600">
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <div className="text-sm text-red-600">
                   {t('please_upgrade_plan.0')}
                   <a
                     className="cursor-pointer font-semibold text-blue-600 underline"
@@ -192,7 +195,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     {t('please_upgrade_plan.1')}
                   </a>
                   {t('please_upgrade_plan.2')}
-                </div>
+                </div> */}
               </>
             )}
           </div>

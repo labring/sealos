@@ -296,8 +296,8 @@ export function NetworkSection({
                           network.openPublicDomain
                             ? network.appProtocol
                             : network.openNodePort
-                            ? network.protocol
-                            : 'HTTP'
+                              ? network.protocol
+                              : 'HTTP'
                         }
                         list={ProtocolList}
                         onchange={(val: any) => {
@@ -334,14 +334,14 @@ export function NetworkSection({
                             {network.customDomain
                               ? network.customDomain
                               : network.openNodePort
-                              ? network?.nodePort
-                                ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                    network.nodePort
-                                  }`
-                                : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                    'pending_to_allocated'
-                                  )}`
-                              : `${network.publicDomain}.${network.domain}`}
+                                ? network?.nodePort
+                                  ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                      network.nodePort
+                                    }`
+                                  : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                      'pending_to_allocated'
+                                    )}`
+                                : `${network.publicDomain}.${network.domain}`}
                           </Box>
                         </Tooltip>
 
@@ -399,7 +399,8 @@ export function NetworkSection({
                   used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
                 })}
               </Box>
-              <Box fontSize={'md'} color={'red.500'}>
+              {/* [TODO] Let's wait for the Client SDK upgrade */}
+              {/* <Box fontSize={'md'} color={'red.500'}>
                 {t('please_upgrade_plan.0')}
                 <Box
                   as="span"
@@ -412,7 +413,7 @@ export function NetworkSection({
                   {t('please_upgrade_plan.1')}
                 </Box>
                 {t('please_upgrade_plan.2')}
-              </Box>
+              </Box> */}
             </Box>
           )}
         </Box>

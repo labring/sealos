@@ -727,7 +727,8 @@ const Form = ({
                         resourcePropertyMap.cpu.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -740,7 +741,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
@@ -773,7 +774,8 @@ const Form = ({
                         resourcePropertyMap.memory.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -786,7 +788,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <Flex mb={7} alignItems={'center'}>
@@ -954,7 +956,8 @@ const Form = ({
                         resourcePropertyMap.storage.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -967,7 +970,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <ResourcesDistributeTable
