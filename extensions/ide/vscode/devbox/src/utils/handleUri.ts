@@ -23,7 +23,6 @@ export class UriHandler {
     // ) {
     //   return
     // }
-    console.log('uri schema', uri.scheme)
 
     const queryParams = new URLSearchParams(uri.query)
     const params = this.extractParams(queryParams)
