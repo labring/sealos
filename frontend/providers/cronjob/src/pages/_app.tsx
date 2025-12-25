@@ -180,7 +180,7 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession}>
+          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
             <Component {...pageProps} />
             <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
             <ConfirmChild />

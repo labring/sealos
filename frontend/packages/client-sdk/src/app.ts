@@ -178,6 +178,9 @@ class ClientSDK {
   }
 }
 
+/**
+ * @deprecated - You really should not use sealosApp directly anymore. We will migrate to a React Context based approach in the near future.
+ */
 export let sealosApp: ClientSDK;
 
 export const createSealosApp = () => {

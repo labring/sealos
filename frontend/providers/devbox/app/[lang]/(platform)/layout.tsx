@@ -149,7 +149,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [router, searchParams]);
 
   return (
-    <QuotaGuardProvider getSession={getSession}>
+    <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
       <RouteHandlerProvider>
         <ConfirmChild />
         <Toaster />

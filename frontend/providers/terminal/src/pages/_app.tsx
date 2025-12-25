@@ -45,7 +45,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider>
-        <QuotaGuardProvider getSession={getSession}>
+        <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
           <Component {...pageProps} />
           <InsufficientQuotaDialog lang={(router.locale || 'en') as SupportedLang} />
         </QuotaGuardProvider>

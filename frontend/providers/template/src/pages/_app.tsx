@@ -169,7 +169,7 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession}>
+          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
             <Layout>
               <Component {...pageProps} />
             </Layout>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InsufficientQuotaDialogView } from './InsufficientQuotaDialogView';
 import { useQuotaStore } from '../../../store/quota';
+import { useQuotaGuardConfig } from '../../../hooks/QuotaGuardProvider';
 import type { SupportedLang } from '../../../i18n/quota-dialog';
 
 export interface InsufficientQuotaDialogProps {
@@ -16,9 +16,16 @@ export interface InsufficientQuotaDialogProps {
  */
 export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) {
   const quotaStore = useQuotaStore();
+  const { sealosApp } = useQuotaGuardConfig();
   const [subscriptionEnabled, setSubscriptionEnabled] = useState(true);
 
   useEffect(() => {
+    if (!sealosApp) {
+      // Default to true if sealosApp is not initialized
+      setSubscriptionEnabled(true);
+      return;
+    }
+
     sealosApp
       .getHostConfig()
       .then((config) => {
@@ -28,9 +35,10 @@ export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) 
         // Default to true if failed to get config
         setSubscriptionEnabled(true);
       });
-  }, []);
+  }, [sealosApp]);
 
   const handleOpenCostcenter = () => {
+    if (!sealosApp) return;
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-costcenter',
       pathname: '/',
@@ -45,6 +53,7 @@ export function InsufficientQuotaDialog({ lang }: InsufficientQuotaDialogProps) 
   };
 
   const openTicketsApp = () => {
+    if (!sealosApp) return;
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-workorder',
       pathname: '/'

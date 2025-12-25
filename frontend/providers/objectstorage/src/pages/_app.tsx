@@ -102,7 +102,7 @@ function App({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>
         <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession}>
+          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
             <Component {...pageProps} />
             <InsufficientQuotaDialog lang={(router.locale || 'en') as SupportedLang} />
           </QuotaGuardProvider>
