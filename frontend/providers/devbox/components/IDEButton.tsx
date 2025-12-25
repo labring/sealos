@@ -518,8 +518,8 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
       menuLabel: 'Trae',
       group: 'trae',
       options: [
-        { value: 'trae', menuLabel: 'Trae' },
-        { value: 'traeCN', menuLabel: 'CN' }
+        { value: 'trae' as IDEType, menuLabel: 'Trae' },
+        { value: 'traeCN' as IDEType, menuLabel: 'CN' }
       ]
     },
     {
@@ -527,8 +527,8 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
       menuLabel: 'CodeBuddy',
       group: 'codebuddy',
       options: [
-        { value: 'codebuddy', menuLabel: 'CodeBuddy' },
-        { value: 'codebuddyCN', menuLabel: 'CN' }
+        { value: 'codebuddy' as IDEType, menuLabel: 'CodeBuddy' },
+        { value: 'codebuddyCN' as IDEType, menuLabel: 'CN' }
       ]
     }
   ];
@@ -547,24 +547,24 @@ const getRightColumnItems = (
         menuLabel: 'JetBrains',
         group: 'jetbrains',
         options: [
-          { value: 'toolbox', menuLabel: 'Toolbox' },
-          { value: 'gateway', menuLabel: 'Gateway' }
+          { value: 'toolbox' as IDEType, menuLabel: 'Toolbox' },
+          { value: 'gateway' as IDEType, menuLabel: 'Gateway' }
         ]
       }
     ];
   }
 
-  const vscodeGroup = {
+  const vscodeGroup: MenuItem = {
     value: 'vscode-group',
     menuLabel: 'VSCode',
     group: 'vscode',
     options:
       enableWebideFeature === 'true'
         ? [
-            { value: 'vscode', menuLabel: 'VS Code' },
-            { value: 'webide', menuLabel: 'Online' }
+            { value: 'vscode' as IDEType, menuLabel: 'VS Code' },
+            { value: 'webide' as IDEType, menuLabel: 'Online' }
           ]
-        : [{ value: 'vscode', menuLabel: 'VS Code' }]
+        : [{ value: 'vscode' as IDEType, menuLabel: 'VS Code' }]
   };
 
   const items: MenuItem[] = [
@@ -578,8 +578,8 @@ const getRightColumnItems = (
       menuLabel: 'JetBrains',
       group: 'jetbrains',
       options: [
-        { value: 'toolbox', menuLabel: 'Toolbox' },
-        { value: 'gateway', menuLabel: 'Gateway' }
+        { value: 'toolbox' as IDEType, menuLabel: 'Toolbox' },
+        { value: 'gateway' as IDEType, menuLabel: 'Gateway' }
       ]
     }
   ];
