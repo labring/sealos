@@ -169,7 +169,6 @@ const DevboxCreatePage = () => {
     },
     {
       onSuccess(res) {
-        console.log('res', res);
         if (!res) {
           return;
         }
@@ -198,6 +197,7 @@ const DevboxCreatePage = () => {
       if (formData.gpu?.type) {
         const inventory = countGpuInventory(formData.gpu?.type);
         if (formData.gpu?.amount > inventory) {
+          setIsLoading(false);
           return toast.warning(
             t('Gpu under inventory Tip', {
               gputype: formData.gpu.type
@@ -221,6 +221,7 @@ const DevboxCreatePage = () => {
         }
         if (!parsedNewYamlList) {
           // prevent empty yamlList
+          setIsLoading(false);
           return toast.warning(t('submit_form_error'));
         }
         const patch = patchYamlList({
@@ -254,15 +255,16 @@ const DevboxCreatePage = () => {
         });
       }
       addDevboxIDE('vscode', formData.name);
+      setStartedTemplate(undefined);
 
       toast.success(t(applySuccess));
+      router.push(`/devbox/detail/${formData.name}`);
 
       if (sourcePrice?.gpu) {
         refetchPrice();
       }
-      setStartedTemplate(undefined);
-      router.push(`/devbox/detail/${formData.name}`);
     } catch (error: any) {
+      setIsLoading(false);
       if (typeof error === 'string' && error.includes('402')) {
         toast.warning(t(applyError), {
           description: t('outstanding_tips')
@@ -272,7 +274,6 @@ const DevboxCreatePage = () => {
         toast.warning(t(applyError), { description: errorMsg });
       }
     }
-    setIsLoading(false);
   };
 
   const submitError = useCallback(() => {
@@ -326,7 +327,7 @@ const DevboxCreatePage = () => {
             from={captureFrom as 'list' | 'detail'}
             applyCb={handleApply}
           />
-          <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
+          <div className="pb-30 w-full px-5 pt-10 md:px-10 lg:px-20">
             {tabType === 'form' ? (
               <Form
                 isEdit={isEdit}

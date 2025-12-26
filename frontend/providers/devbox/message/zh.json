@@ -128,6 +128,7 @@
   "devbox_name_max_length": "超出最大名字长度",
   "devbox_name_placeholder": "输入 DevBox 名称",
   "devbox_name_required": "项目名称不能为空",
+  "devbox_name_exists": "该项目名称已存在",
   "devbox_pause_save_change": "DevBox会在发版过程中停止，请提前保存好所有的变更。",
   "devbox_ready": "DevBox 已就绪",
   "devbox_shutdown_notice1": "节省停机模式下，暂停对端口的计费",

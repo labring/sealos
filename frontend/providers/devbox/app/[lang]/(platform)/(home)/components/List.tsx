@@ -63,7 +63,15 @@ const dateFilterFn: FilterFn<DevboxListItemTypeV2> = (row, columnId, filterValue
   if (!filterValue || !filterValue.startDateTime || !filterValue.endDateTime) return true;
   const createTime = row.getValue(columnId) as string;
   const createTimeDate = new Date(createTime);
-  return createTimeDate >= filterValue.startDateTime && createTimeDate <= filterValue.endDateTime;
+
+  // Check if it's "all time" range (startDateTime is 1970-01-01)
+  const allTimeStartDate = new Date('1970-01-01T00:00:00Z');
+  const isAllTimeRange = filterValue.startDateTime.getTime() === allTimeStartDate.getTime();
+
+  // For "all time" range, use current time as upper bound to include newly created devboxes
+  const effectiveEndDateTime = isAllTimeRange ? new Date() : filterValue.endDateTime;
+
+  return createTimeDate >= filterValue.startDateTime && createTimeDate <= effectiveEndDateTime;
 };
 
 const DevboxList = ({

@@ -4,7 +4,6 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
-import { KBDevboxTypeV2 } from '@/types/k8s';
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
 
@@ -26,31 +25,9 @@ export async function POST(req: NextRequest) {
     const devboxForm = validationResult.data;
     const headerList = req.headers;
 
-    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+    const { applyYamlList } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
-
-    const { body: devboxListBody } = (await k8sCustomObjects.listNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha2',
-      namespace,
-      'devboxes'
-    )) as {
-      body: {
-        items: KBDevboxTypeV2[];
-      };
-    };
-
-    if (
-      !!devboxListBody &&
-      devboxListBody.items.length > 0 &&
-      devboxListBody.items.find((item) => item.metadata.name === devboxForm.name)
-    ) {
-      return jsonRes({
-        code: 409,
-        message: 'Devbox already exists'
-      });
-    }
 
     const template = await devboxDB.template.findUnique({
       where: {
@@ -102,6 +79,15 @@ export async function POST(req: NextRequest) {
       data: 'success create devbox'
     });
   } catch (err: any) {
+    const isAlreadyExists = err?.body?.reason === 'AlreadyExists' || err?.statusCode === 409;
+
+    if (isAlreadyExists) {
+      return jsonRes({
+        code: 409,
+        message: 'Devbox already exists'
+      });
+    }
+
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',

@@ -127,6 +127,7 @@
   "devbox_name_max_length": "Exceeds the maximum name length",
   "devbox_name_placeholder": "Enter DevBox name",
   "devbox_name_required": "DevBox name cannot be empty",
+  "devbox_name_exists": "This DevBox name already exists",
   "devbox_pause_save_change": "DevBox will pause during release. Save all changes first.",
   "devbox_ready": "DevBox is ready",
   "devbox_shutdown_notice1": "Suspend port billing in cost-saving shutdown mode.",
