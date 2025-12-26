@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 import type { ExceededWorkspaceQuotaItem, WorkspaceQuotaItemType } from '../../../types/workspace';
 import { resourcePropertyMap } from '../../../constants/resource';
