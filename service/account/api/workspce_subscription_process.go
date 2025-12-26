@@ -506,7 +506,8 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(
 				err,
 			)
 			// 记录错误但不阻止删除过程
-			tx.StatusDesc = fmt.Sprintf("Stripe cancellation failed: %v", err)
+			// TODO too long
+			// tx.StatusDesc = fmt.Sprintf("Stripe cancellation failed: %v", err)
 			// return fmt.Errorf("failed to cancel Stripe subscription %s: %w", sub.Stripe.SubscriptionID, err)
 		}
 		sub.PayStatus = types.SubscriptionPayStatusCanceled

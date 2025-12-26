@@ -50,8 +50,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useUserStore } from '@/store/user';
-import { WorkspaceQuotaItem } from '@/types/workspace';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { useQuotaGuarded } from '@sealos/shared';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -123,10 +122,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const router = useRouter();
   const { detailCompleted, applistCompleted } = useGuideStore();
 
-  const { loadUserQuota, checkExceededQuotas, session } = useUserStore();
-  const [quotaLoaded, setQuotaLoaded] = useState(false);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+  const { session } = useUserStore();
 
   useEffect(() => {
     if (!detailCompleted && applistCompleted) {
@@ -169,14 +165,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       (item) => item === db?.dbType
     );
   }, [db?.dbType]);
-
-  // load user quota on component mount
-  useEffect(() => {
-    if (quotaLoaded) return;
-
-    loadUserQuota();
-    setQuotaLoaded(true);
-  }, [quotaLoaded, loadUserQuota]);
 
   const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
@@ -316,11 +304,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [db.dbType, secret]);
 
   const refetchAll = useCallback(() => {
-    loadUserQuota();
     refetchDBStatefulSet();
     refetchSecret();
     refetchService();
-  }, [loadUserQuota, refetchDBStatefulSet, refetchSecret, refetchService]);
+  }, [refetchDBStatefulSet, refetchSecret, refetchService]);
 
   const openNetWorkService = useCallback(async () => {
     try {
@@ -364,6 +351,20 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   };
 
+  const checkQuotaAndOpenNetwork = useQuotaGuarded(
+    {
+      requirements: {
+        nodeport: 1,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: false
+    },
+    () => {
+      openNetWorkService();
+    }
+  );
+
   const handleOpenExternalNetwork = useCallback(async () => {
     if (session?.subscription?.type === 'PAYG') {
       setScenario('externalNetwork');
@@ -371,22 +372,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       return;
     }
 
-    // Subscription
-    await loadUserQuota();
-    const exceededQuotaItems = checkExceededQuotas({
-      nodeport: 1,
-      traffic: 1
-    });
-
-    if (exceededQuotaItems.length > 0) {
-      setExceededQuotas(exceededQuotaItems);
-      setExceededDialogOpen(true);
-      return;
-    } else {
-      setExceededQuotas([]);
-      openNetWorkService();
-    }
-  }, [checkExceededQuotas, onOpen, openNetWorkService, loadUserQuota, session]);
+    // Subscription - check quota before opening network service
+    checkQuotaAndOpenNetwork();
+  }, [session, onOpen, checkQuotaAndOpenNetwork]);
 
   const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
     try {
@@ -818,18 +806,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           />
         </Stack>
       )}
-
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        open={exceededDialogOpen}
-        showControls={false}
-        onOpenChange={(open) => {
-          // Refresh quota on open change
-          loadUserQuota();
-          setExceededDialogOpen(open);
-        }}
-        onConfirm={() => {}}
-      />
     </Flex>
   );
 };

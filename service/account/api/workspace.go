@@ -135,9 +135,15 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 
 	// 复制现有配额数据（除了 traffic）
 	for key, value := range resQuota.Status.Hard {
+		if (key == "requests.nvidia.com/gpu" || key == "limits.nvidia.com/gpu") && !dao.HasGpuNode {
+			continue
+		}
 		customQuota.Hard[key] = value
 	}
 	for key, value := range resQuota.Status.Used {
+		if (key == "requests.nvidia.com/gpu" || key == "limits.nvidia.com/gpu") && !dao.HasGpuNode {
+			continue
+		}
 		customQuota.Used[key] = value
 	}
 	customQuota.Hard["traffic"] = total

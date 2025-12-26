@@ -1,11 +1,9 @@
 import React, { useMemo } from 'react';
 import { Box, Flex, useTheme, Progress, css, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { MyTooltip } from '@sealos/ui';
 
-import { useUserStore } from '@/store/user';
-import { resourcePropertyMap } from '@/constants/resource';
+import { useUserQuota, resourcePropertyMap, type WorkspaceQuotaItem } from '@sealos/shared';
 
 const sourceMap = {
   cpu: {
@@ -31,8 +29,7 @@ const sourceMap = {
 const QuotaBox = () => {
   const theme = useTheme();
   const { t } = useTranslation();
-  const { userQuota, loadUserQuota } = useUserStore();
-  useQuery(['getUserQuota'], loadUserQuota);
+  const { userQuota } = useUserQuota();
 
   const quotaList = useMemo(() => {
     if (!userQuota) return [];

@@ -10,8 +10,8 @@ import { useCopyData } from '@/utils/tools';
 import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
 import type { CustomAccessModalParams } from './CustomAccessModal';
-import type { WorkspaceQuotaItem } from '@/types/workspace';
 import dynamic from 'next/dynamic';
+import { WorkspaceQuotaItem } from '@sealos/shared';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
@@ -399,7 +399,8 @@ export function NetworkSection({
                   used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
                 })}
               </Box>
-              <Box fontSize={'md'} color={'red.500'}>
+              {/* [TODO] Let's wait for the Client SDK upgrade */}
+              {/* <Box fontSize={'md'} color={'red.500'}>
                 {t('please_upgrade_plan.0')}
                 <Box
                   as="span"
@@ -412,7 +413,7 @@ export function NetworkSection({
                   {t('please_upgrade_plan.1')}
                 </Box>
                 {t('please_upgrade_plan.2')}
-              </Box>
+              </Box> */}
             </Box>
           )}
         </Box>

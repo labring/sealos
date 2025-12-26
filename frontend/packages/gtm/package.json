@@ -36,8 +36,9 @@
   "author": "Sealos Team",
   "license": "MIT",
   "peerDependencies": {
-    "next": ">=13.0.0",
-    "react": ">=16.8.0"
+    "next": ">=13.5.11",
+    "react": "^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^18.0 || ^19.0 || ^19.0.0-rc"
   },
   "peerDependenciesMeta": {
     "next": {
@@ -48,7 +49,7 @@
     }
   },
   "devDependencies": {
-    "@types/react": "18.2.37",
+    "@types/react": "18.3.27",
     "@types/node": "18.15.11",
     "typescript": "^5.0.0"
   }

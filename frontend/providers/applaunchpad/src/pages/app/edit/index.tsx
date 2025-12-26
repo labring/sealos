@@ -21,8 +21,6 @@ import {
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
 
-import { YamlKindEnum } from '@/utils/adapt';
-import yaml from 'js-yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -38,18 +36,13 @@ import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
-import { resourcePropertyMap } from '@/constants/resource';
+import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shared';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
-export const formData2Yamls = (
-  data: AppEditType
-  // handleType: 'edit' | 'create' = 'create',
-  // crYamlList?: DeployKindsType[]
-) => [
+export const formData2Yamls = (data: AppEditType) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
@@ -108,7 +101,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice, checkExceededQuotas, session } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -124,7 +117,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     amount: 0,
     manufacturers: ''
   });
-  const [isInsufficientQuotaDialogOpen, setIsInsufficientQuotaDialogOpen] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
@@ -165,59 +157,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     },
     [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
   );
-
-  const exceededQuotas = useMemo(() => {
-    const oldReplicas =
-      (formHook.formState.defaultValues?.hpa?.use
-        ? formHook.formState.defaultValues?.hpa?.maxReplicas
-        : Number.isSafeInteger(formHook.formState.defaultValues?.replicas)
-          ? (formHook.formState.defaultValues?.replicas as number)
-          : 1) ?? 1;
-
-    const newReplicas = realTimeForm.current.hpa.use
-      ? realTimeForm.current.hpa.maxReplicas
-      : Number.isSafeInteger(realTimeForm.current.replicas)
-        ? (realTimeForm.current.replicas as number)
-        : 1;
-
-    const oldGpuCount =
-      formHook.formState.defaultValues?.gpu?.type === ''
-        ? 0
-        : (formHook.formState.defaultValues?.gpu?.amount ?? 0);
-    const newGpuCount =
-      realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0);
-
-    return checkExceededQuotas({
-      cpu: isEdit
-        ? realTimeForm.current.cpu * newReplicas -
-          (formHook.formState.defaultValues?.cpu ?? 0) * oldReplicas
-        : realTimeForm.current.cpu * newReplicas,
-      memory: isEdit
-        ? realTimeForm.current.memory * newReplicas -
-          (formHook.formState.defaultValues?.memory ?? 0) * oldReplicas
-        : realTimeForm.current.memory * newReplicas,
-      gpu: isEdit
-        ? newGpuCount * newReplicas - oldGpuCount * oldReplicas
-        : newGpuCount * newReplicas,
-      nodeport: isEdit
-        ? (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
-            newReplicas -
-          (formHook.formState.defaultValues?.networks?.filter((item) => item?.openNodePort ?? false)
-            ?.length ?? 0) *
-            oldReplicas
-        : (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
-          newReplicas,
-      storage: isEdit
-        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) * newReplicas -
-            existingStores.reduce((sum, item) => sum + item.value, 0) * oldReplicas) *
-          resourcePropertyMap.storage.scale
-        : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
-          newReplicas *
-          resourcePropertyMap.storage.scale,
-      ...(session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-    });
-  }, [checkExceededQuotas, existingStores, formHook.formState, isEdit, session]);
-
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {
       if (!createCompleted) {
@@ -299,7 +238,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   );
 
   const submitError = useCallback(() => {
-    // deep search message
     const deepSearch = (obj: any): string => {
       if (!obj || typeof obj !== 'object') return t('Submit Error');
       if (!!obj.message) {
@@ -437,12 +375,73 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }));
         formHook.setValue('networks', completeNetworks);
       }
+
+      // Handle GPU configuration
+      if (parsedData.gpu && parsedData.gpu.type) {
+        formHook.setValue('gpu', {
+          type: parsedData.gpu.type,
+          amount: parsedData.gpu.amount || 0,
+          manufacturers: parsedData.gpu.manufacturers || 'nvidia'
+        });
+      }
     } catch (error) {}
   }, [router.query, already]);
 
-  const confirmSubmit = () => {
-    setIsInsufficientQuotaDialogOpen(false);
+  const resourceRequirements = useMemo(() => {
+    const oldReplicas =
+      (formHook.formState.defaultValues?.hpa?.use
+        ? formHook.formState.defaultValues?.hpa?.maxReplicas
+        : Number.isSafeInteger(formHook.formState.defaultValues?.replicas)
+          ? (formHook.formState.defaultValues?.replicas as number)
+          : 1) ?? 1;
 
+    const newReplicas = realTimeForm.current.hpa.use
+      ? realTimeForm.current.hpa.maxReplicas
+      : Number.isSafeInteger(realTimeForm.current.replicas)
+        ? (realTimeForm.current.replicas as number)
+        : 1;
+
+    const oldGpuCount =
+      formHook.formState.defaultValues?.gpu?.type === ''
+        ? 0
+        : (formHook.formState.defaultValues?.gpu?.amount ?? 0);
+    const newGpuCount =
+      realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0);
+
+    return {
+      cpu: isEdit
+        ? realTimeForm.current.cpu * newReplicas -
+          (formHook.formState.defaultValues?.cpu ?? 0) * oldReplicas
+        : realTimeForm.current.cpu * newReplicas,
+      memory: isEdit
+        ? realTimeForm.current.memory * newReplicas -
+          (formHook.formState.defaultValues?.memory ?? 0) * oldReplicas
+        : realTimeForm.current.memory * newReplicas,
+      gpu: isEdit
+        ? newGpuCount * newReplicas - oldGpuCount * oldReplicas
+        : newGpuCount * newReplicas,
+      nodeport: isEdit
+        ? (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
+            newReplicas -
+          (formHook.formState.defaultValues?.networks?.filter((item) => item?.openNodePort ?? false)
+            ?.length ?? 0) *
+            oldReplicas
+        : (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
+          newReplicas,
+      storage: isEdit
+        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) * newReplicas -
+            existingStores.reduce((sum, item) => sum + item.value, 0) * oldReplicas) *
+          resourcePropertyMap.storage.scale
+        : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
+          newReplicas *
+          resourcePropertyMap.storage.scale,
+      traffic: true as const
+    };
+  }, [existingStores, formHook.formState, isEdit]);
+
+  const { exceededQuotas } = useUserQuota({ requirements: resourceRequirements });
+
+  const doSubmit = useCallback(() => {
     formHook.handleSubmit(async (data) => {
       const parseYamls = formData2Yamls(data);
       setYamlList(parseYamls);
@@ -513,16 +512,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         submitSuccess(parseYamls);
       })();
     }, submitError)();
-  };
+  }, [formHook, countGpuInventory, toast, t, appName, openConfirm, submitSuccess, submitError]);
 
-  const handleSubmit = () => {
-    if (exceededQuotas.length <= 0) {
-      confirmSubmit();
-      return;
-    }
-
-    setIsInsufficientQuotaDialogOpen(true);
-  };
+  const handleSubmit = useQuotaGuarded(
+    {
+      requirements: resourceRequirements,
+      immediate: false,
+      allowContinue: false
+    },
+    doSubmit
+  );
 
   return (
     <>
@@ -571,14 +570,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           errorCode={errorCode}
         />
       )}
-
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        onOpenChange={setIsInsufficientQuotaDialogOpen}
-        open={isInsufficientQuotaDialogOpen}
-        onConfirm={() => {}}
-        showControls={false}
-      />
     </>
   );
 };

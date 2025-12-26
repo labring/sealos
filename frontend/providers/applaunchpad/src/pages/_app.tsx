@@ -12,7 +12,7 @@ import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import 'react-day-picker/dist/style.css';
@@ -26,6 +26,8 @@ import * as yaml from 'js-yaml';
 import type { AppConfigType } from '@/types';
 import Script from 'next/script';
 import { GTMScript } from '@sealos/gtm';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { QuotaGuardProvider } from '@sealos/shared';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -56,6 +58,10 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
     title: 'jump_prompt',
     content: 'jump_message'
   });
+
+  const getSession = useCallback(() => {
+    return useUserStore.getState().session ?? null;
+  }, []);
 
   useEffect(() => {
     const response = createSealosApp();
@@ -218,9 +224,12 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
       )}
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <Component {...pageProps} />
-          <ConfirmChild />
-          <Loading loading={loading} />
+          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+            <Component {...pageProps} />
+            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+            <ConfirmChild />
+            <Loading loading={loading} />
+          </QuotaGuardProvider>
         </ChakraProvider>
       </QueryClientProvider>
       {config?.launchpad?.meta?.scripts?.map((script, i) => (

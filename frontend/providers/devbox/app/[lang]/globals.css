@@ -1,5 +1,6 @@
 @import '@sealos/shadcn-ui/shadcn.css';
 @import '@sealos/shadcn-ui/styles.css';
+@import '@sealos/shared/components/shadcn/styles.css';
 
 html {
   font-family: var(--font-geist-sans);

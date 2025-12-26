@@ -3,72 +3,52 @@ import request from '@/service/request';
 import useSessionStore from '@/store/session';
 import { Box, Flex, Spinner, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { use, useEffect, useMemo, useState } from 'react';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { useEffect, useRef } from 'react';
 import styles from './index.module.scss';
 import { getEnv } from '@/api/terminal';
-import { WorkspaceQuotaItem } from '@/types/workspace';
-import { InsufficientQuotaDialog } from '@/components/InsufficientQuotaDialog';
+import { useQuotaGuarded } from '@sealos/shared';
+import { useState } from 'react';
 
 type ServiceEnv = {
   site: string;
 };
 
 export default function Index(props: ServiceEnv) {
-  const { setSession, isUserLogin, session } = useSessionStore();
+  const { isUserLogin, session } = useSessionStore();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [workspaceQuota, setWorkspaceQuota] = useState<WorkspaceQuotaItem[] | null>(null);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
+  const [quotaCheckPassed, setQuotaCheckPassed] = useState(false);
+  const quotaCheckTriggered = useRef(false);
 
   const toast = useToast();
-
-  const loadWorkspaceQuota = async () => {
-    const res = await sealosApp.getWorkspaceQuota();
-    setWorkspaceQuota(res.quota);
-  };
-
-  useEffect(() => {
-    return createSealosApp();
-  }, []);
-
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        const result = await sealosApp.getSession();
-        setSession(result);
-      } catch (error) {
-        console.log('App is not running in desktop');
-      }
-    };
-    initApp();
-    loadWorkspaceQuota();
-  }, [setSession]);
 
   const { data: envData, isSuccess: envQuerySuccess } = useQuery({
     queryFn: () => getEnv(),
     queryKey: ['env']
   });
 
-  const exceededQuotas = useMemo(() => {
-    if (!workspaceQuota || !envQuerySuccess) return null;
+  const triggerQuotaCheck = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: envData?.data?.data?.CPU_REQUIREMENT ?? 0,
+        memory: envData?.data?.data?.MEMORY_REQUIREMENT ?? 0,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: false,
+      disallowClosing: true
+    },
+    () => {
+      setQuotaCheckPassed(true);
+    }
+  );
 
-    const quotaRequest = {
-      cpu: envData.data.data.CPU_REQUIREMENT,
-      memory: envData.data.data.MEMORY_REQUIREMENT,
-      traffic: session.subscription.type === 'PAYG' ? 0 : 1
-    };
-
-    const exceededItems = workspaceQuota.filter((item) => {
-      if (!(item.type in quotaRequest)) return false;
-
-      if (item.limit - item.used < quotaRequest[item.type as keyof typeof quotaRequest]!) {
-        return true;
-      }
-    });
-
-    return exceededItems;
-  }, [workspaceQuota, envData, envQuerySuccess, session]);
+  useEffect(() => {
+    if (envQuerySuccess && session?.user && !quotaCheckTriggered.current) {
+      quotaCheckTriggered.current = true;
+      triggerQuotaCheck();
+    }
+  }, [envQuerySuccess, session, triggerQuotaCheck]);
 
   useQuery(['applyApp'], () => request.post('/api/apply'), {
     onSuccess: (res) => {
@@ -105,14 +85,8 @@ export default function Index(props: ServiceEnv) {
       }
     },
     refetchInterval: url === '' ? 500 : false,
-    enabled: workspaceQuota !== null && exceededQuotas?.length === 0
+    enabled: quotaCheckPassed
   });
-
-  useEffect(() => {
-    if (exceededQuotas && exceededQuotas.length > 0) {
-      setExceededDialogOpen(true);
-    }
-  }, [exceededQuotas]);
 
   if (isLoading) {
     return (
@@ -128,18 +102,6 @@ export default function Index(props: ServiceEnv) {
             />
           </Box>
         </Box>
-
-        <InsufficientQuotaDialog
-          items={exceededQuotas ?? []}
-          open={exceededDialogOpen}
-          showControls={false}
-          onOpenChange={(open) => {
-            // Refresh quota on open change
-            loadWorkspaceQuota();
-            setExceededDialogOpen(open);
-          }}
-          onConfirm={() => {}}
-        />
       </Flex>
     );
   }

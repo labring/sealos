@@ -15,7 +15,11 @@ const bundleFile = ({ input, output }) => {
 };
 const bundleType = ({ input, output }) => {
   return {
-    plugins: [dts()],
+    plugins: [
+      dts({
+        tsconfig: './tsconfig.json'
+      })
+    ],
     input,
     output
   };
