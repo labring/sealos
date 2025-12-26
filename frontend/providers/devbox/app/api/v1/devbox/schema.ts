@@ -147,8 +147,11 @@ export const RequestSchema = z.object({
     .openapi({
       description: 'Devbox name (must be DNS compliant: lowercase, numbers, hyphens, 1-63 chars)'
     }),
-  runtime: RuntimeName.openapi({
-    description: 'Runtime environment name'
+  runtime: z.string().openapi({
+    description: 'Runtime environment name or iconId (depending on isRuntimeName)'
+  }),
+  isRuntimeName: z.boolean().optional().openapi({
+    description: 'If true, runtime is treated as templateRepository name; otherwise as iconId (enum)'
   }),
   resource: ResourceConfig.openapi({
     description: 'Resource allocation for CPU and memory'

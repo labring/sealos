@@ -9,7 +9,7 @@ import { getUserNamespace } from './user';
 export const json2Devbox = (
   data: Omit<json2DevboxData, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
-  storageLimit: string = '1Gi'
+  storageLimit: string = '10Gi'
 ) => {
   const gpuMap = !!data.gpu?.type
     ? {
@@ -57,7 +57,7 @@ export const json2Devbox = (
       state: 'Running',
       ...gpuMap,
       runtimeClassName: 'devbox-runtime',
-      storageLimit: storageLimit // 1Gi default
+      storageLimit: storageLimit // 10Gi default
     }
   };
   if (devboxAffinityEnable === 'true') {

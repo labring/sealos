@@ -465,7 +465,9 @@ export async function POST(req: NextRequest) {
           isDeleted: false,
           regionUid,
           isPublic: true,
-          iconId: devboxForm.runtime,
+          ...(devboxForm.isRuntimeName
+            ? { name: devboxForm.runtime }
+            : { iconId: devboxForm.runtime }),
           templateRepositoryTags: {
             some: {
               tag: {
@@ -520,7 +522,8 @@ export async function POST(req: NextRequest) {
         networks: [],
         env: devboxForm.env || []
       },
-      DEVBOX_AFFINITY_ENABLE
+      DEVBOX_AFFINITY_ENABLE,
+      STORAGE_LIMIT
     );
 
     const [devboxBody, createdPorts] = await Promise.all([
