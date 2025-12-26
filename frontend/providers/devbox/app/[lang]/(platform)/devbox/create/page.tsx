@@ -23,9 +23,10 @@ import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
-import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { useUserStore } from '@/stores/user';
 import { useQuotaGuarded } from '@sealos/shared';
+import { useDevboxOperation } from '@/hooks/useDevboxOperation';
+import ErrorModal from '@/components/ErrorModal';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -39,7 +40,7 @@ const DevboxCreatePage = () => {
   const router = useRouter();
   const t = useTranslations();
   const searchParams = useSearchParams();
-  const { getErrorMessage } = useErrorMessage();
+  const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
   const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
@@ -191,88 +192,87 @@ const DevboxCreatePage = () => {
     if (!guideConfigDevbox) {
       return router.push('/devbox/detail/devbox-mock');
     }
-    setIsLoading(true);
-    try {
-      // gpu inventory check
-      if (formData.gpu?.type) {
-        const inventory = countGpuInventory(formData.gpu?.type);
-        if (formData.gpu?.amount > inventory) {
-          setIsLoading(false);
-          return toast.warning(
-            t('Gpu under inventory Tip', {
-              gputype: formData.gpu.type
-            })
-          );
-        }
-      }
 
-      // update
-      if (isEdit) {
-        const yamlList = generateYamlList(formData, env);
-        setYamlList(yamlList);
-        const parsedNewYamlList = yamlList.map((item) => item.value);
-        const parsedOldYamlList = formOldYamls.current.map((item) => item.value);
-        const areYamlListsEqual =
-          new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
-          [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item));
-        if (areYamlListsEqual) {
-          setIsLoading(false);
-          return toast.info(t('No changes detected'));
-        }
-        if (!parsedNewYamlList) {
-          // prevent empty yamlList
-          setIsLoading(false);
-          return toast.warning(t('submit_form_error'));
-        }
-        const patch = patchYamlList({
-          parsedOldYamlList: parsedOldYamlList,
-          parsedNewYamlList: parsedNewYamlList,
-          originalYamlList: crOldYamls.current
-        });
-        await updateDevbox({
-          patch,
-          devboxName: formData.name
-        });
-        track({
-          event: 'deployment_update',
-          module: 'devbox',
-          context: 'app'
-        });
-      } else {
-        await createDevbox(formData);
-        track({
-          event: 'deployment_create',
-          module: 'devbox',
-          context: 'app',
-          config: {
-            template_name: startedTemplate?.name || '',
-            template_version: templateList.find((t) => t.uid === formData.templateUid)?.name || ''
+    // gpu inventory check
+    if (formData.gpu?.type) {
+      const inventory = countGpuInventory(formData.gpu?.type);
+      if (formData.gpu?.amount > inventory) {
+        return toast.warning(
+          t('Gpu under inventory Tip', {
+            gputype: formData.gpu.type
+          })
+        );
+      }
+    }
+
+    // update
+    if (isEdit) {
+      const yamlList = generateYamlList(formData, env);
+      setYamlList(yamlList);
+      const parsedNewYamlList = yamlList.map((item) => item.value);
+      const parsedOldYamlList = formOldYamls.current.map((item) => item.value);
+      const areYamlListsEqual =
+        new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
+        [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item));
+      if (areYamlListsEqual) {
+        return toast.info(t('No changes detected'));
+      }
+      if (!parsedNewYamlList) {
+        return toast.warning(t('submit_form_error'));
+      }
+      const patch = patchYamlList({
+        parsedOldYamlList: parsedOldYamlList,
+        parsedNewYamlList: parsedNewYamlList,
+        originalYamlList: crOldYamls.current
+      });
+      await executeOperation(
+        () =>
+          updateDevbox({
+            patch,
+            devboxName: formData.name
+          }),
+        {
+          onSuccess: () => {
+            track({
+              event: 'deployment_update',
+              module: 'devbox',
+              context: 'app'
+            });
+            addDevboxIDE('vscode', formData.name);
+            if (sourcePrice?.gpu) {
+              refetchPrice();
+            }
+            setStartedTemplate(undefined);
+            router.push(`/devbox/detail/${formData.name}`);
           },
-          resources: {
-            cpu_cores: formData.cpu,
-            ram_mb: formData.memory
+          successMessage: t(applySuccess)
+        }
+      );
+    } else {
+      await executeOperation(() => createDevbox(formData), {
+        onSuccess: () => {
+          track({
+            event: 'deployment_create',
+            module: 'devbox',
+            context: 'app',
+            config: {
+              template_name: startedTemplate?.name || '',
+              template_version: templateList.find((t) => t.uid === formData.templateUid)?.name || ''
+            },
+            resources: {
+              cpu_cores: formData.cpu,
+              ram_mb: formData.memory
+            }
+          });
+          addDevboxIDE('vscode', formData.name);
+          if (sourcePrice?.gpu) {
+            refetchPrice();
           }
-        });
-      }
-      addDevboxIDE('vscode', formData.name);
-      setStartedTemplate(undefined);
-
-      toast.success(t(applySuccess));
-      router.push(`/devbox/detail/${formData.name}`);
-
-      if (sourcePrice?.gpu) {
-        refetchPrice();
-      }
-    } catch (error: any) {
-      setIsLoading(false);
-      if (typeof error === 'string' && error.includes('402')) {
-        toast.warning(t(applyError), {
-          description: t('outstanding_tips')
-        });
-      } else {
-        const errorMsg = getErrorMessage(error, isEdit ? 'update_failed' : 'create_failed');
-        toast.warning(t(applyError), { description: errorMsg });
-      }
+          setStartedTemplate(undefined);
+          router.push(`/devbox/detail/${formData.name}`);
+        },
+        successMessage: t(applySuccess)
+      });
     }
   };
 
@@ -327,7 +327,7 @@ const DevboxCreatePage = () => {
             from={captureFrom as 'list' | 'detail'}
             applyCb={handleApply}
           />
-          <div className="pb-30 w-full px-5 pt-10 md:px-10 lg:px-20">
+          <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
             {tabType === 'form' ? (
               <Form
                 isEdit={isEdit}
@@ -341,6 +341,12 @@ const DevboxCreatePage = () => {
         </div>
       </FormProvider>
       <ConfirmChild />
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={closeErrorModal}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
     </>
   );
 };
