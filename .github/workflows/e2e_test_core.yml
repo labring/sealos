@@ -48,6 +48,7 @@ jobs:
             E2E_sealos_apply_other_test,
             E2E_sealos_filesystem_test,
             E2E_sealos_run_patchimage_test,
+            E2E_sealos_execution_timeout_test,
             E2E_sealos_runtime_version_122_test,
             E2E_sealos_runtime_version_123_test,
             E2E_sealos_runtime_version_124_test,

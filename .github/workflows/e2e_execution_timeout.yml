@@ -1,0 +1,110 @@
+name: E2E Execution Timeout Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths:
+      - ".github/workflows/e2e_execution_timeout.yml"
+      - "lifecycle/cmd/sealos/cmd/**"
+      - "lifecycle/pkg/ssh/**"
+      - "lifecycle/pkg/exec/**"
+      - "lifecycle/pkg/guest/**"
+      - "lifecycle/test/e2e/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/e2e_execution_timeout.yml"
+      - "lifecycle/cmd/sealos/cmd/**"
+      - "lifecycle/pkg/ssh/**"
+      - "lifecycle/pkg/exec/**"
+      - "lifecycle/pkg/guest/**"
+      - "lifecycle/test/e2e/**"
+
+# Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
+concurrency:
+  group: e2e-execution-timeout-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64
+      e2e: true
+      image: false
+
+  e2e-execution-timeout-test:
+    needs: [call_ci_workflow]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: [
+            E2E_sealos_execution_timeout_test,
+          ]
+    steps:
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v4
+        with:
+          name: image-cri-shim-amd64
+          path: /tmp/
+
+      - name: Download sealctl
+        uses: actions/download-artifact@v4
+        with:
+          name: sealctl-amd64
+          path: /tmp/
+
+      - name: Download sealos
+        uses: actions/download-artifact@v4
+        with:
+          name: sealos-amd64
+          path: /tmp/
+
+      - name: Download e2e test
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e.test
+          path: /tmp/
+
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/{sealos,image-cri-shim,sealctl}
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+
+      - name: Remove containerd & docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+
+      - name: Run execution timeout E2E tests
+        env:
+          UNIT: ${{ matrix.unit }}
+        run: |
+          sudo apt-get remove docker docker-engine docker.io containerd runc
+          sudo apt-get purge docker-ce docker-ce-cli containerd.io
+          sudo apt-get remove -y moby-engine moby-cli moby-buildx moby-compose
+          sudo rm -rf /var/run/docker.sock
+          sudo rm -rf /run/containerd/containerd.sock
+          sudo chmod a+x /tmp/e2e.test
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="$UNIT"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.unit }}
+          path: |
+            /tmp/*.log
+            /tmp/test-results/
+          retention-days: 7
+
+      - name: Test timeout configuration verification
+        if: always()
+        run: |
+          echo "Verifying timeout flags are available..."
+          sudo sealos run --help | grep -i "execution-timeout" && echo "✓ execution-timeout flag is available" || echo "✗ execution-timeout flag not found"
+          sudo sealos run --help | grep -i "max-retry" && echo "✓ max-retry flag is available" || echo "✗ max-retry flag not found"
+          sudo sealos apply --help | grep -i "execution-timeout" && echo "✓ execution-timeout flag is available in apply" || echo "✗ execution-timeout flag not found in apply"
