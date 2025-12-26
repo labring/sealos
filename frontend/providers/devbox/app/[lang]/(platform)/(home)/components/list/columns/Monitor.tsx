@@ -19,7 +19,7 @@ export const Monitor = memo<MonitorProps>(
       <MonitorChart
         type={chartType}
         data={data || generateMockMonitorData(item.name)}
-        className="h-9 w-55"
+        className="h-9 w-44"
       />
     );
   },
