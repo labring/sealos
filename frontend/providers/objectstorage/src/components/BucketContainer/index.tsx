@@ -15,8 +15,12 @@ import MonitorIcon from '../Icons/MonitorIcon';
 import { useOssStore } from '@/store/ossStore';
 import BucketHeader from './BucketHeader';
 import FileManager from './FileManager';
-import DataMonitor from './Monitor';
+import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
+
+const DataMonitor = dynamic(() => import('./Monitor'), {
+  ssr: false
+});
 import { Authority } from '@/consts';
 import { HostStatus } from '@/components/BucketContainer/HostStatus';
 

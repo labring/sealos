@@ -39,6 +39,7 @@ type EChartsOption = echarts.ComposeOption<
   | LineSeriesOption
   | TitleComponentOption
 >;
+
 export default function TrendChart({
   source,
   title,
@@ -115,7 +116,7 @@ export default function TrendChart({
     },
     tooltip: {
       trigger: 'axis',
-      position(point, _params, dom, _rect, size) {
+      position(point: any, _params: any, dom: any, _rect: any, size: any) {
         let xPos = point[0];
         let yPos = point[1];
         let chartWidth = size.viewSize[0];

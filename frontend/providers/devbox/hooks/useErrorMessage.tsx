@@ -22,5 +22,17 @@ export const useErrorMessage = () => {
     [t]
   );
 
-  return { getErrorMessage };
+  /**
+   * Get error code from error object
+   * @param error - Error object
+   * @returns Error code or undefined
+   */
+  const getErrorCode = useCallback((error: any): number | undefined => {
+    if (typeof error === 'object' && error !== null) {
+      return error.code;
+    }
+    return undefined;
+  }, []);
+
+  return { getErrorMessage, getErrorCode };
 };

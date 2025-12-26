@@ -3,12 +3,9 @@ import { useOssStore } from '@/store/ossStore';
 import { Box, BoxProps, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { connect } from 'echarts';
-import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { useTranslation } from 'next-i18next';
-const LineChart = dynamic(() => import('./lineChart'), {
-  ssr: false
-});
+import LineChart from './lineChart';
 const titles = [
   'minio_bucket_usage_object_total',
   'minio_bucket_usage_total_bytes',

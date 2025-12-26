@@ -35,5 +35,22 @@
   "memory": "内存",
   "storage": "存储",
   "nodeport": "端口",
-  "traffic": "流量"
+  "traffic": "流量",
+  "insufficient_quota_dialog.alert-title": "现在无法创建应用，您已经用尽了全部资源。",
+  "insufficient_quota_dialog.cancel": "取消",
+  "insufficient_quota_dialog.confirm": "确认",
+  "insufficient_quota_dialog.please_upgrade_plan.1": "请 ",
+  "insufficient_quota_dialog.please_upgrade_plan.2": "升级您的计划",
+  "insufficient_quota_dialog.please_upgrade_plan.3": "或删除使用上述资源的应用。",
+  "insufficient_quota_dialog.quota_available": "可用: ",
+  "insufficient_quota_dialog.quota_in_use": "使用中: ",
+  "insufficient_quota_dialog.quota_total": "总计: ",
+  "insufficient_quota_dialog.title": "资源不足",
+  "user_balance_not_enough": "账户余额不足，请充值后继续操作。",
+  "forbidden_create_app": "当前用户角色为非管理员，请联系空间管理员执行操作。",
+  "app_already_exists": "桶已存在，请使用其他名称。",
+  "request_failed": "请求失败",
+  "prompt": "提示",
+  "add_credit": "充值",
+  "Confirm": "确认"
 }

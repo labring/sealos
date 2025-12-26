@@ -6,11 +6,12 @@ import ConfigHeader from '@/components/buckConfig/ConfigHeader';
 import ConfigMain from '@/components/buckConfig/Configmain';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { QueryClient, dehydrate, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createBucket } from '@/api/bucket';
-import { useToast } from '@/hooks/useToast';
+import { createBucket, listBucket } from '@/api/bucket';
 import { useRouter } from 'next/router';
 import useSessionStore from '@/store/session';
 import { useQuotaGuarded } from '@sealos/shared';
+import { useStorageOperation } from '@/hooks/useStorageOperation';
+import ErrorModal from '@/components/ErrorModal';
 
 const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const methods = useForm<FormSchema>({
@@ -19,10 +20,10 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
       bucketName
     }
   });
-  const { toast } = useToast();
   const client = useQueryClient();
   const router = useRouter();
   const { session } = useSessionStore();
+  const { executeOperation, errorModalState, closeErrorModal } = useStorageOperation();
 
   const mutation = useMutation({
     mutationFn: createBucket,
@@ -39,26 +40,22 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
         queryKey: [QueryKey.bucketInfo],
         refetchType: 'all'
       });
-      toast({
-        title: 'apply successfully',
-        status: 'success'
-      });
       router.replace('/');
-    },
-    onError(data: { message: string }) {
-      toast({
-        title: data.message,
-        status: 'error'
-      });
     }
   });
 
   const submitForm = () => {
     methods.handleSubmit((data) => {
-      mutation.mutate({
-        bucketName: data.bucketName,
-        bucketPolicy: data.bucketAuthority
-      });
+      executeOperation(
+        () =>
+          mutation.mutateAsync({
+            bucketName: data.bucketName,
+            bucketPolicy: data.bucketAuthority
+          }),
+        {
+          successMessage: 'apply successfully'
+        }
+      );
     })();
   };
 
@@ -74,28 +71,36 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   );
 
   return (
-    <FormProvider {...methods}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit();
-        }}
-      >
-        <Flex
-          minW={'1024px'}
-          flexDirection={'column'}
-          alignItems={'center'}
-          h={'100vh'}
-          bg={'#F3F4F5'}
+    <>
+      <FormProvider {...methods}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
         >
-          <ConfigHeader />
+          <Flex
+            minW={'1024px'}
+            flexDirection={'column'}
+            alignItems={'center'}
+            h={'100vh'}
+            bg={'#F3F4F5'}
+          >
+            <ConfigHeader />
 
-          <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-            <ConfigMain />
-          </Box>
-        </Flex>
-      </form>
-    </FormProvider>
+            <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+              <ConfigMain />
+            </Box>
+          </Flex>
+        </form>
+      </FormProvider>
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={closeErrorModal}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
+    </>
   );
 };
 
