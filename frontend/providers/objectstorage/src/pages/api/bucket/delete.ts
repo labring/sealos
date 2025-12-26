@@ -2,7 +2,7 @@ import { ApiResp, jsonRes } from '@/services/backend/response';
 import { appLanuchPadClient } from '@/services/request';
 import { V1Status } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@sealos/shared/server';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const client = await initK8s({ req });

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
 import type { BillingData, BillingItem, BillingSpec, Costs, RawCosts } from '@/types/billing';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@sealos/shared/server';
 import { jsonRes } from '@/services/backend/response';
 import { getUserNamespace } from '@/utils/user';
 const convertGpu = (_deduction?: RawCosts) =>

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@sealos/shared/server';
 import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
 import { appLanuchPadClient } from '@/services/request';

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { infoLog } from 'sealos-desktop-sdk';
+import { infoLog } from '@sealos/shared/server';
 import { PatchUtils } from '@kubernetes/client-node';
 
 import { YamlKindEnum } from '@/constants/devbox';

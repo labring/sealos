@@ -11,7 +11,7 @@ export const memoryFormatToMi = (memory: string) => {
   if (/Ki/gi.test(memory)) {
     value = value / 1024;
   } else if (/Mi/gi.test(memory)) {
-    value = value;
+    value = value * 1;
   } else if (/Gi/gi.test(memory)) {
     value = value * 1024;
   } else if (/Ti/gi.test(memory)) {
@@ -38,7 +38,7 @@ export const cpuFormatToM = (cpu: string) => {
   } else if (/u/gi.test(cpu)) {
     value = value / 1000;
   } else if (/m/gi.test(cpu)) {
-    value = value;
+    value = value * 1;
   } else {
     value = value * 1000;
   }

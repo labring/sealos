@@ -1,19 +1,22 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
-import { IncomingHttpHeaders } from 'http';
+import type { IncomingHttpHeaders } from 'http';
 import { errLog, infoLog } from './logger';
 
 function CheckIsInCluster(): [boolean, string] {
   if (
-    process.env.KUBERNETES_SERVICE_HOST !== undefined &&
-    process.env.KUBERNETES_SERVICE_HOST !== '' &&
-    process.env.KUBERNETES_SERVICE_PORT !== undefined &&
-    process.env.KUBERNETES_SERVICE_PORT !== ''
+    process.env['KUBERNETES_SERVICE_HOST'] !== undefined &&
+    process.env['KUBERNETES_SERVICE_HOST'] !== '' &&
+    process.env['KUBERNETES_SERVICE_PORT'] !== undefined &&
+    process.env['KUBERNETES_SERVICE_PORT'] !== ''
   ) {
     return [
       true,
-      'https://' + process.env.KUBERNETES_SERVICE_HOST + ':' + process.env.KUBERNETES_SERVICE_PORT
+      'https://' +
+        process.env['KUBERNETES_SERVICE_HOST'] +
+        ':' +
+        process.env['KUBERNETES_SERVICE_PORT']
     ];
   }
   return [false, ''];
@@ -66,7 +69,7 @@ async function CreateYaml(
       const response = await client.create(spec);
       created.push(response.body);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     errLog('create yaml error: ', error);
     /* delete success specs */
     for (const spec of created) {
@@ -98,7 +101,7 @@ async function replaceYaml(
       JSON.stringify(spec);
 
     try {
-      // @ts-ignore
+      // @ts-expect-error something legacy
       const { body } = await client.read(spec);
       infoLog('replace yaml: ', { kind: spec.kind });
       // update resource
@@ -110,15 +113,16 @@ async function replaceYaml(
         }
       });
       succeed.push(response.body);
-    } catch (e: any) {
+    } catch (e: unknown) {
       errLog('replace yaml error: ', e);
       // no yaml, create it
+      // @ts-expect-error something legacy
       if (e?.body?.code && +e?.body?.code === 404) {
         try {
           infoLog('create yaml: ', { kind: spec.kind });
           const response = await client.create(spec);
           succeed.push(response.body);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return Promise.reject(error);
         }
       } else {
@@ -144,6 +148,7 @@ async function applyYamlList({
   const formatYaml: k8s.KubernetesObject[] = yamlList
     .map((item) => yaml.loadAll(item))
     .flat()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((item: any) => {
       if (item.metadata) {
         item.metadata.namespace = namespace;
@@ -206,13 +211,13 @@ async function getDeployApp({
 
   try {
     app = (await k8sApp.readNamespacedDeployment(appName, namespace)).body;
-  } catch (error: any) {
+  } catch (error: unknown) {
     error;
   }
 
   try {
     app = (await k8sApp.readNamespacedStatefulSet(appName, namespace)).body;
-  } catch (error: any) {
+  } catch (error: unknown) {
     error;
   }
 
@@ -233,7 +238,7 @@ export async function initK8s({ req }: { req: { headers: IncomingHttpHeaders } }
     return Promise.reject('User is null');
   }
 
-  const namespace = kc.contexts[0].namespace || `ns-${kube_user.name}`;
+  const namespace = kc.contexts[0]?.namespace || `ns-${kube_user.name}`;
 
   return Promise.resolve({
     kc,

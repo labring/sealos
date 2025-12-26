@@ -1,4 +1,4 @@
-import { WstLogger } from 'sealos-desktop-sdk/service';
+import { WstLogger } from '@sealos/shared/server';
 import { Coin, defaultSliderKey } from '@/constants/app';
 
 export type QueryType = {

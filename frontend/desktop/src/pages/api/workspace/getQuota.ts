@@ -2,7 +2,7 @@ import { generateBillingToken, verifyAccessToken } from '@/services/backend/auth
 import { jsonRes } from '@/services/backend/response';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { cpuFormatToM, memoryFormatToMi } from 'sealos-desktop-sdk';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared/server';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {

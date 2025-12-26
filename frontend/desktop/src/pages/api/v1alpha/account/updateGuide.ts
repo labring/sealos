@@ -3,7 +3,7 @@ import { UpdateCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { AccountMeta } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@sealos/shared/server';
 
 export type UpdateUserGuideParams = {
   activityType: 'beginner-guide';
