@@ -465,7 +465,9 @@ export async function POST(req: NextRequest) {
           isDeleted: false,
           regionUid,
           isPublic: true,
-          iconId: devboxForm.runtime,
+          ...(devboxForm.isRuntimeName
+            ? { name: devboxForm.runtime }
+            : { iconId: devboxForm.runtime }),
           templateRepositoryTags: {
             some: {
               tag: {
