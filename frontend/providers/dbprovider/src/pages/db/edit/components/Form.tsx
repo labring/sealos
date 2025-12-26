@@ -1164,70 +1164,9 @@ const Form = ({
                             </Td>
                             <Td>
                               <Flex alignItems={'center'} gap={'8px'}>
-                                {editingParam === 'maxmemory' ? (
-                                  <Input
-                                    value={maxmemory || calculateMaxmemory(getValues('memory'))}
-                                    size="sm"
-                                    type="number"
-                                    borderRadius={'md'}
-                                    borderColor={'#E8EBF0'}
-                                    bg={'#F7F8FA'}
-                                    width={'180px'}
-                                    _focusVisible={{
-                                      borderColor: 'brightBlue.500',
-                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                                      bg: '#FFF',
-                                      color: '#111824'
-                                    }}
-                                    _hover={{
-                                      borderColor: 'brightBlue.300'
-                                    }}
-                                    onBlur={() => setEditingParam(null)}
-                                    onChange={(e) => {
-                                      setValue('parameterConfig', {
-                                        ...getValues('parameterConfig'),
-                                        maxmemory: e.target.value
-                                      });
-                                    }}
-                                  />
-                                ) : (
-                                  <Text fontSize={'12px'} color={'grayModern.600'}>
-                                    {maxmemory || calculateMaxmemory(getValues('memory'))}
-                                  </Text>
-                                )}
-                                <MyIcon
-                                  name="edit"
-                                  w={'16px'}
-                                  h={'16px'}
-                                  color={'grayModern.500'}
-                                  cursor={'pointer'}
-                                  _hover={{
-                                    color: 'brightBlue.500'
-                                  }}
-                                  onClick={() =>
-                                    setEditingParam(
-                                      editingParam === 'maxmemory' ? null : 'maxmemory'
-                                    )
-                                  }
-                                />
-                                {maxmemory && (
-                                  <MyIcon
-                                    name="delete"
-                                    w={'14px'}
-                                    h={'14px'}
-                                    color={'grayModern.400'}
-                                    cursor={'pointer'}
-                                    _hover={{
-                                      color: 'brightBlue.500'
-                                    }}
-                                    onClick={() => {
-                                      const currentParameterConfig =
-                                        getValues('parameterConfig') || {};
-                                      const { maxmemory: _, ...rest } = currentParameterConfig;
-                                      setValue('parameterConfig', rest);
-                                    }}
-                                  />
-                                )}
+                                <Text fontSize={'12px'} color={'grayModern.600'}>
+                                  {maxmemory || calculateMaxmemory(getValues('memory'))}
+                                </Text>
                               </Flex>
                             </Td>
                           </Tr>
