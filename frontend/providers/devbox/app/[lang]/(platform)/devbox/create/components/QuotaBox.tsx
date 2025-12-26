@@ -2,21 +2,17 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useUserStore } from '@/stores/user';
+import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
 
 import { Progress } from '@sealos/shadcn-ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
-import { resourcePropertyMap } from '@/constants/resource';
 
 const QuotaBox = ({ className }: { className?: string }) => {
   const t = useTranslations();
-  const { userQuota, loadUserQuota } = useUserStore();
-
-  useQuery(['getUserQuota'], loadUserQuota);
+  const { userQuota } = useUserQuota();
 
   const quotaList = useMemo(() => {
     if (!userQuota) return [];

@@ -114,6 +114,19 @@ class ClientSDK {
     return this.sendMessageToMaster(API_NAME.GET_WORKSPACE_QUOTA);
   }
 
+  getHostConfig(): Promise<{
+    cloud: {
+      domain: string;
+      port: string;
+      regionUid: string;
+    };
+    features: {
+      subscription: boolean;
+    };
+  }> {
+    return this.sendMessageToMaster(API_NAME.GET_HOST_CONFIG);
+  }
+
   /**
    * run master EventBus
    */
@@ -165,6 +178,9 @@ class ClientSDK {
   }
 }
 
+/**
+ * @deprecated - You really should not use sealosApp directly anymore. We will migrate to a React Context based approach in the near future.
+ */
 export let sealosApp: ClientSDK;
 
 export const createSealosApp = () => {

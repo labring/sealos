@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
@@ -25,10 +27,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@sealos/shadcn-ui/dropdown-menu';
-import { useUserStore } from '@/stores/user';
-import { WorkspaceQuotaItem } from '@/types/workspace';
-import { InsufficientQuotaDialog } from '@/components/dialogs/InsufficientQuotaDialog';
-import type { ImportType } from '@/types/import';
+import { useQuotaGuarded } from '@sealos/shared';
+import { ImportType } from '@/types/import';
 import GitImportDrawer from '@/components/drawers/GitImportDrawer';
 import LocalImportDrawer from '@/components/drawers/LocalImportDrawer';
 
@@ -40,24 +40,23 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
   const { env } = useEnvStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
-
-  const userStore = useUserStore();
-  const [quotaLoaded, setQuotaLoaded] = useState(false);
-  const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
-  const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
   const [importDrawerType, setImportDrawerType] = useState<ImportType | null>(null);
+  const [importDrawerTypeToSet, setImportDrawerTypeToSet] = useState<ImportType | null>(null);
 
-  // load user quota on load
-  useEffect(() => {
-    if (quotaLoaded) return;
-
-    userStore.loadUserQuota();
-    setQuotaLoaded(true);
-  }, [quotaLoaded, userStore]);
-
-  const handleGotoTemplate = useCallback(() => {
-    router.push('/template?tab=public');
-  }, [router]);
+  const handleGotoTemplate = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: 1,
+        memory: 1,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: true
+    },
+    () => {
+      router.push('/template?tab=public');
+    }
+  );
 
   const handleGotoDocs: any = () => {
     if (locale === 'zh') {
@@ -67,44 +66,44 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     }
   };
 
-  const handleCreateDevbox = useCallback((): void => {
-    setGuide2(true);
-    destroyDriver();
-
-    const exceededQuotaItems = userStore.checkExceededQuotas({
-      cpu: 1,
-      memory: 1,
-      ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-    });
-
-    console.log('exceededQuotaItems', exceededQuotaItems);
-    if (exceededQuotaItems.length > 0) {
-      setExceededQuotas(exceededQuotaItems);
-      setExceededDialogOpen(true);
-      return;
-    } else {
-      setExceededQuotas([]);
+  const handleCreateDevbox = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: 1,
+        memory: 1,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: true
+    },
+    () => {
+      setGuide2(true);
+      destroyDriver();
       handleGotoTemplate();
     }
-  }, [setGuide2, handleGotoTemplate, userStore]);
+  );
+
+  const guardedOpenImportDrawer = useQuotaGuarded(
+    {
+      requirements: {
+        cpu: 1,
+        memory: 1,
+        traffic: true
+      },
+      immediate: false,
+      allowContinue: false
+    },
+    () => {
+      setImportDrawerType(importDrawerTypeToSet);
+    }
+  );
 
   const handleOpenImportDrawer = useCallback(
     (type: ImportType) => {
-      const exceededQuotaItems = userStore.checkExceededQuotas({
-        cpu: 4,
-        memory: 8,
-        ...(userStore.session?.subscription?.type === 'PAYG' ? {} : { traffic: 1 })
-      });
-
-      if (exceededQuotaItems.length > 0) {
-        setExceededQuotas(exceededQuotaItems);
-        setExceededDialogOpen(true);
-        return;
-      }
-
-      setImportDrawerType(type);
+      setImportDrawerTypeToSet(type);
+      guardedOpenImportDrawer();
     },
-    [userStore]
+    [importDrawerType]
   );
 
   const handleImportSuccess = useCallback(
@@ -201,16 +200,6 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
           )}
         </div>
       </div>
-
-      <InsufficientQuotaDialog
-        items={exceededQuotas}
-        open={exceededDialogOpen}
-        onOpenChange={(open) => {
-          userStore.loadUserQuota();
-          setExceededDialogOpen(open);
-        }}
-        onConfirm={handleGotoTemplate}
-      />
 
       <GitImportDrawer
         open={importDrawerType === 'git'}

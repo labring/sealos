@@ -12,17 +12,16 @@ import {
   WeekSelectList
 } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import { resourcePropertyMap } from '@/constants/resource';
+import { resourcePropertyMap } from '@sealos/shared';
 import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { WorkspaceQuotaItem } from '@/types/workspace';
+import { type WorkspaceQuotaItem } from '@sealos/shared';
 import { distributeResources } from '@/utils/database';
 import { getAddonList } from '@/api/platform';
-import type { AddonItem } from '@/pages/api/getAddonList';
 import { useQuery } from '@tanstack/react-query';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -728,7 +727,8 @@ const Form = ({
                         resourcePropertyMap.cpu.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -741,7 +741,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
@@ -774,7 +774,8 @@ const Form = ({
                         resourcePropertyMap.memory.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -787,7 +788,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <Flex mb={7} alignItems={'center'}>
@@ -955,7 +956,8 @@ const Form = ({
                         resourcePropertyMap.storage.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -968,7 +970,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <ResourcesDistributeTable

@@ -25,4 +25,14 @@ export type Method =
 export type MasterOptions = {
   allowedOrigins: string[];
   getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
+  getHostConfigApi?: () => Promise<{
+    cloud: {
+      domain: string;
+      port: string;
+      regionUid: string;
+    };
+    features: {
+      subscription: boolean;
+    };
+  }>;
 };

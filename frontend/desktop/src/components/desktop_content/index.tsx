@@ -5,7 +5,6 @@ import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
 import { Box, Flex, Image, Button, Text } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -40,7 +39,7 @@ export const blurBackgroundStyles = {
 };
 
 export default function Desktop() {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
@@ -144,8 +143,6 @@ export default function Desktop() {
     [closeDesktopApp, guideModal]
   );
 
-  const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
-
   const handleRequestLogin = useCallback(
     (data: { appKey: string; pathname: string; query: Record<string, string> }) => {
       console.log('Guest Mode: Received request_login from Brain:', data);
@@ -167,6 +164,19 @@ export default function Desktop() {
       allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
       getWorkspaceQuotaApi: async () => {
         return getWorkspaceQuota().then((res) => res.data?.quota ?? []);
+      },
+      getHostConfigApi: async () => {
+        const config = useConfigStore.getState();
+        return {
+          cloud: {
+            domain: config.cloudConfig?.domain || '',
+            port: config.cloudConfig?.port || '',
+            regionUid: config.cloudConfig?.regionUID || ''
+          },
+          features: {
+            subscription: config.layoutConfig?.common?.subscriptionEnabled || false
+          }
+        };
       }
     });
     const cleanups = [

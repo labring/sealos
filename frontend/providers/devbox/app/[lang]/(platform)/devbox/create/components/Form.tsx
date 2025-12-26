@@ -19,8 +19,7 @@ import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
 
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
-import { useUserStore } from '@/stores/user';
-import { resourcePropertyMap } from '@/constants/resource';
+import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 interface FormProps {
@@ -32,22 +31,23 @@ interface FormProps {
 const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userStore = useUserStore();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
 
   const formValues = watch();
-  const exceededQuotas = useMemo(() => {
+  const requirements = useMemo(() => {
     const currentGpuAmount = formValues.gpu?.amount || 0;
     const oldGpuAmount = oldDevboxData?.gpu?.amount || 0;
 
-    return userStore.checkExceededQuotas({
+    return {
       cpu: isEdit ? formValues.cpu - (oldDevboxData?.cpu ?? 0) : formValues.cpu,
       memory: isEdit ? formValues.memory - (oldDevboxData?.memory ?? 0) : formValues.memory,
       gpu: isEdit ? currentGpuAmount - oldGpuAmount : currentGpuAmount,
       nodeport: 0
-    });
-  }, [formValues, userStore, isEdit, oldDevboxData]);
+    };
+  }, [formValues, isEdit, oldDevboxData]);
+
+  const { exceededQuotas } = useUserQuota({ requirements });
 
   useEffect(() => {
     if (searchParams.get('scrollTo') === 'network') {
@@ -124,7 +124,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
                   })}
                 </div>
-                <div className="text-sm text-red-600">
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <div className="text-sm text-red-600">
                   {t('please_upgrade_plan.0')}
                   <a
                     className="cursor-pointer font-semibold text-blue-600 underline"
@@ -133,7 +134,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     {t('please_upgrade_plan.1')}
                   </a>
                   {t('please_upgrade_plan.2')}
-                </div>
+                </div> */}
               </>
             )}
           </div>
@@ -153,7 +154,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                       resourcePropertyMap.cpu.scale
                   })}
                 </div>
-                <div className="text-sm text-red-600">
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <div className="text-sm text-red-600">
                   {t('please_upgrade_plan.0')}
                   <a
                     className="cursor-pointer font-semibold text-blue-600 underline"
@@ -162,7 +164,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     {t('please_upgrade_plan.1')}
                   </a>
                   {t('please_upgrade_plan.2')}
-                </div>
+                </div> */}
               </>
             )}
           </div>
@@ -183,7 +185,8 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                   })}
                 </div>
 
-                <div className="text-sm text-red-600">
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <div className="text-sm text-red-600">
                   {t('please_upgrade_plan.0')}
                   <a
                     className="cursor-pointer font-semibold text-blue-600 underline"
@@ -192,7 +195,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
                     {t('please_upgrade_plan.1')}
                   </a>
                   {t('please_upgrade_plan.2')}
-                </div>
+                </div> */}
               </>
             )}
           </div>

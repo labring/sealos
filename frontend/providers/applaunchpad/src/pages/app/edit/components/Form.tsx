@@ -1,12 +1,7 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
-import {
-  APPLICATION_PROTOCOLS,
-  defaultSliderKey,
-  defaultGpuSliderKey,
-  ProtocolList
-} from '@/constants/app';
+import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
@@ -15,7 +10,7 @@ import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
-import { resourcePropertyMap } from '@/constants/resource';
+import { resourcePropertyMap, useUserQuota, type WorkspaceQuotaItem } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -37,7 +32,6 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import { throttle } from 'lodash';
-import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -50,14 +44,10 @@ import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { NetworkSection } from './NetworkSection';
 import { mountPathToConfigMapKey } from '@/utils/tools';
-import { useQuery } from '@tanstack/react-query';
-import { WorkspaceQuotaItem } from '@/types/workspace';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
-
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const labelWidth = 120;
 
@@ -163,8 +153,7 @@ const Form = ({
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
 
   // For quota calculation in fields
-  const { userQuota, loadUserQuota } = useUserStore();
-  useQuery(['getUserQuota'], loadUserQuota);
+  const { userQuota } = useUserQuota();
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -820,7 +809,8 @@ const Form = ({
                       used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -833,7 +823,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
 
@@ -867,7 +857,8 @@ const Form = ({
                         resourcePropertyMap.cpu.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -880,7 +871,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               <Flex mb={8} pr={3} alignItems={'center'}>
@@ -909,7 +900,8 @@ const Form = ({
                         resourcePropertyMap.memory.scale
                     })}
                   </Box>
-                  <Box fontSize={'md'} color={'red.500'}>
+                  {/* [TODO] Let's wait for the Client SDK upgrade */}
+                  {/* <Box fontSize={'md'} color={'red.500'}>
                     {t('please_upgrade_plan.0')}
                     <Box
                       as="span"
@@ -922,7 +914,7 @@ const Form = ({
                       {t('please_upgrade_plan.1')}
                     </Box>
                     {t('please_upgrade_plan.2')}
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
             </Box>
