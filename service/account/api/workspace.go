@@ -103,29 +103,52 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 		)
 		return
 	}
-	total, used, err := dao.DBClient.GetWorkspaceSubscriptionTraffic(
-		req.Workspace,
-		dao.DBClient.GetLocalRegion().Domain,
-	)
+
+	// Check if workspace is a subscription user by checking namespace annotation
+	var namespace v1.Namespace
+	err = dao.K8sManager.GetClient().
+		Get(context.Background(), client.ObjectKey{Name: req.Workspace}, &namespace)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
-			helper.ErrorMessage{
-				Error: fmt.Sprintf("failed to get workspace subscription traffic: %v", err),
-			},
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to get namespace: %v", err)},
 		)
 		return
 	}
-	aiQuotaTotal, aiQuotaUsed, err := dao.DBClient.GetAIQuota(
-		req.Workspace,
-		dao.DBClient.GetLocalRegion().Domain,
-	)
-	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			helper.ErrorMessage{Error: fmt.Sprintf("failed to get AI quota: %v", err)},
+
+	isSubscriptionUser := false
+	if namespace.Annotations != nil {
+		_, isSubscriptionUser = namespace.Annotations["subscription.sealos.io/status"]
+	}
+
+	var total, used int64
+	var aiQuotaTotal, aiQuotaUsed int64
+
+	if isSubscriptionUser {
+		total, used, err = dao.DBClient.GetWorkspaceSubscriptionTraffic(
+			req.Workspace,
+			dao.DBClient.GetLocalRegion().Domain,
 		)
-		return
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{
+					Error: fmt.Sprintf("failed to get workspace subscription traffic: %v", err),
+				},
+			)
+			return
+		}
+		aiQuotaTotal, aiQuotaUsed, err = dao.DBClient.GetAIQuota(
+			req.Workspace,
+			dao.DBClient.GetLocalRegion().Domain,
+		)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("failed to get AI quota: %v", err)},
+			)
+			return
+		}
 	}
 	// 创建自定义配额状态
 	customQuota := CustomResourceQuotaStatus{
@@ -146,10 +169,14 @@ func GetWorkspaceResourceQuota(c *gin.Context) {
 		}
 		customQuota.Used[key] = value
 	}
-	customQuota.Hard["traffic"] = total
-	customQuota.Used["traffic"] = used
-	customQuota.Hard["ai_quota"] = aiQuotaTotal
-	customQuota.Used["ai_quota"] = aiQuotaUsed
+
+	// Only add traffic and ai_quota for subscription users
+	if isSubscriptionUser {
+		customQuota.Hard["traffic"] = total
+		customQuota.Used["traffic"] = used
+		customQuota.Hard["ai_quota"] = aiQuotaTotal
+		customQuota.Used["ai_quota"] = aiQuotaUsed
+	}
 	c.JSON(http.StatusOK, struct {
 		Quota CustomResourceQuotaStatus `json:"quota"`
 	}{
