@@ -56,8 +56,6 @@ const DevboxCreatePage = () => {
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [exceededQuotas, setExceededQuotas] = useState<WorkspaceQuotaItem[]>([]);
   const [exceededDialogOpen, setExceededDialogOpen] = useState(false);
-  console.log('exceededQuotas', exceededQuotas, exceededDialogOpen);
-
   const tabType = searchParams.get('type') || 'form';
   const devboxName = searchParams.get('name') || '';
 
