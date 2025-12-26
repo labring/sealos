@@ -111,6 +111,7 @@ export interface DBEditType {
     timeZone?: string;
     lowerCaseTableNames?: string;
     isMaxConnectionsCustomized?: boolean;
+    maxmemory?: string;
   };
 }
 
@@ -219,3 +220,51 @@ export type ParameterConfigEnumField = {
   description?: string;
   values: string[];
 };
+
+export type ParameterFieldMetadata = {
+  /**
+   * Whether the field is editable.
+   * Whitelist mode: only explicitly true fields are editable.
+   * @default false
+   */
+  editable?: boolean;
+  /**
+   * Whether the field is hidden.
+   * Blacklist mode: only explicitly true fields are hidden.
+   * @default false
+   */
+  hidden?: boolean;
+};
+
+type ConfigParameterBase = {
+  key: string;
+  value: string;
+  description?: string;
+  /**
+   * Whether the field is editable.
+   * Whitelist mode: only explicitly true fields are editable.
+   * @default false
+   */
+  editable: boolean;
+  /**
+   * Whether the field is hidden.
+   * Blacklist mode: only explicitly true fields are hidden.
+   * @default false
+   */
+  hidden?: boolean;
+};
+
+type ConfigParameterStringType = {
+  type: 'string';
+};
+
+type ConfigParameterEnumType = {
+  type: 'enum';
+  enumValues: string[];
+};
+
+export type ConfigParameterStringItem = ConfigParameterBase & ConfigParameterStringType;
+
+export type ConfigParameterEnumItem = ConfigParameterBase & ConfigParameterEnumType;
+
+export type ConfigParameterItem = ConfigParameterStringItem | ConfigParameterEnumItem;

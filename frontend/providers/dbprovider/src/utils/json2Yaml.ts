@@ -768,6 +768,7 @@ export const json2Reconfigure = (
         ...configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.newValue }), {})
       },
       annotations: {
+        // For displaying previous value.
         [DBPreviousConfigKey]: JSON.stringify(
           configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.oldValue }), {})
         )
@@ -962,6 +963,7 @@ export const json2ParameterConfig = (
     timeZone?: string;
     lowerCaseTableNames?: string;
     isMaxConnectionsCustomized?: boolean;
+    maxmemory?: string;
   },
   dynamicMaxConnections?: number
 ) => {
@@ -1338,6 +1340,10 @@ export const json2ParameterConfig = (
 
     if (maxConnections) {
       redisParams['maxclients'] = String(maxConnections);
+    }
+
+    if (parameterConfig?.maxmemory) {
+      redisParams['maxmemory'] = String(parameterConfig.maxmemory);
     }
 
     const replicationItem: any = {

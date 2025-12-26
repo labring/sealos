@@ -312,6 +312,10 @@ export const document = createDocument({
                         enum: ['0', '1'],
                         description:
                           'MySQL-specific: whether table names are case-sensitive. 0=case-sensitive, 1=case-insensitive'
+                      },
+                      maxmemory: {
+                        type: 'string',
+                        description: 'Redis-specific: maximum memory usage in bytes'
                       }
                     },
                     description:

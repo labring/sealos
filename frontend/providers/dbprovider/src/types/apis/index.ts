@@ -266,6 +266,9 @@ export const document = createDocument({
                       },
                       lowerCaseTableNames: {
                         type: 'string'
+                      },
+                      maxmemory: {
+                        type: 'string'
                       }
                     },
                     description: 'Database parameter configuration (optional)'
