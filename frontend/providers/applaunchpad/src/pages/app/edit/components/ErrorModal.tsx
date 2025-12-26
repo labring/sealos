@@ -44,7 +44,7 @@ const ErrorModal = ({
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
           <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
-            {title}
+            {t(title)}
           </Box>
         </ModalHeader>
         <ModalCloseButton fontSize={'16px'} />

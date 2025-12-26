@@ -54,22 +54,13 @@ const ErrorModal = ({
         <ModalFooter>
           <Button
             onClick={() => {
-              onClose();
-            }}
-            variant={'outline'}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            ml={'12px'}
-            onClick={() => {
               if (errorCode === ResponseCode.BALANCE_NOT_ENOUGH) {
                 openCostCenterApp();
               }
               onClose();
             }}
           >
-            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('confirm')}
+            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('Confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -3,29 +3,30 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { withErrorHandler } from '@/services/backend/middleware';
+import { ResponseCode } from '@/types/response';
 import { appDeployKey } from '@/constants/app';
 
 export type DeleteAppParams = { name: string };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  try {
-    const { name } = req.query as DeleteAppParams;
-    if (!name) {
-      throw new Error('deploy name is empty');
-    }
-
-    await DeleteAppByName({ name, req });
-
-    jsonRes(res, {
-      message: 'successfully deleted'
-    });
-  } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
+export default withErrorHandler(async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ApiResp>
+) {
+  const { name } = req.query as DeleteAppParams;
+  if (!name) {
+    return jsonRes(res, {
+      code: ResponseCode.BAD_REQUEST,
+      error: 'deploy name is required'
     });
   }
-}
+
+  await DeleteAppByName({ name, req });
+
+  jsonRes(res, {
+    message: 'successfully deleted'
+  });
+});
 
 export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: NextApiRequest }) {
   const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } =
@@ -82,7 +83,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   delIssuerAndCert.forEach((item) => {
     console.log(item, 'delIssuerAndCert err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(item?.reason?.body?.message || item?.reason?.body?.reason || '删除 App 异常');
+      throw item?.reason?.body || item?.reason || new Error('Delete App Failed');
     }
   });
 
@@ -127,7 +128,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   delDependent.forEach((item) => {
     console.log(item, 'delApp err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常');
+      throw item?.reason?.body || item?.reason || new Error('Delete App Failed');
     }
   });
 
@@ -141,7 +142,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   delApp.forEach((item) => {
     console.log(item, 'delApp Deployment StatefulSet err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常');
+      throw item?.reason?.body || item?.reason || new Error('Delete App Failed');
     }
   });
 }

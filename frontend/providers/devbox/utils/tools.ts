@@ -123,15 +123,6 @@ export const str2Num = (str?: string | number) => {
 export const getErrText = (err: any, def = '') => {
   let msg: string = typeof err === 'string' ? err : err?.message || def || '';
 
-  // Extract message from "code:message" format
-  if (msg.includes(':')) {
-    const parts = msg.split(':');
-    if (parts.length >= 2) {
-      // Get everything after the first colon
-      msg = parts.slice(1).join(':').trim();
-    }
-  }
-
   msg && console.log('error =>', msg);
   return msg;
 };

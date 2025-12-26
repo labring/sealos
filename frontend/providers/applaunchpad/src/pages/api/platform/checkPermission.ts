@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import * as k8s from '@kubernetes/client-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -63,17 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { code: 200, data: 'success' });
   } catch (err: any) {
-    if (err?.body?.code === 403 && err?.body?.message.includes('40001')) {
-      return jsonRes(res, {
-        code: 200,
-        data: 'insufficient_funds',
-        message: err.body.message
-      });
-    }
-
-    jsonRes(res, {
-      code: 500,
-      error: err?.body || err?.message
-    });
+    console.log('===checkPermission===\n', err?.body);
+    jsonRes(res, handleK8sError(err?.body));
   }
 }

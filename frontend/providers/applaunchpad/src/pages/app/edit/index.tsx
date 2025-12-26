@@ -40,7 +40,7 @@ import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shar
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 export const formData2Yamls = (data: AppEditType) => [
   {
@@ -470,16 +470,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       // check permission
       if (appName) {
         try {
-          const result = await checkPermission({
+          await checkPermission({
             appName: data.appName
           });
-          if (result === 'insufficient_funds') {
-            return toast({
-              status: 'warning',
-              title: t('user.Insufficient account balance')
-            });
-          }
         } catch (error: any) {
+          if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+            setErrorMessage(t('user_balance_not_enough'));
+            setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+            setIsLoading(false);
+            return;
+          } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+            setErrorMessage(t('forbidden_create_app'));
+            setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+            setIsLoading(false);
+            return;
+          }
           return toast({
             status: 'warning',
             title: error?.message || 'Check Error'

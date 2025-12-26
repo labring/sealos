@@ -5,7 +5,7 @@ import StatusTag from '@/components/StatusTag';
 import MyTable from '@/components/Table';
 import { StatusEnum } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useToast } from '@/hooks/useToast';
+import { useCronJobOperation } from '@/hooks/useCronJobOperation';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import useEnvStore from '@/store/env';
@@ -18,6 +18,7 @@ import { useCallback, useState } from 'react';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const DelModal = dynamic(() => import('@/pages/job/detail/components/DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const JobList = ({
   list = [],
@@ -28,7 +29,12 @@ const JobList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
-  const { toast } = useToast();
+  const {
+    executeOperation,
+    loading: operationLoading,
+    errorModalState,
+    closeErrorModal
+  } = useCronJobOperation();
   const theme = useTheme();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
@@ -55,46 +61,26 @@ const JobList = ({
 
   const handlePauseApp = useCallback(
     async (job: CronJobListItemType, type: 'Stop' | 'Start') => {
-      try {
-        setLoading(true);
-        await updateCronJobStatus({ jobName: job.name, type: type });
-        toast({
-          title: type === 'Stop' ? t('Pause Success') : t('Start Success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('Pause Error'),
-          status: 'error'
-        });
-        console.error(error);
-      }
-      setLoading(false);
-      refetchApps();
+      await executeOperation(() => updateCronJobStatus({ jobName: job.name, type: type }), {
+        successMessage: type === 'Stop' ? t('job_paused') : t('job_started'),
+        errorMessage: type === 'Stop' ? t('job_pause_error') : t('job_start_error'),
+        onSuccess: () => refetchApps()
+      });
     },
-    [refetchApps, setLoading, t, toast]
+    [executeOperation, refetchApps, t]
   );
   const handleImplementJob = useCallback(
     async (job: CronJobListItemType) => {
-      try {
-        setLoading(true);
-        await implementJob({ jobName: job.name });
-        toast({
-          title: t('job_implement_success'),
-          status: 'success'
-        });
+      const result = await executeOperation(() => implementJob({ jobName: job.name }), {
+        successMessage: t('job_implement_success'),
+        errorMessage: t('job_implement_error')
+      });
+      if (result !== null) {
         router.replace(`/job/detail?name=${job.name}`);
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('job_implement_error'),
-          status: 'error'
-        });
-        console.error(error);
+        refetchApps();
       }
-      setLoading(false);
-      refetchApps();
     },
-    [refetchApps, setLoading, t, toast, router]
+    [executeOperation, refetchApps, router, t]
   );
 
   const columns: {
@@ -263,6 +249,14 @@ const JobList = ({
       <PauseChild />
       {!!delAppName && (
         <DelModal jobName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
+      )}
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
       )}
     </Box>
   );

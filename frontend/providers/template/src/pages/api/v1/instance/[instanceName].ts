@@ -29,7 +29,7 @@ async function deleteResourcesBatch<T>(
 
   for (const result of deleteResults) {
     if (result.status === 'rejected' && +result?.reason?.body?.code !== 404) {
-      throw new Error(errorMessage);
+      throw result?.reason?.body || result?.reason || new Error(errorMessage);
     }
   }
 }
@@ -81,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
       } catch (error: any) {
         if (error?.body?.code !== 404) {
-          throw new Error(error?.message || 'An error occurred whilst deleting instance.');
+          throw error?.body || error;
         }
 
         return jsonRes(res, {

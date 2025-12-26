@@ -19,7 +19,7 @@ async function processAppResponse(
     .map((item: any) => {
       if (item.status === 'fulfilled') return item.value.body;
       if (+item.reason?.body?.code === 404) return '';
-      throw new Error('Get APP Deployment Error');
+      throw item.reason?.body || item.reason || new Error('Get APP Deployment Error');
     })
     .filter((item: any) => item)
     .flat() as DeployKindsType[];
