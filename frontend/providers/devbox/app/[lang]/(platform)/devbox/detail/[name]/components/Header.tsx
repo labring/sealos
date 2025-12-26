@@ -17,6 +17,7 @@ import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
 import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
 import DeleteDevboxModal from '@/components/dialogs/DeleteDevboxDialog';
+import ErrorModal from '@/components/ErrorModal';
 
 interface HeaderProps {
   refetchDevboxDetail: () => void;
@@ -28,8 +29,13 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
 
   const { guideIDE } = useGuideStore();
   const { devboxDetail, setDevboxList } = useDevboxStore();
-  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
-    useControlDevbox(refetchDevboxDetail);
+  const {
+    handleRestartDevbox,
+    handleStartDevbox,
+    handleGoToTerminal,
+    errorModalState,
+    closeErrorModal
+  } = useControlDevbox(refetchDevboxDetail);
 
   const [onOpenShutdown, setOnOpenShutdown] = useState(false);
   const [delDevbox, setDelDevbox] = useState<DevboxDetailTypeV2 | null>(null);
@@ -176,6 +182,12 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             devbox={devboxDetail}
           />
         ))}
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={closeErrorModal}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
     </div>
   );
 };

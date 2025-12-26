@@ -6,7 +6,6 @@ import { Loader2, TriangleAlert } from 'lucide-react';
 import { delDevbox } from '@/api/devbox';
 import { useIDEStore } from '@/stores/ide';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox';
-import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Dialog,
@@ -18,6 +17,8 @@ import {
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { track } from '@sealos/gtm';
+import { useDevboxOperation } from '@/hooks/useDevboxOperation';
+import ErrorModal from '@/components/ErrorModal';
 
 interface DeleteDevboxDialogProps {
   devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
@@ -34,43 +35,38 @@ const DeleteDevboxDialog = ({
 }: DeleteDevboxDialogProps) => {
   const t = useTranslations();
   const { removeDevboxIDE } = useIDEStore();
-  const { getErrorMessage } = useErrorMessage();
+  const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
-  const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
   const handleDelDevbox = useCallback(async () => {
-    try {
-      setLoading(true);
-      await delDevbox(devbox.name);
-      removeDevboxIDE(devbox.name);
-      toast.success(t('delete_successful'));
-      track({
-        event: 'deployment_delete',
-        module: 'devbox',
-        context: 'app'
-      });
-      onSuccess();
-      onClose();
+    await executeOperation(() => delDevbox(devbox.name), {
+      onSuccess: () => {
+        removeDevboxIDE(devbox.name);
+        track({
+          event: 'deployment_delete',
+          module: 'devbox',
+          context: 'app'
+        });
+        onSuccess();
+        onClose();
 
-      let retryCount = 0;
-      const maxRetries = 3;
-      const retryInterval = 3000;
+        let retryCount = 0;
+        const maxRetries = 3;
+        const retryInterval = 3000;
 
-      const retry = async () => {
-        if (retryCount < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, retryInterval));
-          await refetchDevboxList();
-          retryCount++;
-        }
-      };
-      retry();
-    } catch (error: any) {
-      toast.error(getErrorMessage(error, 'delete_failed'));
-      console.error(error);
-    }
-    setLoading(false);
-  }, [devbox.name, removeDevboxIDE, t, onSuccess, onClose, refetchDevboxList, getErrorMessage]);
+        const retry = async () => {
+          if (retryCount < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, retryInterval));
+            await refetchDevboxList();
+            retryCount++;
+          }
+        };
+        retry();
+      },
+      successMessage: t('delete_successful')
+    });
+  }, [devbox.name, removeDevboxIDE, t, onSuccess, onClose, refetchDevboxList, executeOperation]);
 
   // TODO：refactor this component to alert dialog
   return (
@@ -110,14 +106,19 @@ const DeleteDevboxDialog = ({
           </Button>
           <Button
             variant="destructive"
-            disabled={inputValue !== devbox.name || loading}
+            disabled={inputValue !== devbox.name}
             onClick={handleDelDevbox}
           >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('confirm_delete')}
           </Button>
         </DialogFooter>
       </DialogContent>
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={closeErrorModal}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
     </Dialog>
   );
 };

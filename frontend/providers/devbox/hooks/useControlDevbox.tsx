@@ -7,45 +7,13 @@ import { useUserStore } from '@/stores/user';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 import { track } from '@sealos/gtm';
-import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { DevboxStatusEnum } from '@/constants/devbox';
-
-const SPECIAL_ERROR_CODES = {
-  BALANCE_NOT_ENOUGH: 402,
-  FORBIDDEN: 403
-};
+import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
-  const { getErrorMessage, getErrorCode } = useErrorMessage();
-
-  const handleErrorWithSpecialCases = useCallback(
-    (error: any, defaultMsg: string) => {
-      const errorCode = getErrorCode(error);
-
-      if (errorCode === SPECIAL_ERROR_CODES.BALANCE_NOT_ENOUGH) {
-        toast.error(t('user_balance_not_enough_with_action'), {
-          duration: 5000,
-          action: {
-            label: t('go_to_recharge'),
-            onClick: () => {
-              sealosApp.runEvents('openDesktopApp', {
-                appKey: 'system-costcenter',
-                query: { openRecharge: 'true' }
-              });
-            }
-          }
-        });
-      } else if (errorCode === SPECIAL_ERROR_CODES.FORBIDDEN) {
-        const errorMsg = getErrorMessage(error, defaultMsg);
-        toast.error(errorMsg, { duration: 5000 });
-      } else {
-        toast.error(getErrorMessage(error, defaultMsg));
-      }
-    },
-    [getErrorMessage, getErrorCode, t]
-  );
+  const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
   const refetchThreeTimes = useCallback(() => {
     refetchDevboxData();
@@ -57,58 +25,57 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
     }, 3000);
   }, [refetchDevboxData]);
 
-  // TODO: we need a new loading component
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
-      try {
-        if (isOutStandingPayment) {
-          toast.error(t('start_outstanding_tips'));
-          return;
-        }
-        await restartDevbox({ devboxName: devbox.name });
-        track({
-          event: 'deployment_restart',
-          module: 'devbox',
-          context: 'app'
-        });
-        toast.success(t('restart_success'));
-      } catch (error: any) {
-        handleErrorWithSpecialCases(error, 'restart_error');
-        console.error(error);
+      if (isOutStandingPayment) {
+        toast.error(t('start_outstanding_tips'));
+        return;
       }
-      refetchThreeTimes();
+      await executeOperation(() => restartDevbox({ devboxName: devbox.name }), {
+        onSuccess: () => {
+          track({
+            event: 'deployment_restart',
+            module: 'devbox',
+            context: 'app'
+          });
+          refetchThreeTimes();
+        },
+        successMessage: t('restart_success')
+      });
     },
-    [refetchThreeTimes, t, isOutStandingPayment, handleErrorWithSpecialCases]
+    [refetchThreeTimes, t, isOutStandingPayment, executeOperation]
   );
 
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
-      try {
-        if (isOutStandingPayment) {
-          toast.error(t('start_outstanding_tips'));
-          return;
-        }
-        const isShutdown = devbox.status.value === DevboxStatusEnum.Shutdown;
-        const shouldChangeNetwork =
-          isShutdown && devbox.networkType && devbox.networkType !== 'SSHGate';
-
-        await startDevbox({
-          devboxName: devbox.name,
-          networkType: shouldChangeNetwork ? devbox.networkType : undefined
-        });
-        toast.success(t('start_success'));
-        track({
-          event: 'deployment_start',
-          module: 'devbox',
-          context: 'app'
-        });
-      } catch (error: any) {
-        handleErrorWithSpecialCases(error, 'start_error');
-        console.error(error);
+      if (isOutStandingPayment) {
+        toast.error(t('start_outstanding_tips'));
+        return;
       }
-      refetchThreeTimes();
+      const isShutdown = devbox.status.value === DevboxStatusEnum.Shutdown;
+      const shouldChangeNetwork =
+        isShutdown && devbox.networkType && devbox.networkType !== 'SSHGate';
+
+      await executeOperation(
+        () =>
+          startDevbox({
+            devboxName: devbox.name,
+            networkType: shouldChangeNetwork ? devbox.networkType : undefined
+          }),
+        {
+          onSuccess: () => {
+            track({
+              event: 'deployment_start',
+              module: 'devbox',
+              context: 'app'
+            });
+            refetchThreeTimes();
+          },
+          successMessage: t('start_success')
+        }
+      );
     },
-    [refetchThreeTimes, t, isOutStandingPayment, handleErrorWithSpecialCases]
+    [refetchThreeTimes, t, isOutStandingPayment, executeOperation]
   );
 
   const handleGoToTerminal = useCallback(
@@ -129,16 +96,19 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           context: 'app'
         });
       } catch (error: any) {
-        handleErrorWithSpecialCases(error, 'jump_terminal_error');
-        console.error(error);
+        await executeOperation(() => Promise.reject(error), {
+          successMessage: ''
+        });
       }
     },
-    [handleErrorWithSpecialCases]
+    [executeOperation]
   );
 
   return {
     handleRestartDevbox,
     handleStartDevbox,
-    handleGoToTerminal
+    handleGoToTerminal,
+    errorModalState,
+    closeErrorModal
   };
 };
