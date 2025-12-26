@@ -60,40 +60,57 @@ type NamespaceValidator struct {
 
 //+kubebuilder:webhook:path=/validate--v1-namespace,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update;delete,versions=v1,name=vnamespace.sealos.io,admissionReviewVersions=v1
 
-func (v *NamespaceValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *NamespaceValidator) ValidateCreate(
+	ctx context.Context,
+	obj runtime.Object,
+) (admission.Warnings, error) {
 	i, ok := obj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert to Namespace error")
+		return nil, errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("validating create", "name", i.Name)
-	return v.validate(ctx, i)
+	return nil, v.validate(ctx, i)
 }
 
-func (v *NamespaceValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *NamespaceValidator) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
 	ni, ok := newObj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert to Namespace error")
+		return nil, errors.New("obj convert to Namespace error")
 	}
 	oi, ok := oldObj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert to Namespace error")
+		return nil, errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("validating update", "name", oi.Name)
-	return v.validate(ctx, ni)
+	return nil, v.validate(ctx, ni)
 }
 
-func (v *NamespaceValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *NamespaceValidator) ValidateDelete(
+	ctx context.Context,
+	obj runtime.Object,
+) (admission.Warnings, error) {
 	i, ok := obj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert to Namespace error")
+		return nil, errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("validating delete", "name", i.Name)
-	return v.validate(ctx, i)
+	return nil, v.validate(ctx, i)
 }
 
 func (v *NamespaceValidator) validate(ctx context.Context, i *corev1.Namespace) error {
 	request, _ := admission.RequestFromContext(ctx)
-	nlog.Info("validating", "name", i.Name, "user", request.UserInfo.Username, "userGroups", request.UserInfo.Groups)
+	nlog.Info(
+		"validating",
+		"name",
+		i.Name,
+		"user",
+		request.UserInfo.Username,
+		"userGroups",
+		request.UserInfo.Groups,
+	)
 	if isUserServiceAccount(request.UserInfo.Username) {
 		return errors.New("user can not create/update/delete namespace")
 	}

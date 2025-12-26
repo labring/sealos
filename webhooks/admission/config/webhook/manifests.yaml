@@ -66,6 +66,198 @@ webhooks:
     resources:
     - namespaces
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-apps-v1-deployment
+  failurePolicy: Ignore
+  name: mdeployment.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-apps-v1-statefulset
+  failurePolicy: Ignore
+  name: mstatefulset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - statefulsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-apps-v1-replicaset
+  failurePolicy: Ignore
+  name: mreplicaset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - replicasets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-apps-v1-daemonset
+  failurePolicy: Ignore
+  name: mdaemonset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - daemonsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-batch-v1-job
+  failurePolicy: Ignore
+  name: mjob.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - batch
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - jobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-batch-v1-cronjob
+  failurePolicy: Ignore
+  name: mcronjob.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - batch
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate--v1-pod
+  failurePolicy: Ignore
+  name: mpod.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-apps-kubeblocks-io-v1alpha1-cluster
+  failurePolicy: Ignore
+  name: mcluster.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps.kubeblocks.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -121,4 +313,196 @@ webhooks:
     - DELETE
     resources:
     - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-apps-v1-deployment
+  failurePolicy: Ignore
+  name: vdeployment.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-apps-v1-statefulset
+  failurePolicy: Ignore
+  name: vstatefulset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - statefulsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-apps-v1-replicaset
+  failurePolicy: Ignore
+  name: vreplicaset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - replicasets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-apps-v1-daemonset
+  failurePolicy: Ignore
+  name: vdaemonset.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - daemonsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-batch-v1-job
+  failurePolicy: Ignore
+  name: vjob.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - batch
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - jobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-batch-v1-cronjob
+  failurePolicy: Ignore
+  name: vcronjob.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - batch
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate--v1-pod
+  failurePolicy: Ignore
+  name: vpod.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-apps-kubeblocks-io-v1alpha1-cluster
+  failurePolicy: Ignore
+  name: vcluster.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - apps.kubeblocks.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
   sideEffects: None
