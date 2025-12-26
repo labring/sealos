@@ -60,12 +60,7 @@ const ErrorModal = ({ title, errorCode, onClose }: Props) => {
           {title}
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'outline'}>
-            {t('Cancel')}
-          </Button>
-          <Button ml={'12px'} onClick={handleConfirm}>
-            {getButtonText()}
-          </Button>
+          <Button onClick={handleConfirm}>{getButtonText()}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

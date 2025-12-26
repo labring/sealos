@@ -1,32 +1,28 @@
-import React from 'react';
 import {
   Modal,
   ModalOverlay,
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalCloseButton,
-  Box,
   ModalFooter,
-  Button
+  Button,
+  ModalCloseButton,
+  Box
 } from '@chakra-ui/react';
-import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 import { ResponseCode } from '@/types/response';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import InfoCircleIcon from '@/components/Icons/InfoCircleIcon';
 
-const ErrorModal = ({
-  title,
-  content,
-  onClose,
-  errorCode
-}: {
-  title: string;
-  content: string;
+interface ErrorModalProps {
+  isOpen: boolean;
   onClose: () => void;
-  errorCode?: ResponseCode;
-}) => {
-  const { t } = useTranslation();
+  errorCode?: number;
+  errorMessage?: string;
+}
+
+export default function ErrorModal({ isOpen, onClose, errorCode, errorMessage }: ErrorModalProps) {
+  const { t } = useTranslation('common');
 
   const openCostCenterApp = () => {
     sealosApp.runEvents('openDesktopApp', {
@@ -38,18 +34,18 @@ const ErrorModal = ({
   };
 
   return (
-    <Modal isOpen={true} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
-          <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
+          <InfoCircleIcon w={'16px'} h={'16px'} color={'#CA8A04'} />
           <Box ml={3} fontSize={'xl'}>
-            {t(title)}
+            {t('prompt')}
           </Box>
         </ModalHeader>
         <ModalCloseButton fontSize={'16px'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
-          {content}
+          {errorMessage}
         </ModalBody>
         <ModalFooter>
           <Button
@@ -66,6 +62,4 @@ const ErrorModal = ({
       </ModalContent>
     </Modal>
   );
-};
-
-export default ErrorModal;
+}

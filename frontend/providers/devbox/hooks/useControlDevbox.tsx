@@ -10,10 +10,42 @@ import { track } from '@sealos/gtm';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { DevboxStatusEnum } from '@/constants/devbox';
 
+const SPECIAL_ERROR_CODES = {
+  BALANCE_NOT_ENOUGH: 402,
+  FORBIDDEN: 403
+};
+
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
-  const { getErrorMessage } = useErrorMessage();
+  const { getErrorMessage, getErrorCode } = useErrorMessage();
+
+  const handleErrorWithSpecialCases = useCallback(
+    (error: any, defaultMsg: string) => {
+      const errorCode = getErrorCode(error);
+
+      if (errorCode === SPECIAL_ERROR_CODES.BALANCE_NOT_ENOUGH) {
+        toast.error(t('user_balance_not_enough_with_action'), {
+          duration: 5000,
+          action: {
+            label: t('go_to_recharge'),
+            onClick: () => {
+              sealosApp.runEvents('openDesktopApp', {
+                appKey: 'system-costcenter',
+                query: { openRecharge: 'true' }
+              });
+            }
+          }
+        });
+      } else if (errorCode === SPECIAL_ERROR_CODES.FORBIDDEN) {
+        const errorMsg = getErrorMessage(error, defaultMsg);
+        toast.error(errorMsg, { duration: 5000 });
+      } else {
+        toast.error(getErrorMessage(error, defaultMsg));
+      }
+    },
+    [getErrorMessage, getErrorCode, t]
+  );
 
   const refetchThreeTimes = useCallback(() => {
     refetchDevboxData();
@@ -41,12 +73,12 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         });
         toast.success(t('restart_success'));
       } catch (error: any) {
-        toast.error(getErrorMessage(error, 'restart_error'));
+        handleErrorWithSpecialCases(error, 'restart_error');
         console.error(error);
       }
       refetchThreeTimes();
     },
-    [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
+    [refetchThreeTimes, t, isOutStandingPayment, handleErrorWithSpecialCases]
   );
 
   const handleStartDevbox = useCallback(
@@ -71,12 +103,12 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           context: 'app'
         });
       } catch (error: any) {
-        toast.error(getErrorMessage(error, 'start_error'));
+        handleErrorWithSpecialCases(error, 'start_error');
         console.error(error);
       }
       refetchThreeTimes();
     },
-    [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
+    [refetchThreeTimes, t, isOutStandingPayment, handleErrorWithSpecialCases]
   );
 
   const handleGoToTerminal = useCallback(
@@ -97,11 +129,11 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           context: 'app'
         });
       } catch (error: any) {
-        toast.error(getErrorMessage(error, 'jump_terminal_error'));
+        handleErrorWithSpecialCases(error, 'jump_terminal_error');
         console.error(error);
       }
     },
-    [getErrorMessage]
+    [handleErrorWithSpecialCases]
   );
 
   return {

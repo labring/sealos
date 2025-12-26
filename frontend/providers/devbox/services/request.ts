@@ -94,14 +94,16 @@ request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { status, data } = response;
     if (status < 200 || status >= 300 || !isApiResp(data)) {
-      return Promise.reject(
-        status + ':' + showStatus(status) + ', ' + typeof data === 'string' ? data : String(data)
-      );
+      return Promise.reject({
+        code: status,
+        message: showStatus(status) + (typeof data === 'string' ? ', ' + data : '')
+      });
     }
 
     const apiResp = data as ApiResp;
     if (apiResp.code < 200 || apiResp.code >= 400) {
-      return Promise.reject(apiResp.code + ':' + apiResp.message);
+      // Return full error object instead of string
+      return Promise.reject(apiResp);
     }
 
     response.data = apiResp.data;
@@ -109,7 +111,7 @@ request.interceptors.response.use(
   },
   (error: any) => {
     if (axios.isCancel(error)) {
-      return Promise.reject('cancel request' + String(error));
+      return Promise.reject({ message: 'cancel request' + String(error) });
     } else {
       error.errMessage =
         'request timeout or server error, please check the network or contact the administrator!';
