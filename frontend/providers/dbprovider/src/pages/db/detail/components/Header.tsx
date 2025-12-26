@@ -52,7 +52,7 @@ const Header = ({
   setShowSlider: Dispatch<boolean>;
   alerts: Record<string, DatabaseAlertItem>;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { message: toast } = useMessage();
   const {
@@ -233,7 +233,7 @@ const Header = ({
         status: 'error'
       });
     }
-  }, [toast, router, getDataSourceId, setDataSourceId, t, SystemEnv]);
+  }, [toast, getDataSourceId, setDataSourceId, t, SystemEnv, db.dbName, db.dbType, i18n]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
