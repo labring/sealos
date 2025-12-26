@@ -30,7 +30,8 @@ export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
     appName !== 'Trae' &&
     appName !== 'Trae-CN' &&
     appName !== 'CodeBuddy' &&
-    appName !== 'CodeBuddy CN'
+    appName !== 'CodeBuddy CN' &&
+    appName !== 'Antigravity'
   ) {
     await vscode.workspace
       .getConfiguration('remote.SSH')

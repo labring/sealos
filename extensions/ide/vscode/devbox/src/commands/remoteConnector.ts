@@ -276,7 +276,8 @@ export class RemoteSSHConnector extends Disposable {
       vscode.env.uriScheme === 'Qoder' ||
       vscode.env.uriScheme === 'Lingma' ||
       vscode.env.uriScheme === 'codebuddy' ||
-      vscode.env.uriScheme === 'codebuddycn'
+      vscode.env.uriScheme === 'codebuddycn' ||
+      vscode.env.uriScheme === 'antigravity'
 
     if (hasRemoteSSHInside) {
       return true
@@ -307,8 +308,8 @@ export class RemoteSSHConnector extends Disposable {
       vscode.env.uriScheme === 'cursor'
         ? cursorCustomRemoteSSHId
         : vscode.env.uriScheme === 'kiro'
-        ? openRemoteSSHId
-        : msRemoteSSHId
+          ? openRemoteSSHId
+          : msRemoteSSHId
 
     const install = message.Install
 

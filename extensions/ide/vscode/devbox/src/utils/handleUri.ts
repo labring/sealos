@@ -9,10 +9,10 @@ const message = {
 }
 
 export class UriHandler {
-  constructor() {}
+  constructor() { }
 
   public handle(uri: vscode.Uri): void {
-    Logger.info(`Handling URI: ${uri.toString()}`) 
+    Logger.info(`Handling URI: ${uri.toString()}`)
     // if (
     //   uri.scheme !== 'vscode' &&
     //   uri.scheme !== 'cursor' &&

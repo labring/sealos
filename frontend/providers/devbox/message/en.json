@@ -507,6 +507,7 @@
   "use_case": "Use Case",
   "use_jetbrains": "Develop with JetBrains IDEs",
   "use_jetbrains_toolbox": "Develop with JetBrains Toolbox",
+  "use_zed": "Develop with Zed",
   "used": "Used",
   "username": "Username",
   "verify_connection": "Verify Connection",
@@ -526,5 +527,10 @@
   "waiting_devbox_ready": "Waiting for DevBox to be ready...",
   "webide_fee_warning": "Starting the online IDE will listen on port 9999 and enable public access for this port. This may incur associated fees. Do you wish to continue?",
   "will_get_ready_soon": "Will get ready soon...",
-  "yaml_file": "YAML"
+  "yaml_file": "YAML",
+  "zed_guide_click_to_config": "Click the button below to <blue>configure SSH connection </blue>.",
+  "zed_guide_config_ssh": "SSH Connection Setup",
+  "zed_guide_prepare": "Prerequisites",
+  "zed_guide_prepare_install": "You need to download <blue>Zed</blue> in advance.",
+  "zed_guide_start_to_connect": "Connect"
 }

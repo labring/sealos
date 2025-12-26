@@ -26,7 +26,7 @@ import {
 import { downLoadBlob, useCopyData } from '@/utils/tools';
 
 import ScriptCode from '@/components/ScriptCode';
-import { JetBrainsGuideData } from '@/components/IDEButton';
+import { SSHConnectionData } from '@/components/IDEButton';
 
 const systemList = ['Windows', 'Mac', 'Linux'];
 
@@ -39,12 +39,12 @@ interface SshConnectModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  jetbrainsGuideData: JetBrainsGuideData;
+  sshConnectionData: SSHConnectionData;
 }
 
 const SshConnectDrawer = ({
   onClose,
-  jetbrainsGuideData,
+  sshConnectionData,
   onSuccess,
   open
 }: SshConnectModalProps) => {
@@ -81,43 +81,43 @@ const SshConnectDrawer = ({
       return {
         platform: 'Windows',
         script: windowsScriptsTemplate(
-          jetbrainsGuideData.privateKey,
-          jetbrainsGuideData.configHost,
-          jetbrainsGuideData.host,
-          jetbrainsGuideData.port,
-          jetbrainsGuideData.userName
+          sshConnectionData.privateKey,
+          sshConnectionData.configHost,
+          sshConnectionData.host,
+          sshConnectionData.port,
+          sshConnectionData.userName
         )
       };
     } else if (activeTab === 1) {
       return {
         platform: 'Mac',
         script: macosAndLinuxScriptsTemplate(
-          jetbrainsGuideData.privateKey,
-          jetbrainsGuideData.configHost,
-          jetbrainsGuideData.host,
-          jetbrainsGuideData.port,
-          jetbrainsGuideData.userName
+          sshConnectionData.privateKey,
+          sshConnectionData.configHost,
+          sshConnectionData.host,
+          sshConnectionData.port,
+          sshConnectionData.userName
         )
       };
     } else {
       return {
         platform: 'Linux',
         script: macosAndLinuxScriptsTemplate(
-          jetbrainsGuideData.privateKey,
-          jetbrainsGuideData.configHost,
-          jetbrainsGuideData.host,
-          jetbrainsGuideData.port,
-          jetbrainsGuideData.userName
+          sshConnectionData.privateKey,
+          sshConnectionData.configHost,
+          sshConnectionData.host,
+          sshConnectionData.port,
+          sshConnectionData.userName
         )
       };
     }
-  }, [activeTab, jetbrainsGuideData]);
+  }, [activeTab, sshConnectionData]);
 
   const downloadScript = () => {
     if (script.platform === 'Windows') {
-      downLoadBlob(script.script, 'text/plain', `ssh-config-${jetbrainsGuideData.devboxName}.ps1`);
+      downLoadBlob(script.script, 'text/plain', `ssh-config-${sshConnectionData.devboxName}.ps1`);
     } else {
-      downLoadBlob(script.script, 'text/plain', `ssh-config-${jetbrainsGuideData.devboxName}.sh`);
+      downLoadBlob(script.script, 'text/plain', `ssh-config-${sshConnectionData.devboxName}.sh`);
     }
   };
 
@@ -201,7 +201,7 @@ const SshConnectDrawer = ({
                       oneLine
                       defaultOpen
                       platform={script.platform}
-                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                      script={sshConnectCommand(sshConnectionData.configHost)}
                     />
                     <div className="text-sm/5 text-zinc-900">{t('jetbrains_guide_command')}</div>
                   </div>
@@ -224,9 +224,9 @@ const SshConnectDrawer = ({
                         variant="outline"
                         onClick={() => {
                           downLoadBlob(
-                            jetbrainsGuideData.privateKey,
+                            sshConnectionData.privateKey,
                             'application/octet-stream',
-                            `${jetbrainsGuideData.configHost}`
+                            `${sshConnectionData.configHost}`
                           );
                         }}
                       >
@@ -288,10 +288,10 @@ const SshConnectDrawer = ({
                       platform={script.platform}
                       defaultOpen
                       script={sshConfig(
-                        jetbrainsGuideData.configHost,
-                        jetbrainsGuideData.host,
-                        jetbrainsGuideData.port,
-                        jetbrainsGuideData.userName
+                        sshConnectionData.configHost,
+                        sshConnectionData.host,
+                        sshConnectionData.port,
+                        sshConnectionData.userName
                       )}
                     />
                   </div>
@@ -305,7 +305,7 @@ const SshConnectDrawer = ({
                       oneLine={true}
                       defaultOpen={true}
                       platform={script.platform}
-                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                      script={sshConnectCommand(sshConnectionData.configHost)}
                     />
                   </div>
                 </Step>

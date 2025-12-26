@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
-import { JetBrainsGuideData } from '@/components/IDEButton';
+import { SSHConnectionData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
 import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
@@ -19,15 +19,15 @@ interface JetBrainsGuideDrawerProps {
   open: boolean;
   onSuccess: () => void;
   onClose: () => void;
-  jetbrainsGuideData: JetBrainsGuideData;
+  sshConnectionData: SSHConnectionData;
 }
 
-const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGuideDrawerProps) => {
+const JetBrainsGuideDrawer = ({ open, onClose, sshConnectionData }: JetBrainsGuideDrawerProps) => {
   const t = useTranslations();
 
   const controllerRef = useRef<AbortController | null>(null);
 
-  const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType);
+  const recommendIDE = runtimeTypeToIDEType(sshConnectionData.runtimeType);
 
   const [progress, setProgress] = useState(0);
   const [selectedIDE, setSelectedIDE] = useState<JetbrainsIDEObj>(recommendIDE);
@@ -38,16 +38,16 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
     async (idePathName: string, version: string) => {
       window.open(
         `jetbrains-gateway://connect#host=${
-          jetbrainsGuideData.configHost
+          sshConnectionData.configHost
         }&type=ssh&deploy=false&projectPath=${encodeURIComponent(
-          jetbrainsGuideData.workingDir
-        )}&user=${encodeURIComponent(jetbrainsGuideData.userName)}&port=${encodeURIComponent(
-          jetbrainsGuideData.port
+          sshConnectionData.workingDir
+        )}&user=${encodeURIComponent(sshConnectionData.userName)}&port=${encodeURIComponent(
+          sshConnectionData.port
         )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
         '_blank'
       );
     },
-    [jetbrainsGuideData]
+    [sshConnectionData]
   );
 
   const handleConnectIDE = useCallback(async () => {
@@ -72,7 +72,7 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
     const idePathName = selectedIDE.value;
 
     // NOTE: workingDir /home/devbox/project -> /home/devbox, workingDir maybe change in the future
-    const basePath = jetbrainsGuideData.workingDir.split('/').slice(0, -1).join('/');
+    const basePath = sshConnectionData.workingDir.split('/').slice(0, -1).join('/');
 
     const execDownloadCommand = `
     IDE_DIR="${basePath}/.cache/JetBrains/${idePathName}${version}";
@@ -83,7 +83,7 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
 
     try {
       await execCommandInDevboxPod({
-        devboxName: jetbrainsGuideData.devboxName,
+        devboxName: sshConnectionData.devboxName,
         command: execDownloadCommand,
         idePath: `/home/devbox/.cache/JetBrains/${idePathName}${version}`,
         onDownloadProgress: (progressEvent) => {
@@ -112,7 +112,7 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
       setProgress(0);
       setOnConnecting(false);
     }
-  }, [selectedIDE, jetbrainsGuideData.devboxName, connectIDE, jetbrainsGuideData.workingDir]);
+  }, [selectedIDE, sshConnectionData.devboxName, connectIDE, sshConnectionData.workingDir]);
 
   const debouncedHandleConnectIDE = useMemo(
     () => debounce(handleConnectIDE, 3000),
@@ -279,7 +279,7 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
         open={onOpenSSHConnectDrawer}
         onClose={() => setOnOpenSSHConnectDrawer(false)}
         onSuccess={() => {}}
-        jetbrainsGuideData={jetbrainsGuideData}
+        sshConnectionData={sshConnectionData}
       />
     </Drawer>
   );

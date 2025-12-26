@@ -23,13 +23,14 @@ import { DevboxStatusMapType } from '@/types/devbox';
 import { destroyDriver, startDriver, startConnectIDE } from '@/hooks/driver';
 
 import ToolboxDrawer from './drawers/ToolboxDrawer';
+import ZedDrawer from './drawers/ZedDrawer';
 import JetBrainsGuideDrawer from './drawers/JetbrainsGuideDrawer';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname } from '@/i18n';
 import { track } from '@sealos/gtm';
 import { useConfirm } from '@/hooks/useConfirm';
 
-export interface JetBrainsGuideData {
+export interface SSHConnectionData {
   devboxName: string;
   runtimeType: string;
   privateKey: string;
@@ -77,8 +78,9 @@ const IDEButton = memo(
 
     const [loading, setLoading] = useState(false);
     const [onOpenToolboxDrawer, setOnOpenToolboxDrawer] = useState(false);
+    const [onOpenZedDrawer, setOnOpenZedDrawer] = useState(false);
     const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false);
-    const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
+    const [sshConnectionData, setSSHConnectionData] = useState<SSHConnectionData>();
 
     const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType;
     const { guideIDE, setGuideIDE } = useGuideStore();
@@ -104,7 +106,12 @@ const IDEButton = memo(
 
         setLoading(true);
 
-        if (currentIDE !== 'gateway' && currentIDE !== 'toolbox' && currentIDE !== 'webide')
+        if (
+          currentIDE !== 'gateway' &&
+          currentIDE !== 'toolbox' &&
+          currentIDE !== 'webide' &&
+          currentIDE !== 'zed'
+        )
           toast.info(t('opening_ide'));
 
         try {
@@ -140,7 +147,7 @@ const IDEButton = memo(
           });
           const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
 
-          setJetBrainsGuideData({
+          setSSHConnectionData({
             devboxName,
             runtimeType,
             privateKey: sshPrivateKey,
@@ -157,6 +164,9 @@ const IDEButton = memo(
             return;
           } else if (currentIDE === 'toolbox') {
             setOnOpenToolboxDrawer(true);
+            return;
+          } else if (currentIDE === 'zed') {
+            setOnOpenZedDrawer(true);
             return;
           }
 
@@ -315,7 +325,7 @@ const IDEButton = memo(
                 <div className="mx-1.5 w-px bg-gray-200"></div>
                 {/* right column */}
                 <div className="h-20 w-[230px] space-y-1">
-                  {getRightColumnItems(env.enableWebideFeature).map((item) =>
+                  {getRightColumnItems(env.currencySymbol, env.enableWebideFeature).map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
                         {item.options?.map((option, index) => (
@@ -379,19 +389,26 @@ const IDEButton = memo(
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {!!jetbrainsGuideData && (
+          {!!sshConnectionData && (
             <JetBrainsGuideDrawer
               open={onOpenJetbrainsModal}
               onSuccess={() => {}}
               onClose={() => setOnOpenJetbrainsModal(false)}
-              jetbrainsGuideData={jetbrainsGuideData}
+              sshConnectionData={sshConnectionData}
             />
           )}
-          {!!jetbrainsGuideData && (
+          {!!sshConnectionData && (
             <ToolboxDrawer
               open={onOpenToolboxDrawer}
               onClose={() => setOnOpenToolboxDrawer(false)}
-              jetbrainsGuideData={jetbrainsGuideData}
+              sshConnectionData={sshConnectionData}
+            />
+          )}
+          {!!sshConnectionData && (
+            <ZedDrawer
+              open={onOpenZedDrawer}
+              onClose={() => setOnOpenZedDrawer(false)}
+              sshConnectionData={sshConnectionData}
             />
           )}
         </div>
@@ -470,21 +487,39 @@ export const ideObj = {
   gateway: {
     label: 'Gateway',
     prefix: '-'
+  },
+  zed: {
+    label: 'Zed',
+    prefix: 'zed://'
+  },
+  antigravity: {
+    label: 'Antigravity',
+    prefix: 'antigravity://'
   }
 } as const;
 
 const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
-  const baseItems: MenuItem[] = [
+  if (currencySymbol === 'usd') {
+    return [
+      { value: 'zed', menuLabel: 'Zed' },
+      { value: 'antigravity', menuLabel: 'Antigravity' },
+      { value: 'kiro', menuLabel: 'Kiro' },
+      { value: 'windsurf', menuLabel: 'Windsurf' }
+    ];
+  }
+
+  return [
+    { value: 'zed', menuLabel: 'Zed' },
+    { value: 'antigravity', menuLabel: 'Antigravity' },
     { value: 'kiro', menuLabel: 'Kiro' },
     { value: 'qoder', menuLabel: 'Qoder' },
-    { value: 'lingma', menuLabel: 'Lingma' },
     {
       value: 'trae-group',
       menuLabel: 'Trae',
       group: 'trae',
       options: [
-        { value: 'trae', menuLabel: 'Trae' },
-        { value: 'traeCN', menuLabel: 'CN' }
+        { value: 'trae' as IDEType, menuLabel: 'Trae' },
+        { value: 'traeCN' as IDEType, menuLabel: 'CN' }
       ]
     },
     {
@@ -492,74 +527,72 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
       menuLabel: 'CodeBuddy',
       group: 'codebuddy',
       options: [
-        { value: 'codebuddy', menuLabel: 'CodeBuddy' },
-        { value: 'codebuddyCN', menuLabel: 'CN' }
+        { value: 'codebuddy' as IDEType, menuLabel: 'CodeBuddy' },
+        { value: 'codebuddyCN' as IDEType, menuLabel: 'CN' }
       ]
     }
   ];
-
+};
+const getRightColumnItems = (
+  currencySymbol: string,
+  enableWebideFeature: string
+): MenuItem[] => {
   if (currencySymbol === 'usd') {
-    return baseItems.map((item) => {
-      if (item.options) {
-        const filteredOptions = item.options.filter((option) => !option.value.includes('CN'));
-        // If only one option remains after filtering, flatten the group to a single item
-        if (filteredOptions.length === 1) {
-          return {
-            value: filteredOptions[0].value,
-            menuLabel: filteredOptions[0].menuLabel
-          };
-        }
-        return { ...item, options: filteredOptions };
+    return [
+      { value: 'cursor', menuLabel: 'Cursor' },
+      { value: 'vscode', menuLabel: 'VS Code' },
+      { value: 'vscodeInsiders', menuLabel: 'Insiders' },
+      {
+        value: 'jetbrains-group',
+        menuLabel: 'JetBrains',
+        group: 'jetbrains',
+        options: [
+          { value: 'toolbox' as IDEType, menuLabel: 'Toolbox' },
+          { value: 'gateway' as IDEType, menuLabel: 'Gateway' }
+        ]
       }
-      return item;
-    });
+    ];
   }
 
-  return baseItems;
-};
-const getRightColumnItems = (enableWebideFeature: string): MenuItem[] => {
-  const baseItems: MenuItem[] = [
+  const vscodeGroup: MenuItem = {
+    value: 'vscode-group',
+    menuLabel: 'VSCode',
+    group: 'vscode',
+    options:
+      enableWebideFeature === 'true'
+        ? [
+            { value: 'vscode' as IDEType, menuLabel: 'VS Code' },
+            { value: 'webide' as IDEType, menuLabel: 'Online' }
+          ]
+        : [{ value: 'vscode' as IDEType, menuLabel: 'VS Code' }]
+  };
+
+  const items: MenuItem[] = [
     { value: 'cursor', menuLabel: 'Cursor' },
-    {
-      value: 'vscode-group',
-      menuLabel: 'VSCode',
-      group: 'vscode',
-      options: [
-        { value: 'vscode', menuLabel: 'VSCode' },
-        { value: 'webide', menuLabel: 'Online' }
-      ]
-    },
+    vscodeGroup,
     { value: 'vscodeInsiders', menuLabel: 'Insiders' },
+    { value: 'lingma', menuLabel: 'Lingma' },
     { value: 'windsurf', menuLabel: 'Windsurf' },
     {
       value: 'jetbrains-group',
       menuLabel: 'JetBrains',
       group: 'jetbrains',
       options: [
-        { value: 'toolbox', menuLabel: 'Toolbox' },
-        { value: 'gateway', menuLabel: 'Gateway' }
+        { value: 'toolbox' as IDEType, menuLabel: 'Toolbox' },
+        { value: 'gateway' as IDEType, menuLabel: 'Gateway' }
       ]
     }
   ];
 
-  if (enableWebideFeature !== 'true') {
-    return baseItems.map((item) => {
-      if (item.options && item.value === 'vscode-group') {
-        const filteredOptions = item.options.filter((option) => option.value !== 'webide');
-        // If only one option remains after filtering, flatten the group to a single item
-        if (filteredOptions.length === 1) {
-          return {
-            value: filteredOptions[0].value,
-            menuLabel: filteredOptions[0].menuLabel
-          };
-        }
-        return { ...item, options: filteredOptions };
-      }
-      return item;
-    });
-  }
-
-  return baseItems;
+  return items.map((item) => {
+    if (item.options && item.options.length === 1) {
+      return {
+        value: item.options[0].value,
+        menuLabel: item.options[0].menuLabel
+      };
+    }
+    return item;
+  });
 };
 
 export default IDEButton;
