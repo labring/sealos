@@ -24,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       isEdit: boolean;
       backupInfo?: BackupItemType;
     };
-    console.log('api createDB dbForm', dbForm);
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
@@ -49,9 +48,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         opsRequests.push(verticalScalingYaml);
       }
 
+      let shouldNotifyReplicaChange = false;
       if (replicas !== dbForm.replicas) {
         const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
+        // Mark for notification after ops are applied
+        const mongoVersionsRequiringNotification = [
+          'mongodb-6.0',
+          'mongodb-5.0.20',
+          'mongodb-5.0',
+          'mongodb-4.4',
+          'mongodb-4.2',
+          'mongodb-4.0'
+        ];
+        if (mongoVersionsRequiringNotification.includes(dbForm.dbVersion)) {
+          shouldNotifyReplicaChange = true;
+        }
       }
 
       if (dbForm.storage > storage) {
@@ -71,7 +83,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               dbForm.parameterConfig,
               dynamicMaxConnections
             );
-            console.log('api createDB configYaml', configYaml);
             await applyYamlList([configYaml], 'replace');
           } catch (err) {
             console.log('Failed to update parameter configuration:', err);
@@ -81,6 +92,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       if (opsRequests.length > 0) {
         await applyYamlList(opsRequests, 'create');
+      }
+
+      // Call database alert API after ops are applied
+      if (shouldNotifyReplicaChange) {
+        await notifyDatabaseAlertApi({
+          namespace,
+          databaseName: dbForm.dbName,
+          replicas: dbForm.replicas
+        });
       }
 
       if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
@@ -222,4 +242,44 @@ export async function updateTerminationPolicyApi({
   );
 
   return result;
+}
+
+export async function notifyDatabaseAlertApi({
+  namespace,
+  databaseName,
+  replicas
+}: {
+  namespace: string;
+  databaseName: string;
+  replicas: number;
+}) {
+  const databaseAlertUrl = process.env.DATABASE_ALERT_URL;
+  const databaseAlertKey = process.env.DATABASE_ALERT_KEY;
+  if (!databaseAlertUrl || !databaseAlertKey) {
+    return;
+  }
+
+  try {
+    const alertApiUrl = `${databaseAlertUrl}/v1/replicas?key=${databaseAlertKey}`;
+    const response = await fetch(alertApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        namespace: namespace,
+        database_name: databaseName,
+        replicas: replicas
+      })
+    });
+
+    if (!response.ok) {
+      console.log('Failed to call database alert API:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+    }
+  } catch (err) {
+    console.log('Error calling database alert API:', err);
+  }
 }
