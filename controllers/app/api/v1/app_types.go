@@ -62,8 +62,7 @@ type AppSpec struct {
 }
 
 // AppStatus defines the observed state of App
-type AppStatus struct {
-}
+type AppStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
