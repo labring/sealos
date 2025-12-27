@@ -406,7 +406,11 @@ const DevboxList = ({
         size: 150,
         cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
           const item = row.original;
-          return <GPUItem gpu={item.gpu} />;
+          return (
+            <div className="overflow-hidden pr-4">
+              <GPUItem gpu={item.gpu} />
+            </div>
+          );
         }
       },
       {
