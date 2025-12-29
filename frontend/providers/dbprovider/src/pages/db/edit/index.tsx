@@ -320,7 +320,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);
     try {
-      !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
+      // !isEdit && (await applyYamlList([limitRangeYaml], 'create')); // no need to apply limit range yaml
       needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }));
     } catch (error: any) {
       handleDatabaseError(error);
