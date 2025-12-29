@@ -21,7 +21,7 @@ const ErrorModal = ({
   onClose,
   errorCode
 }: {
-  title: string;
+  title?: string;
   content: string;
   onClose: () => void;
   errorCode?: ResponseCode;
@@ -44,7 +44,7 @@ const ErrorModal = ({
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
           <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
-            {title}
+            {title || t('operation_failed')}
           </Box>
         </ModalHeader>
         <ModalCloseButton fontSize={'16px'} />
