@@ -74,8 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             console.log('api createDB configYaml', configYaml);
             await applyYamlList([configYaml], 'replace');
           } catch (err: any) {
-            console.log('Failed to update parameter configuration:', err?.body);
-            return jsonRes(res, handleK8sError(err?.body));
+            console.log('Failed to update parameter configuration:', err);
+            return jsonRes(res, handleK8sError(err));
           }
         }
       }
@@ -181,8 +181,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: 'success create db'
     });
   } catch (err: any) {
-    console.log('error create db', err?.body);
-    jsonRes(res, handleK8sError(err?.body));
+    console.log('error create db', err);
+    jsonRes(res, handleK8sError(err));
   }
 }
 
