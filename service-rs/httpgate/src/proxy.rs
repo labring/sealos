@@ -3,19 +3,19 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use pingora_core::upstreams::peer::{HttpPeer, ALPN};
 use pingora_core::Result;
-use pingora_http::{RequestHeader, ResponseHeader};
+use pingora_http::{RequestHeader, ResponseHeader, Version};
 use pingora_proxy::{ProxyHttp, Session};
 use regex::Regex;
 use tracing::{debug, info, warn};
 
 use crate::registry::DevboxRegistry;
 
-/// Upstream protocol type based on content-type header
+/// Upstream protocol type based on incoming request
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpstreamProtocol {
     /// HTTP/1.1 over cleartext
     Http,
-    /// gRPC over HTTP/2 cleartext (detected by content-type: application/grpc*)
+    /// gRPC over HTTP/2 cleartext (detected by H2 + content-type: application/grpc*)
     Grpc,
 }
 
@@ -109,8 +109,8 @@ pub struct ProxyCtx {
 /// - `devbox-<uniqueID>-<port>.xxx` -> `<pod_ip>:<port>`
 ///
 /// Protocol detection:
-/// - gRPC: detected by content-type header starting with "application/grpc"
-/// - HTTP: all other requests
+/// - gRPC/H2: detected by HTTP/2 request with content-type starting with "application/grpc"
+/// - HTTP/1.1: all other requests
 pub struct DevboxProxy {
     registry: Arc<DevboxRegistry>,
     /// Host parser for extracting uniqueID and port from Host header
@@ -211,20 +211,20 @@ impl ProxyHttp for DevboxProxy {
             return Self::send_not_found(session).await;
         };
 
-        // Detect protocol based on content-type header
-        // gRPC uses content-type starting with "application/grpc"
-        let protocol = session
+        // Detect protocol: use gRPC/H2 when request is HTTP/2 AND content-type starts with "application/grpc"
+        let is_h2 = session.req_header().version == Version::HTTP_2;
+        let is_grpc_content_type = session
             .req_header()
             .headers
             .get("content-type")
             .and_then(|ct| ct.to_str().ok())
-            .map_or(UpstreamProtocol::Http, |ct| {
-                if ct.starts_with("application/grpc") {
-                    UpstreamProtocol::Grpc
-                } else {
-                    UpstreamProtocol::Http
-                }
-            });
+            .is_some_and(|ct| ct.starts_with("application/grpc"));
+
+        let protocol = if is_h2 && is_grpc_content_type {
+            UpstreamProtocol::Grpc
+        } else {
+            UpstreamProtocol::Http
+        };
 
         // Resolve backend from registry
         let (backend_ip, backend_port) = match self.resolve_backend(&unique_id, port) {
