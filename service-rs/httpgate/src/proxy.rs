@@ -218,14 +218,13 @@ impl ProxyHttp for DevboxProxy {
             .headers
             .get("content-type")
             .and_then(|ct| ct.to_str().ok())
-            .map(|ct| {
+            .map_or(UpstreamProtocol::Http, |ct| {
                 if ct.starts_with("application/grpc") {
                     UpstreamProtocol::Grpc
                 } else {
                     UpstreamProtocol::Http
                 }
-            })
-            .unwrap_or(UpstreamProtocol::Http);
+            });
 
         // Resolve backend from registry
         let (backend_ip, backend_port) = match self.resolve_backend(&unique_id, port) {
