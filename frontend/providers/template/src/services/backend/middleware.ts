@@ -19,7 +19,7 @@ export const withErrorHandler = (handler: ApiHandler): ApiHandler => {
     try {
       await handler(req, res);
     } catch (err: any) {
-      console.error('API Error:', err?.body || err);
+      console.error('API Error:', err?.body || err?.message || err);
 
       // Use handleK8sError to process the error
       const errorResponse = handleK8sError(err?.body || err);

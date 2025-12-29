@@ -31,7 +31,7 @@ export function withErrorHandler<T = any>(
         return result;
       }
     } catch (err: any) {
-      console.error('API Error:', err);
+      console.error('API Error:', err?.body || err?.message || err);
       jsonRes(res, handleK8sError(err));
     }
   };
