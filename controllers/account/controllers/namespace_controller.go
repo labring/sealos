@@ -53,6 +53,9 @@ type NamespaceReconciler struct {
 	InternalEndpoint        string
 	deleteResourceSemaphore chan struct{}
 	deleteBackupSemaphore   chan struct{}
+	// devboxVersion stores the detected devbox API version (v1alpha1 or v1alpha2)
+	// empty string if devbox CRD is not installed
+	devboxVersion string
 }
 
 const (
@@ -357,11 +360,10 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	// 2. limitResourceQuotaCreate runs immediately after to quickly block all new resource creation,
 	//    preventing any new workloads from being created during the suspension process.
 	pipelines := []func(context.Context, string) error{
-		r.suspendOrphanPod,         // Recreate orphan pods with debt scheduler (requires pod creation)
-		r.limitResourceQuotaCreate, // Create resource quota to block all new resources (must be after suspendOrphanPod)
-		r.suspendKBCluster,         // Stop KubeBlocks clusters and disable backup
-		// devbox will return after v1alpha2
-		// r.suspendDevboxes,           // Stop devboxes and save original state
+		r.suspendOrphanPod,          // Recreate orphan pods with debt scheduler (requires pod creation)
+		r.limitResourceQuotaCreate,  // Create resource quota to block all new resources (must be after suspendOrphanPod)
+		r.suspendKBCluster,          // Stop KubeBlocks clusters and disable backup
+		r.suspendDevboxes,           // Stop devboxes and save original state
 		r.suspendCertificates,       // Disable cert-manager certificate renewal
 		r.suspendIngresses,          // Pause ingresses by changing ingress class to "pause"
 		r.suspendOrphanDeployments,  // Scale orphan deployments to 0 replicas
@@ -412,7 +414,7 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 				defer func() {
 					<-r.deleteResourceSemaphore // Release semaphore when done
 				}()
-				errChan <- deleteResource(ctx, r.dynamicClient, resource, namespace)
+				errChan <- r.deleteResource(ctx, resource, namespace)
 			case <-ctx.Done():
 				errChan <- ctx.Err()
 			}
@@ -428,19 +430,18 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 
 func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace string) error {
 	pipelines := []func(context.Context, string) error{
-		r.limitResourceQuotaDelete, // Remove resource quota
-		r.resumeOrphanPod,          // Resume orphan pods
-		r.resumeKBCluster,          // Start KubeBlocks clusters and restore backup
-		// devbox will return after v1alpha2
-		// r.resumeDevboxes,           // Restore devboxes to original state
-		r.resumeOrphanReplicaSets,  // Restore orphan replicaset replicas
-		r.resumeOrphanDeployments,  // Restore orphan deployment replicas
-		r.resumeOrphanStatefulSets, // Restore orphan statefulset replicas
-		r.resumeOrphanCronJob,      // Restore orphan cronjob suspend state
-		r.resumeOrphanJob,          // Restore orphan job suspend state
-		r.resumeCertificates,       // Restore certificate renewal
-		r.resumeIngresses,          // Restore ingresses by changing ingress class back
-		r.resumeObjectStorage,      // Enable object storage access
+		r.limitResourceQuotaDelete,  // Remove resource quota
+		r.resumeOrphanPod,           // Resume orphan pods
+		r.resumeKBCluster,           // Start KubeBlocks clusters and restore backup
+		r.resumeDevboxes,            // Restore devboxes to original state
+		r.resumeOrphanReplicaSets,   // Restore orphan replicaset replicas
+		r.resumeOrphanDeployments,   // Restore orphan deployment replicas
+		r.resumeOrphanStatefulSets,  // Restore orphan statefulset replicas
+		r.resumeOrphanCronJob,       // Restore orphan cronjob suspend state
+		r.resumeOrphanJob,           // Restore orphan job suspend state
+		r.resumeCertificates,        // Restore certificate renewal
+		r.resumeIngresses,           // Restore ingresses by changing ingress class back
+		r.resumeObjectStorage,       // Enable object storage access
 	}
 	var errs []error
 	for _, fn := range pipelines {
@@ -1247,6 +1248,15 @@ func (r *NamespaceReconciler) SetupWithManager(
 		return fmt.Errorf("failed to create dynamic client: %w", err)
 	}
 	r.dynamicClient = dynamicClient
+
+	// Detect devbox CRD version (v1alpha2 preferred, fallback to v1alpha1)
+	r.devboxVersion = r.detectDevboxVersion()
+	if r.devboxVersion != "" {
+		r.Log.Info("Detected devbox CRD", "version", r.devboxVersion)
+	} else {
+		r.Log.Info("Devbox CRD not detected, devbox suspend/resume will be skipped")
+	}
+
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
 		r.Log.V(1).
 			Info("failed to get the endpoint or namespace or admin secret env of object storage")
@@ -2264,9 +2274,8 @@ func (r *NamespaceReconciler) resumeCertificates(ctx context.Context, namespace 
 	return nil
 }
 
-func deleteResource(
+func (r *NamespaceReconciler) deleteResource(
 	ctx context.Context,
-	dynamicClient dynamic.Interface,
 	resource, namespace string,
 ) error {
 	deletePolicy := v12.DeletePropagationForeground
@@ -2343,15 +2352,21 @@ func deleteResource(
 	case "app":
 		gvr = schema.GroupVersionResource{Group: "app.sealos.io", Version: "v1", Resource: "apps"}
 	case "devboxes":
+		if r.devboxVersion == "" {
+			return nil // skip if devbox CRD not installed
+		}
 		gvr = schema.GroupVersionResource{
 			Group:    "devbox.sealos.io",
-			Version:  "v1alpha1",
+			Version:  r.devboxVersion,
 			Resource: "devboxes",
 		}
 	case "devboxreleases":
+		if r.devboxVersion == "" {
+			return nil // skip if devbox CRD not installed
+		}
 		gvr = schema.GroupVersionResource{
 			Group:    "devbox.sealos.io",
-			Version:  "v1alpha1",
+			Version:  r.devboxVersion,
 			Resource: "devboxreleases",
 		}
 	case "pod":
@@ -2359,7 +2374,7 @@ func deleteResource(
 	default:
 		return fmt.Errorf("unknown resource: %s", resource)
 	}
-	err := dynamicClient.Resource(gvr).Namespace(namespace).DeleteCollection(ctx, v12.DeleteOptions{
+	err := r.dynamicClient.Resource(gvr).Namespace(namespace).DeleteCollection(ctx, v12.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}, v12.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
@@ -2797,164 +2812,234 @@ func deleteResourceAndWait(
 	return nil
 }
 
-// func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace string) error {
-// 	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendDevboxes")
+// detectDevboxVersion detects the installed devbox CRD version
+// Returns "v1alpha2" if available, otherwise "v1alpha1", or empty string if not installed
+func (r *NamespaceReconciler) detectDevboxVersion() string {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-// 	devboxList := devboxv1alpha1.DevboxList{}
-// 	if err := r.Client.List(ctx, &devboxList, client.InNamespace(namespace)); err != nil {
-// 		if errors.IsNotFound(err) {
-// 			return nil
-// 		}
-// 		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
-// 	}
+	// Try v1alpha2 first (preferred)
+	gvrV2 := schema.GroupVersionResource{
+		Group:    "devbox.sealos.io",
+		Version:  "v1alpha2",
+		Resource: "devboxes",
+	}
+	_, err := r.dynamicClient.Resource(gvrV2).List(ctx, v12.ListOptions{Limit: 1})
+	if err == nil {
+		return "v1alpha2"
+	}
 
-// 	var errs []error
-// 	for _, devbox := range devboxList.Items {
-// 		devboxName := devbox.Name
-// 		logger.V(1).Info("Processing devbox", "Devbox", devboxName)
+	// Try v1alpha1 as fallback
+	gvrV1 := schema.GroupVersionResource{
+		Group:    "devbox.sealos.io",
+		Version:  "v1alpha1",
+		Resource: "devboxes",
+	}
+	_, err = r.dynamicClient.Resource(gvrV1).List(ctx, v12.ListOptions{Limit: 1})
+	if err == nil {
+		return "v1alpha1"
+	}
 
-// 		annotations := devbox.GetAnnotations()
-// 		if annotations == nil {
-// 			annotations = make(map[string]string)
-// 		}
+	// Devbox CRD not installed
+	return ""
+}
 
-// 		// Check if already has original state saved
-// 		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
+func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace string) error {
+	// Skip if devbox CRD is not installed
+	if r.devboxVersion == "" {
+		return nil
+	}
 
-// 		// Get current state
-// 		currentState := string(devbox.Spec.State)
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendDevboxes")
 
-// 		// Skip if already not running and state already saved
-// 		if currentState != "Running" && hasOriginalState {
-// 			logger.V(1).Info("Devbox already suspended, skipping", "Devbox", devboxName)
-// 			continue
-// 		}
+	devboxGVR := schema.GroupVersionResource{
+		Group:    "devbox.sealos.io",
+		Version:  r.devboxVersion,
+		Resource: "devboxes",
+	}
+	devboxList, err := r.dynamicClient.Resource(devboxGVR).
+		Namespace(namespace).
+		List(ctx, v12.ListOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
+	}
 
-// 		// Track if devbox needs update
-// 		needsUpdate := false
+	var errs []error
+	for _, devbox := range devboxList.Items {
+		devboxName := devbox.GetName()
+		logger.V(1).Info("Processing devbox", "Devbox", devboxName)
 
-// 		// Save original state only if not already saved
-// 		if !hasOriginalState {
-// 			// Determine if devbox was running (state is "Running")
-// 			wasRunning := currentState == "Running"
+		annotations := devbox.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
 
-// 			originalState := &DevboxOriginalState{
-// 				WasRunning: wasRunning,
-// 			}
-// 			stateJSON, err := encodeDevboxState(originalState)
-// 			if err != nil {
-// 				logger.Error(err, "failed to encode devbox state", "devbox", devboxName)
-// 				errs = append(
-// 					errs,
-// 					fmt.Errorf("failed to encode devbox state for %s: %w", devboxName, err),
-// 				)
-// 				continue
-// 			}
-// 			annotations[OriginalSuspendStateAnnotation] = stateJSON
-// 			needsUpdate = true
+		// Check if already has original state saved
+		_, hasOriginalState := annotations[OriginalSuspendStateAnnotation]
 
-// 			logger.Info(
-// 				"Saved devbox state",
-// 				"devbox",
-// 				devboxName,
-// 				"wasRunning",
-// 				wasRunning,
-// 			)
-// 		} else {
-// 			logger.V(1).Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
-// 		}
+		// Get current state from spec.state
+		currentState, _, _ := unstructured.NestedString(devbox.Object, "spec", "state")
 
-// 		// Set state to Stopped if currently running
-// 		if currentState == "Running" {
-// 			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
-// 			needsUpdate = true
-// 		}
+		// Skip if already not running and state already saved
+		if currentState != "Running" && hasOriginalState {
+			logger.V(1).Info("Devbox already suspended, skipping", "Devbox", devboxName)
+			continue
+		}
 
-// 		// Update only if there are actual changes
-// 		if needsUpdate {
-// 			devbox.SetAnnotations(annotations)
-// 			if err := r.Client.Update(ctx, &devbox); err != nil {
-// 				errs = append(errs, fmt.Errorf("failed to suspend devbox %s: %w", devboxName, err))
-// 				continue
-// 			}
-// 			logger.V(1).Info("Suspended devbox", "devbox", devboxName)
-// 		}
-// 	}
-// 	return errors2.Join(errs...)
-// }
+		// Track if devbox needs update
+		needsUpdate := false
 
-// func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace string) error {
-// 	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeDevboxes")
+		// Save original state only if not already saved
+		if !hasOriginalState {
+			// Determine if devbox was running (state is "Running")
+			wasRunning := currentState == "Running"
 
-// 	devboxList := devboxv1alpha1.DevboxList{}
-// 	if err := r.Client.List(ctx, &devboxList, client.InNamespace(namespace)); err != nil {
-// 		if errors.IsNotFound(err) {
-// 			return nil
-// 		}
-// 		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
-// 	}
+			originalState := &DevboxOriginalState{
+				WasRunning: wasRunning,
+			}
+			stateJSON, err := encodeDevboxState(originalState)
+			if err != nil {
+				logger.Error(err, "failed to encode devbox state", "devbox", devboxName)
+				errs = append(
+					errs,
+					fmt.Errorf("failed to encode devbox state for %s: %w", devboxName, err),
+				)
+				continue
+			}
+			annotations[OriginalSuspendStateAnnotation] = stateJSON
+			needsUpdate = true
 
-// 	var errs []error
-// 	for _, devbox := range devboxList.Items {
-// 		devboxName := devbox.Name
-// 		annotations := devbox.GetAnnotations()
-// 		if annotations == nil {
-// 			annotations = make(map[string]string)
-// 		}
+			logger.Info(
+				"Saved devbox state",
+				"devbox",
+				devboxName,
+				"wasRunning",
+				wasRunning,
+			)
+		} else {
+			logger.V(1).Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
+		}
 
-// 		// Get or create original state with defaults
-// 		var originalState *DevboxOriginalState
-// 		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
-// 		if !exists {
-// 			// If no state annotation, use default values: restore to Running
-// 			logger.Info(
-// 				"Devbox has no suspend state, using defaults to restore",
-// 				"Devbox",
-// 				devboxName,
-// 			)
-// 		} else {
-// 			// Decode original state
-// 			var err error
-// 			originalState, err = decodeDevboxState(stateJSON)
-// 			if err != nil {
-// 				logger.Error(err, "failed to decode devbox state", "devbox", devboxName)
-// 			}
-// 		}
-// 		if originalState == nil {
-// 			originalState = getDefaultDevboxState()
-// 		}
+		// Set state to Shutdown if currently running
+		if currentState == "Running" {
+			if err := unstructured.SetNestedField(devbox.Object, "Shutdown", "spec", "state"); err != nil {
+				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
+				errs = append(errs, fmt.Errorf("failed to set devbox state for %s: %w", devboxName, err))
+				continue
+			}
+			needsUpdate = true
+		}
 
-// 		logger.Info(
-// 			"Resuming devbox",
-// 			"devbox",
-// 			devboxName,
-// 			"wasRunning",
-// 			originalState.WasRunning,
-// 		)
+		// Update only if there are actual changes
+		if needsUpdate {
+			devbox.SetAnnotations(annotations)
+			_, err := r.dynamicClient.Resource(devboxGVR).
+				Namespace(namespace).
+				Update(ctx, &devbox, v12.UpdateOptions{})
+			if err != nil {
+				errs = append(errs, fmt.Errorf("failed to suspend devbox %s: %w", devboxName, err))
+				continue
+			}
+			logger.V(1).Info("Suspended devbox", "devbox", devboxName)
+		}
+	}
+	return errors2.Join(errs...)
+}
 
-// 		// Track if devbox needs update
-// 		needsUpdate := false
+func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace string) error {
+	// Skip if devbox CRD is not installed
+	if r.devboxVersion == "" {
+		return nil
+	}
 
-// 		// Restore devbox to Running state only if it was running before suspension
-// 		if originalState.WasRunning {
-// 			devbox.Spec.State = devboxv1alpha1.DevboxStateRunning
-// 			needsUpdate = true
-// 		}
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "resumeDevboxes")
 
-// 		// Remove original state annotation if it existed
-// 		if exists {
-// 			delete(annotations, OriginalSuspendStateAnnotation)
-// 			needsUpdate = true
-// 		}
+	devboxGVR := schema.GroupVersionResource{
+		Group:    "devbox.sealos.io",
+		Version:  r.devboxVersion,
+		Resource: "devboxes",
+	}
+	devboxList, err := r.dynamicClient.Resource(devboxGVR).
+		Namespace(namespace).
+		List(ctx, v12.ListOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list devboxes in namespace %s: %w", namespace, err)
+	}
 
-// 		// Update only if there are actual changes
-// 		if needsUpdate {
-// 			devbox.SetAnnotations(annotations)
-// 			if err := r.Client.Update(ctx, &devbox); err != nil {
-// 				errs = append(errs, fmt.Errorf("failed to resume devbox %s: %w", devboxName, err))
-// 				continue
-// 			}
-// 		}
-// 	}
-// 	return errors2.Join(errs...)
-// }
+	var errs []error
+	for _, devbox := range devboxList.Items {
+		devboxName := devbox.GetName()
+		annotations := devbox.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Get or create original state with defaults
+		var originalState *DevboxOriginalState
+		stateJSON, exists := annotations[OriginalSuspendStateAnnotation]
+		if !exists {
+			// If no state annotation, use default values: restore to Running
+			logger.Info(
+				"Devbox has no suspend state, using defaults to restore",
+				"Devbox",
+				devboxName,
+			)
+		} else {
+			// Decode original state
+			var err error
+			originalState, err = decodeDevboxState(stateJSON)
+			if err != nil {
+				logger.Error(err, "failed to decode devbox state", "devbox", devboxName)
+			}
+		}
+		if originalState == nil {
+			originalState = getDefaultDevboxState()
+		}
+
+		logger.Info(
+			"Resuming devbox",
+			"devbox",
+			devboxName,
+			"wasRunning",
+			originalState.WasRunning,
+		)
+
+		// Track if devbox needs update
+		needsUpdate := false
+
+		// Restore devbox to Running state only if it was running before suspension
+		if originalState.WasRunning {
+			if err := unstructured.SetNestedField(devbox.Object, "Running", "spec", "state"); err != nil {
+				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
+				errs = append(errs, fmt.Errorf("failed to set devbox state for %s: %w", devboxName, err))
+				continue
+			}
+			needsUpdate = true
+		}
+
+		// Remove original state annotation if it existed
+		if exists {
+			delete(annotations, OriginalSuspendStateAnnotation)
+			needsUpdate = true
+		}
+
+		// Update only if there are actual changes
+		if needsUpdate {
+			devbox.SetAnnotations(annotations)
+			_, err := r.dynamicClient.Resource(devboxGVR).
+				Namespace(namespace).
+				Update(ctx, &devbox, v12.UpdateOptions{})
+			if err != nil {
+				errs = append(errs, fmt.Errorf("failed to resume devbox %s: %w", devboxName, err))
+				continue
+			}
+		}
+	}
+	return errors2.Join(errs...)
+}
