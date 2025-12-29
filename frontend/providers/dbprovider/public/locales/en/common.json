@@ -406,6 +406,7 @@
   "replicas_list": "Pod List",
   "resources_distribution": "Resources Distribution",
   "restart_error": "Failed to restart due to an error",
+  "db_operation_failed": "Operation Failed",
   "restart_success": "Restarted successfully. Please wait...",
   "restarts": "Restart Count",
   "restore_backup": "Restore from Backup",

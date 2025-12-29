@@ -40,7 +40,7 @@ interface ErrorModalState {
  * const handleRestart = useCallback(async () => {
  *   await executeOperation(() => restartDB(db), {
  *     successMessage: t('restart_success'),
- *     errorMessage: t('restart_error'),
+ *     errorMessage: t('db_operation_failed'),
  *     eventName: 'deployment_restart'
  *   });
  * }, [db, executeOperation, t]);
@@ -140,13 +140,7 @@ export const useDBOperation = () => {
           }
         }
 
-        // Special error codes: display ErrorModal
-        if (
-          showErrorModal &&
-          (errorCode === ResponseCode.BALANCE_NOT_ENOUGH ||
-            errorCode === ResponseCode.FORBIDDEN_CREATE_APP ||
-            errorCode === ResponseCode.APP_ALREADY_EXISTS)
-        ) {
+        if (showErrorModal) {
           setErrorModalState({
             visible: true,
             title: errorMessage,
@@ -154,7 +148,6 @@ export const useDBOperation = () => {
             errorCode: errorCode
           });
         } else {
-          // Normal errors: display toast
           toast({
             title: errorMsg,
             status: 'error'

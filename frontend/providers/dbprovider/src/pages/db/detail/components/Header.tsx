@@ -81,7 +81,7 @@ const Header = ({
   const handleRestartApp = useCallback(async () => {
     await executeOperation(() => restartDB(db), {
       successMessage: t('restart_success'),
-      errorMessage: t('restart_error'),
+      errorMessage: t('db_operation_failed'),
       eventName: 'deployment_restart'
     });
   }, [db, executeOperation, t]);

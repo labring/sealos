@@ -405,6 +405,7 @@
   "replicas_list": "实例列表",
   "resources_distribution": "资源分配",
   "restart_error": "重启出现了意外",
+  "db_operation_failed": "操作失败",
   "restart_success": "重启成功，请等待",
   "restarts": "重启次数",
   "restore_backup": "恢复备份",

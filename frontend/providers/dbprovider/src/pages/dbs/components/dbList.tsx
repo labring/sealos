@@ -141,7 +141,7 @@ const DBList = ({
     async (db: DBListItemType) => {
       await executeOperation(() => restartDB({ dbName: db.name, dbType: db.dbType }), {
         successMessage: t('restart_success'),
-        errorMessage: t('restart_error'),
+        errorMessage: t('db_operation_failed'),
         eventName: 'deployment_restart'
       });
     },
