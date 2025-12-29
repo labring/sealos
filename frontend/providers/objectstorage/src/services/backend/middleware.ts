@@ -15,6 +15,7 @@ export const withErrorHandler = (
     try {
       await handler(req, res);
     } catch (error: any) {
+      console.error('API Error:', error?.body || error?.message || error);
       const errorResponse = handleK8sError(error);
       return jsonRes(res, errorResponse);
     }

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { jsonRes } from '@/services/backend/response';
+import { jsonRes, handleK8sError } from '@/services/backend/response';
 import { appLanuchPadClient } from '@/services/request';
 import fs from 'fs/promises';
 import _ from 'lodash';
@@ -89,11 +89,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: result.data.data
     });
   } catch (err: any) {
-    console.log(err);
-    jsonRes(res, {
-      code: 500,
-      message: 'get bucket error'
-    });
+    console.error('openHost error:', err?.response?.data || err?.body || err?.message || err);
+
+    if (err?.response?.data?.error) {
+      const errorData = err.response.data.error;
+      return jsonRes(res, handleK8sError(errorData));
+    }
+
+    const errorData = err?.body || err;
+    return jsonRes(res, handleK8sError(errorData));
   }
 }
 

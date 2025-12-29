@@ -50,6 +50,7 @@
   "forbidden_create_app": "当前用户角色为非管理员，请联系空间管理员执行操作。",
   "app_already_exists": "桶已存在，请使用其他名称。",
   "request_failed": "请求失败",
+  "operation_failed": "操作失败",
   "prompt": "提示",
   "add_credit": "充值",
   "Confirm": "确认"

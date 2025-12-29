@@ -51,6 +51,7 @@
   "forbidden_create_app": "You do not have sufficient permissions. Please contact the workspace administrator.",
   "app_already_exists": "Bucket already exists. Please use a different name.",
   "request_failed": "Request Failed",
+  "operation_failed": "Operation Failed",
   "prompt": "Prompt",
   "add_credit": "Add Credit",
   "Confirm": "Confirm"

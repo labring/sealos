@@ -40,7 +40,7 @@ export default function ErrorModal({ isOpen, onClose, errorCode, errorMessage }:
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
           <InfoCircleIcon w={'16px'} h={'16px'} color={'#CA8A04'} />
           <Box ml={3} fontSize={'xl'}>
-            {t('prompt')}
+            {t('operation_failed')}
           </Box>
         </ModalHeader>
         <ModalCloseButton fontSize={'16px'} />

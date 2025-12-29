@@ -43,6 +43,10 @@ export const _closeHost = (request: AxiosInstance) => (data: { bucket: string })
   request.post<any>('/api/site/closeHost', data);
 export const closeHost = _closeHost(request);
 
+export const _checkPermission = (request: AxiosInstance) => (data: { bucketName: string }) =>
+  request.get<any, ApiResp<string>>(`/api/platform/checkPermission?bucketName=${data.bucketName}`);
+export const checkPermission = _checkPermission(request);
+
 export function getEnv() {
   return request.get<any, EnvResponse>('/api/env');
 }

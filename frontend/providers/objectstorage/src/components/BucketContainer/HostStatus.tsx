@@ -16,14 +16,16 @@ import MoreIcon from '@/components/Icons/MoreIcon';
 import { WebHostIcon } from '@sealos/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOssStore } from '@/store/ossStore';
-import { closeHost, getHostStatus, openHost } from '@/api/bucket';
-import { useMemo } from 'react';
+import { closeHost, getHostStatus, openHost, checkPermission } from '@/api/bucket';
+import { useMemo, useState } from 'react';
 import { isArray } from 'lodash';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useToast } from '@/hooks/useToast';
 import useSessionStore from '@/store/session';
 import useEnvStore from '@/store/env';
 import { useQuotaGuarded } from '@sealos/shared';
+import { ResponseCode } from '@/types/response';
+import ErrorModal from '../ErrorModal';
 
 enum HostStatusType {
   Running,
@@ -37,6 +39,13 @@ export function HostStatus() {
   const { toast } = useToast();
   const { SystemEnv } = useEnvStore();
   const { session } = useSessionStore();
+  const [errorModalState, setErrorModalState] = useState<{
+    isOpen: boolean;
+    errorCode?: number;
+    errorMessage?: string;
+  }>({
+    isOpen: false
+  });
 
   const { data, isSuccess } = useQuery(
     [QueryKey.HostStatus, currentBucket?.name],
@@ -64,17 +73,39 @@ export function HostStatus() {
     isLoading: openLoading
   } = useMutation(
     [QueryKey.openHost, currentBucket?.name],
-    (bucket: string) => openHost({ bucket }),
+    async (bucket: string) => {
+      // Check permission first
+      await checkPermission({ bucketName: bucket });
+      // If permission check passes, then open host
+      return openHost({ bucket });
+    },
     {
       onSuccess() {
         queryClient.invalidateQueries([QueryKey.HostStatus]);
       },
       onError(error: any) {
-        toast({
-          title: t('openHostFailed'),
-          description: error.message ? t(error.message as any) : t('openHostFailed'),
-          status: 'error'
-        });
+        const errorCode = error?.code as ResponseCode;
+        // Translate error message key to actual text
+        const errorMsg = error?.message ? t(error.message as any) : t('openHostFailed');
+
+        // Show ErrorModal for specific error codes
+        if (
+          errorCode === ResponseCode.BALANCE_NOT_ENOUGH ||
+          errorCode === ResponseCode.FORBIDDEN_CREATE_APP
+        ) {
+          setErrorModalState({
+            isOpen: true,
+            errorCode: errorCode,
+            errorMessage: errorMsg
+          });
+        } else {
+          // Show toast for other errors
+          toast({
+            title: t('openHostFailed'),
+            description: errorMsg,
+            status: 'error'
+          });
+        }
       }
     }
   );
@@ -172,6 +203,12 @@ export function HostStatus() {
           </Menu>
         </HStack>
       )}
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={() => setErrorModalState({ isOpen: false })}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
     </Box>
   );
 }
