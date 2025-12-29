@@ -11,12 +11,11 @@ import (
 	"sync"
 	"time"
 
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -430,18 +429,18 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 
 func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace string) error {
 	pipelines := []func(context.Context, string) error{
-		r.limitResourceQuotaDelete,  // Remove resource quota
-		r.resumeOrphanPod,           // Resume orphan pods
-		r.resumeKBCluster,           // Start KubeBlocks clusters and restore backup
-		r.resumeDevboxes,            // Restore devboxes to original state
-		r.resumeOrphanReplicaSets,   // Restore orphan replicaset replicas
-		r.resumeOrphanDeployments,   // Restore orphan deployment replicas
-		r.resumeOrphanStatefulSets,  // Restore orphan statefulset replicas
-		r.resumeOrphanCronJob,       // Restore orphan cronjob suspend state
-		r.resumeOrphanJob,           // Restore orphan job suspend state
-		r.resumeCertificates,        // Restore certificate renewal
-		r.resumeIngresses,           // Restore ingresses by changing ingress class back
-		r.resumeObjectStorage,       // Enable object storage access
+		r.limitResourceQuotaDelete, // Remove resource quota
+		r.resumeOrphanPod,          // Resume orphan pods
+		r.resumeKBCluster,          // Start KubeBlocks clusters and restore backup
+		r.resumeDevboxes,           // Restore devboxes to original state
+		r.resumeOrphanReplicaSets,  // Restore orphan replicaset replicas
+		r.resumeOrphanDeployments,  // Restore orphan deployment replicas
+		r.resumeOrphanStatefulSets, // Restore orphan statefulset replicas
+		r.resumeOrphanCronJob,      // Restore orphan cronjob suspend state
+		r.resumeOrphanJob,          // Restore orphan job suspend state
+		r.resumeCertificates,       // Restore certificate renewal
+		r.resumeIngresses,          // Restore ingresses by changing ingress class back
+		r.resumeObjectStorage,      // Enable object storage access
 	}
 	var errs []error
 	for _, fn := range pipelines {
@@ -2374,9 +2373,11 @@ func (r *NamespaceReconciler) deleteResource(
 	default:
 		return fmt.Errorf("unknown resource: %s", resource)
 	}
-	err := r.dynamicClient.Resource(gvr).Namespace(namespace).DeleteCollection(ctx, v12.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}, v12.ListOptions{})
+	err := r.dynamicClient.Resource(gvr).
+		Namespace(namespace).
+		DeleteCollection(ctx, v12.DeleteOptions{
+			PropagationPolicy: &deletePolicy,
+		}, v12.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete %s: %w", resource, err)
 	}
@@ -2927,7 +2928,10 @@ func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace str
 		if currentState == "Running" {
 			if err := unstructured.SetNestedField(devbox.Object, "Shutdown", "spec", "state"); err != nil {
 				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
-				errs = append(errs, fmt.Errorf("failed to set devbox state for %s: %w", devboxName, err))
+				errs = append(
+					errs,
+					fmt.Errorf("failed to set devbox state for %s: %w", devboxName, err),
+				)
 				continue
 			}
 			needsUpdate = true
@@ -3017,7 +3021,10 @@ func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace stri
 		if originalState.WasRunning {
 			if err := unstructured.SetNestedField(devbox.Object, "Running", "spec", "state"); err != nil {
 				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
-				errs = append(errs, fmt.Errorf("failed to set devbox state for %s: %w", devboxName, err))
+				errs = append(
+					errs,
+					fmt.Errorf("failed to set devbox state for %s: %w", devboxName, err),
+				)
 				continue
 			}
 			needsUpdate = true
