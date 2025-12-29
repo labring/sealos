@@ -579,7 +579,7 @@ func (r *DebtReconciler) start() {
 	//			return nil
 	//		},
 	//	)
-	//}()
+	// }()
 
 	// 2.2 subscription change processing
 	// wg.Add(1)
