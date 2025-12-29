@@ -52,7 +52,7 @@ const ErrorModal = ({ title, errorCode, onClose }: Props) => {
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
           <MyIcon color={'#CA8A04'} name="warning" width={'16px'} height={'16px'} />
           <Box ml={3} fontSize={'xl'}>
-            {t('Prompt')}
+            {t('operation_failed')}
           </Box>
         </ModalHeader>
         <ModalCloseButton fontSize={'16px'} />

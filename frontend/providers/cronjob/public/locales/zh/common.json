@@ -253,6 +253,7 @@
   "implement": "执行",
   "job_implement_success": "Job 执行成功",
   "job_implement_error": "Job 执行失败",
+  "operation_failed": "操作失败",
   "job_paused": "任务已暂停",
   "job_pause_error": "暂停失败",
   "job_started": "任务已启动",

@@ -57,7 +57,7 @@ const Header = ({
   const handleRunJob = useCallback(async () => {
     await executeOperation(() => implementJob({ jobName: appName }), {
       successMessage: t('job_implement_success'),
-      errorMessage: t('job_implement_error'),
+      errorMessage: t('operation_failed'),
       onSuccess: () => refetchJob()
     });
   }, [appName, executeOperation, refetchJob, t]);

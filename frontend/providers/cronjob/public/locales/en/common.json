@@ -205,6 +205,7 @@
   "implement": "Execute",
   "job_implement_success": "Job has been executed",
   "job_implement_error": "An error occurred while executing the job",
+  "operation_failed": "Operation Failed",
   "job_paused": "Job has been paused",
   "job_pause_error": "Failed to pause job",
   "job_started": "Job has been started",

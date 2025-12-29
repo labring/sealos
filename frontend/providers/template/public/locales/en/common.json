@@ -180,6 +180,7 @@
   "add_credit": "Add Credit",
   "i_know": "I Know",
   "request_failed": "Request Failed",
+  "operation_failed": "Operation Failed",
   "app": {
     "Resource Quota": "Resource Quota",
     "The applied CPU exceeds the quota": "Requested CPU exceeds your quota. Please contact admin.",

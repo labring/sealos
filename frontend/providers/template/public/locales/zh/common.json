@@ -180,6 +180,7 @@
   "add_credit": "充值",
   "i_know": "我知道了",
   "request_failed": "请求失败",
+  "operation_failed": "操作失败",
   "app": {
     "Resource Quota": "资源配额",
     "The applied CPU exceeds the quota": "申请的 CPU 超出配额限制，请联系管理员",

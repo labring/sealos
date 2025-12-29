@@ -73,7 +73,7 @@ const JobList = ({
     async (job: CronJobListItemType) => {
       const result = await executeOperation(() => implementJob({ jobName: job.name }), {
         successMessage: t('job_implement_success'),
-        errorMessage: t('job_implement_error')
+        errorMessage: t('operation_failed')
       });
       if (result !== null) {
         router.replace(`/job/detail?name=${job.name}`);
