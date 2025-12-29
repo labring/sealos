@@ -10,6 +10,7 @@ import { parseTimeRange } from '@/utils/timeRange';
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
 import { RefreshButton } from '@/components/RefreshButton';
+import { EMPTY_MONITOR_DATA } from '@/constants/monitor';
 
 const Monitor = () => {
   const params = useParams();
@@ -68,12 +69,14 @@ const Monitor = () => {
         <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
           <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
             <span>{t('cpu')}</span>
-            <span>{devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%</span>
+            <span>
+              {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1] || '0'}%
+            </span>
           </div>
           <div className="h-full p-8">
             <MonitorChart
               type="blue"
-              data={devboxDetail?.usedCpu}
+              data={devboxDetail?.usedCpu || EMPTY_MONITOR_DATA}
               isShowText={false}
               splitNumber={4}
               className="w-full"
@@ -88,13 +91,13 @@ const Monitor = () => {
           <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
             <span>{t('memory')}</span>
             <span>
-              {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
+              {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1] || '0'}%
             </span>
           </div>
           <div className="h-full p-8">
             <MonitorChart
               type="green"
-              data={devboxDetail?.usedMemory}
+              data={devboxDetail?.usedMemory || EMPTY_MONITOR_DATA}
               isShowText={false}
               splitNumber={4}
               className="w-full"

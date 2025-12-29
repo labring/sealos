@@ -306,6 +306,7 @@
   "no_category_templates": "No {category} templates available",
   "no_description": "No description available",
   "no_devbox_remark_set": "no remarks set.",
+  "no_monitor_data": "No monitor data available",
   "no_network": "No network added yet",
   "no_related_devbox": "No related DevBoxs found.",
   "no_runtime_found": "No runtime found",

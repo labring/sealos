@@ -20,7 +20,7 @@ const MonitorDialog = ({ onClose, isOpen }: MonitorDialogProps) => {
         <DialogHeader>
           <DialogTitle>{t('monitor')}</DialogTitle>
         </DialogHeader>
-        {devboxDetail && (
+        {devboxDetail?.usedCpu && devboxDetail?.usedMemory ? (
           <div className="text-xs font-bold text-gray-900">
             <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-6">
               <div className="mb-3">
@@ -39,6 +39,10 @@ const MonitorDialog = ({ onClose, isOpen }: MonitorDialogProps) => {
                 <PodLineChart type={'purple'} data={devboxDetail.usedMemory} isShowLabel />
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+            {t('no_monitor_data')}
           </div>
         )}
       </DialogContent>

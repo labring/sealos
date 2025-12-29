@@ -9,12 +9,12 @@ import { DevboxListItemTypeV2 } from '@/types/devbox';
 
 export const useDevboxList = () => {
   const router = useRouter();
-  const [refresh, setFresh] = useState(false);
+  const [list, setList] = useState<DevboxListItemTypeV2[]>([]);
   const setDevboxList = useDevboxStore((state) => state.setDevboxList);
   const loadAvgMonitorData = useDevboxStore((state) => state.loadAvgMonitorData);
   const isInitialized = useGlobalStore((state) => state.isInitialized);
   const isImporting = useGlobalStore((state) => state.isImporting);
-  const list = useRef<DevboxListItemTypeV2[]>([]);
+  const prevListRef = useRef<DevboxListItemTypeV2[]>([]);
 
   const { isLoading, refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
     enabled: isInitialized,
@@ -27,15 +27,15 @@ export const useDevboxList = () => {
     },
     onSettled(res) {
       if (!res) return;
-      refreshList(res);
+      refreshList();
     }
   });
 
   const hasDataChanged = useCallback((newList: DevboxListItemTypeV2[]) => {
-    if (list.current.length !== newList.length) return true;
+    if (prevListRef.current.length !== newList.length) return true;
 
     return newList.some((newItem, index) => {
-      const oldItem = list.current[index];
+      const oldItem = prevListRef.current[index];
       if (!oldItem) return true;
 
       return (
@@ -49,17 +49,14 @@ export const useDevboxList = () => {
     });
   }, []);
 
-  const refreshList = useCallback(
-    (res?: DevboxListItemTypeV2[]) => {
-      const dataToCheck = res || useDevboxStore.getState().devboxList;
-      if (hasDataChanged(dataToCheck)) {
-        list.current = dataToCheck;
-        setFresh((state) => !state);
-      }
-      return null;
-    },
-    [hasDataChanged]
-  );
+  const refreshList = useCallback(() => {
+    const dataToCheck = useDevboxStore.getState().devboxList;
+    if (hasDataChanged(dataToCheck)) {
+      prevListRef.current = dataToCheck;
+      setList([...dataToCheck]);
+    }
+    return null;
+  }, [hasDataChanged]);
 
   const getViewportDevboxes = (minCount = 3) => {
     const devboxList = useDevboxStore.getState().devboxList;
@@ -75,15 +72,21 @@ export const useDevboxList = () => {
 
   const { refetch: refetchAvgMonitorData } = useQuery(
     ['loadAvgMonitorData'],
-    () => {
+    async () => {
       const viewportDevboxList = getViewportDevboxes();
-      return viewportDevboxList
-        .filter((devbox) => devbox.status.value === 'Running')
-        .map((devbox) => loadAvgMonitorData(devbox.name));
+      const runningDevboxes = viewportDevboxList.filter(
+        (devbox) => devbox.status.value === 'Running'
+      );
+      await Promise.all(runningDevboxes.map((devbox) => loadAvgMonitorData(devbox.name)));
+      return runningDevboxes.length;
     },
     {
       refetchOnMount: true,
-      refetchInterval: 2 * 60 * 1000,
+      refetchInterval: () => {
+        const devboxList = useDevboxStore.getState().devboxList;
+        const hasRunningDevbox = devboxList.some((devbox) => devbox.status.value === 'Running');
+        return hasRunningDevbox ? 2 * 60 * 1000 : false;
+      },
       enabled: !isLoading && !isImporting,
       onSettled() {
         refreshList();
@@ -115,7 +118,7 @@ export const useDevboxList = () => {
   }, [refetchDevboxList, refetchAvgMonitorData]);
 
   return {
-    list: list.current,
+    list,
     isLoading,
     refetchList: refetchListCallback
   };

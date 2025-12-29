@@ -59,6 +59,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       return loadDetailMonitorData(devboxName);
     },
     {
+      enabled: initialized && !!devboxDetail && !devboxDetail?.isPause,
       refetchOnMount: true,
       refetchInterval: 2 * 60 * 1000
     }
