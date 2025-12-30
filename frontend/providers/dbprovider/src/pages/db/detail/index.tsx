@@ -153,6 +153,7 @@ const AppDetail = ({
         });
       },
       onError(err) {
+        console.log('err', err);
         router.replace('/dbs');
         toast({
           title: String(err),

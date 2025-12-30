@@ -289,20 +289,6 @@
   "import_through_file": "文件导入",
   "important_tips_for_migrating": "<b>数据库</b>是一个用于存储和管理数据的系统，它包含了多个<b>database（数据库实例）</b>，每个database是一个独立的数据集合，包含表、视图、存储过程等对象。如果<b>源数据库</b>（即原始的数据库）和<b>目标数据库</b>（即要将数据导入的数据库）中有相同的部分（比如数据库名称、数据结构等），为了避免数据重复或冲突，应该<b>在目标数据库中创建一个新的database</b>来存放数据，而不是直接将数据导入到已有的目标数据库中。",
   "innodb_buffer_pool": "InnoDB 缓冲池",
-  "insufficient_quota_dialog": {
-    "alert-title": "现在无法创建数据库，您已经用尽了全部资源。",
-    "cancel": "取消",
-    "confirm": "确认",
-    "please_upgrade_plan": {
-      "1": "请 ",
-      "2": "升级您的计划",
-      "3": "或删除使用上述资源的应用。"
-    },
-    "quota_available": "可用: ",
-    "quota_in_use": "使用中: ",
-    "quota_total": "总计: ",
-    "title": "资源不足"
-  },
   "intranet_address": "内网地址",
   "items_per_db": "键值数",
   "jump_prompt": "跳转提示",
@@ -471,5 +457,6 @@
   "within_1_hour": "一小时内",
   "within_5_minutes": "五分钟内",
   "yaml_file": "YAML 文件",
-  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！"
+  "kafka_resource_desc": "kafka-broker占50%、controller、kafka-expoter各占25%",
+  "clickhouse_resource_desc": "clickhouse占50%、ch-keeper和zookeeper各占25%"
 }
