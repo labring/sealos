@@ -100,7 +100,8 @@ func RegisterPayRouter() {
 		POST(helper.AdminWorkspaceSubscriptionProcessExpired, api.AdminProcessExpiredWorkspaceSubscriptions).
 		POST(helper.AdminWorkspaceSubscriptionAdd, api.AdminAddWorkspaceSubscription).
 		POST(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionList).
-		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans)
+		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans).
+		POST(helper.AdminReloadPropertyTypes, api.ReloadPropertyTypes)
 	paymentGroup := router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
 		POST(helper.Notify, api.NewPayNotifyHandler).

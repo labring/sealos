@@ -19,9 +19,12 @@ package main
 import (
 	"context"
 	"flag"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
@@ -48,7 +51,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -278,8 +280,20 @@ func main() {
 		setupLog.Info("disable all webhooks")
 	} else {
 		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
+		// Start HTTP server for property reload handler (without TLS)
+		jwtSecret := os.Getenv("ACCOUNT_API_JWT_SECRET")
+		reloadHandler := &controllers.PropertyReloadHandler{
+			AccountReconciler: accountReconciler,
+			DBClient:          dbClient,
+			JwtSecret:         jwtSecret,
+		}
+		go func() {
+			setupLog.Info("starting property reload HTTP server", "port", 9444)
+			if err := http.ListenAndServe(":9444", reloadHandler); err != nil {
+				setupLog.Error(err, "failed to start property reload HTTP server")
+			}
+		}()
 	}
-
 	err = dbClient.InitDefaultPropertyTypeLS()
 	if err != nil {
 		setupLog.Error(err, "unable to get property type")
@@ -324,12 +338,13 @@ func main() {
 		setupManagerError(err, "Namespace")
 	}
 
-	if err = (&controllers.PaymentReconciler{
+	paymentReconciler := &controllers.PaymentReconciler{
 		Account:     accountReconciler,
 		WatchClient: watchClient,
 		Client:      mgr.GetClient(),
 		Scheme:      mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}
+	if err = (paymentReconciler).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}
 	trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))

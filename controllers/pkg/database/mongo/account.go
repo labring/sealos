@@ -532,6 +532,26 @@ func (m *mongoDB) InitDefaultPropertyTypeLS() error {
 	return nil
 }
 
+func (m *mongoDB) ReloadPropertyTypeLS() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("get all prices error: %w", err)
+	}
+	var properties []resources.PropertyType
+	if err = cursor.All(ctx, &properties); err != nil {
+		return fmt.Errorf("get all prices error: %w", err)
+	}
+	if len(properties) != 0 {
+		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(properties)
+		logger.Info("successfully reloaded property type ls", "count", len(properties))
+	} else {
+		logger.Info("no properties found in database, using default properties")
+	}
+	return nil
+}
+
 func (m *mongoDB) SavePropertyTypes(types []resources.PropertyType) error {
 	tps := make([]any, len(types))
 	for i, b := range types {

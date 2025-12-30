@@ -45,7 +45,6 @@ type PaymentReconciler struct {
 	Logger            logr.Logger
 	reconcileDuration time.Duration
 	createDuration    time.Duration
-	accountConfig     pkgtypes.AccountConfig
 	userLock          map[uuid.UUID]*sync.Mutex
 	domain            string
 }
@@ -89,14 +88,6 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 			r.createDuration = createDuration
 		}
 	}
-	r.accountConfig, err = r.Account.AccountV2.GetAccountConfig()
-	if err != nil {
-		return fmt.Errorf("get account config failed: %w", err)
-	}
-	if len(r.accountConfig.DefaultDiscountSteps) == 0 {
-		r.Logger.Info("default discount steps is empty, use default value")
-	}
-	r.Logger.V(1).Info("account config", "config", r.accountConfig)
 	r.Logger.V(1).
 		Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
 	if err := mgr.Add(r); err != nil {

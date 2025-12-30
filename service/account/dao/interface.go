@@ -135,6 +135,7 @@ type Interface interface {
 	) ([]types.WorkspaceSubscription, int64, error)
 	GetWorkspaceRemainingAIQuota(workspace string) (totalQuota, remainingQuota int64, err error)
 	ChargeWorkspaceAIQuota(usage int64, workspace string) error
+	ReloadConfig() error
 }
 
 type Account struct {
@@ -635,6 +636,44 @@ func (g *Cockroach) GetRechargeAmount(
 		paymentAmount += payment[i].Amount
 	}
 	return paymentAmount, nil
+}
+
+func (m *Account) ReloadConfig() error {
+	_, err := m.ck.ReloadAccountConfig()
+	if err != nil {
+		return fmt.Errorf("failed to reload account config: %w", err)
+	}
+	err = m.MongoDB.ReloadPropertyTypeLS()
+	if err != nil {
+		return fmt.Errorf("failed to reload property type ls: %w", err)
+	}
+	return nil
+}
+
+func (g *Cockroach) ReloadAccountConfig() error {
+	_, err := g.ck.ReloadAccountConfig()
+	return err
+}
+
+func (m *MongoDB) ReloadPropertyTypeLS() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("get all prices error: %w", err)
+	}
+	var properties []resources.PropertyType
+	if err = cursor.All(ctx, &properties); err != nil {
+		return fmt.Errorf("get all prices error: %w", err)
+	}
+	if len(properties) != 0 {
+		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(properties)
+		m.Properties = resources.DefaultPropertyTypeLS
+		logrus.Info("successfully reloaded property type ls", "count", len(properties))
+	} else {
+		logrus.Info("no properties found in database, using default properties")
+	}
+	return nil
 }
 
 func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
