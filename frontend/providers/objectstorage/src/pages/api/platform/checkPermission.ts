@@ -34,7 +34,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   };
 
   const options = {
-    headers: { 'Content-Type': k8s.PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH }
+    headers: { 'Content-Type': k8s.PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH }
   };
 
   await client.k8sCustomObjects.patchNamespacedCustomObject(

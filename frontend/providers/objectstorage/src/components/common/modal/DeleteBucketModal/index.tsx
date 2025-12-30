@@ -109,7 +109,8 @@ export default function DeleteBucketModal({
                   if (inputVal !== bucketName) {
                     toast({
                       title: t('bucket:enterValidBucketName'),
-                      status: 'error'
+                      status: 'error',
+                      position: 'top'
                     });
                     return;
                   }

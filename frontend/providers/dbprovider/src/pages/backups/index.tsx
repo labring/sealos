@@ -1,5 +1,6 @@
 import { deleteBackup, getBackups } from '@/api/backup';
 import { getDBByName } from '@/api/db';
+import ErrorModal from '@/components/ErrorModal';
 import MyIcon from '@/components/Icon';
 import MyTooltip from '@/components/MyTooltip';
 import Sidebar from '@/components/Sidebar';
@@ -9,6 +10,7 @@ import { useLoading } from '@/hooks/useLoading';
 import useEnvStore from '@/store/env';
 import { BackupItemType, DBDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { ResponseCode } from '@/types/response';
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText } from '@/utils/tools';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
@@ -64,6 +66,11 @@ export default function Backups() {
   });
 
   const [db, setDb] = useState<DBDetailType>();
+  const [errorModalState, setErrorModalState] = useState<{
+    isOpen: boolean;
+    errorCode?: number;
+    errorMessage?: string;
+  }>({ isOpen: false });
 
   const loadDBDetail = useCallback(
     async (dbName: string) => {
@@ -100,18 +107,32 @@ export default function Backups() {
         await deleteBackup(name);
         await refetch();
         toast({
-          title: t('Success'),
+          title: t('delete_successful'),
           status: 'success'
         });
-      } catch (err) {
-        toast({
-          title: getErrText(err),
-          status: 'error'
-        });
+      } catch (err: any) {
+        if (err?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+          setErrorModalState({
+            isOpen: true,
+            errorCode: ResponseCode.BALANCE_NOT_ENOUGH,
+            errorMessage: t('user_balance_not_enough')
+          });
+        } else if (err?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+          setErrorModalState({
+            isOpen: true,
+            errorCode: ResponseCode.FORBIDDEN_CREATE_APP,
+            errorMessage: t('forbidden_create_app')
+          });
+        } else {
+          toast({
+            title: err?.message || getErrText(err),
+            status: 'error'
+          });
+        }
       }
       setIsLoading(false);
     },
-    [refetch, setIsLoading, toast]
+    [refetch, setIsLoading, toast, t]
   );
 
   const columns = useMemo<Array<ColumnDef<BackupItemType>>>(
@@ -354,6 +375,14 @@ export default function Backups() {
       <ConfirmDelChild />
       {!!backupInfo?.name && db && (
         <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
+      )}
+      {errorModalState.isOpen && (
+        <ErrorModal
+          title={t('operation_failed')}
+          content={errorModalState.errorMessage || ''}
+          onClose={() => setErrorModalState({ isOpen: false })}
+          errorCode={errorModalState.errorCode}
+        />
       )}
     </Flex>
   );

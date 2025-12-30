@@ -36,7 +36,8 @@ export const useStorageOperation = () => {
           toast({
             title: successMessage,
             status: 'success',
-            duration: 3000
+            duration: 3000,
+            position: 'top'
           });
         }
 
@@ -66,7 +67,8 @@ export const useStorageOperation = () => {
           toast({
             title: t(errorMessage) || errorMessage,
             status: 'error',
-            duration: 5000
+            duration: 5000,
+            position: 'top'
           });
         }
 
