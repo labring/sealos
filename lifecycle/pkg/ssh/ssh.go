@@ -29,7 +29,7 @@ import (
 
 var (
 	defaultMaxRetry         = 5
-	defaultExecutionTimeout = 300 * time.Second
+	defaultExecutionTimeout = 2 * time.Hour
 )
 
 func RegisterFlags(fs *pflag.FlagSet) {
