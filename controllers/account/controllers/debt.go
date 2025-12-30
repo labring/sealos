@@ -551,8 +551,8 @@ func (r *DebtReconciler) start() {
 	}()
 
 	// 2.1 recharge record processing
-	//wg.Add(1)
-	//go func() {
+	// wg.Add(1)
+	// go func() {
 	//	defer wg.Done()
 	//	r.processWithTimeRange(
 	//		&types.Payment{},
@@ -579,7 +579,7 @@ func (r *DebtReconciler) start() {
 	//			return nil
 	//		},
 	//	)
-	//}()
+	// }()
 
 	// 2.2 subscription change processing
 	// wg.Add(1)
