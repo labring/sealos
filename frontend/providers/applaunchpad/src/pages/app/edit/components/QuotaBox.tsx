@@ -42,7 +42,7 @@ const QuotaBox = () => {
         ...item,
         tip: `${t('Total')}: ${`${item.limit} ${sourceMap[item.type]?.unit}`}
 ${t('common.Used')}: ${`${item.used} ${sourceMap[item.type]?.unit}`}
-${t('common.Surplus')}: ${`${item.limit - item.used} ${sourceMap[item.type]?.unit}`}
+${t('common.Surplus')}: ${`${Math.max(0, item.limit - item.used)} ${sourceMap[item.type]?.unit}`}
 `,
         color: sourceMap[item.type]?.color
       }))

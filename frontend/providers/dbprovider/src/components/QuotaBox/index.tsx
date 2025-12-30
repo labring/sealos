@@ -41,7 +41,7 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
         const color = sourceMap[type]?.color;
         const tip = `${t('common.Total')}: ${limit} ${unit}
 ${t('common.Used')}: ${used.toFixed(2)} ${unit}
-${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
+${t('common.Surplus')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
 
         return { ...item, tip, color };
       });
