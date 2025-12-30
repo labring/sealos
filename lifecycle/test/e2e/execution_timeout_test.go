@@ -78,6 +78,13 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 
 			fmt.Println("Cluster executed successfully with unlimited timeout")
 		})
+	})
+
+	Context("timeout format validation", func() {
+		AfterEach(func() {
+			// Clean up environment variables after each test
+			os.Unsetenv("SEALOS_EXECUTION_TIMEOUT")
+		})
 
 		It("sealos run with various timeout formats via environment variables", func() {
 			By("testing different timeout format specifications")
