@@ -20,6 +20,10 @@ import { track } from '@sealos/gtm';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useDBOperation } from '@/hooks/useDBOperation';
+import dynamic from 'next/dynamic';
+
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 enum Page {
   REMINDER = 'REMINDER',
@@ -39,8 +43,8 @@ const DelModal = ({
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
   const { message: toast } = useMessage();
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useDBOperation();
   const [activePage, setActivePage] = useState<Page>(Page.REMINDER);
   const pageManuallyChangedRef = useRef(false);
 
@@ -56,36 +60,17 @@ const DelModal = ({
   };
 
   const handleDelApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await delDBByName(dbName);
+    const result = await executeOperation(() => delDBByName(dbName), {
+      successMessage: t('delete_successful'),
+      errorMessage: t('delete_failed'),
+      eventName: 'deployment_delete'
+    });
 
-      track({
-        event: 'deployment_delete',
-        module: 'database',
-        context: 'app'
-      });
-
-      toast({
-        title: t('delete_successful'),
-        status: 'success'
-      });
+    if (result !== null) {
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('delete_failed'),
-        status: 'error'
-      });
-      console.error(error);
-
-      track('error_occurred', {
-        module: 'database',
-        error_code: 'DELETE_ERROR'
-      });
     }
-    setLoading(false);
-  }, [dbName, toast, t, onSuccess, onClose]);
+  }, [dbName, executeOperation, t, onSuccess, onClose]);
 
   const openTemplateApp = () => {
     if (!source?.hasSource) return;
@@ -107,77 +92,87 @@ const DelModal = ({
   };
 
   return (
-    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <Flex alignItems={'center'} gap={'10px'}>
-            <MyIcon name="warning" width={'20px'} h={'20px'} />
-            {activePage === Page.REMINDER ? t('remind') : t('delete_warning')}
-          </Flex>
-        </ModalHeader>
-        <ModalCloseButton top={'10px'} right={'10px'} />
-        <ModalBody pb={4}>
-          <Box color={'grayModern.600'}>
-            {activePage === Page.REMINDER && source?.sourceType
-              ? deleteTypeTipMap[source?.sourceType]
-              : t('delete_hint')}
+    <>
+      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <Flex alignItems={'center'} gap={'10px'}>
+              <MyIcon name="warning" width={'20px'} h={'20px'} />
+              {activePage === Page.REMINDER ? t('remind') : t('delete_warning')}
+            </Flex>
+          </ModalHeader>
+          <ModalCloseButton top={'10px'} right={'10px'} />
+          <ModalBody pb={4}>
+            <Box color={'grayModern.600'}>
+              {activePage === Page.REMINDER && source?.sourceType
+                ? deleteTypeTipMap[source?.sourceType]
+                : t('delete_hint')}
+
+              {activePage === Page.DELETION_WARNING && (
+                <Box my={3}>
+                  {t('please_enter')}
+                  <Box
+                    as={'span'}
+                    px={1}
+                    color={'grayModern.900'}
+                    fontWeight={'bold'}
+                    userSelect={'all'}
+                  >
+                    {dbName}
+                  </Box>
+                  {t('confirm')}
+                </Box>
+              )}
+            </Box>
 
             {activePage === Page.DELETION_WARNING && (
-              <Box my={3}>
-                {t('please_enter')}
-                <Box
-                  as={'span'}
-                  px={1}
-                  color={'grayModern.900'}
-                  fontWeight={'bold'}
-                  userSelect={'all'}
-                >
-                  {dbName}
-                </Box>
-                {t('confirm')}
-              </Box>
+              <Input
+                placeholder={`${t('please_enter')}：${dbName}`}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+              />
             )}
-          </Box>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={onClose} variant={'outline'}>
+              {t('Cancel')}
+            </Button>
 
-          {activePage === Page.DELETION_WARNING && (
-            <Input
-              placeholder={`${t('please_enter')}：${dbName}`}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <Button onClick={onClose} variant={'outline'}>
-            {t('Cancel')}
-          </Button>
+            {/* {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
+              <Button
+                ml={3}
+                variant={'outline'}
+                onClick={() => {
+                  setActivePage(Page.DELETION_WARNING);
+                  pageManuallyChangedRef.current = true;
+                }}
+              >
+                {t('delete_anyway')}
+              </Button>
+            )} */}
 
-          {/* {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
             <Button
               ml={3}
-              variant={'outline'}
-              onClick={() => {
-                setActivePage(Page.DELETION_WARNING);
-                pageManuallyChangedRef.current = true;
-              }}
+              variant={'solid'}
+              isDisabled={activePage === Page.DELETION_WARNING && inputValue !== dbName}
+              isLoading={loading}
+              onClick={activePage === Page.REMINDER ? openTemplateApp : handleDelApp}
             >
-              {t('delete_anyway')}
+              {activePage === Page.REMINDER ? t('confirm_to_go') : t('confirm_delete')}
             </Button>
-          )} */}
-
-          <Button
-            ml={3}
-            variant={'solid'}
-            isDisabled={activePage === Page.DELETION_WARNING && inputValue !== dbName}
-            isLoading={loading}
-            onClick={activePage === Page.REMINDER ? openTemplateApp : handleDelApp}
-          >
-            {activePage === Page.REMINDER ? t('confirm_to_go') : t('confirm_delete')}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
+    </>
   );
 };
 

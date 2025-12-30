@@ -3,15 +3,16 @@ import MyIcon from '@/components/Icon';
 import StatusTag from '@/components/StatusTag';
 import { CronJobStatusMap } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useToast } from '@/hooks/useToast';
+import { useCronJobOperation } from '@/hooks/useCronJobOperation';
 import type { CronJobStatusMapType } from '@/types/job';
 import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { Dispatch, useCallback, useState } from 'react';
+import React, { Dispatch, useCallback } from 'react';
 
 const DelModal = dynamic(() => import('./DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const Header = ({
   appName = 'app-name',
@@ -32,7 +33,7 @@ const Header = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { toast } = useToast();
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useCronJobOperation();
   const {
     isOpen: isOpenDelModal,
     onOpen: onOpenDelModal,
@@ -45,67 +46,29 @@ const Header = ({
     content: t('pause_message')
   });
 
-  const [loading, setLoading] = useState(false);
-
   const handlePauseApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await updateCronJobStatus({
-        jobName: appName,
-        type: 'Stop'
-      });
-      toast({
-        title: '应用已暂停',
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetchCronJob();
-  }, [appName, refetchCronJob, toast]);
+    await executeOperation(() => updateCronJobStatus({ jobName: appName, type: 'Stop' }), {
+      successMessage: t('job_paused'),
+      errorMessage: t('job_pause_error'),
+      onSuccess: () => refetchCronJob()
+    });
+  }, [appName, executeOperation, refetchCronJob, t]);
 
   const handleRunJob = useCallback(async () => {
-    try {
-      setLoading(true);
-      await implementJob({ jobName: appName });
-      toast({
-        title: t('job_implement_success'),
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('job_implement_error'),
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetchJob();
-  }, [appName, refetchJob, toast]);
+    await executeOperation(() => implementJob({ jobName: appName }), {
+      successMessage: t('job_implement_success'),
+      errorMessage: t('operation_failed'),
+      onSuccess: () => refetchJob()
+    });
+  }, [appName, executeOperation, refetchJob, t]);
 
   const handleStartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await updateCronJobStatus({ jobName: appName, type: 'Start' });
-      toast({
-        title: '应用已启动',
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetchCronJob();
-  }, [appName, refetchCronJob, toast]);
+    await executeOperation(() => updateCronJobStatus({ jobName: appName, type: 'Start' }), {
+      successMessage: t('job_started'),
+      errorMessage: t('job_start_error'),
+      onSuccess: () => refetchCronJob()
+    });
+  }, [appName, executeOperation, refetchCronJob, t]);
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
@@ -211,6 +174,14 @@ const Header = ({
           jobName={appName}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/jobs')}
+        />
+      )}
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
         />
       )}
     </Flex>

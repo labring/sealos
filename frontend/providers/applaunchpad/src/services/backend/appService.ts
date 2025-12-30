@@ -214,7 +214,7 @@ export async function startApp(appName: string, k8s: K8sContext) {
     }
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('无法读取到ingress');
+      throw error;
     }
   }
 
@@ -254,7 +254,7 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
     requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('not found hpa');
+      throw error;
     }
   }
 
@@ -304,7 +304,7 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
     }
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('无法读取到ingress');
+      throw error;
     }
   }
 
@@ -393,9 +393,7 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
   delIssuerAndCert.forEach((item) => {
     console.log(item, 'delIssuerAndCert err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(
-        item?.reason?.body?.message || item?.reason?.body?.reason || 'Failed to delete app'
-      );
+      throw item?.reason?.body || item?.reason || new Error('Failed to delete app');
     }
   });
 
@@ -436,9 +434,7 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
   delDependent.forEach((item) => {
     console.log(item, 'delApp err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(
-        item?.reason?.body?.reason || item?.reason?.body?.message || 'Failed to delete app'
-      );
+      throw item?.reason?.body || item?.reason || new Error('Failed to delete app');
     }
   });
 
@@ -450,9 +446,7 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
   delApp.forEach((item) => {
     console.log(item, 'delApp Deployment StatefulSet err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(
-        item?.reason?.body?.reason || item?.reason?.body?.message || 'Failed to delete app'
-      );
+      throw item?.reason?.body || item?.reason || new Error('Failed to delete app');
     }
   });
 }
@@ -521,7 +515,7 @@ export async function updateAppResources(
         );
       } catch (error: any) {
         if (error?.statusCode !== 404) {
-          throw new Error('无法读取到hpa');
+          throw error;
         }
       }
 
@@ -541,7 +535,7 @@ export async function updateAppResources(
         );
       } catch (error: any) {
         if (error?.statusCode !== 404) {
-          throw new Error('Failed to check existing HPA');
+          throw error;
         }
       }
 
@@ -580,7 +574,7 @@ export async function updateAppResources(
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error: any) {
       if (error?.statusCode !== 404) {
-        throw new Error('Failed to check existing HPA');
+        throw error;
       }
     }
 

@@ -27,6 +27,8 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import useEnvStore from '@/store/env';
+import { ResponseCode } from '@/types/response';
+import ErrorModal from '@/components/ErrorModal';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 enum NavEnum {
@@ -79,6 +81,11 @@ const BackupModal = ({
 
   const [refresh, setRefresh] = useState(false);
   const [currentNav, setCurrentNav] = useState<`${NavEnum}`>(NavEnum.manual);
+  const [errorModalState, setErrorModalState] = useState<{
+    isOpen: boolean;
+    errorCode?: number;
+    errorMessage?: string;
+  }>({ isOpen: false });
   const {
     register: manualRegister,
     handleSubmit: handleSubmitManual,
@@ -159,11 +166,25 @@ const BackupModal = ({
       });
       onClose();
     },
-    onError(err) {
-      toast({
-        status: 'error',
-        title: t(getErrText(err, 'The backup task has been created failed !'))
-      });
+    onError(err: any) {
+      if (err?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+        setErrorModalState({
+          isOpen: true,
+          errorCode: ResponseCode.BALANCE_NOT_ENOUGH,
+          errorMessage: t('user_balance_not_enough')
+        });
+      } else if (err?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+        setErrorModalState({
+          isOpen: true,
+          errorCode: ResponseCode.FORBIDDEN_CREATE_APP,
+          errorMessage: t('forbidden_create_app')
+        });
+      } else {
+        toast({
+          status: 'error',
+          title: err?.message
+        });
+      }
     }
   });
   const { mutate: onclickSetAutoBackup, isLoading: isLoadingSetAutoBackup } = useMutation({
@@ -472,6 +493,14 @@ const BackupModal = ({
       </Modal>
       <ConfirmChild />
       <AutoBackupConfirmChild />
+      {errorModalState.isOpen && (
+        <ErrorModal
+          title={t('operation_failed')}
+          content={errorModalState.errorMessage || ''}
+          onClose={() => setErrorModalState({ isOpen: false })}
+          errorCode={errorModalState.errorCode}
+        />
+      )}
     </>
   );
 };

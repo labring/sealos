@@ -49,7 +49,10 @@ request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { status, data } = response;
     if (status < 200 || status >= 300 || !isApiResp(data)) {
-      return Promise.reject(data);
+      return Promise.reject({
+        code: status,
+        message: typeof data === 'string' ? data : JSON.stringify(data)
+      });
     }
 
     const apiResp = data as ApiResp;
@@ -63,7 +66,7 @@ request.interceptors.response.use(
   },
   (error: any) => {
     if (axios.isCancel(error)) {
-      return Promise.reject('cancel request' + String(error));
+      return Promise.reject({ message: 'cancel request' + String(error) });
     } else {
       error.errMessage = 'Server abnormality, please contact the administrator!';
     }

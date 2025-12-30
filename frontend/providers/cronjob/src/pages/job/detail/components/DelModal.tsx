@@ -12,8 +12,11 @@ import {
   Button
 } from '@chakra-ui/react';
 import { delCronJobByName } from '@/api/job';
-import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
+import { useCronJobOperation } from '@/hooks/useCronJobOperation';
+import dynamic from 'next/dynamic';
+
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const DelModal = ({
   jobName,
@@ -26,28 +29,20 @@ const DelModal = ({
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useCronJobOperation();
 
   const handleDelApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await delCronJobByName(jobName);
-      toast({
-        title: t('Delete successful'),
-        status: 'success'
-      });
+    const result = await executeOperation(() => delCronJobByName(jobName), {
+      successMessage: t('delete_successful'),
+      errorMessage: t('delete_failed'),
+      showErrorModal: true
+    });
+
+    if (result !== null) {
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('Delete Failed'),
-        status: 'error'
-      });
-      console.error(error);
     }
-    setLoading(false);
-  }, [jobName, toast, t, onSuccess, onClose]);
+  }, [executeOperation, jobName, onClose, onSuccess, t]);
 
   return (
     <Modal isOpen onClose={onClose}>
@@ -90,6 +85,14 @@ const DelModal = ({
           </Button>
         </ModalFooter>
       </ModalContent>
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
     </Modal>
   );
 };

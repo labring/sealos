@@ -34,6 +34,8 @@ import React, {
   useMemo,
   useState
 } from 'react';
+import { ResponseCode } from '@/types/response';
+import ErrorModal from '@/components/ErrorModal';
 
 const BackupModal = dynamic(() => import('./BackupModal'));
 const RestoreModal = dynamic(() => import('./RestoreModal'));
@@ -59,6 +61,11 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
   });
 
   const [backupInfo, setBackupInfo] = useState<BackupItemType>();
+  const [errorModalState, setErrorModalState] = useState<{
+    isOpen: boolean;
+    errorCode?: number;
+    errorMessage?: string;
+  }>({ isOpen: false });
 
   const {
     isInitialLoading,
@@ -89,15 +96,33 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
         setIsLoading(true);
         await deleteBackup(name);
         await refetch();
-      } catch (err) {
         toast({
-          title: getErrText(err),
-          status: 'error'
+          title: t('delete_successful'),
+          status: 'success'
         });
+      } catch (err: any) {
+        if (err?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+          setErrorModalState({
+            isOpen: true,
+            errorCode: ResponseCode.BALANCE_NOT_ENOUGH,
+            errorMessage: t('user_balance_not_enough')
+          });
+        } else if (err?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+          setErrorModalState({
+            isOpen: true,
+            errorCode: ResponseCode.FORBIDDEN_CREATE_APP,
+            errorMessage: t('forbidden_create_app')
+          });
+        } else {
+          toast({
+            title: err?.message || getErrText(err),
+            status: 'error'
+          });
+        }
       }
       setIsLoading(false);
     },
-    [refetch, setIsLoading, toast]
+    [refetch, setIsLoading, toast, t]
   );
 
   const operationIconBoxStyles = {
@@ -260,8 +285,8 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                      ? `${app[col.dataIndex]}`
-                      : '-'}
+                        ? `${app[col.dataIndex]}`
+                        : '-'}
                   </Td>
                 ))}
               </Tr>
@@ -282,6 +307,14 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       )}
       {!!backupInfo?.name && (
         <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
+      )}
+      {errorModalState.isOpen && (
+        <ErrorModal
+          title={t('operation_failed')}
+          content={errorModalState.errorMessage || ''}
+          onClose={() => setErrorModalState({ isOpen: false })}
+          errorCode={errorModalState.errorCode}
+        />
       )}
     </Flex>
   );

@@ -17,8 +17,10 @@ export const jsonRes = <T = any>(res: NextApiResponse, options: Partial<ApiRespo
 };
 
 export const handleK8sError = (err: any): Partial<ApiResponse> => {
-  if (err?.kind === 'Status' && err?.apiVersion === 'v1' && err?.status) {
-    const k8sApiErr = err as V1Status;
+  const errorData = err?.body || err;
+
+  if (errorData?.kind === 'Status' && errorData?.apiVersion === 'v1' && errorData?.status) {
+    const k8sApiErr = errorData as V1Status;
     if (k8sApiErr.code === 403) {
       if (k8sApiErr.message?.includes('account balance less than 0')) {
         return {
@@ -40,7 +42,7 @@ export const handleK8sError = (err: any): Partial<ApiResponse> => {
   }
 
   return {
-    code: err?.code || ResponseCode.SERVER_ERROR,
-    message: err?.message || ResponseMessages[ResponseCode.SERVER_ERROR]
+    code: errorData?.code || err?.code || ResponseCode.SERVER_ERROR,
+    message: errorData?.message || err?.message || ResponseMessages[ResponseCode.SERVER_ERROR]
   };
 };

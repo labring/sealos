@@ -7,13 +7,13 @@ import { useUserStore } from '@/stores/user';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 import { track } from '@sealos/gtm';
-import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { DevboxStatusEnum } from '@/constants/devbox';
+import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
-  const { getErrorMessage } = useErrorMessage();
+  const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
   const refetchThreeTimes = useCallback(() => {
     refetchDevboxData();
@@ -25,58 +25,57 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
     }, 3000);
   }, [refetchDevboxData]);
 
-  // TODO: we need a new loading component
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
-      try {
-        if (isOutStandingPayment) {
-          toast.error(t('start_outstanding_tips'));
-          return;
-        }
-        await restartDevbox({ devboxName: devbox.name });
-        track({
-          event: 'deployment_restart',
-          module: 'devbox',
-          context: 'app'
-        });
-        toast.success(t('restart_success'));
-      } catch (error: any) {
-        toast.error(getErrorMessage(error, 'restart_error'));
-        console.error(error);
+      if (isOutStandingPayment) {
+        toast.error(t('start_outstanding_tips'));
+        return;
       }
-      refetchThreeTimes();
+      await executeOperation(() => restartDevbox({ devboxName: devbox.name }), {
+        onSuccess: () => {
+          track({
+            event: 'deployment_restart',
+            module: 'devbox',
+            context: 'app'
+          });
+          refetchThreeTimes();
+        },
+        successMessage: t('restart_success')
+      });
     },
-    [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
+    [refetchThreeTimes, t, isOutStandingPayment, executeOperation]
   );
 
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
-      try {
-        if (isOutStandingPayment) {
-          toast.error(t('start_outstanding_tips'));
-          return;
-        }
-        const isShutdown = devbox.status.value === DevboxStatusEnum.Shutdown;
-        const shouldChangeNetwork =
-          isShutdown && devbox.networkType && devbox.networkType !== 'SSHGate';
-
-        await startDevbox({
-          devboxName: devbox.name,
-          networkType: shouldChangeNetwork ? devbox.networkType : undefined
-        });
-        toast.success(t('start_success'));
-        track({
-          event: 'deployment_start',
-          module: 'devbox',
-          context: 'app'
-        });
-      } catch (error: any) {
-        toast.error(getErrorMessage(error, 'start_error'));
-        console.error(error);
+      if (isOutStandingPayment) {
+        toast.error(t('start_outstanding_tips'));
+        return;
       }
-      refetchThreeTimes();
+      const isShutdown = devbox.status.value === DevboxStatusEnum.Shutdown;
+      const shouldChangeNetwork =
+        isShutdown && devbox.networkType && devbox.networkType !== 'SSHGate';
+
+      await executeOperation(
+        () =>
+          startDevbox({
+            devboxName: devbox.name,
+            networkType: shouldChangeNetwork ? devbox.networkType : undefined
+          }),
+        {
+          onSuccess: () => {
+            track({
+              event: 'deployment_start',
+              module: 'devbox',
+              context: 'app'
+            });
+            refetchThreeTimes();
+          },
+          successMessage: t('start_success')
+        }
+      );
     },
-    [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
+    [refetchThreeTimes, t, isOutStandingPayment, executeOperation]
   );
 
   const handleGoToTerminal = useCallback(
@@ -97,16 +96,19 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           context: 'app'
         });
       } catch (error: any) {
-        toast.error(getErrorMessage(error, 'jump_terminal_error'));
-        console.error(error);
+        await executeOperation(() => Promise.reject(error), {
+          successMessage: ''
+        });
       }
     },
-    [getErrorMessage]
+    [executeOperation]
   );
 
   return {
     handleRestartDevbox,
     handleStartDevbox,
-    handleGoToTerminal
+    handleGoToTerminal,
+    errorModalState,
+    closeErrorModal
   };
 };

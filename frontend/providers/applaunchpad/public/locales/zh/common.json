@@ -63,6 +63,7 @@
   "Data cannot be communicated between multiple instances": "不同实例之间数据不互通",
   "Day": "天",
   "Delete": "删除",
+  "Delete Failed": "删除失败",
   "Delete anyway": "仍要删除",
   "Deletion warning": "删除警告",
   "Deploy": "部署",
@@ -294,7 +295,7 @@
   "filter": "筛选",
   "first_charge": "首充优惠",
   "first_charge_tip": "部分规格首次充值可享双倍赠送金额",
-  "forbidden_create_app": "您在当前工作空间没有足够的权限来创建应用。请联系该工作空间的 owner (所有者) 为您授权。",
+  "forbidden_create_app": "您在当前工作空间没有足够的权限来创建应用。请联系该工作空间的 Owner (所有者) 为您授权。",
   "form": {
     "add_configmap": "新增配置文件",
     "storage_path_placeholder": "如：/data"

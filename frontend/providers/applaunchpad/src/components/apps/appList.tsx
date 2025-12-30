@@ -7,6 +7,7 @@ import PodLineChart from '@/components/PodLineChart';
 import { MyTable } from '@sealos/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
+import { useAppOperation } from '@/hooks/useAppOperation';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
@@ -45,6 +46,7 @@ import { track } from '@sealos/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const AppList = ({
   apps = [],
@@ -57,6 +59,7 @@ const AppList = ({
   const { setLoading } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
   const { toast } = useToast();
+  const { executeOperation, errorModalState, closeErrorModal } = useAppOperation();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
@@ -143,67 +146,35 @@ const AppList = ({
 
   const handleRestartApp = useCallback(
     async (appName: string) => {
-      try {
-        setLoading(true);
-        await restartAppByName(appName);
-        toast({
-          title: `${t('Restart Success')}`,
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: t(getErrText(error), 'Restart Failed'),
-          status: 'error'
-        });
-        console.error(error, '==');
-      }
-      setLoading(false);
+      await executeOperation(() => restartAppByName(appName), {
+        successMessage: t('Restart Success'),
+        errorMessage: t('Restart Failed'),
+        onSuccess: () => refetchApps()
+      });
     },
-    [setLoading, t, toast]
+    [executeOperation, refetchApps, t]
   );
 
   const handlePauseApp = useCallback(
     async (appName: string) => {
-      try {
-        setLoading(true);
-        await pauseAppByName(appName);
-        toast({
-          title: t('Application paused'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: t(getErrText(error), 'Pause Failed'),
-          status: 'error'
-        });
-        console.error(error);
-      }
-      setLoading(false);
-      refetchApps();
+      await executeOperation(() => pauseAppByName(appName), {
+        successMessage: t('Application paused'),
+        errorMessage: t('Application failed'),
+        onSuccess: () => refetchApps()
+      });
     },
-    [refetchApps, setLoading, t, toast]
+    [executeOperation, refetchApps, t]
   );
 
   const handleStartApp = useCallback(
     async (appName: string) => {
-      try {
-        setLoading(true);
-        await startAppByName(appName);
-        toast({
-          title: t('Start Successful'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: t(getErrText(error), 'Start Failed'),
-          status: 'error'
-        });
-        console.error(error);
-      }
-      setLoading(false);
-      refetchApps();
+      await executeOperation(() => startAppByName(appName), {
+        successMessage: t('Start Successful'),
+        errorMessage: t('Start Failed'),
+        onSuccess: () => refetchApps()
+      });
     },
-    [refetchApps, setLoading, t, toast]
+    [executeOperation, refetchApps, t]
   );
 
   const columns = useMemo<
@@ -622,6 +593,14 @@ const AppList = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {errorModalState.visible && (
+        <ErrorModal
+          title={errorModalState.title}
+          content={errorModalState.content}
+          errorCode={errorModalState.errorCode}
+          onClose={closeErrorModal}
+        />
+      )}
     </Box>
   );
 };
