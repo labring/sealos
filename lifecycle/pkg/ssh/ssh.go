@@ -16,32 +16,86 @@ package ssh
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"time"
 
-	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/errgroup"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/labring/sealos/pkg/system"
 )
 
-var (
+const (
 	defaultMaxRetry         = 5
 	defaultExecutionTimeout = 300 * time.Second
 )
 
-func RegisterFlags(fs *pflag.FlagSet) {
-	fs.IntVar(&defaultMaxRetry, "max-retry", defaultMaxRetry, "define max num of ssh retry times")
-	fs.DurationVar(&defaultExecutionTimeout, "execution-timeout", defaultExecutionTimeout, "timeout setting of command execution")
+// GetMaxRetry returns the maximum number of retry times from system configuration
+func GetMaxRetry() int {
+	cfg, err := system.GetConfig(system.MaxRetryConfigKey)
+	if err != nil {
+		logger.Debug("failed to get max retry config, using default: %v", err)
+		return defaultMaxRetry
+	}
+	maxRetry, err := strconv.Atoi(cfg.DefaultValue)
+	if err != nil {
+		logger.Debug("failed to parse max retry value %s: %v, using default", cfg.DefaultValue, err)
+		return defaultMaxRetry
+	}
+	return maxRetry
 }
 
-// GetTimeoutContext create a context.Context with default timeout
-// default execution timeout in sealos is just fine, if you want to customize the timeout setting,
-// you must invoke the `RegisterFlags` function above.
+// parseExecutionTimeout parses timeout string (e.g., "300s", "5m", "1h") to time.Duration
+func parseExecutionTimeout(timeoutStr string) (time.Duration, error) {
+	// Try to parse as duration string
+	duration, err := time.ParseDuration(timeoutStr)
+	if err == nil {
+		return duration, nil
+	}
+
+	// If it's just a number, treat it as seconds
+	if seconds, err := strconv.Atoi(timeoutStr); err == nil {
+		return time.Duration(seconds) * time.Second, nil
+	}
+
+	return 0, fmt.Errorf("invalid timeout format: %s", timeoutStr)
+}
+
+// GetExecutionTimeout returns the execution timeout from system configuration
+func GetExecutionTimeout() time.Duration {
+	cfg, err := system.GetConfig(system.ExecutionTimeoutConfigKey)
+	if err != nil {
+		logger.Debug("failed to get execution timeout config, using default: %v", err)
+		return defaultExecutionTimeout
+	}
+
+	// Check for unlimited timeout (0)
+	if cfg.DefaultValue == "0" {
+		return 0
+	}
+
+	timeout, err := parseExecutionTimeout(cfg.DefaultValue)
+	if err != nil {
+		logger.Debug("failed to parse execution timeout value %s: %v, using default", cfg.DefaultValue, err)
+		return defaultExecutionTimeout
+	}
+
+	return timeout
+}
+
+// GetTimeoutContext create a context.Context with timeout from system configuration
 func GetTimeoutContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), defaultExecutionTimeout)
+	timeout := GetExecutionTimeout()
+	if timeout == 0 {
+		// Unlimited timeout
+		return context.WithCancel(context.Background())
+	}
+	return context.WithTimeout(context.Background(), timeout)
 }
 
 type Interface interface {

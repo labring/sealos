@@ -28,29 +28,26 @@ type CommandOptions interface {
 
 // LifeCycleOptions sealos run/apply/delete/reset/create/add/cert options
 type RunOptions struct {
-	Cluster           string
-	Debug             bool
-	Cmd               []string
-	ConfigFile        []string
-	Env               []string
-	Force             bool
-	Masters           []string
-	Nodes             []string
-	Images            []string
-	SSH               *v1beta1.SSH
-	Transport         string
-	ExecutionTimeout  string // Duration string (e.g., "300s", "5m", "1h")
-	MaxRetry          int    // Max retry times for SSH operations
+	Cluster    string
+	Debug      bool
+	Cmd        []string
+	ConfigFile []string
+	Env        []string
+	Force      bool
+	Masters    []string
+	Nodes      []string
+	Images     []string
+	SSH        *v1beta1.SSH
+	Transport  string
 }
 
 type ApplyOptions struct {
-	Clusterfile      string
-	Debug            bool
-	ConfigFile       []string
-	Env              []string
-	Set              []string
-	Values           []string
-	ExecutionTimeout string // Duration string (e.g., "300s", "5m", "1h")
+	Clusterfile string
+	Debug       bool
+	ConfigFile  []string
+	Env         []string
+	Set         []string
+	Values      []string
 }
 
 type AddOptions struct {
@@ -144,9 +141,7 @@ func (ro *RunOptions) Args() []string {
 		appendFlagsWithValues("--pk", ro.SSH.Pk).
 		appendFlagsWithValues("--pk-passwd", ro.SSH.PkPasswd).
 		appendFlagsWithValues("--port", ro.SSH.Port).
-		appendFlagsWithValues("--transport", ro.Transport).
-		appendFlagsWithValues("--execution-timeout", ro.ExecutionTimeout).
-		appendFlagsWithValues("--max-retry", ro.MaxRetry)
+		appendFlagsWithValues("--transport", ro.Transport)
 }
 
 func (ro *ApplyOptions) Args() []string {
@@ -156,8 +151,7 @@ func (ro *ApplyOptions) Args() []string {
 		appendFlagsWithValues("--config-file", ro.ConfigFile).
 		appendFlagsWithValues("--env", ro.Env).
 		appendFlagsWithValues("--set", ro.Set).
-		appendFlagsWithValues("--values", ro.Values).
-		appendFlagsWithValues("--execution-timeout", ro.ExecutionTimeout)
+		appendFlagsWithValues("--values", ro.Values)
 }
 
 type Args []string

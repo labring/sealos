@@ -25,7 +25,6 @@ import (
 
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -58,7 +57,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(onBootOnDie)
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	ssh.RegisterFlags(rootCmd.PersistentFlags())
 	buildah.RegisterRootCommand(rootCmd)
 
 	groups := templates.CommandGroups{

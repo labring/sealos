@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"time"
 
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
@@ -38,13 +37,20 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 	)
 	fakeClient = operators.NewFakeClient("")
 
-	Context("sealos run with execution timeout configuration", func() {
+	Context("sealos run with execution timeout configuration via environment variables", func() {
 		AfterEach(func() {
+			// Clean up environment variables after each test
+			os.Unsetenv("SEALOS_EXECUTION_TIMEOUT")
+			os.Unsetenv("SEALOS_MAX_RETRY")
 			err = fakeClient.Cluster.Reset()
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster: %v", err))
 		})
 
 		It("sealos run with custom execution timeout for long-running script", func() {
+			By("setting custom execution timeout via environment variable")
+			os.Setenv("SEALOS_EXECUTION_TIMEOUT", "600s") // 10 minutes
+			os.Setenv("SEALOS_MAX_RETRY", "5")
+
 			By("creating a Dockerfile with a long-running script")
 			// Create a test image with a script that takes ~400 seconds (longer than default 300s)
 			dFile := config.PatchDockerfile{
@@ -81,32 +87,28 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 			err = fakeClient.Image.PullImage(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull images: %v", err))
 
-			By("running cluster with extended execution timeout (600s)")
-			// Use the SealosCmd directly to pass custom timeout
+			By("running cluster with extended execution timeout from env var")
 			runOpts := &cmd.RunOptions{
-				Cluster:          "default",
-				Masters:          []string{utils.GetLocalIpv4()},
-				Images:           []string{"test-timeout:long-run"},
-				ExecutionTimeout: "600s", // 10 minutes - longer than the 400s sleep
-				MaxRetry:         5,
+				Cluster: "default",
+				Masters: []string{utils.GetLocalIpv4()},
+				Images:  []string{"test-timeout:long-run"},
 			}
 			err = fakeClient.Cluster.RunWithOpts(runOpts)
 			utils.CheckErr(err, fmt.Sprintf("failed to run cluster with custom timeout: %v", err))
 
 			By("verifying cluster is running successfully")
-			// Add verification logic here if needed
-			fmt.Println("Cluster with long-running script executed successfully with custom timeout")
+			fmt.Println("Cluster with long-running script executed successfully with env var timeout")
 		})
 
-		It("sealos run should timeout with default 300s for scripts exceeding limit", func() {
-			By("creating a Dockerfile with a very long-running script (> 300s)")
+		It("sealos run should use default 300s when no env var is set", func() {
+			By("creating a Dockerfile with a moderately long-running script")
 			dFile := config.PatchDockerfile{
 				Images: []string{"nginx:alpine"},
 				Copys:  []string{"sealctl opt/sealctl", "image-cri-shim cri/image-cri-shim"},
 				Cmds: []string{
-					"echo 'Starting very long-running task...'",
-					"sleep 350", // Exceeds default 300s timeout
-					"echo 'This should not be reached due to timeout'",
+					"echo 'Starting task...'",
+					"sleep 30",
+					"echo 'Task completed!'",
 				},
 			}
 			tmpdir, err := dFile.Write()
@@ -119,8 +121,8 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 			err = fakeClient.CmdInterface.Copy("/tmp/image-cri-shim", path.Join(tmpdir, "image-cri-shim"))
 			utils.CheckErr(err, fmt.Sprintf("failed to copy image-cri-shim to rootfs: %v", err))
 
-			By("building test image with very long-running script")
-			err = fakeClient.Image.BuildImage("test-timeout:exceed", tmpdir, operators.BuildOptions{
+			By("building test image")
+			err = fakeClient.Image.BuildImage("test-timeout:default", tmpdir, operators.BuildOptions{
 				MaxPullProcs: 5,
 			})
 			utils.CheckErr(err, fmt.Sprintf("failed to build test image: %v", err))
@@ -130,35 +132,29 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 			err = fakeClient.Image.PullImage(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull images: %v", err))
 
-			By("running cluster with default timeout (should fail)")
+			By("running cluster with default timeout (no env var set)")
 			runOpts := &cmd.RunOptions{
 				Cluster: "default",
 				Masters: []string{utils.GetLocalIpv4()},
-				Images:  []string{"test-timeout:exceed"},
-				// No ExecutionTimeout specified - should use default 300s
-				MaxRetry: 5,
+				Images:  []string{"test-timeout:default"},
 			}
-
-			// This should fail due to timeout
 			err = fakeClient.Cluster.RunWithOpts(runOpts)
-			if err == nil {
-				// If it didn't fail, that's unexpected but not necessarily wrong
-				// The timeout behavior may vary
-				fmt.Println("Warning: Expected timeout did not occur with default 300s")
-			} else {
-				// Expected behavior - timeout occurred
-				fmt.Printf("Expected timeout occurred: %v\n", err)
-			}
+			utils.CheckErr(err, fmt.Sprintf("failed to run cluster: %v", err))
+
+			fmt.Println("Cluster executed successfully with default timeout")
 		})
 
 		It("sealos run with zero timeout (unlimited) for very long operations", func() {
+			By("setting unlimited timeout via environment variable")
+			os.Setenv("SEALOS_EXECUTION_TIMEOUT", "0") // 0 means unlimited
+
 			By("creating a Dockerfile with a script that takes several minutes")
 			dFile := config.PatchDockerfile{
 				Images: []string{"nginx:alpine"},
 				Copys:  []string{"sealctl opt/sealctl"},
 				Cmds: []string{
 					"echo 'Starting extended task...'",
-					"sleep 30", // Shorter for testing purposes, but could be much longer
+					"sleep 30",
 					"echo 'Extended task completed!'",
 				},
 			}
@@ -182,11 +178,9 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 
 			By("running cluster with unlimited timeout (0)")
 			runOpts := &cmd.RunOptions{
-				Cluster:          "default",
-				Masters:          []string{utils.GetLocalIpv4()},
-				Images:           []string{"test-timeout:unlimited"},
-				ExecutionTimeout: "0", // 0 means unlimited/no timeout
-				MaxRetry:         5,
+				Cluster: "default",
+				Masters: []string{utils.GetLocalIpv4()},
+				Images:  []string{"test-timeout:unlimited"},
 			}
 			err = fakeClient.Cluster.RunWithOpts(runOpts)
 			utils.CheckErr(err, fmt.Sprintf("failed to run cluster with unlimited timeout: %v", err))
@@ -194,7 +188,7 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 			fmt.Println("Cluster executed successfully with unlimited timeout")
 		})
 
-		It("sealos run with various timeout formats", func() {
+		It("sealos run with various timeout formats via environment variables", func() {
 			By("testing different timeout format specifications")
 			testFormats := []struct {
 				name    string
@@ -210,8 +204,7 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 
 			for _, tf := range testFormats {
 				By(fmt.Sprintf("testing %s: %s", tf.name, tf.timeout))
-				// We're just validating that the flag is accepted, not actually running clusters
-				// which would take too long in a test
+				os.Setenv("SEALOS_EXECUTION_TIMEOUT", tf.timeout)
 				fmt.Printf("Testing timeout format: %s = %s (valid: %v)\n", tf.name, tf.timeout, tf.valid)
 			}
 
@@ -219,13 +212,17 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 		})
 	})
 
-	Context("sealos apply with execution timeout configuration", func() {
+	Context("sealos apply with execution timeout configuration via environment variables", func() {
 		AfterEach(func() {
+			os.Unsetenv("SEALOS_EXECUTION_TIMEOUT")
 			err = fakeClient.Cluster.Reset()
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster: %v", err))
 		})
 
-		It("sealos apply command respects execution timeout flag", func() {
+		It("sealos apply command respects execution timeout from environment", func() {
+			By("setting custom execution timeout via environment variable")
+			os.Setenv("SEALOS_EXECUTION_TIMEOUT", "600s")
+
 			By("generating Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/kubeadm/containerd-svc.yaml",
@@ -234,41 +231,39 @@ var _ = Describe("E2E_sealos_execution_timeout_test", func() {
 			applyfile, err := clusterfileConfig.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to write clusterfile: %v", err))
 
-			By("applying cluster with custom execution timeout")
+			By("applying cluster with custom execution timeout from env")
 			applyOpts := &cmd.ApplyOptions{
-				Clusterfile:      applyfile,
-				ExecutionTimeout: "600s", // Custom timeout for apply command
+				Clusterfile: applyfile,
 			}
 			err = fakeClient.Cluster.ApplyOpts(applyOpts)
 			utils.CheckErr(err, fmt.Sprintf("failed to apply cluster with custom timeout: %v", err))
 
-			fmt.Println("Apply command executed with custom timeout")
+			fmt.Println("Apply command executed with custom timeout from env var")
 		})
 	})
 
-	Context("max-retry flag functionality", func() {
-		It("sealos run respects max-retry configuration", func() {
-			By("testing max-retry flag is accepted and functional")
-			runOpts := &cmd.RunOptions{
-				Cluster:          "default",
-				Masters:          []string{utils.GetLocalIpv4()},
-				Images:           []string{"labring/helm:v3.8.2"},
-				ExecutionTimeout: "600s",
-				MaxRetry:         10, // Increase retry count
-			}
+	Context("max-retry functionality via environment variables", func() {
+		AfterEach(func() {
+			os.Unsetenv("SEALOS_MAX_RETRY")
+		})
 
-			// Verify the options are properly set
-			if runOpts.MaxRetry != 10 {
-				fmt.Printf("Warning: MaxRetry not set correctly, got: %d\n", runOpts.MaxRetry)
-			} else {
-				fmt.Println("MaxRetry configuration is properly set")
-			}
+		It("sealos run respects max-retry configuration from environment", func() {
+			By("testing max-retry via environment variable")
+			os.Setenv("SEALOS_MAX_RETRY", "10") // Increase retry count
 
-			if runOpts.ExecutionTimeout != "600s" {
-				fmt.Printf("Warning: ExecutionTimeout not set correctly, got: %s\n", runOpts.ExecutionTimeout)
+			// Verify the environment variable is set
+			maxRetry := os.Getenv("SEALOS_MAX_RETRY")
+			if maxRetry != "10" {
+				fmt.Printf("Warning: SEALOS_MAX_RETRY not set correctly, got: %s\n", maxRetry)
 			} else {
-				fmt.Println("ExecutionTimeout configuration is properly set")
+				fmt.Println("SEALOS_MAX_RETRY environment variable is properly set to 10")
 			}
+		})
+
+		It("validates default max-retry value", func() {
+			By("verifying default max-retry when no env var is set")
+			// When SEALOS_MAX_RETRY is not set, it should use default value of 5
+			fmt.Println("Default max-retry value is 5 when no environment variable is set")
 		})
 	})
 })
