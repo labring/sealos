@@ -308,6 +308,7 @@
   "no_category_templates": "暂无{category}模板",
   "no_description": "暂无简介",
   "no_devbox_remark_set": "无备注",
+  "no_monitor_data": "暂无监控数据",
   "no_network": "暂无网络配置",
   "no_related_devbox": "未查询到相关DevBox",
   "no_runtime_found": "未找到运行环境",

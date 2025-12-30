@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 
 import { useDevboxStore } from '@/stores/devbox';
 import MonitorChart from '@/components/MonitorChart';
+import { EMPTY_MONITOR_DATA } from '@/constants/monitor';
 
 const LiveMonitoring = () => {
   const t = useTranslations();
@@ -24,11 +25,11 @@ const LiveMonitoring = () => {
         <div className="flex w-[18vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('cpu')}:&nbsp;
-            {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
+            {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1] || '0'}%
           </span>
           <MonitorChart
             type="blue"
-            data={devboxDetail?.usedCpu}
+            data={devboxDetail?.usedCpu || EMPTY_MONITOR_DATA}
             isShowText={false}
             className="w-full"
           />
@@ -36,11 +37,11 @@ const LiveMonitoring = () => {
         <div className="flex w-[18vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('memory')}:&nbsp;
-            {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
+            {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1] || '0'}%
           </span>
           <MonitorChart
             type="green"
-            data={devboxDetail?.usedMemory}
+            data={devboxDetail?.usedMemory || EMPTY_MONITOR_DATA}
             isShowText={false}
             className="w-full"
           />

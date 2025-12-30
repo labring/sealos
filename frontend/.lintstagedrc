@@ -1,4 +1,4 @@
 {
-  "**/*.{js,jsx,ts,tsx}": ["npx prettier --write"],
-  "**/*.{json,css,scss,md}": ["npx prettier --write"]
+  "**/*.{js,jsx,ts,tsx}": ["bash frontend/scripts/prettier-staged.sh"],
+  "**/*.{json,css,scss,md}": ["bash frontend/scripts/prettier-staged.sh"]
 }
