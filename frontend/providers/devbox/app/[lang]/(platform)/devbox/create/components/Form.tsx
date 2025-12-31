@@ -18,6 +18,7 @@ import Runtime from './Runtime';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
+import AdvancedConfig from './AdvancedConfig';
 
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 
@@ -91,6 +92,9 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         <div id="network">
           <Network isEdit={isEdit} />
         </div>
+
+        {/* Advanced Configurations */}
+        <AdvancedConfig />
       </div>
     </div>
   );
