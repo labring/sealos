@@ -65,7 +65,7 @@ const QuotaBox = ({ className }: { className?: string }) => {
         const icon = sourceMap[type]?.icon;
         const tip = `${t('total')}: ${limit} ${unit}
 ${t('used')}: ${used.toFixed(2)} ${unit}
-${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`;
+${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
 
         return { ...item, tip, icon };
       });
