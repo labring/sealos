@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+.cache
+.claude
+.gocache
+.gomodcache
 bin/*
 Dockerfile.cross
 

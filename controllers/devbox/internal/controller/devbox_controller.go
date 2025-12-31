@@ -24,9 +24,12 @@ import (
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
+	utilsregistry "github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/crane"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,6 +53,11 @@ import (
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
 	CommitImageRegistry string
+	RegistryUser        string
+	RegistryPassword    string
+	RegistryInsecure    bool
+
+	RepoDeleter utilsregistry.RepoDeleter
 
 	RequestRate      resource.RequestRate
 	EphemeralStorage resource.EphemeralStorage
@@ -64,6 +72,15 @@ type DevboxReconciler struct {
 	Scheme                   *runtime.Scheme
 	Recorder                 record.EventRecorder
 	RestartPredicateDuration time.Duration
+}
+
+// InitRepoDeleter initializes and caches RepoDeleter on the reconciler.
+// Call this once during controller startup; reconcile will reuse the cached instance.
+func (r *DevboxReconciler) InitRepoDeleter() {
+	if r.RepoDeleter != nil {
+		return
+	}
+	r.RepoDeleter = r.getRepoDeleter()
 }
 
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes,verbs=get;list;watch;create;update;patch;delete
@@ -114,6 +131,13 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	} else {
 		logger.Info("devbox deleted, remove all resources")
 		if err := r.removeAll(ctx, devbox, recLabels); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// best-effort cleanup of devbox commit image repo before finalizer removal
+		if err := r.deleteDevboxRepo(ctx, devbox); err != nil {
+			logger.Error(err, "devbox deleted, delete repo failed", "repo", r.devboxCommitRepo(devbox))
+			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "DeleteRepoFailed", "delete repo %q failed: %v", r.devboxCommitRepo(devbox), err)
 			return ctrl.Result{}, err
 		}
 
@@ -178,6 +202,46 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
+}
+
+func (r *DevboxReconciler) devboxCommitRepo(devbox *devboxv1alpha1.Devbox) string {
+	if r.CommitImageRegistry == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s/%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name)
+}
+
+func (r *DevboxReconciler) getRepoDeleter() utilsregistry.RepoDeleter {
+	if r.RepoDeleter != nil {
+		return r.RepoDeleter
+	}
+
+	opts := []crane.Option{}
+	if r.RegistryUser != "" || r.RegistryPassword != "" {
+		opts = append(opts, crane.WithAuth(&authn.Basic{
+			Username: r.RegistryUser,
+			Password: r.RegistryPassword,
+		}))
+	}
+	if r.RegistryInsecure {
+		opts = append(opts, crane.Insecure)
+	}
+	return utilsregistry.NewCraneRepoDeleter(opts...)
+}
+
+func (r *DevboxReconciler) deleteDevboxRepo(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+	repo := r.devboxCommitRepo(devbox)
+	if repo == "" {
+		return nil
+	}
+	if r.RepoDeleter == nil {
+		// Fallback: initialize lazily if not done at startup.
+		r.InitRepoDeleter()
+	}
+	if r.RepoDeleter == nil {
+		return nil
+	}
+	return r.RepoDeleter.DeleteRepo(ctx, repo)
 }
 
 func (r *DevboxReconciler) syncStartupConfigMap(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
@@ -257,6 +321,12 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 			}
 		}
 
+		// generate SEALOS_DEVBOX_ENV_PROFILE
+		devboxSecret.Data["SEALOS_DEVBOX_ENV_PROFILE"] = helper.GenerateEnvProfile(
+			devbox,
+			devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"],
+		)
+
 		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
 			devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = devboxSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
 			if err := r.Update(ctx, devboxSecret); err != nil {
@@ -285,6 +355,9 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 			"SEALOS_DEVBOX_AUTHORIZED_KEYS": publicKey,
 		},
 	}
+
+	// generate SEALOS_DEVBOX_ENV_PROFILE
+	secret.Data["SEALOS_DEVBOX_ENV_PROFILE"] = helper.GenerateEnvProfile(devbox, secret.Data["SEALOS_DEVBOX_JWT_SECRET"])
 
 	if err := controllerutil.SetControllerReference(devbox, secret, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set controller reference: %w", err)
@@ -639,12 +712,14 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 	if r.StartupConfigMapName != "" {
 		volumes = append(volumes, helper.GenerateStartupVolume(devbox))
 	}
+	volumes = append(volumes, helper.GenerateEnvProfileVolume(devbox))
 
 	volumeMounts := devbox.Spec.Config.VolumeMounts
 	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
 	if r.StartupConfigMapName != "" {
 		volumeMounts = append(volumeMounts, helper.GenerateStartupVolumeMounts()...)
 	}
+	volumeMounts = append(volumeMounts, helper.GenerateEnvProfileVolumeMount()...)
 
 	containers := []corev1.Container{
 		{
