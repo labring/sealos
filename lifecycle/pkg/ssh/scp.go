@@ -94,7 +94,7 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 }
 
 func (c *Client) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
-	err = exponentialBackOffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
+	err = exponentialBackOffRetry(GetMaxRetry(), time.Millisecond*100, 2, func() error {
 		sshClient, sftpClient, err = c.newClientAndSftpClient(host)
 		return err
 	}, isErrorWorthRetry)

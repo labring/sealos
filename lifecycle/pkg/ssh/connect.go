@@ -69,7 +69,7 @@ func newSession(client *ssh.Client) (*ssh.Session, error) {
 }
 
 func (c *Client) Connect(host string) (sshClient *ssh.Client, session *ssh.Session, err error) {
-	err = exponentialBackOffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
+	err = exponentialBackOffRetry(GetMaxRetry(), time.Millisecond*100, 2, func() error {
 		sshClient, session, err = c.newClientAndSession(host)
 		return err
 	}, isErrorWorthRetry)
