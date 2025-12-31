@@ -206,6 +206,8 @@
   "no_apps_found": "No Apps Found",
   "no_realname_auth": "Identity Not Verified",
   "notification": "Notification",
+  "no_notifications_yet": "No notifications yet",
+  "no_notifications_desc": "Recent notifications will be shown here. Everything is going well.",
   "noworkspacecreated": "You haven't created a workspace yet",
   "official_account_login": "Official account login",
   "old_email": "Old email",

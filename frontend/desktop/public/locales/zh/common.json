@@ -201,6 +201,8 @@
   "no_apps_found": "未找到任何应​​用",
   "no_realname_auth": "未实名认证",
   "notification": "通知",
+  "no_notifications_yet": "暂无通知",
+  "no_notifications_desc": "最近的通知将显示在这里。一切正常。",
   "noworkspacecreated": "您还没有创建工作空间",
   "official_account_login": "公众号登录",
   "old_email": "旧电子邮箱",

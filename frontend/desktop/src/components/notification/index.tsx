@@ -307,10 +307,10 @@ export default function Notification(props: NotificationProps) {
                     >
                       <Image src="/images/no-notification.svg" alt="no-notification" />
                       <Text mt={'20px'} fontSize={'16px'} fontWeight={500} color={'#18181B'}>
-                        No notifications yet
+                        {t('common:no_notifications_yet')}
                       </Text>
                       <Text color={'#71717A'} mt={'4px'} fontSize={'14px'}>
-                        Recent notifications will be shown here. Everything is going well.
+                        {t('common:no_notifications_desc')}
                       </Text>
                     </Flex>
                   )}
