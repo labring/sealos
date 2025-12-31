@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useFormContext } from 'react-hook-form';
 import { PencilLine, Plus, Trash2, FileText, HardDrive } from 'lucide-react';
 
 import { Button } from '@sealos/shadcn-ui/button';
@@ -9,38 +10,21 @@ import { Separator } from '@sealos/shadcn-ui/separator';
 import EnvVariablesDrawer from '@/components/drawers/EnvVariablesDrawer';
 import ConfigMapDrawer from '@/components/drawers/ConfigMapDrawer';
 import NetworkStorageDrawer from '@/components/drawers/NetworkStorageDrawer';
+import type { DevboxEditTypeV2 } from '@/types/devbox';
 
 export default function AdvancedConfig() {
   const t = useTranslations();
+  const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
+
+  const envs = watch('envs') || [];
+  const configMaps = watch('configMaps') || [];
+  const volumes = watch('volumes') || [];
 
   const [isEnvDrawerOpen, setIsEnvDrawerOpen] = useState(false);
   const [isConfigMapDrawerOpen, setIsConfigMapDrawerOpen] = useState(false);
   const [editingConfigMapIndex, setEditingConfigMapIndex] = useState<number | null>(null);
   const [isNetworkStorageDrawerOpen, setIsNetworkStorageDrawerOpen] = useState(false);
   const [editingStorageIndex, setEditingStorageIndex] = useState<number | null>(null);
-
-  // todo: mock data
-  const [envVars, setEnvVars] = useState([
-    { key: '/bin/bash -c', value: '/home/devbox/project/entrypoint.sh' },
-    { key: '/bin/bash -c', value: '/home/devbox/project/entrypoint.sh' },
-    { key: '/bin/bash -c', value: '/home/devbox/project/entrypoint.sh' }
-  ]);
-
-  const [configmaps, setConfigmaps] = useState([
-    {
-      path: '/etc/kubernetes/admin.conf',
-      content: '# property-like keys; each key maps to a simple value'
-    },
-    {
-      path: '/etc/kubernetes/admin.conf',
-      content: '# property-like keys; each key maps to a simple value'
-    }
-  ]);
-
-  const [storages, setStorages] = useState([
-    { path: '/asdadsakda', size: 1 },
-    { path: '/dadlada', size: 20 }
-  ]);
 
   return (
     <div className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
@@ -67,34 +51,36 @@ export default function AdvancedConfig() {
         </div>
 
         {/* Env Variables Table */}
-        <div className="overflow-hidden rounded-lg border border-zinc-200">
-          {/* Table Header */}
-          <div className="flex border-b border-zinc-200 bg-zinc-50">
-            <div className="w-50 border-r border-zinc-200 px-3 py-2">
-              <span className="text-sm font-semibold text-zinc-500">{t('key')}</span>
-            </div>
-            <div className="flex-1 px-3 py-2">
-              <span className="text-sm font-semibold text-zinc-500">{t('value')}</span>
-            </div>
-          </div>
-
-          {/* Table Body */}
-          {envVars.map((env, idx) => (
-            <div
-              key={idx}
-              className={`flex border-b border-zinc-200 last:border-b-0 ${
-                idx % 2 === 1 ? 'bg-zinc-50' : ''
-              }`}
-            >
+        {envs.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-zinc-200">
+            {/* Table Header */}
+            <div className="flex border-b border-zinc-200 bg-zinc-50">
               <div className="w-50 border-r border-zinc-200 px-3 py-2">
-                <span className="truncate text-sm">{env.key}</span>
+                <span className="text-sm font-semibold text-zinc-500">{t('key')}</span>
               </div>
               <div className="flex-1 px-3 py-2">
-                <span className="truncate text-sm">{env.value}</span>
+                <span className="text-sm font-semibold text-zinc-500">{t('value')}</span>
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* Table Body */}
+            {envs.map((env, idx) => (
+              <div
+                key={idx}
+                className={`flex border-b border-zinc-200 last:border-b-0 ${
+                  idx % 2 === 1 ? 'bg-zinc-50' : ''
+                }`}
+              >
+                <div className="w-50 border-r border-zinc-200 px-3 py-2">
+                  <span className="truncate text-sm">{env.key}</span>
+                </div>
+                <div className="flex-1 px-3 py-2">
+                  <span className="truncate text-sm">{env.value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Separator className="my-1" />
@@ -118,7 +104,7 @@ export default function AdvancedConfig() {
 
         {/* Configmaps List */}
         <div className="flex flex-col gap-1">
-          {configmaps.map((config, idx) => (
+          {configMaps.map((config, idx) => (
             <div
               key={idx}
               className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3"
@@ -144,7 +130,10 @@ export default function AdvancedConfig() {
                 size="icon"
                 className="h-4 w-4 p-0 text-neutral-500 hover:bg-transparent hover:text-red-600"
                 onClick={() => {
-                  setConfigmaps(configmaps.filter((_, i) => i !== idx));
+                  setValue(
+                    'configMaps',
+                    configMaps.filter((_, i) => i !== idx)
+                  );
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -175,7 +164,7 @@ export default function AdvancedConfig() {
 
         {/* Storage List */}
         <div className="flex flex-col gap-1">
-          {storages.map((storage, idx) => (
+          {volumes.map((storage, idx) => (
             <div
               key={idx}
               className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3"
@@ -198,7 +187,10 @@ export default function AdvancedConfig() {
                 size="icon"
                 className="h-4 w-4 p-0 text-neutral-500 hover:bg-transparent hover:text-red-600"
                 onClick={() => {
-                  setStorages(storages.filter((_, i) => i !== idx));
+                  setValue(
+                    'volumes',
+                    volumes.filter((_, i) => i !== idx)
+                  );
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -210,16 +202,18 @@ export default function AdvancedConfig() {
 
       {isEnvDrawerOpen && (
         <EnvVariablesDrawer
-          initialValue={envVars}
+          initialValue={envs}
           onClose={() => setIsEnvDrawerOpen(false)}
-          onSuccess={(newEnvVars) => setEnvVars(newEnvVars)}
+          onSuccess={(newEnvVars) => {
+            setValue('envs', newEnvVars);
+          }}
         />
       )}
 
       {isConfigMapDrawerOpen && (
         <ConfigMapDrawer
           initialValue={
-            editingConfigMapIndex !== null ? configmaps[editingConfigMapIndex] : undefined
+            editingConfigMapIndex !== null ? configMaps[editingConfigMapIndex] : undefined
           }
           onClose={() => {
             setIsConfigMapDrawerOpen(false);
@@ -227,11 +221,11 @@ export default function AdvancedConfig() {
           }}
           onSuccess={(newConfigMap) => {
             if (editingConfigMapIndex !== null) {
-              const updated = [...configmaps];
+              const updated = [...configMaps];
               updated[editingConfigMapIndex] = newConfigMap;
-              setConfigmaps(updated);
+              setValue('configMaps', updated);
             } else {
-              setConfigmaps([...configmaps, newConfigMap]);
+              setValue('configMaps', [...configMaps, newConfigMap]);
             }
           }}
         />
@@ -239,18 +233,18 @@ export default function AdvancedConfig() {
 
       {isNetworkStorageDrawerOpen && (
         <NetworkStorageDrawer
-          initialValue={editingStorageIndex !== null ? storages[editingStorageIndex] : undefined}
+          initialValue={editingStorageIndex !== null ? volumes[editingStorageIndex] : undefined}
           onClose={() => {
             setIsNetworkStorageDrawerOpen(false);
             setEditingStorageIndex(null);
           }}
           onSuccess={(newStorage) => {
             if (editingStorageIndex !== null) {
-              const updated = [...storages];
+              const updated = [...volumes];
               updated[editingStorageIndex] = newStorage;
-              setStorages(updated);
+              setValue('volumes', updated);
             } else {
-              setStorages([...storages, newStorage]);
+              setValue('volumes', [...volumes, newStorage]);
             }
           }}
         />

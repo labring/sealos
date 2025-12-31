@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Minus, Plus, X } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 
 import {
   Drawer,
