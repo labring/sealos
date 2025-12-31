@@ -92,6 +92,16 @@ var configOptions = []ConfigOption{
 		Description:  "whether to sync runtime root dir to all master nodes for backup purpose",
 		DefaultValue: "true",
 	},
+	{
+		Key:          ExecutionTimeoutConfigKey,
+		Description:  "timeout setting of command execution (e.g., 300s, 5m, 1h). Set to 0 for unlimited timeout.",
+		DefaultValue: "300s",
+	},
+	{
+		Key:          MaxRetryConfigKey,
+		Description:  "maximum number of retry times for SSH operations",
+		DefaultValue: "5",
+	},
 }
 
 const (
@@ -102,6 +112,8 @@ const (
 	BuildahLogLevelConfigKey   = "BUILDAH_LOG_LEVEL"
 	ContainerStorageConfEnvKey = "CONTAINERS_STORAGE_CONF"
 	SyncWorkDirEnvKey          = "SYNC_WORKDIR"
+	ExecutionTimeoutConfigKey  = "EXECUTION_TIMEOUT"
+	MaxRetryConfigKey          = "MAX_RETRY"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {
