@@ -1,10 +1,6 @@
-import { applyYamlList, getConfigByName } from '@/api/db';
-import MyIcon from '@/components/Icon';
-import { DBReconfigureMap } from '@/constants/db';
-import type { DBDetailType } from '@/types/db';
+import { applyReconfigureOps, getConfigByName } from '@/api/db';
+import type { ConfigParameterItem, DBDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { json2Reconfigure } from '@/utils/json2Yaml';
-import { adjustDifferencesForIni, flattenObject, parseConfig } from '@/utils/tools';
 import {
   Box,
   Button,
@@ -71,18 +67,28 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
   const { data: config } = useQuery(
     ['getConfigByName', db.dbName, db.dbType, subMenu],
     async () => {
-      const _config = await getConfigByName({ name: db.dbName, dbType: db.dbType });
-      const temp = parseConfig({
-        configString: _config,
-        type: DBReconfigureMap[db.dbType].type
-      });
-      const result = flattenObject(temp).map((item, index) => ({
-        ...item,
+      const configItems = await getConfigByName({ name: db.dbName, dbType: db.dbType });
+      return configItems.map((item: ConfigParameterItem, index: number) => ({
+        key: item.key,
+        value: item.value,
         isEditing: false,
         isEdited: false,
-        originalIndex: index
+        originalIndex: index,
+        editable: item.editable,
+        field:
+          item.type === 'enum'
+            ? {
+                name: item.key,
+                type: 'enum' as const,
+                values: item.enumValues,
+                description: item.description
+              }
+            : {
+                name: item.key,
+                type: 'string' as const,
+                description: item.description
+              }
       }));
-      return result;
     },
     {
       enabled: !!db.dbName
@@ -93,14 +99,11 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
     try {
       const differences = configTableRef.current?.submit();
       if (!differences) return;
-      const reconfigureType = DBReconfigureMap[db.dbType].type;
-      const reconfigureYaml = json2Reconfigure(
-        db.dbName,
-        db.dbType,
-        db.id,
-        adjustDifferencesForIni(differences, reconfigureType, db.dbType)
-      );
-      await applyYamlList([reconfigureYaml], 'create');
+      await applyReconfigureOps({
+        dbName: db.dbName,
+        dbType: db.dbType,
+        differences
+      });
       onClose();
       router.push({
         query: {
