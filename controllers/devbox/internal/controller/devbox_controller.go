@@ -1580,24 +1580,6 @@ func (r *DevboxReconciler) getTotalMemoryLimitRatio(ctx context.Context) (float6
 	return ratio, nil
 }
 
-type ControllerRestartPredicate struct {
-	predicate.Funcs
-	duration  time.Duration
-	checkTime time.Time
-}
-
-func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
-	return &ControllerRestartPredicate{
-		checkTime: time.Now().Add(-duration),
-		duration:  duration,
-	}
-}
-
-// skip create event p.duration ago
-func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
-	return e.Object.GetCreationTimestamp().After(p.checkTime)
-}
-
 // ContentIDChangedPredicate triggers reconcile when devbox status.contentID changes
 type ContentIDChangedPredicate struct {
 	predicate.Funcs
@@ -1651,6 +1633,23 @@ func (p NetworkTypeChangedPredicate) Update(e event.UpdateEvent) bool {
 	return false
 }
 
+// PhaseChangedPredicate triggers reconcile when devbox status.phase changes or status.phase is `Error`
+type PhaseChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p PhaseChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.Phase != newDevbox.Status.Phase || newDevbox.Status.Phase == devboxv1alpha2.DevboxPhaseError
+	}
+	return false
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
@@ -1669,14 +1668,12 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			NetworkTypeChangedPredicate{},          // enqueue request if devbox status.network.type is updated
 			ContentIDChangedPredicate{},            // enqueue request if devbox status.contentID is updated
 			LastContainerStatusChangedPredicate{},  // enqueue request if devbox status.lastContainerStatus is updated
-		),
-		)).
+			PhaseChangedPredicate{},                // enqueue request if devbox status.phase is updated or status.phase is `Error`
+		))).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		// enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		// enqueue request if service spec is updated
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		// enqueue request if secret spec is updated
-		WithEventFilter(NewControllerRestartPredicate(r.RestartPredicateDuration)).
 		Complete(r)
 }

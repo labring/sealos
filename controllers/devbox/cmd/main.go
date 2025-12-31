@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -318,6 +319,8 @@ func main() {
 				&corev1.Pod{}:     {Label: cacheObjLabelSelector},
 				&corev1.Secret{}:  {Label: cacheObjLabelSelector},
 			}
+			// set sync period to 1 hour for devbox controller to reconcile all devboxes.
+			opts.SyncPeriod = ptr.To(time.Hour)
 			return cache.New(config, opts)
 		},
 		Controller: ctrlconfig.Controller{
