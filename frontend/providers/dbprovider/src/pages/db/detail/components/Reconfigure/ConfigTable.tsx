@@ -1,8 +1,11 @@
 import MyIcon from '@/components/Icon';
+import { DBTypeEnum } from '@/constants/db';
+import { ParameterConfigField } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Flex, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
+import { MySelect } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 
 export interface ConfigItem {
@@ -11,6 +14,8 @@ export interface ConfigItem {
   isEditing: boolean;
   isEdited: boolean;
   originalIndex: number;
+  field?: ParameterConfigField;
+  editable?: boolean;
 }
 
 export interface ConfigTableRef {
@@ -30,6 +35,13 @@ const ConfigTable = forwardRef<
 >(function ConfigTable({ initialData = [], onDifferenceChange }, ref) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
+
+  const configItems = useMemo(() => {
+    return initialData.map((item) => ({
+      ...item,
+      editable: item.editable !== undefined ? item.editable : false // Not editable by default
+    }));
+  }, [initialData]);
 
   const { register, watch, setValue, control, reset } = useForm<{ configs: ConfigItem[] }>({
     defaultValues: {
@@ -124,31 +136,57 @@ const ConfigTable = forwardRef<
     {
       title: 'dbconfig.parameter_value',
       key: 'parameter_value',
-      render: (item) => (
-        <Flex alignItems={'center'} h={'full'}>
-          {item.isEditing ? (
-            <Input
-              {...register(`configs.${item.originalIndex}.value`)}
-              autoFocus
-              onBlur={() => handleBlur(item.originalIndex)}
-            />
-          ) : (
-            <Flex gap={'4px'} alignItems={'center'}>
-              <Text maxW={'300px'} color={item.isEdited ? 'red.500' : 'grayModern.600'}>
-                {item.value}
-              </Text>
-              <MyIcon
-                onClick={() => toggleEdit(item.originalIndex)}
-                cursor={'pointer'}
-                name={'edit'}
-                w={'16px'}
-                h={'16px'}
-                color={'grayModern.600'}
-              />
-            </Flex>
-          )}
-        </Flex>
-      )
+      render: (item) => {
+        const field = item.field;
+        const isEnum = field?.type === 'enum';
+        const enumValues = isEnum ? (field as { values: string[] }).values : [];
+
+        return (
+          <Flex alignItems={'center'} h={'full'}>
+            {item.isEditing ? (
+              <>
+                {field?.type === 'enum' && (
+                  <MySelect
+                    width={'120px'}
+                    value={item.value}
+                    list={enumValues.map((val) => ({ label: val, value: val }))}
+                    onchange={(val: string) => {
+                      setValue(`configs.${item.originalIndex}.value`, val);
+                      handleBlur(item.originalIndex);
+                    }}
+                    isDisabled={item.editable === false}
+                  />
+                )}
+
+                {field?.type === 'string' && (
+                  <Input
+                    {...register(`configs.${item.originalIndex}.value`)}
+                    autoFocus
+                    onBlur={() => handleBlur(item.originalIndex)}
+                    isDisabled={item.editable === false}
+                  />
+                )}
+              </>
+            ) : (
+              <Flex gap={'4px'} alignItems={'center'}>
+                <Text maxW={'300px'} color={item.isEdited ? 'red.500' : 'grayModern.600'}>
+                  {item.value}
+                </Text>
+                {item.editable !== false && (
+                  <MyIcon
+                    onClick={() => toggleEdit(item.originalIndex)}
+                    cursor={'pointer'}
+                    name={'edit'}
+                    w={'16px'}
+                    h={'16px'}
+                    color={'grayModern.600'}
+                  />
+                )}
+              </Flex>
+            )}
+          </Flex>
+        );
+      }
     }
   ];
 

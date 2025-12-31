@@ -2,6 +2,7 @@ import type { SecretResponse } from '@/pages/api/getSecretByName';
 import { DELETE, GET, POST } from '@/services/request';
 import type {
   BackupItemType,
+  ConfigParameterItem,
   DBDetailType,
   DBEditType,
   DBListItemType,
@@ -48,7 +49,13 @@ export const getDBByName = ({
 }) => GET<DBDetailType>(`/api/getDBByName?name=${name}&mock=${mock}`, {}, config);
 
 export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
-  GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
+  GET<ConfigParameterItem[]>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
+
+export const applyReconfigureOps = (payload: {
+  dbName: string;
+  dbType: DBType;
+  differences: { path: string; oldValue: string; newValue: string }[];
+}) => POST('/api/applyReconfigureOps', payload);
 
 export const createDB = (payload: {
   dbForm: DBEditType;

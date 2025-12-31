@@ -120,6 +120,7 @@ function extractParameterConfigFromConfiguration(configuration: any, dbType: str
     timeZone?: string;
     lowerCaseTableNames?: string;
     isMaxConnectionsCustomized?: boolean;
+    maxmemory?: string;
   } = {};
 
   let hasParams = false;
@@ -187,6 +188,10 @@ function extractParameterConfigFromConfiguration(configuration: any, dbType: str
             if (redisParams['maxclients']) {
               parameterConfig.maxConnections = String(redisParams['maxclients']);
               parameterConfig.isMaxConnectionsCustomized = true;
+              hasParams = true;
+            }
+            if (redisParams['maxmemory']) {
+              parameterConfig.maxmemory = String(redisParams['maxmemory']);
               hasParams = true;
             }
           }
