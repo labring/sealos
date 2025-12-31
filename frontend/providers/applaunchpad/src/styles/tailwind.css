@@ -1,0 +1,23 @@
+@import '@sealos/shadcn-ui/shadcn.css';
+@import '@sealos/shadcn-ui/styles.css';
+@import '@sealos/shared/components/shadcn/styles.css';
+
+/* 全局样式（高优先级，覆盖 Chakra 注入） */
+html {
+  overflow: hidden;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 16px;
+  font-weight: 400;
+  min-width: 1024px;
+  min-height: 100%;
+  background-color: #e4e4e7;
+  overflow-x: auto;
+}
+
+#__next {
+  height: 100%;
+}

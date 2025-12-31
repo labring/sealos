@@ -26,6 +26,7 @@
     "@scalar/api-reference-react": "^0.6.24",
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
+    "@sealos/shadcn-ui": "workspace:^",
     "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
@@ -73,6 +74,9 @@
   },
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
+    "@tailwindcss/postcss": "^4.1.10",
+    "tailwindcss": "^4.1.10",
+    "geist": "^1.4.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^14.0.0",
     "@types/base64-stream": "^1.0.5",

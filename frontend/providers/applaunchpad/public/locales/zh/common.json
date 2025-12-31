@@ -72,6 +72,7 @@
   "Deployment Mode": "部署模式",
   "Deployment Successful": "部署成功",
   "Details": "详情",
+  "docs": "文档",
   "Edit Env Variable": "编辑环境变量",
   "Edit Environment Variables": "编辑环境变量",
   "Env Placeholder": "环境变量，每行一个，可用冒号或等号分隔，例如：\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test",

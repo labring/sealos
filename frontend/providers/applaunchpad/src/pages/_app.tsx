@@ -6,6 +6,7 @@ import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
+import { GeistSans } from 'geist/font/sans';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
@@ -17,6 +18,7 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import 'react-day-picker/dist/style.css';
 import '@/styles/reset.scss';
+import '@/styles/tailwind.css';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import Head from 'next/head';
@@ -215,7 +217,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   }, []);
 
   return (
-    <>
+    <div className={GeistSans.variable}>
       {config?.launchpad?.meta?.title && (
         <Head>
           <title>{config?.launchpad?.meta?.title}</title>
@@ -223,7 +225,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         </Head>
       )}
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme}>
+        <ChakraProvider theme={theme} resetCSS={false}>
           <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
             <Component {...pageProps} />
             <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
@@ -240,7 +242,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         gtmId={config?.launchpad?.gtmId!}
         debug={process.env.NODE_ENV === 'development'}
       />
-    </>
+    </div>
   );
 };
 

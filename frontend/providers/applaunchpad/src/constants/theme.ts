@@ -18,18 +18,19 @@ const baseStyle = definePartsStyle({
 export const Switch = defineMultiStyleConfig({ baseStyle });
 
 export const theme = extendTheme(sealosTheme, {
-  styles: {
-    global: {
-      'html, body': {
-        fontSize: 'md',
-        height: '100%',
-        backgroundColor: '#F4F4F7',
-        overflowX: 'auto',
-        fontWeight: 400,
-        minWidth: '1024px'
-      }
-    }
-  },
+  // 全局样式已迁移到 tailwind.css
+  // styles: {
+  //   global: {
+  //     'html, body': {
+  //       fontSize: 'md',
+  //       height: '100%',
+  //       backgroundColor: '#F4F4F7',
+  //       overflowX: 'auto',
+  //       fontWeight: 400,
+  //       minWidth: '1024px'
+  //     }
+  //   }
+  // },
   components: {
     Switch: Switch
   }

@@ -15,11 +15,10 @@ import { getErrText } from '@/utils/tools';
 import {
   Box,
   Text,
-  Button,
+  Button as ChakraButton,
   Center,
   Flex,
   MenuButton,
-  useTheme,
   useDisclosure,
   Modal,
   ModalOverlay,
@@ -32,16 +31,16 @@ import {
   FormControl,
   FormLabel
 } from '@chakra-ui/react';
+import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ThemeType } from '@sealos/ui';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { PencilLineIcon } from 'lucide-react';
+import { PencilLineIcon, BookOpen, Plus } from 'lucide-react';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
 
@@ -60,7 +59,6 @@ const AppList = ({
   const { userSourcePrice } = useUserStore();
   const { toast } = useToast();
   const { executeOperation, errorModalState, closeErrorModal } = useAppOperation();
-  const theme = useTheme<ThemeType>();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
@@ -123,6 +121,15 @@ const AppList = ({
       setRemarkValue('');
     }
   }, [apps, remarkAppName, remarkValue, setLoading, toast, t, refetchApps, onCloseRemarkModal]);
+
+  const handleGotoDocs = useCallback(() => {
+    // TODO: update localized docs url?
+    const docsUrl =
+      router.locale === 'zh'
+        ? 'https://sealos.run/docs/guides/app-launchpad'
+        : 'https://sealos.run/docs/guides/app-launchpad';
+    window.open(docsUrl, '_blank');
+  }, [router.locale]);
 
   const handleCreateApp = useQuotaGuarded(
     {
@@ -375,7 +382,7 @@ const AppList = ({
         key: 'control',
         render: (item: AppListItemType) => (
           <Flex>
-            <Button
+            <ChakraButton
               mr={5}
               height={'32px'}
               size={'sm'}
@@ -389,11 +396,11 @@ const AppList = ({
               onClick={() => router.push(`/app/detail?name=${item.name}`)}
             >
               {t('Details')}
-            </Button>
+            </ChakraButton>
             <SealosMenu
               width={100}
               Button={
-                <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
+                <MenuButton as={ChakraButton} variant={'square'} w={'30px'} h={'30px'}>
                   <MyIcon name={'more'} px={3} />
                 </MenuButton>
               }
@@ -505,37 +512,28 @@ const AppList = ({
   }, [listCompleted, router, t, isClientSide]);
 
   return (
-    <Box backgroundColor={'grayModern.100'} px={'30px'} pb={5} minH={'100%'}>
-      <Flex h={'88px'} alignItems={'center'}>
-        <Center
-          w="46px"
-          h={'46px'}
-          mr={4}
-          backgroundColor={'#FEFEFE'}
-          border={theme.borders[200]}
-          borderRadius={'md'}
+    <div className="h-[calc(100vh-28px)] bg-zinc-50 px-12">
+      <div className="flex h-24 items-center">
+        <div className="text-2xl font-semibold text-neutral-950">{t('Applications')}</div>
+        <div className="text-base font-medium leading-none ml-2 text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full border-[0.5px] border-zinc-200">
+          {apps.length}
+        </div>
+        <div
+          className="flex cursor-pointer items-center gap-2 text-blue-600 ml-4"
+          onClick={handleGotoDocs}
         >
-          <MyIcon name="logo" w={'24px'} h={'24px'} />
-        </Center>
-        <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
-          {t('Applications')}
-        </Box>
-        <Box ml={3} color={'grayModern.500'}>
-          ( {apps.length} )
-        </Box>
-        <Box flex={1}></Box>
+          <BookOpen className="h-4 w-4" />
+          <span className="text-small font-medium leading-none">{t('docs')}</span>
+        </div>
+        <div className="flex-1"></div>
         <Button
-          mr={'4px'}
-          className="create-app-btn"
-          h={'40px'}
-          w={'156px'}
-          flex={'0 0 auto'}
-          leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
+          className="bg-neutral-950 text-primary-foreground !px-4 py-2 rounded-lg"
           onClick={handleCreateApp}
         >
-          {t('Create Application')}
+          <Plus className="h-4 w-4" />
+          <span className="text-sm font-medium leading-none">{t('Create Application')}</span>
         </Button>
-      </Flex>
+      </div>
 
       <Box
         sx={{
@@ -584,12 +582,12 @@ const AppList = ({
             </FormControl>
           </ModalBody>
           <ModalFooter px={'24px'}>
-            <Button variant="outline" onClick={onCloseRemarkModal} mr={'12px'}>
+            <ChakraButton variant="outline" onClick={onCloseRemarkModal} mr={'12px'}>
               {t('Cancel')}
-            </Button>
-            <Button colorScheme="blue" onClick={handleSaveRemark}>
+            </ChakraButton>
+            <ChakraButton colorScheme="blue" onClick={handleSaveRemark}>
               {t('Confirm')}
-            </Button>
+            </ChakraButton>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -601,7 +599,7 @@ const AppList = ({
           onClose={closeErrorModal}
         />
       )}
-    </Box>
+    </div>
   );
 };
 
