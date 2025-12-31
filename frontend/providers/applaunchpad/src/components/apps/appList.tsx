@@ -1,10 +1,4 @@
 import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
-import AppStatusTag from '@/components/AppStatusTag';
-import GPUItem from '@/components/GPUItem';
-import MyIcon from '@/components/Icon';
-import { SealosMenu } from '@sealos/ui';
-import PodLineChart from '@/components/PodLineChart';
-import { MyTable } from '@sealos/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
 import { useAppOperation } from '@/hooks/useAppOperation';
@@ -12,40 +6,54 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import {
-  Box,
-  Text,
-  Button as ChakraButton,
-  Center,
-  Flex,
-  MenuButton,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  Input,
-  FormControl,
-  FormLabel
-} from '@chakra-ui/react';
+import { useDisclosure } from '@chakra-ui/react';
 import { Button } from '@sealos/shadcn-ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@sealos/shadcn-ui/dialog';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { PencilLineIcon, BookOpen, Plus } from 'lucide-react';
+import { BookOpen, Plus } from 'lucide-react';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
 
+import {
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+  flexRender,
+  type ColumnDef,
+  type CellContext
+} from '@tanstack/react-table';
+
+import { Name as NameColumn } from './list/columns/Name';
+import { Status as StatusColumn } from './list/columns/Status';
+import { CreateTime as CreateTimeColumn } from './list/columns/CreateTime';
+import { CPU as CPUColumn } from './list/columns/CPU';
+import { Memory as MemoryColumn } from './list/columns/Memory';
+import { GPU as GPUColumn } from './list/columns/GPU';
+import { Replicas as ReplicasColumn } from './list/columns/Replicas';
+import { Storage as StorageColumn } from './list/columns/Storage';
+import { Actions as ActionsColumn } from './list/columns/Actions';
+import { EmptyList } from './list/EmptyList';
+
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
+
+const PAGE_SIZE = 10;
 
 const AppList = ({
   apps = [],
@@ -74,20 +82,16 @@ const AppList = ({
     onClose: onCloseUpdateModal
   } = useDisclosure();
 
-  const {
-    isOpen: isOpenRemarkModal,
-    onOpen: onOpenRemarkModal,
-    onClose: onCloseRemarkModal
-  } = useDisclosure();
+  const [isOpenRemarkModal, setIsOpenRemarkModal] = useState(false);
 
   const handleOpenRemarkModal = useCallback(
     (appName: string) => {
       const app = apps.find((app) => app.name === appName);
       setRemarkAppName(appName);
       setRemarkValue(app?.remark || '');
-      onOpenRemarkModal();
+      setIsOpenRemarkModal(true);
     },
-    [apps, onOpenRemarkModal]
+    [apps]
   );
 
   const handleSaveRemark = useCallback(async () => {
@@ -116,11 +120,11 @@ const AppList = ({
       console.error(error);
     } finally {
       setLoading(false);
-      onCloseRemarkModal();
+      setIsOpenRemarkModal(false);
       setRemarkAppName('');
       setRemarkValue('');
     }
-  }, [apps, remarkAppName, remarkValue, setLoading, toast, t, refetchApps, onCloseRemarkModal]);
+  }, [apps, remarkAppName, remarkValue, setLoading, toast, t, refetchApps]);
 
   const handleGotoDocs = useCallback(() => {
     // TODO: update localized docs url?
@@ -184,319 +188,120 @@ const AppList = ({
     [executeOperation, refetchApps, t]
   );
 
-  const columns = useMemo<
-    {
-      title: string;
-      dataIndex?: keyof AppListItemType;
-      key: string;
-      render?: (item: AppListItemType) => JSX.Element;
-    }[]
-  >(
-    () => [
-      {
-        title: t('Name'),
-        key: 'name',
-        render: (item: AppListItemType) => {
-          return (
-            <Flex
-              cursor={'pointer'}
-              pl={4}
-              fontSize={'14px'}
-              fontWeight={'500'}
-              alignItems={item?.remark ? 'flex-start' : 'center'}
-              _hover={{
-                '& .remark-button': {
-                  opacity: 1,
-                  visibility: 'visible'
-                },
-                '& .app-name': {
-                  maxWidth: '100px'
-                }
-              }}
-              flexDirection={item?.remark ? 'column' : 'row'}
-              gap={item?.remark ? '4px' : 0}
-            >
-              <Flex alignItems="center" width="100%">
-                <Text
-                  className="app-name"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  whiteSpace="nowrap"
-                  title=""
-                  maxWidth="150px"
-                  transition="max-width 0.2s"
-                >
-                  {item.name}
-                </Text>
-
-                {!item.remark && (
-                  <Center
-                    className="remark-button"
-                    gap={'4px'}
-                    color={'#737373'}
-                    opacity={0}
-                    visibility="hidden"
-                    transition="all 0.2s"
-                    flexShrink={0}
-                    ml={2}
-                    onClick={() => handleOpenRemarkModal(item.name)}
-                  >
-                    <PencilLineIcon size={16} />
-                    <Text fontSize={'14px'} fontWeight={'400'} whiteSpace="nowrap">
-                      {t('set_remarks')}
-                    </Text>
-                  </Center>
-                )}
-              </Flex>
-              {item.remark && (
-                <Flex alignItems="center" width="100%">
-                  <Text
-                    className="app-name"
-                    fontSize={'12px'}
-                    color={'#737373'}
-                    flex={1}
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                    title=""
-                    maxWidth="150px"
-                    transition="max-width 0.2s"
-                  >
-                    {item.remark}
-                  </Text>
-
-                  <Center
-                    className="remark-button"
-                    gap={'4px'}
-                    color={'#737373'}
-                    opacity={0}
-                    visibility="hidden"
-                    transition="all 0.2s"
-                    flexShrink={0}
-                    ml={2}
-                    onClick={() => handleOpenRemarkModal(item.name)}
-                  >
-                    <PencilLineIcon size={16} />
-                    <Text fontSize={'14px'} fontWeight={'400'} whiteSpace="nowrap">
-                      {t('set_remarks')}
-                    </Text>
-                  </Center>
-                </Flex>
-              )}
-            </Flex>
-          );
-        }
-      },
-      {
-        title: t('Status'),
-        key: 'status',
-        render: (item: AppListItemType) => (
-          <AppStatusTag status={item.status} isPause={item.isPause} showBorder={false} />
-        )
-      },
-      {
-        title: t('Creation Time'),
-        dataIndex: 'createTime',
-        key: 'createTime'
-      },
-      {
-        title: t('CPU'),
-        key: 'cpu',
-        render: (item: AppListItemType) => (
-          <Box h={'35px'} w={['120px', '130px', '140px']}>
-            <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
-              <PodLineChart type="blue" data={item.usedCpu} />
-              <Text
-                color={'#0077A9'}
-                fontSize={'sm'}
-                fontWeight={'bold'}
-                position={'absolute'}
-                right={'4px'}
-                bottom={'0px'}
-                pointerEvents={'none'}
-                textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
-              >
-                {item?.usedCpu?.yData[item?.usedCpu?.yData?.length - 1]}%
-              </Text>
-            </Box>
-          </Box>
-        )
-      },
-      {
-        title: t('Memory'),
-        key: 'storage',
-        render: (item: AppListItemType) => (
-          <Box h={'35px'} w={['120px', '130px', '140px']}>
-            <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
-              <PodLineChart type="purple" data={item.usedMemory} />
-              <Text
-                color={'#6F5DD7'}
-                fontSize={'sm'}
-                fontWeight={'bold'}
-                position={'absolute'}
-                right={'4px'}
-                bottom={'0px'}
-                pointerEvents={'none'}
-                textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
-              >
-                {item?.usedMemory?.yData[item?.usedMemory?.yData?.length - 1]}%
-              </Text>
-            </Box>
-          </Box>
-        )
-      },
-      ...(userSourcePrice?.gpu
-        ? [
-            {
-              title: t('GPU'),
-              key: 'gpu',
-              render: (item: AppListItemType) => <GPUItem gpu={item.gpu} />
-            }
-          ]
-        : []),
-      {
-        title: t('Replicas'),
-        key: 'activeReplicas',
-        render: (item: AppListItemType) => (
-          <Flex whiteSpace={'nowrap'}>
-            <Box color={'myGray.900'}>
-              {t('Active')}: {item.activeReplicas}
-            </Box>
-            {item.minReplicas !== item.maxReplicas && (
-              <Box>
-                &ensp;/&ensp;{t('Total')}: {item.minReplicas}-{item.maxReplicas}
-              </Box>
-            )}
-          </Flex>
-        )
-      },
-      {
-        title: t('Storage'),
-        key: 'store',
-        render: (item: AppListItemType) => (
-          <>{item.storeAmount > 0 ? `${item.storeAmount}Gi` : '-'}</>
-        )
-      },
-      {
-        title: t('Operation'),
-        key: 'control',
-        render: (item: AppListItemType) => (
-          <Flex>
-            <ChakraButton
-              mr={5}
-              height={'32px'}
-              size={'sm'}
-              fontSize={'base'}
-              bg={'grayModern.150'}
-              color={'grayModern.900'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              leftIcon={<MyIcon name={'detail'} w={'16px'} h="16px" />}
-              onClick={() => router.push(`/app/detail?name=${item.name}`)}
-            >
-              {t('Details')}
-            </ChakraButton>
-            <SealosMenu
-              width={100}
-              Button={
-                <MenuButton as={ChakraButton} variant={'square'} w={'30px'} h={'30px'}>
-                  <MyIcon name={'more'} px={3} />
-                </MenuButton>
-              }
-              menuList={[
-                ...(item.isPause
-                  ? [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'continue'} w={'16px'} />
-                            <Box ml={2} fontWeight={'bold'}>
-                              {t('Start Up')}
-                            </Box>
-                          </>
-                        ),
-                        onClick: () => handleStartApp(item.name)
-                      }
-                    ]
-                  : [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'pause'} w={'16px'} />
-                            <Box ml={2} fontWeight={'bold'}>
-                              {t('Pause')}
-                            </Box>
-                          </>
-                        ),
-                        onClick: onOpenPause(() => handlePauseApp(item.name))
-                      },
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'change'} w={'16px'} />
-                            <Box ml={2} fontWeight={'bold'}>
-                              {t('Update')}
-                            </Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          if (item.source.hasSource && item.source.sourceType === 'sealaf') {
-                            setUpdateAppName(item.name);
-                            onOpenUpdateModal();
-                          } else {
-                            router.push(`/app/edit?name=${item.name}`);
-                          }
-                        }
-                      },
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'restart'} w="16px" />
-                            <Box ml={2} fontWeight={'bold'}>
-                              {t('Restart')}
-                            </Box>
-                          </>
-                        ),
-                        onClick: () => handleRestartApp(item.name)
-                      }
-                    ]),
-
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'delete'} w={'16px'} />
-                      <Box ml={2} fontWeight={'bold'}>
-                        {t('Delete')}
-                      </Box>
-                    </>
-                  ),
-                  menuItemStyle: {
-                    _hover: {
-                      color: 'red.600',
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }
-                  },
-                  onClick: () => setDelAppName(item.name)
-                }
-              ]}
-            />
-          </Flex>
-        )
+  const handleUpdateApp = useCallback(
+    (item: AppListItemType) => {
+      if (item.source.hasSource && item.source.sourceType === 'sealaf') {
+        setUpdateAppName(item.name);
+        onOpenUpdateModal();
+      } else {
+        router.push(`/app/edit?name=${item.name}`);
       }
-    ],
+    },
+    [onOpenUpdateModal, router]
+  );
+
+  const handleDeleteApp = useCallback((appName: string) => {
+    setDelAppName(appName);
+  }, []);
+
+  const showGpu = !!userSourcePrice?.gpu;
+
+  const columns = useMemo<ColumnDef<AppListItemType>[]>(
+    () =>
+      [
+        {
+          accessorKey: 'name',
+          header: () => <span className="select-none">{t('Name')}</span>,
+          cell: (props: CellContext<AppListItemType, unknown>) => (
+            <NameColumn {...props} onEditRemark={handleOpenRemarkModal} />
+          )
+        },
+        {
+          accessorKey: 'status',
+          header: () => <span className="select-none">{t('Status')}</span>,
+          size: 140,
+          cell: StatusColumn
+        },
+        {
+          accessorKey: 'cpu',
+          header: () => <span className="select-none">{t('CPU')}</span>,
+          cell: CPUColumn
+        },
+        {
+          accessorKey: 'memory',
+          header: () => <span className="select-none">{t('Memory')}</span>,
+          cell: MemoryColumn
+        },
+        {
+          accessorKey: 'gpu',
+          header: () => <span className="select-none">{t('GPU')}</span>,
+          size: 100,
+          cell: GPUColumn
+        },
+        {
+          accessorKey: 'replicas',
+          header: () => <span className="select-none">{t('Replicas')}</span>,
+          size: 120,
+          cell: ReplicasColumn
+        },
+        {
+          accessorKey: 'storage',
+          header: () => <span className="select-none">{t('Storage')}</span>,
+          size: 100,
+          cell: StorageColumn
+        },
+        {
+          accessorKey: 'createTime',
+          header: () => <span className="select-none">{t('Creation Time')}</span>,
+          size: 160,
+          cell: CreateTimeColumn
+        },
+        {
+          id: 'actions',
+          header: () => <span className="select-none">{t('Operation')}</span>,
+          size: 140,
+          cell: (props: CellContext<AppListItemType, unknown>) => (
+            <ActionsColumn
+              {...props}
+              onPauseApp={(appName) => onOpenPause(() => handlePauseApp(appName))()}
+              onStartApp={handleStartApp}
+              onRestartApp={handleRestartApp}
+              onDeleteApp={handleDeleteApp}
+              onUpdateApp={handleUpdateApp}
+            />
+          )
+        }
+      ].filter((column) => {
+        if (column.accessorKey === 'gpu' && !showGpu) {
+          return false;
+        }
+        return true;
+      }),
     [
-      handlePauseApp,
-      handleRestartApp,
-      handleStartApp,
-      onOpenPause,
-      router,
       t,
-      userSourcePrice?.gpu,
+      showGpu,
       handleOpenRemarkModal,
-      onOpenUpdateModal
+      onOpenPause,
+      handlePauseApp,
+      handleStartApp,
+      handleRestartApp,
+      handleDeleteApp,
+      handleUpdateApp
     ]
   );
+
+  const table = useReactTable({
+    data: apps,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: PAGE_SIZE
+      }
+    },
+    autoResetPageIndex: false
+  });
 
   const { listCompleted } = useGuideStore();
   const isClientSide = useClientSideValue(true);
@@ -512,7 +317,8 @@ const AppList = ({
   }, [listCompleted, router, t, isClientSide]);
 
   return (
-    <div className="h-[calc(100vh-28px)] bg-zinc-50 px-12">
+    <div className="flex h-screen flex-col bg-zinc-50 px-12">
+      {/* Header */}
       <div className="flex h-24 items-center">
         <div className="text-2xl font-semibold text-neutral-950">{t('Applications')}</div>
         <div className="text-base font-medium leading-none ml-2 text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full border-[0.5px] border-zinc-200">
@@ -535,16 +341,74 @@ const AppList = ({
         </Button>
       </div>
 
-      <Box
-        sx={{
-          '& > div': {
-            gridTemplateColumns: `200px repeat(${columns.length - 1}, 1fr) !important`
-          }
-        }}
-      >
-        <MyTable itemClass="appItem" columns={columns} data={apps} />
-      </Box>
+      {/* Table */}
+      <div className="flex flex-1 flex-col justify-between overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto scrollbar-hide">
+          {/* Table Header */}
+          <div className="sticky top-0 z-10 flex min-w-[1350px] h-10 shrink-0 items-center text-sm rounded-lg border-[0.5px] bg-white px-6 text-sm text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
+            {table.getFlatHeaders().map((header) => {
+              const isGrowColumn = ['name', 'cpu', 'memory'].includes(header.id);
+              const columnSize = header.column.columnDef.size;
+              return (
+                <div
+                  key={header.id}
+                  style={columnSize ? { width: columnSize } : undefined}
+                  className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
+                >
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </div>
+              );
+            })}
+          </div>
 
+          {/* Table Body */}
+          {table.getRowModel().rows.length === 0 ? (
+            <EmptyList />
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <div
+                key={row.id}
+                className="appListItem group flex h-18 shrink-0 text-sm min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors hover:bg-zinc-50"
+                data-id={row.original.id}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  const isGrowColumn = ['name', 'cpu', 'memory'].includes(cell.column.id);
+                  const columnSize = cell.column.columnDef.size;
+                  return (
+                    <div
+                      key={cell.id}
+                      style={columnSize ? { width: columnSize } : undefined}
+                      className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Pagination */}
+        {table.getRowModel().rows.length > 0 && (
+          <div className="flex items-center justify-between gap-2.5 py-4 text-sm/5 text-zinc-500">
+            <span>{t('Total') + ': ' + table.getFilteredRowModel().rows.length}</span>
+            <div className="flex items-center gap-3">
+              <Pagination
+                currentPage={table.getState().pagination.pageIndex + 1}
+                totalPages={table.getPageCount()}
+                onPageChange={(page) => table.setPageIndex(page - 1)}
+              />
+              <div className="flex items-center gap-1">
+                <span className="text-zinc-900">{table.getState().pagination.pageSize}</span>/
+                <span>{t('Page')}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
       <PauseChild />
       {!!delAppName && (
         <DelModal
@@ -562,35 +426,28 @@ const AppList = ({
           onCloseUpdateModal();
         }}
       />
-      <Modal isOpen={isOpenRemarkModal} onClose={onCloseRemarkModal}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader bg={'#fff'} borderBottom={'none'} pt={'24px'}>
-            {t('set_remarks_title')}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody px={'24px'} pb={'16px'} pt={'0px'}>
-            <FormControl>
-              <FormLabel>{t('remarks')}</FormLabel>
-              <Input
-                placeholder={t('set_remarks_placeholder')}
-                width={'100%'}
-                value={remarkValue}
-                onChange={(e) => setRemarkValue(e.target.value)}
-                maxLength={60}
-              />
-            </FormControl>
-          </ModalBody>
-          <ModalFooter px={'24px'}>
-            <ChakraButton variant="outline" onClick={onCloseRemarkModal} mr={'12px'}>
+      <Dialog open={isOpenRemarkModal} onOpenChange={setIsOpenRemarkModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('set_remarks_title')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>{t('remarks')}</Label>
+            <Input
+              placeholder={t('set_remarks_placeholder')}
+              value={remarkValue}
+              onChange={(e) => setRemarkValue(e.target.value)}
+              maxLength={60}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpenRemarkModal(false)}>
               {t('Cancel')}
-            </ChakraButton>
-            <ChakraButton colorScheme="blue" onClick={handleSaveRemark}>
-              {t('Confirm')}
-            </ChakraButton>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+            </Button>
+            <Button onClick={handleSaveRemark}>{t('Confirm')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {errorModalState.visible && (
         <ErrorModal
           title={errorModalState.title}

@@ -17,7 +17,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import 'react-day-picker/dist/style.css';
-import '@/styles/reset.scss';
 import '@/styles/tailwind.css';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';

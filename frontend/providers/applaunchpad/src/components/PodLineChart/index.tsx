@@ -3,107 +3,43 @@ import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import { MonitorDataResult } from '@/types/monitor';
 import dayjs from 'dayjs';
+import { cn } from '@sealos/shadcn-ui';
 
 const map = {
   blue: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(3, 190, 232, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(0, 182, 240, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
-    lineColor: '#36ADEF'
+    backgroundColor: 'rgba(229, 243, 255, 0.3)',
+    lineColor: '#49AEFF'
+  },
+  green: {
+    backgroundColor: 'rgba(214, 245, 241, 0.3)',
+    lineColor: '#00D1B5'
   },
   deepBlue: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(47, 112, 237, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(94, 159, 235, 0)'
-        }
-      ],
-      global: false
-    },
+    backgroundColor: 'rgba(47, 112, 237, 0.3)',
     lineColor: '#3293EC'
   },
   purple: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(211, 190, 255, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(52, 60, 255, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
+    backgroundColor: 'rgba(211, 190, 255, 0.3)',
     lineColor: '#8172D8'
-  },
-  green: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(4, 209, 148, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(19, 217, 181, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
-    lineColor: '#00A9A6',
-    max: 100
   }
 };
 
 const PodLineChart = ({
   type,
   data,
-  isShowLabel = false
+  isShowLabel = false,
+  isShowText = true,
+  className
 }: {
   type: 'blue' | 'deepBlue' | 'green' | 'purple';
   data?: MonitorDataResult;
   isShowLabel?: boolean;
+  isShowText?: boolean;
+  className?: string;
 }) => {
   const { screenWidth } = useGlobalStore();
   const xData =
-    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
+    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
   const yData = data?.yData || new Array(30).fill('');
 
@@ -148,18 +84,23 @@ const PodLineChart = ({
       splitNumber: 2,
       max: 100,
       min: 0,
+      interval: 50,
       axisLabel: {
-        show: isShowLabel
+        show: isShowLabel,
+        formatter: '{value}'
       },
       splitLine: {
-        show: false
+        show: true,
+        lineStyle: {
+          color: '#EBEBEB'
+        }
       }
     },
     grid: {
       containLabel: isShowLabel,
       show: false,
-      left: 0,
-      right: isShowLabel ? 14 : 0,
+      left: '2%',
+      right: isShowLabel ? '4%' : 0,
       top: 10,
       bottom: 2
     },
@@ -168,9 +109,24 @@ const PodLineChart = ({
       axisPointer: {
         type: 'line'
       },
+      appendToBody: true,
+      borderRadius: 6,
       formatter: (params: any[]) => {
-        const axisValue = params[0]?.axisValue;
-        return `${axisValue} ${params[0]?.value || 0}%`;
+        const xValue = params[0]?.axisValue;
+        const yValue = params[0]?.value;
+        return `
+          <div>
+            <div style="font-size: 12px; margin-bottom: 6px; font-weight: 500; color: #09090B;">
+              ${xValue || ''}
+            </div>
+            <div style="display: flex; align-items: center; font-size: 12px; font-weight: 500;">
+              <span style="display: inline-block; width: 8px; height: 8px; background-color: ${
+                map[type].lineColor
+              }; margin-right: 8px; border-radius: 2px;"></span>
+              <span style="color: #09090B;">${yValue || 0}%</span>
+            </div>
+          </div>
+        `;
       }
     },
     series: [
@@ -220,7 +176,16 @@ const PodLineChart = ({
     myChart.current.resize();
   }, [screenWidth]);
 
-  return <div ref={Dom} style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div className={cn('relative h-full w-full', className)}>
+      <div ref={Dom} style={{ width: '100%', height: '100%' }} />
+      {isShowText && (
+        <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
+          {data?.yData[data?.yData?.length - 1]}%
+        </span>
+      )}
+    </div>
+  );
 };
 
 export default React.memo(PodLineChart);
