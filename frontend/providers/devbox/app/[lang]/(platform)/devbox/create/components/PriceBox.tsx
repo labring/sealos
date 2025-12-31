@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CurrencySymbol } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
-import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
+import { CircuitBoard, Cpu, MemoryStick } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
@@ -11,8 +11,7 @@ import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
 export const colorMap = {
   cpu: '#33BABB',
-  memory: '#36ADEF',
-  nodeports: '#8172D8'
+  memory: '#36ADEF'
 };
 
 interface PriceBoxProps {
@@ -39,14 +38,12 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
   }[] = useMemo(() => {
     let cp = 0;
     let mp = 0;
-    let pp = 0;
     let tp = 0;
     let gp = 0;
 
     components.forEach(({ cpu, memory, gpu }) => {
       cp = (sourcePrice.cpu * cpu * 24) / 1000;
       mp = (sourcePrice.memory * memory * 24) / 1024;
-      pp = sourcePrice.nodeports * 1 * 24;
 
       gp = (() => {
         if (!gpu || !gpu.amount) return 0;
@@ -55,7 +52,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
         return +(item.price * gpu.amount * 24);
       })();
 
-      tp = cp + mp + pp + gp;
+      tp = cp + mp + gp;
     });
     const iconClassName = 'h-5 w-5 text-neutral-400';
 
@@ -71,11 +68,6 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
         color: '#36ADEF',
         value: mp.toFixed(2)
       },
-      {
-        icon: <HdmiPort className={iconClassName} />,
-        label: 'nodeports',
-        value: pp.toFixed(2)
-      },
       ...(sourcePrice?.gpu
         ? [
             {
@@ -87,7 +79,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
         : []),
       { label: 'total_price', value: tp.toFixed(2) }
     ];
-  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports, sourcePrice.gpu]);
+  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.gpu]);
 
   return (
     <Card className={cn('guide-cost', className)}>

@@ -22,8 +22,14 @@ export type Session = {
 export type userPriceType = {
   cpu: number;
   memory: number;
-  nodeports: number;
-  gpu?: { alias: string; type: string; price: number; available: number; count: number; vm: number }[];
+  gpu?: {
+    alias: string;
+    type: string;
+    price: number;
+    available: number;
+    count: number;
+    vm: number;
+  }[];
 };
 
 export type GpuType = {
