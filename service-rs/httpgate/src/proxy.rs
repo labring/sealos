@@ -3,19 +3,19 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use pingora_core::upstreams::peer::{HttpPeer, ALPN};
 use pingora_core::Result;
-use pingora_http::{RequestHeader, ResponseHeader};
+use pingora_http::{RequestHeader, ResponseHeader, Version};
 use pingora_proxy::{ProxyHttp, Session};
 use regex::Regex;
 use tracing::{debug, info, warn};
 
 use crate::registry::DevboxRegistry;
 
-/// Upstream protocol type based on host prefix
+/// Upstream protocol type based on incoming request
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpstreamProtocol {
-    /// HTTP/1.1 over cleartext (prefix: devbox-)
+    /// HTTP/1.1 over cleartext
     Http,
-    /// gRPC over HTTP/2 cleartext (prefix: devboxgrpc-)
+    /// gRPC over HTTP/2 cleartext (detected by H2 + content-type: application/grpc*)
     Grpc,
 }
 
@@ -39,9 +39,9 @@ const BODY_NOT_RUNNING: &[u8] = b"devbox not running";
 /// - uniqueID: lowercase alphanumeric with hyphens, cannot start/end with hyphen
 /// - port: numeric or "agent" (special keyword for agent port)
 ///
-/// Note: Prefix (e.g., "devbox-", "devboxgrpc-") should be stripped before matching.
+/// Note: "devbox-" prefix should be stripped before matching.
 ///
-/// Examples (after prefix stripped):
+/// Examples (after devbox- prefix stripped):
 ///   - "outdoor-before-78648-8080.devbox.xxx" -> ("outdoor-before-78648", 8080)
 ///   - "my-app-8080.devbox.xxx" -> ("my-app", 8080)
 ///   - "my-app-agent.devbox.xxx" -> ("my-app", agent_port from config)
@@ -52,7 +52,7 @@ static HOST_REGEX: std::sync::LazyLock<Regex> = std::sync::LazyLock::new(|| {
     Regex::new(r"^([a-z\d](?:[-a-z\d]*[a-z\d])?)-(\d+|agent)\.").unwrap()
 });
 
-/// Host parser for extracting protocol, uniqueID and port from Host header.
+/// Host parser for extracting uniqueID and port from Host header.
 #[derive(Debug, Clone)]
 pub struct HostParser {
     /// Agent port (used when port is "agent" instead of a number)
@@ -65,29 +65,20 @@ impl HostParser {
         Self { agent_port }
     }
 
-    /// Parse the Host header to extract protocol, uniqueID and port.
+    /// Parse the Host header to extract uniqueID and port.
     ///
-    /// Expected formats:
-    /// - `devbox-<uniqueID>-<port>.xxx[:port]` -> HTTP
-    /// - `devboxgrpc-<uniqueID>-<port>.xxx[:port]` -> gRPCs
+    /// Expected format: `devbox-<uniqueID>-<port>.xxx[:port]`
     ///
     /// Examples:
-    /// - `devbox-outdoor-before-78648-8080.devbox.sealos.io` -> (Http, "outdoor-before-78648", 8080)
-    /// - `devboxgrpc-my-app-50051.devbox.sealos.io` -> (Grpc, "my-app", 50051)
-    /// - `devbox-my-app-agent.devbox.sealos.io` -> (Http, "my-app", agent_port)
-    pub fn parse(&self, host: &str) -> Option<(UpstreamProtocol, String, u16)> {
+    /// - `devbox-outdoor-before-78648-8080.devbox.sealos.io` -> ("outdoor-before-78648", 8080)
+    /// - `devbox-my-app-50051.devbox.sealos.io` -> ("my-app", 50051)
+    /// - `devbox-my-app-agent.devbox.sealos.io` -> ("my-app", agent_port)
+    pub fn parse(&self, host: &str) -> Option<(String, u16)> {
         // Remove port suffix if present (e.g., "xxx:443" -> "xxx")
         let host_without_port = host.split(':').next().unwrap_or(host);
 
-        // Try to strip prefixes and determine protocol
-        let (protocol, host_stripped) =
-            if let Some(stripped) = host_without_port.strip_prefix("devboxgrpc-") {
-                (UpstreamProtocol::Grpc, stripped)
-            } else if let Some(stripped) = host_without_port.strip_prefix("devbox-") {
-                (UpstreamProtocol::Http, stripped)
-            } else {
-                (UpstreamProtocol::Http, host_without_port)
-            };
+        // Strip devbox- prefix
+        let host_stripped = host_without_port.strip_prefix("devbox-")?;
 
         HOST_REGEX.captures(host_stripped).and_then(|caps| {
             let unique_id = caps.get(1)?.as_str().to_string();
@@ -97,7 +88,7 @@ impl HostParser {
             } else {
                 port_str.parse().ok()?
             };
-            Some((protocol, unique_id, port))
+            Some((unique_id, port))
         })
     }
 }
@@ -115,11 +106,14 @@ pub struct ProxyCtx {
 /// Pingora-based HTTP proxy for routing requests to devbox pods.
 ///
 /// Routes requests based on the Host header pattern:
-/// - `devbox-<uniqueID>-<port>.xxx` -> HTTP/1.1 to `<pod_ip>:<port>`
-/// - `devboxgrpc-<uniqueID>-<port>.xxx` -> gRPCs to `<pod_ip>:<port>`
+/// - `devbox-<uniqueID>-<port>.xxx` -> `<pod_ip>:<port>`
+///
+/// Protocol detection:
+/// - gRPC/H2: detected by HTTP/2 request with content-type starting with "application/grpc"
+/// - HTTP/1.1: all other requests
 pub struct DevboxProxy {
     registry: Arc<DevboxRegistry>,
-    /// Host parser for extracting protocol, uniqueID and port from Host header
+    /// Host parser for extracting uniqueID and port from Host header
     host_parser: HostParser,
 }
 
@@ -211,10 +205,26 @@ impl ProxyHttp for DevboxProxy {
             .or_else(|| session.req_header().uri.authority().map(|a| a.as_str()))
             .unwrap_or("");
 
-        // Parse protocol, uniqueID and port from host
-        let Some((protocol, unique_id, port)) = self.host_parser.parse(host) else {
+        // Parse uniqueID and port from host
+        let Some((unique_id, port)) = self.host_parser.parse(host) else {
             warn!(host = %host, "Failed to parse host header");
             return Self::send_not_found(session).await;
+        };
+
+        // Detect protocol: use gRPC/H2 when request is HTTP/2 AND content-type starts with "application/grpc"
+        let is_h2 = session.req_header().version == Version::HTTP_2;
+        let is_grpc_content_type = session
+            .req_header()
+            .headers
+            .get("content-type")
+            .and_then(|ct| ct.to_str().ok())
+            .map(|ct| ct.to_ascii_lowercase())
+            .is_some_and(|ct| ct.starts_with("application/grpc"));
+
+        let protocol = if is_h2 && is_grpc_content_type {
+            UpstreamProtocol::Grpc
+        } else {
+            UpstreamProtocol::Http
         };
 
         // Resolve backend from registry
@@ -303,145 +313,57 @@ mod tests {
         HostParser::new(TEST_AGENT_PORT)
     }
 
-    // HTTP protocol tests (devbox- prefix)
+    // Host parsing tests (devbox- prefix)
 
     #[test]
-    fn test_parse_host_http_standard_format() {
+    fn test_parse_host_standard_format() {
         let parser = test_parser();
         let result = parser.parse("devbox-outdoor-before-78648-8080.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((
-                UpstreamProtocol::Http,
-                "outdoor-before-78648".to_string(),
-                8080
-            ))
-        );
+        assert_eq!(result, Some(("outdoor-before-78648".to_string(), 8080)));
     }
 
     #[test]
-    fn test_parse_host_http_simple_id() {
+    fn test_parse_host_simple_id() {
         let parser = test_parser();
         let result = parser.parse("devbox-my-app-8080.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((UpstreamProtocol::Http, "my-app".to_string(), 8080))
-        );
+        assert_eq!(result, Some(("my-app".to_string(), 8080)));
     }
 
     #[test]
-    fn test_parse_host_http_single_word() {
+    fn test_parse_host_single_word() {
         let parser = test_parser();
         let result = parser.parse("devbox-myapp-443.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((UpstreamProtocol::Http, "myapp".to_string(), 443))
-        );
+        assert_eq!(result, Some(("myapp".to_string(), 443)));
     }
 
     #[test]
-    fn test_parse_host_http_with_numbers() {
+    fn test_parse_host_with_numbers() {
         let parser = test_parser();
         let result = parser.parse("devbox-app123-test456-3000.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((UpstreamProtocol::Http, "app123-test456".to_string(), 3000))
-        );
+        assert_eq!(result, Some(("app123-test456".to_string(), 3000)));
     }
 
     #[test]
-    fn test_parse_host_http_with_port_suffix() {
+    fn test_parse_host_with_port_suffix() {
         let parser = test_parser();
         let result = parser.parse("devbox-outdoor-before-78648-8080.devbox.sealos.io:443");
-        assert_eq!(
-            result,
-            Some((
-                UpstreamProtocol::Http,
-                "outdoor-before-78648".to_string(),
-                8080
-            ))
-        );
+        assert_eq!(result, Some(("outdoor-before-78648".to_string(), 8080)));
     }
 
     #[test]
-    fn test_parse_host_http_agent_port() {
+    fn test_parse_host_agent_port() {
         let parser = test_parser();
         let result = parser.parse("devbox-my-app-agent.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((
-                UpstreamProtocol::Http,
-                "my-app".to_string(),
-                TEST_AGENT_PORT
-            ))
-        );
+        assert_eq!(result, Some(("my-app".to_string(), TEST_AGENT_PORT)));
     }
 
     #[test]
-    fn test_parse_host_http_agent_port_complex_id() {
+    fn test_parse_host_agent_port_complex_id() {
         let parser = test_parser();
         let result = parser.parse("devbox-outdoor-before-78648-agent.devbox.sealos.io");
         assert_eq!(
             result,
-            Some((
-                UpstreamProtocol::Http,
-                "outdoor-before-78648".to_string(),
-                TEST_AGENT_PORT
-            ))
-        );
-    }
-
-    // gRPC protocol tests (devboxgrpc- prefix)
-
-    #[test]
-    fn test_parse_host_grpc_standard_format() {
-        let parser = test_parser();
-        let result = parser.parse("devboxgrpc-outdoor-before-78648-50051.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((
-                UpstreamProtocol::Grpc,
-                "outdoor-before-78648".to_string(),
-                50051
-            ))
-        );
-    }
-
-    #[test]
-    fn test_parse_host_grpc_simple_id() {
-        let parser = test_parser();
-        let result = parser.parse("devboxgrpc-my-app-50051.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((UpstreamProtocol::Grpc, "my-app".to_string(), 50051))
-        );
-    }
-
-    #[test]
-    fn test_parse_host_grpc_with_port_suffix() {
-        let parser = test_parser();
-        let result = parser.parse("devboxgrpc-outdoor-before-78648-50051.devbox.sealos.io:443");
-        assert_eq!(
-            result,
-            Some((
-                UpstreamProtocol::Grpc,
-                "outdoor-before-78648".to_string(),
-                50051
-            ))
-        );
-    }
-
-    #[test]
-    fn test_parse_host_grpc_agent_port() {
-        let parser = test_parser();
-        let result = parser.parse("devboxgrpc-my-app-agent.devbox.sealos.io");
-        assert_eq!(
-            result,
-            Some((
-                UpstreamProtocol::Grpc,
-                "my-app".to_string(),
-                TEST_AGENT_PORT
-            ))
+            Some(("outdoor-before-78648".to_string(), TEST_AGENT_PORT))
         );
     }
 
@@ -453,9 +375,6 @@ mod tests {
         assert!(parser
             .parse("devbox-outdoor-before.devbox.sealos.io")
             .is_none());
-        assert!(parser
-            .parse("devboxgrpc-outdoor-before.devbox.sealos.io")
-            .is_none());
     }
 
     #[test]
@@ -464,16 +383,13 @@ mod tests {
         // No prefix
         assert!(parser.parse("invalid.example.com").is_none());
         assert!(parser.parse("").is_none());
-        // Missing prefix
+        // Missing devbox- prefix
         assert!(parser
             .parse("outdoor-before-78648-8080.devbox.sealos.io")
             .is_none());
         // Invalid uniqueID format (starts/ends with hyphen)
         assert!(parser.parse("devbox--invalid-8080.devbox.io").is_none());
         assert!(parser.parse("devbox-invalid--8080.devbox.io").is_none());
-        assert!(parser
-            .parse("devboxgrpc--invalid-50051.devbox.io")
-            .is_none());
     }
 
     #[test]
