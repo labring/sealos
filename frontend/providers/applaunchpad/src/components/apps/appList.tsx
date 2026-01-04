@@ -1,12 +1,10 @@
 import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
-import { useConfirm } from '@/hooks/useConfirm';
-import { useToast } from '@/hooks/useToast';
 import { useAppOperation } from '@/hooks/useAppOperation';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import { useDisclosure } from '@chakra-ui/react';
+import { toast } from 'sonner';
 import { Button } from '@sealos/shadcn-ui/button';
 import {
   Dialog,
@@ -15,6 +13,16 @@ import {
   DialogTitle,
   DialogFooter
 } from '@sealos/shadcn-ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction
+} from '@sealos/shadcn-ui/alert-dialog';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
@@ -35,8 +43,7 @@ import {
   getPaginationRowModel,
   useReactTable,
   flexRender,
-  type ColumnDef,
-  type CellContext
+  type ColumnDef
 } from '@tanstack/react-table';
 
 import { Name as NameColumn } from './list/columns/Name';
@@ -48,7 +55,16 @@ import { GPU as GPUColumn } from './list/columns/GPU';
 import { Replicas as ReplicasColumn } from './list/columns/Replicas';
 import { Storage as StorageColumn } from './list/columns/Storage';
 import { Actions as ActionsColumn } from './list/columns/Actions';
-import { EmptyList } from './list/EmptyList';
+
+// Define table meta type for callbacks
+export interface AppTableMeta {
+  onEditRemark: (appName: string) => void;
+  onPauseApp: (appName: string) => void;
+  onStartApp: (appName: string) => void;
+  onRestartApp: (appName: string) => void;
+  onDeleteApp: (appName: string) => void;
+  onUpdateApp: (item: AppListItemType) => void;
+}
 
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
@@ -65,7 +81,6 @@ const AppList = ({
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
-  const { toast } = useToast();
   const { executeOperation, errorModalState, closeErrorModal } = useAppOperation();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
@@ -73,14 +88,14 @@ const AppList = ({
   const [remarkAppName, setRemarkAppName] = useState('');
   const [remarkValue, setRemarkValue] = useState('');
 
-  const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: 'pause_message'
-  });
-  const {
-    isOpen: isOpenUpdateModal,
-    onOpen: onOpenUpdateModal,
-    onClose: onCloseUpdateModal
-  } = useDisclosure();
+  // Pause confirm dialog state
+  const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+  const [pendingPauseAppName, setPendingPauseAppName] = useState('');
+
+  // Update modal state (replaces useDisclosure)
+  const [isOpenUpdateModal, setIsOpenUpdateModal] = useState(false);
+  const onOpenUpdateModal = useCallback(() => setIsOpenUpdateModal(true), []);
+  const onCloseUpdateModal = useCallback(() => setIsOpenUpdateModal(false), []);
 
   const [isOpenRemarkModal, setIsOpenRemarkModal] = useState(false);
 
@@ -106,17 +121,11 @@ const AppList = ({
         kind
       });
 
-      toast({
-        title: t('remark_updated_successfully'),
-        status: 'success'
-      });
+      toast.success(t('remark_updated_successfully'));
 
       refetchApps();
     } catch (error: any) {
-      toast({
-        title: t(getErrText(error), 'update_remark_failed'),
-        status: 'error'
-      });
+      toast.error(t(getErrText(error), 'update_remark_failed'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -124,7 +133,7 @@ const AppList = ({
       setRemarkAppName('');
       setRemarkValue('');
     }
-  }, [apps, remarkAppName, remarkValue, setLoading, toast, t, refetchApps]);
+  }, [apps, remarkAppName, remarkValue, setLoading, t, refetchApps]);
 
   const handleGotoDocs = useCallback(() => {
     // TODO: update localized docs url?
@@ -206,15 +215,19 @@ const AppList = ({
 
   const showGpu = !!userSourcePrice?.gpu;
 
+  const handlePauseAppWithDialog = useCallback((appName: string) => {
+    setPendingPauseAppName(appName);
+    setPauseDialogOpen(true);
+  }, []);
+
+  // Stable columns definition - no inline functions for cell renderers
   const columns = useMemo<ColumnDef<AppListItemType>[]>(
     () =>
       [
         {
           accessorKey: 'name',
           header: () => <span className="select-none">{t('Name')}</span>,
-          cell: (props: CellContext<AppListItemType, unknown>) => (
-            <NameColumn {...props} onEditRemark={handleOpenRemarkModal} />
-          )
+          cell: NameColumn
         },
         {
           accessorKey: 'status',
@@ -260,16 +273,7 @@ const AppList = ({
           id: 'actions',
           header: () => <span className="select-none">{t('Operation')}</span>,
           size: 140,
-          cell: (props: CellContext<AppListItemType, unknown>) => (
-            <ActionsColumn
-              {...props}
-              onPauseApp={(appName) => onOpenPause(() => handlePauseApp(appName))()}
-              onStartApp={handleStartApp}
-              onRestartApp={handleRestartApp}
-              onDeleteApp={handleDeleteApp}
-              onUpdateApp={handleUpdateApp}
-            />
-          )
+          cell: ActionsColumn
         }
       ].filter((column) => {
         if (column.accessorKey === 'gpu' && !showGpu) {
@@ -277,12 +281,22 @@ const AppList = ({
         }
         return true;
       }),
+    [t, showGpu]
+  );
+
+  // Table meta with callbacks - passed to cells via table.options.meta
+  const tableMeta = useMemo<AppTableMeta>(
+    () => ({
+      onEditRemark: handleOpenRemarkModal,
+      onPauseApp: handlePauseAppWithDialog,
+      onStartApp: handleStartApp,
+      onRestartApp: handleRestartApp,
+      onDeleteApp: handleDeleteApp,
+      onUpdateApp: handleUpdateApp
+    }),
     [
-      t,
-      showGpu,
       handleOpenRemarkModal,
-      onOpenPause,
-      handlePauseApp,
+      handlePauseAppWithDialog,
       handleStartApp,
       handleRestartApp,
       handleDeleteApp,
@@ -300,7 +314,8 @@ const AppList = ({
         pageSize: PAGE_SIZE
       }
     },
-    autoResetPageIndex: false
+    autoResetPageIndex: false,
+    meta: tableMeta
   });
 
   const { listCompleted } = useGuideStore();
@@ -362,31 +377,27 @@ const AppList = ({
           </div>
 
           {/* Table Body */}
-          {table.getRowModel().rows.length === 0 ? (
-            <EmptyList />
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <div
-                key={row.id}
-                className="appListItem group flex h-18 shrink-0 text-sm min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors hover:bg-zinc-50"
-                data-id={row.original.id}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const isGrowColumn = ['name', 'cpu', 'memory'].includes(cell.column.id);
-                  const columnSize = cell.column.columnDef.size;
-                  return (
-                    <div
-                      key={cell.id}
-                      style={columnSize ? { width: columnSize } : undefined}
-                      className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </div>
-                  );
-                })}
-              </div>
-            ))
-          )}
+          {table.getRowModel().rows.map((row) => (
+            <div
+              key={row.id}
+              className="appListItem group flex h-18 shrink-0 text-sm min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors hover:bg-zinc-50"
+              data-id={row.original.id}
+            >
+              {row.getVisibleCells().map((cell) => {
+                const isGrowColumn = ['name', 'cpu', 'memory'].includes(cell.column.id);
+                const columnSize = cell.column.columnDef.size;
+                return (
+                  <div
+                    key={cell.id}
+                    style={columnSize ? { width: columnSize } : undefined}
+                    className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Pagination */}
@@ -409,7 +420,28 @@ const AppList = ({
       </div>
 
       {/* Modals */}
-      <PauseChild />
+      {/* Pause Confirm Dialog */}
+      <AlertDialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('Warning')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('pause_message')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="w-[88px]">{t('Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="w-[88px]"
+              onClick={() => {
+                handlePauseApp(pendingPauseAppName);
+                setPauseDialogOpen(false);
+                setPendingPauseAppName('');
+              }}
+            >
+              {t('Yes')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {!!delAppName && (
         <DelModal
           appName={delAppName}

@@ -1,24 +1,20 @@
 import { delAppByName } from '@/api/app';
-import MyIcon from '@/components/Icon';
 import { TAppSource, TAppSourceType } from '@/types/app';
 import {
-  Box,
-  Button,
-  Flex,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay
-} from '@chakra-ui/react';
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@sealos/shadcn-ui/dialog';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Input } from '@sealos/shadcn-ui/input';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useAppOperation } from '@/hooks/useAppOperation';
 import dynamic from 'next/dynamic';
+import { TriangleAlert } from 'lucide-react';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -56,7 +52,7 @@ const DelModal = ({
   };
 
   const handleDelApp = useCallback(async () => {
-    const result = await executeOperation(
+    await executeOperation(
       async () => {
         await delAppByName(appName);
         const delay = Math.random() * 2000 + 2000; // 2000-4000ms
@@ -65,14 +61,13 @@ const DelModal = ({
       {
         successMessage: t('success'),
         errorMessage: t('Delete Failed'),
-        showErrorModal: true
+        showErrorModal: true,
+        onSuccess: () => {
+          onSuccess();
+          onClose();
+        }
       }
     );
-
-    if (result !== null) {
-      onSuccess();
-      onClose();
-    }
   }, [appName, executeOperation, t, onSuccess, onClose]);
 
   const openTemplateApp = () => {
@@ -95,80 +90,69 @@ const DelModal = ({
   };
 
   return (
-    <>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <Flex alignItems={'center'} gap={'10px'}>
-              <MyIcon name="warning" width={'20px'} h={'20px'} />
-              {activePage === Page.REMINDER ? t('Remind') : t('Deletion warning')}
-            </Flex>
-          </ModalHeader>
-          <ModalCloseButton />
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-[450px] text-foreground">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+            <TriangleAlert className="h-4 w-4 text-yellow-600" />
+            {activePage === Page.REMINDER ? t('Remind') : t('Deletion warning')}
+          </DialogTitle>
+        </DialogHeader>
 
-          <ModalBody>
-            <Box color={'myGray.600'}>
-              {activePage === Page.REMINDER && source?.sourceType
-                ? deleteTypeTipMap[source?.sourceType]
-                : t('delete_app_tip')}
+        {activePage === Page.REMINDER && source?.sourceType ? (
+          <>
+            <div className="text-sm font-normal">{deleteTypeTipMap[source?.sourceType]}</div>
+          </>
+        ) : (
+          <>
+            <div className="text-sm font-normal">{t('delete_app_tip')}</div>
 
-              {activePage === Page.DELETION_WARNING && (
-                <Box my={3}>
-                  {t('Please enter')}
-                  <Box
-                    as={'span'}
-                    px={'4px'}
-                    color={'myGray.900'}
-                    fontWeight={'bold'}
-                    userSelect={'all'}
-                  >
-                    {appName}
-                  </Box>
-                  {t('To Confirm')}
-                </Box>
-              )}
-            </Box>
-            {activePage === Page.DELETION_WARNING && (
+            <div className="rounded-lg bg-destructive-foreground p-4 text-sm text-destructive">
+              {t('delete_warning_persistent')}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-muted-foreground">
+                {t('Please enter')}
+                <span className="mx-1 font-medium text-accent-foreground select-all">
+                  {appName}
+                </span>
+                {t('To Confirm')}
+              </span>
               <Input
-                placeholder={t('please enter app name', { appName }) || ''}
+                placeholder={appName}
                 value={inputValue}
-                bg={'myWhite.300'}
                 onChange={(e) => setInputValue(e.target.value)}
+                className="h-10"
               />
-            )}
-          </ModalBody>
+            </div>
+          </>
+        )}
 
-          <ModalFooter>
-            <Button width={'64px'} onClick={onClose} variant={'outline'}>
-              {t('Cancel')}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} size="lg">
+            {t('Cancel')}
+          </Button>
+          {activePage === Page.REMINDER ? (
+            <Button onClick={openTemplateApp} size="lg">
+              {t('confirm_to_go')}
             </Button>
-
-            {/* {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
-              <Button
-                ml={3}
-                variant={'outline'}
-                onClick={() => {
-                  setActivePage(Page.DELETION_WARNING);
-                  pageManuallyChangedRef.current = true;
-                }}
-              >
-                {t('Delete anyway')}
-              </Button>
-            )} */}
-
+          ) : (
             <Button
-              ml={3}
-              variant={'solid'}
-              isDisabled={activePage === Page.DELETION_WARNING && inputValue !== appName}
-              isLoading={loading}
-              onClick={activePage === Page.REMINDER ? openTemplateApp : handleDelApp}
+              variant="outline"
+              className="text-destructive"
+              disabled={inputValue !== appName || loading}
+              onClick={handleDelApp}
+              size="lg"
             >
-              {activePage === Page.REMINDER ? t('confirm_to_go') : t('Delete')}
+              {loading && (
+                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              )}
+              {t('Delete')}
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          )}
+        </DialogFooter>
+      </DialogContent>
       {errorModalState.visible && (
         <ErrorModal
           title={errorModalState.title}
@@ -177,7 +161,7 @@ const DelModal = ({
           onClose={closeErrorModal}
         />
       )}
-    </>
+    </Dialog>
   );
 };
 

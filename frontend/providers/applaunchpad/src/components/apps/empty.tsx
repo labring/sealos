@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { Button, Box } from '@chakra-ui/react';
-import styles from './empty.module.scss';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 import { useGuideStore } from '@/store/guide';
@@ -9,6 +7,8 @@ import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Plus } from 'lucide-react';
 
 const Empty = () => {
   const router = useRouter();
@@ -48,26 +48,17 @@ const Empty = () => {
   );
 
   return (
-    <Box
-      className={styles.empty}
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      bg={'#F3F4F5'}
-    >
+    <div className="flex h-full flex-col items-center justify-center bg-zinc-100">
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
-      <Box py={8}>{t("You haven't created any application yet")}</Box>
+      <div className="py-8">{t("You haven't created any application yet")}</div>
       <Button
-        className="create-app-btn"
-        w={155}
-        mt={5}
+        className="create-app-btn mt-5 w-[155px] bg-neutral-950 text-primary-foreground"
         onClick={() => handleCreateApp()}
-        leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
       >
+        <Plus className="h-5 w-5" />
         {t('Create Application')}
       </Button>
-    </Box>
+    </div>
   );
 };
 

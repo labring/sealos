@@ -4,15 +4,13 @@ import { PencilLine } from 'lucide-react';
 import { type CellContext } from '@tanstack/react-table';
 
 import { AppListItemType } from '@/types/app';
+import type { AppTableMeta } from '@/components/apps/appList';
 
-interface NameProps extends CellContext<AppListItemType, unknown> {
-  onEditRemark: (appName: string) => void;
-}
-
-export const Name = memo<NameProps>(
-  ({ row, onEditRemark }) => {
+export const Name = memo<CellContext<AppListItemType, unknown>>(
+  ({ row, table }) => {
     const { t } = useTranslation();
     const item = row.original;
+    const { onEditRemark } = table.options.meta as AppTableMeta;
 
     return (
       <div className="flex w-full cursor-pointer items-center pr-4">

@@ -6,6 +6,7 @@ import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
+import { Toaster } from '@sealos/shadcn-ui/sonner';
 import { GeistSans } from 'geist/font/sans';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
@@ -230,6 +231,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
             <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
             <ConfirmChild />
             <Loading loading={loading} />
+            <Toaster />
           </QuotaGuardProvider>
         </ChakraProvider>
       </QueryClientProvider>

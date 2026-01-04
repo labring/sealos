@@ -12,20 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@sealos/shadcn-ui/dropdown-menu';
+import type { AppTableMeta } from '@/components/apps/appList';
 
-interface ActionsProps extends CellContext<AppListItemType, unknown> {
-  onPauseApp: (appName: string) => void;
-  onStartApp: (appName: string) => void;
-  onRestartApp: (appName: string) => void;
-  onDeleteApp: (appName: string) => void;
-  onUpdateApp: (item: AppListItemType) => void;
-}
-
-export const Actions = memo<ActionsProps>(
-  ({ row, onPauseApp, onStartApp, onRestartApp, onDeleteApp, onUpdateApp }) => {
+export const Actions = memo<CellContext<AppListItemType, unknown>>(
+  ({ row, table }) => {
     const { t } = useTranslation();
     const router = useRouter();
     const item = row.original;
+    const { onPauseApp, onStartApp, onRestartApp, onDeleteApp, onUpdateApp } = table.options
+      .meta as AppTableMeta;
 
     return (
       <div className="w-full flex gap-2">
