@@ -153,7 +153,9 @@ func New(hostKey ssh.Signer, reg *registry.Registry, opts ...Option) *Gateway {
 
 // NewServerConn performs SSH handshake with deadline on the given connection.
 // Returns the SSH connection, channels, requests, and any error that occurred.
-func (g *Gateway) NewServerConn(nConn net.Conn) (*ssh.ServerConn, <-chan ssh.NewChannel, <-chan *ssh.Request, error) {
+func (g *Gateway) NewServerConn(
+	nConn net.Conn,
+) (*ssh.ServerConn, <-chan ssh.NewChannel, <-chan *ssh.Request, error) {
 	_ = nConn.SetDeadline(time.Now().Add(g.options.SSHHandshakeTimeout))
 	conn, chans, reqs, err := ssh.NewServerConn(nConn, g.sshConfig)
 	if err != nil {
