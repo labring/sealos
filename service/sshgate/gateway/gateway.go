@@ -3,8 +3,11 @@
 package gateway
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
+	"syscall"
 	"time"
 
 	"github.com/labring/sealos/service/sshgate/registry"
@@ -148,19 +151,37 @@ func New(hostKey ssh.Signer, reg *registry.Registry, opts ...Option) *Gateway {
 	return gw
 }
 
-func (g *Gateway) HandleConnection(nConn net.Conn) {
+// NewServerConn performs SSH handshake with deadline on the given connection.
+// Returns the SSH connection, channels, requests, and any error that occurred.
+func (g *Gateway) NewServerConn(
+	nConn net.Conn,
+) (*ssh.ServerConn, <-chan ssh.NewChannel, <-chan *ssh.Request, error) {
 	_ = nConn.SetDeadline(time.Now().Add(g.options.SSHHandshakeTimeout))
-
 	conn, chans, reqs, err := ssh.NewServerConn(nConn, g.sshConfig)
 	if err != nil {
-		g.logger.WithFields(log.Fields{
-			"remote_addr": nConn.RemoteAddr().String(),
-		}).WithError(err).Warn("SSH handshake failed")
+		return nil, nil, nil, err
+	}
+	_ = nConn.SetDeadline(time.Time{})
+	return conn, chans, reqs, nil
+}
+
+func (g *Gateway) HandleConnection(nConn net.Conn) {
+	conn, chans, reqs, err := g.NewServerConn(nConn)
+	if err != nil {
+		// Check if this is likely a health check probe (LB, k8s, etc.)
+		// These probes typically just connect and disconnect without completing SSH handshake
+		if IsHealthCheckProbeError(err) {
+			g.logger.WithFields(log.Fields{
+				"remote_addr": nConn.RemoteAddr().String(),
+			}).WithError(err).Debug("SSH handshake failed (likely health check probe)")
+		} else {
+			g.logger.WithFields(log.Fields{
+				"remote_addr": nConn.RemoteAddr().String(),
+			}).WithError(err).Warn("SSH handshake failed")
+		}
 		return
 	}
 	defer conn.Close()
-
-	_ = nConn.SetDeadline(time.Time{})
 
 	info, err := g.getDevboxInfoFromPermissions(conn.Permissions)
 	if err != nil {
@@ -244,4 +265,28 @@ func (g *Gateway) getLoggerFromPermissions(perms *ssh.Permissions) *log.Entry {
 	}
 
 	return logger
+}
+
+// IsHealthCheckProbeError checks if the error is likely from a health check probe.
+// Health check probes (LB, k8s, etc.) typically just establish TCP connection
+// and close it without sending valid SSH protocol data, causing:
+//   - ECONNRESET: connection reset by peer (RST packet)
+//   - EPIPE: broken pipe (write to closed connection)
+//   - EOF: connection closed gracefully without data
+func IsHealthCheckProbeError(err error) bool {
+	// Check for EOF (graceful close without SSH data)
+	if errors.Is(err, io.EOF) {
+		return true
+	}
+
+	// Check for network errors
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		// ECONNRESET: connection reset by peer
+		// EPIPE: broken pipe
+		if errors.Is(opErr.Err, syscall.ECONNRESET) || errors.Is(opErr.Err, syscall.EPIPE) {
+			return true
+		}
+	}
+	return false
 }
