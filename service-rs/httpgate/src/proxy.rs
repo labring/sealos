@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use bytes::Bytes;
 use pingora_core::upstreams::peer::{HttpPeer, ALPN};
-use pingora_core::Result;
+use pingora_core::{Error, ErrorSource, ErrorType, Result};
 use pingora_http::{RequestHeader, ResponseHeader, Version};
-use pingora_proxy::{ProxyHttp, Session};
+use pingora_proxy::{FailToProxy, ProxyHttp, Session};
 use regex::Regex;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::registry::DevboxRegistry;
 
@@ -218,7 +219,7 @@ impl ProxyHttp for DevboxProxy {
             .headers
             .get("content-type")
             .and_then(|ct| ct.to_str().ok())
-            .map(|ct| ct.to_ascii_lowercase())
+            .map(str::to_ascii_lowercase)
             .is_some_and(|ct| ct.starts_with("application/grpc"));
 
         let protocol = if is_h2 && is_grpc_content_type {
@@ -299,6 +300,45 @@ impl ProxyHttp for DevboxProxy {
         //     .unwrap();
 
         Ok(())
+    }
+
+    /// Handle fatal proxy errors by returning an error response with a message body.
+    ///
+    /// This overrides the default behavior which returns empty 502 responses.
+    async fn fail_to_proxy(
+        &self,
+        session: &mut Session,
+        e: &Error,
+        _ctx: &mut Self::CTX,
+    ) -> FailToProxy {
+        let code = match e.etype() {
+            ErrorType::HTTPStatus(code) => *code,
+            _ => match e.esource() {
+                ErrorSource::Upstream => 502,
+                ErrorSource::Downstream => match e.etype() {
+                    ErrorType::WriteError | ErrorType::ReadError | ErrorType::ConnectionClosed => {
+                        /* conn already dead */
+                        0
+                    }
+                    _ => 400,
+                },
+                ErrorSource::Internal | ErrorSource::Unset => 500,
+            },
+        };
+
+        if code > 0 {
+            // Return the error message with httpgate prefix
+            let body = Bytes::from(format!("httpgate: {e}"));
+
+            if let Err(send_err) = session.respond_error_with_body(code, body).await {
+                error!("Failed to send error response to downstream: {send_err}");
+            }
+        }
+
+        FailToProxy {
+            error_code: code,
+            can_reuse_downstream: false,
+        }
     }
 }
 
