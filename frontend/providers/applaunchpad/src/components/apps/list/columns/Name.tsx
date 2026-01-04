@@ -13,15 +13,15 @@ export const Name = memo<CellContext<AppListItemType, unknown>>(
     const { onEditRemark } = table.options.meta as AppTableMeta;
 
     return (
-      <div className="flex w-full cursor-pointer items-center pr-4">
+      <div className="group/name-column flex w-full cursor-pointer items-center pr-4 h-full">
         <div className="flex w-full flex-1 flex-col leading-none">
-          <div className="group flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">
               {item.name}
             </span>
             {!item.remark && (
               <div
-                className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity select-none group-hover:opacity-100"
+                className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity select-none group-hover/name-column:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEditRemark(item.name);
@@ -33,10 +33,10 @@ export const Name = memo<CellContext<AppListItemType, unknown>>(
             )}
           </div>
           {item.remark && (
-            <div className="group flex w-[80%] items-center gap-1">
+            <div className="flex w-[80%] items-center gap-1">
               <span className="truncate text-xs font-normal text-zinc-500">{item.remark}</span>
               <PencilLine
-                className="h-4 min-h-4 w-4 min-w-4 cursor-pointer text-neutral-500 opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-4 min-h-4 w-4 min-w-4 cursor-pointer text-neutral-500 opacity-0 transition-opacity group-hover/name-column:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEditRemark(item.name);

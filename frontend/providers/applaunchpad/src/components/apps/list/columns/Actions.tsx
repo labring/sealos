@@ -2,7 +2,15 @@ import { memo } from 'react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { type CellContext } from '@tanstack/react-table';
-import { MoreHorizontal, Play, Pause, RefreshCw, Pencil, Trash2, AlignLeft } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Play,
+  Pause,
+  PencilLine,
+  Trash2,
+  AlignLeft,
+  IterationCw
+} from 'lucide-react';
 
 import { AppListItemType } from '@/types/app';
 import { Button } from '@sealos/shadcn-ui/button';
@@ -10,7 +18,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@sealos/shadcn-ui/dropdown-menu';
 import type { AppTableMeta } from '@/components/apps/appList';
 
@@ -39,7 +48,7 @@ export const Actions = memo<CellContext<AppListItemType, unknown>>(
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent className="w-40" align="end">
             {item.isPause ? (
               <DropdownMenuItem onClick={() => onStartApp(item.name)}>
                 <Play className="h-4 w-4" />
@@ -52,15 +61,16 @@ export const Actions = memo<CellContext<AppListItemType, unknown>>(
                   <span>{t('Pause')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onUpdateApp(item)}>
-                  <Pencil className="h-4 w-4" />
+                  <PencilLine className="h-4 w-4" />
                   <span>{t('Update')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onRestartApp(item.name)}>
-                  <RefreshCw className="h-4 w-4" />
+                  <IterationCw className="h-4 w-4" />
                   <span>{t('Restart')}</span>
                 </DropdownMenuItem>
               </>
             )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={() => onDeleteApp(item.name)}>
               <Trash2 className="h-4 w-4" />
               <span>{t('Delete')}</span>

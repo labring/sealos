@@ -390,7 +390,9 @@ const AppList = ({
                   <div
                     key={cell.id}
                     style={columnSize ? { width: columnSize } : undefined}
-                    className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
+                    className={`${
+                      isGrowColumn ? 'shrink-0 grow' : 'shrink-0'
+                    } first:h-full first:flex first:items-center`}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </div>
