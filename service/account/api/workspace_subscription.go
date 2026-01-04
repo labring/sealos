@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -2325,6 +2327,9 @@ func finalizeWorkspaceSubscriptionSuccess(
 	wsTransaction.Status = types.SubscriptionTransactionStatusCompleted
 	wsTransaction.Amount = payment.Amount
 	wsTransaction.PayStatus = types.SubscriptionPayStatusPaid
+	if wsTransaction.Period == "" {
+		wsTransaction.Period = types.SubscriptionPeriodMonthly
+	}
 	// Create or update transaction
 	if wsTransaction.Operator == types.SubscriptionTransactionTypeCreated ||
 		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded ||
@@ -2379,29 +2384,30 @@ func finalizeWorkspaceSubscriptionSuccess(
 			CreateAt:             time.Now().UTC(),
 			ExpireAt:             stripe.Time(time.Now().UTC().AddDate(0, 1, 0)),
 		}
+		if wsTransaction.Period != "" {
+			period, err := types.ParsePeriod(wsTransaction.Period)
+			if err == nil {
+				workspaceSubscription.CurrentPeriodEndAt = workspaceSubscription.CurrentPeriodStartAt.Add(period)
+				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+			}
+		}
 		if payment.Stripe != nil {
 			workspaceSubscription.Stripe = payment.Stripe
 		}
 	}
-
-	// Set period for renewal and upgrade
-	switch wsTransaction.Operator {
-	case types.SubscriptionTransactionTypeRenewed:
-		// Renewal: extend from current period
-		workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
-		workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
-		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
-	case types.SubscriptionTransactionTypeUpgraded:
-		// Upgrade: reset period from today with new billing cycle
-		now := time.Now().UTC()
+	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed || wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
 		periodDuration, err := types.ParsePeriod(wsTransaction.Period)
 		if err != nil {
 			// Fallback to monthly if parsing fails
 			periodDuration = 30 * 24 * time.Hour
 		}
-		workspaceSubscription.CurrentPeriodStartAt = now
-		workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
-		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+		if time.Since(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour {
+			workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
+			workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().Add(periodDuration)
+		}
+		if workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+			workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+		}
 	}
 
 	if err := tx.Save(workspaceSubscription).Error; err != nil {
@@ -2419,10 +2425,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 	plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(wsTransaction.NewPlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
-	}
-
-	if wsTransaction.Period == "" {
-		wsTransaction.Period = types.SubscriptionPeriodMonthly
 	}
 
 	var oldPlan *types.WorkspaceSubscriptionPlan
@@ -2523,14 +2525,18 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		}
 
 		// Check if the annotation already matches the desired status
-		if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == types.NormalDebtNamespaceAnnoStatus ||
-			ns.Status.Phase == corev1.NamespaceTerminating {
+		if ns.Status.Phase == corev1.NamespaceTerminating {
 			return nil
 		}
 
 		// Update the annotation
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
-
+		ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
+		ns.Annotations[NetworkStatusAnnoKey] = ResumeDebtNamespaceAnnoStatus
+		original := ns.DeepCopy()
+		if err := dao.K8sManager.GetClient().Patch(ctx, ns, client.MergeFrom(original)); err != nil {
+			return fmt.Errorf("patch namespace annotation failed: %w", err)
+		}
 		// Attempt to update the namespace
 		if err := dao.K8sManager.GetClient().Update(ctx, ns); err != nil {
 			return fmt.Errorf("failed to update namespace annotation: %w", err)

@@ -353,6 +353,9 @@ func handleSubscriptionUpdate(
 	if err != nil {
 		return err
 	}
+	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
+	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC()
+	sub.ExpireAt = stripe.Time(sub.CurrentPeriodEndAt)
 
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
 		// Check if there's a PaymentOrder to convert
@@ -509,8 +512,9 @@ func handleSubscriptionCreateOrRenew(
 				)
 				return nil
 			}
-			ws.CurrentPeriodStartAt = time.Now().UTC()
-			ws.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
+			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
+			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC()
+			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
 		}
 
 		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
@@ -548,7 +552,7 @@ func prepareCreateOrRenewTransactionAndPayment(
 	paymentID := meta.PaymentID
 
 	if !isInitial {
-		paymentID, _ = gonanoid.New(12) // 忽略 err，假设成功
+		paymentID, _ = gonanoid.New(12)
 	}
 
 	if isInitial {
