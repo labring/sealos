@@ -218,6 +218,7 @@ impl ProxyHttp for DevboxProxy {
             .headers
             .get("content-type")
             .and_then(|ct| ct.to_str().ok())
+            .map(|ct| ct.to_ascii_lowercase())
             .is_some_and(|ct| ct.starts_with("application/grpc"));
 
         let protocol = if is_h2 && is_grpc_content_type {
