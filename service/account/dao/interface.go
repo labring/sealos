@@ -1224,7 +1224,7 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	}
 
 	if strings.ToUpper(req.AppType) != resources.AppStore {
-		var match bson.D
+		var match = make(bson.D, len(matchConditions))
 		copy(match, matchConditions[:])
 		if req.AppType != "" {
 			match = append(
