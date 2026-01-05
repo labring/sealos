@@ -40,7 +40,7 @@ const CustomAccessDrawer = ({
       }
 
       if (val.endsWith(`.${env.ingressDomain}`)) {
-        toast.error(t('Cannot use internal domain'));
+        toast.error(t('cannot_use_internal_domain'));
         throw new Error('Cannot use internal domain');
       }
 
