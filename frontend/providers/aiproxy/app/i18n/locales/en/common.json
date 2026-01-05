@@ -13,13 +13,7 @@
     "McpHub": "MCP Hub"
   },
   "keyList": {
-    "title": "API Keys",
-    "invitationText1": "Limited time benefits!!",
-    "invite": "Event details",
-    "invitationText2": "Invite friends to register Sealos,",
-    "invitationText3": "Rebate immediately: 10 yuan balance!",
-    "invitationText4": "Invitation link:",
-    "invitationText5": "Click to copy"
+    "title": "API Keys"
   },
   "key": {
     "key": "API Key",
@@ -170,8 +164,7 @@
     "exportAll": "Export All",
     "importSuccess": "Import successful",
     "importError": "Import failed",
-    "doc": "Docs",
-    "invite": "Invite"
+    "doc": "Docs"
   },
   "channelStatus": {
     "autoDisabled": "System disabled"
