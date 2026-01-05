@@ -42,7 +42,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     template,
     remark: devbox.metadata?.annotations?.[devboxRemarkKey] || '',
     status: devboxStatusMap[devbox.status.phase] || devboxStatusMap.Error, // use devbox.status.phase to get status
-    state: devbox.spec.state,
+    state: devbox.spec.state || 'Error',
     sshPort:
       devbox.spec.network.type === 'SSHGate' ? 2233 : devbox.status?.network.nodePort || 65535,
     createTime: devbox.metadata.creationTimestamp,
