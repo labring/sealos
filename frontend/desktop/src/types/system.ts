@@ -121,11 +121,6 @@ export type AuthConfigType = {
   billingUrl?: string;
   workorderUrl?: string;
   cloudVitrualMachineUrl: string;
-  invite?: {
-    enabled: boolean;
-    lafSecretKey: string;
-    lafBaseURL: string;
-  };
   idp: {
     password?: {
       enabled: boolean;
@@ -212,8 +207,6 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
-      'invite.lafSecretKey',
-      'invite.lafBaseURL',
       'idp.password.salt',
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
@@ -339,9 +332,6 @@ export const DefaultLayoutConfig: LayoutConfigType = {
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {
   hasBaiduToken: false,
-  invite: {
-    enabled: false
-  },
   callbackURL: 'https://cloud.sealos.io/callback',
   idp: {
     password: {

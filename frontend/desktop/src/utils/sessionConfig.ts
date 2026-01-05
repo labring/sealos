@@ -43,10 +43,6 @@ export const sessionConfig = async ({
   sessionStore.setHasEverLoggedIn(true);
 };
 
-export const getInviterId = () => localStorage.getItem('inviterId');
-
-export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);
-
 export const getUserSemData = (): SemData | null => {
   const semDataString = localStorage.getItem('sealos_sem');
   if (semDataString) {

@@ -48,15 +48,13 @@ export const filterPhoneVerifyParams = (
   next: (data: {
     phoneNumbers: string;
     code: string;
-    inviterId?: string;
     semData?: SemData;
     adClickData?: AdClickData;
   }) => void
 ) =>
   filterPhoneParams(req, res, async (data) => {
-    const { code, inviterId, semData, adClickData } = req.body as {
+    const { code, semData, adClickData } = req.body as {
       code?: string;
-      inviterId?: string;
       semData?: SemData;
       adClickData?: AdClickData;
     };
@@ -70,7 +68,6 @@ export const filterPhoneVerifyParams = (
       next({
         ...data,
         code,
-        inviterId,
         semData,
         adClickData
       })
@@ -79,12 +76,11 @@ export const filterPhoneVerifyParams = (
 export const filterEmailVerifyParams = (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { email: string; code: string; inviterId?: string }) => void
+  next: (data: { email: string; code: string }) => void
 ) =>
   filterEmailParams(req, res, async (data) => {
-    const { code, inviterId } = req.body as {
+    const { code } = req.body as {
       code?: string;
-      inviterId?: string;
     };
     if (!code)
       return jsonRes(res, {
@@ -94,8 +90,7 @@ export const filterEmailVerifyParams = (
     await Promise.resolve(
       next({
         ...data,
-        code,
-        inviterId
+        code
       })
     );
   });

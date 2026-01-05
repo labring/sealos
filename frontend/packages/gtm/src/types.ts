@@ -146,7 +146,7 @@ export interface GuideExitEvent extends BaseGTMEvent {
 export interface AnnouncementClickEvent extends BaseGTMEvent {
   event: 'announcement_click';
   module: 'dashboard';
-  announcement_id: 'invitation_referral_prompt' | 'onboarding_guide_prompt';
+  announcement_id: 'onboarding_guide_prompt';
 }
 
 export interface WorkspaceCreateEvent extends BaseGTMEvent {

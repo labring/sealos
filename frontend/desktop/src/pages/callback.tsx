@@ -12,7 +12,7 @@ import {
   unBindRequest,
   autoInitRegionToken
 } from '@/api/auth';
-import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
@@ -80,7 +80,6 @@ export default function Callback() {
           if (action === 'LOGIN') {
             const data = await signInRequest(provider)({
               code,
-              inviterId: getInviterId() ?? undefined,
               semData: getUserSemData() ?? undefined,
               adClickData: getAdClickData() ?? undefined
             }).catch((e) => e);

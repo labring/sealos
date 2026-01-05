@@ -63,9 +63,6 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/email/verify', {
         id: data.id,
         code: data.code
-        // inviterId: getInviterId(),
-        // semData: getUserSemData(),
-        // bdVid: getBaiduId()
       }),
     async onSuccess(result) {
       const globalToken = result.data?.token;

@@ -810,13 +810,6 @@ export default function Apps() {
     }
   };
 
-  const openReferralApp = () => {
-    openDesktopApp({
-      appKey: 'system-invite',
-      pathname: '/'
-    });
-  };
-
   return (
     <Flex
       flexDirection={'column'}
@@ -852,23 +845,13 @@ export default function Apps() {
               gap={'8px'}
               p={'8px 12px'}
               cursor={'pointer'}
-              onClick={
-                layoutConfig?.version === 'cn'
-                  ? () => {
-                      track('announcement_click', {
-                        module: 'dashboard',
-                        announcement_id: 'invitation_referral_prompt'
-                      });
-                      openReferralApp();
-                    }
-                  : () => {
-                      track('announcement_click', {
-                        module: 'dashboard',
-                        announcement_id: 'onboarding_guide_prompt'
-                      });
-                      openGuideModal();
-                    }
-              }
+              onClick={() => {
+                track('announcement_click', {
+                  module: 'dashboard',
+                  announcement_id: 'onboarding_guide_prompt'
+                });
+                openGuideModal();
+              }}
             >
               <Box position="relative" className="gradient-icon">
                 <Volume2 width={16} height={16} />
@@ -883,7 +866,7 @@ export default function Apps() {
                   WebkitTextFillColor: 'transparent'
                 }}
               >
-                {layoutConfig?.version === 'cn' ? t('v2:invite_friend') : t('v2:onboard_guide')}
+                {t('v2:onboard_guide')}
               </Text>
               <Box position="relative" className="gradient-icon">
                 <ArrowRight width={16} height={16} />

@@ -20,7 +20,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     throw new Error('OAuth2 configuration missing');
   }
 
-  const { code, inviterId, semData, adClickData } = req.body;
+  const { code, semData, adClickData } = req.body;
   const url = `${tokenUrl}`;
   const oauth2Data = (await (
     await fetch(url, {
@@ -70,7 +70,6 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     providerId: id + '',
     avatar_url,
     name,
-    inviterId,
     semData,
     adClickData
   });

@@ -8,7 +8,6 @@ import { PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
 import { AdditionalInfo } from '@/types/response/enterpriseRealName';
 import { RealNameAuthProvider } from '@/pages/api/account/faceIdRealNameAuthCallback';
 import { TencentCloudFaceAuthConfig } from '@/pages/api/account/faceIdRealNameAuthCallback';
-import { getInviterInfo } from '@/utils/getInviteInfo';
 
 const schema = z.object({
   transAmt: z.string().min(1)
@@ -30,8 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const userUid = payload.userUid;
   const userId = payload.userId;
-
-  const inviteInfo = await getInviterInfo(userId);
 
   try {
     const realNameAuthProvider: RealNameAuthProvider | null =
@@ -171,66 +168,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let totalUserReward = BigInt(0);
       const userActivityBonus = userAccount.activityBonus || BigInt(0);
       let currentUserBalance = userAccount.balance;
-
-      if (inviteInfo.inviterId && inviteInfo.amount) {
-        const realnameInviteReward = inviteInfo.amount;
-
-        await globalPrisma.accountTransaction.create({
-          data: {
-            type: 'REALNAME_AUTH_INVITE_REWARD',
-            userUid: userUid,
-            balance: realnameInviteReward,
-            balance_before: currentUserBalance,
-            deduction_balance: 0,
-            deduction_balance_before: userAccount.deduction_balance,
-            message: 'Real name authentication invite reward',
-            billing_id: enterpriseRealNameInfo.id
-          }
-        });
-
-        currentUserBalance += realnameInviteReward;
-        totalUserReward += realnameInviteReward;
-
-        const inviterUser = await globalPrisma.user.findUniqueOrThrow({
-          where: { id: inviteInfo.inviterId }
-        });
-
-        if (!inviterUser) {
-          throw new Error('enterpriseRealNameVerify: Inviter user not found');
-        }
-
-        const inviterAccount = await globalPrisma.account.findUniqueOrThrow({
-          where: { userUid: inviterUser.uid }
-        });
-
-        if (!inviterAccount.balance) {
-          throw new Error('enterpriseRealNameVerify: Inviter account balance not found');
-        }
-
-        const inviterActivityBonus = inviterAccount.activityBonus || BigInt(0);
-
-        await globalPrisma.account.update({
-          where: { userUid: inviterUser.uid },
-          data: {
-            activityBonus: inviterActivityBonus + realnameInviteReward,
-            balance: inviterAccount.balance + realnameInviteReward,
-            updated_at: new Date()
-          }
-        });
-
-        await globalPrisma.accountTransaction.create({
-          data: {
-            type: 'REALNAME_AUTH_INVITE_REWARD',
-            userUid: inviterUser.uid,
-            balance: realnameInviteReward,
-            balance_before: inviterAccount.balance,
-            deduction_balance: 0,
-            deduction_balance_before: inviterAccount.deduction_balance,
-            message: 'Real name authentication invite reward',
-            billing_id: enterpriseRealNameInfo.id
-          }
-        });
-      }
 
       if (realNameAuthReward > 0) {
         const realnameReward = BigInt(realNameAuthReward);

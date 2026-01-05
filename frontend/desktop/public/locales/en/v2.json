@@ -55,9 +55,6 @@
   "guide_steps": "{{count}} steps",
   "guide_title": "Hi, {{name}}. Welcome to your free plan.",
   "includes_credits": "Includes ${{credits}} credits",
-  "input_invite_id": "Input Invitation Code",
-  "invite_friend": "Invite friends to register Sealos and get 10 yuan balance",
-  "invite_id": "Invitation Code",
   "invite_link_copied": "Invitation link copied!",
   "join_discord_prompt": {
     "cancel": "Maybe Later",
@@ -103,7 +100,6 @@
   "quickstart_guide": "Quickstart Guide",
   "quit_guide": "Explore More Guides",
   "quit_guide_description": "To restart Guide, click here. If you're looking for extra support, select Docs to find articles that relate to your task.",
-  "referral": "Referral",
   "register": "Register",
   "remember_me": "Remember me",
   "request_new_link": "Resend it",

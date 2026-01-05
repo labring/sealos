@@ -53,8 +53,6 @@ desktop:
     callbackURL: "https://127.0.0.1.nip.io/callback"
     signUpEnabled: "true"
     baiduToken: ""
-    invite:
-      enabled: "false"
     jwt:
       internal: "thisisinternaljwt"
       regional: "thisisregionaljwt"
