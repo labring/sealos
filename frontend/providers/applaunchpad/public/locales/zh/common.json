@@ -243,6 +243,7 @@
   "domain_cname_verify_failed_toast": "CNAME 记录验证失败",
   "domain_input_tip": "请自备域名并填入下方输入框中。",
   "domain_invalid_toast": "'{{domain}}' 不是有效的域名",
+  "domain_cannot_use_internal": "不能使用内部域名",
   "domain_not_bound_modal_cancel": "取消",
   "domain_not_bound_modal_confirm": "确认",
   "domain_not_bound_modal_description": "您确定要关闭这个弹窗吗？",
