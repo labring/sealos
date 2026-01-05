@@ -584,7 +584,8 @@ export const getScore = (dbType: DBType, cpu: number, memory: number) => {
   if (
     dbType === DBTypeEnum.postgresql ||
     dbType === DBTypeEnum.mongodb ||
-    dbType === DBTypeEnum.mysql
+    dbType === DBTypeEnum.mysql ||
+    dbType === DBTypeEnum.notapemysql
   ) {
     score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
   } else if (dbType === DBTypeEnum.redis) {

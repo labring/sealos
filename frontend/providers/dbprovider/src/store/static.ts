@@ -40,9 +40,9 @@ export let DBVersionMap: DBVersionMapType = {
   ],
   [DBTypeEnum.mysql]: [
     { id: 'ac-mysql-8.0.30-1', label: 'ac-mysql-8.0.30-1' },
-    { id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' },
-    { id: 'mysql-5.7.42', label: 'mysql-5.7.42' }
+    { id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }
   ],
+  [DBTypeEnum.notapemysql]: [{ id: 'mysql-5.7.42', label: 'mysql-5.7.42' }],
   [DBTypeEnum.redis]: [
     { id: 'redis-7.2.7', label: 'redis-7.2.7' },
     { id: 'redis-7.2.4', label: 'redis-7.2.4' },

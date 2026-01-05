@@ -127,8 +127,8 @@ export async function createDatabase(
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    if (!(rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
+  if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
+    if (!(rawDbForm.dbType === 'mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
       let dynamicMaxConnections: number = 0;
       try {
         dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);

@@ -27,6 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       [DBTypeEnum.mysql]: {
         key: 'mysql'
       },
+      [DBTypeEnum.notapemysql]: {
+        key: 'mysql'
+      },
       [DBTypeEnum.redis]: {
         key: 'redis'
       },

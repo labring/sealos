@@ -57,8 +57,10 @@ const AppDetail = ({
   const [isSmallScreen] = useMediaQuery('(max-width: 1180px)');
 
   const { listNav } = useMemo(() => {
-    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
-    const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
+    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mysql', 'mongodb'].includes(
+      dbType
+    );
+    const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql', 'mysql'].includes(dbType);
     const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [

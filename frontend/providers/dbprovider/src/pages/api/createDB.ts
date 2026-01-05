@@ -72,8 +72,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // Handle parameter configuration updates
-      if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-        if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+      if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+        if (!(dbForm.dbType === 'mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
           try {
             const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
             const configYaml = json2ParameterConfig(
@@ -139,9 +139,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const yamlList = [account, cluster];
 
-    if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+    if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
       // MySQL 5.7.42 version should not apply parameter config
-      if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+      if (!(dbForm.dbType === 'mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
         const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
 
         const config = json2ParameterConfig(

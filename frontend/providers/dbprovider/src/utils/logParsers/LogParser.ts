@@ -26,7 +26,8 @@ class DatabaseLogService {
       [DBTypeEnum.postgresql, new PostgresLogParser(k8sExec, namespace)],
       [DBTypeEnum.redis, new RedisLogParser(k8sExec, namespace)],
       [DBTypeEnum.mongodb, new MongoLogParser(k8sExec, k8sCore, namespace)],
-      [DBTypeEnum.mysql, new MysqlLogParser(k8sExec, namespace)]
+      [DBTypeEnum.mysql, new MysqlLogParser(k8sExec, namespace)],
+      [DBTypeEnum.notapemysql, new MysqlLogParser(k8sExec, namespace)]
     ]);
   }
 

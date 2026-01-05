@@ -17,10 +17,9 @@ export async function restartDatabase(
   if (!rawDbType) {
     throw new Error('Unable to determine database type from cluster metadata');
   }
-  const dbType = (rawDbType as string) === 'mysql' ? 'apecloud-mysql' : rawDbType;
   const yaml = json2BasicOps({
     dbName: request.params.databaseName,
-    dbType: dbType,
+    dbType: rawDbType,
     type: 'Restart'
   });
   await k8s.applyYamlList([yaml], 'update');

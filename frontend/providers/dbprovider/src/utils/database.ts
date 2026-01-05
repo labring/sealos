@@ -24,6 +24,10 @@ export const dbTypeMap = {
     ...base,
     connectKey: 'mysql'
   },
+  [DBTypeEnum.notapemysql]: {
+    ...base,
+    connectKey: 'mysql'
+  },
   [DBTypeEnum.redis]: {
     ...base,
     connectKey: 'redis'
@@ -89,6 +93,8 @@ export const getSecretNames = (dbType: DBType, dbName: string) => {
 
   switch (dbType) {
     case DBTypeEnum.mysql: // apecloud-mysql
+      return { primary: backupSecretName, backup: null }; // Same for old and new
+    case DBTypeEnum.notapemysql:
       return { primary: backupSecretName, backup: null }; // Same for old and new
     case DBTypeEnum.clickhouse:
       return { primary: backupSecretName, backup: null }; // Same for old and new
@@ -309,6 +315,7 @@ export function distributeResources(data: {
     case DBTypeEnum.postgresql:
     case DBTypeEnum.mongodb:
     case DBTypeEnum.mysql:
+    case DBTypeEnum.notapemysql:
       const dbComponents = DBComponentNameMap[dbType];
       if (!dbComponents || dbComponents.length === 0) {
         console.warn(`Unknown database type: ${dbType}, falling back to default configuration`);

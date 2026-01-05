@@ -57,6 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           case DBTypeEnum.mysql:
             name = dataObject.metric?.command + ' | ' + dataObject.metric.pod;
             break;
+          case DBTypeEnum.notapemysql:
+            name = dataObject.metric?.command + ' | ' + dataObject.metric.pod;
+            break;
           case DBTypeEnum.postgresql:
             if (!dataObject.metric.datname) return null;
             name = dataObject.metric.pod + ' | ' + dataObject.metric.datname;

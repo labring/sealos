@@ -256,7 +256,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   const { createCompleted } = useGuideStore();
 
-  const supportConnect = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(
+  const supportConnect = ['postgresql', 'mongodb', 'apecloud-mysql', 'mysql', 'redis'].includes(
     formHook.getValues('dbType')
   );
 

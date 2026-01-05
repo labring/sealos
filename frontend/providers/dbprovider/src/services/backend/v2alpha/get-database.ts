@@ -230,6 +230,8 @@ async function getConnectionInfo(
           return `postgresql://${username}:${password}@${host}:${port}/${db}`;
         case 'apecloud-mysql':
           return `mysql://${username}:${password}@${host}:${port}/${db}`;
+        case 'mysql':
+          return `mysql://${username}:${password}@${host}:${port}/${db}`;
         case 'mongodb':
           return `mongodb://${username}:${password}@${host}:${port}/${db}`;
         case 'redis':

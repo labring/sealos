@@ -29,6 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const showDatabaseCommand: Map<DBTypeEnum, string[]> = new Map([
       [DBTypeEnum.mysql, ['mysql', `-u${username}`, `-p${password}`, `-e SHOW DATABASES;`]],
+      [DBTypeEnum.notapemysql, ['mysql', `-u${username}`, `-p${password}`, `-e SHOW DATABASES;`]],
       [DBTypeEnum.postgresql, ['psql', '-U', 'postgres', '-c', 'SELECT datname FROM pg_database;']],
       [
         DBTypeEnum.mongodb,
@@ -60,6 +61,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     let databaseList;
     switch (dbType) {
       case DBTypeEnum.mysql:
+        databaseList = result.split('\n').slice(1, -1);
+        break;
+      case DBTypeEnum.notapemysql:
         databaseList = result.split('\n').slice(1, -1);
         break;
       case DBTypeEnum.postgresql:

@@ -179,6 +179,7 @@ export interface DatasourceDelete {
 
 const DB_TYPE_MAP: Record<string, string> = {
   'apecloud-mysql': 'MYSQL',
+  mysql: 'MYSQL',
   clickhouse: 'CLICKHOUSE',
   mongodb: 'MONGODB',
   snowflake: 'SNOWFLAKE',

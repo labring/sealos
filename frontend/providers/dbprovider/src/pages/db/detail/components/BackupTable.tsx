@@ -260,8 +260,8 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                      ? `${app[col.dataIndex]}`
-                      : '-'}
+                        ? `${app[col.dataIndex]}`
+                        : '-'}
                   </Td>
                 ))}
               </Tr>
@@ -281,7 +281,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
         <BackupModal dbName={db.dbName} dbType={db.dbType} onClose={onCloseBackupModal} />
       )}
       {!!backupInfo?.name && (
-        <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
+        <RestoreModal backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
       )}
     </Flex>
   );

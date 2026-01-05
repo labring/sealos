@@ -48,14 +48,8 @@ async function getLatestVersion(
     items.forEach((item: any, index: number) => {
       const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
 
-      //map db_type
-      let mappedDbType = clusterDefinitionRef;
-      if (clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql') {
-        mappedDbType = 'apecloud-mysql';
-      }
-
-      if (mappedDbType === dbType && item?.metadata?.name) {
-        if (dbType === 'apecloud-mysql' && item.metadata.name === 'mysql-8.0.33') {
+      if (clusterDefinitionRef === dbType && item?.metadata?.name) {
+        if (dbType === 'mysql' && item.metadata.name === 'mysql-8.0.33') {
           return;
         }
         versions.push(item.metadata.name);
@@ -169,8 +163,8 @@ export async function createDatabase(
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    if (!(rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
+  if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
+    if (!(rawDbForm.dbType === 'mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
       let dynamicMaxConnections: number = 0;
       try {
         dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);

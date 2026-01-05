@@ -138,7 +138,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
             </>
           )}
 
-          {dbType === DBTypeEnum.mysql && (
+          {(dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.notapemysql) && (
             <>
               <ChartTemplate
                 apiUrl="/api/monitor/getCurrentConnections"
@@ -225,7 +225,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
               />
             </>
           )}
-          {dbType === DBTypeEnum.mysql && (
+          {(dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.notapemysql) && (
             <>
               <ChartTemplate
                 apiUrl="/api/monitor/getTransactions"

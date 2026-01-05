@@ -63,6 +63,9 @@ export const createDB = (payload: {
   backupInfo?: BackupItemType;
 }) => POST(`/api/createDB`, payload);
 
+export const restoreBackup = (payload: { databaseName: string; backupName: string }) =>
+  POST(`/api/restoreBackup`, payload);
+
 export const getDBEvents = (name: string) => GET(`/api/getDBEvents?name=${name}`);
 
 export const getDBSecret = (data: { dbName: string; dbType: DBType; mock?: boolean }) =>

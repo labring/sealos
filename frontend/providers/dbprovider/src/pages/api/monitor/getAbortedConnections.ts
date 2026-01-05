@@ -19,7 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      [DBTypeEnum.mysql]: `sum(rate(mysql_global_status_aborted_connects{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`
+      [DBTypeEnum.mysql]: `sum(rate(mysql_global_status_aborted_connects{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.notapemysql]: `sum(rate(mysql_global_status_aborted_connects{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);
@@ -54,6 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         let name = '';
         switch (dbType) {
           case DBTypeEnum.mysql:
+            name = dataObject.metric.app_kubernetes_io_instance + ' | ' + dataObject.metric.pod;
+            break;
+          case DBTypeEnum.notapemysql:
             name = dataObject.metric.app_kubernetes_io_instance + ' | ' + dataObject.metric.pod;
             break;
           case DBTypeEnum.postgresql:

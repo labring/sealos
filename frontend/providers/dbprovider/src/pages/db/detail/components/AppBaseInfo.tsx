@@ -165,6 +165,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       'postgresql',
       'mongodb',
       'apecloud-mysql',
+      'mysql',
       'redis',
       'milvus',
       'kafka',
@@ -272,6 +273,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
       [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
       [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
+      [DBTypeEnum.notapemysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
       [DBTypeEnum.redis]: `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`,
       [DBTypeEnum.kafka]: ``,
       [DBTypeEnum.qdrant]: ``,
@@ -662,9 +664,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   {t('direct_connection')}
                 </Center>
               )}
-              {[DBTypeEnum.mysql, DBTypeEnum.postgresql, DBTypeEnum.mongodb].includes(
-                db.dbType as DBTypeEnum
-              ) && (
+              {[
+                DBTypeEnum.mysql,
+                DBTypeEnum.notapemysql,
+                DBTypeEnum.postgresql,
+                DBTypeEnum.mongodb
+              ].includes(db.dbType as DBTypeEnum) && (
                 <Center
                   className="driver-detail-terminal-button"
                   gap={'6px'}

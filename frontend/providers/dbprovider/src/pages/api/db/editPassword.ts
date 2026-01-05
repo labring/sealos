@@ -91,6 +91,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         ]
       ],
       [
+        DBTypeEnum.notapemysql,
+        [
+          'mysql',
+          `-u${username}`,
+          `-p${password}`,
+          `-h${host}`,
+          `-P${port}`,
+          `-e ALTER USER '${username}'@'localhost' IDENTIFIED BY '${newPassword}';ALTER USER '${username}'@'%' IDENTIFIED BY '${newPassword}';`
+        ]
+      ],
+      [
         DBTypeEnum.postgresql,
         [
           'psql',

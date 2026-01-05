@@ -255,6 +255,9 @@ const DBList = ({
             case 'apecloud-mysql':
               connectionUrl = `jdbc:mysql://${host}:${port}`;
               break;
+            case 'mysql':
+              connectionUrl = `jdbc:mysql://${host}:${port}`;
+              break;
             case 'postgresql':
               connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
               break;

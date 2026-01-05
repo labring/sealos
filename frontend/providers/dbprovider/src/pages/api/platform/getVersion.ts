@@ -43,6 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [DBTypeEnum.postgresql]: [],
       [DBTypeEnum.mongodb]: [],
       [DBTypeEnum.mysql]: [],
+      [DBTypeEnum.notapemysql]: [],
       [DBTypeEnum.redis]: [],
       [DBTypeEnum.kafka]: [],
       [DBTypeEnum.qdrant]: [],
@@ -66,12 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       cvBody.items.forEach((item: any) => {
         const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
-        if (item?.spec?.clusterDefinitionRef === 'mysql') {
-          DBVersionMap[DBTypeEnum.mysql].unshift({
-            id: item.metadata.name,
-            label: item.metadata.name
-          });
-        }
+
         // Only use ClusterVersion for databases not using ComponentVersion
         if (
           DBVersionMap[db] &&
@@ -149,21 +145,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return b.id.localeCompare(a.id);
       });
     });
-
-    // Sort MySQL versions to put ac-mysql versions first
-    if (DBVersionMap[DBTypeEnum.mysql].length > 0) {
-      DBVersionMap[DBTypeEnum.mysql].sort((a, b) => {
-        // Put ac-mysql versions first
-        const aIsAc = a.id.startsWith('ac-mysql');
-        const bIsAc = b.id.startsWith('ac-mysql');
-
-        if (aIsAc && !bIsAc) return -1;
-        if (!aIsAc && bIsAc) return 1;
-
-        // Keep other versions in their original order
-        return 0;
-      });
-    }
 
     jsonRes(res, {
       data: DBVersionMap

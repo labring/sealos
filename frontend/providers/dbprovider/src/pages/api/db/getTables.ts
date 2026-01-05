@@ -34,6 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         ['mysql', `-u${username}`, `-p${password}`, databaseName, '-e SHOW TABLES;']
       ],
       [
+        DBTypeEnum.notapemysql,
+        ['mysql', `-u${username}`, `-p${password}`, databaseName, '-e SHOW TABLES;']
+      ],
+      [
         DBTypeEnum.postgresql,
         [
           'psql',
@@ -73,6 +77,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     let tableList: string[] = [];
     switch (dbType) {
       case DBTypeEnum.mysql:
+        tableList = result.split('\n').slice(1, -1);
+        break;
+      case DBTypeEnum.notapemysql:
         tableList = result.split('\n').slice(1, -1);
         break;
       case DBTypeEnum.postgresql:

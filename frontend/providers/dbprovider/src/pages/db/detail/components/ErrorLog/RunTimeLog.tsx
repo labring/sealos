@@ -25,6 +25,7 @@ const DB_MAIN_CONTAINER_MAP: Record<SupportReconfigureDBType, string> = {
   postgresql: 'postgresql',
   mongodb: 'mongodb',
   'apecloud-mysql': 'mysql',
+  mysql: 'mysql',
   redis: 'redis'
 };
 
@@ -362,7 +363,7 @@ export default function RunTimeLog({
       const containerName = db.dbType === 'apecloud-mysql' ? 'mysql' : db.dbType;
 
       const logTypeStr = (() => {
-        if (db.dbType === 'apecloud-mysql') {
+        if (db.dbType === 'apecloud-mysql' || db.dbType === 'mysql') {
           return logType === LogTypeEnum.ErrorLog ? ('error' as const) : ('slow' as const);
         }
         return 'run' as const;

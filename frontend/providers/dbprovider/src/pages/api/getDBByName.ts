@@ -84,6 +84,9 @@ export async function getDBConfiguration(req: NextApiRequest, dbName: string, db
       case 'apecloud-mysql':
         configurationName = `${dbName}-mysql`;
         break;
+      case 'mysql':
+        configurationName = `${dbName}-mysql`;
+        break;
       case 'mongodb':
         configurationName = `${dbName}-mongodb`;
         break;
@@ -145,6 +148,33 @@ function extractParameterConfigFromConfiguration(configuration: any, dbType: str
           break;
 
         case 'apecloud-mysql':
+          if (configItem.configFileParams['my.cnf']) {
+            const mysqlParams = configItem.configFileParams['my.cnf'].parameters || {};
+            if (mysqlParams['max_connections']) {
+              parameterConfig.maxConnections = String(mysqlParams['max_connections']);
+              parameterConfig.isMaxConnectionsCustomized = true;
+              hasParams = true;
+            }
+            if (mysqlParams['default-time-zone']) {
+              const timezone = String(mysqlParams['default-time-zone']);
+              // Convert back from offset to timezone name
+              if (timezone === '+00:00') {
+                parameterConfig.timeZone = 'UTC';
+              } else if (timezone === '+08:00') {
+                parameterConfig.timeZone = 'Asia/Shanghai';
+              } else {
+                parameterConfig.timeZone = timezone;
+              }
+              hasParams = true;
+            }
+            if (mysqlParams['lower_case_table_names'] !== undefined) {
+              parameterConfig.lowerCaseTableNames = String(mysqlParams['lower_case_table_names']);
+              hasParams = true;
+            }
+          }
+          break;
+
+        case 'mysql':
           if (configItem.configFileParams['my.cnf']) {
             const mysqlParams = configItem.configFileParams['my.cnf'].parameters || {};
             if (mysqlParams['max_connections']) {

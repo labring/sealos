@@ -142,7 +142,7 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       dbType = 'apecloud-mysql';
       dbVersion = kbDatabase;
     } else {
-      const [type, ...versionParts] = kbDatabase.split('-');
+      const [type] = kbDatabase.split('-');
       dbType = type;
       dbVersion = kbDatabase; // Use full kb.io/database value as version
     }
@@ -153,21 +153,17 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
     } else {
       // ComponentVersion approach - infer from componentSpecs or helm chart
-      const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDefRef;
       const helmChart = labels['helm.sh/chart'];
 
-      if (componentDefRef) {
-        dbType = componentDefRef;
-        if (componentDefRef === ('mysql' as any)) {
-          dbType = 'apecloud-mysql';
-        }
-      } else if (helmChart) {
+      if (helmChart) {
         if (helmChart.includes('mongodb')) {
           dbType = 'mongodb';
         } else if (helmChart.includes('redis')) {
           dbType = 'redis';
-        } else if (helmChart.includes('mysql')) {
+        } else if (helmChart.includes('apecloud-mysql')) {
           dbType = 'apecloud-mysql';
+        } else if (helmChart.includes('mysql')) {
+          dbType = 'mysql';
         } else if (helmChart.includes('postgresql')) {
           dbType = 'postgresql';
         }
@@ -215,7 +211,6 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   const labels = db?.metadata?.labels || {};
   const kbDatabase = labels['kb.io/database'];
-  const rawDbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
   let dbType = '';
   let dbVersion = '';
 
@@ -235,9 +230,6 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     // First try clusterdefinition label
     dbType = labels['clusterdefinition.kubeblocks.io/name'] || '';
 
-    if (dbType === 'mysql') {
-      dbType = 'apecloud-mysql';
-    }
     // If still no dbType, try to infer from componentSpecs or helm chart
     if (!dbType) {
       const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDefRef;
@@ -245,18 +237,12 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
 
       if (componentDefRef) {
         dbType = componentDefRef;
-        // Handle special case for MySQL
-        if (componentDefRef === ('mysql' as any)) {
-          dbType = 'apecloud-mysql';
-        }
       } else if (helmChart) {
         // Infer from helm chart name
         if (helmChart.includes('mongodb')) {
           dbType = 'mongodb';
         } else if (helmChart.includes('redis')) {
           dbType = 'redis';
-        } else if (helmChart.includes('mysql')) {
-          dbType = 'apecloud-mysql';
         } else if (helmChart.includes('postgresql')) {
           dbType = 'postgresql';
         } else if (helmChart.includes('kafka')) {
@@ -298,7 +284,6 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    rawDbType: rawDbType,
     dbType: dbType as DBType, // todo
     dbVersion: dbVersion,
     dbName: db.metadata?.name || 'db name',
@@ -440,6 +425,7 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
     failureReason: backup.status?.failureReason,
     connectionPassword: backup.metadata?.annotations?.[passwordLabel],
     dbName: backup.metadata.labels[DBNameLabel],
+    // [FIXME] We can not infer the real dbType from labels
     dbType: dbType === 'mysql' ? 'apecloud-mysql' : dbType
   };
 };

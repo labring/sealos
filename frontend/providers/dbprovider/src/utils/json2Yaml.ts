@@ -84,9 +84,13 @@ export const json2CreateCluster = (
 
   const terminationPolicy =
     backupInfo?.name &&
-    ![DBTypeEnum.postgresql, DBTypeEnum.mysql, DBTypeEnum.mongodb, DBTypeEnum.redis].includes(
-      data.dbType as DBTypeEnum
-    )
+    ![
+      DBTypeEnum.postgresql,
+      DBTypeEnum.mysql,
+      DBTypeEnum.notapemysql,
+      DBTypeEnum.mongodb,
+      DBTypeEnum.redis
+    ].includes(data.dbType as DBTypeEnum)
       ? 'WipeOut'
       : data.terminationPolicy;
 
@@ -95,7 +99,10 @@ export const json2CreateCluster = (
     if (!mysqlRes) return [];
 
     // Branch structure for different database types and versions
-    if (data.dbType === 'apecloud-mysql' && data.dbVersion.startsWith('mysql-')) {
+    if (
+      (data.dbType === 'apecloud-mysql' || data.dbType === 'mysql') &&
+      data.dbVersion.startsWith('mysql-')
+    ) {
       // start with mysql- specific configuration
       return [
         {
@@ -773,6 +780,7 @@ export const json2CreateCluster = (
   function createDBObject(dbType: DBType) {
     switch (dbType) {
       case DBTypeEnum.mysql:
+      case DBTypeEnum.notapemysql:
       case 'apecloud-mysql':
         return buildMySQLYaml();
       case DBTypeEnum.postgresql:
@@ -914,6 +922,7 @@ export const json2Account = (rawData: Partial<DBEditType> = {}, ownerId?: string
   const map = {
     [DBTypeEnum.postgresql]: pgAccountTemplate,
     [DBTypeEnum.mysql]: pgAccountTemplate,
+    [DBTypeEnum.notapemysql]: pgAccountTemplate,
     [DBTypeEnum.mongodb]: pgAccountTemplate,
     [DBTypeEnum.redis]: pgAccountTemplate,
     [DBTypeEnum.kafka]: pgAccountTemplate,
@@ -1079,6 +1088,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
 
   const templateByDB: Record<DBType, string> = {
     'apecloud-mysql': 'apecloud-mysql2mysql',
+    mysql: 'apecloud-mysql2mysql',
     postgresql: 'apecloud-pg2pg',
     mongodb: 'apecloud-mongo2mongo',
     redis: '',
@@ -1202,6 +1212,7 @@ export const json2NetworkService = ({
     postgresql: 5432,
     mongodb: 27017,
     'apecloud-mysql': 3306,
+    mysql: 3306,
     redis: 6379,
     kafka: 9092,
     qdrant: '',
@@ -1212,8 +1223,7 @@ export const json2NetworkService = ({
     clickhouse: 8123
   };
   const labelMap: Record<
-    // [FIXME] Remove this union after KB 0.9 upgrade!
-    DBType | 'mysql',
+    DBType,
     Record<string, Record<string, string>> & { default: Record<string, string> }
   > = {
     postgresql: {
@@ -1270,9 +1280,9 @@ export const json2NetworkService = ({
   };
 
   const labels =
-    Object.entries(labelMap[dbDetail.rawDbType]).find(
+    Object.entries(labelMap[dbDetail.dbType]).find(
       ([version]) => version === dbDetail.dbVersion
-    )?.[1] ?? labelMap[dbDetail.rawDbType].default;
+    )?.[1] ?? labelMap[dbDetail.dbType].default;
 
   const template = {
     apiVersion: 'v1',
@@ -1322,7 +1332,7 @@ export const json2NetworkService = ({
       selector: {
         'app.kubernetes.io/instance': dbDetail.dbName,
         // 'app.kubernetes.io/managed-by': 'kubeblocks',
-        ...labelMap[dbDetail.dbType]
+        ...labels
       },
       type: 'NodePort'
     }
@@ -1532,6 +1542,40 @@ export function json2SwitchMsNode(data: SwitchMsData) {
       ],
       ttlSecondsBeforeAbort: 0,
       type: 'Switchover'
+    }
+  };
+
+  return yaml.dump(template);
+}
+
+export function json2RestoreOpsRequest(params: {
+  clusterName: string;
+  namespace: string;
+  backupName: string;
+}) {
+  const { clusterName, namespace, backupName } = params;
+
+  const template = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      labels: {
+        'app.kubernetes.io/instance': clusterName,
+        'ops.kubeblocks.io/ops-type': 'Restore'
+      },
+      name: `${clusterName}-${nanoid(4)}`,
+      namespace
+    },
+    spec: {
+      clusterName,
+      enqueueOnForce: false,
+      preConditionDeadlineSeconds: 0,
+      restore: {
+        backupName,
+        volumeRestorePolicy: 'Parallel'
+      },
+      ttlSecondsAfterSucceed: 30,
+      type: 'Restore'
     }
   };
 
@@ -1904,7 +1948,7 @@ export const json2ParameterConfig = (
   // Support for multiple database types
   if (dbType === 'postgresql' || dbType === undefined) {
     return buildPostgresYaml();
-  } else if (dbType === 'apecloud-mysql') {
+  } else if (dbType === 'apecloud-mysql' || dbType === 'mysql') {
     return buildMysqlYaml();
   } else if (dbType === 'mongodb') {
     return buildMongodbYaml();

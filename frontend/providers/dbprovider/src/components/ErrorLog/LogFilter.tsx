@@ -112,6 +112,7 @@ export const LogFilter = ({
         mongodb: 'mongodb',
         postgresql: 'postgresql',
         'apecloud-mysql': 'mysql',
+        mysql: 'mysql',
         redis: 'redis',
         kafka: 'kafka',
         qdrant: 'qdrant',
@@ -161,6 +162,7 @@ export const LogFilter = ({
       mongodb: 'mongodb',
       postgresql: 'postgresql',
       'apecloud-mysql': 'mysql',
+      mysql: 'mysql',
       redis: 'redis',
       kafka: 'kafka',
       qdrant: 'qdrant',
@@ -362,7 +364,9 @@ export const LogFilter = ({
                       ? t('All')
                       : (() => {
                           const firstSelected = podList.find((p) => p.checked);
-                          return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
+                          return `${firstSelected?.label}${
+                            selectedCount > 1 ? ` (+${selectedCount - 1})` : ''
+                          }`;
                         })();
 
                   return (
@@ -547,7 +551,9 @@ export const LogFilter = ({
                       ? t('All')
                       : (() => {
                           const firstSelected = containerList.find((c) => c.checked);
-                          return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
+                          return `${firstSelected?.label}${
+                            selectedCount > 1 ? ` (+${selectedCount - 1})` : ''
+                          }`;
                         })();
 
                   return (

@@ -21,13 +21,19 @@ export type CPUResourceEnum = 0.5 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type MemoryResourceEnum = 0.5 | 1 | 2 | 4 | 6 | 8 | 12 | 16 | 32;
 export type ReplicasResourceEnum = 1 | 2 | 3;
 
-export type SupportMigrationDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
+export type SupportMigrationDBType = Extract<
+  DBType,
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'mysql'
+>;
 
-export type SupportConnectDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
+export type SupportConnectDBType = Extract<
+  DBType,
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'mysql'
+>;
 
 export type SupportReconfigureDBType = Extract<
   DBType,
-  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'redis'
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'redis' | 'mysql'
 >;
 
 export type DeployKindsType =
@@ -134,7 +140,6 @@ export interface DBDetailType extends DBEditType {
   totalCpu: number;
   totalMemory: number;
   totalStorage: number;
-  rawDbType: DBType;
   cluster?: KbPgClusterType; // cluster info
 }
 

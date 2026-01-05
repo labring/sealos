@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const queryType: { [key: string]: string } = {
       [DBTypeEnum.postgresql]: `avg by(namespace, app_kubernetes_io_instance, pod) (time() - pg_postmaster_start_time_seconds{$, app_kubernetes_io_instance="${dbName}"})`,
       [DBTypeEnum.mysql]: `sum(mysql_global_status_uptime{$, app_kubernetes_io_instance="${dbName}"}) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.notapemysql]: `sum(mysql_global_status_uptime{$, app_kubernetes_io_instance="${dbName}"}) by (namespace,app_kubernetes_io_instance,pod)`,
       [DBTypeEnum.mongodb]: `sum by(namespace, app_kubernetes_io_instance, pod) (mongodb_instance_uptime_seconds{$, app_kubernetes_io_instance="${dbName}"})`,
       [DBTypeEnum.redis]: `redis_uptime_in_seconds{$, app_kubernetes_io_instance="${dbName}"}`
     };
