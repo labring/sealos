@@ -48,6 +48,7 @@
   "basic_info": "Basic",
   "billing_resource": "Billing Resource",
   "cancel": "Cancel",
+  "cannot_use_internal_domain": "Cannot use internal domain",
   "categories": "Categories",
   "change": "Change",
   "choose_runtime": "Choose a Runtime",

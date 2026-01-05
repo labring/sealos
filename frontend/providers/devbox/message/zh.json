@@ -48,6 +48,7 @@
   "basic_info": "基础信息",
   "billing_resource": "计费资源",
   "cancel": "取消",
+  "cannot_use_internal_domain": "不能使用内部域名",
   "categories": "分类",
   "change": "变更",
   "choose_runtime": "选择运行时",
