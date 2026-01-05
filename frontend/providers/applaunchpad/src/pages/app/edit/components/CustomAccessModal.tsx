@@ -37,7 +37,8 @@ import {
   DOMAIN_BINDING_DOCUMENTATION_LINK,
   DOMAIN_REG_QUERY_LINK,
   INFRASTRUCTURE_PROVIDER,
-  REQUIRES_DOMAIN_REG
+  REQUIRES_DOMAIN_REG,
+  SEALOS_USER_DOMAINS
 } from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy, AlertTriangle } from 'lucide-react';
@@ -77,6 +78,25 @@ const CustomAccessModal = ({
 
   const sanitizeDomain = (input: string) =>
     input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
+
+  // Check if domain is an internal domain (any SEALOS_USER_DOMAINS)
+  const isInternalDomain = (domain: string): boolean => {
+    if (!domain) return false;
+    const normalizedDomain = domain.toLowerCase().trim();
+
+    // Check against all user domains
+    for (const userDomain of SEALOS_USER_DOMAINS) {
+      const userDomainLower = userDomain.name.toLowerCase();
+      if (
+        normalizedDomain === userDomainLower ||
+        normalizedDomain.endsWith(`.${userDomainLower}`)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async (silent: boolean) => {
@@ -312,17 +332,28 @@ const CustomAccessModal = ({
                     height={'32px'}
                     onClick={() => {
                       const sanitizedDomain = sanitizeDomain(customDomain);
-                      if (sanitizedDomain) {
-                        setCustomDomain(sanitizedDomain);
-                        setProcessPhase('VERIFY_DOMAIN');
-                        setVerificationMethod('CNAME'); // Reset to try CNAME first
-                        authDomain(true);
-                      } else {
+                      if (!sanitizedDomain) {
                         toast({
                           title: t('domain_invalid_toast', { domain: customDomain }),
+                          status: 'error',
+                          position: 'top'
+                        });
+                        return;
+                      }
+
+                      // Check if domain is an internal domain
+                      if (isInternalDomain(sanitizedDomain)) {
+                        toast({
+                          title: t('domain_cannot_use_internal'),
                           status: 'error'
                         });
+                        return;
                       }
+
+                      setCustomDomain(sanitizedDomain);
+                      setProcessPhase('VERIFY_DOMAIN');
+                      setVerificationMethod('CNAME'); // Reset to try CNAME first
+                      authDomain(true);
                     }}
                   >
                     {t('domain_verification_input_save')}
