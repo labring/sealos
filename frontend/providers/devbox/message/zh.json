@@ -5,6 +5,7 @@
   "CNAME Tips": "请到您的域名服务商处，添加该域名的 `CNAME` 解析到 {domain}，解析生效后即可绑定自定义域名。",
   "CPU_with_Memory": "CPU、内存",
   "Card": "张",
+  "Cannot use internal domain": "不能使用内部域名",
   "Container Port": "容器暴露端口",
   "Custom Domain": "自定义域名",
   "Delete": "删除中",

@@ -5,6 +5,7 @@
   "CNAME Tips": "To set up a custom domain, please add a `CNAME` record for your domain pointing to {domain} at your domain registrar. You can bind your custom domain once the DNS resolution takes effect.",
   "CPU_with_Memory": "CPU、Memory",
   "Card": "cards",
+  "Cannot use internal domain": "Cannot use internal domain",
   "Container Port": "Container Port",
   "Custom Domain": "Custom",
   "Delete": "Deleting",

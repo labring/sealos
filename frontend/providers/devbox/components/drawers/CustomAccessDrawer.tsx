@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 import {
   Drawer,
@@ -14,6 +15,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';
+import { useEnvStore } from '@/stores/env';
 
 export type CustomAccessDrawerParams = {
   publicDomain: string;
@@ -28,12 +30,18 @@ const CustomAccessDrawer = ({
 }: CustomAccessDrawerParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const ref = useRef<HTMLInputElement>(null);
   const t = useTranslations();
+  const { env } = useEnvStore();
 
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async () => {
       const val = ref.current?.value || '';
       if (!val) {
         return '';
+      }
+
+      if (val.endsWith(`.${env.ingressDomain}`)) {
+        toast.error(t('Cannot use internal domain'));
+        throw new Error('Cannot use internal domain');
       }
 
       try {
