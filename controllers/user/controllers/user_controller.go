@@ -208,6 +208,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		r.syncKubeConfig,
 		r.syncRole,
 		r.syncRoleBinding,
+		r.syncClusterRoleBinding,
 		r.syncFinalStatus,
 	}
 
@@ -430,6 +431,63 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 			v1.EventTypeWarning,
 			"syncUserRoleBinding",
 			"Sync User namespace role binding %s is error: %v",
+			user.Name,
+			err,
+		)
+	}
+	return ctx
+}
+
+func (r *UserReconciler) syncClusterRoleBinding(ctx context.Context, user *userv1.User) context.Context {
+	if user.Name != "admin" {
+		return ctx
+	}
+	roleBindingConditionType := userv1.ConditionType("ClusterRoleBindingSyncReady")
+	rbCondition := &userv1.Condition{
+		Type:               roleBindingConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync admin role binding successfully",
+	}
+	condition := helper.GetCondition(user.Status.Conditions, rbCondition)
+	defer func() {
+		if helper.DiffCondition(condition, rbCondition) {
+			r.saveCondition(user, rbCondition.DeepCopy())
+		}
+	}()
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+		clusterRoleBinding.Name = "sealos-cloud" + user.Name
+		clusterRoleBinding.Labels = map[string]string{}
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, clusterRoleBinding, func() error {
+			clusterRoleBinding.Annotations = map[string]string{
+				userAnnotationCreatorKey: user.Name,
+				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+			}
+			clusterRoleBinding.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "ClusterRole",
+				Name:     "cluster-admin",
+			}
+			clusterRoleBinding.Subjects = config.GetUsersSubject(user.Name)
+			return controllerutil.SetControllerReference(user, clusterRoleBinding, r.Scheme)
+		}); err != nil {
+			return fmt.Errorf("unable to create namespace admin cluster role binding by User: %w", err)
+		}
+		r.Logger.V(1).Info("create or update namespace admin cluster role binding by User", "OperationResult", change)
+		rbCondition.Message = fmt.Sprintf("sync namespace admin cluster role binding %s/%s successfully", clusterRoleBinding.Name, clusterRoleBinding.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(rbCondition, "SyncUserError", err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncUserClusterRoleBinding",
+			"Sync User admin cluster role binding %s is error: %v",
 			user.Name,
 			err,
 		)
