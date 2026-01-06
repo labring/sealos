@@ -67,6 +67,7 @@ func (g *Gateway) PublicKeyCallback(
 			"namespace": fullNamespace,
 			"devbox":    devboxName,
 			"devbox_ip": info.PodIP,
+			"node_name": info.NodeName,
 		})
 
 		customKeyLogger.Info("authentication accept")
@@ -88,6 +89,7 @@ func (g *Gateway) PublicKeyCallback(
 		"namespace": info.Namespace,
 		"devbox":    info.DevboxName,
 		"devbox_ip": info.PodIP,
+		"node_name": info.NodeName,
 	})
 
 	pkLogger.Info("authentication accept")
@@ -135,6 +137,7 @@ func (g *Gateway) NoClientAuthCallback(conn ssh.ConnMetadata) (*ssh.Permissions,
 		"namespace": fullNamespace,
 		"devbox":    devboxName,
 		"devbox_ip": info.PodIP,
+		"node_name": info.NodeName,
 	})
 
 	noAuthLogger.Info("authentication accept")

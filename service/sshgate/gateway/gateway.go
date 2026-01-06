@@ -209,6 +209,7 @@ func (g *Gateway) HandleConnection(nConn net.Conn) {
 			"namespace":   info.Namespace,
 			"devbox":      info.DevboxName,
 			"devbox_ip":   info.PodIP,
+			"node_name":   info.NodeName,
 			"auth_mode":   authMode.String(),
 		})
 	}
