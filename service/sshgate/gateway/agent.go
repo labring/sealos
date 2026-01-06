@@ -64,6 +64,7 @@ func (g *Gateway) handleAgentForwardMode(
 	backendChannel, backendRequests, err := backendConn.OpenChannel("session", nil)
 	if err != nil {
 		sessionLogger.WithError(err).Error("Failed to open devbox channel")
+		fmt.Fprintf(channel, "Failed to open devbox session: %v\r\n", err)
 		return
 	}
 	defer backendChannel.Close()

@@ -3,6 +3,7 @@ package gateway
 import (
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/labring/sealos/service/sshgate/registry"
 	log "github.com/sirupsen/logrus"
@@ -34,6 +35,20 @@ func (g *Gateway) handlePublicKeyMode(
 		logger.WithField("devbox_addr", devboxAddr).
 			WithError(err).
 			Error("Failed to connect to devbox")
+
+		// Reject the first channel with error message so client knows what happened
+		// Connection will be closed after return, other channels will fail automatically
+		errMsg := "Failed to connect to devbox: " + err.Error() + "\r\n" +
+			"The devbox may be starting up or the SSH service is not ready\r\n"
+		select {
+		case newChannel, ok := <-chans:
+			if ok {
+				_ = newChannel.Reject(ssh.ConnectionFailed, errMsg)
+			}
+		case <-time.After(g.options.SessionRequestTimeout):
+			logger.Debug("Timeout waiting for channel to reject")
+		}
+
 		return
 	}
 	defer backendConn.Close()
@@ -85,7 +100,9 @@ func (g *Gateway) handleChannelPublicKey(
 	)
 	if err != nil {
 		channelLogger.WithError(err).Warn("Failed to open devbox channel")
-		_ = newChannel.Reject(ssh.ConnectionFailed, err.Error())
+		errMsg := "Failed to open devbox channel: " + err.Error() + "\r\n" +
+			"The devbox session may have been terminated\r\n"
+		_ = newChannel.Reject(ssh.ConnectionFailed, errMsg)
 		return
 	}
 	defer backendChannel.Close()
