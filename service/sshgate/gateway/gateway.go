@@ -205,9 +205,10 @@ func (g *Gateway) HandleConnection(nConn net.Conn) {
 	if connLogger == nil {
 		connLogger = g.logger.WithFields(log.Fields{
 			"remote_addr": conn.RemoteAddr().String(),
-			"ssh_user":    conn.User(),
+			"user":        conn.User(),
 			"namespace":   info.Namespace,
 			"devbox":      info.DevboxName,
+			"devbox_ip":   info.PodIP,
 			"auth_mode":   authMode.String(),
 		})
 	}

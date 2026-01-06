@@ -56,17 +56,18 @@ func (g *Gateway) PublicKeyCallback(
 			return nil, err
 		}
 
+		info, ok := g.registry.GetDevboxInfo(fullNamespace, devboxName)
+		if !ok {
+			return nil, errors.New("devbox not found")
+		}
+
 		// Update logger with devbox info for custom key mode
 		customKeyLogger := authLogger.WithFields(log.Fields{
 			"auth_mode": AuthModeCustomKey.String(),
 			"namespace": fullNamespace,
 			"devbox":    devboxName,
+			"devbox_ip": info.PodIP,
 		})
-
-		info, ok := g.registry.GetDevboxInfo(fullNamespace, devboxName)
-		if !ok {
-			return nil, errors.New("devbox not found")
-		}
 
 		customKeyLogger.Info("authentication accept")
 
@@ -86,6 +87,7 @@ func (g *Gateway) PublicKeyCallback(
 	pkLogger := authLogger.WithFields(log.Fields{
 		"namespace": info.Namespace,
 		"devbox":    info.DevboxName,
+		"devbox_ip": info.PodIP,
 	})
 
 	pkLogger.Info("authentication accept")
@@ -122,19 +124,20 @@ func (g *Gateway) NoClientAuthCallback(conn ssh.ConnMetadata) (*ssh.Permissions,
 		return nil, err
 	}
 
-	// Update logger with devbox info
-	noAuthLogger := authLogger.WithFields(log.Fields{
-		"namespace": fullNamespace,
-		"devbox":    devboxName,
-	})
-
-	noAuthLogger.Info("authentication accept")
-
 	// Get devbox info
 	info, ok := g.registry.GetDevboxInfo(fullNamespace, devboxName)
 	if !ok {
 		return nil, errors.New("devbox not found")
 	}
+
+	// Update logger with devbox info
+	noAuthLogger := authLogger.WithFields(log.Fields{
+		"namespace": fullNamespace,
+		"devbox":    devboxName,
+		"devbox_ip": info.PodIP,
+	})
+
+	noAuthLogger.Info("authentication accept")
 
 	return &ssh.Permissions{
 		Extensions: map[string]string{
