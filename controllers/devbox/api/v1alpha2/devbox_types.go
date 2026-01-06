@@ -41,6 +41,8 @@ const (
 	AnnotationMemoryLimitRatio   = "devbox.sealos.io/memory-limit-ratio"
 	// Annotate the devbox pod with the runtime
 	AnnotationRuntime = "io.containerd.cri.runtime-handler"
+	// Annotate the devbox pod with the blockio resources
+	AnnotationBlockIOResources = "blockio.resources.beta.kubernetes.io/pod"
 
 	// Label the devbox pod with the devbox part of
 	LabelDevBoxPartOf = "devbox"
