@@ -21,32 +21,17 @@ import (
 )
 
 type Config struct {
-	Global `yaml:"global"`
-	Kube   `yaml:"kube"`
+	Global  `yaml:"global"`
+	Feature `yaml:"feature"`
 }
 
 type Global struct {
-	CloudDomain    string `yaml:"cloudDomain"`
-	CloudPort      string `yaml:"cloudPort"`
-	RegionUID      string `yaml:"regionUID"`
-	CertSecretName string `yaml:"certSecretName"`
+	CloudAPIServerDomain string `yaml:"cloudAPIServerDomain"`
+	CloudAPIServerPort   string `yaml:"cloudAPIServerPort"`
 }
 
-type Kube struct {
-	Version       string `yaml:"version"`
-	APIServerHost string `yaml:"apiServerHost"`
-	APIServerPort string `yaml:"apiServerPort"`
-}
-
-type Common struct {
-	GuideEnabled string `yaml:"guideEnabled"`
-	APIEnabled   string `yaml:"apiEnabled"`
-}
-
-type Database struct {
-	MongodbURI             string `yaml:"mongodbURI"`
-	GlobalCockroachdbURI   string `yaml:"globalCockroachdbURI"`
-	RegionalCockroachdbURI string `yaml:"regionalCockroachdbURI"`
+type Feature struct {
+	AdminSkip bool `yaml:"adminSkip"`
 }
 
 func LoadConfig(path string, target any) error {
