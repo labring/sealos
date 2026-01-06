@@ -236,8 +236,8 @@ func main() {
 }
 
 func setConfigToEnv(cfg configpkg.Config) error {
-	if err := os.Setenv("SEALOS_CLOUD_HOST", cfg.CloudDomain); err != nil {
+	if err := os.Setenv("SEALOS_CLOUD_APISERVER_HOST", cfg.CloudAPIServerDomain); err != nil {
 		return err
 	}
-	return os.Setenv("APISERVER_PORT", cfg.APIServerPort)
+	return os.Setenv("SEALOS_CLOUD_APISERVER_PORT", cfg.CloudAPIServerPort)
 }
