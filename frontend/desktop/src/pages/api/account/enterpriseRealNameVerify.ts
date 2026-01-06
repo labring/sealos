@@ -50,8 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('enterpriseRealNameVerify: Real name authentication configuration not found');
     }
 
-    let realNameAuthReward = config.realNameAuthReward ?? 0;
-
     const validationResult = schema.safeParse(req.body);
     if (!validationResult.success) {
       return jsonRes(res, {
@@ -111,12 +109,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    let duplicateRealNameUser = false;
-
-    if (enterprise) {
-      duplicateRealNameUser = true;
-    }
-
     await globalPrisma.$transaction(async (globalPrisma) => {
       try {
         await globalPrisma.$queryRawUnsafe(
@@ -127,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return;
       }
 
-      const enterpriseRealNameInfo = await globalPrisma.enterpriseRealNameInfo.update({
+      await globalPrisma.enterpriseRealNameInfo.update({
         where: { userUid: userUid },
         data: {
           isVerified: true,
@@ -152,53 +144,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           completedAt: new Date()
         }
       });
-
-      if (duplicateRealNameUser) {
-        return;
-      }
-
-      const userAccount = await globalPrisma.account.findUniqueOrThrow({
-        where: { userUid: userUid }
-      });
-
-      if (!userAccount.balance) {
-        throw new Error('enterpriseRealNameVerify: Account balance not found');
-      }
-
-      let totalUserReward = BigInt(0);
-      const userActivityBonus = userAccount.activityBonus || BigInt(0);
-      let currentUserBalance = userAccount.balance;
-
-      if (realNameAuthReward > 0) {
-        const realnameReward = BigInt(realNameAuthReward);
-
-        await globalPrisma.accountTransaction.create({
-          data: {
-            type: 'REALNAME_AUTH_REWARD',
-            userUid: userUid,
-            balance: realnameReward,
-            balance_before: currentUserBalance,
-            deduction_balance: 0,
-            deduction_balance_before: userAccount.deduction_balance,
-            message: 'Real name authentication reward',
-            billing_id: enterpriseRealNameInfo.id
-          }
-        });
-
-        currentUserBalance += realnameReward;
-        totalUserReward += realnameReward;
-      }
-
-      if (totalUserReward > 0) {
-        await globalPrisma.account.update({
-          where: { userUid: userUid },
-          data: {
-            activityBonus: userActivityBonus + totalUserReward,
-            balance: currentUserBalance,
-            updated_at: new Date()
-          }
-        });
-      }
 
       return;
     });
