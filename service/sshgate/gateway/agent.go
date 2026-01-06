@@ -57,6 +57,7 @@ func (g *Gateway) handleAgentForwardMode(
 	defer backendConn.Close()
 
 	sessionLogger.Info("Backend connected via agent forwarding")
+	defer sessionLogger.Debug("Session channel closed")
 
 	backendChannel, backendRequests, err := backendConn.OpenChannel("session", nil)
 	if err != nil {

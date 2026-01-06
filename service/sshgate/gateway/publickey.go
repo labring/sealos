@@ -97,6 +97,7 @@ func (g *Gateway) handleChannelPublicKey(
 	defer channel.Close()
 
 	channelLogger.Debug("Channel established")
+	defer channelLogger.Debug("Channel closed")
 
 	// Use synchronized proxy to ensure exit-status is forwarded before closing
 	g.proxyChannelWithRequests(

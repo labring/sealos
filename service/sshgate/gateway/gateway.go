@@ -232,6 +232,7 @@ func (g *Gateway) HandleConnection(nConn net.Conn) {
 	}
 
 	connLogger.Info("Connection established")
+	defer connLogger.Info("Connection closed")
 
 	switch authMode {
 	case AuthModePublicKey:

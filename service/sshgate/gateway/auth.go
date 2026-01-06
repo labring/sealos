@@ -40,7 +40,7 @@ func (g *Gateway) PublicKeyCallback(
 
 	// Create auth logger with base fields
 	authLogger := g.logger.WithFields(log.Fields{
-		"auth_type":   "public_key",
+		"auth_type":   AuthModePublicKey.String(),
 		"remote_addr": conn.RemoteAddr().String(),
 		"user":        username,
 	})
@@ -88,7 +88,7 @@ func (g *Gateway) PublicKeyCallback(
 		"devbox":    info.DevboxName,
 	})
 
-	authLogger.Info("authentication accept")
+	pkLogger.Info("authentication accept")
 
 	return &ssh.Permissions{
 		Extensions: map[string]string{
@@ -109,7 +109,7 @@ func (g *Gateway) NoClientAuthCallback(conn ssh.ConnMetadata) (*ssh.Permissions,
 
 	// Create auth logger with base fields
 	authLogger := g.logger.WithFields(log.Fields{
-		"auth_type":   "no_auth",
+		"auth_type":   AuthModeNoAuth.String(),
 		"remote_addr": conn.RemoteAddr().String(),
 		"user":        username,
 	})
