@@ -65,6 +65,7 @@ export type TOSState = {
   runner: AppStateManager;
   runningInfo: AppInfo[];
   currentAppPid: number;
+  currentAppKey: string;
   autolaunch: string;
   autolaunchWorkspaceUid?: string;
   launchQuery: {
