@@ -29,6 +29,7 @@ type DevboxInfo struct {
 	Namespace  string
 	DevboxName string
 	PodIP      string
+	NodeName   string
 	PublicKey  ssh.PublicKey
 	PrivateKey ssh.Signer
 }
@@ -182,7 +183,8 @@ func (r *Registry) UpdatePod(pod *corev1.Pod) error {
 		"namespace": pod.Namespace,
 		"devbox":    devboxName,
 		"pod_ip":    pod.Status.PodIP,
-	}).Info("Updating pod IP")
+		"node_name": pod.Spec.NodeName,
+	}).Info("Updating pod info")
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -196,8 +198,9 @@ func (r *Registry) UpdatePod(pod *corev1.Pod) error {
 		r.devboxToInfo[key] = info
 	}
 
-	// Update PodIP even if empty (pod may be restarting)
+	// Update PodIP and NodeName even if empty (pod may be restarting)
 	info.PodIP = pod.Status.PodIP
+	info.NodeName = pod.Spec.NodeName
 
 	return nil
 }

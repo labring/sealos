@@ -74,7 +74,7 @@ func (g *Gateway) handleProxyJumpMode(
 	proxyLogger.Info("Tunnel established")
 
 	// Proxy data between client channel and devbox connection
-	g.proxyChannelToConn(channel, conn)
+	g.proxyChannelToConn(channel, conn, proxyLogger)
 
 	proxyLogger.Info("Tunnel closed")
 }

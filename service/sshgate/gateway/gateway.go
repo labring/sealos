@@ -205,9 +205,11 @@ func (g *Gateway) HandleConnection(nConn net.Conn) {
 	if connLogger == nil {
 		connLogger = g.logger.WithFields(log.Fields{
 			"remote_addr": conn.RemoteAddr().String(),
-			"ssh_user":    conn.User(),
+			"user":        conn.User(),
 			"namespace":   info.Namespace,
 			"devbox":      info.DevboxName,
+			"devbox_ip":   info.PodIP,
+			"node_name":   info.NodeName,
 			"auth_mode":   authMode.String(),
 		})
 	}
@@ -232,6 +234,7 @@ func (g *Gateway) HandleConnection(nConn net.Conn) {
 	}
 
 	connLogger.Info("Connection established")
+	defer connLogger.Info("Connection closed")
 
 	switch authMode {
 	case AuthModePublicKey:
