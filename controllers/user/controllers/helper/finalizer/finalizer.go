@@ -56,7 +56,11 @@ func NewFinalizer(client client.Client, finalizerName string) *Finalizer {
 	}
 }
 
-func (f *Finalizer) RemoveFinalizer(ctx context.Context, obj client.Object, fun func(ctx context.Context, obj client.Object) error) (bool, error) {
+func (f *Finalizer) RemoveFinalizer(
+	ctx context.Context,
+	obj client.Object,
+	fun func(ctx context.Context, obj client.Object) error,
+) (bool, error) {
 	var deleteBool bool
 	if obj.GetDeletionTimestamp() != nil && !obj.GetDeletionTimestamp().IsZero() {
 		deleteBool = true
@@ -75,7 +79,12 @@ func (f *Finalizer) RemoveFinalizer(ctx context.Context, obj client.Object, fun 
 	return deleteBool, nil
 }
 
-func (f *Finalizer) updateFinalizers(ctx context.Context, objectKey client.ObjectKey, obj client.Object, finalizers []string) error {
+func (f *Finalizer) updateFinalizers(
+	ctx context.Context,
+	objectKey client.ObjectKey,
+	obj client.Object,
+	finalizers []string,
+) error {
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		gvk := obj.GetObjectKind().GroupVersionKind()
 		fetchObject := &unstructured.Unstructured{}
