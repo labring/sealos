@@ -47,7 +47,8 @@ export default function Desktop() {
     openApp,
     setToHighestLayerById,
     closeAppById,
-    setAutoLaunch
+    setAutoLaunch,
+    currentAppKey
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
@@ -59,11 +60,35 @@ export default function Desktop() {
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
   const guideModal = useGuideModalStore();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Restore current app after page refresh
+  useEffect(() => {
+    if (!isClient || apps.length === 0) {
+      return;
+    }
+
+    if (currentAppKey) {
+      const savedApp = apps.find((app) => app.key === currentAppKey);
+      const isAppRunning = runningInfo.some((app) => app.key === currentAppKey);
+
+      if (savedApp && !isAppRunning) {
+        openApp(savedApp).then(() => {
+          // Wait a bit for the app to render before hiding loading
+          setTimeout(() => setIsRestoring(false), 100);
+        });
+        return;
+      }
+    }
+
+    // No app to restore or app already running
+    setIsRestoring(false);
+  }, [currentAppKey, apps, runningInfo, openApp, isClient]);
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -226,6 +251,48 @@ export default function Desktop() {
       setIsBannerVisible(true);
     }
   }, []);
+
+  // Show loading during app restoration
+  if (isRestoring) {
+    return (
+      <Box
+        id="desktop"
+        className={styles.desktop}
+        position={'relative'}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          zIndex={-10}
+          overflow="hidden"
+        >
+          <Image
+            src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
+            alt="background"
+            width="100%"
+            height="100vh"
+            objectFit="cover"
+            objectPosition="bottom"
+          />
+        </Box>
+
+        {/* opened apps - need to render during restore */}
+        {runningInfo.map((process) => {
+          return (
+            <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
+              <IframeWindow pid={process.pid} />
+            </AppWindow>
+          );
+        })}
+      </Box>
+    );
+  }
 
   return (
     <Box id="desktop" className={styles.desktop} position={'relative'}>
